@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify
 
 from core.claude_client import responder_chat, gerar_post, perguntar
-from core.notificador import alertar, alertar_critico
+from core.notificador import alertar, alertar_critico, alertar_gestor
 from core.config import MARGEM_MINIMA, ESTOQUE_CRITICO
 from integracoes.bling.bling_client import (
     buscar_produto,
