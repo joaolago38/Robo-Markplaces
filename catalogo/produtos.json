@@ -1,0 +1,28 @@
+[
+  {
+    "sku": "ESM-001",
+    "nome": "Esmalte Vermelho Carmim 8ml",
+    "preco": 9.90,
+    "estoque_total": 200,
+    "ncm": "3304.10.00",
+    "canais": {
+      "mercadolivre": {"ativo": true,  "preco": 9.90,  "estoque": 100},
+      "shopee":       {"ativo": true,  "preco": 8.90,  "estoque": 100},
+      "magalu":       {"ativo": false, "preco": 11.90, "estoque": 0},
+      "amazon":       {"ativo": false, "preco": 12.90, "estoque": 0}
+    }
+  },
+  {
+    "sku": "ESM-002",
+    "nome": "Kit 12 Esmaltes Nude Manicure",
+    "preco": 59.90,
+    "estoque_total": 50,
+    "ncm": "3304.10.00",
+    "canais": {
+      "mercadolivre": {"ativo": false, "preco": 0,     "estoque": 0},
+      "shopee":       {"ativo": true,  "preco": 59.90, "estoque": 50},
+      "magalu":       {"ativo": false, "preco": 0,     "estoque": 0},
+      "amazon":       {"ativo": false, "preco": 0,     "estoque": 0}
+    }
+  }
+]

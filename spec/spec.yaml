@@ -1,0 +1,36 @@
+# ============================================================
+# SPEC PRINCIPAL — Robo-Markplaces
+# Metodologia: Spec-Driven Development (SDD)
+# Fonte da verdade de todo o projeto
+# ============================================================
+
+projeto:
+  nome: Robo-Markplaces
+  versao: "1.0"
+  descricao: >
+    Agente autônomo que gerencia vendas em 4 marketplaces,
+    responde perguntas com IA, publica promoções nas redes sociais
+    e emite NF-e via Bling — tudo guiado por esta spec.
+
+marketplaces:
+  - id: mercadolivre
+    ativo: true
+    prioridade: 1
+  - id: shopee
+    ativo: true
+    prioridade: 2
+  - id: magalu
+    ativo: false
+    prioridade: 3
+  - id: amazon
+    ativo: false
+    prioridade: 4
+
+regras_negocio:
+  margem_minima_pct: 15.0
+  estoque_critico_unidades: 20
+  cpc_maximo_reais: 1.50
+  ctr_minimo_pct: 1.0
+  roas_escala: 3.0
+  horario_post_manha: "08:00"
+  horario_post_noite: "19:00"

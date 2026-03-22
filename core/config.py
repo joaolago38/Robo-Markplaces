@@ -1,0 +1,75 @@
+"""
+core/config.py
+Configuração central — lê spec.yaml e variáveis de ambiente.
+"""
+import os
+import yaml
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+ROOT = Path(__file__).parent.parent
+
+def carregar_spec() -> dict:
+    with open(ROOT / "spec" / "spec.yaml", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+SPEC = carregar_spec()
+REGRAS = SPEC.get("regras_negocio", {})
+
+# IA
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
+# Lojahub
+LOJAHUB_TOKEN           = os.getenv("LOJAHUB_TOKEN", "")
+LOJAHUB_ANALYTICS_TOKEN = os.getenv("LOJAHUB_ANALYTICS_TOKEN", "")
+
+# Bling
+BLING_CLIENT_ID     = os.getenv("BLING_CLIENT_ID", "")
+BLING_CLIENT_SECRET = os.getenv("BLING_CLIENT_SECRET", "")
+BLING_ACCESS_TOKEN  = os.getenv("BLING_ACCESS_TOKEN", "")
+BLING_REFRESH_TOKEN = os.getenv("BLING_REFRESH_TOKEN", "")
+
+# Mercado Livre
+ML_CLIENT_ID     = os.getenv("ML_CLIENT_ID", "")
+ML_CLIENT_SECRET = os.getenv("ML_CLIENT_SECRET", "")
+ML_ACCESS_TOKEN  = os.getenv("ML_ACCESS_TOKEN", "")
+ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "")
+ML_SELLER_ID     = os.getenv("ML_SELLER_ID", "")
+
+# Shopee
+SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "")
+SHOPEE_PARTNER_KEY = os.getenv("SHOPEE_PARTNER_KEY", "")
+SHOPEE_SHOP_ID     = os.getenv("SHOPEE_SHOP_ID", "")
+SHOPEE_ACCESS_TOKEN  = os.getenv("SHOPEE_ACCESS_TOKEN", "")
+SHOPEE_REFRESH_TOKEN = os.getenv("SHOPEE_REFRESH_TOKEN", "")
+
+# Magalu
+MAGALU_CLIENT_ID     = os.getenv("MAGALU_CLIENT_ID", "")
+MAGALU_CLIENT_SECRET = os.getenv("MAGALU_CLIENT_SECRET", "")
+MAGALU_MERCHANT_ID   = os.getenv("MAGALU_MERCHANT_ID", "")
+MAGALU_ACCESS_TOKEN  = os.getenv("MAGALU_ACCESS_TOKEN", "")
+
+# Amazon
+AMAZON_LWA_CLIENT_ID     = os.getenv("AMAZON_LWA_CLIENT_ID", "")
+AMAZON_LWA_CLIENT_SECRET = os.getenv("AMAZON_LWA_CLIENT_SECRET", "")
+AMAZON_REFRESH_TOKEN     = os.getenv("AMAZON_REFRESH_TOKEN", "")
+AMAZON_SELLER_ID         = os.getenv("AMAZON_SELLER_ID", "")
+AMAZON_MARKETPLACE_ID    = os.getenv("AMAZON_MARKETPLACE_ID", "A2Q3Y263D00KWC")
+
+# Meta (Facebook + Instagram)
+META_ACCESS_TOKEN  = os.getenv("META_ACCESS_TOKEN", "")
+META_AD_ACCOUNT_ID = os.getenv("META_AD_ACCOUNT_ID", "")
+META_PAGE_ID       = os.getenv("META_PAGE_ID", "")
+META_INSTAGRAM_ID  = os.getenv("META_INSTAGRAM_ID", "")
+
+# Alertas
+TELEGRAM_TOKEN          = os.getenv("TELEGRAM_TOKEN", "")
+TELEGRAM_CHAT_ID        = os.getenv("TELEGRAM_CHAT_ID", "")
+TELEGRAM_GESTOR_CHAT_ID = os.getenv("TELEGRAM_GESTOR_CHAT_ID", "")
+
+# Regras de negócio
+MARGEM_MINIMA  = float(os.getenv("MARGEM_MINIMA",  str(REGRAS.get("margem_minima_pct", 15.0))))
+ESTOQUE_CRITICO = int(os.getenv("ESTOQUE_CRITICO", str(REGRAS.get("estoque_critico_unidades", 20))))
+CPC_MAXIMO     = float(os.getenv("CPC_MAXIMO",     str(REGRAS.get("cpc_maximo_reais", 1.50))))
+ROAS_ESCALA    = float(os.getenv("ROAS_ESCALA",    str(REGRAS.get("roas_escala", 3.0))))
