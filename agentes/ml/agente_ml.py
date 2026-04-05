@@ -23,7 +23,6 @@ def _h():
 def pergunta_valida(texto: str) -> bool:
     return bool(texto and len(texto.strip()) >= 3)
 
-
 def validar_resposta(resposta: str, produto: dict) -> str:
     if not produto:
         return "Vou confirmar os detalhes e já te respondo 😊"
