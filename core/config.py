@@ -73,6 +73,11 @@ META_ACCESS_TOKEN  = os.getenv("META_ACCESS_TOKEN", "")
 META_AD_ACCOUNT_ID = os.getenv("META_AD_ACCOUNT_ID", "")
 META_PAGE_ID       = os.getenv("META_PAGE_ID", "")
 META_INSTAGRAM_ID  = os.getenv("META_INSTAGRAM_ID", "")
+META_CPC_MAXIMO    = float(os.getenv("META_CPC_MAXIMO", "1.50"))
+META_CTR_MINIMO    = float(os.getenv("META_CTR_MINIMO", "1.00"))
+META_ROAS_MINIMO   = float(os.getenv("META_ROAS_MINIMO", "2.00"))
+META_FREQ_MAXIMA   = float(os.getenv("META_FREQ_MAXIMA", "3.00"))
+META_GASTO_MINIMO_ALERTA = float(os.getenv("META_GASTO_MINIMO_ALERTA", "50.0"))
 
 # Alertas
 TELEGRAM_TOKEN          = os.getenv("TELEGRAM_TOKEN", "")

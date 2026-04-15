@@ -7,6 +7,7 @@ Este diretório contém o pacote pronto para orquestrar a API pelo n8n.
 - `workflows/robo_markplaces_rotinas.json`: rotinas automáticas (cron).
 - `workflows/robo_markplaces_chat_webhook.json`: entrada webhook para chat.
 - `workflows/robo_markplaces_faturamento_webhook.json`: entrada webhook para emissão de NF-e.
+- `workflows/robo_markplaces_meta_metricas.json`: monitoramento de campanhas Meta.
 - `env.exemplo`: variáveis esperadas pelos workflows.
 
 ## Pré-requisitos
@@ -29,8 +30,9 @@ No n8n, configure as variáveis de ambiente:
 2. Importe `workflows/robo_markplaces_rotinas.json`.
 3. Importe `workflows/robo_markplaces_chat_webhook.json`.
 4. Importe `workflows/robo_markplaces_faturamento_webhook.json`.
-5. Ajuste timezone dos cron nodes para `America/Sao_Paulo`.
-6. Ative os workflows.
+5. Importe `workflows/robo_markplaces_meta_metricas.json`.
+6. Ajuste timezone dos cron nodes para `America/Sao_Paulo`.
+7. Ative os workflows.
 
 ## Rotinas incluídas
 
@@ -38,6 +40,7 @@ No n8n, configure as variáveis de ambiente:
 - Ajuste de algoritmo/saúde: a cada 1 hora.
 - Relatório diário: diariamente às 08:00.
 - Estoque crítico: a cada 4 horas.
+- Validação Meta Ads: a cada 1 hora.
 
 ## Teste rápido
 

@@ -41,6 +41,7 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /marketplaces/keepalive`
 - `POST /marketplaces/algoritmo/ajustar`
 - `POST /faturamento/nfe`
+- `POST /meta/campanhas/validar`
 
 ## Conexão com marketplaces
 
@@ -91,6 +92,27 @@ Esse fluxo:
 - gera score e status (`saudavel`, `atencao`, `critico`),
 - sugere ajustes automáticos para o momento (responder fila, revisar preço/título, estabilizar operação),
 - mantém histórico em `logs/marketplace_algorithm_history.json` para detectar queda brusca de desempenho.
+
+### Validação de campanhas Meta (Instagram/Facebook)
+
+Use `POST /meta/campanhas/validar` para avaliar campanhas da Meta Ads API.
+
+Payload opcional:
+
+```json
+{
+  "alertar_quando_atencao": false,
+  "periodo_dias": 1
+}
+```
+
+Regras de validação:
+- CPC acima do limite configurado.
+- CTR abaixo do mínimo.
+- ROAS abaixo do alvo com gasto relevante.
+- Frequência alta (fadiga de criativo).
+
+Retorna status por campanha (`saudavel`, `atencao`, `critico`) e recomendações.
 
 ### Emissão de NF-e automática (Bling)
 

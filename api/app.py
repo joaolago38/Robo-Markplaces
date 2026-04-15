@@ -15,6 +15,7 @@ from core.config import MARGEM_MINIMA, ESTOQUE_CRITICO
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
+from agentes.social.agente_metricas_meta import executar as executar_metricas_meta
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -468,6 +469,33 @@ def faturamento_nfe():
     return jsonify(resultado), status_code
 
 
+@app.route("/meta/campanhas/validar", methods=["POST"])
+def meta_validar_campanhas():
+    """
+    POST /meta/campanhas/validar
+    Valida métricas de campanhas do Instagram/Facebook (Meta Ads) e alerta gestor.
+    Body opcional:
+    {
+      "alertar_quando_atencao": false,
+      "periodo_dias": 1
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    alertar_quando_atencao = bool(dados.get("alertar_quando_atencao", False))
+    periodo_dias, erro_periodo = _parse_float(dados.get("periodo_dias", 1), "periodo_dias")
+    if erro_periodo:
+        return jsonify({"ok": False, "erro": erro_periodo}), 400
+
+    resultado = executar_metricas_meta(
+        alertar_quando_atencao=alertar_quando_atencao,
+        periodo_dias=max(1, int(periodo_dias)),
+    )
+    return jsonify({"ok": True, **resultado})
+
+
 # ============================================================
 # INICIALIZAÇÃO
 # ============================================================
@@ -485,6 +513,7 @@ if __name__ == "__main__":
     print("   POST /marketplaces/keepalive — mantém sessão ativa nos marketplaces")
     print("   POST /marketplaces/algoritmo/ajustar — avalia saúde e ajusta estratégia")
     print("   POST /faturamento/nfe     — emite NF-e no Bling para pedido pago")
+    print("   POST /meta/campanhas/validar — valida métricas Meta Ads e recomenda ajustes")
     print("\n   n8n deve apontar para: http://localhost:5000\n")
 
     app.run(host="0.0.0.0", port=5000, debug=False)
