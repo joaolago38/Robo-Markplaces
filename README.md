@@ -123,6 +123,7 @@ Regras:
 - NCM é resolvido por prioridade: item -> produto no Bling -> `catalogo/produtos.json`.
 - Se algum item ficar sem NCM válido, a emissão é bloqueada e alerta crítico é disparado.
 - Em `dry_run=true`, retorna o payload fiscal para conferência antes da emissão real.
+- O item já sai com campos fiscais base (`cfop`, `cst`, `csosn`, `origem`) configuráveis no `.env`.
 
 ## Exemplos de payload
 

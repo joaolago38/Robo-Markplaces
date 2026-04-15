@@ -79,6 +79,14 @@ TELEGRAM_TOKEN          = os.getenv("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID        = os.getenv("TELEGRAM_CHAT_ID", "")
 TELEGRAM_GESTOR_CHAT_ID = os.getenv("TELEGRAM_GESTOR_CHAT_ID", "")
 
+# Fiscal (NF-e)
+NFE_NATUREZA_OPERACAO = os.getenv("NFE_NATUREZA_OPERACAO", "Venda de mercadoria")
+NFE_CFOP_PADRAO       = os.getenv("NFE_CFOP_PADRAO", "5102")
+NFE_CST_PADRAO        = os.getenv("NFE_CST_PADRAO", "00")
+NFE_CSOSN_PADRAO      = os.getenv("NFE_CSOSN_PADRAO", "102")
+NFE_ORIGEM_PADRAO     = os.getenv("NFE_ORIGEM_PADRAO", "0")
+NFE_SERIE_PADRAO      = os.getenv("NFE_SERIE_PADRAO", "1")
+
 # Regras de negócio
 MARGEM_MINIMA  = float(os.getenv("MARGEM_MINIMA",  str(REGRAS.get("margem_minima_pct", 15.0))))
 ESTOQUE_CRITICO = int(os.getenv("ESTOQUE_CRITICO", str(REGRAS.get("estoque_critico_unidades", 20))))

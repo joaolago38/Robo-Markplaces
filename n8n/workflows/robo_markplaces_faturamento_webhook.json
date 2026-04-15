@@ -1,0 +1,82 @@
+{
+  "name": "Robo-Markplaces - Faturamento Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "robo-markplaces/faturamento/nfe",
+        "responseMode": "responseNode",
+        "httpMethod": "POST"
+      },
+      "id": "webhook-faturamento",
+      "name": "Webhook Faturamento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/faturamento/nfe",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.body}}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "http-faturamento",
+      "name": "HTTP Faturamento NFE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}"
+      },
+      "id": "respond-faturamento",
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Faturamento": {
+      "main": [
+        [
+          {
+            "node": "HTTP Faturamento NFE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Faturamento NFE": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

@@ -1,0 +1,128 @@
+{
+  "market_mid_test": [
+    {
+      "ts": "2026-04-15T16:39:42.762130+00:00",
+      "score": 80,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-04-15T16:39:58.011027+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-04-15T16:45:00.884733+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-04-15T16:45:44.653612+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    }
+  ],
+  "market_x_test": [
+    {
+      "ts": "2026-04-15T16:39:42.764292+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-04-15T16:39:58.012448+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-04-15T16:45:00.886972+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-04-15T16:45:44.655141+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_ok_test": [
+    {
+      "ts": "2026-04-15T16:39:42.765927+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-04-15T16:39:58.013910+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-04-15T16:45:00.888742+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-04-15T16:45:44.656655+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    }
+  ]
+}

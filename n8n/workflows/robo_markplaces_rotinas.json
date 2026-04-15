@@ -1,0 +1,211 @@
+{
+  "name": "Robo-Markplaces - Rotinas",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 9,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "cron-keepalive",
+      "name": "Cron Keepalive",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        220,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/keepalive",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"limite_dias_sem_acesso\": Number($env.ROBO_KEEPALIVE_DIAS || 5)}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "http-keepalive",
+      "name": "HTTP Keepalive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "cron-algoritmo",
+      "name": "Cron Algoritmo",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/algoritmo/ajustar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"alertar_quando_atencao\": ($env.ROBO_ALERTAR_ATENCAO || 'false') === 'true'}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "http-algoritmo",
+      "name": "HTTP Algoritmo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "cron-relatorio",
+      "name": "Cron Relatorio",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        220,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/relatorio",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "http-relatorio",
+      "name": "HTTP Relatorio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "id": "cron-estoque",
+      "name": "Cron Estoque",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/estoque/criticos",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "http-estoque",
+      "name": "HTTP Estoque Critico",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        720
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Keepalive": {
+      "main": [
+        [
+          {
+            "node": "HTTP Keepalive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron Algoritmo": {
+      "main": [
+        [
+          {
+            "node": "HTTP Algoritmo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron Relatorio": {
+      "main": [
+        [
+          {
+            "node": "HTTP Relatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron Estoque": {
+      "main": [
+        [
+          {
+            "node": "HTTP Estoque Critico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}
