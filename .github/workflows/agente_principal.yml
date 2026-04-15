@@ -1,49 +1,160 @@
 # GitHub Actions — Orquestrador do Robo-Markplaces
-# Este arquivo ativa todos os agentes automaticamente
 name: Robo-Markplaces
 
 on:
   schedule:
-    - cron: '0 11 * * *'       # Relatório diário às 8h (BR)
-    - cron: '*/30 11-23 * * *' # Chat ML/Shopee a cada 30min
-    - cron: '0 */6 * * *'      # Algoritmos de ranking a cada 6h
-  workflow_dispatch:            # Permite rodar manualmente
+    - cron: "0 11 * * *"        # Relatório diário às 08:00 BRT
+    - cron: "*/30 11-23 * * *"  # Chat marketplaces a cada 30min
+    - cron: "0 */6 * * *"       # Saúde/algoritmo a cada 6h
+  workflow_dispatch:
     inputs:
-      agente:
-        description: 'Qual agente rodar?'
-        default: 'todos'
+      rotina:
+        description: "Rotina a executar"
+        required: true
+        default: "todos"
+        type: choice
+        options:
+          - todos
+          - testes
+          - relatorio
+          - chat
+          - algoritmo
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: "3.11"
 
 jobs:
-  testes:
-    name: Testes SDD
+  qualidade:
+    name: Qualidade (lint + testes)
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      github.event.inputs.rotina == 'todos' ||
+      github.event.inputs.rotina == 'testes'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - run: pip install -r requirements.txt
-      - run: python tests/test_behaviors.py
+      - name: Instalar dependências
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check api agentes core integracoes tests
+      - name: Testes
+        run: python -m unittest discover -s tests -p "test_*.py"
 
   relatorio:
-    name: Relatório Diário
+    name: Relatório diário
     runs-on: ubuntu-latest
-    needs: testes
+    needs: qualidade
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '0 11 * * *') ||
+      github.event.inputs.rotina == 'todos' ||
+      github.event.inputs.rotina == 'relatorio'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - run: pip install -r requirements.txt
-      - run: python -c "from agentes.relatorio import executar; executar()"
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Executar relatório
+        run: python -c "from agentes.relatorio import executar; executar()"
         env:
-          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
-          LOJAHUB_TOKEN:      ${{ secrets.LOJAHUB_TOKEN }}
-          TELEGRAM_TOKEN:     ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+
+  chat_marketplaces:
+    name: Chat marketplaces
+    runs-on: ubuntu-latest
+    needs: qualidade
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '*/30 11-23 * * *') ||
+      github.event.inputs.rotina == 'todos' ||
+      github.event.inputs.rotina == 'chat'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Rodar agentes de chat
+        run: |
+          python -c "from agentes.ml.agente_ml import executar; print(executar())"
+          python -c "from agentes.shopee.agente_shopee import executar; print(executar())"
+          python -c "from agentes.magalu.agente_magalu import executar; print(executar())"
+          python -c "from agentes.amazon.agente_amazon import executar; print(executar())"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+
+  algoritmo_marketplaces:
+    name: Saúde e algoritmo marketplaces
+    runs-on: ubuntu-latest
+    needs: qualidade
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '0 */6 * * *') ||
+      github.event.inputs.rotina == 'todos' ||
+      github.event.inputs.rotina == 'algoritmo'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Keepalive marketplaces
+        run: python -c "from agentes.manutencao_marketplaces import executar; print(executar())"
+        env:
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Avaliar saúde/algoritmo
+        run: python -c "from agentes.algoritmo_marketplaces import executar; print(executar(alertar_quando_atencao=False))"
+        env:
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}

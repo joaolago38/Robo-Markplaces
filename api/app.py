@@ -13,6 +13,7 @@ from core.claude_client import responder_chat, gerar_post, perguntar
 from core.notificador import alertar, alertar_critico, alertar_gestor
 from core.config import MARGEM_MINIMA, ESTOQUE_CRITICO
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
+from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -420,6 +421,25 @@ def keepalive_marketplaces():
     return jsonify({"ok": True, **resultado})
 
 
+@app.route("/marketplaces/algoritmo/ajustar", methods=["POST"])
+def ajustar_algoritmo_marketplaces():
+    """
+    POST /marketplaces/algoritmo/ajustar
+    Avalia saúde de conta nos marketplaces e recomenda ajustes no momento certo.
+    Body opcional:
+    {
+        "alertar_quando_atencao": false
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    alertar_quando_atencao = bool(dados.get("alertar_quando_atencao", False))
+    resultado = executar_algoritmo_marketplaces(alertar_quando_atencao=alertar_quando_atencao)
+    return jsonify({"ok": True, **resultado})
+
+
 # ============================================================
 # INICIALIZAÇÃO
 # ============================================================
@@ -435,6 +455,7 @@ if __name__ == "__main__":
     print("   POST /relatorio           — gera relatório diário")
     print("   POST /campanha/avaliar    — avalia métricas e decide ação")
     print("   POST /marketplaces/keepalive — mantém sessão ativa nos marketplaces")
+    print("   POST /marketplaces/algoritmo/ajustar — avalia saúde e ajusta estratégia")
     print("\n   n8n deve apontar para: http://localhost:5000\n")
 
     app.run(host="0.0.0.0", port=5000, debug=False)

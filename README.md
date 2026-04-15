@@ -39,6 +39,7 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /relatorio`
 - `POST /campanha/avaliar`
 - `POST /marketplaces/keepalive`
+- `POST /marketplaces/algoritmo/ajustar`
 
 ## Conexão com marketplaces
 
@@ -72,6 +73,24 @@ Esse fluxo:
 - registra último acesso com sucesso em `logs/marketplace_keepalive.json`,
 - alerta gestor quando falha acesso ou quando ultrapassa limite configurado.
 
+### Saúde da conta + ajuste de algoritmo
+
+Use `POST /marketplaces/algoritmo/ajustar` para monitorar Mercado Livre, Shopee, Magalu e Amazon.
+
+Payload opcional:
+
+```json
+{
+  "alertar_quando_atencao": false
+}
+```
+
+Esse fluxo:
+- mede saúde por marketplace (pendências, claims quando disponível e dias sem acesso),
+- gera score e status (`saudavel`, `atencao`, `critico`),
+- sugere ajustes automáticos para o momento (responder fila, revisar preço/título, estabilizar operação),
+- mantém histórico em `logs/marketplace_algorithm_history.json` para detectar queda brusca de desempenho.
+
 ## Exemplos de payload
 
 ### Repricing
@@ -99,6 +118,14 @@ Esse fluxo:
 ## Testes
 
 - `python -m unittest discover -s tests -p "test_*.py"`
+
+## n8n pronto para uso
+
+O pacote de automação está em `n8n/` com workflows prontos para importação:
+- `n8n/workflows/robo_markplaces_rotinas.json`
+- `n8n/workflows/robo_markplaces_chat_webhook.json`
+
+Guia de configuração: `n8n/README.md`.
 
 ## Qualidade recomendada
 
