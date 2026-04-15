@@ -3,16 +3,26 @@ core/config.py
 Configuração central — lê spec.yaml e variáveis de ambiente.
 """
 import os
+import logging
 import yaml
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 ROOT = Path(__file__).parent.parent
+logger = logging.getLogger("config")
 
 def carregar_spec() -> dict:
-    with open(ROOT / "spec" / "spec.yaml", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    spec_path = ROOT / "spec" / "spec.yaml"
+    try:
+        with open(spec_path, encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        logger.warning("spec.yaml não encontrado em %s; usando defaults.", spec_path)
+        return {}
+    except yaml.YAMLError as exc:
+        logger.error("Erro de parse no spec.yaml: %s; usando defaults.", exc)
+        return {}
 
 SPEC = carregar_spec()
 REGRAS = SPEC.get("regras_negocio", {})

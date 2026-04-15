@@ -16,7 +16,14 @@ def selecionar_produto() -> dict | None:
     elegiveis = [p for p in produtos if p["estoque"] >= ESTOQUE_CRITICO]
     if not elegiveis:
         return None
-    return max(elegiveis, key=lambda p: p["preco"])
+
+    def score(produto):
+        preco = float(produto.get("preco", 0) or 0)
+        custo = float(produto.get("custo", 0) or 0)
+        margem_pct = ((preco - custo) / preco * 100) if preco > 0 else -999
+        return (margem_pct, preco)
+
+    return max(elegiveis, key=score)
 
 def executar() -> bool:
     produto = selecionar_produto()

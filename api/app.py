@@ -7,6 +7,7 @@ Contratos: spec/spec.yaml > modulos[chat_responder, publicador_social, relatorio
 import logging
 from datetime import datetime
 from flask import Flask, request, jsonify
+from werkzeug.exceptions import BadRequest
 
 from core.claude_client import responder_chat, gerar_post, perguntar
 from core.notificador import alertar, alertar_critico, alertar_gestor
@@ -24,6 +25,35 @@ logging.basicConfig(
 logger = logging.getLogger("api")
 
 app = Flask(__name__)
+
+
+def _get_json_payload():
+    try:
+        return request.get_json(force=True, silent=False) or {}
+    except BadRequest:
+        return None
+
+
+def _parse_float(value, field_name: str):
+    try:
+        return float(value), None
+    except (TypeError, ValueError):
+        return None, f"campo '{field_name}' deve ser numérico"
+
+
+def _selecionar_melhor_por_margem(produtos: list[dict]) -> dict | None:
+    elegiveis = [p for p in produtos if p.get("estoque", 0) >= ESTOQUE_CRITICO]
+    if not elegiveis:
+        return None
+
+    def score(produto: dict):
+        preco = float(produto.get("preco", 0) or 0)
+        custo = float(produto.get("custo", 0) or 0)
+        margem_pct = ((preco - custo) / preco * 100) if preco > 0 else -999
+        # desempate por preço para manter previsibilidade
+        return (margem_pct, preco)
+
+    return max(elegiveis, key=score)
 
 # ============================================================
 # HEALTH CHECK — n8n usa para verificar se o servidor está vivo
@@ -69,7 +99,9 @@ def chat():
     - DEVE responder em menos de 60s (timeout configurado)
     - NÃO DEVE responder com texto genérico
     """
-    dados = request.get_json(force=True, silent=True) or {}
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
     pergunta = dados.get("pergunta", "")
     item_id  = dados.get("item_id", "")
     canal    = dados.get("canal", "mercadolivre")
@@ -120,13 +152,20 @@ def repricing():
     - NÃO DEVE baixar preço se margem ficar abaixo de MARGEM_MINIMA
     - DEVE alertar Telegram se concorrente usar dumping
     """
-    dados = request.get_json(force=True, silent=True) or {}
-    sku              = dados.get("sku", "")
-    preco_atual      = float(dados.get("preco_atual", 0))
-    custo            = float(dados.get("custo", 0))
-    preco_concorrente = float(dados.get("preco_concorrente", 0))
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
 
-    if not all([sku, preco_atual, custo, preco_concorrente]):
+    sku              = dados.get("sku", "")
+    preco_atual, erro_preco_atual = _parse_float(dados.get("preco_atual"), "preco_atual")
+    custo, erro_custo = _parse_float(dados.get("custo"), "custo")
+    preco_concorrente, erro_preco_concorrente = _parse_float(dados.get("preco_concorrente"), "preco_concorrente")
+
+    erros = [e for e in [erro_preco_atual, erro_custo, erro_preco_concorrente] if e]
+    if erros:
+        return jsonify({"ok": False, "erro": "; ".join(erros)}), 400
+
+    if not sku or preco_atual <= 0 or custo <= 0 or preco_concorrente <= 0:
         return jsonify({"ok": False, "erro": "campos obrigatórios: sku, preco_atual, custo, preco_concorrente"}), 400
 
     preco_alvo = preco_concorrente * 1.05  # 5% acima do concorrente
@@ -188,7 +227,10 @@ def post_social():
     - NÃO DEVE publicar produto com estoque abaixo de ESTOQUE_CRITICO
     - DEVE gerar texto personalizado por canal
     """
-    dados = request.get_json(force=True, silent=True) or {}
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
     canal = dados.get("canal", "instagram")
     sku   = dados.get("sku", "")
 
@@ -196,9 +238,8 @@ def post_social():
     if sku:
         produto = buscar_produto(sku)
     else:
-        produtos   = listar_produtos()
-        elegiveis  = [p for p in produtos if p.get("estoque", 0) >= ESTOQUE_CRITICO]
-        produto    = max(elegiveis, key=lambda p: p.get("preco", 0)) if elegiveis else None
+        produtos = listar_produtos()
+        produto = _selecionar_melhor_por_margem(produtos)
 
     if not produto:
         return jsonify({"ok": False, "motivo": "nenhum produto elegível com estoque suficiente"})
@@ -323,11 +364,18 @@ def avaliar_campanha():
     """
     from core.config import CPC_MAXIMO, ROAS_ESCALA
 
-    dados = request.get_json(force=True, silent=True) or {}
-    cpc   = float(dados.get("cpc",  0))
-    ctr   = float(dados.get("ctr",  0))
-    roas  = float(dados.get("roas", 0))
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    cpc, erro_cpc = _parse_float(dados.get("cpc"), "cpc")
+    ctr, erro_ctr = _parse_float(dados.get("ctr"), "ctr")
+    roas, erro_roas = _parse_float(dados.get("roas"), "roas")
     nome  = dados.get("nome", "campanha")
+
+    erros = [e for e in [erro_cpc, erro_ctr, erro_roas] if e]
+    if erros:
+        return jsonify({"ok": False, "erro": "; ".join(erros)}), 400
 
     logger.info(f"[CAMPANHA] {nome} | CPC={cpc} CTR={ctr}% ROAS={roas}x")
 

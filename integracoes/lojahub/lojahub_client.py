@@ -3,7 +3,6 @@ integracoes/lojahub/lojahub_client.py
 Cliente da API Lojahub. A preencher com endpoints reais.
 """
 import logging
-import requests
 from core.config import LOJAHUB_TOKEN
 
 logger = logging.getLogger("lojahub")

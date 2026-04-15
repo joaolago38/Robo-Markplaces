@@ -3,9 +3,9 @@ core/notificador.py
 Envia alertas via Telegram. Nunca lança exceção.
 """
 import logging
-import requests
 from datetime import datetime
 from core.config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_GESTOR_CHAT_ID
+from core.http_client import request
 
 logger = logging.getLogger("notificador")
 
@@ -14,7 +14,8 @@ def _enviar(chat_id: str, msg: str) -> bool:
         print(f"[TELEGRAM não configurado]\n{msg}")
         return True
     try:
-        r = requests.post(
+        r = request(
+            "POST",
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
             json={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"},
             timeout=10,
@@ -22,7 +23,7 @@ def _enviar(chat_id: str, msg: str) -> bool:
         r.raise_for_status()
         return True
     except Exception as e:
-        logger.error(f"Telegram erro: {e}")
+        logger.error("Telegram erro: %s", e)
         return False
 
 def alertar(msg: str) -> bool:

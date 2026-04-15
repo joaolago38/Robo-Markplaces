@@ -1,8 +1,8 @@
-import requests
 import time
 import logging
 
 from core.config import ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REFRESH_TOKEN
+from core.http_client import request
 
 logger = logging.getLogger("token_manager")
 
@@ -22,8 +22,12 @@ def _renovar_token():
         "refresh_token": ML_REFRESH_TOKEN
     }
 
+    if not all([ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REFRESH_TOKEN]):
+        logger.error("Credenciais ML ausentes para renovação de token.")
+        return None
+
     try:
-        r = requests.post(url, data=data, timeout=15)
+        r = request("POST", url, data=data, timeout=15)
         r.raise_for_status()
 
         tokens = r.json()
@@ -38,8 +42,11 @@ def _renovar_token():
 
         return access_token
 
+    except ValueError as e:
+        logger.error("Erro de parse da resposta do token ML: %s", e)
+        return None
     except Exception as e:
-        logger.error(f"Erro ao renovar token ML: {e}")
+        logger.error("Erro ao renovar token ML: %s", e)
         return None
 
 

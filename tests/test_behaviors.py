@@ -1,71 +1,81 @@
 """
 tests/test_behaviors.py
-Testes derivados dos behaviors da spec.yaml (BDD).
+Testes de comportamento contra o código real da API.
 """
-import sys, os
+import os
+import sys
+import unittest
+from unittest.mock import patch
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-
-def test_B01_identifica_atacado():
-    palavras = ["atacado", "salão", "salon", "revenda", "quantidade"]
-    def eh_atacado(texto):
-        return any(p in texto.lower() for p in palavras)
-    assert eh_atacado("vocês vendem no atacado?")
-    assert eh_atacado("tenho salão, preciso de bastante")
-    assert not eh_atacado("qual a cor desse esmalte?")
-    print("  PASS  B01 — identifica pergunta de atacado")
+from api.app import app
+from agentes.social.publicador import selecionar_produto
 
 
-def test_B03_repricing_respeita_margem():
-    MARGEM_MINIMA = 15.0
-    custo = 6.00
-    preco_concorrente = 4.00
-    preco_alvo = preco_concorrente * 1.05
-    margem = (preco_alvo - custo) / preco_alvo * 100
-    assert margem < MARGEM_MINIMA, "Repricing deveria ser bloqueado"
-    print("  PASS  B03 — repricing bloqueado quando margem insuficiente")
+class ApiBehaviorTests(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+
+    @patch("api.app.alertar_critico")
+    def test_B03_repricing_respeita_margem(self, mock_alerta):
+        resp = self.client.post(
+            "/repricing",
+            json={"sku": "ESM-001", "preco_atual": 9.9, "custo": 6.0, "preco_concorrente": 4.0},
+        )
+        data = resp.get_json()
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(data["ajustar"])
+        self.assertTrue(data["alertado"])
+        mock_alerta.assert_called_once()
+
+    def test_repricing_rejeita_payload_invalido(self):
+        resp = self.client.post(
+            "/repricing",
+            json={"sku": "ESM-001", "preco_atual": "abc", "custo": 6.0, "preco_concorrente": 4.0},
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("numérico", resp.get_json()["erro"])
+
+    @patch("api.app.alertar_gestor")
+    def test_B07_campanha_pausada_ctr_baixo(self, mock_alerta):
+        resp = self.client.post("/campanha/avaliar", json={"nome": "Campanha X", "cpc": 1.0, "ctr": 0.2, "roas": 2.0})
+        data = resp.get_json()
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(data["acao"], "pausar")
+        self.assertIn("CTR", data["motivo"])
+        mock_alerta.assert_called_once()
+
+    @patch("api.app.listar_produtos")
+    @patch("api.app.gerar_post")
+    def test_B08_post_exige_estoque_minimo(self, mock_gerar_post, mock_listar_produtos):
+        mock_listar_produtos.return_value = [
+            {"nome": "A", "preco": 10, "custo": 9, "estoque": 5},
+            {"nome": "B", "preco": 20, "custo": 5, "estoque": 50},
+            {"nome": "C", "preco": 30, "custo": 28, "estoque": 25},
+        ]
+        mock_gerar_post.return_value = "promo"
+
+        resp = self.client.post("/post", json={"canal": "instagram"})
+        data = resp.get_json()
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["produto"]["nome"], "B")
 
 
-def test_B06_nf_nao_emitida_pendente():
-    pode_emitir = ["pago", "aprovado", "confirmed"]
-    nao_emite   = ["pendente", "aguardando_pagamento", "cancelado"]
-    for s in nao_emite:
-        assert s not in pode_emitir, f"'{s}' não deveria emitir NF"
-    print("  PASS  B06 — NF bloqueada para status pendente")
-
-
-def test_B07_campanha_pausada_estoque_zero():
-    def pausar(estoque):
-        return estoque <= 0
-    assert pausar(0) and pausar(-1)
-    assert not pausar(1) and not pausar(100)
-    print("  PASS  B07 — campanha pausada com estoque zero")
-
-
-def test_B08_post_exige_estoque_minimo():
-    MIN = 20
-    produtos = [
-        {"nome": "A", "estoque": 5},
-        {"nome": "B", "estoque": 50},
-        {"nome": "C", "estoque": 15},
-    ]
-    elegiveis = [p for p in produtos if p["estoque"] >= MIN]
-    assert len(elegiveis) == 1 and elegiveis[0]["nome"] == "B"
-    print("  PASS  B08 — post bloqueado para estoque abaixo de 20")
+class SocialAgentTests(unittest.TestCase):
+    @patch("agentes.social.publicador.listar_produtos")
+    def test_selecionar_produto_por_margem(self, mock_listar_produtos):
+        mock_listar_produtos.return_value = [
+            {"nome": "A", "preco": 20, "custo": 18, "estoque": 100},
+            {"nome": "B", "preco": 15, "custo": 5, "estoque": 100},
+        ]
+        produto = selecionar_produto()
+        self.assertEqual(produto["nome"], "B")
 
 
 if __name__ == "__main__":
-    testes = [test_B01_identifica_atacado, test_B03_repricing_respeita_margem,
-              test_B06_nf_nao_emitida_pendente, test_B07_campanha_pausada_estoque_zero,
-              test_B08_post_exige_estoque_minimo]
-    falhas = 0
-    print(f"\nRodando {len(testes)} testes...\n")
-    for t in testes:
-        try:
-            t()
-        except AssertionError as e:
-            print(f"  FAIL  {t.__name__} — {e}")
-            falhas += 1
-    print(f"\nResultado: {len(testes)-falhas}/{len(testes)} testes passaram")
-    if falhas:
-        exit(1)
+    unittest.main()
