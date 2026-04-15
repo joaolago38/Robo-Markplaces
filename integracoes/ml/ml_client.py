@@ -7,6 +7,7 @@ import logging
 from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from core.http_client import request
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
+from core.token_manager import get_token_ml
 
 logger = logging.getLogger("ml_client")
 BASE = "https://api.mercadolibre.com"
@@ -17,7 +18,9 @@ def _enabled() -> bool:
 
 
 def _h():
-    return {"Authorization": f"Bearer {ML_ACCESS_TOKEN}"}
+    # Prefere token renovado automaticamente; fallback para token estático do .env.
+    token = get_token_ml() or ML_ACCESS_TOKEN
+    return {"Authorization": f"Bearer {token}"}
 
 
 def listar_perguntas_nao_respondidas() -> list[dict]:
