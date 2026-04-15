@@ -28,6 +28,11 @@ def _normalizar_produto(p: dict) -> dict:
     custo = _to_float(
         p.get("precoCusto", p.get("precoCompra", p.get("custo", 0)))
     )
+    imagens = p.get("imagens", p.get("imagemURL", []))
+    if isinstance(imagens, str):
+        imagens = [imagens]
+    elif not isinstance(imagens, list):
+        imagens = []
     return {
         "sku": p.get("codigo"),
         "nome": p.get("nome"),
@@ -36,6 +41,7 @@ def _normalizar_produto(p: dict) -> dict:
         "ncm": p.get("ncm", ""),
         "estoque": _to_int(p.get("estoqueAtual", 0)),
         "descricao": p.get("descricaoCurta", ""),
+        "imagens": imagens,
     }
 
 def buscar_produto(sku: str) -> dict | None:

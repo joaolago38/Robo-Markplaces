@@ -1,0 +1,63 @@
+{
+  "name": "Robo-Markplaces - Trafego Manicures Noite",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 22,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "cron-trafego-manicures-noite",
+      "name": "Cron Trafego Manicures Noite",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        220,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/meta/trafego/manicures",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"periodo_dias\": 1, \"alertar_todo_relatorio\": true}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "http-trafego-manicures-noite",
+      "name": "HTTP Trafego Manicures",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Trafego Manicures Noite": {
+      "main": [
+        [
+          {
+            "node": "HTTP Trafego Manicures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

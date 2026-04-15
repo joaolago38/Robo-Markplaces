@@ -106,3 +106,22 @@ def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
     except Exception as exc:
         logger.error("ML atualizar_preco_item erro item_id=%s: %s", item_id, exc)
         return False
+
+
+def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
+    if not _enabled():
+        logger.warning("Mercado Livre não configurado para atualização de estoque.")
+        return False
+    try:
+        r = request(
+            "PUT",
+            f"{BASE}/items/{item_id}",
+            headers=_h(),
+            json={"available_quantity": int(max(0, novo_estoque))},
+            timeout=20,
+        )
+        r.raise_for_status()
+        return True
+    except Exception as exc:
+        logger.error("ML atualizar_estoque_item erro item_id=%s: %s", item_id, exc)
+        return False

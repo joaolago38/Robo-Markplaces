@@ -1,0 +1,63 @@
+{
+  "name": "Robo-Markplaces - Resumo Madrugada",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 6,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "cron-resumo-madrugada",
+      "name": "Cron Resumo Madrugada",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        220,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/meta/trafego/manicures/resumo-madrugada",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"periodo_dias\": 1}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "http-resumo-madrugada",
+      "name": "HTTP Resumo Madrugada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Resumo Madrugada": {
+      "main": [
+        [
+          {
+            "node": "HTTP Resumo Madrugada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

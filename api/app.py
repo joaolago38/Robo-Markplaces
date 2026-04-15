@@ -16,8 +16,13 @@ from agentes.manutencao_marketplaces import executar as executar_manutencao_mark
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from agentes.social.agente_metricas_meta import executar as executar_metricas_meta
+from agentes.social.agente_trafego_manicures import (
+    executar as executar_trafego_manicures,
+    executar_resumo_madrugada as executar_resumo_madrugada_trafego,
+)
 from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
 from agentes.operacao_24h import executar as executar_operacao_24h
+from agentes.auto_respostas_visuais import executar as executar_auto_respostas_visuais
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -549,6 +554,69 @@ def operacao_24h():
     return jsonify({"ok": True, **resultado})
 
 
+@app.route("/meta/trafego/manicures", methods=["POST"])
+def meta_trafego_manicures():
+    """
+    POST /meta/trafego/manicures
+    Mede eficiência de tráfego pago no Instagram/Facebook para manicures,
+    com foco em Impala, Anita e kits.
+    Body opcional:
+    {
+      "periodo_dias": 1,
+      "alertar_todo_relatorio": true
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    periodo_dias, erro_periodo = _parse_float(dados.get("periodo_dias", 1), "periodo_dias")
+    if erro_periodo:
+        return jsonify({"ok": False, "erro": erro_periodo}), 400
+    alertar_todo_relatorio = bool(dados.get("alertar_todo_relatorio", True))
+
+    resultado = executar_trafego_manicures(
+        periodo_dias=max(1, int(periodo_dias)),
+        alertar_todo_relatorio=alertar_todo_relatorio,
+    )
+    return jsonify({"ok": True, **resultado})
+
+
+@app.route("/meta/trafego/manicures/resumo-madrugada", methods=["POST"])
+def meta_trafego_manicures_resumo_madrugada():
+    """
+    POST /meta/trafego/manicures/resumo-madrugada
+    Retorna e alerta apenas as 3 campanhas com pior eficiência.
+    Body opcional:
+    {
+      "periodo_dias": 1
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    periodo_dias, erro_periodo = _parse_float(dados.get("periodo_dias", 1), "periodo_dias")
+    if erro_periodo:
+        return jsonify({"ok": False, "erro": erro_periodo}), 400
+
+    resultado = executar_resumo_madrugada_trafego(periodo_dias=max(1, int(periodo_dias)))
+    return jsonify({"ok": True, **resultado})
+
+
+@app.route("/marketplaces/chat/visual/rodar", methods=["POST"])
+def marketplaces_chat_visual_rodar():
+    """
+    POST /marketplaces/chat/visual/rodar
+    Processa perguntas/mensagens com contexto visual (fotos do produto).
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+    resultado = executar_auto_respostas_visuais()
+    return jsonify({"ok": True, **resultado})
+
+
 # ============================================================
 # INICIALIZAÇÃO
 # ============================================================
@@ -569,6 +637,9 @@ if __name__ == "__main__":
     print("   POST /operacao/24h         — monitora vendas/lucro e gera NF via Lojahub+Bling")
     print("   POST /faturamento/nfe     — emite NF-e no Bling para pedido pago")
     print("   POST /meta/campanhas/validar — valida métricas Meta Ads e recomenda ajustes")
+    print("   POST /meta/trafego/manicures — mede eficiência p/ Impala, Anita e kits")
+    print("   POST /meta/trafego/manicures/resumo-madrugada — top 3 piores campanhas")
+    print("   POST /marketplaces/chat/visual/rodar — respostas automáticas com contexto de fotos")
     print("\n   n8n deve apontar para: http://localhost:5000\n")
 
     app.run(host="0.0.0.0", port=5000, debug=False)

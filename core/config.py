@@ -78,6 +78,8 @@ META_CTR_MINIMO    = float(os.getenv("META_CTR_MINIMO", "1.00"))
 META_ROAS_MINIMO   = float(os.getenv("META_ROAS_MINIMO", "2.00"))
 META_FREQ_MAXIMA   = float(os.getenv("META_FREQ_MAXIMA", "3.00"))
 META_GASTO_MINIMO_ALERTA = float(os.getenv("META_GASTO_MINIMO_ALERTA", "50.0"))
+META_ROAS_MINIMO_MANICURES = float(os.getenv("META_ROAS_MINIMO_MANICURES", "2.20"))
+META_CTR_MINIMO_MANICURES = float(os.getenv("META_CTR_MINIMO_MANICURES", "1.20"))
 
 # Alertas
 TELEGRAM_TOKEN          = os.getenv("TELEGRAM_TOKEN", "")

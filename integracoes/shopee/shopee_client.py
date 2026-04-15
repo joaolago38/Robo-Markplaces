@@ -170,3 +170,25 @@ def atualizar_preco_item(item_id: int, novo_preco: float) -> bool:
     except Exception as exc:
         logger.error("Shopee atualizar_preco_item erro item_id=%s: %s", item_id, exc)
         return False
+
+
+def atualizar_estoque_item(item_id: int, novo_estoque: int) -> bool:
+    if not _enabled():
+        logger.warning("Shopee não configurado para atualização de estoque.")
+        return False
+    path = "/api/v2/product/update_stock"
+    try:
+        payload = {"stock_list": [{"item_id": int(item_id), "normal_stock": int(max(0, novo_estoque))}]}
+        r = request(
+            "POST",
+            f"{BASE}{path}",
+            params=_params(path),
+            json=payload,
+            timeout=20,
+        )
+        r.raise_for_status()
+        body = r.json()
+        return body.get("error") in (None, "", 0)
+    except Exception as exc:
+        logger.error("Shopee atualizar_estoque_item erro item_id=%s: %s", item_id, exc)
+        return False

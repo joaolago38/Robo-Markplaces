@@ -44,6 +44,9 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /operacao/24h`
 - `POST /faturamento/nfe`
 - `POST /meta/campanhas/validar`
+- `POST /meta/trafego/manicures`
+- `POST /meta/trafego/manicures/resumo-madrugada`
+- `POST /marketplaces/chat/visual/rodar`
 
 ## Conexão com marketplaces
 
@@ -120,6 +123,24 @@ Regras de validação:
 
 Retorna status por campanha (`saudavel`, `atencao`, `critico`) e recomendações.
 
+### Eficiência de tráfego para manicures (Impala, Anita e kits)
+
+Use `POST /meta/trafego/manicures` para medir eficiência de tráfego pago no Instagram/Facebook com foco nas marcas e kits de manicure.
+
+Payload opcional:
+
+```json
+{
+  "periodo_dias": 1,
+  "alertar_todo_relatorio": true
+}
+```
+
+Retorna:
+- score de eficiência por campanha,
+- resumo por grupo (`impala`, `anita`, `kits`, `outras`),
+- campanhas críticas e recomendações de otimização.
+
 ### Emissão de NF-e automática (Bling)
 
 Use `POST /faturamento/nfe` quando o pedido estiver pago/confirmado.
@@ -178,7 +199,7 @@ Regras:
 Use `POST /operacao/24h` para:
 - monitorar marketplaces continuamente,
 - calcular média de venda/lucro/preço geral dos produtos,
-- gerar NF no Bling para pedidos aprovados vindos do Lojahub (ficando pronto para impressão no fluxo operacional).
+- gerar NF no Bling para pedidos aprovados vindos do Lojahub (recomendado agendar para o dia seguinte, ex.: 06:15).
 
 Payload opcional:
 

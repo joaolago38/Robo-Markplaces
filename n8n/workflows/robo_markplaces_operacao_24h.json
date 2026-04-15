@@ -26,7 +26,7 @@
         "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/operacao/24h",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"dry_run_repricing\": true, \"dry_run_nfe\": false}",
+        "jsonBody": "={\"dry_run_repricing\": true, \"dry_run_nfe\": true}",
         "options": {
           "timeout": 120000
         }
