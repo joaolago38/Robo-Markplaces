@@ -8,15 +8,16 @@ import time
 from core.claude_client import responder_chat
 from core.notificador import alertar
 from integracoes.bling.bling_client import buscar_produto
+from integracoes.magalu.magalu_client import (
+    listar_perguntas_nao_respondidas,
+    responder_pergunta,
+)
 
 logger = logging.getLogger("agente_magalu")
 
 def validar_produto(produto):
     if not produto:
-     return False
-
-
-def validar_produto(produto):
+        return False
     estoque = produto.get("estoque", 0)
 
     if estoque <= 0:
@@ -26,29 +27,28 @@ def validar_produto(produto):
 
 def processar_perguntas():
     logger.info("Magalu: verificando perguntas...")
-
-    perguntas = [
-        {"id": 1, "text": "Esse kit vem completo?", "produto_id": "123"},
-        {"id": 2, "text": "Qual o prazo de envio?", "produto_id": "456"}
-    ]
+    perguntas = listar_perguntas_nao_respondidas()
 
     ok = 0
 
     for p in perguntas:
-        texto = p.get("text", "").strip()
+        texto = (p.get("question") or p.get("text") or "").strip()
 
         if not texto:
             continue
 
-        produto = buscar_produto(p.get("produto_id", "")) or {}
+        produto_id = p.get("sku") or p.get("product_id") or p.get("produto_id") or ""
+        produto = buscar_produto(str(produto_id)) or {}
+        question_id = p.get("id") or p.get("question_id")
 
         if not validar_produto(produto):
             continue
 
         try:
             resposta = responder_chat(texto, produto, "magalu")
-            logger.info(f"[Magalu] {texto} -> {resposta}")
-            ok += 1
+            if question_id and responder_pergunta(str(question_id), resposta):
+                logger.info("[Magalu] respondido question_id=%s", question_id)
+                ok += 1
 
         except Exception as e:
             logger.error(f"Erro Magalu IA: {e}")

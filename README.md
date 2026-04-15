@@ -39,6 +39,21 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /relatorio`
 - `POST /campanha/avaliar`
 
+## Conexão com marketplaces
+
+Os agentes agora estão ligados a clientes dedicados em `integracoes/`:
+- `integracoes/ml/ml_client.py`
+- `integracoes/shopee/shopee_client.py`
+- `integracoes/magalu/magalu_client.py`
+- `integracoes/amazon/amazon_client.py`
+
+Fluxo padrão:
+1. buscar perguntas/mensagens pendentes,
+2. gerar resposta com IA contextualizada no produto (Bling),
+3. enviar resposta para o canal.
+
+Observação: Shopee, Magalu e Amazon podem variar endpoints/permissões por conta e app. O cliente já está preparado com autenticação e fallback seguro (não quebra o robô quando credencial/permite faltar), mas pode exigir ajuste fino de rota em produção.
+
 ## Exemplos de payload
 
 ### Repricing

@@ -5,19 +5,18 @@ VERSÃO LIMPA E FUNCIONAL
 
 import logging
 import time
-import requests
 
-from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID, MARGEM_MINIMA
+from core.config import MARGEM_MINIMA
 from core.claude_client import responder_chat
-from core.notificador import alertar, alertar_critico
+from core.notificador import alertar_critico
 from integracoes.bling.bling_client import buscar_produto
+from integracoes.ml.ml_client import (
+    listar_perguntas_nao_respondidas,
+    responder_pergunta,
+    buscar_reputacao_vendedor,
+)
 
 logger = logging.getLogger("agente_ml")
-BASE = "https://api.mercadolibre.com"
-
-
-def _h():
-    return {"Authorization": f"Bearer {ML_ACCESS_TOKEN}"}
 
 
 def pergunta_valida(texto: str) -> bool:
@@ -50,35 +49,11 @@ def calcular_preco(preco_atual, preco_concorrente, custo):
 
 
 def buscar_perguntas():
-    try:
-        r = requests.get(
-            f"{BASE}/my/received_questions/search",
-            headers=_h(),
-            params={"status": "UNANSWERED", "seller_id": ML_SELLER_ID},
-            timeout=15
-        )
-        r.raise_for_status()
-        return r.json().get("questions", [])
-
-    except Exception as e:
-        logger.error(f"ML buscar_perguntas: {e}")
-        return []
+    return listar_perguntas_nao_respondidas()
 
 
 def responder(pergunta_id, texto):
-    try:
-        r = requests.post(
-            f"{BASE}/answers",
-            headers=_h(),
-            json={"question_id": pergunta_id, "text": texto},
-            timeout=15
-        )
-        r.raise_for_status()
-        return True
-
-    except Exception as e:
-        logger.error(f"ML responder {pergunta_id}: {e}")
-        return False
+    return responder_pergunta(pergunta_id, texto)
 
 
 def ciclo_chat():
@@ -112,25 +87,11 @@ def ciclo_chat():
 
 
 def verificar_reputacao():
-    try:
-        r = requests.get(
-            f"{BASE}/users/{ML_SELLER_ID}",
-            headers=_h(),
-            timeout=15
-        )
-        r.raise_for_status()
-
-        rep = r.json().get("seller_reputation", {})
-        pct = rep.get("metrics", {}).get("claims", {}).get("rate", 0)
-
-        if pct > 0.01:
-            alertar_critico(f"Reclamações altas: {pct*100:.1f}%")
-
-        return rep
-
-    except Exception as e:
-        logger.error(f"Erro reputação: {e}")
-        return {}
+    rep = buscar_reputacao_vendedor()
+    pct = rep.get("metrics", {}).get("claims", {}).get("rate", 0)
+    if pct > 0.01:
+        alertar_critico(f"Reclamações altas: {pct*100:.1f}%")
+    return rep
 
 
 def executar():

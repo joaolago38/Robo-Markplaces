@@ -2,39 +2,40 @@
 Agente Shopee (versão limpa)
 """
 
-"""
-Agente Shopee (100% corrigido)
-"""
-
 import logging
 import time
 
-
 from core.claude_client import responder_chat
 from core.notificador import alertar
+from integracoes.bling.bling_client import buscar_produto
+from integracoes.shopee.shopee_client import (
+    listar_perguntas_nao_respondidas,
+    responder_pergunta,
+)
 
 logger = logging.getLogger("agente_shopee")
 
 def responder_perguntas():
     logger.info("Shopee: verificando perguntas...")
-
-    perguntas = [
-        {"id": 1, "text": "Tem pronta entrega?"},
-        {"id": 2, "text": "Qual prazo de envio?"}
-    ]
+    perguntas = listar_perguntas_nao_respondidas()
 
     ok = 0
 
     for p in perguntas:
-        texto = p.get("text", "").strip()
+        texto = (p.get("comment") or p.get("text") or "").strip()
 
         if not texto:
             continue
 
+        item_id = p.get("item_id")
+        comment_id = p.get("comment_id") or p.get("id")
+        produto = buscar_produto(str(item_id)) if item_id else {}
+
         try:
-            resposta = responder_chat(texto, {}, "shopee")
-            logger.info(f"[Shopee] {texto} -> {resposta}")
-            ok += 1
+            resposta = responder_chat(texto, produto or {}, "shopee")
+            if item_id and comment_id and responder_pergunta(item_id, comment_id, resposta):
+                logger.info("[Shopee] respondido comment_id=%s", comment_id)
+                ok += 1
 
         except Exception as e:
             logger.error(f"Erro Shopee IA: {e}")
@@ -43,3 +44,7 @@ def responder_perguntas():
         time.sleep(1)
 
     return ok
+
+
+def executar() -> dict:
+    return {"respostas": responder_perguntas()}
