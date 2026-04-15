@@ -12,6 +12,7 @@ from werkzeug.exceptions import BadRequest
 from core.claude_client import responder_chat, gerar_post, perguntar
 from core.notificador import alertar, alertar_critico, alertar_gestor
 from core.config import MARGEM_MINIMA, ESTOQUE_CRITICO
+from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -397,6 +398,28 @@ def avaliar_campanha():
     return jsonify({"acao": "manter", "motivo": f"métricas dentro do esperado — CPC={cpc} CTR={ctr}% ROAS={roas}x"})
 
 
+@app.route("/marketplaces/keepalive", methods=["POST"])
+def keepalive_marketplaces():
+    """
+    POST /marketplaces/keepalive
+    Executa acesso preventivo em Shopee e Magalu para evitar longos períodos sem login.
+    Body opcional:
+    {
+        "limite_dias_sem_acesso": 5
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    limite, erro_limite = _parse_float(dados.get("limite_dias_sem_acesso", 5), "limite_dias_sem_acesso")
+    if erro_limite:
+        return jsonify({"ok": False, "erro": erro_limite}), 400
+
+    resultado = executar_manutencao_marketplaces(limite_dias_sem_acesso=int(limite))
+    return jsonify({"ok": True, **resultado})
+
+
 # ============================================================
 # INICIALIZAÇÃO
 # ============================================================
@@ -411,6 +434,7 @@ if __name__ == "__main__":
     print("   GET  /estoque/criticos    — lista produtos com estoque baixo")
     print("   POST /relatorio           — gera relatório diário")
     print("   POST /campanha/avaliar    — avalia métricas e decide ação")
+    print("   POST /marketplaces/keepalive — mantém sessão ativa nos marketplaces")
     print("\n   n8n deve apontar para: http://localhost:5000\n")
 
     app.run(host="0.0.0.0", port=5000, debug=False)

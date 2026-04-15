@@ -38,6 +38,7 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `GET /estoque/criticos`
 - `POST /relatorio`
 - `POST /campanha/avaliar`
+- `POST /marketplaces/keepalive`
 
 ## Conexão com marketplaces
 
@@ -53,6 +54,23 @@ Fluxo padrão:
 3. enviar resposta para o canal.
 
 Observação: Shopee, Magalu e Amazon podem variar endpoints/permissões por conta e app. O cliente já está preparado com autenticação e fallback seguro (não quebra o robô quando credencial/permite faltar), mas pode exigir ajuste fino de rota em produção.
+
+### Keepalive (Shopee e Magalu)
+
+Para reduzir risco de inatividade de conta, use `POST /marketplaces/keepalive` em um cron diário (n8n, por exemplo, 1x ao dia).
+
+Payload opcional:
+
+```json
+{
+  "limite_dias_sem_acesso": 5
+}
+```
+
+Esse fluxo:
+- executa uma chamada leve em Shopee e Magalu,
+- registra último acesso com sucesso em `logs/marketplace_keepalive.json`,
+- alerta gestor quando falha acesso ou quando ultrapassa limite configurado.
 
 ## Exemplos de payload
 
