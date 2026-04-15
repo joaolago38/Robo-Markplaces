@@ -160,6 +160,17 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
                 timeout=20,
             )
             r.raise_for_status()
+            body = r.json()
+            if _tem_erro_api(body):
+                logger.error("Shopee manter_conta_ativa erro de API: %s", body.get("error"))
+                sem_acesso_atual = dias_sem_acesso("shopee")
+                return {
+                    "ok": False,
+                    "marketplace": "shopee",
+                    "acao": "falha no keepalive",
+                    "dias_sem_acesso": sem_acesso_atual if sem_acesso_atual is not None else -1,
+                    "alerta": True,
+                }
             registrar_acesso("shopee")
             sem_acesso_atual = dias_sem_acesso("shopee") or 0
             return {

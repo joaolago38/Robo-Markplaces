@@ -238,6 +238,32 @@ Payload opcional:
 
 - `python -m unittest discover -s tests -p "test_*.py"`
 
+## Diagnóstico de conexão de marketplaces
+
+- Execute: `py scripts/verificar_marketplaces.py`
+- Saída detalhada: `logs/diagnostico_marketplaces.json`
+- Guia completo de homologação: `MARKETPLACES_HOMOLOGACAO.md`
+
+## Agente de varredura diária (7x por semana)
+
+- Agente: `agentes/agente_varredura_marketplaces.py`
+- Scheduler diário: `scripts/scheduler_varredura_marketplaces.py`
+- Execução:
+  - `py scripts/scheduler_varredura_marketplaces.py`
+- Padrão:
+  - roda todos os dias às `06:00` (hora local),
+  - faz varredura de pendências em ML/Shopee/Magalu/Amazon,
+  - executa keepalive + algoritmo + repricing,
+  - roda chat visual quando existir pendência.
+- Variáveis opcionais no `.env`:
+  - `MARKETPLACE_SCHEDULE_HOUR=6`
+  - `MARKETPLACE_SCHEDULE_MINUTE=0`
+  - `MARKETPLACE_RUN_ON_START=true`
+  - `MARKETPLACE_SLEEP_SECONDS=30`
+  - `MARKETPLACE_DRY_RUN_REPRICING=true`
+  - `MARKETPLACE_ALERTAR_ATENCAO=false`
+  - `MARKETPLACE_KEEPALIVE_LIMITE_DIAS=5`
+
 ## n8n pronto para uso
 
 O pacote de automação está em `n8n/` com workflows prontos para importação:

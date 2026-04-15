@@ -7,29 +7,76 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # Evita dependências externas para importação do cliente em ambiente mínimo de teste.
-if "core.config" not in sys.modules:
-    config_stub = types.ModuleType("core.config")
-    config_stub.SHOPEE_ACCESS_TOKEN = "token"
-    config_stub.SHOPEE_PARTNER_ID = "1"
-    config_stub.SHOPEE_PARTNER_KEY = "key"
-    config_stub.SHOPEE_SHOP_ID = "2"
-    sys.modules["core.config"] = config_stub
+if "yaml" not in sys.modules:
+    yaml_stub = types.ModuleType("yaml")
+    yaml_stub.safe_load = lambda *_args, **_kwargs: {}
+    yaml_stub.YAMLError = Exception
+    sys.modules["yaml"] = yaml_stub
 
-if "core.http_client" not in sys.modules:
-    http_stub = types.ModuleType("core.http_client")
-    http_stub.request = lambda *_args, **_kwargs: None
-    sys.modules["core.http_client"] = http_stub
+if "dotenv" not in sys.modules:
+    dotenv_stub = types.ModuleType("dotenv")
+    dotenv_stub.load_dotenv = lambda *_args, **_kwargs: None
+    sys.modules["dotenv"] = dotenv_stub
 
-if "core.marketplace_keepalive" not in sys.modules:
-    keepalive_stub = types.ModuleType("core.marketplace_keepalive")
-    keepalive_stub.registrar_acesso = lambda *_args, **_kwargs: None
-    keepalive_stub.dias_sem_acesso = lambda *_args, **_kwargs: 0
-    sys.modules["core.marketplace_keepalive"] = keepalive_stub
+if "requests" not in sys.modules:
+    requests_stub = types.ModuleType("requests")
+
+    class _Session:
+        def mount(self, *_args, **_kwargs):
+            return None
+
+        def request(self, *_args, **_kwargs):
+            return None
+
+    requests_stub.Session = _Session
+    requests_stub.Response = object
+    sys.modules["requests"] = requests_stub
+
+if "requests.adapters" not in sys.modules:
+    adapters_stub = types.ModuleType("requests.adapters")
+
+    class _HTTPAdapter:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    adapters_stub.HTTPAdapter = _HTTPAdapter
+    sys.modules["requests.adapters"] = adapters_stub
+
+if "urllib3" not in sys.modules:
+    sys.modules["urllib3"] = types.ModuleType("urllib3")
+
+if "urllib3.util" not in sys.modules:
+    sys.modules["urllib3.util"] = types.ModuleType("urllib3.util")
+
+if "urllib3.util.retry" not in sys.modules:
+    retry_stub = types.ModuleType("urllib3.util.retry")
+
+    class _Retry:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    retry_stub.Retry = _Retry
+    sys.modules["urllib3.util.retry"] = retry_stub
 
 from integracoes.shopee import shopee_client
 
 
 class ShopeeClientTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._config_patch = patch.multiple(
+            shopee_client,
+            SHOPEE_PARTNER_ID="1",
+            SHOPEE_PARTNER_KEY="key",
+            SHOPEE_SHOP_ID="2",
+            SHOPEE_ACCESS_TOKEN="token",
+        )
+        cls._config_patch.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._config_patch.stop()
+
     @staticmethod
     def _mock_response(body: dict) -> Mock:
         resp = Mock()
@@ -142,6 +189,12 @@ class ShopeeClientTests(unittest.TestCase):
         ok = shopee_client.responder_pergunta(item_id=10, comment_id=20, texto="teste")
         self.assertTrue(ok)
 
+    @patch("integracoes.shopee.shopee_client.request", side_effect=Exception("boom"))
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
+    def test_responder_pergunta_retorna_false_em_excecao(self, _mock_enabled, _mock_request):
+        ok = shopee_client.responder_pergunta(item_id=10, comment_id=20, texto="teste")
+        self.assertFalse(ok)
+
     @patch("integracoes.shopee.shopee_client.request")
     @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
     def test_atualizar_preco_item_sem_model_id(self, _mock_enabled, mock_request):
@@ -164,6 +217,11 @@ class ShopeeClientTests(unittest.TestCase):
         payload = mock_request.call_args.kwargs["json"]
         self.assertEqual(payload["price_list"][0]["model_list"][0]["model_id"], 44)
         self.assertEqual(payload["price_list"][0]["model_list"][0]["original_price"], 19.9)
+
+    @patch("integracoes.shopee.shopee_client.request", side_effect=Exception("boom"))
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
+    def test_atualizar_preco_item_retorna_false_em_excecao(self, _mock_enabled, _mock_request):
+        self.assertFalse(shopee_client.atualizar_preco_item(item_id=11, novo_preco=19.9))
 
     @patch("integracoes.shopee.shopee_client.request")
     @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
@@ -188,10 +246,66 @@ class ShopeeClientTests(unittest.TestCase):
         self.assertEqual(payload["stock_list"][0]["model_list"][0]["model_id"], 55)
         self.assertEqual(payload["stock_list"][0]["model_list"][0]["normal_stock"], 7)
 
+    @patch("integracoes.shopee.shopee_client.request", side_effect=Exception("boom"))
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
+    def test_atualizar_estoque_item_retorna_false_em_excecao(self, _mock_enabled, _mock_request):
+        self.assertFalse(shopee_client.atualizar_estoque_item(item_id=22, novo_estoque=1))
+
     @patch("integracoes.shopee.shopee_client._enabled", return_value=False)
     def test_atualizacoes_retorna_false_quando_nao_configurado(self, _mock_enabled):
         self.assertFalse(shopee_client.atualizar_preco_item(item_id=10, novo_preco=10.0))
         self.assertFalse(shopee_client.atualizar_estoque_item(item_id=10, novo_estoque=5))
+
+    @patch("integracoes.shopee.shopee_client.dias_sem_acesso", return_value=0)
+    def test_manter_conta_ativa_retorna_ja_acessado_hoje(self, mock_dias):
+        out = shopee_client.manter_conta_ativa()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["acao"], "já acessado hoje")
+        mock_dias.assert_called_with("shopee")
+
+    @patch("integracoes.shopee.shopee_client.dias_sem_acesso", return_value=3)
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=False)
+    def test_manter_conta_ativa_quando_nao_configurado(self, _mock_enabled, _mock_dias):
+        out = shopee_client.manter_conta_ativa()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["acao"], "não configurado")
+        self.assertEqual(out["dias_sem_acesso"], 3)
+
+    @patch("integracoes.shopee.shopee_client.dias_sem_acesso", side_effect=[2, 0])
+    @patch("integracoes.shopee.shopee_client.registrar_acesso")
+    @patch("integracoes.shopee.shopee_client.request")
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
+    def test_manter_conta_ativa_sucesso_real(self, _mock_enabled, mock_request, mock_registrar, _mock_dias):
+        mock_request.return_value = self._mock_response({"error": "", "response": {}})
+        out = shopee_client.manter_conta_ativa(limite_dias_sem_acesso=5)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["acao"], "keepalive executado")
+        self.assertEqual(out["dias_sem_acesso"], 0)
+        self.assertFalse(out["alerta"])
+        mock_registrar.assert_called_once_with("shopee")
+
+    @patch("integracoes.shopee.shopee_client.dias_sem_acesso", side_effect=[2, 2])
+    @patch("integracoes.shopee.shopee_client.registrar_acesso")
+    @patch("integracoes.shopee.shopee_client.request")
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
+    def test_manter_conta_ativa_falha_em_erro_de_api(self, _mock_enabled, mock_request, mock_registrar, _mock_dias):
+        mock_request.return_value = self._mock_response({"error": "bad_request", "response": {}})
+        out = shopee_client.manter_conta_ativa()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["acao"], "falha no keepalive")
+        self.assertEqual(out["dias_sem_acesso"], 2)
+        mock_registrar.assert_not_called()
+
+    @patch("integracoes.shopee.shopee_client.dias_sem_acesso", side_effect=[2, 2])
+    @patch("integracoes.shopee.shopee_client.registrar_acesso")
+    @patch("integracoes.shopee.shopee_client.request", side_effect=Exception("boom"))
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
+    def test_manter_conta_ativa_falha_em_excecao(self, _mock_enabled, _mock_request, mock_registrar, _mock_dias):
+        out = shopee_client.manter_conta_ativa()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["acao"], "falha no keepalive")
+        self.assertEqual(out["dias_sem_acesso"], 2)
+        mock_registrar.assert_not_called()
 
 
 if __name__ == "__main__":
