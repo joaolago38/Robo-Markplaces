@@ -1,0 +1,62 @@
+{
+  "name": "Robo-Markplaces - Chat Visual Marketplaces",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "cron-chat-visual",
+      "name": "Cron Chat Visual",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/chat/visual/rodar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "http-chat-visual",
+      "name": "HTTP Chat Visual",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Chat Visual": {
+      "main": [
+        [
+          {
+            "node": "HTTP Chat Visual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}
