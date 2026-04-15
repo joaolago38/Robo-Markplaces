@@ -40,6 +40,8 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /campanha/avaliar`
 - `POST /marketplaces/keepalive`
 - `POST /marketplaces/algoritmo/ajustar`
+- `POST /marketplaces/produtos/monitorar`
+- `POST /operacao/24h`
 - `POST /faturamento/nfe`
 - `POST /meta/campanhas/validar`
 
@@ -150,6 +152,42 @@ Regras:
 - Se algum item ficar sem NCM válido, a emissão é bloqueada e alerta crítico é disparado.
 - Em `dry_run=true`, retorna o payload fiscal para conferência antes da emissão real.
 - O item já sai com campos fiscais base (`cfop`, `cst`, `csosn`, `origem`) configuráveis no `.env`.
+
+### Repricing de produtos por marketplace
+
+Use `POST /marketplaces/produtos/monitorar` para monitorar e ajustar preços visando lucro mínimo.
+
+Payload opcional:
+
+```json
+{
+  "dry_run": true,
+  "lucro_minimo_pct": 10.0,
+  "produtos": []
+}
+```
+
+Regras:
+- Garante margem mínima por item/canal (default 10%).
+- Considera preço concorrente quando informado.
+- Nunca propõe preço abaixo do necessário para manter o lucro mínimo.
+- Em `dry_run=false`, tenta aplicar preço nos canais integrados.
+
+### Operação contínua 24h
+
+Use `POST /operacao/24h` para:
+- monitorar marketplaces continuamente,
+- calcular média de venda/lucro/preço geral dos produtos,
+- gerar NF no Bling para pedidos aprovados vindos do Lojahub (ficando pronto para impressão no fluxo operacional).
+
+Payload opcional:
+
+```json
+{
+  "dry_run_repricing": true,
+  "dry_run_nfe": false
+}
+```
 
 ## Exemplos de payload
 

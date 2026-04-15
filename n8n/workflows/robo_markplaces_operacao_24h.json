@@ -1,0 +1,62 @@
+{
+  "name": "Robo-Markplaces - Operacao 24h",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "cron-operacao-24h",
+      "name": "Cron Operacao 24h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/operacao/24h",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"dry_run_repricing\": true, \"dry_run_nfe\": false}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "http-operacao-24h",
+      "name": "HTTP Operacao 24h",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Operacao 24h": {
+      "main": [
+        [
+          {
+            "node": "HTTP Operacao 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

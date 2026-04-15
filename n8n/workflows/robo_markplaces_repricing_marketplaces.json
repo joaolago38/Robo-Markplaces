@@ -1,0 +1,62 @@
+{
+  "name": "Robo-Markplaces - Repricing Marketplaces",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "cron-repricing-marketplaces",
+      "name": "Cron Repricing Marketplaces",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/produtos/monitorar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"dry_run\": true, \"lucro_minimo_pct\": 10.0}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "http-repricing-marketplaces",
+      "name": "HTTP Repricing Marketplaces",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Repricing Marketplaces": {
+      "main": [
+        [
+          {
+            "node": "HTTP Repricing Marketplaces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

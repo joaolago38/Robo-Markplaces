@@ -87,3 +87,22 @@ def obter_saude_conta() -> dict:
         "claims_rate": float(claims_rate),
         "dias_sem_acesso": dias_sem_acesso("mercadolivre") or 0,
     }
+
+
+def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
+    if not _enabled():
+        logger.warning("Mercado Livre não configurado para atualização de preço.")
+        return False
+    try:
+        r = request(
+            "PUT",
+            f"{BASE}/items/{item_id}",
+            headers=_h(),
+            json={"price": float(novo_preco)},
+            timeout=20,
+        )
+        r.raise_for_status()
+        return True
+    except Exception as exc:
+        logger.error("ML atualizar_preco_item erro item_id=%s: %s", item_id, exc)
+        return False

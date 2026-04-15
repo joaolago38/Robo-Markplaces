@@ -148,3 +148,25 @@ def obter_saude_conta() -> dict:
         "claims_rate": 0.0,
         "dias_sem_acesso": dias_sem_acesso("shopee") or 0,
     }
+
+
+def atualizar_preco_item(item_id: int, novo_preco: float) -> bool:
+    if not _enabled():
+        logger.warning("Shopee não configurado para atualização de preço.")
+        return False
+    path = "/api/v2/product/update_price"
+    try:
+        payload = {"price_list": [{"item_id": int(item_id), "original_price": float(novo_preco)}]}
+        r = request(
+            "POST",
+            f"{BASE}{path}",
+            params=_params(path),
+            json=payload,
+            timeout=20,
+        )
+        r.raise_for_status()
+        body = r.json()
+        return body.get("error") in (None, "", 0)
+    except Exception as exc:
+        logger.error("Shopee atualizar_preco_item erro item_id=%s: %s", item_id, exc)
+        return False

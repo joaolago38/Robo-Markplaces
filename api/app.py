@@ -16,6 +16,8 @@ from agentes.manutencao_marketplaces import executar as executar_manutencao_mark
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from agentes.social.agente_metricas_meta import executar as executar_metricas_meta
+from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
+from agentes.operacao_24h import executar as executar_operacao_24h
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -496,6 +498,57 @@ def meta_validar_campanhas():
     return jsonify({"ok": True, **resultado})
 
 
+@app.route("/marketplaces/produtos/monitorar", methods=["POST"])
+def monitorar_produtos_marketplaces():
+    """
+    POST /marketplaces/produtos/monitorar
+    Monitora produtos e calcula ajuste de preço para manter lucro mínimo.
+    Body opcional:
+    {
+      "dry_run": true,
+      "lucro_minimo_pct": 10.0,
+      "produtos": [...]
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    dry_run = bool(dados.get("dry_run", True))
+    lucro_minimo_pct, erro_lucro = _parse_float(dados.get("lucro_minimo_pct", 10.0), "lucro_minimo_pct")
+    if erro_lucro:
+        return jsonify({"ok": False, "erro": erro_lucro}), 400
+
+    produtos = dados.get("produtos")
+    resultado = executar_repricing_marketplaces(
+        produtos=produtos if isinstance(produtos, list) else None,
+        dry_run=dry_run,
+        lucro_minimo_pct=lucro_minimo_pct,
+    )
+    return jsonify({"ok": True, **resultado})
+
+
+@app.route("/operacao/24h", methods=["POST"])
+def operacao_24h():
+    """
+    POST /operacao/24h
+    Monitora marketplaces 24h, calcula médias e gera NF-e (Lojahub -> Bling).
+    Body opcional:
+    {
+      "dry_run_repricing": true,
+      "dry_run_nfe": false
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    dry_run_repricing = bool(dados.get("dry_run_repricing", True))
+    dry_run_nfe = bool(dados.get("dry_run_nfe", False))
+    resultado = executar_operacao_24h(dry_run_repricing=dry_run_repricing, dry_run_nfe=dry_run_nfe)
+    return jsonify({"ok": True, **resultado})
+
+
 # ============================================================
 # INICIALIZAÇÃO
 # ============================================================
@@ -512,6 +565,8 @@ if __name__ == "__main__":
     print("   POST /campanha/avaliar    — avalia métricas e decide ação")
     print("   POST /marketplaces/keepalive — mantém sessão ativa nos marketplaces")
     print("   POST /marketplaces/algoritmo/ajustar — avalia saúde e ajusta estratégia")
+    print("   POST /marketplaces/produtos/monitorar — repricing com lucro mínimo por canal")
+    print("   POST /operacao/24h         — monitora vendas/lucro e gera NF via Lojahub+Bling")
     print("   POST /faturamento/nfe     — emite NF-e no Bling para pedido pago")
     print("   POST /meta/campanhas/validar — valida métricas Meta Ads e recomenda ajustes")
     print("\n   n8n deve apontar para: http://localhost:5000\n")

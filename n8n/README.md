@@ -8,6 +8,8 @@ Este diretório contém o pacote pronto para orquestrar a API pelo n8n.
 - `workflows/robo_markplaces_chat_webhook.json`: entrada webhook para chat.
 - `workflows/robo_markplaces_faturamento_webhook.json`: entrada webhook para emissão de NF-e.
 - `workflows/robo_markplaces_meta_metricas.json`: monitoramento de campanhas Meta.
+- `workflows/robo_markplaces_repricing_marketplaces.json`: monitoramento e repricing por lucro mínimo.
+- `workflows/robo_markplaces_operacao_24h.json`: operação contínua (vendas/lucro + faturamento).
 - `env.exemplo`: variáveis esperadas pelos workflows.
 
 ## Pré-requisitos
@@ -31,8 +33,10 @@ No n8n, configure as variáveis de ambiente:
 3. Importe `workflows/robo_markplaces_chat_webhook.json`.
 4. Importe `workflows/robo_markplaces_faturamento_webhook.json`.
 5. Importe `workflows/robo_markplaces_meta_metricas.json`.
-6. Ajuste timezone dos cron nodes para `America/Sao_Paulo`.
-7. Ative os workflows.
+6. Importe `workflows/robo_markplaces_repricing_marketplaces.json`.
+7. Importe `workflows/robo_markplaces_operacao_24h.json`.
+8. Ajuste timezone dos cron nodes para `America/Sao_Paulo`.
+9. Ative os workflows.
 
 ## Rotinas incluídas
 
@@ -41,6 +45,8 @@ No n8n, configure as variáveis de ambiente:
 - Relatório diário: diariamente às 08:00.
 - Estoque crítico: a cada 4 horas.
 - Validação Meta Ads: a cada 1 hora.
+- Repricing marketplaces: a cada 2 horas.
+- Operação 24h (monitoramento + NF): a cada 1 hora.
 
 ## Teste rápido
 

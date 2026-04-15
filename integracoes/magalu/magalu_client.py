@@ -120,3 +120,22 @@ def obter_saude_conta() -> dict:
         "claims_rate": 0.0,
         "dias_sem_acesso": dias_sem_acesso("magalu") or 0,
     }
+
+
+def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
+    if not _enabled():
+        logger.warning("Magalu não configurado para atualização de preço.")
+        return False
+    try:
+        r = request(
+            "PUT",
+            f"{BASE}/seller/products/{sku}/price",
+            headers=_h(),
+            json={"price": float(novo_preco)},
+            timeout=20,
+        )
+        r.raise_for_status()
+        return True
+    except Exception as exc:
+        logger.error("Magalu atualizar_preco_item erro sku=%s: %s", sku, exc)
+        return False

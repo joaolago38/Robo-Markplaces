@@ -73,3 +73,22 @@ def obter_saude_conta() -> dict:
         "claims_rate": 0.0,
         "dias_sem_acesso": dias_sem_acesso("amazon") or 0,
     }
+
+
+def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
+    if not _enabled():
+        logger.warning("Amazon não configurado para atualização de preço.")
+        return False
+    try:
+        r = request(
+            "PATCH",
+            f"{BASE}/listings/2021-08-01/items/{sku}",
+            headers=_h(),
+            json={"attributes": {"purchasable_offer": [{"our_price": [{"schedule": [{"value_with_tax": float(novo_preco)}]}]}]}},
+            timeout=20,
+        )
+        r.raise_for_status()
+        return True
+    except Exception as exc:
+        logger.error("Amazon atualizar_preco_item erro sku=%s: %s", sku, exc)
+        return False
