@@ -40,6 +40,7 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /campanha/avaliar`
 - `POST /marketplaces/keepalive`
 - `POST /marketplaces/algoritmo/ajustar`
+- `POST /faturamento/nfe`
 
 ## Conexão com marketplaces
 
@@ -90,6 +91,38 @@ Esse fluxo:
 - gera score e status (`saudavel`, `atencao`, `critico`),
 - sugere ajustes automáticos para o momento (responder fila, revisar preço/título, estabilizar operação),
 - mantém histórico em `logs/marketplace_algorithm_history.json` para detectar queda brusca de desempenho.
+
+### Emissão de NF-e automática (Bling)
+
+Use `POST /faturamento/nfe` quando o pedido estiver pago/confirmado.
+
+Payload:
+
+```json
+{
+  "dry_run": true,
+  "pedido": {
+    "pedido_id": "PED-123",
+    "cliente": {
+      "nome": "Cliente Exemplo",
+      "documento": "12345678901",
+      "email": "cliente@exemplo.com"
+    },
+    "itens": [
+      {
+        "sku": "ESM-001",
+        "quantidade": 2,
+        "valor_unitario": 9.9
+      }
+    ]
+  }
+}
+```
+
+Regras:
+- NCM é resolvido por prioridade: item -> produto no Bling -> `catalogo/produtos.json`.
+- Se algum item ficar sem NCM válido, a emissão é bloqueada e alerta crítico é disparado.
+- Em `dry_run=true`, retorna o payload fiscal para conferência antes da emissão real.
 
 ## Exemplos de payload
 

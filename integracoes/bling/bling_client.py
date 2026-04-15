@@ -3,7 +3,7 @@ integracoes/bling/bling_client.py
 Cliente da API Bling v3. Nunca lança exceção.
 """
 import logging
-from core.config import BLING_ACCESS_TOKEN, BLING_REFRESH_TOKEN, BLING_CLIENT_ID, BLING_CLIENT_SECRET
+from core.config import BLING_ACCESS_TOKEN
 from core.http_client import request
 
 logger = logging.getLogger("bling")
@@ -33,6 +33,7 @@ def _normalizar_produto(p: dict) -> dict:
         "nome": p.get("nome"),
         "preco": _to_float(p.get("preco", 0)),
         "custo": custo,
+        "ncm": p.get("ncm", ""),
         "estoque": _to_int(p.get("estoqueAtual", 0)),
         "descricao": p.get("descricaoCurta", ""),
     }
@@ -66,3 +67,20 @@ def listar_produtos() -> list[dict]:
 
 def estoques_criticos(limite: int = 20) -> list[dict]:
     return [p for p in listar_produtos() if p["estoque"] <= limite]
+
+
+def criar_nfe(payload_nfe: dict) -> dict:
+    """
+    Cria NF-e no Bling. Retorna payload de resposta ou erro padronizado.
+    """
+    if not BLING_ACCESS_TOKEN:
+        return {"ok": False, "erro": "BLING_ACCESS_TOKEN não configurado"}
+    try:
+        r = request("POST", f"{BASE}/nfe", headers=_h(), json=payload_nfe, timeout=30)
+        r.raise_for_status()
+        body = r.json()
+        data = body.get("data", body)
+        return {"ok": True, "data": data}
+    except Exception as exc:
+        logger.error("Bling criar_nfe erro: %s", exc)
+        return {"ok": False, "erro": str(exc)}

@@ -14,6 +14,7 @@ from core.notificador import alertar, alertar_critico, alertar_gestor
 from core.config import MARGEM_MINIMA, ESTOQUE_CRITICO
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
+from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -440,6 +441,33 @@ def ajustar_algoritmo_marketplaces():
     return jsonify({"ok": True, **resultado})
 
 
+@app.route("/faturamento/nfe", methods=["POST"])
+def faturamento_nfe():
+    """
+    POST /faturamento/nfe
+    Emite NF-e no Bling para um pedido já pago/confirmado.
+    Body:
+    {
+      "dry_run": false,
+      "pedido": {
+        "pedido_id": "PED-123",
+        "cliente": {"nome": "...", "documento": "...", "email": "..."},
+        "itens": [{"sku": "ESM-001", "quantidade": 2, "valor_unitario": 9.9}]
+      }
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    pedido = dados.get("pedido") or {}
+    dry_run = bool(dados.get("dry_run", False))
+
+    resultado = emitir_nfe_pedido(pedido, dry_run=dry_run)
+    status_code = 200 if resultado.get("ok") else 400
+    return jsonify(resultado), status_code
+
+
 # ============================================================
 # INICIALIZAÇÃO
 # ============================================================
@@ -456,6 +484,7 @@ if __name__ == "__main__":
     print("   POST /campanha/avaliar    — avalia métricas e decide ação")
     print("   POST /marketplaces/keepalive — mantém sessão ativa nos marketplaces")
     print("   POST /marketplaces/algoritmo/ajustar — avalia saúde e ajusta estratégia")
+    print("   POST /faturamento/nfe     — emite NF-e no Bling para pedido pago")
     print("\n   n8n deve apontar para: http://localhost:5000\n")
 
     app.run(host="0.0.0.0", port=5000, debug=False)

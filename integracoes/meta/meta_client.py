@@ -3,7 +3,7 @@ integracoes/meta/meta_client.py
 Cliente da Meta Graph API (Facebook + Instagram).
 """
 import logging
-from core.config import META_ACCESS_TOKEN, META_PAGE_ID, META_INSTAGRAM_ID
+from core.config import META_ACCESS_TOKEN, META_PAGE_ID
 from core.http_client import request
 
 logger = logging.getLogger("meta")
