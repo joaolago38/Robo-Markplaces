@@ -25,10 +25,16 @@ def executar(alertar_quando_atencao: bool = False) -> dict:
 
     for nome, avaliacao in avaliacoes.items():
         status = avaliacao["status"]
-        if status == "critico" or (alertar_quando_atencao and status == "atencao"):
+        variacoes = avaliacao.get("variacoes_relevantes", [])
+        variacao_critica = any(v.get("metrica") == "score" and v.get("variacao_pct", 0) <= -5 for v in variacoes)
+        if status == "critico" or (alertar_quando_atencao and status == "atencao") or variacao_critica:
+            bloco_variacoes = ""
+            if variacoes:
+                top = ", ".join([f"{v['metrica']} {v['variacao_pct']}%" for v in variacoes[:2]])
+                bloco_variacoes = f"\nVariações: {top}"
             alertar_gestor(
                 f"Saúde {nome}: {status.upper()} (score {avaliacao['score']})\n"
-                f"Ajustes: {'; '.join(avaliacao['acoes_recomendadas'][:3])}"
+                f"Ajustes: {'; '.join(avaliacao['acoes_recomendadas'][:3])}{bloco_variacoes}"
             )
 
     resumo = {

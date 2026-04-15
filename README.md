@@ -93,6 +93,10 @@ Esse fluxo:
 - sugere ajustes automáticos para o momento (responder fila, revisar preço/título, estabilizar operação),
 - mantém histórico em `logs/marketplace_algorithm_history.json` para detectar queda brusca de desempenho.
 
+Variações:
+- O motor também detecta variações relevantes de 5% (configurável em `MARKETPLACE_VARIACAO_ALERTA_PCT`) em score, pendências e taxa de reclamação.
+- Quando detecta variação relevante, gera ajuste fino de vendas (ex.: micro ajuste de preço 1-2%, reforço de atendimento e revisão de oferta).
+
 ### Validação de campanhas Meta (Instagram/Facebook)
 
 Use `POST /meta/campanhas/validar` para avaliar campanhas da Meta Ads API.

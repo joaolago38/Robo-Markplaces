@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from uuid import uuid4
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -31,6 +32,19 @@ class MarketplaceAlgorithmTests(unittest.TestCase):
         )
         self.assertTrue(60 <= out["score"] < 80)
         self.assertEqual(out["status"], "atencao")
+
+    def test_detecta_variacao_de_5_porcento(self):
+        nome = f"market_var_{uuid4().hex[:8]}"
+        avaliar_marketplace(
+            nome,
+            {"configurado": True, "pendencias": 10, "claims_rate": 0.01, "dias_sem_acesso": 0},
+        )
+        out = avaliar_marketplace(
+            nome,
+            {"configurado": True, "pendencias": 11, "claims_rate": 0.0106, "dias_sem_acesso": 0},
+        )
+        variacoes = out.get("variacoes_relevantes", [])
+        self.assertTrue(any(v["metrica"] == "pendencias" and abs(v["variacao_pct"]) >= 5 for v in variacoes))
 
 
 if __name__ == "__main__":
