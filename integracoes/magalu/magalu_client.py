@@ -4,8 +4,9 @@ Cliente Magalu Seller API para perguntas e respostas.
 """
 import logging
 
-from core.config import MAGALU_ACCESS_TOKEN, MAGALU_MERCHANT_ID
+from core.config import MAGALU_ACCESS_TOKEN, MAGALU_MERCHANT_ID, MAGALU_REFRESH_TOKEN
 from core.http_client import request
+from core.token_manager import get_token_magalu
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
 logger = logging.getLogger("magalu_client")
@@ -13,12 +14,16 @@ BASE = "https://api.magalu.com"
 
 
 def _enabled() -> bool:
-    return bool(MAGALU_ACCESS_TOKEN and MAGALU_MERCHANT_ID)
+    tem_token = bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
+    return bool(tem_token and MAGALU_MERCHANT_ID)
 
 
 def _h():
+    tok = MAGALU_ACCESS_TOKEN
+    if MAGALU_REFRESH_TOKEN:
+        tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
     return {
-        "Authorization": f"Bearer {MAGALU_ACCESS_TOKEN}",
+        "Authorization": f"Bearer {tok}",
         "X-Seller-Id": str(MAGALU_MERCHANT_ID),
         "Content-Type": "application/json",
     }

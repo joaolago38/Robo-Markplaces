@@ -20,11 +20,13 @@ from core.config import (  # noqa: E402
     AMAZON_ACCESS_TOKEN,
     MAGALU_ACCESS_TOKEN,
     MAGALU_MERCHANT_ID,
+    MAGALU_REFRESH_TOKEN,
     ML_ACCESS_TOKEN,
     ML_SELLER_ID,
     SHOPEE_ACCESS_TOKEN,
     SHOPEE_PARTNER_ID,
     SHOPEE_PARTNER_KEY,
+    SHOPEE_REFRESH_TOKEN,
     SHOPEE_SHOP_ID,
 )
 from integracoes.amazon.amazon_client import listar_mensagens_nao_respondidas  # noqa: E402
@@ -38,11 +40,13 @@ def _ok_config_ml() -> bool:
 
 
 def _ok_config_shopee() -> bool:
-    return bool(SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and SHOPEE_ACCESS_TOKEN)
+    tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
+    return bool(SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token)
 
 
 def _ok_config_magalu() -> bool:
-    return bool(MAGALU_ACCESS_TOKEN and MAGALU_MERCHANT_ID)
+    tem_token = bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
+    return bool(tem_token and MAGALU_MERCHANT_ID)
 
 
 def _ok_config_amazon() -> bool:

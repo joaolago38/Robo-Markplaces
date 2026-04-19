@@ -11,9 +11,11 @@ from core.config import (
     SHOPEE_ACCESS_TOKEN,
     SHOPEE_PARTNER_ID,
     SHOPEE_PARTNER_KEY,
+    SHOPEE_REFRESH_TOKEN,
     SHOPEE_SHOP_ID,
 )
 from core.http_client import request
+from core.token_manager import get_token_shopee
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
 logger = logging.getLogger("shopee_client")
@@ -21,20 +23,29 @@ BASE = "https://partner.shopeemobile.com"
 
 
 def _enabled() -> bool:
-    return bool(SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and SHOPEE_ACCESS_TOKEN)
+    tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
+    return bool(SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token)
+
+
+def _token_para_assinatura() -> str:
+    if SHOPEE_REFRESH_TOKEN:
+        return get_token_shopee() or SHOPEE_ACCESS_TOKEN or ""
+    return SHOPEE_ACCESS_TOKEN or ""
 
 
 def _assinar(path: str, timestamp: int) -> str:
-    base = f"{SHOPEE_PARTNER_ID}{path}{timestamp}{SHOPEE_ACCESS_TOKEN}{SHOPEE_SHOP_ID}"
+    tok = _token_para_assinatura()
+    base = f"{SHOPEE_PARTNER_ID}{path}{timestamp}{tok}{SHOPEE_SHOP_ID}"
     return hmac.new(SHOPEE_PARTNER_KEY.encode("utf-8"), base.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def _params(path: str) -> dict:
     ts = int(time.time())
+    tok = _token_para_assinatura()
     return {
         "partner_id": int(SHOPEE_PARTNER_ID),
         "timestamp": ts,
-        "access_token": SHOPEE_ACCESS_TOKEN,
+        "access_token": tok,
         "shop_id": int(SHOPEE_SHOP_ID),
         "sign": _assinar(path, ts),
     }
