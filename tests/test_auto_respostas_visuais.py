@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agentes.auto_respostas_visuais import _gerar_resposta_visual
 
-
 class AutoRespostasVisuaisTests(unittest.TestCase):
     @patch("agentes.auto_respostas_visuais.perguntar")
     def test_gera_prompt_com_fotos(self, mock_perguntar):
