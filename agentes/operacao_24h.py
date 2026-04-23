@@ -7,8 +7,11 @@ from __future__ import annotations
 import logging
 
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
+from agentes.ml.agente_ads_gatilho import executar as verificar_gatilho_ads
 from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
+from agentes.repricing.agente_repricing_impala import executar as repricing_impala
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
+from core.alertas_esmaltes import verificar_todos as verificar_alertas_esmaltes
 from core.notificador import alertar_gestor
 from integracoes.bling.bling_client import listar_produtos
 from integracoes.lojahub.lojahub_client import listar_pedidos_prontos_faturar, listar_resumo_vendas_24h
@@ -114,6 +117,18 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = False) -> dict:
     pedidos_faturar = listar_pedidos_prontos_faturar(limit=100)
     kpis = _calcular_kpis_24h(produtos, pedidos_faturar, analytics)
 
+    # Alertas específicos de esmaltes
+    alertas_esmaltes = verificar_alertas_esmaltes(
+        total_avaliacoes=0,  # TODO: buscar total real de avaliações da conta ML
+        kits=produtos,
+    )
+
+    # Verificar se é hora de ligar/escalar/pausar ads
+    gatilho_ads = verificar_gatilho_ads(acos_atual=0.0, full_ativo=False)
+
+    # Repricing consciente de fase
+    repricing_fases = repricing_impala(dry_run=dry_run_repricing)
+
     monitor_marketplaces = executar_algoritmo_marketplaces(alertar_quando_atencao=False)
     repricing = executar_repricing_marketplaces(produtos=produtos, dry_run=dry_run_repricing)
     faturamento = _faturar_pedidos_lojahub(dry_run_nfe=dry_run_nfe, limite=30)
@@ -122,7 +137,10 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = False) -> dict:
         "kpis_24h": kpis,
         "marketplaces": monitor_marketplaces,
         "repricing": repricing,
+        "repricing_fases": repricing_fases,
         "faturamento": faturamento,
+        "alertas_esmaltes": alertas_esmaltes,
+        "gatilho_ads": gatilho_ads,
         "modo": {"repricing_dry_run": dry_run_repricing, "nfe_dry_run": dry_run_nfe},
     }
 

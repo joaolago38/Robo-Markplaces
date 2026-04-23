@@ -1,23 +1,158 @@
 [
-  {"sku":"ESM-001","nome":"Impala Esmalte Cremoso Marilyn","preco":9.90,"estoque_total":160,"ncm":"3304.10.00","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":80},"shopee":{"ativo":true,"preco":8.90,"estoque":80},"magalu":{"ativo":true,"preco":10.90,"estoque":40},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-002","nome":"Impala Esmalte Cremoso Tempestade","preco":9.90,"estoque_total":140,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":70},"shopee":{"ativo":true,"preco":8.90,"estoque":70},"magalu":{"ativo":true,"preco":10.90,"estoque":35},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-003","nome":"Impala Esmalte Cremoso Nosferatu","preco":9.90,"estoque_total":130,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":65},"shopee":{"ativo":true,"preco":8.90,"estoque":65},"magalu":{"ativo":true,"preco":10.90,"estoque":32},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-004","nome":"Impala Esmalte Cremoso Sexy Nude","preco":9.90,"estoque_total":150,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":75},"shopee":{"ativo":true,"preco":8.90,"estoque":75},"magalu":{"ativo":true,"preco":10.90,"estoque":37},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-005","nome":"Impala Esmalte Cremoso Íris","preco":9.90,"estoque_total":125,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":62},"shopee":{"ativo":true,"preco":8.90,"estoque":62},"magalu":{"ativo":true,"preco":10.90,"estoque":31},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-006","nome":"Impala Esmalte Cremoso Boneca de Luxo","preco":9.90,"estoque_total":155,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":77},"shopee":{"ativo":true,"preco":8.90,"estoque":77},"magalu":{"ativo":true,"preco":10.90,"estoque":38},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-007","nome":"Impala Esmalte Cremoso Pipoca Doce","preco":9.90,"estoque_total":120,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":60},"shopee":{"ativo":true,"preco":8.90,"estoque":60},"magalu":{"ativo":true,"preco":10.90,"estoque":30},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-008","nome":"Impala Esmalte Cremoso Luna","preco":9.90,"estoque_total":135,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":67},"shopee":{"ativo":true,"preco":8.90,"estoque":67},"magalu":{"ativo":true,"preco":10.90,"estoque":34},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-009","nome":"Impala Esmalte Cremoso Paz e Amor","preco":9.90,"estoque_total":165,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":82},"shopee":{"ativo":true,"preco":8.90,"estoque":82},"magalu":{"ativo":true,"preco":10.90,"estoque":41},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-010","nome":"Impala Esmalte Cremoso Amor em Miami","preco":9.90,"estoque_total":110,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":55},"shopee":{"ativo":true,"preco":8.90,"estoque":55},"magalu":{"ativo":true,"preco":10.90,"estoque":27},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-011","nome":"Impala Esmalte Cremoso Rosa Chiclete","preco":9.90,"estoque_total":145,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":72},"shopee":{"ativo":true,"preco":8.90,"estoque":72},"magalu":{"ativo":true,"preco":10.90,"estoque":36},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-012","nome":"Impala Esmalte Cremoso Melancia","preco":9.90,"estoque_total":170,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":85},"shopee":{"ativo":true,"preco":8.90,"estoque":85},"magalu":{"ativo":true,"preco":10.90,"estoque":42},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-013","nome":"Impala Esmalte Cremoso Caju","preco":9.90,"estoque_total":115,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":57},"shopee":{"ativo":true,"preco":8.90,"estoque":57},"magalu":{"ativo":true,"preco":10.90,"estoque":28},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-014","nome":"Impala Esmalte Cremoso Café Creme","preco":9.90,"estoque_total":100,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":50},"shopee":{"ativo":true,"preco":8.90,"estoque":50},"magalu":{"ativo":true,"preco":10.90,"estoque":25},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-015","nome":"Impala Esmalte Cremoso Pretinho Básico","preco":9.90,"estoque_total":190,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":95},"shopee":{"ativo":true,"preco":8.90,"estoque":95},"magalu":{"ativo":true,"preco":10.90,"estoque":47},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-016","nome":"Impala Esmalte Cremoso Buquê","preco":9.90,"estoque_total":128,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":64},"shopee":{"ativo":true,"preco":8.90,"estoque":64},"magalu":{"ativo":true,"preco":10.90,"estoque":32},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-017","nome":"Impala Esmalte Cremoso Me Tira Pra Dançar","preco":9.90,"estoque_total":105,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":52},"shopee":{"ativo":true,"preco":8.90,"estoque":52},"magalu":{"ativo":true,"preco":10.90,"estoque":26},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-018","nome":"Impala Esmalte Cremoso Marrom Cigana","preco":9.90,"estoque_total":122,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":61},"shopee":{"ativo":true,"preco":8.90,"estoque":61},"magalu":{"ativo":true,"preco":10.90,"estoque":30},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-019","nome":"Impala Esmalte Cremoso Chimarrão","preco":9.90,"estoque_total":118,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":59},"shopee":{"ativo":true,"preco":8.90,"estoque":59},"magalu":{"ativo":true,"preco":10.90,"estoque":29},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-020","nome":"Impala Esmalte Cremoso Coco com Doce","preco":9.90,"estoque_total":132,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":66},"shopee":{"ativo":true,"preco":8.90,"estoque":66},"magalu":{"ativo":true,"preco":10.90,"estoque":33},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}},
-  {"sku":"ESM-021","nome":"Impala Esmalte Cremoso Atena","preco":9.90,"estoque_total":108,"ncm":"3304.30.22","canais":{"mercadolivre":{"ativo":true,"preco":9.90,"estoque":54},"shopee":{"ativo":true,"preco":8.90,"estoque":54},"magalu":{"ativo":true,"preco":10.90,"estoque":27},"amazon":{"ativo":false,"preco":11.90,"estoque":0}}}
+  {
+    "sku": "IMP-MIMO-003",
+    "nome": "Kit 3 Mimo + Carmed Impala",
+    "ncm": "3304.10.00",
+    "custo_esmaltes": 8.61,
+    "custo_complemento": 7.00,
+    "custo_embalagem": 1.56,
+    "custo_caixa": 0.98,
+    "custo_total_sem_frete": 18.15,
+    "frete_estimado": 9.00,
+    "custo_total": 27.15,
+    "fase_atual": 1,
+    "precos_por_fase": {
+      "fase1": 44.90,
+      "fase2": 49.90,
+      "fase3": 54.90
+    },
+    "preco": 44.90,
+    "estoque_total": 0,
+    "peso_gramas": 350,
+    "caixa_caixasnet": "S20-16x11x10",
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 44.90, "estoque": 0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0}
+    }
+  },
+  {
+    "sku": "IMP-BAIL-005",
+    "nome": "Kit 5 Bailarina Impala",
+    "ncm": "3304.10.00",
+    "custo_esmaltes": 14.35,
+    "custo_complemento": 5.00,
+    "custo_embalagem": 3.90,
+    "custo_caixa": 0.98,
+    "custo_total_sem_frete": 24.23,
+    "frete_estimado": 11.00,
+    "custo_total": 35.23,
+    "fase_atual": 1,
+    "precos_por_fase": {
+      "fase1": 48.90,
+      "fase2": 52.90,
+      "fase3": 57.90
+    },
+    "preco": 48.90,
+    "estoque_total": 0,
+    "peso_gramas": 530,
+    "caixa_caixasnet": "S20-16x11x10",
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 48.90, "estoque": 0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0}
+    }
+  },
+  {
+    "sku": "IMP-SORT-006",
+    "nome": "Kit 6 Sortido Cores da Moda Impala",
+    "ncm": "3304.10.00",
+    "custo_esmaltes": 17.22,
+    "custo_complemento": 1.00,
+    "custo_embalagem": 4.18,
+    "custo_caixa": 3.70,
+    "custo_total_sem_frete": 26.10,
+    "frete_estimado": 13.00,
+    "custo_total": 39.10,
+    "fase_atual": 1,
+    "precos_por_fase": {
+      "fase1": 49.90,
+      "fase2": 54.90,
+      "fase3": 59.90
+    },
+    "preco": 49.90,
+    "estoque_total": 0,
+    "peso_gramas": 620,
+    "caixa_caixasnet": "S03-31x20x11.5",
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 49.90, "estoque": 0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0}
+    }
+  },
+  {
+    "sku": "IMP-ATAC-010",
+    "nome": "Kit 10 Atacado Manicure Impala",
+    "ncm": "3304.10.00",
+    "custo_esmaltes": 28.70,
+    "custo_complemento": 1.00,
+    "custo_embalagem": 5.04,
+    "custo_caixa": 3.70,
+    "custo_total_sem_frete": 38.44,
+    "frete_estimado": 14.50,
+    "custo_total": 52.94,
+    "fase_atual": 1,
+    "precos_por_fase": {
+      "fase1": 69.90,
+      "fase2": 74.90,
+      "fase3": 79.90
+    },
+    "preco": 69.90,
+    "estoque_total": 0,
+    "peso_gramas": 1000,
+    "caixa_caixasnet": "S03-31x20x11.5",
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 69.90, "estoque": 0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0}
+    }
+  },
+  {
+    "sku": "IMP-COLC-015",
+    "nome": "Kit 15 Cores da Sua Moda Impala",
+    "ncm": "3304.10.00",
+    "custo_esmaltes": 43.05,
+    "custo_complemento": 1.00,
+    "custo_embalagem": 5.88,
+    "custo_caixa": 3.70,
+    "custo_total_sem_frete": 53.63,
+    "frete_estimado": 16.00,
+    "custo_total": 69.63,
+    "fase_atual": 1,
+    "precos_por_fase": {
+      "fase1": 79.90,
+      "fase2": 89.90,
+      "fase3": 99.90
+    },
+    "preco": 79.90,
+    "estoque_total": 0,
+    "peso_gramas": 1400,
+    "caixa_caixasnet": "S03-31x20x11.5",
+    "canais": {
+      "mercadolivre": {"ativo": false, "preco": 79.90, "estoque": 0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0}
+    }
+  },
+  {
+    "sku": "IMP-GRAN-030",
+    "nome": "Kit 30 Atacado Clássico Impala",
+    "ncm": "3304.10.00",
+    "custo_esmaltes": 86.10,
+    "custo_complemento": 0.00,
+    "custo_embalagem": 8.50,
+    "custo_caixa": 4.50,
+    "custo_total_sem_frete": 99.10,
+    "frete_estimado": 19.00,
+    "custo_total": 118.10,
+    "fase_atual": 1,
+    "precos_por_fase": {
+      "fase1": 145.00,
+      "fase2": 159.00,
+      "fase3": 175.00
+    },
+    "preco": 145.00,
+    "estoque_total": 0,
+    "peso_gramas": 2800,
+    "caixa_caixasnet": "Buscar-ML-32x19x21",
+    "canais": {
+      "mercadolivre": {"ativo": false, "preco": 145.00, "estoque": 0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0}
+    }
+  }
 ]

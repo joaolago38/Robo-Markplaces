@@ -1,23 +1,18 @@
-# ============================================================
-# SPEC PRINCIPAL — Robo-Markplaces
-# Metodologia: Spec-Driven Development (SDD)
-# Fonte da verdade de todo o projeto
-# ============================================================
-
+# spec/spec.yaml — Robo-Marketplaces Esmaltes Impala v2.0
 projeto:
-  nome: Robo-Markplaces
-  versao: "1.0"
+  nome: Robo-Markplaces-Impala
+  versao: "2.0"
   descricao: >
-    Agente autônomo que gerencia vendas em 4 marketplaces,
-    responde perguntas com IA, publica promoções nas redes sociais
-    e emite NF-e via Bling — tudo guiado por esta spec.
+    Agente autônomo para venda de kits de esmaltes Impala no ML.
+    Opera em 3 fases: validação (0-20 avaliações), crescimento
+    (20-100 avaliações) e reputação/Full (100+ avaliações).
 
 marketplaces:
   - id: mercadolivre
     ativo: true
     prioridade: 1
   - id: shopee
-    ativo: true
+    ativo: false
     prioridade: 2
   - id: magalu
     ativo: false
@@ -26,11 +21,45 @@ marketplaces:
     ativo: false
     prioridade: 4
 
+fase_operacao:
+  fase_atual: 1
+  full_ativo: false
+  mercadolider: false
+
 regras_negocio:
-  margem_minima_pct: 15.0
-  estoque_critico_unidades: 20
+  margem_minima_fase1_pct: 10.0
+  margem_minima_fase2_pct: 18.0
+  margem_minima_fase3_pct: 25.0
+  taxa_marketplace_pct: 14.0
+  estoque_critico_unidades: 30
+  estoque_ideal_unidades: 60
+  ads_avaliacoes_minimas: 20
+  ads_nota_minima: 4.8
+  ads_budget_inicio_dia: 10.0
+  ads_budget_full_dia: 30.0
+  ads_acos_maximo_pct: 20.0
   cpc_maximo_reais: 1.50
-  ctr_minimo_pct: 1.0
-  roas_escala: 3.0
+  ctr_minimo_pct: 1.20
+  roas_escala: 2.20
+  repricing_variacao_minima: 0.50
+  repricing_nunca_abaixo_custo: true
   horario_post_manha: "08:00"
   horario_post_noite: "19:00"
+  varredura_hora: 6
+  varredura_minuto: 0
+
+kits_prioritarios:
+  validacao: ["IMP-MIMO-003", "IMP-SORT-006"]
+  fase2: ["IMP-BAIL-005", "IMP-ATAC-010"]
+  fase3: ["IMP-COLC-015", "IMP-GRAN-030"]
+
+datas_sazonais:
+  - data: "05-11"
+    evento: "Dia das Mães"
+    dias_antecedencia_alerta: 30
+  - data: "06-12"
+    evento: "Dia dos Namorados"
+    dias_antecedencia_alerta: 21
+  - data: "12-10"
+    evento: "Natal"
+    dias_antecedencia_alerta: 45

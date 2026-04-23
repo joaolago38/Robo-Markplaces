@@ -16,6 +16,7 @@ logger = logging.getLogger("agente_trafego_manicures")
 _BRAND_KEYS = {
     "impala": ["impala"],
     "anita": ["anita"],
+    "cruzeiro": ["cruzeiro", "removedor", "acetona"],  # NOVO — kit esmalte + removedor
     "kits": ["kit", "kits", "combo", "manicure kit"],
 }
 
@@ -26,6 +27,8 @@ def _classificar_campanha(nome: str) -> str:
         return "impala"
     if any(k in low for k in _BRAND_KEYS["anita"]):
         return "anita"
+    if any(k in low for k in _BRAND_KEYS["cruzeiro"]):
+        return "cruzeiro"
     if any(k in low for k in _BRAND_KEYS["kits"]):
         return "kits"
     return "outras"
@@ -52,7 +55,7 @@ def _eficiencia(c: dict) -> dict:
 
 
 def _agrupar_metricas(campanhas: list[dict]) -> dict:
-    grupos = {"impala": [], "anita": [], "kits": [], "outras": []}
+    grupos = {"impala": [], "anita": [], "cruzeiro": [], "kits": [], "outras": []}
     for c in campanhas:
         grupos[_classificar_campanha(c["nome"])].append(c)
 
@@ -91,7 +94,7 @@ def executar(periodo_dias: int = 1, alertar_todo_relatorio: bool = True) -> dict
         )
 
     resumo = _agrupar_metricas([c["metricas"] | {"nome": c["nome"]} for c in campanhas])
-    priorizadas = [c for c in campanhas if c["grupo"] in ("impala", "anita", "kits")]
+    priorizadas = [c for c in campanhas if c["grupo"] in ("impala", "anita", "cruzeiro", "kits")]
     prioridade_score_medio = round(
         sum(c["score_eficiencia"] for c in priorizadas) / max(1, len(priorizadas)), 1
     )
@@ -102,6 +105,8 @@ def executar(periodo_dias: int = 1, alertar_todo_relatorio: bool = True) -> dict
         recomendacoes.append("Aumentar verba de teste em criativos de kits com prova social para manicures.")
     if resumo["impala"]["roas"] < resumo["anita"]["roas"]:
         recomendacoes.append("Revisar oferta de Impala e replicar formato criativo vencedor da Anita.")
+    if resumo.get("cruzeiro", {}).get("roas", 0) < META_ROAS_MINIMO_MANICURES:
+        recomendacoes.append("Revisar campanha kit esmalte+removedor Cruzeiro — ROAS abaixo da meta.")
     if any(c["status_eficiencia"] == "baixa" for c in priorizadas):
         recomendacoes.append("Pausar criativos com eficiência baixa e subir 2 novas variações por marca.")
     if not recomendacoes:
