@@ -8,7 +8,13 @@ import logging
 import time
 
 from core.claude_client import perguntar
+from core.config import SPEC
 from core.notificador import alertar_gestor
+
+# Marketplaces ativos conforme spec.yaml — evita chamadas desnecessárias
+_CANAIS_ATIVOS: set[str] = {
+    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
+}
 from integracoes.bling.bling_client import buscar_produto
 from integracoes.ml.ml_client import listar_perguntas_nao_respondidas, responder_pergunta as responder_ml
 from integracoes.shopee.shopee_client import listar_perguntas_nao_respondidas as listar_shopee, responder_pergunta as responder_shopee
@@ -106,12 +112,17 @@ def _processar_amazon() -> dict:
 
 
 def executar() -> dict:
-    resultados = [
-        _processar_ml(),
-        _processar_shopee(),
-        _processar_magalu(),
-        _processar_amazon(),
-    ]
+    resultados = []
+
+    if "mercadolivre" in _CANAIS_ATIVOS:
+        resultados.append(_processar_ml())
+    if "shopee" in _CANAIS_ATIVOS:
+        resultados.append(_processar_shopee())
+    if "magalu" in _CANAIS_ATIVOS:
+        resultados.append(_processar_magalu())
+    if "amazon" in _CANAIS_ATIVOS:
+        resultados.append(_processar_amazon())
+
     total_lidas = sum(r["lidas"] for r in resultados)
     total_respondidas = sum(r["respondidas"] for r in resultados)
     payload = {"resultados": resultados, "total_lidas": total_lidas, "total_respondidas": total_respondidas}

@@ -26,7 +26,13 @@ def validar_resposta(resposta: str, produto: dict) -> str:
     if not produto:
         return "Vou confirmar os detalhes e já te respondo 😊"
 
-    estoque = produto.get("estoque", 0)
+    # Busca estoque real no Bling pelo SKU, evitando depender do catálogo local (pode estar zerado)
+    sku = produto.get("sku") or produto.get("codigo") or ""
+    if sku:
+        produto_bling = buscar_produto(str(sku)) or {}
+        estoque = int(produto_bling.get("estoque", produto.get("estoque", 0)) or 0)
+    else:
+        estoque = int(produto.get("estoque", 0) or 0)
 
     if estoque <= 0:
         return "Produto indisponível no momento 😊"

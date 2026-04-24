@@ -11,24 +11,54 @@ from agentes.algoritmo_marketplaces import executar as executar_algoritmo_market
 from agentes.auto_respostas_visuais import executar as executar_auto_respostas_visuais
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
 from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
+from core.config import SPEC
 from integracoes.amazon.amazon_client import listar_mensagens_nao_respondidas
 from integracoes.magalu.magalu_client import listar_perguntas_nao_respondidas as listar_magalu
 from integracoes.ml.ml_client import listar_perguntas_nao_respondidas as listar_ml
 from integracoes.shopee.shopee_client import listar_perguntas_nao_respondidas as listar_shopee
+
+# Lê quais marketplaces estão ativos no spec.yaml uma única vez na inicialização
+_MARKETPLACES_ATIVOS: set[str] = {
+    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
+}
 
 logger = logging.getLogger("agente_varredura_marketplaces")
 
 
 def coletar_atualizacoes() -> dict:
     """
-    Coleta pendências por canal para decidir se vale rodar atendimento automático.
+    Coleta pendências apenas nos marketplaces marcados como ativo: true no spec.yaml.
     """
-    atualizacoes = {
-        "mercadolivre": len(listar_ml() or []),
-        "shopee": len(listar_shopee(page_size=30, max_pages=2) or []),
-        "magalu": len(listar_magalu(limit=30) or []),
-        "amazon": len(listar_mensagens_nao_respondidas(limit=30) or []),
-    }
+    atualizacoes: dict[str, int] = {}
+
+    if "mercadolivre" in _MARKETPLACES_ATIVOS:
+        try:
+            atualizacoes["mercadolivre"] = len(listar_ml() or [])
+        except Exception as e:
+            logger.warning("Erro ao coletar ML: %s", e)
+            atualizacoes["mercadolivre"] = 0
+
+    if "shopee" in _MARKETPLACES_ATIVOS:
+        try:
+            atualizacoes["shopee"] = len(listar_shopee(page_size=30, max_pages=2) or [])
+        except Exception as e:
+            logger.warning("Erro ao coletar Shopee: %s", e)
+            atualizacoes["shopee"] = 0
+
+    if "magalu" in _MARKETPLACES_ATIVOS:
+        try:
+            atualizacoes["magalu"] = len(listar_magalu(limit=30) or [])
+        except Exception as e:
+            logger.warning("Erro ao coletar Magalu: %s", e)
+            atualizacoes["magalu"] = 0
+
+    if "amazon" in _MARKETPLACES_ATIVOS:
+        try:
+            atualizacoes["amazon"] = len(listar_mensagens_nao_respondidas(limit=30) or [])
+        except Exception as e:
+            logger.warning("Erro ao coletar Amazon: %s", e)
+            atualizacoes["amazon"] = 0
+
     atualizacoes["total"] = sum(atualizacoes.values())
     return atualizacoes
 

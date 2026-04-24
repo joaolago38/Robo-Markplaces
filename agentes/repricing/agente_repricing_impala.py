@@ -14,7 +14,9 @@ from core.notificador import alertar_gestor
 logger = logging.getLogger("agente_repricing_impala")
 
 TAXA_ML = 0.14
-CATALOGO_PATH = Path("catalogo/produtos.json")
+# Caminho absoluto ancorado neste arquivo, independente de onde o processo é iniciado
+_ROOT = Path(__file__).resolve().parent.parent.parent
+CATALOGO_PATH = _ROOT / "catalogo" / "produtos.json"
 
 MARGEM_POR_FASE = {
     1: 0.10,  # Fase 1: aceita 10% para ganhar avaliações

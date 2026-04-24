@@ -117,14 +117,30 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = False) -> dict:
     pedidos_faturar = listar_pedidos_prontos_faturar(limit=100)
     kpis = _calcular_kpis_24h(produtos, pedidos_faturar, analytics)
 
-    # Alertas específicos de esmaltes
+    # Busca reputação real da conta ML para usar nos alertas e gatilho de ads
+    try:
+        from integracoes.ml.ml_client import buscar_reputacao_vendedor
+        _rep = buscar_reputacao_vendedor()
+        _metrics = _rep.get("metrics", {})
+        _total_avaliacoes = int(_metrics.get("total_ratings", 0) or 0)
+        _nota_media = float(_metrics.get("average_rating", 0.0) or 0.0)
+        _acos_atual = float(_metrics.get("acos", 0.0) or 0.0)
+        _full_ativo = bool(_metrics.get("power_seller_status") in ("gold", "platinum"))
+    except Exception as _e:
+        logger.warning("Não foi possível buscar reputação ML: %s", _e)
+        _total_avaliacoes = 0
+        _nota_media = 0.0
+        _acos_atual = 0.0
+        _full_ativo = False
+
+    # Alertas específicos de esmaltes com dados reais
     alertas_esmaltes = verificar_alertas_esmaltes(
-        total_avaliacoes=0,  # TODO: buscar total real de avaliações da conta ML
+        total_avaliacoes=_total_avaliacoes,
         kits=produtos,
     )
 
-    # Verificar se é hora de ligar/escalar/pausar ads
-    gatilho_ads = verificar_gatilho_ads(acos_atual=0.0, full_ativo=False)
+    # Verificar se é hora de ligar/escalar/pausar ads com dados reais
+    gatilho_ads = verificar_gatilho_ads(acos_atual=_acos_atual, full_ativo=_full_ativo)
 
     # Repricing consciente de fase
     repricing_fases = repricing_impala(dry_run=dry_run_repricing)
