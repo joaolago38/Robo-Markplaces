@@ -11,11 +11,16 @@ from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 class FaturamentoTests(unittest.TestCase):
     @patch("agentes.faturamento.agente_faturamento.buscar_produto")
     def test_dry_run_monta_payload_com_ncm_catalogo(self, mock_buscar_produto):
-        mock_buscar_produto.return_value = {"sku": "ESM-001", "nome": "Esmalte", "preco": 9.9}
+        # SKU existente em catalogo/produtos.json; Bling mock sem NCM → NCM vem do catálogo
+        mock_buscar_produto.return_value = {
+            "sku": "IMP-MIMO-003",
+            "nome": "Kit 3 Mimo + Carmed Impala",
+            "preco": 44.9,
+        }
         pedido = {
             "pedido_id": "PED-1",
             "cliente": {"nome": "Cliente Teste", "documento": "12345678901"},
-            "itens": [{"sku": "ESM-001", "quantidade": 2}],
+            "itens": [{"sku": "IMP-MIMO-003", "quantidade": 2}],
         }
 
         out = emitir_nfe_pedido(pedido, dry_run=True)
