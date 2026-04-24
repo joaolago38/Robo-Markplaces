@@ -1,0 +1,42 @@
+# Renovação preventiva de tokens — Shopee (~4h) e Magalu (~1–2h) especialmente curtos.
+name: Renovar tokens marketplace
+
+on:
+  schedule:
+    # A cada 30 min (UTC). Ajuste conforme fusos e políticas das APIs.
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  renovar:
+    name: Renovar ML / Shopee / Magalu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Tentar renovar tokens
+        run: python scripts/renovar_tokens.py
+        env:
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
+          MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
+          MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
