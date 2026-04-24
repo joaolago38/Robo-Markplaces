@@ -3,7 +3,8 @@ name: Renovar tokens marketplace
 
 on:
   schedule:
-    # A cada 30 min (UTC). Ajuste conforme fusos e políticas das APIs.
+    # A cada 30 min em UTC (GitHub). Em BRT = deslocado −3h (ex.: 00:00 UTC = 21:00 BRT).
+    # Shopee/Magalu têm TTL curto; reduza só se atualizar tokens por outro meio.
     - cron: "*/30 * * * *"
   workflow_dispatch:
 
