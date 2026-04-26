@@ -154,5 +154,110 @@
       "mercadolivre": {"ativo": false, "preco": 145.00, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
+  },
+  {
+    "sku": "KIT-10-VERM-ROSA",
+    "nome": "Kit 10 Esmaltes Impala Vermelho e Rosa",
+    "ncm": "33042000",
+    "cores": ["Amante", "Beterraba", "Tomate", "Atração", "Vibrações", "Boneca de Luxo", "Fascinação", "Gatinha", "Dádiva", "Le Rose"],
+    "custo_total": 28.70,
+    "custo": 28.70,
+    "fase_atual": 1,
+    "precos_por_fase": {"fase1": 49.90, "fase2": 54.90, "fase3": 59.90},
+    "preco": 49.90,
+    "estoque_total": 0,
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 49.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
+    }
+  },
+  {
+    "sku": "KIT-12-CLASSICOS",
+    "nome": "Kit 12 Esmaltes Impala Clássicos Profissional",
+    "ncm": "33042000",
+    "cores": ["Preto", "Vinho", "Beterraba", "Branco", "Nude Clássico", "Inocense", "Tomate", "Gatinha", "Zaz", "Patins", "Le Rose", "Donata"],
+    "custo_total": 34.44,
+    "custo": 34.44,
+    "fase_atual": 1,
+    "precos_por_fase": {"fase1": 54.90, "fase2": 59.90, "fase3": 64.90},
+    "preco": 59.90,
+    "estoque_total": 0,
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 59.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
+    }
+  },
+  {
+    "sku": "KIT-10-NUDE",
+    "nome": "Kit 10 Esmaltes Impala Nude e Claro",
+    "ncm": "33042000",
+    "cores": ["Nude Clássico", "Inocense", "Le Rose", "Patins", "Serena", "Café Café", "Coffee", "Sutileza", "Lua", "Sonho"],
+    "custo_total": 28.70,
+    "custo": 28.70,
+    "fase_atual": 1,
+    "precos_por_fase": {"fase1": 46.90, "fase2": 52.90, "fase3": 57.90},
+    "preco": 46.90,
+    "estoque_total": 0,
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 46.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
+    }
+  },
+  {
+    "sku": "KIT-15-SORTIDOS",
+    "nome": "Kit 15 Esmaltes Impala Cores Sortidas",
+    "ncm": "33042000",
+    "custo_total": 43.05,
+    "custo": 43.05,
+    "fase_atual": 1,
+    "precos_por_fase": {"fase1": 69.90, "fase2": 74.90, "fase3": 79.90},
+    "preco": 69.90,
+    "estoque_total": 0,
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 69.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
+    }
+  },
+  {
+    "sku": "KIT-30-ATACADO",
+    "nome": "Kit 30 Esmaltes Impala Atacado",
+    "ncm": "33042000",
+    "custo_total": 86.10,
+    "custo": 86.10,
+    "fase_atual": 1,
+    "precos_por_fase": {"fase1": 119.90, "fase2": 131.00, "fase3": 145.00},
+    "preco": 119.90,
+    "estoque_total": 0,
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 119.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
+    }
+  },
+  {
+    "sku": "BUNDLE-777-5ESM",
+    "nome": "Kit Manicure Alicate Mundial 777 + 5 Esmaltes Impala",
+    "ncm": "82142000",
+    "custo_total": 38.10,
+    "custo": 38.10,
+    "fase_atual": 1,
+    "precos_por_fase": {"fase1": 79.90, "fase2": 85.00, "fase3": 89.90},
+    "preco": 79.90,
+    "estoque_total": 0,
+    "canais": {
+      "mercadolivre": {"ativo": true, "preco": 79.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
+    }
   }
 ]

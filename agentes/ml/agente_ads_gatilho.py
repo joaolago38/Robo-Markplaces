@@ -6,20 +6,21 @@ Baseado em avaliações reais, nota média e ACOS atual.
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 
 from core.notificador import alertar_gestor
+from core.config import (
+    AVALIACOES_PARA_ADS,
+    NOTA_MINIMA_PARA_ADS,
+    AVALIACOES_PARA_ESCALAR,
+    ACOS_MAXIMO,
+    BUDGET_FASE_INICIO,
+    BUDGET_FASE_CRESCIMENTO,
+    BUDGET_FASE_ESCALA,
+)
 from integracoes.ml.ml_client import buscar_reputacao_vendedor
 
 logger = logging.getLogger("agente_ads_gatilho")
-
-# Thresholds baseados na análise dos top sellers do nicho
-AVALIACOES_PARA_ADS = 20        # mínimo para ligar ads
-NOTA_MINIMA_PARA_ADS = 4.8      # nota mínima para ligar ads
-AVALIACOES_PARA_ESCALAR = 50    # mínimo para escalar budget
-ACOS_MAXIMO_ACEITAVEL = 0.20    # pausa se ACOS > 20%
-BUDGET_FASE_INICIO = 10.0       # R$/dia — fase 2 (campanha automática)
-BUDGET_FASE_CRESCIMENTO = 30.0  # R$/dia — Full ativo
-BUDGET_FASE_ESCALA = 80.0       # R$/dia — pico sazonal
 
 
 def avaliar_momento_ads(
@@ -40,11 +41,17 @@ def avaliar_momento_ads(
         motivos.append(f"Nota abaixo do mínimo: {nota_media:.1f}/{NOTA_MINIMA_PARA_ADS}")
         motivos.append("Melhorar atendimento antes de investir em ads")
 
-    elif acos_atual > ACOS_MAXIMO_ACEITAVEL and acos_atual > 0:
+    elif acos_atual > ACOS_MAXIMO and acos_atual > 0:
         decisao = "pausar"
         budget_sugerido = 0.0
-        motivos.append(f"ACOS alto: {acos_atual*100:.0f}% (máx {ACOS_MAXIMO_ACEITAVEL*100:.0f}%)")
+        motivos.append(f"ACOS alto: {acos_atual*100:.0f}% (máx {ACOS_MAXIMO*100:.0f}%)")
         motivos.append("Revisar título e preço antes de religar")
+
+    elif datetime.now().month in (10, 11, 12) and avaliacoes >= AVALIACOES_PARA_ADS and nota_media >= NOTA_MINIMA_PARA_ADS:
+        decisao = "escalar"
+        budget_sugerido = BUDGET_FASE_ESCALA
+        motivos.append("Pico sazonal (Out-Dez) — escalar agressivo")
+        motivos.append(f"Budget sugerido: R$ {BUDGET_FASE_ESCALA}/dia")
 
     elif full_ativo and avaliacoes >= AVALIACOES_PARA_ESCALAR:
         decisao = "escalar"

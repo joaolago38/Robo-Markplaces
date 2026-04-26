@@ -6,7 +6,15 @@ from __future__ import annotations
 
 import logging
 
-from core.config import LUCRO_MINIMO_REPRICING_PCT, REPRICING_ABAIXO_CONCORRENTE_PCT
+from core.config import (
+    LUCRO_MINIMO_REPRICING_PCT,
+    REPRICING_ABAIXO_CONCORRENTE_PCT,
+    MARGEM_FASE_1_PCT,
+    MARGEM_FASE_2_PCT,
+    MARGEM_FASE_3_PCT,
+    TAXA_CANAL_PADRAO_PCT,
+    REPRICING_DIFERENCA_MINIMA,
+)
 from core.notificador import alertar_gestor
 from integracoes.bling.bling_client import listar_produtos, buscar_produto
 from integracoes.ml.ml_client import atualizar_preco_item as atualizar_preco_ml
@@ -24,21 +32,51 @@ def _to_float(v, default=0.0) -> float:
         return float(default)
 
 
-def _calcular_preco_min_lucro(custo: float, lucro_minimo_pct: float) -> float:
-    margem = max(0.0, min(99.0, lucro_minimo_pct)) / 100.0
-    return custo / (1 - margem) if custo > 0 else 0.0
+def _margem_minima_por_fase(fase_atual: int | str | None) -> float:
+    fase = str(fase_atual or "1").strip()
+    if fase == "2":
+        return MARGEM_FASE_2_PCT
+    if fase == "3":
+        return MARGEM_FASE_3_PCT
+    return MARGEM_FASE_1_PCT
 
 
-def _calcular_novo_preco(preco_atual: float, custo: float, preco_concorrente: float | None, lucro_minimo_pct: float) -> tuple[float, float]:
-    preco_min_lucro = _calcular_preco_min_lucro(custo, lucro_minimo_pct)
+def _calcular_preco_piso(custo: float, taxa_canal_pct: float, margem_minima_pct: float) -> float:
+    taxa = max(0.0, min(99.0, taxa_canal_pct)) / 100.0
+    margem = max(0.0, min(99.0, margem_minima_pct)) / 100.0
+    denominador = 1 - taxa - margem
+    if custo <= 0 or denominador <= 0:
+        return 0.0
+    return custo / denominador
+
+
+def _faixa_bloqueada(nome: str, preco: float) -> str | None:
+    nome_lower = (nome or "").lower()
+    if ("kit 3" in nome_lower or "kit 4" in nome_lower or "kit 5" in nome_lower) and preco < 22:
+        return "kit 3-5 abaixo de R$22 bloqueado"
+    if ("kit 10" in nome_lower or "kit 12" in nome_lower) and preco < 38:
+        return "kit 10-12 abaixo de R$38 bloqueado"
+    if "alicate" in nome_lower and "kit" in nome_lower and preco < 55:
+        return "bundle alicate+esmalte abaixo de R$55 bloqueado"
+    return None
+
+
+def _calcular_novo_preco(
+    preco_atual: float,
+    custo: float,
+    preco_concorrente: float | None,
+    margem_minima_pct: float,
+    taxa_canal_pct: float,
+) -> tuple[float, float, float]:
+    preco_piso = _calcular_preco_piso(custo, taxa_canal_pct, margem_minima_pct)
     alvo_concorrencia = 0.0
     if preco_concorrente and preco_concorrente > 0:
         alvo_concorrencia = preco_concorrente * (1 - REPRICING_ABAIXO_CONCORRENTE_PCT / 100.0)
 
-    base = max(preco_min_lucro, alvo_concorrencia if alvo_concorrencia > 0 else preco_atual)
+    base = max(preco_piso, alvo_concorrencia if alvo_concorrencia > 0 else preco_atual, custo)
     novo_preco = round(max(0.01, base), 2)
     margem = ((novo_preco - custo) / novo_preco * 100) if novo_preco > 0 else 0.0
-    return novo_preco, margem
+    return novo_preco, margem, round(preco_piso, 2)
 
 
 def _updater(canal: str):
@@ -71,6 +109,10 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
         custo = _to_float(p.get("custo", completo.get("custo", 0.0)))
         if custo <= 0:
             continue
+        nome = p.get("nome") or completo.get("nome") or sku
+        fase_atual = p.get("fase_atual", completo.get("fase_atual", 1))
+        margem_fase = _margem_minima_por_fase(fase_atual)
+        margem_minima = max(lucro_minimo, margem_fase)
 
         canais = p.get("canais", {}) if isinstance(p.get("canais", {}), dict) else {}
         for canal, dados in canais.items():
@@ -78,9 +120,17 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                 continue
             preco_atual = _to_float(dados.get("preco", p.get("preco", 0)))
             preco_concorrente = _to_float(dados.get("preco_concorrente", 0), 0)
+            taxa_canal = _to_float(dados.get("taxa_canal_pct", TAXA_CANAL_PADRAO_PCT), TAXA_CANAL_PADRAO_PCT)
 
-            novo_preco, margem = _calcular_novo_preco(preco_atual, custo, preco_concorrente, lucro_minimo)
-            ajustar = abs(novo_preco - preco_atual) >= 0.05
+            novo_preco, margem, preco_piso = _calcular_novo_preco(
+                preco_atual=preco_atual,
+                custo=custo,
+                preco_concorrente=preco_concorrente,
+                margem_minima_pct=margem_minima,
+                taxa_canal_pct=taxa_canal,
+            )
+            bloqueio = _faixa_bloqueada(nome, novo_preco)
+            ajustar = abs(novo_preco - preco_atual) >= REPRICING_DIFERENCA_MINIMA and not bloqueio
 
             resultado_aplicacao = None
             if ajustar and not dry_run:
@@ -95,11 +145,14 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     "canal": canal,
                     "preco_atual": round(preco_atual, 2),
                     "novo_preco": novo_preco,
+                    "preco_piso": preco_piso,
                     "custo": round(custo, 2),
+                    "fase_atual": str(fase_atual),
+                    "taxa_canal_pct": round(taxa_canal, 2),
                     "margem_pct": round(margem, 2),
                     "ajustar": ajustar,
                     "aplicado": resultado_aplicacao,
-                    "motivo": f"lucro mínimo {lucro_minimo:.1f}% garantido",
+                    "motivo": bloqueio or f"piso por fase {margem_minima:.1f}% + taxa canal {taxa_canal:.1f}%",
                 }
             )
 
