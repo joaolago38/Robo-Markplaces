@@ -3,6 +3,7 @@ integracoes/magalu/magalu_client.py
 Cliente Magalu Seller API para perguntas e respostas.
 """
 import logging
+from datetime import datetime, timedelta, timezone
 
 from core.config import MAGALU_ACCESS_TOKEN, MAGALU_MERCHANT_ID, MAGALU_REFRESH_TOKEN
 from core.http_client import request
@@ -163,3 +164,94 @@ def atualizar_estoque_item(sku: str, novo_estoque: int) -> bool:
     except Exception as exc:
         logger.error("Magalu atualizar_estoque_item erro sku=%s: %s", sku, exc)
         return False
+
+
+def listar_pedidos(dias: int = 7) -> list[dict]:
+    """
+    Lista pedidos recentes via GET /seller/v1/orders.
+    Retorno alinhado ao padrão do ML. Nunca lança exceção.
+    """
+    if not _enabled():
+        logger.warning("Magalu não configurado para listar pedidos.")
+        return []
+    try:
+        r = request(
+            "GET",
+            f"{BASE}/seller/v1/orders",
+            headers=_h(),
+            params={"limit": 50},
+            timeout=25,
+        )
+        if r.status_code == 404:
+            logger.warning("Magalu listar_pedidos: endpoint não encontrado (404).")
+            return []
+        r.raise_for_status()
+        body = r.json() or {}
+        rows = body.get("data") or body.get("items") or body.get("orders") or []
+        if not isinstance(rows, list):
+            return []
+
+        limite = datetime.now(timezone.utc) - timedelta(days=max(1, int(dias)))
+        out: list[dict] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            oid = str(row.get("code") or row.get("id") or row.get("order_id") or "")
+            if not oid:
+                continue
+            created_raw = (
+                row.get("created_at")
+                or row.get("createdAt")
+                or row.get("inserted_at")
+                or row.get("ordered_at")
+            )
+            if created_raw:
+                try:
+                    created = datetime.fromisoformat(str(created_raw).replace("Z", "+00:00"))
+                    if created.tzinfo is None:
+                        created = created.replace(tzinfo=timezone.utc)
+                    if created < limite:
+                        continue
+                except (TypeError, ValueError):
+                    pass
+
+            items_src = row.get("items") or row.get("products") or row.get("order_items") or []
+            itens: list[dict] = []
+            if isinstance(items_src, list):
+                for it in items_src:
+                    if not isinstance(it, dict):
+                        continue
+                    try:
+                        qty = int(it.get("quantity") or it.get("qty") or 1)
+                    except (TypeError, ValueError):
+                        qty = 1
+                    try:
+                        pu = float(it.get("price") or it.get("unit_price") or 0)
+                    except (TypeError, ValueError):
+                        pu = 0.0
+                    itens.append(
+                        {
+                            "sku": str(it.get("sku") or it.get("id") or it.get("product_id") or ""),
+                            "item_id": str(it.get("id") or it.get("product_id") or ""),
+                            "quantidade": qty,
+                            "preco_unitario": pu,
+                        }
+                    )
+            try:
+                total = float(row.get("total") or row.get("amount") or row.get("total_price") or 0)
+            except (TypeError, ValueError):
+                total = 0.0
+
+            out.append(
+                {
+                    "order_id": oid,
+                    "status": str(row.get("status", "paid") or "paid").lower(),
+                    "total": total,
+                    "data": str(created_raw or ""),
+                    "itens": itens,
+                }
+            )
+        return out
+    except Exception as exc:
+        logger.error("Magalu listar_pedidos erro: %s", exc)
+        return []

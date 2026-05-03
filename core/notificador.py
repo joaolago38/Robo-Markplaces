@@ -39,6 +39,29 @@ def alertar_critico(msg: str) -> bool:
     return alertar(f"🚨 CRÍTICO\n{msg}")
 
 
+def notificar_venda_whatsapp(
+    marketplace: str,
+    pedido_id: str,
+    produto: str,
+    valor: float,
+    quantidade: int = 1,
+) -> bool:
+    """Notifica nova venda no WhatsApp (Evolution ou Meta). Nunca lança exceção."""
+    try:
+        from core.whatsapp import notificar_venda
+
+        return notificar_venda(
+            marketplace=marketplace,
+            pedido_id=pedido_id,
+            produto=produto,
+            valor=valor,
+            quantidade=quantidade,
+        )
+    except Exception as exc:
+        logger.error("notificar_venda_whatsapp: %s", exc)
+        return False
+
+
 def _responder_callback(callback_query_id: str, texto: str) -> None:
     """Responde ao callback_query para remover indicador de carregamento do botão."""
     if not TELEGRAM_TOKEN or not callback_query_id:

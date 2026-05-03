@@ -95,6 +95,15 @@ NFE_CSOSN_PADRAO      = os.getenv("NFE_CSOSN_PADRAO", "102")
 NFE_ORIGEM_PADRAO     = os.getenv("NFE_ORIGEM_PADRAO", "0")
 NFE_SERIE_PADRAO      = os.getenv("NFE_SERIE_PADRAO", "1")
 
+# WhatsApp
+WHATSAPP_API_TYPE = os.getenv("WHATSAPP_API_TYPE", "evolution")  # "evolution" ou "meta"
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "")
+WHATSAPP_API_KEY = os.getenv("WHATSAPP_API_KEY", "")
+WHATSAPP_INSTANCE = os.getenv("WHATSAPP_INSTANCE", "")
+WHATSAPP_NUMERO_DESTINO = os.getenv("WHATSAPP_NUMERO_DESTINO") or "5519999889059"
+WHATSAPP_BUSINESS_TOKEN = os.getenv("WHATSAPP_BUSINESS_TOKEN", "")
+WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID", "")
+
 # Regras de negócio
 MARGEM_MINIMA  = float(os.getenv("MARGEM_MINIMA",  str(REGRAS.get("margem_minima_pct", 15.0))))
 ESTOQUE_CRITICO = int(os.getenv("ESTOQUE_CRITICO", str(REGRAS.get("estoque_critico_unidades", 20))))

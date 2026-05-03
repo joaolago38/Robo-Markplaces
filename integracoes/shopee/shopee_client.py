@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import logging
 import time
+from datetime import datetime, timedelta, timezone
 
 from core.config import (
     SHOPEE_ACCESS_TOKEN,
@@ -275,3 +276,134 @@ def atualizar_estoque_item(item_id: int, novo_estoque: int, model_id: int | None
     except Exception as exc:
         logger.error("Shopee atualizar_estoque_item erro item_id=%s: %s", item_id, exc)
         return False
+
+
+def listar_pedidos(dias: int = 7) -> list[dict]:
+    """
+    Lista pedidos recentes (pagos / em processamento).
+    Retorno alinhado ao padrão do ML: order_id, status, total, data, itens.
+    Nunca lança exceção.
+    """
+    if not _enabled():
+        logger.warning("Shopee não configurado para listar pedidos.")
+        return []
+    try:
+        path_list = "/api/v2/order/get_order_list"
+        now = datetime.now(timezone.utc)
+        time_to = int(now.timestamp())
+        time_from = int((now - timedelta(days=max(1, int(dias)))).timestamp())
+        order_sns: list[str] = []
+        cursor: str | None = None
+
+        for _ in range(40):
+            params: dict = {
+                **_params(path_list),
+                "time_range_field": "create_time",
+                "time_from": time_from,
+                "time_to": time_to,
+                "page_size": 50,
+            }
+            if cursor:
+                params["cursor"] = cursor
+            r = request("GET", f"{BASE}{path_list}", params=params, timeout=30)
+            r.raise_for_status()
+            body = r.json()
+            if _tem_erro_api(body):
+                logger.error("Shopee listar_pedidos erro de API: %s", body.get("error"))
+                return []
+            resp = body.get("response") or {}
+            order_list = resp.get("order_list") or []
+            if not isinstance(order_list, list):
+                break
+            for o in order_list:
+                if not isinstance(o, dict):
+                    continue
+                st = str(o.get("order_status", "")).upper()
+                if st in ("UNPAID", "CANCELLED", "IN_CANCEL"):
+                    continue
+                sn = o.get("order_sn")
+                if sn:
+                    order_sns.append(str(sn))
+            has_next = bool(resp.get("more"))
+            next_c = resp.get("next_cursor") or ""
+            if not has_next or not next_c:
+                break
+            cursor = str(next_c)
+
+        if not order_sns:
+            return []
+
+        seen: set[str] = set()
+        unique_sns: list[str] = []
+        for sn in order_sns:
+            if sn not in seen:
+                seen.add(sn)
+                unique_sns.append(sn)
+
+        out: list[dict] = []
+        path_d = "/api/v2/order/get_order_detail"
+        for i in range(0, len(unique_sns), 50):
+            batch = unique_sns[i : i + 50]
+            r2 = request(
+                "POST",
+                f"{BASE}{path_d}",
+                params=_params(path_d),
+                json={"order_sn_list": batch},
+                timeout=40,
+            )
+            r2.raise_for_status()
+            body2 = r2.json()
+            if _tem_erro_api(body2):
+                logger.error("Shopee listar_pedidos detalhe erro: %s", body2.get("error"))
+                continue
+            det = body2.get("response") or {}
+            detail_list = det.get("order_list") or []
+            if not isinstance(detail_list, list):
+                continue
+            for ordem in detail_list:
+                if not isinstance(ordem, dict):
+                    continue
+                sn = str(ordem.get("order_sn", ""))
+                if not sn:
+                    continue
+                try:
+                    total = float(ordem.get("total_amount", 0) or ordem.get("escrow_amount", 0) or 0)
+                except (TypeError, ValueError):
+                    total = 0.0
+                item_list = ordem.get("item_list") or []
+                itens: list[dict] = []
+                if isinstance(item_list, list):
+                    for it in item_list:
+                        if not isinstance(it, dict):
+                            continue
+                        try:
+                            qty = int(it.get("model_quantity_purchased", it.get("quantity", 1)) or 1)
+                        except (TypeError, ValueError):
+                            qty = 1
+                        try:
+                            pu = float(
+                                it.get("model_discounted_price", it.get("model_original_price", 0)) or 0
+                            )
+                        except (TypeError, ValueError):
+                            pu = 0.0
+                        itens.append(
+                            {
+                                "sku": str(it.get("item_sku", "") or ""),
+                                "item_id": str(it.get("item_id", "") or ""),
+                                "quantidade": qty,
+                                "preco_unitario": pu,
+                            }
+                        )
+                out.append(
+                    {
+                        "order_id": sn,
+                        "status": str(ordem.get("order_status", "paid")).lower(),
+                        "total": total,
+                        "data": str(ordem.get("create_time", "")),
+                        "itens": itens,
+                    }
+                )
+        return out
+    except Exception as exc:
+        logger.error("Shopee listar_pedidos erro: %s", exc)
+        return []

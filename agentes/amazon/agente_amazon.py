@@ -43,4 +43,12 @@ def processar_mensagens() -> int:
 
 def executar() -> dict:
     logger.info("=== Agente Amazon iniciado ===")
-    return {"respostas": processar_mensagens()}
+    respostas = processar_mensagens()
+    vendas_wpp: dict = {}
+    try:
+        from agentes.vendas_notificador import notificar_pedidos_novos_marketplace
+
+        vendas_wpp = notificar_pedidos_novos_marketplace("amazon")
+    except Exception as exc:
+        logger.error("Notificação vendas WhatsApp (Amazon): %s", exc)
+    return {"respostas": respostas, "vendas_whatsapp": vendas_wpp}
