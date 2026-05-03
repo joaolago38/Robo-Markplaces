@@ -18,7 +18,7 @@ from core.config import (
     BUDGET_FASE_CRESCIMENTO,
     BUDGET_FASE_ESCALA,
 )
-from integracoes.ml.ml_client import buscar_reputacao_vendedor
+from integracoes.ml.ml_client import buscar_reputacao_vendedor, buscar_acos_ads
 
 logger = logging.getLogger("agente_ads_gatilho")
 
@@ -96,8 +96,10 @@ def avaliar_momento_ads(
     return resultado
 
 
-def executar(acos_atual: float = 0.0, full_ativo: bool = False) -> dict:
+def executar(item_id: str = "", acos_atual: float = 0.0, full_ativo: bool = False) -> dict:
     rep = buscar_reputacao_vendedor()
+    if item_id and acos_atual == 0.0:
+        acos_atual = buscar_acos_ads(item_id)
     metrics = rep.get("metrics", {})
     avaliacoes = int(metrics.get("total_ratings", 0))
     nota = float(metrics.get("average_rating", 0.0))

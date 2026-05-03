@@ -21,7 +21,7 @@
     "peso_gramas": 350,
     "caixa_caixasnet": "S20-16x11x10",
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 44.90, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 44.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -47,7 +47,7 @@
     "peso_gramas": 530,
     "caixa_caixasnet": "S20-16x11x10",
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 48.90, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 48.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -73,7 +73,7 @@
     "peso_gramas": 620,
     "caixa_caixasnet": "S03-31x20x11.5",
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 49.90, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 49.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -99,7 +99,7 @@
     "peso_gramas": 1000,
     "caixa_caixasnet": "S03-31x20x11.5",
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 69.90, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 69.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -125,7 +125,7 @@
     "peso_gramas": 1400,
     "caixa_caixasnet": "S03-31x20x11.5",
     "canais": {
-      "mercadolivre": {"ativo": false, "preco": 79.90, "estoque": 0},
+      "mercadolivre": {"ativo": false, "item_id": "MLB_PREENCHER", "preco": 79.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -151,7 +151,7 @@
     "peso_gramas": 2800,
     "caixa_caixasnet": "Buscar-ML-32x19x21",
     "canais": {
-      "mercadolivre": {"ativo": false, "preco": 145.00, "estoque": 0},
+      "mercadolivre": {"ativo": false, "item_id": "MLB_PREENCHER", "preco": 145.00, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -167,7 +167,7 @@
     "preco": 49.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 49.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 49.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -185,7 +185,7 @@
     "preco": 59.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 59.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 59.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -203,7 +203,7 @@
     "preco": 46.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 46.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 46.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -220,7 +220,7 @@
     "preco": 69.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 69.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 69.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -237,7 +237,7 @@
     "preco": 119.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 119.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 119.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -254,7 +254,7 @@
     "preco": 79.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "preco": 79.90, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 79.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
