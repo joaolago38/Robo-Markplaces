@@ -11,7 +11,16 @@ from werkzeug.exceptions import BadRequest
 
 from core.claude_client import responder_chat, gerar_post, perguntar
 from core.notificador import alertar, alertar_critico, alertar_gestor
-from core.config import MARGEM_MINIMA, ESTOQUE_CRITICO
+from core.config import (
+    MARGEM_MINIMA,
+    ESTOQUE_CRITICO,
+    REPRICING_ABAIXO_CONCORRENTE_PCT,
+    REPRICING_DIFERENCA_MINIMA,
+    TAXA_CANAL_PADRAO_PCT,
+    MARGEM_FASE_1_PCT,
+    MARGEM_FASE_2_PCT,
+    MARGEM_FASE_3_PCT,
+)
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
@@ -65,6 +74,14 @@ def _selecionar_melhor_por_margem(produtos: list[dict]) -> dict | None:
         return (margem_pct, preco)
 
     return max(elegiveis, key=score)
+
+
+def _margem_fase(fase: int) -> float:
+    if fase == 2:
+        return MARGEM_FASE_2_PCT
+    if fase == 3:
+        return MARGEM_FASE_3_PCT
+    return MARGEM_FASE_1_PCT
 
 # ============================================================
 # HEALTH CHECK — n8n usa para verificar se o servidor está vivo
@@ -179,33 +196,50 @@ def repricing():
     if not sku or preco_atual <= 0 or custo <= 0 or preco_concorrente <= 0:
         return jsonify({"ok": False, "erro": "campos obrigatórios: sku, preco_atual, custo, preco_concorrente"}), 400
 
-    preco_alvo = preco_concorrente * 1.05  # 5% acima do concorrente
-    margem     = (preco_alvo - custo) / preco_alvo * 100 if preco_alvo > 0 else 0
+    fase = int(dados.get("fase", 1) or 1)
+    taxa_canal_pct, erro_taxa = _parse_float(dados.get("taxa_canal_pct", TAXA_CANAL_PADRAO_PCT), "taxa_canal_pct")
+    if erro_taxa:
+        return jsonify({"ok": False, "erro": erro_taxa}), 400
+    margem_minima = max(MARGEM_MINIMA, _margem_fase(fase))
 
-    logger.info(f"[REPRICING] {sku} | atual={preco_atual} | concorrente={preco_concorrente} | alvo={preco_alvo:.2f} | margem={margem:.1f}%")
+    # Estratégia: entrar 3% abaixo do concorrente quando viável, respeitando piso absoluto.
+    preco_concorrencia = preco_concorrente * (1 - REPRICING_ABAIXO_CONCORRENTE_PCT / 100.0)
+    denominador = 1 - (taxa_canal_pct / 100.0) - (margem_minima / 100.0)
+    preco_piso = custo / denominador if denominador > 0 else custo
+    preco_alvo = max(preco_concorrencia, preco_piso, custo)
+    margem = (preco_alvo - custo) / preco_alvo * 100 if preco_alvo > 0 else 0
+
+    logger.info(
+        f"[REPRICING] {sku} | fase={fase} | atual={preco_atual} | concorrente={preco_concorrente} | "
+        f"alvo={preco_alvo:.2f} | piso={preco_piso:.2f} | margem={margem:.1f}%"
+    )
 
     # Contrato: NÃO DEVE baixar abaixo da margem mínima
-    if margem < MARGEM_MINIMA:
+    if margem < margem_minima:
         alertar_critico(
             f"Repricing bloqueado: {sku}\n"
             f"Concorrente: R$ {preco_concorrente:.2f} (possível dumping)\n"
-            f"Margem resultante seria {margem:.1f}% — abaixo do mínimo de {MARGEM_MINIMA}%"
+            f"Margem resultante seria {margem:.1f}% — abaixo do mínimo de {margem_minima}%"
         )
         return jsonify({
             "ajustar":  False,
-            "motivo":   f"margem {margem:.1f}% abaixo do mínimo {MARGEM_MINIMA}%",
+            "motivo":   f"margem {margem:.1f}% abaixo do mínimo {margem_minima}%",
             "alertado": True,
         })
 
-    # Só ajusta se a diferença for significativa (mais de R$ 0.10)
-    if abs(preco_alvo - preco_atual) <= 0.10:
+    if preco_alvo < custo:
+        return jsonify({"ajustar": False, "motivo": "bloqueado: abaixo do custo"})
+
+    # Só ajusta se a diferença for significativa (>= R$ 0,50).
+    if abs(preco_alvo - preco_atual) < REPRICING_DIFERENCA_MINIMA:
         return jsonify({"ajustar": False, "motivo": "diferença insignificante"})
 
     return jsonify({
         "ajustar":    True,
         "novo_preco": round(preco_alvo, 2),
+        "preco_piso": round(preco_piso, 2),
         "margem_pct": round(margem, 1),
-        "motivo":     f"5% acima do concorrente R$ {preco_concorrente:.2f}",
+        "motivo":     f"{REPRICING_ABAIXO_CONCORRENTE_PCT:.0f}% abaixo do concorrente quando viável, com piso da fase",
     })
 
 

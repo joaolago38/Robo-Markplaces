@@ -103,10 +103,18 @@ def verificar_reputacao():
 def executar():
     logger.info("Agente ML iniciado")
 
-    return {
+    out = {
         "chat": ciclo_chat(),
-        "reputacao": verificar_reputacao()
+        "reputacao": verificar_reputacao(),
     }
+    try:
+        from agentes.vendas_notificador import notificar_pedidos_novos_marketplace
+
+        out["vendas_whatsapp"] = notificar_pedidos_novos_marketplace("mercadolivre")
+    except Exception as exc:
+        logger.error("Notificação vendas WhatsApp (ML): %s", exc)
+        out["vendas_whatsapp"] = {}
+    return out
 if __name__ == "__main__":
     resultado = executar()
     print(resultado)

@@ -47,4 +47,12 @@ def responder_perguntas():
 
 
 def executar() -> dict:
-    return {"respostas": responder_perguntas()}
+    respostas = responder_perguntas()
+    vendas_wpp: dict = {}
+    try:
+        from agentes.vendas_notificador import notificar_pedidos_novos_marketplace
+
+        vendas_wpp = notificar_pedidos_novos_marketplace("shopee")
+    except Exception as exc:
+        logger.error("Notificação vendas WhatsApp (Shopee): %s", exc)
+    return {"respostas": respostas, "vendas_whatsapp": vendas_wpp}

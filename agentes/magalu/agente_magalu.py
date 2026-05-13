@@ -73,8 +73,15 @@ def executar():
 
     resultado = {
         "respostas": processar_perguntas(),
-        "metricas": monitorar_metricas()
+        "metricas": monitorar_metricas(),
     }
+    try:
+        from agentes.vendas_notificador import notificar_pedidos_novos_marketplace
+
+        resultado["vendas_whatsapp"] = notificar_pedidos_novos_marketplace("magalu")
+    except Exception as exc:
+        logger.error("Notificação vendas WhatsApp (Magalu): %s", exc)
+        resultado["vendas_whatsapp"] = {}
 
     logger.info(f"Resultado Magalu: {resultado}")
 

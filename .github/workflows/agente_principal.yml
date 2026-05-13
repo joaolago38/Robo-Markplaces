@@ -26,6 +26,7 @@ on:
           - testes
           - relatorio
           - chat
+          - vendas_whatsapp
           - algoritmo
 
 env:
@@ -129,6 +130,55 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+
+  vendas_whatsapp:
+    name: Notificações de vendas WhatsApp
+    runs-on: ubuntu-latest
+    needs: qualidade
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '*/30 11-23 * * *') ||
+      github.event.inputs.rotina == 'todos' ||
+      github.event.inputs.rotina == 'vendas_whatsapp'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Notificar vendas no WhatsApp
+        run: python -c "from agentes.vendas_notificador import executar; print(executar())"
+        env:
+          WHATSAPP_API_TYPE: ${{ secrets.WHATSAPP_API_TYPE }}
+          WHATSAPP_API_URL: ${{ secrets.WHATSAPP_API_URL }}
+          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
+          WHATSAPP_INSTANCE: ${{ secrets.WHATSAPP_INSTANCE }}
+          WHATSAPP_NUMERO_DESTINO: ${{ secrets.WHATSAPP_NUMERO_DESTINO }}
+          WHATSAPP_BUSINESS_TOKEN: ${{ secrets.WHATSAPP_BUSINESS_TOKEN }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
+          MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
+          MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
+          MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
+          AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}
+          AMAZON_REFRESH_TOKEN: ${{ secrets.AMAZON_REFRESH_TOKEN }}
+          AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
+          AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   algoritmo_marketplaces:
     name: Saúde e algoritmo marketplaces
