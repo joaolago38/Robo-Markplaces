@@ -1,0 +1,126 @@
+"""
+tests/test_ml_client.py — ML01–ML13
+"""
+import os
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from integracoes.ml import ml_client
+
+
+def _mock_resp(body: dict) -> MagicMock:
+    r = MagicMock()
+    r.raise_for_status = MagicMock()
+    r.json.return_value = body
+    return r
+
+
+class TestMlClient(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._patch = patch.multiple(
+            ml_client,
+            ML_ACCESS_TOKEN="tok",
+            ML_SELLER_ID="111",
+        )
+        cls._patch.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._patch.stop()
+
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML01_listar_perguntas_sucesso(self, _mock_en, mock_request):
+        mock_request.return_value = _mock_resp({"questions": [{"id": "q1", "text": "Tem frete?"}]})
+        out = ml_client.listar_perguntas_nao_respondidas()
+        self.assertEqual(out, [{"id": "q1", "text": "Tem frete?"}])
+
+    @patch.object(ml_client, "_enabled", return_value=False)
+    def test_ML02_listar_perguntas_nao_configurado(self, *_patches):
+        self.assertEqual(ml_client.listar_perguntas_nao_respondidas(), [])
+
+    @patch.object(ml_client, "request", side_effect=Exception("boom"))
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML03_listar_perguntas_excecao(self, *_patches):
+        self.assertEqual(ml_client.listar_perguntas_nao_respondidas(), [])
+
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML04_responder_pergunta_sucesso(self, _mock_en, mock_request):
+        mock_request.return_value = _mock_resp({})
+        self.assertTrue(ml_client.responder_pergunta("q1", "Sim, temos!"))
+
+    @patch.object(ml_client, "request", side_effect=Exception("boom"))
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML05_responder_pergunta_excecao(self, *_patches):
+        self.assertFalse(ml_client.responder_pergunta("q1", "texto"))
+
+    @patch.object(ml_client, "_enabled", return_value=False)
+    def test_ML06_responder_pergunta_nao_configurado(self, *_patches):
+        self.assertFalse(ml_client.responder_pergunta("q1", "texto"))
+
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML07_buscar_reputacao(self, _mock_en, mock_request):
+        mock_request.return_value = _mock_resp({"seller_reputation": {"level_id": "5_green"}})
+        rep = ml_client.buscar_reputacao_vendedor()
+        self.assertEqual(rep.get("level_id"), "5_green")
+
+    @patch.object(ml_client, "request", side_effect=Exception("boom"))
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML08_buscar_reputacao_excecao(self, *_patches):
+        self.assertEqual(ml_client.buscar_reputacao_vendedor(), {})
+
+    @patch.object(ml_client, "dias_sem_acesso", return_value=0)
+    @patch.object(ml_client, "registrar_acesso")
+    @patch.object(ml_client, "listar_perguntas_nao_respondidas", return_value=[])
+    @patch.object(ml_client, "buscar_reputacao_vendedor", return_value={})
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML09_obter_saude_conta(self, *_patches):
+        saude = ml_client.obter_saude_conta()
+        self.assertIn("configurado", saude)
+        self.assertTrue(saude["configurado"])
+
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML10_atualizar_preco_sucesso(self, _mock_en, mock_request):
+        mock_request.return_value = _mock_resp({})
+        self.assertTrue(ml_client.atualizar_preco_item("MLB123", 59.90))
+
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML11_atualizar_estoque_sucesso(self, _mock_en, mock_request):
+        mock_request.return_value = _mock_resp({})
+        self.assertTrue(ml_client.atualizar_estoque_item("MLB123", 50))
+
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML12_listar_pedidos(self, _mock_en, mock_request):
+        mock_request.return_value = _mock_resp({"results": [{"id": "1", "status": "paid"}]})
+        pedidos = ml_client.listar_pedidos()
+        self.assertGreaterEqual(len(pedidos), 1)
+
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML13_buscar_menor_preco_concorrente_float(self, _mock_en, mock_request):
+        item_body = {"catalog_product_id": "CAT1"}
+        concorrentes = {
+            "results": [
+                {"seller_id": 999, "price": 45.90},
+                {"seller_id": 888, "price": 50.0},
+            ]
+        }
+        mock_request.side_effect = [
+            _mock_resp(item_body),
+            _mock_resp(concorrentes),
+        ]
+        preco = ml_client.buscar_menor_preco_concorrente("MLB123")
+        self.assertIsInstance(preco, float)
+
+
+if __name__ == "__main__":
+    unittest.main()
