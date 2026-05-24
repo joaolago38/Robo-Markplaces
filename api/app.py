@@ -196,6 +196,18 @@ def repricing():
     if not sku or preco_atual <= 0 or custo <= 0 or preco_concorrente <= 0:
         return jsonify({"ok": False, "erro": "campos obrigatórios: sku, preco_atual, custo, preco_concorrente"}), 400
 
+    # Contrato: DEVE detectar e alertar dumping (preco_concorrente < custo)
+    if preco_concorrente < custo:
+        alertar_critico(
+            f"Dumping detectado: {sku}\n"
+            f"Concorrente R$ {preco_concorrente:.2f} abaixo do custo R$ {custo:.2f}"
+        )
+        return jsonify({
+            "ajustar":  False,
+            "motivo":   f"dumping: concorrente R$ {preco_concorrente:.2f} abaixo do custo R$ {custo:.2f}",
+            "alertado": True,
+        })
+
     fase = int(dados.get("fase", 1) or 1)
     taxa_canal_pct, erro_taxa = _parse_float(dados.get("taxa_canal_pct", TAXA_CANAL_PADRAO_PCT), "taxa_canal_pct")
     if erro_taxa:
