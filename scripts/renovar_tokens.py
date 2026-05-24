@@ -145,6 +145,116 @@ def _renovar_bling() -> dict:
         return {"ok": False, "motivo": str(exc)}
 
 
+# ── Retry com backoff ──────────────────────────────────────────────────────
+MAX_TENTATIVAS   = 3
+BACKOFF_SEGUNDOS = [0, 30, 90]
+
+
+def _renovar_bling_com_retry() -> dict:
+    import time
+    erros: list[str] = []
+    for tentativa in range(MAX_TENTATIVAS):
+        espera = BACKOFF_SEGUNDOS[tentativa]
+        if espera > 0:
+            print(f"  [retry] aguardando {espera}s antes da tentativa {tentativa + 1}/{MAX_TENTATIVAS}...")
+            time.sleep(espera)
+        res = _renovar_bling()
+        if res["ok"]:
+            if tentativa > 0:
+                print(f"  [retry] sucesso na tentativa {tentativa + 1}")
+            return res
+        erros.append(f"tent.{tentativa + 1}: {res['motivo']}")
+        print(f"  [retry] falhou — {res['motivo']}")
+    return {
+        "ok":         False,
+        "motivo":     " | ".join(erros),
+        "tentativas": MAX_TENTATIVAS,
+    }
+
+
+# ── Contador de falhas consecutivas ───────────────────────────────────────
+FALHAS_LOG = ROOT / "logs" / "renovacao_falhas.json"
+
+
+def _contar_falhas_consecutivas() -> int:
+    try:
+        import json as _json
+        if FALHAS_LOG.exists():
+            return _json.loads(FALHAS_LOG.read_text(encoding="utf-8")).get("bling", 0)
+    except Exception:
+        pass
+    return 0
+
+
+def _registrar_falha() -> int:
+    import json as _json
+    from datetime import datetime as _dt
+    try:
+        FALHAS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        atual = _contar_falhas_consecutivas()
+        novo  = atual + 1
+        FALHAS_LOG.write_text(
+            _json.dumps({"bling": novo, "ultima_falha": _dt.now().isoformat()}),
+            encoding="utf-8",
+        )
+        return novo
+    except Exception:
+        return 1
+
+
+def _registrar_sucesso() -> None:
+    import json as _json
+    try:
+        FALHAS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        FALHAS_LOG.write_text(
+            _json.dumps({"bling": 0, "ultima_falha": None}),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+
+# ── Alerta escalonado ──────────────────────────────────────────────────────
+
+def _alertar_falha_bling(motivo: str, falhas_consecutivas: int) -> None:
+    """
+    1-2  falhas → alertar()         aviso simples
+    3-5  falhas → alertar_gestor()  1h30 sem renovar
+    6+   falhas → alertar_critico() 3h+ sem renovar
+    """
+    try:
+        from core.notificador import alertar, alertar_critico, alertar_gestor
+
+        tempo_sem = falhas_consecutivas * 30
+        expira_em = max(0, 360 - tempo_sem)
+
+        msg = (
+            f"♻️ *Renovação Bling — "
+            f"{'CRÍTICO' if falhas_consecutivas >= 6 else 'Atenção'}*\n\n"
+            f"Falhas consecutivas: {falhas_consecutivas}×\n"
+            f"Sem renovar há: ~{tempo_sem} minutos\n"
+            f"Token expira em: ~{expira_em} minutos\n\n"
+            f"Motivo: `{motivo[:200]}`\n\n"
+        )
+
+        if falhas_consecutivas >= 6:
+            msg += (
+                "🚨 *Token pode expirar em breve!*\n"
+                "Acesse: github.com/joaolago38/Robo-Markplaces/actions\n"
+                "→ _Renovar tokens marketplace_ → *Run workflow*"
+            )
+            alertar_critico(msg)
+        elif falhas_consecutivas >= 3:
+            msg += "⚠️ Verifique se o Bling ou o GitHub Actions estão com problemas."
+            alertar_gestor(msg)
+        else:
+            msg += "_Tentando novamente em 30 minutos._"
+            alertar(msg)
+
+    except Exception as exc:
+        print(f"  [alerta] falha ao enviar Telegram: {exc}")
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # Main
 # ══════════════════════════════════════════════════════════════════════════
@@ -170,9 +280,10 @@ def main() -> int:
 
     # ── Bling ────────────────────────────────────────────────────────────
     print("\n[Bling]")
-    res = _renovar_bling()
+    res = _renovar_bling_com_retry()
     if res["ok"]:
         print(f"  Token renovado — expira em {res['expires_in']}s")
+        _registrar_sucesso()
         if pub_key_id:
             _salvar_secret("BLING_ACCESS_TOKEN",  res["access_token"],  pub_key_id, pub_key_b64)
             _salvar_secret("BLING_REFRESH_TOKEN", res["refresh_token"], pub_key_id, pub_key_b64)
@@ -181,7 +292,9 @@ def main() -> int:
             BLING_REFRESH_TOKEN=res["refresh_token"],
         )
     else:
-        print(f"  FALHOU: {res['motivo']}")
+        falhas = _registrar_falha()
+        print(f"  FALHOU ({falhas}× consecutiva(s)): {res['motivo']}")
+        _alertar_falha_bling(res["motivo"], falhas)
         exit_code = 1
 
     # ── ML / Shopee / Magalu — delega ao token_manager existente ─────────
