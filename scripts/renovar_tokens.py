@@ -23,18 +23,14 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# ── Variáveis de ambiente injetadas pelo workflow ──────────────────────────
-GH_TOKEN = os.getenv("GH_TOKEN", "")           # secrets.GITHUB_TOKEN
-GH_REPO  = os.getenv("GITHUB_REPOSITORY", "")  # ex: joaolago38/Robo-Markplaces
-
-
 # ══════════════════════════════════════════════════════════════════════════
 # GitHub Secrets API
 # ══════════════════════════════════════════════════════════════════════════
 
 def _gh_headers() -> dict:
+    token = os.getenv("GH_TOKEN", "")
     return {
-        "Authorization":        f"Bearer {GH_TOKEN}",
+        "Authorization":        f"Bearer {token}",
         "Accept":               "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
@@ -42,7 +38,8 @@ def _gh_headers() -> dict:
 
 def _get_public_key() -> dict:
     """Retorna {"key_id": str, "key": str (base64)} do repositório."""
-    url = f"https://api.github.com/repos/{GH_REPO}/actions/secrets/public-key"
+    repo = os.getenv("GITHUB_REPOSITORY", "")
+    url = f"https://api.github.com/repos/{repo}/actions/secrets/public-key"
     r = requests.get(url, headers=_gh_headers(), timeout=10)
     r.raise_for_status()
     return r.json()
@@ -61,7 +58,9 @@ def _encrypt_secret(public_key_b64: str, secret_value: str) -> str:
 
 def _salvar_secret(nome: str, valor: str, key_id: str, pub_key_b64: str) -> bool:
     """Salva (ou atualiza) um Secret no repositório GitHub."""
-    if not GH_TOKEN or not GH_REPO:
+    gh_token = os.getenv("GH_TOKEN", "")
+    gh_repo  = os.getenv("GITHUB_REPOSITORY", "")
+    if not gh_token or not gh_repo:
         print(f"    [aviso] GH_TOKEN/GITHUB_REPOSITORY ausentes — {nome} nao salvo")
         return False
     if not valor:
@@ -69,7 +68,7 @@ def _salvar_secret(nome: str, valor: str, key_id: str, pub_key_b64: str) -> bool
         return False
     try:
         encrypted = _encrypt_secret(pub_key_b64, valor)
-        url = f"https://api.github.com/repos/{GH_REPO}/actions/secrets/{nome}"
+        url = f"https://api.github.com/repos/{gh_repo}/actions/secrets/{nome}"
         r = requests.put(
             url,
             headers=_gh_headers(),
@@ -90,10 +89,13 @@ def _atualizar_github_env(**kwargs: str) -> None:
     env_file = os.getenv("GITHUB_ENV", "")
     if not env_file:
         return
-    with open(env_file, "a", encoding="utf-8") as f:
-        for nome, valor in kwargs.items():
-            if valor:
-                f.write(f"{nome}={valor}\n")
+    try:
+        with open(env_file, "a", encoding="utf-8") as f:
+            for nome, valor in kwargs.items():
+                if valor:
+                    f.write(f"{nome}={valor}\n")
+    except OSError:
+        pass
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -157,7 +159,7 @@ def main() -> int:
     # Obtém chave pública do repo para salvar Secrets
     pub_key_id  = ""
     pub_key_b64 = ""
-    if GH_TOKEN and GH_REPO:
+    if os.getenv("GH_TOKEN") and os.getenv("GITHUB_REPOSITORY"):
         try:
             pk = _get_public_key()
             pub_key_id  = pk["key_id"]

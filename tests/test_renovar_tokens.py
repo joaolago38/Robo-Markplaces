@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 def _carregar_script_com_env(env: dict | None = None):
     """
-    Recarrega o módulo scripts.renovar_tokens já com as variáveis de ambiente
-    desejadas. Necessário porque GH_TOKEN/GH_REPO são lidas na importação.
+    Recarrega scripts.renovar_tokens com env mockado ativo durante os testes.
+    O patch permanece ligado até a próxima chamada (os.getenv é lido na chamada).
     """
     env = env or {}
     base = {
@@ -36,12 +36,17 @@ def _carregar_script_com_env(env: dict | None = None):
         "GITHUB_ENV":         "",
     }
     base.update(env)
-    with patch.dict(os.environ, base, clear=False):
-        if "scripts.renovar_tokens" in sys.modules:
-            mod = importlib.reload(sys.modules["scripts.renovar_tokens"])
-        else:
-            import scripts.renovar_tokens as mod  # noqa: WPS433
-        return mod
+    patcher = patch.dict(os.environ, base, clear=False)
+    anterior = getattr(_carregar_script_com_env, "_patcher", None)
+    if anterior is not None:
+        anterior.stop()
+    patcher.start()
+    _carregar_script_com_env._patcher = patcher
+    if "scripts.renovar_tokens" in sys.modules:
+        mod = importlib.reload(sys.modules["scripts.renovar_tokens"])
+    else:
+        import scripts.renovar_tokens as mod  # noqa: WPS433
+    return mod
 
 
 def _mock_resp(status: int = 200, body: dict | None = None) -> MagicMock:
