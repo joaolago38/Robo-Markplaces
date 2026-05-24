@@ -417,6 +417,9 @@ class TestMainOrquestracao(unittest.TestCase):
                  "ok": False, "motivo": "credenciais ausentes"
              }), \
              patch.object(mod, "_salvar_secret", return_value=True), \
+             patch.object(mod, "_alertar_falha_bling"), \
+             patch.object(mod, "_registrar_falha", return_value=1), \
+             patch("time.sleep"), \
              patch(
                  "core.token_manager.renovar_todos_tokens",
                  return_value={
