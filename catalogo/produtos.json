@@ -21,7 +21,7 @@
     "peso_gramas": 350,
     "caixa_caixasnet": "S20-16x11x10",
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 44.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure Profissional", "categoria_ml": "MLB1430", "preco": 44.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -47,7 +47,7 @@
     "peso_gramas": 530,
     "caixa_caixasnet": "S20-16x11x10",
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 48.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 5 Esmaltes Impala Bailarina Manicure Cores Sortidas", "categoria_ml": "MLB1430", "preco": 48.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -73,7 +73,7 @@
     "peso_gramas": 620,
     "caixa_caixasnet": "S03-31x20x11.5",
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 49.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 6 Esmaltes Impala Sortidos Cores da Moda Manicure", "categoria_ml": "MLB1430", "preco": 49.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -99,7 +99,7 @@
     "peso_gramas": 1000,
     "caixa_caixasnet": "S03-31x20x11.5",
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 69.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 10 Esmaltes Impala Atacado Manicure Profissional", "categoria_ml": "MLB1430", "preco": 69.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -125,7 +125,7 @@
     "peso_gramas": 1400,
     "caixa_caixasnet": "S03-31x20x11.5",
     "canais": {
-      "mercadolivre": {"ativo": false, "item_id": "MLB_PREENCHER", "preco": 79.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": false, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 15 Esmaltes Impala Cores da Moda Manicure Atacado", "categoria_ml": "MLB1430", "preco": 79.90, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -151,7 +151,7 @@
     "peso_gramas": 2800,
     "caixa_caixasnet": "Buscar-ML-32x19x21",
     "canais": {
-      "mercadolivre": {"ativo": false, "item_id": "MLB_PREENCHER", "preco": 145.00, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": false, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 30 Esmaltes Impala Atacado Classico Manicure", "categoria_ml": "MLB1430", "preco": 145.00, "preco_concorrente": 0.0, "estoque": 0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -167,7 +167,7 @@
     "preco": 49.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 49.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 10 Esmaltes Impala Vermelho e Rosa Manicure", "categoria_ml": "MLB1430", "preco": 49.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -185,7 +185,7 @@
     "preco": 59.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 59.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 12 Esmaltes Impala Classicos Profissional Manicure", "categoria_ml": "MLB1430", "preco": 59.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -203,7 +203,7 @@
     "preco": 46.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 46.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 10 Esmaltes Impala Nude e Claro Manicure", "categoria_ml": "MLB1430", "preco": 46.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -220,7 +220,7 @@
     "preco": 69.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 69.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 15 Esmaltes Impala Sortidos Manicure Atacado", "categoria_ml": "MLB1430", "preco": 69.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -237,7 +237,7 @@
     "preco": 119.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 119.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 30 Esmaltes Impala Atacado Manicure Profissional", "categoria_ml": "MLB1430", "preco": 119.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}
@@ -254,7 +254,7 @@
     "preco": 79.90,
     "estoque_total": 0,
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "preco": 79.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit Alicate Manicure Mundial 777 + 5 Esmaltes Impala", "categoria_ml": "MLB5422", "preco": 79.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "amazon": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "magalu": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0, "taxa_canal_pct": 18.0}

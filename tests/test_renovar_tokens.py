@@ -417,6 +417,9 @@ class TestMainOrquestracao(unittest.TestCase):
                  "ok": False, "motivo": "credenciais ausentes"
              }), \
              patch.object(mod, "_salvar_secret", return_value=True), \
+             patch.object(mod, "_alertar_falha_bling"), \
+             patch.object(mod, "_registrar_falha", return_value=1), \
+             patch("time.sleep"), \
              patch(
                  "core.token_manager.renovar_todos_tokens",
                  return_value={
@@ -487,6 +490,129 @@ class TestMainOrquestracao(unittest.TestCase):
              ):
             exit_code = mod.main()
         self.assertEqual(exit_code, 1)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# RT26–RT36 — retry, contador de falhas e alerta escalonado
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestRenovarBlingComRetry(unittest.TestCase):
+
+    def _env(self):
+        return {"BLING_CLIENT_ID": "cid", "BLING_CLIENT_SECRET": "csec", "BLING_REFRESH_TOKEN": "ref"}
+
+    def test_RT26_sucesso_na_segunda_tentativa(self):
+        mod = _carregar_script_com_env(self._env())
+        respostas = [
+            {"ok": False, "motivo": "timeout"},
+            {"ok": True, "access_token": "ACC", "refresh_token": "REF", "expires_in": 21600},
+        ]
+        with patch.object(mod, "_renovar_bling", side_effect=respostas), patch("time.sleep"):
+            res = mod._renovar_bling_com_retry()
+        self.assertTrue(res["ok"])
+        self.assertEqual(res["access_token"], "ACC")
+
+    def test_RT27_todas_tentativas_falham(self):
+        mod = _carregar_script_com_env(self._env())
+        with patch.object(mod, "_renovar_bling", return_value={"ok": False, "motivo": "offline"}), \
+             patch("time.sleep"):
+            res = mod._renovar_bling_com_retry()
+        self.assertFalse(res["ok"])
+        self.assertEqual(res["tentativas"], 3)
+        self.assertIn("offline", res["motivo"])
+
+    def test_RT28_sucesso_imediato_nao_chama_sleep(self):
+        mod = _carregar_script_com_env(self._env())
+        ok = {"ok": True, "access_token": "T", "refresh_token": "R", "expires_in": 21600}
+        with patch.object(mod, "_renovar_bling", return_value=ok), patch("time.sleep") as ms:
+            mod._renovar_bling_com_retry()
+        ms.assert_not_called()
+
+    def test_RT29_historico_de_erros_no_motivo(self):
+        mod = _carregar_script_com_env(self._env())
+        erros = [
+            {"ok": False, "motivo": "erro_a"},
+            {"ok": False, "motivo": "erro_b"},
+            {"ok": False, "motivo": "erro_c"},
+        ]
+        with patch.object(mod, "_renovar_bling", side_effect=erros), patch("time.sleep"):
+            res = mod._renovar_bling_com_retry()
+        for e in ["erro_a", "erro_b", "erro_c"]:
+            self.assertIn(e, res["motivo"])
+
+
+class TestContadorFalhasConsecutivas(unittest.TestCase):
+
+    def _mod_tmp(self, tmp):
+        from pathlib import Path
+        mod = _carregar_script_com_env({})
+        mod.FALHAS_LOG = Path(tmp) / "logs" / "renovacao_falhas.json"
+        return mod
+
+    def test_RT30_registrar_falha_incrementa(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            mod = self._mod_tmp(tmp)
+            self.assertEqual(mod._registrar_falha(), 1)
+            self.assertEqual(mod._registrar_falha(), 2)
+
+    def test_RT31_registrar_sucesso_zera(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            mod = self._mod_tmp(tmp)
+            mod._registrar_falha()
+            mod._registrar_falha()
+            mod._registrar_sucesso()
+            self.assertEqual(mod._contar_falhas_consecutivas(), 0)
+
+    def test_RT32_sem_arquivo_retorna_zero(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            mod = self._mod_tmp(tmp)
+            self.assertEqual(mod._contar_falhas_consecutivas(), 0)
+
+
+class TestAlertarFalhaBling(unittest.TestCase):
+
+    def _mod(self):
+        return _carregar_script_com_env({})
+
+    def test_RT33_uma_falha_alerta_simples(self):
+        mod = self._mod()
+        with patch("core.notificador.alertar") as ma, \
+             patch("core.notificador.alertar_gestor") as mg, \
+             patch("core.notificador.alertar_critico") as mc:
+            mod._alertar_falha_bling("timeout", falhas_consecutivas=1)
+        ma.assert_called_once()
+        mg.assert_not_called()
+        mc.assert_not_called()
+
+    def test_RT34_tres_falhas_alerta_gestor(self):
+        mod = self._mod()
+        with patch("core.notificador.alertar") as ma, \
+             patch("core.notificador.alertar_gestor") as mg, \
+             patch("core.notificador.alertar_critico") as mc:
+            mod._alertar_falha_bling("offline", falhas_consecutivas=3)
+        mg.assert_called_once()
+        mc.assert_not_called()
+
+    def test_RT35_seis_falhas_alerta_critico(self):
+        mod = self._mod()
+        with patch("core.notificador.alertar") as ma, \
+             patch("core.notificador.alertar_gestor") as mg, \
+             patch("core.notificador.alertar_critico") as mc:
+            mod._alertar_falha_bling("github offline", falhas_consecutivas=6)
+        mc.assert_called_once()
+        self.assertIn("CRÍTICO", mc.call_args[0][0])
+
+    def test_RT36_mensagem_contem_tempo_e_expiracao(self):
+        mod = self._mod()
+        with patch("core.notificador.alertar_critico") as mc:
+            mod._alertar_falha_bling("erro", falhas_consecutivas=8)
+        msg = mc.call_args[0][0]
+        self.assertIn("240 minutos", msg)
+        self.assertIn("120 minutos", msg)
 
 
 if __name__ == "__main__":
