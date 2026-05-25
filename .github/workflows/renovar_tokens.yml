@@ -9,10 +9,9 @@ on:
 
 permissions:
   contents: read
-  secrets:  write              # NECESSARIO para salvar tokens renovados
-
 env:
   PYTHON_VERSION: "3.11"
+
 
 jobs:
   renovar:
