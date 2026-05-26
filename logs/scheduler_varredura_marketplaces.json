@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-05-25T18:52:28",
+  "atualizacoes": {
+    "mercadolivre": 0,
+    "total": 0
+  },
+  "chat_visual_processado": false,
+  "chat_visual": {
+    "ok": true,
+    "motivo": "sem pendências para responder"
+  },
+  "keepalive": {
+    "limite_dias_sem_acesso": 5,
+    "resultados": [
+      {
+        "ok": false,
+        "marketplace": "shopee",
+        "acao": "não configurado",
+        "dias_sem_acesso": -1,
+        "alerta": true
+      },
+      {
+        "ok": false,
+        "marketplace": "magalu",
+        "acao": "não configurado",
+        "dias_sem_acesso": -1,
+        "alerta": true
+      }
+    ]
+  },
+  "algoritmo": {
+    "resumo": {
+      "saudavel": 0,
+      "atencao": 0,
+      "critico": 4
+    },
+    "marketplaces": {
+      "mercadolivre": {
+        "marketplace": "mercadolivre",
+        "score": 0,
+        "status": "critico",
+        "penalidades": [
+          "configuração ausente para este marketplace"
+        ],
+        "variacoes_relevantes": [],
+        "acoes_recomendadas": [
+          "executar keepalive imediato e validar token",
+          "reduzir mudanças agressivas de preço por 24h e estabilizar atendimento"
+        ],
+        "metrics": {
+          "configurado": false,
+          "pendencias": 0,
+          "claims_rate": 0.0,
+          "dias_sem_acesso": 999
+        },
+        "media_historica": null
+      },
+      "shopee": {
+        "marketplace": "shopee",
+        "score": 0,
+        "status": "critico",
+        "penalidades": [
+          "configuração ausente para este marketplace"
+        ],
+        "variacoes_relevantes": [],
+        "acoes_recomendadas": [
+          "executar keepalive imediato e validar token",
+          "reduzir mudanças agressivas de preço por 24h e estabilizar atendimento"
+        ],
+        "metrics": {
+          "configurado": false,
+          "pendencias": 0,
+          "claims_rate": 0.0,
+          "dias_sem_acesso": 999
+        },
+        "media_historica": null
+      },
+      "magalu": {
+        "marketplace": "magalu",
+        "score": 0,
+        "status": "critico",
+        "penalidades": [
+          "configuração ausente para este marketplace"
+        ],
+        "variacoes_relevantes": [],
+        "acoes_recomendadas": [
+          "executar keepalive imediato e validar token",
+          "reduzir mudanças agressivas de preço por 24h e estabilizar atendimento"
+        ],
+        "metrics": {
+          "configurado": false,
+          "pendencias": 0,
+          "claims_rate": 0.0,
+          "dias_sem_acesso": 999
+        },
+        "media_historica": null
+      },
+      "amazon": {
+        "marketplace": "amazon",
+        "score": 0,
+        "status": "critico",
+        "penalidades": [
+          "configuração ausente para este marketplace"
+        ],
+        "variacoes_relevantes": [],
+        "acoes_recomendadas": [
+          "executar keepalive imediato e validar token",
+          "reduzir mudanças agressivas de preço por 24h e estabilizar atendimento"
+        ],
+        "metrics": {
+          "configurado": false,
+          "pendencias": 0,
+          "claims_rate": 0.0,
+          "dias_sem_acesso": 999
+        },
+        "media_historica": null
+      }
+    }
+  },
+  "repricing": {
+    "dry_run": true,
+    "lucro_minimo_pct": 10.0,
+    "total_itens": 0,
+    "total_ajustes": 0,
+    "ajustes": []
+  }
+}

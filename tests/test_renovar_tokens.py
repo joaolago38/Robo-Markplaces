@@ -590,7 +590,7 @@ class TestAlertarFalhaBling(unittest.TestCase):
 
     def test_RT34_tres_falhas_alerta_gestor(self):
         mod = self._mod()
-        with patch("core.notificador.alertar") as ma, \
+        with patch("core.notificador.alertar"), \
              patch("core.notificador.alertar_gestor") as mg, \
              patch("core.notificador.alertar_critico") as mc:
             mod._alertar_falha_bling("offline", falhas_consecutivas=3)
@@ -599,8 +599,8 @@ class TestAlertarFalhaBling(unittest.TestCase):
 
     def test_RT35_seis_falhas_alerta_critico(self):
         mod = self._mod()
-        with patch("core.notificador.alertar") as ma, \
-             patch("core.notificador.alertar_gestor") as mg, \
+        with patch("core.notificador.alertar"), \
+             patch("core.notificador.alertar_gestor"), \
              patch("core.notificador.alertar_critico") as mc:
             mod._alertar_falha_bling("github offline", falhas_consecutivas=6)
         mc.assert_called_once()
