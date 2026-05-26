@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "total_marketplaces": 4,
+  "configurados": 0,
+  "conectados": 0,
+  "resultados": [
+    {
+      "marketplace": "mercadolivre",
+      "configurado": false,
+      "conectado": false,
+      "mensagem": "credenciais ausentes no .env",
+      "pendencias_detectadas": 0
+    },
+    {
+      "marketplace": "shopee",
+      "configurado": false,
+      "conectado": false,
+      "mensagem": "credenciais ausentes no .env",
+      "pendencias_detectadas": 0
+    },
+    {
+      "marketplace": "magalu",
+      "configurado": false,
+      "conectado": false,
+      "mensagem": "credenciais ausentes no .env",
+      "pendencias_detectadas": 0
+    },
+    {
+      "marketplace": "amazon",
+      "configurado": false,
+      "conectado": false,
+      "mensagem": "credenciais ausentes no .env",
+      "pendencias_detectadas": 0
+    }
+  ]
+}
