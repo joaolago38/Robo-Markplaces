@@ -12,7 +12,7 @@ REDIRECT_URI  = "https://google.com"
 #   &client_id=db6853620b6e2f6f259b1cb972f64bf5579bd4d0
 #   &redirect_uri=https%3A%2F%2Fgoogle.com
 #   &state=robo
-CODE = "fcc6be2eaff0a7a6815286836a83501a5e095f66"
+CODE = "8ea9efb89189f8b3332a05ef981a258701b3139a"
 # ───────────────────────────────────────────────────────────
 
 credenciais = base64.b64encode(
