@@ -25,15 +25,14 @@ def main() -> int:
         from core.token_manager import renovar_todos_tokens
         resultados = renovar_todos_tokens()
         for nome, payload in sorted(resultados.items()):
-            ok      = payload.get("ok")
-            motivo  = payload.get("motivo", "")
-            ausente = "ausente" in motivo.lower() if motivo else False
+            ok = payload.get("ok")
 
-            if ausente:
-                print(f"  {nome}: sem credenciais — ignorado")
-            elif ok:
-                print(f"  {nome}: ok")
+            # ok=None significa credenciais ausentes — nao e erro real
+            if ok is None or ok is True:
+                status = "ok" if ok else "sem credenciais — ignorado"
+                print(f"  {nome}: {status}")
             else:
+                motivo = payload.get("motivo", "erro desconhecido")
                 print(f"  {nome}: falhou — {motivo}")
                 exit_code = 1
 
