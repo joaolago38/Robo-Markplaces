@@ -10,7 +10,6 @@ permissions:
 
 env:
   PYTHON_VERSION: "3.11"
-
 jobs:
   renovar:
     name: Renovar ML / Shopee / Magalu
