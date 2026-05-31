@@ -1,12 +1,12 @@
+# Renovação preventiva de tokens — Shopee (~4h) e Magalu (~1–2h) especialmente curtos.
 name: Renovar tokens marketplace
 
 on:
   schedule:
+    # A cada 30 min em UTC (GitHub). Em BRT = deslocado −3h (ex.: 00:00 UTC = 21:00 BRT).
+    # Shopee/Magalu têm TTL curto; reduza só se atualizar tokens por outro meio.
     - cron: "*/30 * * * *"
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 env:
   PYTHON_VERSION: "3.11"
@@ -17,18 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-
-      - name: Instalar dependencias
-        run: |
-          pip install -r requirements.txt
-          pip install PyNaCl
-
-      - name: Renovar tokens
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Tentar renovar tokens
         run: python scripts/renovar_tokens.py
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -47,12 +42,3 @@ jobs:
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
-      - name: Notificar falha no Telegram
-        if: failure()
-        run: python scripts/notificar_falha_telegram.py
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
