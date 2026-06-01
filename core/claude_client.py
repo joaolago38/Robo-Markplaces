@@ -9,7 +9,7 @@ from core.http_client import request
 
 logger = logging.getLogger("claude")
 API_URL = "https://api.anthropic.com/v1/messages"
-MODELO  = "claude-sonnet-4-20250514"
+MODELO = "claude-sonnet-4-5"
 
 SYSTEM = """
 Você é o agente de vendas de uma distribuidora de esmaltes para manicures.
