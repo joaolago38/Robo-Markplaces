@@ -21,7 +21,7 @@ for nome in [".env", ".env.exemplo"]:
                     os.environ.setdefault(k.strip(), v)
         break
 
-key = os.getenv("ANTHROPIC_API_KEY", "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")
+key = os.getenv("ANTHROPIC_API_KEY", "")
 print(f"API Key: {key[:20]}..." if key else "API Key: NAO ENCONTRADA")
 
 print("\n=== Testando Claude direto ===")
