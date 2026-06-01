@@ -14,6 +14,7 @@ Variáveis opcionais:
     MARKETPLACE_ALERTAR_ATENCAO=false
     MARKETPLACE_KEEPALIVE_LIMITE_DIAS=5
 """
+
 from __future__ import annotations
 
 import json
