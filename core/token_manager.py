@@ -1,8 +1,12 @@
+import base64
 import hashlib
 import hmac
+import json
 import logging
+import os
 import time
 import urllib.parse
+from pathlib import Path
 
 import core.config as cfg
 from core.http_client import request
@@ -16,6 +20,9 @@ _shopee_refresh_efetivo = {"valor": None}
 
 _token_cache_magalu = {"access_token": None, "expires_at": 0}
 _magalu_refresh_efetivo = {"valor": None}
+
+_token_cache_bling = {"access_token": None, "expires_at": 0}
+_bling_refresh_efetivo = {"valor": None}
 
 
 def _renovar_token_ml():
@@ -236,6 +243,191 @@ def get_token_magalu():
     return novo or cfg.MAGALU_ACCESS_TOKEN or None
 
 
+def _bling_store_path() -> Path | None:
+    """
+    Caminho do cofre de tokens do Bling em disco. Só fica ATIVO quando a env
+    BLING_TOKEN_STORE está definida — assim o GitHub Actions e os testes (que
+    não a definem) mantêm exatamente o comportamento antigo, sem tocar em disco.
+    Em máquina persistente (servidor/PC com tarefa agendada), defina:
+        BLING_TOKEN_STORE=dados/bling_token.json
+    """
+    p = (os.getenv("BLING_TOKEN_STORE") or "").strip()
+    return Path(p) if p else None
+
+
+def _carregar_store_bling() -> dict:
+    p = _bling_store_path()
+    if not p or not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        logger.error("Falha ao ler store Bling (%s): %s", p, e)
+        return {}
+
+
+def _salvar_store_bling(access_token: str, refresh_token: str | None, expires_at: float) -> None:
+    p = _bling_store_path()
+    if not p:
+        return
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps(
+                {
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "expires_at": expires_at,
+                    "atualizado_em": time.time(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        try:
+            os.chmod(p, 0o600)  # apenas dono lê/grava (best-effort; ignora no Windows)
+        except OSError:
+            pass
+        logger.info("Tokens Bling persistidos em %s", p)
+    except Exception as e:
+        logger.error("Falha ao gravar store Bling (%s): %s", p, e)
+
+
+def _hidratar_cache_bling_do_store() -> None:
+    """Na partida de um processo novo, usa o token do disco em vez do .env estático."""
+    if _token_cache_bling["access_token"] is None:
+        store = _carregar_store_bling()
+        if store.get("access_token"):
+            _token_cache_bling["access_token"] = store["access_token"]
+            _token_cache_bling["expires_at"] = store.get("expires_at", 0)
+
+
+def _bling_refresh_disponivel() -> str | None:
+    if _bling_refresh_efetivo["valor"] is None:
+        # Prioridade: refresh_token do disco (mais recente) > .env/secret (bootstrap).
+        store = _carregar_store_bling()
+        _bling_refresh_efetivo["valor"] = (
+            (store.get("refresh_token") or cfg.BLING_REFRESH_TOKEN or "").strip() or None
+        )
+    return _bling_refresh_efetivo["valor"]
+
+
+def _renovar_token_bling():
+    """
+    Renova o access_token do Bling v3 via grant_type=refresh_token.
+
+    IMPORTANTE: o Bling ROTACIONA o refresh_token a cada renovação — o token
+    antigo é invalidado e a resposta traz um refresh_token novo. Ele é guardado
+    em memória (cfg.BLING_REFRESH_TOKEN) e no cofre em disco (se ativo).
+    """
+    refresh = _bling_refresh_disponivel()
+
+    if not all([cfg.BLING_CLIENT_ID, cfg.BLING_CLIENT_SECRET, refresh]):
+        logger.error(
+            "Credenciais Bling ausentes para renovação "
+            "(client_id/secret ou refresh_token)."
+        )
+        return None
+
+    credenciais = base64.b64encode(
+        f"{cfg.BLING_CLIENT_ID}:{cfg.BLING_CLIENT_SECRET}".encode()
+    ).decode()
+
+    try:
+        r = request(
+            "POST",
+            "https://www.bling.com.br/Api/v3/oauth/token",
+            headers={
+                "Authorization": f"Basic {credenciais}",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+            },
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh,
+            },
+            timeout=25,
+        )
+        r.raise_for_status()
+        tokens = r.json()
+
+        access_token = tokens.get("access_token")
+        expires_in = int(tokens.get("expires_in") or 21600)
+        novo_refresh = tokens.get("refresh_token")
+
+        if not access_token:
+            logger.error("Bling refresh sem access_token na resposta.")
+            return None
+
+        _token_cache_bling["access_token"] = access_token
+        # margem de 5 min antes do vencimento real
+        _token_cache_bling["expires_at"] = time.time() + max(120, expires_in) - 300
+
+        if novo_refresh:
+            _bling_refresh_efetivo["valor"] = novo_refresh
+            cfg.BLING_REFRESH_TOKEN = novo_refresh
+
+        cfg.BLING_ACCESS_TOKEN = access_token
+
+        # Persiste em disco (se o cofre estiver ativo) — resolve a rotação fora do Actions.
+        _salvar_store_bling(
+            access_token,
+            novo_refresh or refresh,
+            _token_cache_bling["expires_at"],
+        )
+
+        logger.info("Token Bling renovado com sucesso")
+        return access_token
+
+    except ValueError as e:
+        logger.error("Erro de parse da resposta do token Bling: %s", e)
+        return None
+    except Exception as e:
+        logger.error("Erro ao renovar token Bling: %s", e)
+        return None
+
+
+def get_token_bling(forcar: bool = False):
+    """
+    Retorna um access_token válido do Bling.
+
+    - forcar=True   → tenta renovar imediatamente (usado após um 401).
+    - cache válido  → devolve o token em cache.
+    - sem cache     → devolve o BLING_ACCESS_TOKEN estático (sem chamada de rede).
+    """
+    now = time.time()
+
+    _hidratar_cache_bling_do_store()
+
+    if not forcar:
+        if _token_cache_bling["access_token"] and now < _token_cache_bling["expires_at"]:
+            return _token_cache_bling["access_token"]
+        if not _token_cache_bling["access_token"]:
+            return cfg.BLING_ACCESS_TOKEN or None
+
+    novo = _renovar_token_bling()
+    return novo or cfg.BLING_ACCESS_TOKEN or None
+
+
+def renovar_token_bling_detalhado() -> dict:
+    """
+    Força a renovação e devolve os novos tokens (para o CLI/script local
+    persistir o refresh_token rotacionado).
+    """
+    if not all([cfg.BLING_CLIENT_ID, cfg.BLING_CLIENT_SECRET, _bling_refresh_disponivel()]):
+        return {"ok": False, "motivo": "credenciais Bling ausentes"}
+
+    access = _renovar_token_bling()
+    if not access:
+        return {"ok": False, "motivo": "falha ao renovar (refresh expirado/inválido?)"}
+
+    return {
+        "ok": True,
+        "access_token": access,
+        "refresh_token": _bling_refresh_efetivo["valor"],
+    }
+
+
 def garantir_tokens_marketplaces() -> dict[str, bool]:
     """
     Renova caches em sequência (útil na entrada de agentes longos).
@@ -252,6 +444,9 @@ def garantir_tokens_marketplaces() -> dict[str, bool]:
     mg = get_token_magalu()
     out["magalu"] = bool(mg)
 
+    bl = get_token_bling()
+    out["bling"] = bool(bl)
+
     return out
 
 
@@ -263,6 +458,8 @@ def renovar_todos_tokens() -> dict[str, dict]:
     ml = _renovar_token_ml()
     sp = _renovar_token_shopee()
     mg = _renovar_token_magalu()
+    # Bling NÃO entra aqui: é renovado separadamente (renovar_token_bling_detalhado),
+    # pois o refresh_token rotaciona e seria consumido duas vezes.
 
     return {
         "mercadolivre": {"ok": bool(ml)},

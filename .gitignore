@@ -197,6 +197,9 @@ cython_debug/
 # Controle local de pedidos já notificados (WhatsApp)
 dados/pedidos_notificados.json
 
+# Cofre de tokens do Bling (rotacionado localmente — NUNCA commitar)
+dados/bling_token.json
+
 # Cursor
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
 #  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
