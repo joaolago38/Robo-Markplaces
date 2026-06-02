@@ -15,10 +15,10 @@ import requests
 
 CLIENT_ID     = "7869766083120381"
 CLIENT_SECRET = "wVDAVJnt2DH5qkoWWt2if0vUP8D1yUJs"
-REDIRECT_URI  = "https://www.google.com.br"
+REDIRECT_URI  = "https://www.google.com"
 
 # ── COLE O CODE AQUI ──────────────────────────────────────────
-CODE = "COLE_O_CODE_AQUI"
+CODE = "TG-6a1f3a2510d5e40001c2a90b-1651424153"
 # ──────────────────────────────────────────────────────────────
 
 print("Enviando requisição para o ML...")
