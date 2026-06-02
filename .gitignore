@@ -208,3 +208,8 @@ dados/pedidos_notificados.json
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# Scripts locais de renovação Bling (específicos do computador)
+scripts/renovar_bling_local.py
+scripts/instalar_tarefa.py
+scripts/remover_tarefa.py
+logs/renovar_bling_local.log
