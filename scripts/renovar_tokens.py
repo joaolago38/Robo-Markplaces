@@ -25,7 +25,29 @@ def main() -> int:
     exit_code = 0
 
     print("\n[Bling]")
-    print("  Renovacao manual — use pegar_token_bling.py")
+    tem_bling = _tem_credenciais(["BLING_CLIENT_ID", "BLING_CLIENT_SECRET", "BLING_REFRESH_TOKEN"])
+    if not tem_bling:
+        print("  Sem CLIENT_ID/SECRET/REFRESH_TOKEN — renovacao manual via pegar_token_bling.py")
+    else:
+        try:
+            from core.token_manager import renovar_token_bling_detalhado
+            res_bling = renovar_token_bling_detalhado()
+            if res_bling.get("ok"):
+                print("  bling: ok — token renovado")
+                novo_refresh = res_bling.get("refresh_token")
+                print("  ATENCAO: o Bling rotaciona o refresh_token a cada renovacao.")
+                print("  Atualize os secrets com os novos valores abaixo, senao a")
+                print("  proxima execucao falhara (o refresh_token antigo foi invalidado):")
+                print(f"    BLING_ACCESS_TOKEN  -> {res_bling.get('access_token')}")
+                print(f"    BLING_REFRESH_TOKEN -> {novo_refresh}")
+            else:
+                print(f"  bling: falhou — {res_bling.get('motivo', '')}")
+                print("  Se o refresh_token expirou, gere um novo com pegar_token_bling.py")
+                exit_code = 1
+        except Exception as exc:
+            print(f"  bling: ERRO — {exc}")
+            print("  Renovacao manual via pegar_token_bling.py")
+            exit_code = 1
 
     print("\n[ML / Shopee / Magalu]")
 

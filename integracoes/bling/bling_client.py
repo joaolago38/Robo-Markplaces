@@ -5,12 +5,31 @@ Cliente da API Bling v3. Nunca lança exceção.
 import logging
 from core.config import BLING_ACCESS_TOKEN
 from core.http_client import request
+from core import token_manager
 
 logger = logging.getLogger("bling")
 BASE = "https://www.bling.com.br/Api/v3"
 
-def _h():
-    return {"Authorization": f"Bearer {BLING_ACCESS_TOKEN}"}
+def _h(token: str | None = None):
+    tok = token or token_manager.get_token_bling()
+    return {"Authorization": f"Bearer {tok}"}
+
+def _request_bling(method: str, url: str, **kwargs):
+    """
+    Faz a chamada autenticada e, em caso de 401 (token expirado), força a
+    renovação via refresh_token e tenta UMA vez mais.
+    """
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.update(_h())
+    r = request(method, url, headers=headers, **kwargs)
+
+    if getattr(r, "status_code", None) == 401:
+        logger.warning("Bling retornou 401 — renovando token e tentando novamente.")
+        novo = token_manager.get_token_bling(forcar=True)
+        if novo:
+            headers.update(_h(novo))
+            r = request(method, url, headers=headers, **kwargs)
+    return r
 
 def _to_float(value, default=0.0) -> float:
     try:
@@ -46,7 +65,7 @@ def _normalizar_produto(p: dict) -> dict:
 
 def buscar_produto(sku: str) -> dict | None:
     try:
-        r = request("GET", f"{BASE}/produtos", headers=_h(), params={"codigo": sku}, timeout=15)
+        r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
         r.raise_for_status()
         itens = r.json().get("data", [])
         if not itens:
@@ -61,7 +80,7 @@ def buscar_produto(sku: str) -> dict | None:
 
 def listar_produtos() -> list[dict]:
     try:
-        r = request("GET", f"{BASE}/produtos", headers=_h(), params={"situacao": "A"}, timeout=15)
+        r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
         r.raise_for_status()
         return [_normalizar_produto(p) for p in r.json().get("data", [])]
     except ValueError as e:
@@ -82,7 +101,7 @@ def criar_nfe(payload_nfe: dict) -> dict:
     if not BLING_ACCESS_TOKEN:
         return {"ok": False, "erro": "BLING_ACCESS_TOKEN não configurado"}
     try:
-        r = request("POST", f"{BASE}/nfe", headers=_h(), json=payload_nfe, timeout=30)
+        r = _request_bling("POST", f"{BASE}/nfe", json=payload_nfe, timeout=30)
         r.raise_for_status()
         body = r.json()
         data = body.get("data", body)
