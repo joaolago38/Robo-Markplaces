@@ -1,0 +1,29 @@
+# Diagnóstico manual do refresh do Bling.
+# Rode em: Actions -> "Debug Bling refresh" -> Run workflow.
+# Imprime o motivo do 400 (invalid_grant vs invalid_client) SEM vazar tokens.
+name: Debug Bling refresh
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  debug:
+    name: Debug refresh do Bling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Rodar debug do Bling
+        run: python scripts/debug_bling_refresh.py
+        env:
+          BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
