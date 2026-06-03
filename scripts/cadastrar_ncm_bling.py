@@ -48,7 +48,7 @@ def _so_digitos(v) -> str:
 def _ler_xlsx(caminho: Path) -> list[dict]:
     from openpyxl import load_workbook
 
-    wb = load_workbook(caminho, data_only=True)
+    wb = load_workbook(caminho, data_only=True, read_only=True)
     ws = wb["Produtos NCM"] if "Produtos NCM" in wb.sheetnames else wb.active
 
     # Localiza a linha de cabeçalho (tem "SKU" e "NCM")
