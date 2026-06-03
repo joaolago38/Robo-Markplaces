@@ -94,6 +94,57 @@ def estoques_criticos(limite: int = 20) -> list[dict]:
     return [p for p in listar_produtos() if p["estoque"] <= limite]
 
 
+def _buscar_produto_raw(sku: str) -> dict | None:
+    """Retorna o objeto BRUTO do produto (com o id do Bling), ou None."""
+    r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
+    r.raise_for_status()
+    itens = r.json().get("data", [])
+    return itens[0] if itens else None
+
+
+def obter_produto_completo(produto_id: str | int) -> dict:
+    """GET de um produto específico (objeto completo, necessário para o PUT)."""
+    r = _request_bling("GET", f"{BASE}/produtos/{produto_id}", timeout=15)
+    r.raise_for_status()
+    return r.json().get("data") or {}
+
+
+def atualizar_ncm_produto(produto_id: str | int, ncm: str) -> dict:
+    """
+    Define o NCM de um produto no Bling com segurança: lê o produto COMPLETO,
+    altera apenas o campo ncm e grava de volta (PUT é substituição no Bling v3,
+    então read-modify-write evita apagar outros campos). Nunca lança exceção.
+    """
+    ncm_limpo = "".join(ch for ch in str(ncm) if ch.isdigit())
+    if len(ncm_limpo) != 8:
+        return {"ok": False, "erro": f"NCM inválido (esperado 8 dígitos): {ncm!r}", "produto_id": produto_id}
+    try:
+        produto = obter_produto_completo(produto_id)
+        if not produto:
+            return {"ok": False, "erro": f"produto {produto_id} não encontrado", "produto_id": produto_id}
+        produto["ncm"] = ncm_limpo
+        r = _request_bling("PUT", f"{BASE}/produtos/{produto_id}", json=produto, timeout=30)
+        r.raise_for_status()
+        return {"ok": True, "produto_id": produto_id, "ncm": ncm_limpo}
+    except Exception as e:
+        logger.error("Bling atualizar_ncm_produto erro id=%s: %s", produto_id, e)
+        return {"ok": False, "erro": str(e), "produto_id": produto_id}
+
+
+def definir_ncm_por_sku(sku: str, ncm: str) -> dict:
+    """Resolve o id do produto pelo SKU e define o NCM. Nunca lança exceção."""
+    try:
+        raw = _buscar_produto_raw(sku)
+    except Exception as e:
+        logger.error("Bling definir_ncm_por_sku busca erro sku=%s: %s", sku, e)
+        return {"ok": False, "erro": str(e), "sku": sku}
+    if not raw:
+        return {"ok": False, "erro": f"SKU {sku} não encontrado no Bling", "sku": sku}
+    resultado = atualizar_ncm_produto(raw.get("id"), ncm)
+    resultado["sku"] = sku
+    return resultado
+
+
 def criar_nfe(payload_nfe: dict) -> dict:
     """
     Cria NF-e no Bling. Retorna payload de resposta ou erro padronizado.

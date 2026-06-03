@@ -1,0 +1,47 @@
+# Cadastro de NCM no Bling — o robô faz tudo ao acionar.
+# Actions -> "Cadastrar NCM no Bling" -> Run workflow.
+# Padrão: DRY-RUN (não grava). Marque "aplicar" para efetivar.
+name: Cadastrar NCM no Bling
+
+on:
+  workflow_dispatch:
+    inputs:
+      arquivo:
+        description: "Planilha de NCM (caminho no repo)"
+        required: true
+        default: "dados/Cadastro_NCM_Bling_Impala_Cruzeiro.xlsx"
+      aplicar:
+        description: "Efetivar no Bling? (desmarcado = dry-run, não grava)"
+        type: boolean
+        default: false
+      incluir_validar:
+        description: "Incluir itens marcados 'Validar c/ contador'? (só após validar)"
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  cadastrar:
+    name: Cadastro de NCM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      - name: Rodar cadastro de NCM
+        run: |
+          python scripts/cadastrar_ncm_bling.py \
+            --arquivo "${{ inputs.arquivo }}" \
+            ${{ inputs.aplicar && '--aplicar' || '' }} \
+            ${{ inputs.incluir_validar && '--incluir-validar' || '' }}
+        env:
+          BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
