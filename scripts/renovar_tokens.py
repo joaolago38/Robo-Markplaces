@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -15,6 +17,36 @@ CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_MERCHA
 
 def _tem_credenciais(variaveis: list[str]) -> bool:
     return all(os.getenv(v, "").strip() for v in variaveis)
+
+
+def _sync_secrets_github(access_token: str, refresh_token: str | None, prefix: str = "BLING") -> bool:
+    if not shutil.which("gh"):
+        print(f"  gh CLI não encontrado — Secret {prefix}_* não atualizado")
+        return False
+
+    repo = (os.getenv("GH_REPO") or "").strip()
+    base_cmd = ["gh", "secret", "set"]
+    repo_args = ["--repo", repo] if repo else []
+
+    pares = [(f"{prefix}_ACCESS_TOKEN", access_token)]
+    if refresh_token:
+        pares.append((f"{prefix}_REFRESH_TOKEN", refresh_token))
+
+    ok = True
+    for nome, valor in pares:
+        try:
+            subprocess.run(
+                base_cmd + [nome] + repo_args,
+                input=valor,
+                text=True,
+                check=True,
+                capture_output=True,
+            )
+            print(f"  Secret {nome} atualizado no GitHub")
+        except subprocess.CalledProcessError as e:
+            print(f"  Falha ao atualizar {nome}: {e.stderr.strip()}")
+            ok = False
+    return ok
 
 
 def main() -> int:
@@ -80,6 +112,18 @@ def main() -> int:
             else:
                 motivo = payload.get("motivo", "")
                 print(f"  {nome}: falhou — {motivo}")
+                exit_code = 1
+
+        # Write-back do ML: o refresh_token do ML é de uso único e rotaciona.
+        # Lê os tokens JÁ rotacionados (sem renovar de novo) e grava nos Secrets.
+        ml_ok = resultados.get("mercadolivre", {}).get("ok")
+        em_actions = os.getenv("GITHUB_ACTIONS") == "true"
+        quer_sync = os.getenv("BLING_SYNC_GITHUB", "").strip().lower() in {"1", "true", "yes"}
+        if ml_ok and tem_ml and (em_actions or quer_sync):
+            from core.token_manager import tokens_ml_atuais
+
+            tk = tokens_ml_atuais()
+            if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="ML"):
                 exit_code = 1
 
     except Exception as exc:
