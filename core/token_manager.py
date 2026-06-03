@@ -14,6 +14,7 @@ from core.http_client import request
 logger = logging.getLogger("token_manager")
 
 _token_cache_ml = {"access_token": None, "expires_at": 0}
+_ml_refresh_efetivo = {"valor": None}
 
 _token_cache_shopee = {"access_token": None, "expires_at": 0}
 _shopee_refresh_efetivo = {"valor": None}
@@ -25,19 +26,28 @@ _token_cache_bling = {"access_token": None, "expires_at": 0}
 _bling_refresh_efetivo = {"valor": None}
 
 
+def _ml_refresh_disponivel() -> str | None:
+    """Prioriza o refresh_token rotacionado (em memória) sobre o do .env/secret."""
+    if _ml_refresh_efetivo["valor"] is None:
+        _ml_refresh_efetivo["valor"] = (cfg.ML_REFRESH_TOKEN or "").strip() or None
+    return _ml_refresh_efetivo["valor"]
+
+
 def _renovar_token_ml():
     url = "https://api.mercadolibre.com/oauth/token"
+
+    refresh = _ml_refresh_disponivel()
+
+    if not all([cfg.ML_CLIENT_ID, cfg.ML_CLIENT_SECRET, refresh]):
+        logger.error("Credenciais ML ausentes para renovação de token.")
+        return None
 
     data = {
         "grant_type": "refresh_token",
         "client_id": cfg.ML_CLIENT_ID,
         "client_secret": cfg.ML_CLIENT_SECRET,
-        "refresh_token": cfg.ML_REFRESH_TOKEN,
+        "refresh_token": refresh,
     }
-
-    if not all([cfg.ML_CLIENT_ID, cfg.ML_CLIENT_SECRET, cfg.ML_REFRESH_TOKEN]):
-        logger.error("Credenciais ML ausentes para renovação de token.")
-        return None
 
     try:
         r = request("POST", url, data=data, timeout=15)
@@ -47,9 +57,16 @@ def _renovar_token_ml():
 
         access_token = tokens.get("access_token")
         expires_in = tokens.get("expires_in", 21600)
+        novo_refresh = tokens.get("refresh_token")
 
         _token_cache_ml["access_token"] = access_token
         _token_cache_ml["expires_at"] = time.time() + expires_in - 60
+
+        # ML rotaciona o refresh_token (uso único): guarda o novo, senão a
+        # próxima renovação falha com 400 invalid_grant.
+        if novo_refresh:
+            _ml_refresh_efetivo["valor"] = novo_refresh
+            cfg.ML_REFRESH_TOKEN = novo_refresh
 
         logger.info("Token ML renovado com sucesso")
 
@@ -70,6 +87,18 @@ def get_token_ml():
         return _token_cache_ml["access_token"]
 
     return _renovar_token_ml()
+
+
+def tokens_ml_atuais() -> dict:
+    """
+    Tokens ML mais recentes em memória (após a última renovação), para o
+    write-back nos Secrets. NÃO dispara nova renovação (evita consumir o
+    refresh_token rotacionado duas vezes).
+    """
+    return {
+        "access_token": _token_cache_ml["access_token"] or cfg.ML_ACCESS_TOKEN,
+        "refresh_token": _ml_refresh_efetivo["valor"] or cfg.ML_REFRESH_TOKEN,
+    }
 
 
 def _shopee_refresh_disponivel() -> str | None:
