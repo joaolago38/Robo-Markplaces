@@ -139,14 +139,25 @@ def testar_empresa() -> dict:
     try:
         r = requests.get(f"{BASE}/empresas", headers=_headers(), timeout=TIMEOUT)
         if r.status_code == 200:
-            emp = r.json().get("data", {})
+            payload = r.json()
+            if isinstance(payload, dict):
+                empresa = payload.get("data", payload)
+            elif isinstance(payload, list):
+                empresa = payload[0] if payload else {}
+            else:
+                empresa = {}
+            if isinstance(empresa, list):
+                empresa = empresa[0] if empresa else {}
+            if not isinstance(empresa, dict):
+                empresa = {}
+            endereco = empresa.get("endereco", {}) if isinstance(empresa.get("endereco"), dict) else {}
             return {
                 "ok":     True,
                 "status": 200,
-                "razao":  emp.get("razaoSocial", ""),
-                "cnpj":   emp.get("cnpj", ""),
-                "cidade": emp.get("endereco", {}).get("municipio", ""),
-                "msg":    emp.get("razaoSocial", ""),
+                "razao":  empresa.get("razaoSocial", ""),
+                "cnpj":   empresa.get("cnpj", ""),
+                "cidade": endereco.get("municipio", ""),
+                "msg":    empresa.get("razaoSocial", ""),
             }
         return {"ok": False, "status": r.status_code, "msg": f"HTTP {r.status_code}"}
     except Exception as exc:
@@ -270,7 +281,7 @@ def executar() -> dict:
             "Token expirado. Para renovar:",
             "1. Abra no navegador:",
             "   https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code",
-            "   &client_id=db6853620b6e2f6f259b1cb972f64bf5579bd4d0",
+            "   &client_id=SEU_CLIENT_ID",
             "   &redirect_uri=https%3A%2F%2Fgoogle.com&state=robo",
             "2. Autorize → copie o code da URL do Google",
             "3. Cole no pegar_token_bling.py e rode IMEDIATAMENTE",

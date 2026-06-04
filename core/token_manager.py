@@ -341,6 +341,16 @@ def _bling_refresh_disponivel() -> str | None:
     return _bling_refresh_efetivo["valor"]
 
 
+def _dica_erro_refresh_bling(status: int, detalhe: str) -> None:
+    d = (detalhe or "").lower()
+    if "invalid_grant" in d or "expired" in d or "revoked" in d:
+        logger.error("→ refresh_token invalido/expirado/ja usado. Re-bootstrap com pegar_token_bling.py e atualize BLING_ACCESS_TOKEN e BLING_REFRESH_TOKEN.")
+    elif "invalid_client" in d or "client" in d or status in (401, 403):
+        logger.error("→ client_id/client_secret incorretos. Confira BLING_CLIENT_ID e BLING_CLIENT_SECRET (sem ponto, sem aspas, sem espaco).")
+    elif status == 400:
+        logger.error("→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.")
+
+
 def _renovar_token_bling():
     """
     Renova o access_token do Bling v3 via grant_type=refresh_token.
@@ -377,7 +387,20 @@ def _renovar_token_bling():
             },
             timeout=25,
         )
-        r.raise_for_status()
+
+        if r.status_code != 200:
+            detalhe = ""
+            try:
+                corpo = r.json()
+                detalhe = corpo.get("error_description") or corpo.get("error") or ""
+                if isinstance(detalhe, dict):
+                    detalhe = detalhe.get("description") or detalhe.get("message") or str(detalhe)
+            except Exception:
+                detalhe = (getattr(r, "text", "") or "")[:300]
+            logger.error("Bling refresh falhou (HTTP %s): %s", r.status_code, detalhe)
+            _dica_erro_refresh_bling(r.status_code, str(detalhe))
+            return None
+
         tokens = r.json()
 
         access_token = tokens.get("access_token")

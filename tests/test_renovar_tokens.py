@@ -152,6 +152,9 @@ class TestMain(unittest.TestCase):
             "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
             "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
             "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
+            # isola o teste do ambiente de CI: sem isto, no GitHub Actions o write-back
+            # do ML dispara (gh secret set) e faz main() retornar 1.
+            "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
         }
         with patch.dict(os.environ, env):
             m = _reload({})
