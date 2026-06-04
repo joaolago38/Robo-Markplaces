@@ -270,7 +270,7 @@ def executar() -> dict:
             "Token expirado. Para renovar:",
             "1. Abra no navegador:",
             "   https://www.bling.com.br/Api/v3/oauth/authorize?response_type=code",
-            "   &client_id=db6853620b6e2f6f259b1cb972f64bf5579bd4d0",
+            "   &client_id=SEU_CLIENT_ID",
             "   &redirect_uri=https%3A%2F%2Fgoogle.com&state=robo",
             "2. Autorize → copie o code da URL do Google",
             "3. Cole no pegar_token_bling.py e rode IMEDIATAMENTE",
