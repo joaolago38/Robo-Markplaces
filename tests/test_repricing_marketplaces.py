@@ -37,6 +37,56 @@ class RepricingMarketplacesTests(unittest.TestCase):
         self.assertEqual(out["total_itens"], 0)
         self.assertEqual(out["total_ajustes"], 0)
 
+    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_menor_preco_concorrente")
+    @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
+    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
+    def test_busca_concorrente_ao_vivo_quando_ausente(
+        self, mock_buscar_produto, _mock_alerta, mock_vivo
+    ):
+        """Sem preco_concorrente no payload (ML), deve buscar ao vivo."""
+        mock_buscar_produto.return_value = {"sku": "SKU3", "custo": 9.5}
+        mock_vivo.return_value = 30.0
+        produtos = [
+            {
+                "sku": "SKU3",
+                "custo": 9.5,
+                "canais": {
+                    "mercadolivre": {"ativo": True, "item_id": "MLB3", "preco": 10.0}
+                },
+            }
+        ]
+        out = executar(produtos=produtos, dry_run=True, lucro_minimo_pct=10.0)
+        mock_vivo.assert_called_once_with("MLB3")
+        ajuste = out["ajustes"][0]
+        self.assertEqual(ajuste["fonte_concorrente"], "ao_vivo")
+        self.assertEqual(ajuste["preco_concorrente"], 30.0)
+
+    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_menor_preco_concorrente")
+    @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
+    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
+    def test_nao_busca_ao_vivo_quando_payload_tem_preco(
+        self, mock_buscar_produto, _mock_alerta, mock_vivo
+    ):
+        """Com preco_concorrente no payload, NÃO chama a busca ao vivo."""
+        mock_buscar_produto.return_value = {"sku": "SKU4", "custo": 9.5}
+        produtos = [
+            {
+                "sku": "SKU4",
+                "custo": 9.5,
+                "canais": {
+                    "mercadolivre": {
+                        "ativo": True,
+                        "item_id": "MLB4",
+                        "preco": 10.0,
+                        "preco_concorrente": 25.0,
+                    }
+                },
+            }
+        ]
+        out = executar(produtos=produtos, dry_run=True, lucro_minimo_pct=10.0)
+        mock_vivo.assert_not_called()
+        self.assertEqual(out["ajustes"][0]["fonte_concorrente"], "payload")
+
 
 if __name__ == "__main__":
     unittest.main()
