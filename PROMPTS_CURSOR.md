@@ -1,97 +1,80 @@
-# Prompt para o Cursor — Resolver os erros do CI (teste que quebra o Actions + bug do diagnóstico)
+# Tarefa: implementar funcionalidades faltantes da integração com Mercado Livre
 
-Cole no Cursor (Agent). Peça: **"Aplique as correções e rode a verificação simulando o CI. Não altere mais nada."**
+## Contexto do projeto
+Projeto Python que integra com a API do Mercado Livre (Mercado Libre / developers.mercadolibre.com).
+Já existe:
+- `.env` com: ML_CLIENT_ID, ML_CLIENT_SECRET, ML_ACCESS_TOKEN, ML_REFRESH_TOKEN, ML_SELLER_ID
+- `catalogo/produtos.json` (catálogo estático) e `catalogo/COMO_PUBLICAR_NO_ML.md`
+- `scripts/diagnostico_ml_produtos.py` e `scripts/verificar_marketplaces.py`
+- Um sistema de agentes que roda em loop e envia alertas no Telegram
+- Mecanismo de refresh de token (use o existente; não reinvente)
 
-> Diagnóstico (já investigado e validado):
-> 1. **O CI quebra (exit code 1)** por causa do teste `test_RT09_ignora_marketplace_sem_credencial`.
->    Ele passa LOCAL mas falha no GitHub Actions: no Actions, `GITHUB_ACTIONS=true` faz o
->    `main()` disparar o write-back do token do ML (`gh secret set`); como o `gh` não está
->    autenticado no runner de teste, o sync falha e o `main()` retorna 1 (`1 != 0`).
-> 2. **Bug no diagnóstico:** `[3] Dados da empresa — 'list' object has no attribute 'get'`
->    (o endpoint de empresa às vezes devolve lista, e o código chama `.get()` direto).
+Antes de codar, LEIA o código atual para entender: como o token é carregado/renovado, onde ficam as chamadas HTTP, como os agentes são registrados/disparados, e o formato do `produtos.json`. Reaproveite os padrões que já existem.
 
----
+## Regras gerais (obrigatórias)
+1. Centralize TODAS as chamadas à API em um único cliente HTTP (ex.: `ml_client.py`) com: refresh automático em 401, tratamento de rate limit (429, backoff), e logging estruturado de request/response (sem vazar tokens).
+2. NUNCA escreva token/secret no código. Use sempre `os.getenv`.
+3. Toda ação IRREVERSÍVEL ou que GASTA DINHEIRO/afeta o comprador deve ter:
+   - modo `dry_run=True` por padrão, e
+   - confirmação explícita (flag/variável) para executar de verdade.
+   Isso vale para: encerrar anúncio, publicar anúncio, ligar/pausar Product Ads, alterar orçamento, enviar mensagem a comprador.
+4. Antes de usar qualquer endpoint abaixo, CONFIRME a versão/rota atual na doc oficial (developers.mercadolibre.com) — as rotas mudam. Os caminhos abaixo são ponto de partida, não verdade absoluta.
+5. Escreva testes (pytest) com a API mockada e adicione cada nova capacidade ao diagnóstico para validar a conexão.
+6. Não quebre nada que já funciona. Mudanças incrementais, um recurso por vez.
 
-## Prompt
+## Tarefas (em ordem de prioridade)
 
-### Título: Corrigir teste sensível ao CI (RT09) + bug 'list' do diagnóstico de empresa
+### 1. Pausar / ativar / encerrar anúncio
+- `PUT /items/{item_id}` com body `{"status": "paused" | "active" | "closed"}`.
+- `closed` é praticamente irreversível → exigir confirmação.
+- Expor funções `pausar_anuncio(item_id)`, `ativar_anuncio(item_id)`, `encerrar_anuncio(item_id)` e conectá-las ao agente.
 
-**Prompt:**
-```
-CORREÇÃO 1 — tests/test_renovar_tokens.py (o que quebra o Actions)
+### 2. Sincronizar estoque para o ML (a função já existe, só falta conectar)
+- Localize a função de sync pronta e ligue-a a um agente/rotina.
+- Estoque simples: `PUT /items/{item_id}` `{"available_quantity": N}`.
+- Com variações: `PUT /items/{item_id}/variations/{variation_id}`.
+- Origem do estoque: defina a fonte de verdade (planilha/ERP/produtos.json) e documente.
 
-No teste test_RT09_ignora_marketplace_sem_credencial, o dicionário `env` precisa
-neutralizar o ambiente de CI, senão o write-back do ML dispara e main() retorna 1.
-Substitua o bloco:
+### 3. Product Ads de verdade (ligar/pausar/orçamento) — hoje é stub
+- Hoje só lê ACOS e alerta no Telegram. Implementar controle real via Mercado Ads:
+  - Listar advertiser/campanhas, alterar `status` (active/paused) e `budget` da campanha.
+  - Pontos de partida: `/advertising/advertisers`, campanhas e métricas sob `/advertising/...`.
+- Regra de negócio sugerida: se ACOS > limite por X dias → pausar (com dry_run e confirmação).
 
-        env = {
-            "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
-            "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-            "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
-        }
+### 4. Repricing com preço de concorrente AO VIVO (hoje usa preço estático)
+- Substituir a leitura de `catalogo/produtos.json` por preço de mercado em tempo real:
+  - Sugestão de preço: `GET /suggestions/items/{item_id}/details` (traz preço de referência do mercado), e/ou
+  - Busca de concorrentes: `GET /sites/MLB/search?q=...`.
+- Aplicar regras de margem mínima e teto antes de atualizar o preço via `PUT /items/{item_id}`.
 
-por:
+### 5. Mensagens pós-venda / chat com comprador (hoje só pré-venda)
+- Ler: `GET /messages/packs/{pack_id}/sellers/{seller_id}`.
+- Responder: `POST /messages/packs/{pack_id}/sellers/{seller_id}`.
+- Enviar mensagem a comprador exige confirmação (regra 3). Manter o fluxo de perguntas pré-venda existente intacto.
 
-        env = {
-            "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
-            "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-            "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
-            # isola o teste do ambiente de CI: sem isto, no GitHub Actions o write-back
-            # do ML dispara (gh secret set) e faz main() retornar 1.
-            "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
-        }
+### 6. Envio / logística (shipping)
+- `GET /shipments/{shipment_id}` (status), itens do envio, e geração de etiqueta.
+- Expor consulta de status e, se aplicável, impressão de etiqueta. Etiqueta/ação de despacho → confirmação.
 
-CORREÇÃO 2 — scripts/debug_bling_refresh.py (bug 'list' object has no attribute 'get')
+### 7. Categorias, avaliações e reclamações/disputas
+- Categorias: `GET /sites/MLB/categories` e `GET /categories/{id}/attributes` (necessário para publicar — ver tarefa 8).
+- Avaliações: `GET /reviews/item/{item_id}`.
+- Reclamações/disputas (mediações): explorar os endpoints de claims/post-purchase. Começar só por LEITURA + alerta no Telegram; ações de resposta vêm depois.
 
-Na checagem [3] Dados da empresa, o código chama .get() direto no JSON do endpoint de
-empresa, que às vezes vem como LISTA. Torne o parsing robusto a list/dict. Onde hoje há
-algo como `dados = resp.json()` seguido de `dados.get(...)`, troque por:
+### 8. Criar / publicar anúncio (hoje é manual)
+- `POST /items` com payload completo: title, category_id, price, currency_id, available_quantity, condition, listing_type_id, pictures, attributes, etc.
+- Use o predador/preditor de categoria e os atributos obrigatórios da categoria antes de publicar.
+- Publicação real → dry_run + confirmação. Validar payload contra os atributos obrigatórios antes de enviar.
 
-    payload = resp.json()
-    if isinstance(payload, dict):
-        empresa = payload.get("data", payload)
-    elif isinstance(payload, list):
-        empresa = payload[0] if payload else {}
-    else:
-        empresa = {}
-    if isinstance(empresa, list):
-        empresa = empresa[0] if empresa else {}
-    if not isinstance(empresa, dict):
-        empresa = {}
-    # use sempre `empresa.get(...)` a partir daqui (nome/razaoSocial/cnpj etc.)
+## Critérios de aceitação
+- Cada recurso tem função isolada, testes mockados e entrada no script de diagnóstico.
+- Nenhuma ação que gasta dinheiro ou afeta comprador roda sem dry_run/confirmação.
+- 401 dispara refresh automático e a chamada é repetida uma vez.
+- README atualizado: o que cada novo agente faz, variáveis necessárias e como acionar.
 
-VERIFICAÇÃO (rode e mostre a saída):
-    # simula o CI — sem isto o problema não aparece localmente:
-    GITHUB_ACTIONS=true python -m unittest discover -s tests -p "test_*.py"
-    ruff check api agentes core integracoes tests
+## Como validar ao final
+- `python scripts/diagnostico_ml_produtos.py` deve listar anúncios e exercitar as novas leituras.
+- `pytest` verde.
+- Rodar cada novo recurso em dry_run e mostrar no log o que SERIA feito, sem executar.
 
-Os 201 testes devem passar (inclusive sob GITHUB_ACTIONS=true) e o ruff deve ficar limpo.
-```
-
-**Contexto:**
-- Arquivos: `tests/test_renovar_tokens.py` (RT09) e `scripts/debug_bling_refresh.py` (checagem [3]).
-- A falha só aparece no Actions porque depende de `GITHUB_ACTIONS=true`.
-
-**Resultado esperado:**
-- `GITHUB_ACTIONS=true python -m unittest discover -s tests -p "test_*.py"` → `OK`, 201 testes.
-- `ruff check ...` → All checks passed!
-- O Actions deixa de terminar com exit code 1.
-
-**Status:** ⬜ a fazer
-
----
-
-## Observações honestas
-
-- A **Correção 1** conserta a quebra do CI de forma definitiva (já reproduzi a falha com
-  `GITHUB_ACTIONS=true` e confirmei que o patch faz os 201 testes passarem). O teste estava
-  exercitando, sem querer, o caminho de write-back; o patch isola o teste do ambiente.
-- A **Correção 2** elimina o `'list' object has no attribute 'get'` no diagnóstico.
-- O que este prompt **não** resolve (porque não é bug de código): o `400` na renovação do
-  Bling continua sendo credencial inválida — siga o `PROMPT_CURSOR_RESOLVER_BLING_400`
-  (revelar `invalid_grant` vs `invalid_client`) e, conforme o veredito, re-bootstrap ou
-  corrigir o `BLING_CLIENT_SECRET`. E o `[5] Refresh token … ausentes` do diagnóstico indica
-  que, no ambiente onde rodou, faltavam `BLING_CLIENT_ID/SECRET/REFRESH_TOKEN` nos Secrets.
-- Detalhe menor (não quebra nada): o `ResourceWarning: unclosed file ... ncm.xlsx` é só um
-  aviso de arquivo não fechado no teste de NCM; se quiser silenciar, feche o workbook após o
-  uso (`wb.close()`), mas não afeta o resultado.
+Comece pela tarefa 1, me mostre o diff, e só siga para a próxima após eu aprovar.

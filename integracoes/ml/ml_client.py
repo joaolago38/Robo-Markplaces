@@ -4,6 +4,7 @@ Cliente Mercado Livre com operações essenciais de perguntas/respostas.
 """
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from core.http_client import request
@@ -23,6 +24,120 @@ def _h():
     token = get_token_ml() or ML_ACCESS_TOKEN
     return {"Authorization": f"Bearer {token}"}
 
+
+def _request_ml(method: str, url: str, *, timeout: int = 30, **kwargs: Any):
+    """
+    Request autenticado com retry único em 401 (renova token e repete).
+    Rate limit (429) já é tratado pelo http_client (backoff).
+    """
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.update(_h())
+    kwargs["headers"] = headers
+
+    r = request(method, url, timeout=timeout, **kwargs)
+    if r.status_code == 401:
+        logger.warning("ML HTTP 401 — renovando token e repetindo request")
+        headers["Authorization"] = f"Bearer {get_token_ml(forcar=True) or ML_ACCESS_TOKEN}"
+        kwargs["headers"] = headers
+        r = request(method, url, timeout=timeout, **kwargs)
+    return r
+
+
+def _executar_acao_status(
+    item_id: str,
+    status: str,
+    acao: str,
+    *,
+    dry_run: bool = True,
+    confirmar: bool = False,
+) -> dict:
+    """
+    Altera o status de um anúncio (paused / active / closed).
+    dry_run=True por padrão; confirmar=True obrigatório para executar de verdade.
+    """
+    item_id = (item_id or "").strip()
+    if not item_id:
+        return {"ok": False, "erro": "item_id ausente", "dry_run": dry_run, "acao": acao}
+    if not _enabled():
+        return {"ok": False, "erro": "Mercado Livre não configurado", "dry_run": dry_run, "acao": acao}
+
+    if dry_run:
+        logger.info("[DRY-RUN] ML %s item_id=%s -> status=%s", acao, item_id, status)
+        return {
+            "ok": True,
+            "dry_run": True,
+            "acao": acao,
+            "item_id": item_id,
+            "status": status,
+        }
+
+    if not confirmar:
+        return {
+            "ok": False,
+            "dry_run": False,
+            "acao": acao,
+            "item_id": item_id,
+            "erro": f"ação de escrita requer confirmar=True (ação: {acao})",
+        }
+
+    try:
+        r = _request_ml(
+            "PUT",
+            f"{BASE}/items/{item_id}",
+            json={"status": status},
+            timeout=30,
+        )
+        r.raise_for_status()
+        body = r.json() or {}
+        logger.info("ML %s ok item_id=%s status=%s", acao, item_id, body.get("status", status))
+        return {
+            "ok": True,
+            "dry_run": False,
+            "acao": acao,
+            "item_id": item_id,
+            "status": str(body.get("status", status)),
+        }
+    except Exception as exc:
+        logger.error("ML %s erro item_id=%s: %s", acao, item_id, exc)
+        return {"ok": False, "dry_run": False, "acao": acao, "item_id": item_id, "erro": str(exc)}
+
+
+def pausar_anuncio(item_id: str, *, dry_run: bool = True, confirmar: bool = False) -> dict:
+    """Pausa um anúncio (status=paused). Não lança exceção."""
+    return _executar_acao_status(item_id, "paused", "pausar", dry_run=dry_run, confirmar=confirmar)
+
+
+def ativar_anuncio(item_id: str, *, dry_run: bool = True, confirmar: bool = False) -> dict:
+    """Reativa um anúncio pausado (status=active). Não lança exceção."""
+    return _executar_acao_status(item_id, "active", "ativar", dry_run=dry_run, confirmar=confirmar)
+
+
+def encerrar_anuncio(item_id: str, *, dry_run: bool = True, confirmar: bool = False) -> dict:
+    """
+    Encerra um anúncio (status=closed) — praticamente irreversível.
+    Exige confirmar=True quando dry_run=False.
+    """
+    return _executar_acao_status(item_id, "closed", "encerrar", dry_run=dry_run, confirmar=confirmar)
+
+
+def obter_status_anuncio(item_id: str) -> dict:
+    """Lê o status atual de um anúncio. Retorna {ok, item_id, status, titulo} ou {ok: False, erro}."""
+    item_id = (item_id or "").strip()
+    if not item_id or not _enabled():
+        return {"ok": False, "erro": "item_id ausente ou ML não configurado"}
+    try:
+        r = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
+        r.raise_for_status()
+        body = r.json() or {}
+        return {
+            "ok": True,
+            "item_id": item_id,
+            "status": str(body.get("status", "") or ""),
+            "titulo": str(body.get("title", "") or ""),
+        }
+    except Exception as exc:
+        logger.error("ML obter_status_anuncio erro item_id=%s: %s", item_id, exc)
+        return {"ok": False, "item_id": item_id, "erro": str(exc)}
 
 def listar_perguntas_nao_respondidas() -> list[dict]:
     if not _enabled():

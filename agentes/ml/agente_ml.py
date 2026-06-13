@@ -14,6 +14,9 @@ from integracoes.ml.ml_client import (
     listar_perguntas_nao_respondidas,
     responder_pergunta,
     buscar_reputacao_vendedor,
+    pausar_anuncio,
+    ativar_anuncio,
+    encerrar_anuncio,
 )
 
 logger = logging.getLogger("agente_ml")
@@ -98,6 +101,29 @@ def verificar_reputacao():
     if pct > 0.01:
         alertar_critico(f"Reclamações altas: {pct*100:.1f}%")
     return rep
+
+
+def gerenciar_status_anuncio(
+    item_id: str,
+    acao: str,
+    *,
+    dry_run: bool = True,
+    confirmar: bool = False,
+) -> dict:
+    """
+    Pausa, ativa ou encerra um anúncio no ML.
+    acao: 'pausar' | 'ativar' | 'encerrar'
+    Por padrão dry_run=True (só simula). confirmar=True obrigatório para gravar.
+    """
+    acoes = {
+        "pausar": pausar_anuncio,
+        "ativar": ativar_anuncio,
+        "encerrar": encerrar_anuncio,
+    }
+    fn = acoes.get((acao or "").strip().lower())
+    if not fn:
+        return {"ok": False, "erro": f"ação inválida: {acao!r} (use pausar/ativar/encerrar)"}
+    return fn(item_id, dry_run=dry_run, confirmar=confirmar)
 
 
 def executar():

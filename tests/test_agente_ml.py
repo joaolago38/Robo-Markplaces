@@ -96,5 +96,17 @@ class TestAgenteMlExecutar(unittest.TestCase):
         self.assertIn("reputacao", out)
 
 
+class TestAgenteMlAnuncios(unittest.TestCase):
+    @patch.object(agente_ml, "pausar_anuncio", return_value={"ok": True, "dry_run": True})
+    def test_AML10_gerenciar_pausar(self, mock_pausar):
+        out = agente_ml.gerenciar_status_anuncio("MLB1", "pausar", dry_run=True)
+        self.assertTrue(out["ok"])
+        mock_pausar.assert_called_once_with("MLB1", dry_run=True, confirmar=False)
+
+    def test_AML11_acao_invalida(self):
+        out = agente_ml.gerenciar_status_anuncio("MLB1", "explodir")
+        self.assertFalse(out["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()
