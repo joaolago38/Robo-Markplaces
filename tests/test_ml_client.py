@@ -122,5 +122,64 @@ class TestMlClient(unittest.TestCase):
         self.assertIsInstance(preco, float)
 
 
+class TestMlAnuncioStatus(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._patch = patch.multiple(ml_client, ML_ACCESS_TOKEN="tok", ML_SELLER_ID="111")
+        cls._patch.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._patch.stop()
+
+    def test_ML14_pausar_dry_run(self):
+        out = ml_client.pausar_anuncio("MLB1", dry_run=True)
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["dry_run"])
+        self.assertEqual(out["status"], "paused")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML15_pausar_confirmado(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"status": "paused"})
+        out = ml_client.pausar_anuncio("MLB1", dry_run=False, confirmar=True)
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["dry_run"])
+        mock_req.assert_called_once()
+
+    def test_ML16_sem_confirmar_bloqueia(self):
+        out = ml_client.encerrar_anuncio("MLB1", dry_run=False, confirmar=False)
+        self.assertFalse(out["ok"])
+        self.assertIn("confirmar", out["erro"])
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML17_encerrar_confirmado(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"status": "closed"})
+        out = ml_client.encerrar_anuncio("MLB1", dry_run=False, confirmar=True)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["status"], "closed")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML18_obter_status(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"status": "active", "title": "Esmalte"})
+        out = ml_client.obter_status_anuncio("MLB1")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["status"], "active")
+
+    @patch.object(ml_client, "get_token_ml", return_value="novo_tok")
+    @patch.object(ml_client, "request")
+    def test_ML19_request_ml_retry_401(self, mock_request, _gt):
+        r401 = MagicMock()
+        r401.status_code = 401
+        r200 = MagicMock()
+        r200.status_code = 200
+        mock_request.side_effect = [r401, r200]
+        out = ml_client._request_ml("GET", f"{ml_client.BASE}/items/MLB1")
+        self.assertEqual(out.status_code, 200)
+        self.assertEqual(mock_request.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

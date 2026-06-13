@@ -25,7 +25,7 @@ try:
 except Exception:
     pass
 
-from integracoes.ml.ml_client import listar_meus_anuncios
+from integracoes.ml.ml_client import listar_meus_anuncios, pausar_anuncio, obter_status_anuncio
 
 
 def main() -> int:
@@ -61,6 +61,18 @@ def main() -> int:
     for status, qtd in sorted(por_status.items()):
         print(f"  {status}: {qtd}")
     print(f"  Sem SKU: {sem_sku}")
+
+    # Valida leitura de status + simulação dry-run (não altera nada no ML)
+    primeiro = anuncios[0].get("item_id", "")
+    if primeiro:
+        st = obter_status_anuncio(primeiro)
+        sim = pausar_anuncio(primeiro, dry_run=True)
+        print("\n--- Diagnóstico de status (dry-run) ---")
+        if st.get("ok"):
+            print(f"  Status atual de {primeiro}: {st.get('status')}")
+        else:
+            print(f"  Não foi possível ler status: {st.get('erro')}")
+        print(f"  Simulação pausar: {sim}")
 
     return 0
 
