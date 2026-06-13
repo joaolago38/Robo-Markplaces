@@ -18,6 +18,7 @@ from core.config import (
 from core.notificador import alertar_gestor
 from integracoes.bling.bling_client import listar_produtos, buscar_produto
 from integracoes.ml.ml_client import atualizar_preco_item as atualizar_preco_ml
+from integracoes.ml.ml_client import buscar_menor_preco_concorrente
 from integracoes.shopee.shopee_client import atualizar_preco_item as atualizar_preco_shopee
 from integracoes.magalu.magalu_client import atualizar_preco_item as atualizar_preco_magalu
 from integracoes.amazon.amazon_client import atualizar_preco_item as atualizar_preco_amazon
@@ -120,6 +121,17 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                 continue
             preco_atual = _to_float(dados.get("preco", p.get("preco", 0)))
             preco_concorrente = _to_float(dados.get("preco_concorrente", 0), 0)
+            fonte_concorrente = "payload" if preco_concorrente > 0 else "indisponivel"
+
+            # Concorrente AO VIVO: se não veio no payload e for ML com item_id, busca em tempo real
+            if preco_concorrente <= 0 and canal == "mercadolivre":
+                item_id_ml = dados.get("item_id")
+                if item_id_ml:
+                    vivo = _to_float(buscar_menor_preco_concorrente(str(item_id_ml)), 0)
+                    if vivo > 0:
+                        preco_concorrente = vivo
+                        fonte_concorrente = "ao_vivo"
+
             taxa_canal = _to_float(dados.get("taxa_canal_pct", TAXA_CANAL_PADRAO_PCT), TAXA_CANAL_PADRAO_PCT)
 
             novo_preco, margem, preco_piso = _calcular_novo_preco(
@@ -150,6 +162,8 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     "fase_atual": str(fase_atual),
                     "taxa_canal_pct": round(taxa_canal, 2),
                     "margem_pct": round(margem, 2),
+                    "preco_concorrente": round(preco_concorrente, 2),
+                    "fonte_concorrente": fonte_concorrente,
                     "ajustar": ajustar,
                     "aplicado": resultado_aplicacao,
                     "motivo": bloqueio or f"piso por fase {margem_minima:.1f}% + taxa canal {taxa_canal:.1f}%",
