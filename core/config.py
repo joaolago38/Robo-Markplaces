@@ -138,3 +138,8 @@ ACOS_MAXIMO = float(os.getenv("ACOS_MAXIMO", "0.20"))
 BUDGET_FASE_INICIO = float(os.getenv("BUDGET_FASE_INICIO", "10.0"))
 BUDGET_FASE_CRESCIMENTO = float(os.getenv("BUDGET_FASE_CRESCIMENTO", "30.0"))
 BUDGET_FASE_ESCALA = float(os.getenv("BUDGET_FASE_ESCALA", "80.0"))
+
+# Product Ads ML — guardrails
+ML_ADS_KILL_SWITCH = os.getenv("ML_ADS_KILL_SWITCH", "false").lower() in {"1", "true", "yes"}
+ML_ADS_ORCAMENTO_MAXIMO = float(os.getenv("ML_ADS_ORCAMENTO_MAXIMO", "500.0"))
+ML_ADS_ACOS_DIAS_LIMITE = int(os.getenv("ML_ADS_ACOS_DIAS_LIMITE", "3"))

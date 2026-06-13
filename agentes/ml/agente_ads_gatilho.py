@@ -19,6 +19,7 @@ from core.config import (
     BUDGET_FASE_ESCALA,
 )
 from integracoes.ml.ml_client import buscar_reputacao_vendedor, buscar_acos_ads
+from integracoes.ml.ml_product_ads import aplicar_decisao_campanhas
 
 logger = logging.getLogger("agente_ads_gatilho")
 
@@ -142,6 +143,31 @@ def avaliar_momento_ads(
             resultado["decisao"] = "manter"
 
     logger.info("Gatilho ads: %s", resultado)
+    return _executar_api_se_aprovado(resultado)
+
+
+def _executar_api_se_aprovado(resultado: dict) -> dict:
+    """Após confirmação do gestor, aplica a decisão nas campanhas Product Ads via API."""
+    if not resultado.get("confirmado_gestor"):
+        return resultado
+
+    decisao = resultado.get("decisao")
+    mapa = {"ligar": "ativar", "pausar": "pausar", "escalar": "escalar"}
+    api_decisao = mapa.get(decisao)
+    if not api_decisao:
+        return resultado
+
+    aplicacoes = aplicar_decisao_campanhas(
+        api_decisao,
+        budget=float(resultado.get("budget_sugerido_dia") or 0),
+        dry_run=False,
+        confirmar=True,
+    )
+    resultado["aplicacoes_api"] = aplicacoes
+    ok = sum(1 for a in aplicacoes if a.get("ok"))
+    alertar_gestor(
+        f"ML Product Ads API ({decisao}): {ok}/{len(aplicacoes)} campanha(s) processada(s)."
+    )
     return resultado
 
 
