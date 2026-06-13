@@ -26,6 +26,7 @@ except Exception:
     pass
 
 from integracoes.ml.ml_client import listar_meus_anuncios, pausar_anuncio, obter_status_anuncio
+from integracoes.ml.ml_product_ads import listar_campanhas, obter_advertiser
 
 
 def main() -> int:
@@ -73,6 +74,20 @@ def main() -> int:
         else:
             print(f"  Não foi possível ler status: {st.get('erro')}")
         print(f"  Simulação pausar: {sim}")
+
+    adv = obter_advertiser()
+    print("\n--- Product Ads ---")
+    if adv.get("ok"):
+        print(f"  Advertiser: {adv.get('advertiser_id')} (site {adv.get('site_id')})")
+        camps = listar_campanhas(advertiser_id=adv["advertiser_id"], dias=7)
+        print(f"  Campanhas: {len(camps)}")
+        for c in camps[:5]:
+            print(
+                f"    {c.get('id')} | {c.get('nome', '')[:30]} | "
+                f"status={c.get('status')} budget={c.get('budget')} acos={c.get('acos')}"
+            )
+    else:
+        print(f"  {adv.get('erro')}")
 
     return 0
 
