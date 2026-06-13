@@ -81,6 +81,31 @@ def main() -> int:
             print("  Renovacao manual via pegar_token_bling.py")
             exit_code = 1
 
+    print("\n[Meta]")
+    tem_meta = _tem_credenciais(["META_APP_ID", "META_APP_SECRET", "META_ACCESS_TOKEN"])
+    if not tem_meta:
+        print("  Sem APP_ID/APP_SECRET/ACCESS_TOKEN — gere o token com pegar_token_meta.py")
+    else:
+        try:
+            from core.token_manager import renovar_token_meta_detalhado
+            res_meta = renovar_token_meta_detalhado()
+            if res_meta.get("ok"):
+                print("  meta: ok — token longo renovado (~60 dias)")
+                em_actions = os.getenv("GITHUB_ACTIONS") == "true"
+                quer_sync = os.getenv("BLING_SYNC_GITHUB", "").strip().lower() in {"1", "true", "yes"}
+                if em_actions or quer_sync:
+                    if not _sync_secrets_github(res_meta["access_token"], None, prefix="META"):
+                        exit_code = 1
+                else:
+                    print(f"    META_ACCESS_TOKEN -> {res_meta['access_token']}")
+            else:
+                print(f"  meta: falhou — {res_meta.get('motivo', '')}")
+                print("  Se o token longo expirou, gere um novo com pegar_token_meta.py")
+                exit_code = 1
+        except Exception as exc:
+            print(f"  meta: ERRO — {exc}")
+            exit_code = 1
+
     print("\n[ML / Shopee / Magalu]")
 
     tem_ml     = _tem_credenciais(CREDENCIAIS_ML)

@@ -25,6 +25,9 @@ _magalu_refresh_efetivo = {"valor": None}
 _token_cache_bling = {"access_token": None, "expires_at": 0}
 _bling_refresh_efetivo = {"valor": None}
 
+_token_cache_meta = {"access_token": None, "expires_at": 0}
+_meta_token_efetivo = {"valor": None}
+
 
 def _ml_refresh_disponivel() -> str | None:
     """Prioriza o refresh_token rotacionado (em memória) sobre o do .env/secret."""
@@ -99,6 +102,144 @@ def tokens_ml_atuais() -> dict:
         "access_token": _token_cache_ml["access_token"] or cfg.ML_ACCESS_TOKEN,
         "refresh_token": _ml_refresh_efetivo["valor"] or cfg.ML_REFRESH_TOKEN,
     }
+
+
+def _meta_store_path() -> Path | None:
+    """
+    Cofre do token longo do Meta em disco. Ativo só quando META_TOKEN_STORE
+    está definido (assim Actions e testes mantêm o comportamento sem tocar disco).
+        META_TOKEN_STORE=dados/meta_token.json
+    """
+    p = (os.getenv("META_TOKEN_STORE") or "").strip()
+    return Path(p) if p else None
+
+
+def _carregar_store_meta() -> dict:
+    p = _meta_store_path()
+    if not p or not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        logger.error("Falha ao ler store Meta (%s): %s", p, e)
+        return {}
+
+
+def _salvar_store_meta(access_token: str, expires_at: float) -> None:
+    p = _meta_store_path()
+    if not p:
+        return
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps(
+                {
+                    "access_token": access_token,
+                    "expires_at": expires_at,
+                    "atualizado_em": time.time(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        try:
+            os.chmod(p, 0o600)
+        except OSError:
+            pass
+        logger.info("Token Meta persistido em %s", p)
+    except Exception as e:
+        logger.error("Falha ao gravar store Meta (%s): %s", p, e)
+
+
+def _meta_token_disponivel() -> str | None:
+    """Prioridade: token rotacionado em memória > disco > .env/secret."""
+    if _meta_token_efetivo["valor"] is None:
+        store = _carregar_store_meta()
+        _meta_token_efetivo["valor"] = (
+            (store.get("access_token") or cfg.META_ACCESS_TOKEN or "").strip() or None
+        )
+    return _meta_token_efetivo["valor"]
+
+
+def _renovar_token_meta():
+    """
+    Estende o token longo do Meta (fb_exchange_token). O token longo dura ~60 dias;
+    reexchange antes do vencimento renova por mais ~60 dias. Requer META_APP_ID,
+    META_APP_SECRET e um token longo atual válido.
+    """
+    token_atual = _meta_token_disponivel()
+
+    if not all([cfg.META_APP_ID, cfg.META_APP_SECRET, token_atual]):
+        logger.error("Credenciais Meta ausentes para renovação (app_id/secret/token).")
+        return None
+
+    version = getattr(cfg, "META_API_VERSION", "v19.0")
+    url = f"https://graph.facebook.com/{version}/oauth/access_token"
+    params = {
+        "grant_type": "fb_exchange_token",
+        "client_id": cfg.META_APP_ID,
+        "client_secret": cfg.META_APP_SECRET,
+        "fb_exchange_token": token_atual,
+    }
+
+    try:
+        r = request("GET", url, params=params, timeout=15)
+        r.raise_for_status()
+        tokens = r.json()
+
+        access_token = tokens.get("access_token")
+        if not access_token:
+            logger.error("Meta refresh sem access_token na resposta.")
+            return None
+
+        expires_in = int(tokens.get("expires_in") or 5184000)  # ~60 dias
+        _token_cache_meta["access_token"] = access_token
+        _token_cache_meta["expires_at"] = time.time() + max(120, expires_in) - 300
+        _meta_token_efetivo["valor"] = access_token
+        cfg.META_ACCESS_TOKEN = access_token
+        _salvar_store_meta(access_token, _token_cache_meta["expires_at"])
+
+        logger.info("Token Meta renovado com sucesso")
+        return access_token
+
+    except ValueError as e:
+        logger.error("Erro de parse da resposta do token Meta: %s", e)
+        return None
+    except Exception as e:
+        logger.error("Erro ao renovar token Meta: %s", e)
+        return None
+
+
+def get_token_meta(forcar: bool = False):
+    """Retorna um token Meta válido (renova via fb_exchange_token quando forçado/expirado)."""
+    now = time.time()
+
+    if _token_cache_meta["access_token"] is None:
+        store = _carregar_store_meta()
+        if store.get("access_token"):
+            _token_cache_meta["access_token"] = store["access_token"]
+            _token_cache_meta["expires_at"] = store.get("expires_at", 0)
+
+    if not forcar:
+        if _token_cache_meta["access_token"] and now < _token_cache_meta["expires_at"]:
+            return _token_cache_meta["access_token"]
+        if not _token_cache_meta["access_token"]:
+            return cfg.META_ACCESS_TOKEN or None
+
+    novo = _renovar_token_meta()
+    return novo or cfg.META_ACCESS_TOKEN or None
+
+
+def renovar_token_meta_detalhado() -> dict:
+    """Força a renovação do token longo e devolve o novo valor (para write-back nos Secrets)."""
+    if not all([cfg.META_APP_ID, cfg.META_APP_SECRET, _meta_token_disponivel()]):
+        return {"ok": False, "motivo": "credenciais Meta ausentes"}
+
+    access = _renovar_token_meta()
+    if not access:
+        return {"ok": False, "motivo": "falha ao renovar (token longo expirado/inválido?)"}
+
+    return {"ok": True, "access_token": access}
 
 
 def _shopee_refresh_disponivel() -> str | None:

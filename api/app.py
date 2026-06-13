@@ -25,6 +25,11 @@ from agentes.manutencao_marketplaces import executar as executar_manutencao_mark
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from agentes.social.agente_metricas_meta import executar as executar_metricas_meta
+from integracoes.meta.meta_ads_client import (
+    listar_metricas_por_plataforma,
+    normalizar_por_plataforma,
+    validar_conexao as validar_conexao_meta,
+)
 from agentes.social.agente_trafego_manicures import (
     executar as executar_trafego_manicures,
     executar_resumo_madrugada as executar_resumo_madrugada_trafego,
@@ -598,6 +603,31 @@ def operacao_24h():
     dry_run_nfe = bool(dados.get("dry_run_nfe", False))
     resultado = executar_operacao_24h(dry_run_repricing=dry_run_repricing, dry_run_nfe=dry_run_nfe)
     return jsonify({"ok": True, **resultado})
+
+
+@app.route("/meta/diagnostico", methods=["GET", "POST"])
+def meta_diagnostico():
+    """
+    GET/POST /meta/diagnostico
+    Verifica a conexão com a Meta Ads API e retorna o split por plataforma
+    (Instagram x Facebook). Útil para responder "estou conectado e como vão os anúncios?".
+    Body opcional: { "periodo_dias": 7 }
+    """
+    dados = _get_json_payload() if request.method == "POST" else {}
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    periodo_dias, erro_periodo = _parse_float((dados or {}).get("periodo_dias", 7), "periodo_dias")
+    if erro_periodo:
+        return jsonify({"ok": False, "erro": erro_periodo}), 400
+
+    conexao = validar_conexao_meta()
+    if not conexao.get("ok"):
+        return jsonify({"ok": False, "conexao": conexao}), 502
+
+    rows = listar_metricas_por_plataforma(periodo_dias=max(1, int(periodo_dias)), limite=100)
+    plataformas = normalizar_por_plataforma(rows)
+    return jsonify({"ok": True, "conexao": conexao, "plataformas": plataformas})
 
 
 @app.route("/meta/trafego/manicures", methods=["POST"])
