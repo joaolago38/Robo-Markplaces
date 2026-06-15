@@ -88,6 +88,28 @@ class TestMlRefreshRotacao(unittest.TestCase):
         self.assertEqual(out["access_token"], "acc_cache")
         self.assertEqual(out["refresh_token"], "ref_cache")
 
+    @patch.object(tm, "request")
+    def test_tokens_shopee_atuais_nao_renova(self, mock_request):
+        tm._token_cache_shopee["access_token"] = "sp_acc"
+        tm._shopee_refresh_efetivo["valor"] = "sp_ref"
+
+        out = tm.tokens_shopee_atuais()
+
+        mock_request.assert_not_called()
+        self.assertEqual(out["access_token"], "sp_acc")
+        self.assertEqual(out["refresh_token"], "sp_ref")
+
+    @patch.object(tm, "request")
+    def test_tokens_magalu_atuais_nao_renova(self, mock_request):
+        tm._token_cache_magalu["access_token"] = "mg_acc"
+        tm._magalu_refresh_efetivo["valor"] = "mg_ref"
+
+        out = tm.tokens_magalu_atuais()
+
+        mock_request.assert_not_called()
+        self.assertEqual(out["access_token"], "mg_acc")
+        self.assertEqual(out["refresh_token"], "mg_ref")
+
 
 class TestListarMeusAnuncios(unittest.TestCase):
     @classmethod

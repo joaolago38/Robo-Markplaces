@@ -379,6 +379,36 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 3
       }
+    },
+    {
+      "ts": "2026-06-15T13:16:40.130406+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:14.753840+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:33.821015+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
     }
   ],
   "market_x_test": [
@@ -761,6 +791,36 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 0
       }
+    },
+    {
+      "ts": "2026-06-15T13:16:40.136167+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:14.760519+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:33.826596+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
     }
   ],
   "market_ok_test": [
@@ -1136,6 +1196,36 @@
     },
     {
       "ts": "2026-06-13T15:08:16.712161+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:16:40.142587+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:14.766338+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:33.831691+00:00",
       "score": 100,
       "metrics": {
         "configurado": true,
@@ -1866,6 +1956,72 @@
     },
     {
       "ts": "2026-06-13T15:08:16.697228+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_5e0cbe37": [
+    {
+      "ts": "2026-06-15T13:16:40.119067+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:16:40.124448+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_e83a4e88": [
+    {
+      "ts": "2026-06-15T13:18:14.743051+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:14.748038+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_6cd8f222": [
+    {
+      "ts": "2026-06-15T13:18:33.810854+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-15T13:18:33.816045+00:00",
       "score": 77,
       "metrics": {
         "configurado": true,

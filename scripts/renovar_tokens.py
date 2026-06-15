@@ -55,6 +55,8 @@ def main() -> int:
     print("=" * 60)
 
     exit_code = 0
+    em_actions = os.getenv("GITHUB_ACTIONS") == "true"
+    quer_sync = os.getenv("BLING_SYNC_GITHUB", "").strip().lower() in {"1", "true", "yes"}
 
     print("\n[Bling]")
     tem_bling = _tem_credenciais(["BLING_CLIENT_ID", "BLING_CLIENT_SECRET", "BLING_REFRESH_TOKEN"])
@@ -67,11 +69,19 @@ def main() -> int:
             if res_bling.get("ok"):
                 print("  bling: ok — token renovado")
                 novo_refresh = res_bling.get("refresh_token")
-                print("  ATENCAO: o Bling rotaciona o refresh_token a cada renovacao.")
-                print("  Atualize os secrets com os novos valores abaixo, senao a")
-                print("  proxima execucao falhara (o refresh_token antigo foi invalidado):")
-                print(f"    BLING_ACCESS_TOKEN  -> {res_bling.get('access_token')}")
-                print(f"    BLING_REFRESH_TOKEN -> {novo_refresh}")
+                if em_actions or quer_sync:
+                    if not _sync_secrets_github(
+                        res_bling["access_token"],
+                        novo_refresh,
+                        prefix="BLING",
+                    ):
+                        exit_code = 1
+                else:
+                    print("  ATENCAO: o Bling rotaciona o refresh_token a cada renovacao.")
+                    print("  Atualize os secrets com os novos valores abaixo, senao a")
+                    print("  proxima execucao falhara (o refresh_token antigo foi invalidado):")
+                    print(f"    BLING_ACCESS_TOKEN  -> {res_bling.get('access_token')}")
+                    print(f"    BLING_REFRESH_TOKEN -> {novo_refresh}")
             else:
                 print(f"  bling: falhou — {res_bling.get('motivo', '')}")
                 print("  Se o refresh_token expirou, gere um novo com pegar_token_bling.py")
@@ -91,8 +101,6 @@ def main() -> int:
             res_meta = renovar_token_meta_detalhado()
             if res_meta.get("ok"):
                 print("  meta: ok — token longo renovado (~60 dias)")
-                em_actions = os.getenv("GITHUB_ACTIONS") == "true"
-                quer_sync = os.getenv("BLING_SYNC_GITHUB", "").strip().lower() in {"1", "true", "yes"}
                 if em_actions or quer_sync:
                     if not _sync_secrets_github(res_meta["access_token"], None, prefix="META"):
                         exit_code = 1
@@ -139,16 +147,29 @@ def main() -> int:
                 print(f"  {nome}: falhou — {motivo}")
                 exit_code = 1
 
-        # Write-back do ML: o refresh_token do ML é de uso único e rotaciona.
-        # Lê os tokens JÁ rotacionados (sem renovar de novo) e grava nos Secrets.
+        # Write-back: refresh_tokens rotativos — grava nos Secrets sem renovar de novo.
         ml_ok = resultados.get("mercadolivre", {}).get("ok")
-        em_actions = os.getenv("GITHUB_ACTIONS") == "true"
-        quer_sync = os.getenv("BLING_SYNC_GITHUB", "").strip().lower() in {"1", "true", "yes"}
         if ml_ok and tem_ml and (em_actions or quer_sync):
             from core.token_manager import tokens_ml_atuais
 
             tk = tokens_ml_atuais()
             if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="ML"):
+                exit_code = 1
+
+        shopee_ok = resultados.get("shopee", {}).get("ok")
+        if shopee_ok and tem_shopee and (em_actions or quer_sync):
+            from core.token_manager import tokens_shopee_atuais
+
+            tk = tokens_shopee_atuais()
+            if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="SHOPEE"):
+                exit_code = 1
+
+        magalu_ok = resultados.get("magalu", {}).get("ok")
+        if magalu_ok and tem_magalu and (em_actions or quer_sync):
+            from core.token_manager import tokens_magalu_atuais
+
+            tk = tokens_magalu_atuais()
+            if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="MAGALU"):
                 exit_code = 1
 
     except Exception as exc:

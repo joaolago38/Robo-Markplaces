@@ -13,7 +13,8 @@ env:
 
 jobs:
   renovar:
-    name: Renovar ML / Shopee / Magalu / Meta
+    # GH_TOKEN precisa ser um PAT com escopo secrets:write (GITHUB_TOKEN padrão NÃO grava Secret).
+    name: Renovar Bling / ML / Shopee / Magalu / Meta
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
