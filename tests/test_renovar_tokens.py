@@ -171,5 +171,111 @@ class TestMain(unittest.TestCase):
         self.assertEqual(resultado, 0)
 
 
+class TestWriteBackBling(unittest.TestCase):
+    """Write-back do Bling quando GITHUB_ACTIONS ou BLING_SYNC_GITHUB."""
+
+    _ENV_BASE = {
+        "BLING_CLIENT_ID": "cid",
+        "BLING_CLIENT_SECRET": "sec",
+        "BLING_REFRESH_TOKEN": "old_ref",
+        "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
+        "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
+        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
+        "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
+        "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
+    }
+
+    def setUp(self):
+        importlib.reload(mod)
+
+    def test_bling_sync_em_actions(self):
+        env = dict(self._ENV_BASE)
+        env["GITHUB_ACTIONS"] = "true"
+        res_bling = {"ok": True, "access_token": "acc_novo", "refresh_token": "ref_novo"}
+        with patch.dict(os.environ, env, clear=False):
+            with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res_bling), \
+                 patch.object(mod, "_sync_secrets_github", return_value=True) as sync, \
+                 patch("builtins.print"):
+                code = mod.main()
+        sync.assert_called_once_with("acc_novo", "ref_novo", prefix="BLING")
+        self.assertEqual(code, 0)
+
+    def test_bling_fora_actions_apenas_imprime(self):
+        env = dict(self._ENV_BASE)
+        res_bling = {"ok": True, "access_token": "acc_novo", "refresh_token": "ref_novo"}
+        saida = StringIO()
+        with patch.dict(os.environ, env, clear=False):
+            with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res_bling), \
+                 patch.object(mod, "_sync_secrets_github") as sync, \
+                 patch("sys.stdout", saida):
+                code = mod.main()
+        sync.assert_not_called()
+        out = saida.getvalue()
+        self.assertIn("BLING_ACCESS_TOKEN", out)
+        self.assertIn("acc_novo", out)
+        self.assertIn("ref_novo", out)
+        self.assertEqual(code, 0)
+
+    def test_bling_sync_falha_em_actions(self):
+        env = dict(self._ENV_BASE)
+        env["GITHUB_ACTIONS"] = "true"
+        res_bling = {"ok": True, "access_token": "acc", "refresh_token": "ref"}
+        with patch.dict(os.environ, env, clear=False):
+            with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res_bling), \
+                 patch.object(mod, "_sync_secrets_github", return_value=False), \
+                 patch("builtins.print"):
+                code = mod.main()
+        self.assertEqual(code, 1)
+
+
+class TestWriteBackShopeeMagalu(unittest.TestCase):
+    """Write-back de Shopee e Magalu após renovar_todos_tokens."""
+
+    _ENV_SHOPEE = {
+        "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
+        "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
+        "SHOPEE_PARTNER_ID": "1", "SHOPEE_PARTNER_KEY": "key", "SHOPEE_SHOP_ID": "99",
+        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
+        "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
+        "GITHUB_ACTIONS": "true", "BLING_SYNC_GITHUB": "",
+    }
+
+    _ENV_MAGALU = {
+        "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
+        "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
+        "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
+        "MAGALU_CLIENT_ID": "cid", "MAGALU_CLIENT_SECRET": "sec", "MAGALU_MERCHANT_ID": "m1",
+        "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
+        "GITHUB_ACTIONS": "true", "BLING_SYNC_GITHUB": "",
+    }
+
+    def setUp(self):
+        importlib.reload(mod)
+
+    def test_shopee_sync_em_actions(self):
+        with patch.dict(os.environ, self._ENV_SHOPEE, clear=False):
+            with patch("core.token_manager.renovar_todos_tokens",
+                       return_value={"mercadolivre": {"ok": False}, "shopee": {"ok": True}, "magalu": {"ok": False}}), \
+                 patch("core.token_manager.tokens_shopee_atuais",
+                       return_value={"access_token": "sp_acc", "refresh_token": "sp_ref"}), \
+                 patch.object(mod, "_sync_secrets_github", return_value=True) as sync, \
+                 patch("builtins.print"):
+                code = mod.main()
+        sync.assert_called_once_with("sp_acc", "sp_ref", prefix="SHOPEE")
+        self.assertEqual(code, 0)
+
+    def test_magalu_sync_em_actions(self):
+        with patch.dict(os.environ, self._ENV_MAGALU, clear=False):
+            with patch("core.token_manager.renovar_todos_tokens",
+                       return_value={"mercadolivre": {"ok": False}, "shopee": {"ok": False}, "magalu": {"ok": True}}), \
+                 patch("core.token_manager.tokens_magalu_atuais",
+                       return_value={"access_token": "mg_acc", "refresh_token": "mg_ref"}), \
+                 patch.object(mod, "_sync_secrets_github", return_value=True) as sync, \
+                 patch("builtins.print"):
+                code = mod.main()
+        sync.assert_called_once_with("mg_acc", "mg_ref", prefix="MAGALU")
+        self.assertEqual(code, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

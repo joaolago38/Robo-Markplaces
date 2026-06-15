@@ -104,6 +104,22 @@ def tokens_ml_atuais() -> dict:
     }
 
 
+def tokens_shopee_atuais() -> dict:
+    """Tokens Shopee mais recentes em memória — sem disparar nova renovação."""
+    return {
+        "access_token": _token_cache_shopee["access_token"] or cfg.SHOPEE_ACCESS_TOKEN,
+        "refresh_token": _shopee_refresh_efetivo["valor"] or cfg.SHOPEE_REFRESH_TOKEN,
+    }
+
+
+def tokens_magalu_atuais() -> dict:
+    """Tokens Magalu mais recentes em memória — sem disparar nova renovação."""
+    return {
+        "access_token": _token_cache_magalu["access_token"] or cfg.MAGALU_ACCESS_TOKEN,
+        "refresh_token": _magalu_refresh_efetivo["valor"] or cfg.MAGALU_REFRESH_TOKEN,
+    }
+
+
 def _meta_store_path() -> Path | None:
     """
     Cofre do token longo do Meta em disco. Ativo só quando META_TOKEN_STORE
