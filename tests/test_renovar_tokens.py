@@ -86,6 +86,9 @@ class TestMain(unittest.TestCase):
             "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
             "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
             "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
+            "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
+            "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
+            "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
         }
 
     # RT04
@@ -117,9 +120,8 @@ class TestMain(unittest.TestCase):
     # RT07
     def test_RT07_exit_code_1_quando_token_manager_falha(self):
         env = {
+            **self._env_vazio(),
             "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
-            "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-            "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
         }
         with patch.dict(os.environ, env):
             m = _reload({})
@@ -132,9 +134,8 @@ class TestMain(unittest.TestCase):
     # RT08
     def test_RT08_nao_levanta_excecao_quando_token_manager_falha(self):
         env = {
+            **self._env_vazio(),
             "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
-            "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-            "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
         }
         with patch.dict(os.environ, env):
             m = _reload({})
@@ -149,12 +150,8 @@ class TestMain(unittest.TestCase):
     # RT09
     def test_RT09_ignora_marketplace_sem_credencial(self):
         env = {
+            **self._env_vazio(),
             "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
-            "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-            "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
-            # isola o teste do ambiente de CI: sem isto, no GitHub Actions o write-back
-            # do ML dispara (gh secret set) e faz main() retornar 1.
-            "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
         }
         with patch.dict(os.environ, env):
             m = _reload({})
