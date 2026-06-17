@@ -1,38 +1,50 @@
-# Tarefa: corrigir a lista de credenciais do Magalu em `scripts/renovar_tokens.py`
+# Tarefa: refatorar `testar_magalu.py` para ser testável e cobrir com testes (≥90%)
 
-## Bug
-No arquivo `scripts/renovar_tokens.py`, no topo, existe esta constante:
+## Contexto
+Existe (ou deve existir) na raiz do projeto um script `testar_magalu.py`: um diagnóstico que tenta renovar o token do Magalu (`POST https://id.magalu.com/oauth/token`, grant `refresh_token`, form-urlencoded) e imprime o **status** e o **corpo** da resposta, para revelar o motivo de um erro 400 (`invalid_grant`, `invalid_client`, etc.). As credenciais vêm do `.env` (`MAGALU_CLIENT_ID`, `MAGALU_CLIENT_SECRET`, `MAGALU_REFRESH_TOKEN`).
 
-```python
-CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_MERCHANT_ID"]
-```
+O problema para testar: na versão atual o script executa tudo no **nível do módulo** (sem funções, sem `if __name__ == "__main__"`), então importá-lo dispara a chamada HTTP real — impossível de testar e perigoso (consome o refresh token, que é rotativo). Precisamos refatorar para ser testável e então cobrir com testes.
 
-Ela está **errada**. O `MAGALU_MERCHANT_ID` é opcional, costuma ficar vazio, e **não é usado na renovação do token**. A função real de renovação `_renovar_token_magalu()` (em `core/token_manager.py`) só precisa de `MAGALU_CLIENT_ID`, `MAGALU_CLIENT_SECRET` e `MAGALU_REFRESH_TOKEN`.
+## Parte 1 — Refatorar `testar_magalu.py` (sem mudar o comportamento ao rodar)
 
-Como o `MERCHANT_ID` está vazio, o check `tem_magalu = _tem_credenciais(CREDENCIAIS_MAGALU)` retorna `False`. Isso causa dois efeitos ruins no mesmo arquivo:
-1. O resumo imprime `"magalu: sem credenciais — ignorado"` mesmo quando a renovação acontece (rótulo falso).
-2. O write-back do Magalu é pulado, porque está condicionado a `tem_magalu`:
-   ```python
-   if magalu_ok and tem_magalu and (em_actions or quer_sync):
-       ... grava o Secret MAGALU_*
-   ```
-   Ou seja, mesmo renovando com sucesso, o refresh rotacionado nunca é salvo.
+Reorganize em funções puras + um `main()` com guarda, **sem efeitos colaterais no import**:
 
-## Correção (uma linha)
-Troque a constante para usar `MAGALU_REFRESH_TOKEN` no lugar de `MAGALU_MERCHANT_ID`, alinhando com o que a renovação realmente exige:
+- `carregar_credenciais() -> dict` — lê `MAGALU_CLIENT_ID`, `MAGALU_CLIENT_SECRET`, `MAGALU_REFRESH_TOKEN` do ambiente, com `.strip()`, e retorna um dict.
+- `mascarar(valor: str) -> str` — devolve uma versão mascarada para log (ex.: primeiros/últimos chars + tamanho), nunca o valor inteiro.
+- `renovar(client_id: str, client_secret: str, refresh_token: str) -> tuple[int, str]` — faz o POST e retorna `(status_code, corpo_texto)`. Toda a chamada HTTP fica aqui (para ser mockada nos testes). Use `requests.post` com `Content-Type: application/x-www-form-urlencoded` e `timeout=25`.
+- `main() -> int` — orquestra: carrega credenciais, imprime as mascaradas + tamanhos, valida que as três existem (se faltar alguma, imprime aviso e retorna código diferente de 0 — não use `sys.exit` direto dentro de lógica testável; retorne o código e deixe o `main` retornar), chama `renovar(...)`, imprime status e corpo, e retorna 0 em sucesso (status < 400) ou 1 caso contrário.
+- No fim do arquivo: `if __name__ == "__main__": raise SystemExit(main())`.
 
-```python
-CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_REFRESH_TOKEN"]
-```
+Mantenha o `load_dotenv()` dentro de try/except, mas chame-o **dentro do `main()`** (ou de `carregar_credenciais()`), não no nível do módulo, para o import não ter efeitos colaterais.
+
+Regra de segurança: NUNCA imprimir o valor completo de client_secret ou tokens — só a versão mascarada e o tamanho.
+
+## Parte 2 — Testes em `tests/test_testar_magalu.py`
+
+Siga o padrão de testes já existente no projeto (pytest). **Nenhum teste pode fazer chamada de rede real** — mocke `requests.post` (via `monkeypatch` ou `unittest.mock.patch`). Use `monkeypatch.setenv` para as variáveis de ambiente. Cubra pelo menos:
+
+1. `carregar_credenciais()` lê e dá `.strip()` corretamente nas três variáveis.
+2. `mascarar()` não vaza o valor completo (o resultado não contém o valor inteiro) e indica o tamanho.
+3. `renovar()` em **sucesso** (mock de `requests.post` retornando um objeto com `status_code=200` e um `text`/`json` válido) retorna `(200, ...)`.
+4. `renovar()` em **erro 400** (mock retornando `status_code=400` e um `text` tipo `{"error":"invalid_grant"}`) retorna `(400, corpo)` e o corpo é propagado.
+5. `main()` com as três env vars presentes e mock de sucesso → retorna `0`.
+6. `main()` com mock de 400 → retorna `1` e imprime o corpo (capture com `capsys` e verifique que o corpo aparece na saída).
+7. `main()` com alguma env var ausente → retorna código != 0 sem fazer a chamada HTTP (verifique que `requests.post` NÃO foi chamado).
+
+Meta de cobertura: **≥ 90%** das linhas de `testar_magalu.py`.
+
+## Validação
+- Rode: `pytest tests/test_testar_magalu.py --cov=testar_magalu --cov-report=term-missing -q` e confirme cobertura ≥ 90%.
+- Rode `ruff check .` (se o projeto usar ruff) e garanta verde.
+- Garanta que a suíte geral (`pytest -q`) continua passando.
 
 ## NÃO fazer
-- Não alterar `CREDENCIAIS_ML` nem `CREDENCIAIS_SHOPEE` (essas já estão corretas para os respectivos fluxos — a Shopee usa partner_id/partner_key/shop_id de propósito).
-- Não mexer em `core/token_manager.py` nem em qualquer outra parte do `renovar_tokens.py`.
-- Não remover o suporte ao `MAGALU_MERCHANT_ID` em outros lugares do projeto (ele pode ser usado em chamadas de API do Magalu); apenas tirá-lo do check de credenciais da renovação.
-
-## Validar
-- Se houver testes (`tests/test_renovar_tokens*.py`), rode `pytest -q` e garanta que continuam passando.
-- Rode `ruff check .` se o projeto usar ruff.
+- Não fazer chamadas HTTP reais nos testes (mocke tudo).
+- Não imprimir/logar credenciais completas em lugar nenhum.
+- Não alterar `core/token_manager.py`, `scripts/renovar_tokens.py` nem outros arquivos.
+- Não commitar `.env`.
 
 ## Entregar
-A linha `CREDENCIAIS_MAGALU` corrigida, e confirmação de que os testes (se existirem) continuam verdes.
+- `testar_magalu.py` refatorado (funções + `main()` + guarda).
+- `tests/test_testar_magalu.py` com os casos acima.
+- Saída do `pytest --cov` mostrando ≥ 90% para o arquivo.
