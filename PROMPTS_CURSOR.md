@@ -1,57 +1,38 @@
-# Tarefa: logar o corpo da resposta no erro de renovação do Magalu (diagnóstico)
+# Tarefa: corrigir a lista de credenciais do Magalu em `scripts/renovar_tokens.py`
 
-## Contexto
-A renovação do token do Magalu está falhando com `400 Bad Request` no endpoint `https://id.magalu.com/oauth/token`. O problema: o código atual loga apenas o **status** do erro, não o **corpo** da resposta — e é o corpo que diz o motivo real (`invalid_grant`, `invalid_client`, `invalid_request`, etc.). Sem o corpo, não dá para saber a causa.
-
-Arquivo: `core/token_manager.py`, função `_renovar_token_magalu()` (por volta das linhas 367-416).
-
-Hoje o final da função é assim (resumido):
-```python
-    try:
-        r = request("POST", "https://id.magalu.com/oauth/token", data=body,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=25)
-        r.raise_for_status()
-        tokens = r.json()
-        ...
-    except Exception as e:
-        logger.error("Erro ao renovar token Magazine Luiza: %s", e)
-        return None
-```
-
-O `raise_for_status()` levanta o erro sem o corpo, e o `except` loga só `e` (ex.: "400 Client Error: Bad Request").
-
-## O que fazer
-
-Em `_renovar_token_magalu()`, **antes** de `raise_for_status()`, trate o caso de status de erro logando status + corpo (truncado para não poluir o log), e retorne `None`. Mantenha o `try/except` externo para erros de rede (onde `r` pode não existir). Exemplo do que se espera:
+## Bug
+No arquivo `scripts/renovar_tokens.py`, no topo, existe esta constante:
 
 ```python
-    try:
-        r = request("POST", "https://id.magalu.com/oauth/token", data=body,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=25)
-        if r.status_code >= 400:
-            logger.error("Erro ao renovar token Magazine Luiza: HTTP %s — %s",
-                         r.status_code, r.text[:500])
-            return None
-        tokens = r.json()
-        ...  # resto igual (access_token, expires_in, novo_refresh, caches, etc.)
-    except Exception as e:
-        logger.error("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
-        return None
+CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_MERCHANT_ID"]
 ```
 
-Pontos importantes:
-- NÃO alterar o contrato da função: continua retornando `None` em falha e o `access_token` em sucesso.
-- NÃO mudar o corpo da requisição, a URL, os headers nem o grant_type.
-- Truncar o corpo (`r.text[:500]`) para evitar log gigante.
-- Manter todo o resto da função idêntico (parse do access_token, expires_in, rotação do refresh, caches `_token_cache_magalu` / `_magalu_refresh_efetivo`, atribuições em `cfg`).
+Ela está **errada**. O `MAGALU_MERCHANT_ID` é opcional, costuma ficar vazio, e **não é usado na renovação do token**. A função real de renovação `_renovar_token_magalu()` (em `core/token_manager.py`) só precisa de `MAGALU_CLIENT_ID`, `MAGALU_CLIENT_SECRET` e `MAGALU_REFRESH_TOKEN`.
 
-## Opcional (melhora um rótulo enganoso)
-No `scripts/renovar_tokens.py`, no resumo que imprime `"{nome}: sem credenciais — ignorado"` para os resultados de `renovar_todos_tokens()`: hoje qualquer `ok=False` vira "sem credenciais", mesmo quando as credenciais existem e a renovação é que falhou (foi o que aconteceu com o Magalu). Se for simples, distinga os dois casos: quando há credenciais mas `ok=False`, imprimir algo como `"{nome}: falhou na renovação — ver erro acima"` em vez de "sem credenciais". Se exigir refatoração grande, pode pular esta parte.
+Como o `MERCHANT_ID` está vazio, o check `tem_magalu = _tem_credenciais(CREDENCIAIS_MAGALU)` retorna `False`. Isso causa dois efeitos ruins no mesmo arquivo:
+1. O resumo imprime `"magalu: sem credenciais — ignorado"` mesmo quando a renovação acontece (rótulo falso).
+2. O write-back do Magalu é pulado, porque está condicionado a `tem_magalu`:
+   ```python
+   if magalu_ok and tem_magalu and (em_actions or quer_sync):
+       ... grava o Secret MAGALU_*
+   ```
+   Ou seja, mesmo renovando com sucesso, o refresh rotacionado nunca é salvo.
+
+## Correção (uma linha)
+Troque a constante para usar `MAGALU_REFRESH_TOKEN` no lugar de `MAGALU_MERCHANT_ID`, alinhando com o que a renovação realmente exige:
+
+```python
+CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_REFRESH_TOKEN"]
+```
 
 ## NÃO fazer
-- Não tocar nas funções de Bling, ML, Shopee, Meta nesta tarefa (foco no Magalu).
-- Não logar as credenciais (client_secret, tokens) — apenas status e corpo da resposta do servidor.
-- Não commitar `.env`.
+- Não alterar `CREDENCIAIS_ML` nem `CREDENCIAIS_SHOPEE` (essas já estão corretas para os respectivos fluxos — a Shopee usa partner_id/partner_key/shop_id de propósito).
+- Não mexer em `core/token_manager.py` nem em qualquer outra parte do `renovar_tokens.py`.
+- Não remover o suporte ao `MAGALU_MERCHANT_ID` em outros lugares do projeto (ele pode ser usado em chamadas de API do Magalu); apenas tirá-lo do check de credenciais da renovação.
+
+## Validar
+- Se houver testes (`tests/test_renovar_tokens*.py`), rode `pytest -q` e garanta que continuam passando.
+- Rode `ruff check .` se o projeto usar ruff.
 
 ## Entregar
-A função `_renovar_token_magalu()` ajustada, e (se fez a parte opcional) o ajuste do rótulo no `renovar_tokens.py`.
+A linha `CREDENCIAIS_MAGALU` corrigida, e confirmação de que os testes (se existirem) continuam verdes.
