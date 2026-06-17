@@ -70,6 +70,7 @@ class ShopeeClientTests(unittest.TestCase):
             SHOPEE_PARTNER_KEY="key",
             SHOPEE_SHOP_ID="2",
             SHOPEE_ACCESS_TOKEN="token",
+            SHOPEE_REFRESH_TOKEN="",
         )
         cls._config_patch.start()
 
