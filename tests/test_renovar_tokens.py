@@ -85,7 +85,7 @@ class TestMain(unittest.TestCase):
         return {
             "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
             "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-            "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
+            "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
             "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
             "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
             "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
@@ -196,7 +196,7 @@ class TestWriteBackBling(unittest.TestCase):
         "BLING_REFRESH_TOKEN": "old_ref",
         "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
         "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
+        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
         "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
         "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
     }
@@ -251,7 +251,7 @@ class TestWriteBackShopeeMagalu(unittest.TestCase):
         "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
         "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
         "SHOPEE_PARTNER_ID": "1", "SHOPEE_PARTNER_KEY": "key", "SHOPEE_SHOP_ID": "99",
-        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_MERCHANT_ID": "",
+        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
         "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
         "GITHUB_ACTIONS": "true", "BLING_SYNC_GITHUB": "",
     }
@@ -260,7 +260,7 @@ class TestWriteBackShopeeMagalu(unittest.TestCase):
         "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
         "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
         "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
-        "MAGALU_CLIENT_ID": "cid", "MAGALU_CLIENT_SECRET": "sec", "MAGALU_MERCHANT_ID": "m1",
+        "MAGALU_CLIENT_ID": "cid", "MAGALU_CLIENT_SECRET": "sec", "MAGALU_REFRESH_TOKEN": "ref",
         "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
         "GITHUB_ACTIONS": "true", "BLING_SYNC_GITHUB": "",
     }
