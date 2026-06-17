@@ -1,31 +1,57 @@
-# Tarefa: corrigir credenciais no arquivo errado — mover de `.env.exemplo` para `.env`
+# Tarefa: logar o corpo da resposta no erro de renovação do Magalu (diagnóstico)
 
-## Situação
-Por engano, valores REAIS de credenciais foram preenchidos no arquivo **`.env.exemplo`** (que é versionado/commitado no Git). O correto é que eles fiquem no **`.env`** (que é ignorado pelo Git — já consta no `.gitignore`). O `.env.exemplo` deve voltar a ser só um template com placeholders.
+## Contexto
+A renovação do token do Magalu está falhando com `400 Bad Request` no endpoint `https://id.magalu.com/oauth/token`. O problema: o código atual loga apenas o **status** do erro, não o **corpo** da resposta — e é o corpo que diz o motivo real (`invalid_grant`, `invalid_client`, `invalid_request`, etc.). Sem o corpo, não dá para saber a causa.
 
-Risco a evitar: se `.env.exemplo` for commitado com valores reais, o `client_secret` vaza no repositório. Esta tarefa precisa deixar o `.env.exemplo` limpo ANTES de qualquer commit.
+Arquivo: `core/token_manager.py`, função `_renovar_token_magalu()` (por volta das linhas 367-416).
 
-## O que fazer (nesta ordem)
+Hoje o final da função é assim (resumido):
+```python
+    try:
+        r = request("POST", "https://id.magalu.com/oauth/token", data=body,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=25)
+        r.raise_for_status()
+        tokens = r.json()
+        ...
+    except Exception as e:
+        logger.error("Erro ao renovar token Magazine Luiza: %s", e)
+        return None
+```
 
-1. **Ler o `.env.exemplo`** e identificar TODAS as linhas onde o valor é real (qualquer `CHAVE=valor` cujo valor não seja `...`, vazio, ou um valor de configuração legítimo do template — ex.: `META_API_VERSION=v19.0`, `MARGEM_MINIMA=15.0`, URLs de exemplo já existiam no template e NÃO são segredo). Foco nas credenciais: `*_CLIENT_ID`, `*_CLIENT_SECRET`, `*_ACCESS_TOKEN`, `*_REFRESH_TOKEN`, `*_TOKEN`, `*_KEY`, `*_SECRET`, `*_SELLER_ID`, `*_MERCHANT_ID`, `*_SHOP_ID`, `*_PARTNER_*`, `ANTHROPIC_API_KEY`, `TELEGRAM_*`, etc.
+O `raise_for_status()` levanta o erro sem o corpo, e o `except` loga só `e` (ex.: "400 Client Error: Bad Request").
 
-2. **Garantir que o `.env` existe** na raiz (criar se não existir, copiando a estrutura do `.env.exemplo`).
+## O que fazer
 
-3. **Copiar para o `.env`** os valores reais encontrados no `.env.exemplo`, em cada chave correspondente (sobrescrevendo o placeholder em branco que estiver no `.env`). Não apagar do `.env` valores que já estejam corretos lá.
+Em `_renovar_token_magalu()`, **antes** de `raise_for_status()`, trate o caso de status de erro logando status + corpo (truncado para não poluir o log), e retorne `None`. Mantenha o `try/except` externo para erros de rede (onde `r` pode não existir). Exemplo do que se espera:
 
-4. **Resetar o `.env.exemplo`**: trocar de volta para placeholder (`...`) o valor de toda chave de credencial que tenha sido preenchida com valor real. Manter intactas as linhas de configuração legítimas do template (versões de API, margens, flags, redirect_uris de exemplo, comentários e a estrutura geral). O resultado: `.env.exemplo` idêntico a um template, sem nenhum segredo real.
+```python
+    try:
+        r = request("POST", "https://id.magalu.com/oauth/token", data=body,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=25)
+        if r.status_code >= 400:
+            logger.error("Erro ao renovar token Magazine Luiza: HTTP %s — %s",
+                         r.status_code, r.text[:500])
+            return None
+        tokens = r.json()
+        ...  # resto igual (access_token, expires_in, novo_refresh, caches, etc.)
+    except Exception as e:
+        logger.error("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
+        return None
+```
 
-5. **Conferir segurança**:
-   - Confirmar que `.env` continua listado no `.gitignore` (não remover).
-   - Confirmar que o `.env.exemplo`, após o reset, NÃO contém mais nenhum valor real de credencial (fazer um diff/grep mental pelas chaves sensíveis).
-   - Rodar `pip show python-dotenv` no ambiente ativo (`.venv`); se faltar, `pip install -r requirements.txt`. (Os scripts de bootstrap ignoram silenciosamente o `.env` se o `python-dotenv` não estiver instalado.)
+Pontos importantes:
+- NÃO alterar o contrato da função: continua retornando `None` em falha e o `access_token` em sucesso.
+- NÃO mudar o corpo da requisição, a URL, os headers nem o grant_type.
+- Truncar o corpo (`r.text[:500]`) para evitar log gigante.
+- Manter todo o resto da função idêntico (parse do access_token, expires_in, rotação do refresh, caches `_token_cache_magalu` / `_magalu_refresh_efetivo`, atribuições em `cfg`).
+
+## Opcional (melhora um rótulo enganoso)
+No `scripts/renovar_tokens.py`, no resumo que imprime `"{nome}: sem credenciais — ignorado"` para os resultados de `renovar_todos_tokens()`: hoje qualquer `ok=False` vira "sem credenciais", mesmo quando as credenciais existem e a renovação é que falhou (foi o que aconteceu com o Magalu). Se for simples, distinga os dois casos: quando há credenciais mas `ok=False`, imprimir algo como `"{nome}: falhou na renovação — ver erro acima"` em vez de "sem credenciais". Se exigir refatoração grande, pode pular esta parte.
 
 ## NÃO fazer
-- NÃO commitar nada. Apenas deixar os arquivos no estado correto; o commit fica a critério do usuário depois de revisar.
-- NÃO incluir nenhum valor real em mensagens, logs ou arquivos versionados.
-- NÃO alterar `pegar_token_bling.py`, `pegar_token_ml.py`, `core/config.py` nem qualquer outro código.
+- Não tocar nas funções de Bling, ML, Shopee, Meta nesta tarefa (foco no Magalu).
+- Não logar as credenciais (client_secret, tokens) — apenas status e corpo da resposta do servidor.
+- Não commitar `.env`.
 
 ## Entregar
-- Confirmação de quais chaves foram movidas para o `.env`.
-- Confirmação de que o `.env.exemplo` voltou a ter só placeholders (sem segredo real) e está seguro para commit.
-- Status do `python-dotenv` no `.venv`.
+A função `_renovar_token_magalu()` ajustada, e (se fez a parte opcional) o ajuste do rótulo no `renovar_tokens.py`.

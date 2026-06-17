@@ -167,6 +167,25 @@ class TestMain(unittest.TestCase):
         # shopee e magalu ignorados — nao devem causar exit_code 1
         self.assertEqual(resultado, 0)
 
+    def test_RT12_mensagem_falha_renovacao_sem_motivo(self):
+        env = {
+            **self._env_vazio(),
+            "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
+        }
+        with patch.dict(os.environ, env):
+            m = _reload({})
+            mock_result = {
+                "mercadolivre": {"ok": False},
+                "shopee": {"ok": False},
+                "magalu": {"ok": False},
+            }
+            saida = StringIO()
+            with patch("core.token_manager.renovar_todos_tokens", return_value=mock_result):
+                with patch("sys.stdout", saida):
+                    resultado = m.main()
+        self.assertEqual(resultado, 1)
+        self.assertIn("falhou na renovação — ver erro acima", saida.getvalue())
+
 
 class TestWriteBackBling(unittest.TestCase):
     """Write-back do Bling quando GITHUB_ACTIONS ou BLING_SYNC_GITHUB."""
