@@ -387,7 +387,13 @@ def _renovar_token_magalu():
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=25,
         )
-        r.raise_for_status()
+        if r.status_code >= 400:
+            logger.error(
+                "Erro ao renovar token Magazine Luiza: HTTP %s — %s",
+                r.status_code,
+                (r.text or "")[:500],
+            )
+            return None
         tokens = r.json()
 
         access_token = tokens.get("access_token")
@@ -412,7 +418,7 @@ def _renovar_token_magalu():
         return access_token
 
     except Exception as e:
-        logger.error("Erro ao renovar token Magazine Luiza: %s", e)
+        logger.error("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
         return None
 
 

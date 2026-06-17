@@ -143,8 +143,11 @@ def main() -> int:
             elif ok:
                 print(f"  {nome}: ok")
             else:
-                motivo = payload.get("motivo", "")
-                print(f"  {nome}: falhou — {motivo}")
+                motivo = payload.get("motivo", "").strip()
+                if motivo:
+                    print(f"  {nome}: falhou — {motivo}")
+                else:
+                    print(f"  {nome}: falhou na renovação — ver erro acima")
                 exit_code = 1
 
         # Write-back: refresh_tokens rotativos — grava nos Secrets sem renovar de novo.
