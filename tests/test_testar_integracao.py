@@ -23,12 +23,15 @@ class TestTestarIntegracaoConfig(unittest.TestCase):
             "BLING_CLIENT_SECRET",
         ):
             run_env.setdefault(key, "")
+        run_env.setdefault("PYTHONIOENCODING", "utf-8")
         return subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "testar_integracao.py")],
             cwd=ROOT,
             env=run_env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=120,
         )
 

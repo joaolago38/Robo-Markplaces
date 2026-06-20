@@ -16,20 +16,65 @@ def _h(token: str | None = None):
 
 def _request_bling(method: str, url: str, **kwargs):
     """
-    Faz a chamada autenticada e, em caso de 401 (token expirado), força a
-    renovação via refresh_token e tenta UMA vez mais.
+    Faz a chamada autenticada e, em caso de 401/403 (token expirado ou
+    inválido), força a renovação via refresh_token e tenta UMA vez mais.
     """
     headers = dict(kwargs.pop("headers", {}) or {})
     headers.update(_h())
     r = request(method, url, headers=headers, **kwargs)
 
-    if getattr(r, "status_code", None) == 401:
-        logger.warning("Bling retornou 401 — renovando token e tentando novamente.")
+    status = getattr(r, "status_code", None)
+    if status in (401, 403):
+        logger.warning(
+            "Bling retornou %s — renovando token e tentando novamente.", status
+        )
         novo = token_manager.get_token_bling(forcar=True)
         if novo:
             headers.update(_h(novo))
             r = request(method, url, headers=headers, **kwargs)
     return r
+
+
+def probe_produtos() -> dict:
+    """
+    Verifica GET /produtos sem mascarar erros HTTP como lista vazia.
+    Retorna ok, status HTTP e mensagem curta para scripts de diagnóstico.
+    """
+    try:
+        r = _request_bling(
+            "GET",
+            f"{BASE}/produtos",
+            params={"situacao": "A", "limite": 1},
+            timeout=15,
+        )
+        status = getattr(r, "status_code", 0)
+        if status == 200:
+            qtd = len(r.json().get("data", []))
+            return {"ok": True, "status": 200, "msg": "autenticado", "amostra": qtd}
+        if status == 401:
+            return {
+                "ok": False,
+                "status": 401,
+                "msg": "token expirado ou invalido — rode pegar_token_bling.py",
+            }
+        if status == 403:
+            return {
+                "ok": False,
+                "status": 403,
+                "msg": (
+                    "sem permissao — no App Bling marque escopo Produtos e "
+                    "reautorize com pegar_token_bling.py"
+                ),
+            }
+        try:
+            corpo = r.json()
+            detalhe = corpo.get("error", corpo) if isinstance(corpo, dict) else corpo
+        except ValueError:
+            detalhe = (getattr(r, "text", "") or "")[:200]
+        return {"ok": False, "status": status, "msg": str(detalhe)[:200]}
+    except Exception as exc:
+        logger.error("Bling probe_produtos erro: %s", exc)
+        return {"ok": False, "status": 0, "msg": str(exc)}
 
 def _to_float(value, default=0.0) -> float:
     try:
@@ -81,7 +126,14 @@ def buscar_produto(sku: str) -> dict | None:
 def listar_produtos() -> list[dict]:
     try:
         r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
-        r.raise_for_status()
+        status = getattr(r, "status_code", 0)
+        if status != 200:
+            logger.error(
+                "Bling listar_produtos HTTP %s: %s",
+                status,
+                (getattr(r, "text", "") or "")[:300],
+            )
+            return []
         return [_normalizar_produto(p) for p in r.json().get("data", [])]
     except ValueError as e:
         logger.error("Bling listar_produtos JSON inválido: %s", e)
