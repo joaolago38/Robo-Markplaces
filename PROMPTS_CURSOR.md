@@ -1,16 +1,77 @@
-Aqui está um prompt que você pode colar em outra sessão de IA (ou usar você mesmo) para fazer a correção:
+"""
+pegar_token_amazon.py
+Troca o code OAuth2 pelo Access Token e Refresh Token da Amazon SP-API (bootstrap inicial),
+usando o fluxo Login with Amazon (LWA).
 
----
+Credenciais vêm de variáveis de ambiente / .env (NUNCA hardcoded):
+    AMAZON_LWA_CLIENT_ID, AMAZON_LWA_CLIENT_SECRET
+    AMAZON_REDIRECT_URI   (opcional; default https://www.google.com)
 
-**Prompt:**
+Como gerar o "code":
+    1) No Seller Central, crie um app privado SP-API:
+       Apps e Serviços → Desenvolver Apps → Adicionar novo app cliente SP-API.
+       Anote o LWA Client ID e Client Secret e defina a Redirect URI
+       (use https://www.google.com se não tiver um site próprio).
+    2) Autorize o app na sua própria conta (self-authorization), na tela final
+       do cadastro do app privado. A Amazon vai redirecionar para a Redirect URI.
+    3) Copie o "code" (parâmetro ?spapi_oauth_code=XXXX ou ?code=XXXX) da URL de
+       retorno. ATENÇÃO: o code expira em poucos minutos.
+    4) Rode IMEDIATAMENTE, passando o code:
+       python pegar_token_amazon.py SEU_CODE
+       (ou defina AMAZON_OAUTH_CODE no ambiente)
+"""
+import os
+import sys
 
-> No projeto Robo-Markplaces, o teste `scripts/testar_integracao.py` está passando no TESTE 1 (Configuração de variáveis) mesmo quando `BLING_CLIENT_SECRET` está ausente ou incorreto, porque esse teste só confere `ANTHROPIC_API_KEY`, `BLING_ACCESS_TOKEN`, `BLING_REFRESH_TOKEN` e `BLING_CLIENT_ID` — nunca o `BLING_CLIENT_SECRET`. Isso esconde a causa real de falhas de renovação de token do Bling (erro 400 no `/Api/v3/oauth/token`), que só aparece depois, no TESTE 2.
->
-> Faça o seguinte:
->
-> 1. Em `scripts/testar_integracao.py`, dentro do TESTE 1, adicione uma checagem para `BLING_CLIENT_SECRET` (variável de ambiente), seguindo o mesmo padrão das checagens existentes (usar a função `checar()`, mostrar só os primeiros caracteres do valor por segurança, msg de erro clara se ausente).
-> 2. Confirme que `core/config.py` já expõe `BLING_CLIENT_SECRET` corretamente (já expõe, em `core/config.py` linha ~39) — não precisa duplicar, só usar `os.getenv` no próprio script de teste, igual aos outros.
-> 3. Em `core/token_manager.py`, na função `_renovar_token_bling`, garanta que a mensagem de erro logada no bloco `if r.status_code != 200` (que já existe, chamando `_dica_erro_refresh_bling`) é a que realmente aparece nos logs — ou seja, confirme que não há nenhum outro lugar (ex: em `core/http_client.py` ou em outra camada) que poderia estar chamando `raise_for_status()` antes desse bloco e mascarando a mensagem detalhada com o erro genérico do `requests` ("400 Client Error: Bad Request for url..."). Se encontrar, ajuste para que a mensagem detalhada com a dica (`invalid_grant`, `invalid_client`, etc.) seja sempre a que é logada.
-> 4. Rode os testes existentes em `tests/test_diagnostico_bling.py` e `tests/test_bling_client.py` para garantir que nada quebrou, e adicione um teste novo cobrindo o caso de `BLING_CLIENT_SECRET` ausente.
-> 5. Não altere nenhuma credencial real, apenas a lógica de diagnóstico/teste.
+import requests
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except Exception:
+    pass
+
+CLIENT_ID = os.getenv("AMAZON_LWA_CLIENT_ID", "").strip()
+CLIENT_SECRET = os.getenv("AMAZON_LWA_CLIENT_SECRET", "").strip()
+REDIRECT_URI = os.getenv("AMAZON_REDIRECT_URI", "https://www.google.com").strip()
+CODE = (sys.argv[1] if len(sys.argv) > 1 else os.getenv("AMAZON_OAUTH_CODE", "")).strip()
+
+if not CLIENT_ID or not CLIENT_SECRET:
+    sys.exit("Defina AMAZON_LWA_CLIENT_ID e AMAZON_LWA_CLIENT_SECRET no .env / ambiente.")
+if not CODE:
+    sys.exit("Informe o code: python pegar_token_amazon.py SEU_CODE (ou AMAZON_OAUTH_CODE).")
+
+print("Enviando requisicao para a Amazon (LWA)...")
+r = requests.post(
+    "https://api.amazon.com/auth/o2/token",
+    headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"},
+    data={
+        "grant_type": "authorization_code",
+        "code": CODE,
+        "redirect_uri": REDIRECT_URI,
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+    },
+    timeout=15,
+)
+
+print(f"Status: {r.status_code}")
+dados = r.json()
+
+if "access_token" in dados:
+    print("=" * 60)
+    print("SUCESSO! Copie para o GitHub Secrets:")
+    print("=" * 60)
+    print(f"AMAZON_ACCESS_TOKEN:  {dados['access_token']}")
+    print(f"AMAZON_REFRESH_TOKEN: {dados.get('refresh_token', '')}")
+    print(f"Expira em:            {dados.get('expires_in', 0) // 3600}h")
+    print("=" * 60)
+    print()
+    print("AINDA FALTA definir manualmente (nao vem nesta resposta):")
+    print("  AMAZON_SELLER_ID      -> Merchant Token, em Seller Central:")
+    print("                           Configuracoes da conta -> Informacoes comerciais")
+    print("  AMAZON_MARKETPLACE_ID -> Brasil = A2Q3Y263D00KWC (valor fixo)")
+else:
+    print("ERRO:", dados)
+    print("Dica: o code OAuth expira rapido — gere um novo no Seller Central e rode imediatamente.")
