@@ -72,6 +72,10 @@ checar(bool(bling_id),
        f"BLING_CLIENT_ID configurado",
        "BLING_CLIENT_ID ausente")
 
+checar(bool(bling_secret) and bling_secret != "...",
+       f"BLING_CLIENT_SECRET configurado ({bling_secret[:4]}...)",
+       "BLING_CLIENT_SECRET ausente")
+
 
 # ══════════════════════════════════════════════════════════════
 # TESTE 2 — Bling
