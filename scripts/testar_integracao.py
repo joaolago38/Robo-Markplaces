@@ -87,7 +87,15 @@ print("=" * 55)
 
 produtos = []
 try:
-    from integracoes.bling.bling_client import listar_produtos, estoques_criticos
+    from integracoes.bling.bling_client import estoques_criticos, listar_produtos, probe_produtos
+
+    probe = probe_produtos()
+    checar(
+        probe["ok"],
+        f"Bling autenticado (HTTP {probe['status']})",
+        f"Bling HTTP {probe['status']}: {probe['msg']}",
+    )
+
     inicio = time.time()
     produtos = listar_produtos()
     latencia = round(time.time() - inicio, 2)
@@ -96,9 +104,12 @@ try:
            f"listar_produtos() retornou lista",
            "listar_produtos() retornou tipo invalido")
 
-    checar(len(produtos) > 0,
-           f"Bling conectado — {len(produtos)} produto(s) encontrado(s) em {latencia}s",
-           f"Bling retornou lista vazia — token pode estar expirado")
+    if probe["ok"]:
+        checar(
+            len(produtos) > 0,
+            f"Bling conectado — {len(produtos)} produto(s) encontrado(s) em {latencia}s",
+            "Bling retornou lista vazia — nenhum produto ativo (situacao=A) no ERP",
+        )
 
     if produtos:
         log(INFO, "Primeiros 3 produtos:")
@@ -108,8 +119,9 @@ try:
             preco  = p.get("preco", 0)
             log(INFO, f"  {codigo}: {nome} | R$ {preco}")
 
-    criticos = estoques_criticos()
-    log(INFO, f"Estoque critico: {len(criticos)} produto(s)")
+    if probe["ok"]:
+        criticos = estoques_criticos()
+        log(INFO, f"Estoque critico: {len(criticos)} produto(s)")
 
 except Exception as exc:
     checar(False, "", f"Excecao ao conectar no Bling: {exc}")

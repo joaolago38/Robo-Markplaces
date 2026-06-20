@@ -64,14 +64,35 @@ class TestBlingListar(unittest.TestCase):
                 ]
             }
         )
+        mock_request.return_value.status_code = 200
         produtos = bling_client.listar_produtos()
         self.assertEqual(len(produtos), 2)
         self.assertEqual(produtos[0]["sku"], "A")
 
     @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
+    @patch.object(bling_client, "request")
+    def test_BL04b_listar_produtos_403_retorna_vazio(self, mock_request, *_patches):
+        r403 = MagicMock()
+        r403.status_code = 403
+        r403.text = "Forbidden"
+        mock_request.return_value = r403
+        self.assertEqual(bling_client.listar_produtos(), [])
+
+    @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
     @patch.object(bling_client, "request", side_effect=Exception("boom"))
     def test_BL05_listar_produtos_vazio_em_excecao(self, *_patches):
         self.assertEqual(bling_client.listar_produtos(), [])
+
+    @patch.object(bling_client, "_request_bling")
+    def test_BL05b_probe_403_sem_permissao(self, mock_req):
+        r403 = MagicMock()
+        r403.status_code = 403
+        r403.text = "Forbidden"
+        mock_req.return_value = r403
+        out = bling_client.probe_produtos()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["status"], 403)
+        self.assertIn("escopo", out["msg"])
 
 
 class TestBlingEstoquesNfe(unittest.TestCase):
