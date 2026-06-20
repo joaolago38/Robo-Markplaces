@@ -6,6 +6,7 @@ import os
 import sys
 import unittest
 from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -20,11 +21,20 @@ def _resp(body: dict) -> MagicMock:
 
 class TestUrlAutorizacao(unittest.TestCase):
     @patch.object(ptm, "APP_ID", "123")
+    @patch.object(ptm, "REDIRECT_URI", "https://www.google.com")
     def test_contem_client_id_e_scope(self, *_):
         url = ptm.url_autorizacao()
         self.assertIn("client_id=123", url)
         self.assertIn("ads_read", url)
         self.assertIn("response_type=code", url)
+        self.assertIn("redirect_uri=https%3A%2F%2Fwww.google.com", url)
+
+
+class TestCapturarCode(unittest.TestCase):
+    def test_parse_query_code(self):
+        params = parse_qs(urlparse("/?code=ABC123&state=x").query)
+        code = (params.get("code") or [""])[0]
+        self.assertEqual(code, "ABC123")
 
 
 class TestTrocas(unittest.TestCase):
@@ -97,6 +107,17 @@ class TestMain(unittest.TestCase):
     @patch.object(ptm, "listar_contas_anuncio", return_value=[])
     def test_sucesso_sem_contas(self, *_):
         self.assertEqual(ptm.main(["CODE"]), 0)
+
+    @patch.object(ptm, "capturar_code_callback", return_value="CODE_AUTO")
+    @patch.object(ptm, "webbrowser")
+    @patch.object(ptm, "APP_ID", "app")
+    @patch.object(ptm, "APP_SECRET", "sec")
+    @patch.object(ptm, "trocar_code_por_token", return_value={"access_token": "curto"})
+    @patch.object(ptm, "trocar_por_longa_duracao", return_value={"access_token": "longo", "expires_in": 1})
+    @patch.object(ptm, "listar_contas_anuncio", return_value=[])
+    def test_listen_captura_e_troca(self, *_):
+        self.assertEqual(ptm.main(["--listen"]), 0)
+        ptm.capturar_code_callback.assert_called_once()
 
 
 if __name__ == "__main__":
