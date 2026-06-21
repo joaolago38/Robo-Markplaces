@@ -1,0 +1,45 @@
+name: Panorama ML Magalu Bling
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 08:30 BRT = 11:30 UTC
+    - cron: "30 11 * * *"
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  panorama:
+    name: Panorama unificado (modo seguro)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Rodar panorama (somente leitura + dry-run NF-e)
+        run: python -m agentes.panorama.agente_panorama
+        env:
+          ANTHROPIC_API_KEY:       ${{ secrets.ANTHROPIC_API_KEY }}
+          ML_CLIENT_ID:            ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET:        ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN:         ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN:        ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID:            ${{ secrets.ML_SELLER_ID }}
+          MAGALU_CLIENT_ID:        ${{ secrets.MAGALU_CLIENT_ID }}
+          MAGALU_CLIENT_SECRET:    ${{ secrets.MAGALU_CLIENT_SECRET }}
+          MAGALU_ACCESS_TOKEN:     ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_REFRESH_TOKEN:    ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          BLING_CLIENT_ID:         ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET:     ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_ACCESS_TOKEN:      ${{ secrets.BLING_ACCESS_TOKEN }}
+          BLING_REFRESH_TOKEN:     ${{ secrets.BLING_REFRESH_TOKEN }}
+          TELEGRAM_TOKEN:          ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
