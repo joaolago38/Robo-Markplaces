@@ -244,6 +244,91 @@ class TestWriteBackBling(unittest.TestCase):
         self.assertEqual(code, 1)
 
 
+class TestAlertaTokenTravado(unittest.TestCase):
+    """Alerta crítico quando Bling (ou outro provedor) entra em estado travado."""
+
+    _ENV_BLING = {
+        "BLING_CLIENT_ID": "cid",
+        "BLING_CLIENT_SECRET": "sec",
+        "BLING_REFRESH_TOKEN": "old_ref",
+        "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
+        "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
+        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
+        "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
+        "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
+    }
+
+    def setUp(self):
+        importlib.reload(mod)
+        mod._provedores_alertados.clear()
+
+    def test_bling_travado_dispara_alerta_uma_vez(self):
+        res = {"ok": False, "motivo": "falha ao renovar (refresh expirado/inválido?)"}
+        with patch.dict(os.environ, self._ENV_BLING, clear=False):
+            with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res), \
+                 patch.object(mod, "alertar_critico") as mock_alerta, \
+                 patch("builtins.print"):
+                code = mod.main()
+        self.assertEqual(code, 1)
+        mock_alerta.assert_called_once()
+        texto = mock_alerta.call_args[0][0]
+        self.assertIn("BLING TRAVADO", texto)
+        self.assertIn("pegar_token_bling.py", texto)
+        self.assertNotIn("old_ref", texto)
+
+    def test_bling_sucesso_nao_dispara_alerta(self):
+        res = {"ok": True, "access_token": "acc_novo", "refresh_token": "ref_novo"}
+        with patch.dict(os.environ, self._ENV_BLING, clear=False):
+            with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res), \
+                 patch.object(mod, "alertar_critico") as mock_alerta, \
+                 patch("builtins.print"):
+                code = mod.main()
+        self.assertEqual(code, 0)
+        mock_alerta.assert_not_called()
+
+    def test_bling_excecao_dispara_alerta(self):
+        with patch.dict(os.environ, self._ENV_BLING, clear=False):
+            with patch(
+                "core.token_manager.renovar_token_bling_detalhado",
+                side_effect=RuntimeError("rede indisponível"),
+            ), patch.object(mod, "alertar_critico") as mock_alerta, patch("builtins.print"):
+                code = mod.main()
+        self.assertEqual(code, 1)
+        mock_alerta.assert_called_once()
+        self.assertIn("BLING TRAVADO", mock_alerta.call_args[0][0])
+
+    def test_bling_invalid_client_diferencia_secret(self):
+        res = {"ok": False, "motivo": "invalid_client — Client authentication failed"}
+        with patch.dict(os.environ, self._ENV_BLING, clear=False):
+            with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res), \
+                 patch.object(mod, "alertar_critico") as mock_alerta, \
+                 patch("builtins.print"):
+                mod.main()
+        texto = mock_alerta.call_args[0][0]
+        self.assertIn("CLIENT_SECRET", texto)
+
+    def test_ml_travado_dispara_alerta(self):
+        env = {
+            **self._ENV_BLING,
+            "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
+            "ML_CLIENT_ID": "cid", "ML_CLIENT_SECRET": "csec", "ML_REFRESH_TOKEN": "ref",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            with patch(
+                "core.token_manager.renovar_todos_tokens",
+                return_value={"mercadolivre": {"ok": False, "motivo": "invalid_grant"}, "shopee": {"ok": False}, "magalu": {"ok": False}},
+            ), patch.object(mod, "alertar_critico") as mock_alerta, patch("builtins.print"):
+                code = mod.main()
+        self.assertEqual(code, 1)
+        mock_alerta.assert_called_once()
+        self.assertIn("MERCADO LIVRE TRAVADO", mock_alerta.call_args[0][0])
+
+    def test_sanitizar_motivo_mascara_token(self):
+        out = mod._sanitizar_motivo("erro refresh_token=abc123secret")
+        self.assertIn("***", out)
+        self.assertNotIn("abc123secret", out)
+
+
 class TestWriteBackShopeeMagalu(unittest.TestCase):
     """Write-back de Shopee e Magalu após renovar_todos_tokens."""
 

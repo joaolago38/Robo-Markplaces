@@ -181,11 +181,36 @@ class TestMagaluClient(unittest.TestCase):
         headers = mag._h()
         self.assertEqual(headers["Authorization"], "Bearer refreshed")
 
+    def test_probe_desligado(self):
+        with patch.object(mag, "MAGALU_MERCHANT_ID", ""):
+            out = mag.probe_conexao()
+            self.assertFalse(out["ok"])
+
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    def test_listar_perguntas_desligado(self, *_):
+        self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
+
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    def test_atualizar_preco_desligado(self, *_):
+        with self.assertLogs("magalu_client", level="WARNING"):
+            self.assertFalse(mag.atualizar_preco_item("SKU", 1))
+
+    @patch.object(mag, "request", side_effect=RuntimeError("keepalive"))
+    @patch.object(mag, "dias_sem_acesso", return_value=5)
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_manter_conta_ativa_falha(self, *_):
+        with self.assertLogs("magalu_client", level="ERROR"):
+            out = mag.manter_conta_ativa()
+        self.assertFalse(out["ok"])
+
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_responder_pergunta_falha_http(self, mock_request):
-        mock_request.return_value = _resp(500, text="erro")
+        resp = _resp(500, text="erro")
+        resp.raise_for_status.side_effect = RuntimeError("500")
+        mock_request.return_value = resp
         with self.assertLogs("magalu_client", level="ERROR"):
             self.assertFalse(mag.responder_pergunta("q1", "x"))
 
