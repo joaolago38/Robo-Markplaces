@@ -16,7 +16,7 @@ from core.config import (
     SHOPEE_SHOP_ID,
 )
 from core.http_client import request
-from core.http_errors import log_http_erro_listagem
+from core.http_errors import log_http_erro_listagem, status_http
 from core.token_manager import get_token_shopee
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
@@ -126,7 +126,7 @@ def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: 
                 params=params,
                 timeout=20,
             )
-            if r.status_code != 200:
+            if status_http(r) != 200:
                 log_http_erro_listagem(logger, "Shopee listar_perguntas_nao_respondidas", r)
                 return comentarios, False
             body = r.json()
@@ -333,7 +333,7 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             if cursor:
                 params["cursor"] = cursor
             r = request("GET", f"{BASE}{path_list}", params=params, timeout=30)
-            if r.status_code != 200:
+            if status_http(r) != 200:
                 log_http_erro_listagem(logger, "Shopee listar_pedidos", r)
                 return []
             body = r.json()
@@ -380,7 +380,7 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
                 json={"order_sn_list": batch},
                 timeout=40,
             )
-            if r2.status_code != 200:
+            if status_http(r2) != 200:
                 log_http_erro_listagem(logger, "Shopee listar_pedidos (detalhe)", r2)
                 continue
             body2 = r2.json()

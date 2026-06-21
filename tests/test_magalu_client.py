@@ -70,6 +70,24 @@ class TestMagaluClient(unittest.TestCase):
         with self.assertLogs("magalu_client", level="ERROR"):
             self.assertEqual(mag.listar_pedidos(), [])
 
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    def test_desligado_listar_pedidos(self):
+        self.assertEqual(mag.listar_pedidos(), [])
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_responder_pergunta_ok(self, mock_request):
+        mock_request.return_value = _resp(200)
+        self.assertTrue(mag.responder_pergunta("q1", "resposta"))
+
+    @patch.object(mag, "request", side_effect=RuntimeError("rede"))
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_atualizar_preco_erro(self, *_):
+        with self.assertLogs("magalu_client", level="ERROR"):
+            self.assertFalse(mag.atualizar_preco_item("SKU", 10))
+
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
@@ -83,6 +101,93 @@ class TestMagaluClient(unittest.TestCase):
     def test_atualizar_estoque_erro_rede(self, *_):
         with self.assertLogs("magalu_client", level="ERROR"):
             self.assertFalse(mag.atualizar_estoque_item("SKU1", 5))
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_listar_pedidos_ok(self, mock_request):
+        mock_request.return_value = _resp(
+            200,
+            {
+                "data": [
+                    {
+                        "code": "ORD1",
+                        "status": "paid",
+                        "total": 99.9,
+                        "created_at": "2026-06-16T10:00:00+00:00",
+                        "items": [{"sku": "SKU1", "quantity": 1, "price": 99.9}],
+                    }
+                ]
+            },
+        )
+        pedidos = mag.listar_pedidos(dias=7)
+        self.assertEqual(len(pedidos), 1)
+        self.assertEqual(pedidos[0]["order_id"], "ORD1")
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_atualizar_estoque_ok(self, mock_request):
+        mock_request.return_value = _resp(200)
+        self.assertTrue(mag.atualizar_estoque_item("SKU1", 5))
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_probe_conexao_403(self, mock_request):
+        mock_request.return_value = _resp(403, text="forbidden")
+        out = mag.probe_conexao()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["status"], 403)
+
+    @patch.object(mag, "registrar_acesso")
+    @patch.object(mag, "dias_sem_acesso", return_value=0)
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_manter_conta_ativa_ok(self, mock_request, *_):
+        mock_request.return_value = _resp(200, {"data": []})
+        out = mag.manter_conta_ativa()
+        self.assertTrue(out["ok"])
+
+    @patch.object(mag, "dias_sem_acesso", return_value=5)
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    def test_manter_conta_nao_configurado(self, *_):
+        out = mag.manter_conta_ativa()
+        self.assertFalse(out["ok"])
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_probe_conexao_401(self, mock_request):
+        mock_request.return_value = _resp(401, text="unauthorized")
+        out = mag.probe_conexao()
+        self.assertEqual(out["status"], 401)
+
+    @patch.object(mag, "request", side_effect=RuntimeError("rede"))
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_listar_pedidos_excecao(self, *_):
+        with self.assertLogs("magalu_client", level="ERROR"):
+            self.assertEqual(mag.listar_pedidos(), [])
+
+    @patch.object(mag, "get_token_magalu", return_value="refreshed")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_headers_usa_token_renovado(self, *_):
+        headers = mag._h()
+        self.assertEqual(headers["Authorization"], "Bearer refreshed")
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_responder_pergunta_falha_http(self, mock_request):
+        mock_request.return_value = _resp(500, text="erro")
+        with self.assertLogs("magalu_client", level="ERROR"):
+            self.assertFalse(mag.responder_pergunta("q1", "x"))
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")

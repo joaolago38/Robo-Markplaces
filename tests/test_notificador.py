@@ -89,6 +89,41 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
     def test_perguntar_gestor_sem_config_retorna_true(self, *_patches):
         self.assertTrue(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
 
+    @patch.object(notificador, "time")
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_perguntar_gestor_sim_via_callback(self, mock_request, mock_time):
+        mock_time.monotonic.side_effect = [0, 1, 2, 100]
+        mock_time.sleep = MagicMock()
+        send_resp = _mock_resp()
+        poll_resp = MagicMock()
+        poll_resp.raise_for_status = MagicMock()
+        poll_resp.json.return_value = {
+            "result": [
+                {
+                    "update_id": 9,
+                    "callback_query": {
+                        "id": "cb1",
+                        "data": "ads_sim",
+                        "message": {"message_id": 1},
+                    },
+                }
+            ]
+        }
+        mock_request.side_effect = [send_resp, poll_resp]
+        self.assertTrue(notificador.perguntar_gestor_e_aguardar("ligar ads?", timeout_segundos=30))
+
+    @patch.object(notificador, "time")
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_perguntar_gestor_timeout(self, mock_request, mock_time):
+        mock_time.monotonic.side_effect = [0, 100]
+        mock_time.sleep = MagicMock()
+        mock_request.return_value = _mock_resp()
+        self.assertFalse(notificador.perguntar_gestor_e_aguardar("?", timeout_segundos=5))
+
 
 if __name__ == "__main__":
     unittest.main()
