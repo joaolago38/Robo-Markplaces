@@ -90,7 +90,7 @@ def _montar_contato(cliente: dict) -> dict:
     }
 
 
-def emitir_nfe_pedido(pedido: dict, dry_run: bool = False) -> dict:
+def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
     """
     Pedido esperado:
     {

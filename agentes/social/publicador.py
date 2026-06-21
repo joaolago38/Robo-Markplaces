@@ -13,7 +13,7 @@ logger = logging.getLogger("publicador")
 
 def selecionar_produto() -> dict | None:
     produtos = listar_produtos()
-    elegiveis = [p for p in produtos if p["estoque"] >= ESTOQUE_CRITICO]
+    elegiveis = [p for p in produtos if (p.get("estoque") or 0) >= ESTOQUE_CRITICO]
     if not elegiveis:
         return None
 

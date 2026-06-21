@@ -8,31 +8,43 @@ import time
 from datetime import datetime
 from core.config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_GESTOR_CHAT_ID
 from core.http_client import request
+from core.http_errors import mascarar_url_telegram
 
 logger = logging.getLogger("notificador")
+
 
 def _enviar(chat_id: str, msg: str) -> bool:
     if not TELEGRAM_TOKEN or not chat_id:
         print(f"[TELEGRAM não configurado]\n{msg}")
-        return True
+        logger.warning(
+            "Telegram não configurado — alerta NÃO entregue (apenas impresso no stdout)"
+        )
+        return False
     try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         r = request(
             "POST",
-            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+            url,
             json={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"},
             timeout=10,
         )
         r.raise_for_status()
         return True
     except Exception as e:
-        logger.error("Telegram erro: %s", e)
+        logger.error("Telegram erro: %s", mascarar_url_telegram(str(e)))
         return False
+
 
 def alertar(msg: str) -> bool:
     return _enviar(TELEGRAM_CHAT_ID, f"🔔 *Alerta* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}")
 
+
 def alertar_gestor(msg: str) -> bool:
-    return _enviar(TELEGRAM_GESTOR_CHAT_ID, f"📊 *Gestor* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}")
+    return _enviar(
+        TELEGRAM_GESTOR_CHAT_ID,
+        f"📊 *Gestor* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}",
+    )
+
 
 def alertar_critico(msg: str) -> bool:
     alertar_gestor(f"🚨 CRÍTICO\n{msg}")
@@ -74,7 +86,7 @@ def _responder_callback(callback_query_id: str, texto: str) -> None:
             timeout=10,
         )
     except Exception as e:
-        logger.error("Telegram answerCallbackQuery erro: %s", e)
+        logger.error("Telegram answerCallbackQuery erro: %s", mascarar_url_telegram(str(e)))
 
 
 def perguntar_gestor_e_aguardar(pergunta: str, timeout_segundos: int = 600) -> bool:
@@ -157,5 +169,8 @@ def perguntar_gestor_e_aguardar(pergunta: str, timeout_segundos: int = 600) -> b
 
         return False
     except Exception as exc:
-        logger.error("Telegram perguntar_gestor_e_aguardar erro: %s", exc)
+        logger.error(
+            "Telegram perguntar_gestor_e_aguardar erro: %s",
+            mascarar_url_telegram(str(exc)),
+        )
         return False

@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 from core.config import MAGALU_ACCESS_TOKEN, MAGALU_MERCHANT_ID, MAGALU_REFRESH_TOKEN
 from core.http_client import request
+from core.http_errors import log_http_erro_listagem, status_http
 from core.token_manager import get_token_magalu
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
@@ -30,6 +31,35 @@ def _h():
     }
 
 
+def probe_conexao() -> dict:
+    """Diagnóstico sem mascarar erros HTTP como lista vazia."""
+    if not _enabled():
+        return {"ok": False, "status": 0, "msg": "Magalu não configurado"}
+    try:
+        r = request(
+            "GET",
+            f"{BASE}/seller/questions",
+            headers=_h(),
+            params={"limit": 1},
+            timeout=15,
+        )
+        status = getattr(r, "status_code", 0)
+        if status == 200:
+            return {"ok": True, "status": 200, "msg": "autenticado"}
+        if status == 401:
+            return {"ok": False, "status": 401, "msg": "token expirado ou inválido"}
+        if status == 403:
+            return {
+                "ok": False,
+                "status": 403,
+                "msg": "sem permissão — verifique escopos OAuth do app Magalu",
+            }
+        return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
+    except Exception as exc:
+        logger.error("Magalu probe_conexao erro: %s", exc)
+        return {"ok": False, "status": 0, "msg": str(exc)}
+
+
 def listar_perguntas_nao_respondidas(limit: int = 20) -> list[dict]:
     if not _enabled():
         logger.warning("Magalu não configurado.")
@@ -42,7 +72,9 @@ def listar_perguntas_nao_respondidas(limit: int = 20) -> list[dict]:
             params={"status": "pending", "limit": limit},
             timeout=20,
         )
-        r.raise_for_status()
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "Magalu listar_perguntas_nao_respondidas", r)
+            return []
         body = r.json()
         return body.get("data", body.get("items", []))
     except Exception as exc:
@@ -182,10 +214,9 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             params={"limit": 50},
             timeout=25,
         )
-        if r.status_code == 404:
-            logger.warning("Magalu listar_pedidos: endpoint não encontrado (404).")
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "Magalu listar_pedidos", r)
             return []
-        r.raise_for_status()
         body = r.json() or {}
         rows = body.get("data") or body.get("items") or body.get("orders") or []
         if not isinstance(rows, list):

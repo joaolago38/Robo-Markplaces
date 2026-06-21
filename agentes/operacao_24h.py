@@ -5,6 +5,7 @@ Rotina contínua de monitoramento + faturamento (Lojahub -> Bling).
 from __future__ import annotations
 
 import logging
+import os
 
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.ml.agente_ads_gatilho import executar as verificar_gatilho_ads
@@ -96,7 +97,7 @@ def _calcular_kpis_24h(produtos_bling: list[dict], pedidos_faturar: list[dict], 
     }
 
 
-def _faturar_pedidos_lojahub(dry_run_nfe: bool = False, limite: int = 20) -> dict:
+def _faturar_pedidos_lojahub(dry_run_nfe: bool = True, limite: int = 20) -> dict:
     pedidos_raw = listar_pedidos_prontos_faturar(limit=limite)
     pedidos = [_normalizar_pedido_lojahub(p) for p in pedidos_raw]
     resultados = []
@@ -111,7 +112,7 @@ def _faturar_pedidos_lojahub(dry_run_nfe: bool = False, limite: int = 20) -> dic
     return {"total": len(resultados), "sucesso": sucesso, "falhas": len(resultados) - sucesso, "itens": resultados}
 
 
-def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = False) -> dict:
+def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     produtos = listar_produtos()
     analytics = listar_resumo_vendas_24h()
     pedidos_faturar = listar_pedidos_prontos_faturar(limit=100)
@@ -171,4 +172,6 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = False) -> dict:
 
 
 if __name__ == "__main__":
-    print(executar(dry_run_repricing=True, dry_run_nfe=False))
+    # Emissão real de NF-e só com dry_run_nfe=False explícito ou NFE_EMITIR_REAL=true
+    emitir_real = os.getenv("NFE_EMITIR_REAL", "").strip().lower() in ("1", "true", "yes")
+    print(executar(dry_run_repricing=True, dry_run_nfe=not emitir_real))

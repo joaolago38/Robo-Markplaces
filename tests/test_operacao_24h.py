@@ -33,11 +33,22 @@ class Operacao24hTests(unittest.TestCase):
         mock_repricing.return_value = {"total_ajustes": 1, "ajustes": []}
         mock_faturar.return_value = {"total": 1, "sucesso": 1, "falhas": 0, "itens": []}
 
-        out = executar(dry_run_repricing=True, dry_run_nfe=False)
+        out = executar(dry_run_repricing=True, dry_run_nfe=True)
         self.assertIn("kpis_24h", out)
         self.assertEqual(out["kpis_24h"]["receita_24h"], 200.0)
         self.assertEqual(out["faturamento"]["sucesso"], 1)
+        self.assertTrue(out["modo"]["nfe_dry_run"])
 
+    @patch("agentes.operacao_24h.emitir_nfe_pedido")
+    @patch("agentes.operacao_24h.listar_pedidos_prontos_faturar")
+    def test_faturar_default_dry_run(self, mock_pedidos, mock_emitir):
+        from agentes.operacao_24h import _faturar_pedidos_lojahub
+
+        mock_pedidos.return_value = [{"id": "1", "itens": [{"sku": "A", "quantidade": 1, "valor_unitario": 10}]}]
+        mock_emitir.return_value = {"ok": True, "dry_run": True}
+        _faturar_pedidos_lojahub()
+        mock_emitir.assert_called_once()
+        self.assertTrue(mock_emitir.call_args[1]["dry_run"])
 
 if __name__ == "__main__":
     unittest.main()

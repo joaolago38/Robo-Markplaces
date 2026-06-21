@@ -33,7 +33,7 @@ Canal: {canal}
 Pergunta do cliente: {pergunta}
 Produto: {produto.get('nome', 'N/D')}
 Preço: R$ {float(produto.get('preco', 0) or 0):.2f}
-Estoque: {produto.get('estoque', 0)}
+Estoque: {produto.get('estoque') or 0}
 Descrição: {produto.get('descricao', '')}
 Fotos publicadas do produto: {fotos_ctx}
 

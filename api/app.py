@@ -507,7 +507,7 @@ def faturamento_nfe():
     Emite NF-e no Bling para um pedido já pago/confirmado.
     Body:
     {
-      "dry_run": false,
+      "dry_run": true,
       "pedido": {
         "pedido_id": "PED-123",
         "cliente": {"nome": "...", "documento": "...", "email": "..."},
@@ -520,7 +520,7 @@ def faturamento_nfe():
         return jsonify({"ok": False, "erro": "JSON inválido"}), 400
 
     pedido = dados.get("pedido") or {}
-    dry_run = bool(dados.get("dry_run", False))
+    dry_run = bool(dados.get("dry_run", True))
 
     resultado = emitir_nfe_pedido(pedido, dry_run=dry_run)
     status_code = 200 if resultado.get("ok") else 400
@@ -592,7 +592,7 @@ def operacao_24h():
     Body opcional:
     {
       "dry_run_repricing": true,
-      "dry_run_nfe": false
+      "dry_run_nfe": true
     }
     """
     dados = _get_json_payload()
@@ -600,7 +600,7 @@ def operacao_24h():
         return jsonify({"ok": False, "erro": "JSON inválido"}), 400
 
     dry_run_repricing = bool(dados.get("dry_run_repricing", True))
-    dry_run_nfe = bool(dados.get("dry_run_nfe", False))
+    dry_run_nfe = bool(dados.get("dry_run_nfe", True))
     resultado = executar_operacao_24h(dry_run_repricing=dry_run_repricing, dry_run_nfe=dry_run_nfe)
     return jsonify({"ok": True, **resultado})
 

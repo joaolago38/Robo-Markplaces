@@ -16,6 +16,7 @@ from core.config import (
     SHOPEE_SHOP_ID,
 )
 from core.http_client import request
+from core.http_errors import log_http_erro_listagem
 from core.token_manager import get_token_shopee
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
@@ -73,6 +74,30 @@ def _tem_erro_api(body: dict) -> bool:
     return False
 
 
+def probe_conexao() -> dict:
+    if not _enabled():
+        return {"ok": False, "status": 0, "msg": "Shopee não configurado"}
+    path = "/api/v2/product/get_comment"
+    try:
+        r = request(
+            "GET",
+            f"{BASE}{path}",
+            params={**_params(path), "page_size": 1, "comment_status": "UNREAD"},
+            timeout=15,
+        )
+        status = getattr(r, "status_code", 0)
+        if status == 200:
+            return {"ok": True, "status": 200, "msg": "autenticado"}
+        if status == 401:
+            return {"ok": False, "status": 401, "msg": "token expirado ou inválido"}
+        if status == 403:
+            return {"ok": False, "status": 403, "msg": "sem permissão — verifique escopos do app Shopee"}
+        return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
+    except Exception as exc:
+        logger.error("Shopee probe_conexao erro: %s", exc)
+        return {"ok": False, "status": 0, "msg": str(exc)}
+
+
 def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: int = 3) -> tuple[list[dict], bool]:
     """
     Endpoint pode variar entre contas; retorna (lista, sucesso_chamada).
@@ -101,7 +126,9 @@ def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: 
                 params=params,
                 timeout=20,
             )
-            r.raise_for_status()
+            if r.status_code != 200:
+                log_http_erro_listagem(logger, "Shopee listar_perguntas_nao_respondidas", r)
+                return comentarios, False
             body = r.json()
             if _tem_erro_api(body):
                 logger.error("Shopee listar_perguntas_nao_respondidas erro de API: %s", body.get("error"))
@@ -306,7 +333,9 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             if cursor:
                 params["cursor"] = cursor
             r = request("GET", f"{BASE}{path_list}", params=params, timeout=30)
-            r.raise_for_status()
+            if r.status_code != 200:
+                log_http_erro_listagem(logger, "Shopee listar_pedidos", r)
+                return []
             body = r.json()
             if _tem_erro_api(body):
                 logger.error("Shopee listar_pedidos erro de API: %s", body.get("error"))
@@ -351,7 +380,9 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
                 json={"order_sn_list": batch},
                 timeout=40,
             )
-            r2.raise_for_status()
+            if r2.status_code != 200:
+                log_http_erro_listagem(logger, "Shopee listar_pedidos (detalhe)", r2)
+                continue
             body2 = r2.json()
             if _tem_erro_api(body2):
                 logger.error("Shopee listar_pedidos detalhe erro: %s", body2.get("error"))
