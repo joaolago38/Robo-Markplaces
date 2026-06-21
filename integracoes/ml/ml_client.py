@@ -8,6 +8,7 @@ from typing import Any
 
 from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from core.http_client import request
+from core.http_errors import log_http_erro_listagem, status_http
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 from core.token_manager import get_token_ml
 
@@ -139,6 +140,29 @@ def obter_status_anuncio(item_id: str) -> dict:
         logger.error("ML obter_status_anuncio erro item_id=%s: %s", item_id, exc)
         return {"ok": False, "item_id": item_id, "erro": str(exc)}
 
+def probe_conexao() -> dict:
+    """Diagnóstico sem mascarar erros HTTP."""
+    if not _enabled():
+        return {"ok": False, "status": 0, "msg": "Mercado Livre não configurado"}
+    try:
+        r = request("GET", f"{BASE}/users/me", headers=_h(), timeout=15)
+        status = getattr(r, "status_code", 0)
+        if status == 200:
+            return {"ok": True, "status": 200, "msg": "autenticado"}
+        if status == 401:
+            return {"ok": False, "status": 401, "msg": "token expirado ou inválido"}
+        if status == 403:
+            return {
+                "ok": False,
+                "status": 403,
+                "msg": "sem permissão — verifique escopos do app ML",
+            }
+        return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
+    except Exception as exc:
+        logger.error("ML probe_conexao erro: %s", exc)
+        return {"ok": False, "status": 0, "msg": str(exc)}
+
+
 def listar_perguntas_nao_respondidas() -> list[dict]:
     if not _enabled():
         logger.warning("Mercado Livre não configurado.")
@@ -151,7 +175,9 @@ def listar_perguntas_nao_respondidas() -> list[dict]:
             params={"status": "UNANSWERED", "seller_id": ML_SELLER_ID},
             timeout=20,
         )
-        r.raise_for_status()
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "ML listar_perguntas_nao_respondidas", r)
+            return []
         return r.json().get("questions", [])
     except Exception as exc:
         logger.error("ML listar_perguntas_nao_respondidas erro: %s", exc)
@@ -183,7 +209,9 @@ def buscar_reputacao_vendedor() -> dict:
         return {}
     try:
         r = request("GET", f"{BASE}/users/{ML_SELLER_ID}", headers=_h(), timeout=20)
-        r.raise_for_status()
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "ML buscar_reputacao_vendedor", r)
+            return {}
         return r.json().get("seller_reputation", {})
     except Exception as exc:
         logger.error("ML buscar_reputacao_vendedor erro: %s", exc)
@@ -270,7 +298,9 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             },
             timeout=20,
         )
-        r.raise_for_status()
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "ML listar_pedidos", r)
+            return []
         results = r.json().get("results", []) or []
         out: list[dict] = []
         for o in results:

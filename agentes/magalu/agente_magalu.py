@@ -18,7 +18,7 @@ logger = logging.getLogger("agente_magalu")
 def validar_produto(produto):
     if not produto:
         return False
-    estoque = produto.get("estoque", 0)
+    estoque = int(produto.get("estoque") or 0)
 
     if estoque <= 0:
         return False

@@ -1,149 +1,150 @@
-# Prompt — Painel unificado com Claude: ML + Magalu + Bling (visão total, NF-e, alertas, concorrência) + cobertura 90%
+# Prompt — Sanar pontos cegos do Robo-Markplaces (reduzir erros silenciosos)
 
-Crie no projeto Robo-Markplaces um **orquestrador de visão geral** que dá ao
-Claude um panorama completo de Mercado Livre, Magazine Luiza (Magalu) e Bling,
-emite nota fiscal, dispara alertas e — no caso do Mercado Livre — analisa contas
-concorrentes para recomendar decisões objetivas. Entregue também testes com
-**cobertura mínima de 90%** nos arquivos novos.
+Aplique as correções abaixo no projeto Robo-Markplaces, em ordem de prioridade.
+Para CADA correção, adicione/atualize os testes correspondentes em `tests/` e, ao
+final, rode `python -m pytest -q` garantindo que TUDO continua verde (hoje são
+377 testes passando — não pode regredir). Não altere credenciais reais.
 
-REGRA DE OURO (segurança): a coleta e a análise são automáticas, mas qualquer
-AÇÃO DE ESCRITA que tenha efeito real — emitir NF-e de verdade, mudar preço,
-pausar/escalar campanha, alterar estoque — só pode rodar com flag explícita
-(`dry_run=False` e/ou confirmação do gestor). O padrão é SEMPRE o modo seguro
-(coleta + recomendação + alerta), nunca agir sozinho.
+====================================================================
+## 🔴 CRÍTICO 1 — `estoque` None quebra o publicador (TypeError)
+====================================================================
+Depois que a normalização do Bling passou a retornar `estoque = None` quando o
+saldo não vem na listagem, qualquer comparação direta com None estoura.
 
----
-
-## ARQUIVO 1 — `agentes/panorama/agente_panorama.py`
-
-Função principal: `gerar_panorama(enviar_alerta: bool = True, emitir_nfe: bool = False, limite_itens: int = 15) -> dict`
-
-Reutilize SOMENTE funções já existentes no projeto (não reescreva integrações):
-
-**Mercado Livre** (`integracoes.ml.ml_client` e `integracoes.ml.ml_product_ads`):
-- `_enabled()`, `obter_saude_conta()`, `listar_perguntas_nao_respondidas()`,
-  `buscar_reputacao_vendedor()`, `listar_meus_anuncios()`,
-  `buscar_metricas_item(item_id)`, `buscar_menor_preco_concorrente(item_id)`,
-  `buscar_acos_ads(item_id)`, `obter_advertiser()`, `listar_campanhas(...)`,
-  `campanhas_acos_acima_limite(...)`.
-- Reaproveite o agente já existente `agentes.ml.agente_monitor_ml.analisar()`
-  se ele já consolidar conta+ads+concorrência — chame-o em vez de duplicar.
-
-**Magalu** (`integracoes.magalu.magalu_client`):
-- `_enabled()`, `obter_saude_conta()`, `listar_perguntas_nao_respondidas()`,
-  `listar_pedidos(dias=7)`.
-
-**Bling** (`integracoes.bling.bling_client`):
-- `listar_produtos()`, `estoques_criticos()`.
-
-**NF-e** (`agentes.faturamento.agente_faturamento.emitir_nfe_pedido`):
-- Para cada pedido pago (de ML e Magalu via `listar_pedidos`), monte o pedido no
-  formato esperado e chame `emitir_nfe_pedido(pedido, dry_run=not emitir_nfe)`.
-- Com `emitir_nfe=False` (padrão): dry-run — só valida o que está pronto e o que
-  falta (NCM, destinatário etc.), sem emitir nada.
-- Com `emitir_nfe=True`: emite de verdade, mas só os pedidos cujo dry-run passou.
-
-**Alertas** (`core.notificador.alertar_gestor` / `alertar_critico`).
-
-**Síntese com Claude** (`core.claude_client.perguntar`):
-- Monte um texto com TODOS os dados coletados (conta, ads, concorrência,
-  estoque crítico, pedidos a faturar, pendências fiscais) e peça ao Claude um
-  resumo executivo curto + decisões priorizadas. Use o parâmetro `contexto`.
-- O prompt ao Claude deve pedir resposta OBJETIVA em tópicos: "Situação",
-  "Riscos", "Ações recomendadas (priorizadas)". Limite de tokens moderado.
-- Se a `ANTHROPIC_API_KEY` não estiver setada ou Claude falhar, faça fallback:
-  gere o resumo por regras (sem IA), nunca quebre.
-
-**Análise de concorrentes no ML** (decisões concisas):
-- Para até `limite_itens` anúncios meus: compare meu preço com
-  `buscar_menor_preco_concorrente(item_id)`. Classifique cada item em uma decisão
-  objetiva: "MANTER", "BAIXAR PREÇO (estou X% acima)", "REVISAR ANÚNCIO
-  (visitas altas, sem giro)", "SEM DADOS DE CATÁLOGO".
-- Ordene por prioridade (maior diferença de preço / maior gasto de ads primeiro)
-  e inclua no panorama os 5 itens mais urgentes.
-
-**Retorno** (dict estruturado):
-```
-{
-  "ok": True,
-  "mercado_livre": {...},        # saúde, ads, concorrência, decisões
-  "magalu": {...},               # saúde, perguntas, pedidos
-  "bling": {...},                # total produtos, estoque crítico
-  "nfe": {"a_faturar": N, "prontos": N, "pendencias": [...], "emitidos": N},
-  "alertas": [...],
-  "resumo_claude": "texto",
-  "decisoes": ["...", "..."],
-  "enviado": True/False
-}
-```
-
-**Comportamento sem credenciais:** cada marketplace ausente entra como
-"não configurado" (não quebra, não conta como erro). Se NENHUM estiver
-configurado, retorne `{ok: False, motivo: "nenhuma integração configurada"}` e
-mande um alerta.
-
-**Execução direta:** permita `python -m agentes.panorama.agente_panorama`,
-chamando `gerar_panorama(enviar_alerta=False, emitir_nfe=False)` e imprimindo o
-resultado.
-
-Boas práticas obrigatórias: try/except por bloco, nunca propagar exceção;
-respeitar rate limit (limitar nº de itens, pequenos sleeps se necessário);
-nenhuma ação de escrita no modo padrão.
-
----
-
-## ARQUIVO 2 — `tests/test_agente_panorama.py` (cobertura ≥ 90%)
-
-Use `unittest` + `unittest.mock.patch`, no MESMO estilo de
-`tests/test_agente_monitor_ml.py` (patchando as funções de integração no módulo
-do agente, sem nenhuma chamada de rede real). Cubra TODOS os caminhos:
-
-1. Nenhuma integração configurada → `ok=False`, alerta enviado.
-2. Só ML configurado: com perguntas pendentes, com campanha de ACOS alto, e com
-   item cujo preço está acima do concorrente → decisão "BAIXAR PREÇO".
-3. Só Magalu configurado: perguntas + pedidos.
-4. Bling: estoque crítico presente e ausente.
-5. NF-e dry-run: pedido pronto (payload ok) e pedido bloqueado (sem NCM) → entra
-   em `pendencias`. Teste também `emitir_nfe=True` com `emitir_nfe_pedido`
-   mockado retornando ok.
-6. Síntese Claude: caminho com `perguntar` mockado retornando texto, e caminho de
-   fallback (perguntar lança/`⚠️`) garantindo que o resumo por regras é usado.
-7. `enviar_alerta=True` chama `alertar_gestor`; `False` não chama.
-8. Garanta que NENHUM teste faz I/O de rede (todos os clients mockados).
-
-Inclua no rodapé `if __name__ == "__main__": unittest.main()`.
-
----
-
-## ARQUIVO 3 — Configuração de cobertura
-
-- Adicione `pytest-cov` ao `requirements-dev.txt` (já tem `pytest` e `ruff`).
-- Rode localmente e garanta ≥ 90% nos arquivos novos:
+- Em `agentes/social/publicador.py` (linha ~16), troque:
+  ```python
+  elegiveis = [p for p in produtos if p["estoque"] >= ESTOQUE_CRITICO]
   ```
-  pip install -r requirements-dev.txt
-  pytest tests/test_agente_panorama.py \
-    --cov=agentes.panorama.agente_panorama --cov-report=term-missing
+  por (tratando None como 0, e sem usar acesso direto por chave):
+  ```python
+  elegiveis = [p for p in produtos if (p.get("estoque") or 0) >= ESTOQUE_CRITICO]
   ```
-- Ajuste os testes até a cobertura do `agente_panorama.py` ficar ≥ 90%
-  (idealmente cobrir também as linhas de fallback e de erro).
+- Faça uma varredura no projeto por QUALQUER comparação/uso de estoque que assuma
+  inteiro (`p["estoque"]`, `>= ESTOQUE_CRITICO`, `<= limite`, somas) e proteja
+  todas com `(... or 0)`. Confira pelo menos:
+  `agentes/magalu/agente_magalu.py`, `agentes/ml/agente_ml.py`,
+  `agentes/auto_respostas_visuais.py`, `agentes/repricing/*`,
+  `agentes/operacao_24h.py`, `core/claude_client.py`.
+- Teste novo: produto com `estoque=None` não deve quebrar `selecionar_produto()`
+  nem o repricing; deve ser tratado como 0.
 
----
+====================================================================
+## 🔴 CRÍTICO 2 — NF-e emite de verdade por padrão (efeito fiscal acidental)
+====================================================================
+`emitir_nfe_pedido(pedido, dry_run=False)` tem default inseguro: chamar sem o
+parâmetro EMITE nota real. E `agentes/operacao_24h.py` roda com `dry_run_nfe=False`
+inclusive no bloco `__main__`.
 
-## ARQUIVO 4 (opcional) — Workflow
+- Em `agentes/faturamento/agente_faturamento.py`, mude o default para seguro:
+  ```python
+  def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
+  ```
+- Em `agentes/operacao_24h.py`:
+  - `_faturar_pedidos_lojahub(dry_run_nfe: bool = True, ...)` (default seguro).
+  - `executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True)`.
+  - No bloco `if __name__ == "__main__":`, use `dry_run_nfe=True`.
+  - A emissão real só deve acontecer quando o chamador passar `dry_run_nfe=False`
+    EXPLICITAMENTE (ou via variável de ambiente dedicada, ex.
+    `NFE_EMITIR_REAL=true`). Documente isso num comentário.
+- Ajuste os testes existentes de faturamento/operacao_24h para refletir o novo
+  default e adicione um teste garantindo que, sem `dry_run=False` explícito,
+  `criar_nfe` (a chamada que emite de verdade) NÃO é invocada.
 
-Crie `.github/workflows/panorama.yml` (workflow_dispatch + schedule diário,
-ex. 08:30 BRT) que instala dependências e roda
-`python -m agentes.panorama.agente_panorama`. Sem efeitos de escrita (modo
-padrão seguro).
+====================================================================
+## 🟠 ALTO 3 — Erros HTTP mascarados como "lista vazia"
+====================================================================
+O padrão "nunca lança exceção → retorna []/{}/0.0" faz um 401/403/erro de rede
+ficar idêntico a um resultado realmente vazio. Foi o que causou confusão no
+Bling (403 aparecia como "lista vazia").
 
----
+Use o `bling_client.py` como referência (ele já loga status HTTP != 200 e tem
+`probe_produtos`). Aplique o mesmo princípio nos demais clients de leitura
+(`integracoes/ml/ml_client.py`, `integracoes/magalu/magalu_client.py`,
+`integracoes/shopee/shopee_client.py`, `integracoes/amazon/amazon_client.py`):
 
+- Em funções de listagem/consulta, ANTES de retornar `[]`/`{}`:
+  - se `status_code` existir e for != 200, logar em nível ERROR com o status e os
+    primeiros ~200 chars do corpo (sem vazar token).
+  - manter o retorno vazio para não quebrar o fluxo, mas o log deve deixar claro
+    que foi ERRO, não vazio.
+- Onde fizer sentido, exponha uma função `probe_*()` de diagnóstico (como a
+  `probe_produtos` do Bling) que retorna `{ok, status, msg}` sem mascarar.
+- Não trate 403 como se renovar token resolvesse: ao receber 403, logar que é
+  provável falta de ESCOPO/permissão (não apenas token expirado).
+- Testes: para cada client, um teste com resposta mock 401, 403 e erro de rede,
+  verificando que loga ERROR e retorna vazio (use `assertLogs`).
+
+====================================================================
+## 🟠 ALTO 4 — Camada de alertas falha em silêncio
+====================================================================
+`core/notificador.py` e `core/whatsapp.py` têm cobertura baixa, e
+`notificador._enviar` retorna `True` quando o canal NÃO está configurado
+(imprime e finge sucesso). Em produção isso = alerta "enviado" que ninguém recebe.
+
+- Em `core/notificador.py`: quando o canal não estiver configurado, ainda pode
+  imprimir no stdout, mas registre um `logger.warning` deixando claro que o
+  alerta NÃO foi entregue por falta de configuração. Considere retornar um valor
+  que diferencie "entregue" de "apenas impresso" (ex.: retornar `False` ou um
+  dict `{entregue: False, motivo: "telegram_nao_configurado"}`), ajustando os
+  chamadores conforme necessário.
+- Suba a cobertura de `core/notificador.py` e `core/whatsapp.py` para ≥ 80%,
+  cobrindo: canal não configurado, envio com sucesso (request mockado) e falha de
+  envio (exceção do request).
+
+====================================================================
+## 🟠 ALTO 5 — `core/token_manager.py` pouco testado (60%)
+====================================================================
+É o componente que mais quebrou (refresh do Bling com 400/401) e o menos coberto.
+
+- Adicione testes para os caminhos de renovação de token de cada provedor
+  (Bling, ML, Meta, Magalu) cobrindo:
+  - refresh com sucesso (request mock 200 → novos tokens),
+  - refresh com 400/401 (credenciais inválidas) → mensagem de dica clara,
+  - ausência de client_id/secret/refresh_token → não tenta e loga motivo,
+  - rotação de refresh_token (quando o provedor devolve um novo refresh).
+- Meta de cobertura para `core/token_manager.py`: ≥ 85%.
+
+====================================================================
+## 🟡 MÉDIO 6 — Magalu quase sem teste (16%)
+====================================================================
+- Adicione testes para `integracoes/magalu/magalu_client.py` cobrindo
+  `_enabled`, `obter_saude_conta`, `listar_perguntas_nao_respondidas`,
+  `listar_pedidos`, `atualizar_preco_item`, `atualizar_estoque_item`
+  (todos com request mockado, incluindo caminhos de erro/HTTP != 200).
+  Meta: ≥ 80%.
+
+====================================================================
+## 🟡 MÉDIO 7 — Trava de cobertura no CI
+====================================================================
+- Adicione `pytest-cov` ao `requirements-dev.txt`.
+- Crie um `pyproject.toml` (ou `pytest.ini`) configurando uma trava mínima de
+  cobertura GLOBAL de 80% (`--cov=. --cov-fail-under=80`), e garanta que o
+  workflow de testes do GitHub Actions rode com cobertura e falhe se cair abaixo.
+- Não reduza a meta para "passar": se algum módulo crítico estiver abaixo, escreva
+  os testes.
+
+====================================================================
+## 🟡 MÉDIO 8 — Token do Telegram na URL
+====================================================================
+- Avalie mover o token do Telegram para fora da URL quando possível, ou garantir
+  que a URL com token NUNCA seja logada (verifique logs de retry/erro do
+  `http_client` e do `notificador`). Se mantiver na URL (padrão da API), assegure
+  que nenhum `logger`/`print` imprima a URL completa.
+
+====================================================================
 ## Critérios de aceite (confirme ao final)
-1. `python -m py_compile agentes/panorama/agente_panorama.py` sem erros.
-2. `pytest tests/test_agente_panorama.py` todos verdes.
-3. Cobertura do `agente_panorama.py` ≥ 90% (mostre o número do `--cov-report`).
-4. Nenhuma chamada de rede real nos testes; nenhuma ação de escrita no modo padrão.
-5. Reuso das funções existentes (sem duplicar integrações).
+====================================================================
+1. `python -m pytest -q` — todos verdes (≥ 377, sem regressão).
+2. `python -m pytest --cov=. --cov-report=term-missing` mostrando:
+   - `core/token_manager.py` ≥ 85%
+   - `core/notificador.py` e `core/whatsapp.py` ≥ 80%
+   - `integracoes/magalu/magalu_client.py` ≥ 80%
+   - cobertura GLOBAL ≥ 80% com `--cov-fail-under=80` ativo.
+3. Nenhuma ação de escrita (NF-e real, mudança de preço/estoque) ocorre por
+   padrão sem flag explícita.
+4. Erros HTTP (401/403/rede) agora aparecem como ERROR nos logs, não como
+   "vazio" silencioso.
+5. Nenhum teste faz chamada de rede real (tudo mockado).
 
-> Lembrete: roda no GitHub Actions a partir do que está commitado. Depois de
-> gerar e passar os testes, faça commit e push na branch `main`.
+> Lembrete: roda no GitHub Actions a partir do que está commitado. Aplique,
+> rode os testes, e faça commit + push na branch `main`.

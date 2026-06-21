@@ -46,6 +46,24 @@ class FaturamentoTests(unittest.TestCase):
         self.assertIn("sem NCM válido", out["erro"])
         mock_alerta.assert_called_once()
 
+    @patch("agentes.faturamento.agente_faturamento.criar_nfe")
+    @patch("agentes.faturamento.agente_faturamento.buscar_produto")
+    def test_default_nao_emite_nfe_real(self, mock_buscar, mock_criar):
+        mock_buscar.return_value = {
+            "sku": "IMP-MIMO-003",
+            "nome": "Kit",
+            "preco": 44.9,
+        }
+        pedido = {
+            "pedido_id": "PED-DEF",
+            "cliente": {"nome": "Cliente"},
+            "itens": [{"sku": "IMP-MIMO-003", "quantidade": 1}],
+        }
+        out = emitir_nfe_pedido(pedido)
+        self.assertTrue(out["ok"])
+        self.assertTrue(out.get("dry_run"))
+        mock_criar.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

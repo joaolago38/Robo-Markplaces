@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 from core.config import AMAZON_ACCESS_TOKEN, AMAZON_MARKETPLACE_ID
 from core.http_client import request
+from core.http_errors import log_http_erro_listagem, status_http
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
 logger = logging.getLogger("amazon_client")
@@ -24,6 +25,30 @@ def _h():
     }
 
 
+def probe_conexao() -> dict:
+    if not _enabled():
+        return {"ok": False, "status": 0, "msg": "Amazon não configurado"}
+    try:
+        r = request(
+            "GET",
+            f"{BASE}/messaging/v1/customerMessages",
+            headers=_h(),
+            params={"pageSize": 1},
+            timeout=15,
+        )
+        status = getattr(r, "status_code", 0)
+        if status == 200:
+            return {"ok": True, "status": 200, "msg": "autenticado"}
+        if status == 401:
+            return {"ok": False, "status": 401, "msg": "token expirado ou inválido"}
+        if status == 403:
+            return {"ok": False, "status": 403, "msg": "sem permissão — verifique escopos SP-API"}
+        return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
+    except Exception as exc:
+        logger.error("Amazon probe_conexao erro: %s", exc)
+        return {"ok": False, "status": 0, "msg": str(exc)}
+
+
 def listar_mensagens_nao_respondidas(limit: int = 20) -> list[dict]:
     if not _enabled():
         logger.warning("Amazon não configurado.")
@@ -36,7 +61,9 @@ def listar_mensagens_nao_respondidas(limit: int = 20) -> list[dict]:
             params={"status": "UNREAD", "pageSize": limit},
             timeout=20,
         )
-        r.raise_for_status()
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "Amazon listar_mensagens_nao_respondidas", r)
+            return []
         return r.json().get("messages", [])
     except Exception as exc:
         logger.error("Amazon listar_mensagens_nao_respondidas erro: %s", exc)
@@ -117,7 +144,9 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             },
             timeout=25,
         )
-        r.raise_for_status()
+        if r.status_code != 200:
+            log_http_erro_listagem(logger, "Amazon listar_pedidos", r)
+            return []
         data = r.json() or {}
         payload = data.get("payload") or {}
         orders = payload.get("Orders") or payload.get("orders") or []

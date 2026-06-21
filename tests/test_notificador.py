@@ -22,8 +22,10 @@ class TestNotificadorAlertar(unittest.TestCase):
     @patch("builtins.print")
     @patch.object(notificador, "TELEGRAM_CHAT_ID", "")
     @patch.object(notificador, "TELEGRAM_TOKEN", "")
-    def test_NT01_alertar_sem_telegram_retorna_true(self, *_patches):
-        self.assertTrue(notificador.alertar("msg"))
+    def test_NT01_alertar_sem_telegram_retorna_false(self, *_patches):
+        with self.assertLogs("notificador", level="WARNING") as logs:
+            self.assertFalse(notificador.alertar("msg"))
+        self.assertTrue(any("NÃO entregue" in line for line in logs.output))
 
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
@@ -69,6 +71,16 @@ class TestNotificadorAlertar(unittest.TestCase):
     def test_NT07_notificar_venda_whatsapp_false_em_excecao(self, _mock_nv):
         ok = notificador.notificar_venda_whatsapp("ml", "PED-1", "Kit", 59.90)
         self.assertFalse(ok)
+
+    @patch.object(notificador, "request", side_effect=Exception("https://api.telegram.org/botSECRET123/sendMessage"))
+    @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "token")
+    def test_NT08_erro_nao_vaza_token_na_url(self, *_patches):
+        with self.assertLogs("notificador", level="ERROR") as logs:
+            notificador.alertar("msg")
+        joined = "\n".join(logs.output)
+        self.assertIn("bot***", joined)
+        self.assertNotIn("SECRET123", joined)
 
 
 class TestNotificadorPerguntarGestor(unittest.TestCase):
