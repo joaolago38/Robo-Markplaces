@@ -1,77 +1,190 @@
 """
-pegar_token_amazon.py
-Troca o code OAuth2 pelo Access Token e Refresh Token da Amazon SP-API (bootstrap inicial),
-usando o fluxo Login with Amazon (LWA).
-
-Credenciais vêm de variáveis de ambiente / .env (NUNCA hardcoded):
-    AMAZON_LWA_CLIENT_ID, AMAZON_LWA_CLIENT_SECRET
-    AMAZON_REDIRECT_URI   (opcional; default https://www.google.com)
-
-Como gerar o "code":
-    1) No Seller Central, crie um app privado SP-API:
-       Apps e Serviços → Desenvolver Apps → Adicionar novo app cliente SP-API.
-       Anote o LWA Client ID e Client Secret e defina a Redirect URI
-       (use https://www.google.com se não tiver um site próprio).
-    2) Autorize o app na sua própria conta (self-authorization), na tela final
-       do cadastro do app privado. A Amazon vai redirecionar para a Redirect URI.
-    3) Copie o "code" (parâmetro ?spapi_oauth_code=XXXX ou ?code=XXXX) da URL de
-       retorno. ATENÇÃO: o code expira em poucos minutos.
-    4) Rode IMEDIATAMENTE, passando o code:
-       python pegar_token_amazon.py SEU_CODE
-       (ou defina AMAZON_OAUTH_CODE no ambiente)
+integracoes/bling/bling_client.py
+Cliente da API Bling v3. Nunca lança exceção.
 """
-import os
-import sys
+import logging
+from core.config import BLING_ACCESS_TOKEN
+from core.http_client import request
+from core import token_manager
 
-import requests
+logger = logging.getLogger("bling")
+BASE = "https://www.bling.com.br/Api/v3"
 
-try:
-    from dotenv import load_dotenv
+def _h(token: str | None = None):
+    tok = token or token_manager.get_token_bling()
+    return {"Authorization": f"Bearer {tok}"}
 
-    load_dotenv()
-except Exception:
-    pass
+def _request_bling(method: str, url: str, **kwargs):
+    """
+    Faz a chamada autenticada e, em caso de 401 (token expirado), força a
+    renovação via refresh_token e tenta UMA vez mais.
+    """
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.update(_h())
+    r = request(method, url, headers=headers, **kwargs)
 
-CLIENT_ID = os.getenv("AMAZON_LWA_CLIENT_ID", "").strip()
-CLIENT_SECRET = os.getenv("AMAZON_LWA_CLIENT_SECRET", "").strip()
-REDIRECT_URI = os.getenv("AMAZON_REDIRECT_URI", "https://www.google.com").strip()
-CODE = (sys.argv[1] if len(sys.argv) > 1 else os.getenv("AMAZON_OAUTH_CODE", "")).strip()
+    if getattr(r, "status_code", None) == 401:
+        logger.warning("Bling retornou 401 — renovando token e tentando novamente.")
+        novo = token_manager.get_token_bling(forcar=True)
+        if novo:
+            headers.update(_h(novo))
+            r = request(method, url, headers=headers, **kwargs)
+    return r
 
-if not CLIENT_ID or not CLIENT_SECRET:
-    sys.exit("Defina AMAZON_LWA_CLIENT_ID e AMAZON_LWA_CLIENT_SECRET no .env / ambiente.")
-if not CODE:
-    sys.exit("Informe o code: python pegar_token_amazon.py SEU_CODE (ou AMAZON_OAUTH_CODE).")
+def _to_float(value, default=0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
 
-print("Enviando requisicao para a Amazon (LWA)...")
-r = requests.post(
-    "https://api.amazon.com/auth/o2/token",
-    headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"},
-    data={
-        "grant_type": "authorization_code",
-        "code": CODE,
-        "redirect_uri": REDIRECT_URI,
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-    },
-    timeout=15,
-)
+def _to_int(value, default=0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(default)
 
-print(f"Status: {r.status_code}")
-dados = r.json()
+def _extrair_estoque(p: dict):
+    """
+    Lê o saldo de estoque conforme a API v3 do Bling.
+    Na v3 o estoque NÃO vem como 'estoqueAtual'; quando presente, vem em
+    'saldoVirtualTotal'/'saldoFisicoTotal' (ou num objeto aninhado 'estoque').
+    Retorna None quando o saldo não está presente no payload — assim não
+    classificamos como "crítico" um produto cujo estoque é apenas desconhecido.
+    # TODO: a listagem GET /produtos normalmente NÃO traz saldo; para estoque
+    # confiável, buscar via endpoint dedicado de estoques/saldos por id.
+    """
+    for chave in ("saldoVirtualTotal", "saldoFisicoTotal", "estoqueAtual"):
+        if p.get(chave) is not None:
+            return _to_int(p.get(chave))
+    est = p.get("estoque")
+    if isinstance(est, dict):
+        for chave in ("saldoVirtualTotal", "saldoFisicoTotal"):
+            if est.get(chave) is not None:
+                return _to_int(est.get(chave))
+    return None
 
-if "access_token" in dados:
-    print("=" * 60)
-    print("SUCESSO! Copie para o GitHub Secrets:")
-    print("=" * 60)
-    print(f"AMAZON_ACCESS_TOKEN:  {dados['access_token']}")
-    print(f"AMAZON_REFRESH_TOKEN: {dados.get('refresh_token', '')}")
-    print(f"Expira em:            {dados.get('expires_in', 0) // 3600}h")
-    print("=" * 60)
-    print()
-    print("AINDA FALTA definir manualmente (nao vem nesta resposta):")
-    print("  AMAZON_SELLER_ID      -> Merchant Token, em Seller Central:")
-    print("                           Configuracoes da conta -> Informacoes comerciais")
-    print("  AMAZON_MARKETPLACE_ID -> Brasil = A2Q3Y263D00KWC (valor fixo)")
-else:
-    print("ERRO:", dados)
-    print("Dica: o code OAuth expira rapido — gere um novo no Seller Central e rode imediatamente.")
+
+def _normalizar_produto(p: dict) -> dict:
+    custo = _to_float(
+        p.get("precoCusto", p.get("precoCompra", p.get("custo", 0)))
+    )
+    imagens = p.get("imagens", p.get("imagemURL", []))
+    if isinstance(imagens, str):
+        imagens = [imagens]
+    elif not isinstance(imagens, list):
+        imagens = []
+    sku = p.get("codigo") or p.get("sku") or (str(p.get("id")) if p.get("id") else None)
+    return {
+        "sku": sku,
+        "codigo": sku,
+        "nome": p.get("nome"),
+        "preco": _to_float(p.get("preco", 0)),
+        "custo": custo,
+        "ncm": p.get("ncm", ""),
+        "estoque": _extrair_estoque(p),
+        "descricao": p.get("descricaoCurta", ""),
+        "imagens": imagens,
+    }
+
+def buscar_produto(sku: str) -> dict | None:
+    try:
+        r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
+        r.raise_for_status()
+        itens = r.json().get("data", [])
+        if not itens:
+            return None
+        return _normalizar_produto(itens[0])
+    except ValueError as e:
+        logger.error("Bling buscar_produto JSON inválido sku=%s erro=%s", sku, e)
+        return None
+    except Exception as e:
+        logger.error("Bling buscar_produto erro sku=%s: %s", sku, e)
+        return None
+
+def listar_produtos() -> list[dict]:
+    try:
+        r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
+        r.raise_for_status()
+        return [_normalizar_produto(p) for p in r.json().get("data", [])]
+    except ValueError as e:
+        logger.error("Bling listar_produtos JSON inválido: %s", e)
+        return []
+    except Exception as e:
+        logger.error("Bling listar_produtos erro: %s", e)
+        return []
+
+def estoques_criticos(limite: int = 20) -> list[dict]:
+    # Só considera crítico quando o estoque é conhecido E está abaixo do limite.
+    # Estoque None (não retornado pela listagem) não é tratado como zero.
+    return [
+        p for p in listar_produtos()
+        if p.get("estoque") is not None and p["estoque"] <= limite
+    ]
+
+
+def _buscar_produto_raw(sku: str) -> dict | None:
+    """Retorna o objeto BRUTO do produto (com o id do Bling), ou None."""
+    r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
+    r.raise_for_status()
+    itens = r.json().get("data", [])
+    return itens[0] if itens else None
+
+
+def obter_produto_completo(produto_id: str | int) -> dict:
+    """GET de um produto específico (objeto completo, necessário para o PUT)."""
+    r = _request_bling("GET", f"{BASE}/produtos/{produto_id}", timeout=15)
+    r.raise_for_status()
+    return r.json().get("data") or {}
+
+
+def atualizar_ncm_produto(produto_id: str | int, ncm: str) -> dict:
+    """
+    Define o NCM de um produto no Bling com segurança: lê o produto COMPLETO,
+    altera apenas o campo ncm e grava de volta (PUT é substituição no Bling v3,
+    então read-modify-write evita apagar outros campos). Nunca lança exceção.
+    """
+    ncm_limpo = "".join(ch for ch in str(ncm) if ch.isdigit())
+    if len(ncm_limpo) != 8:
+        return {"ok": False, "erro": f"NCM inválido (esperado 8 dígitos): {ncm!r}", "produto_id": produto_id}
+    try:
+        produto = obter_produto_completo(produto_id)
+        if not produto:
+            return {"ok": False, "erro": f"produto {produto_id} não encontrado", "produto_id": produto_id}
+        produto["ncm"] = ncm_limpo
+        r = _request_bling("PUT", f"{BASE}/produtos/{produto_id}", json=produto, timeout=30)
+        r.raise_for_status()
+        return {"ok": True, "produto_id": produto_id, "ncm": ncm_limpo}
+    except Exception as e:
+        logger.error("Bling atualizar_ncm_produto erro id=%s: %s", produto_id, e)
+        return {"ok": False, "erro": str(e), "produto_id": produto_id}
+
+
+def definir_ncm_por_sku(sku: str, ncm: str) -> dict:
+    """Resolve o id do produto pelo SKU e define o NCM. Nunca lança exceção."""
+    try:
+        raw = _buscar_produto_raw(sku)
+    except Exception as e:
+        logger.error("Bling definir_ncm_por_sku busca erro sku=%s: %s", sku, e)
+        return {"ok": False, "erro": str(e), "sku": sku}
+    if not raw:
+        return {"ok": False, "erro": f"SKU {sku} não encontrado no Bling", "sku": sku}
+    resultado = atualizar_ncm_produto(raw.get("id"), ncm)
+    resultado["sku"] = sku
+    return resultado
+
+
+def criar_nfe(payload_nfe: dict) -> dict:
+    """
+    Cria NF-e no Bling. Retorna payload de resposta ou erro padronizado.
+    """
+    if not BLING_ACCESS_TOKEN:
+        return {"ok": False, "erro": "BLING_ACCESS_TOKEN não configurado"}
+    try:
+        r = _request_bling("POST", f"{BASE}/nfe", json=payload_nfe, timeout=30)
+        r.raise_for_status()
+        body = r.json()
+        data = body.get("data", body)
+        return {"ok": True, "data": data}
+    except Exception as exc:
+        logger.error("Bling criar_nfe erro: %s", exc)
+        return {"ok": False, "erro": str(exc)}

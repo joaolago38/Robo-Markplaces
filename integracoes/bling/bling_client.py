@@ -88,6 +88,28 @@ def _to_int(value, default=0) -> int:
     except (TypeError, ValueError):
         return int(default)
 
+
+def _extrair_estoque(p: dict):
+    """
+    Lê o saldo de estoque conforme a API v3 do Bling.
+    Na v3 o estoque NÃO vem como 'estoqueAtual'; quando presente, vem em
+    'saldoVirtualTotal'/'saldoFisicoTotal' (ou num objeto aninhado 'estoque').
+    Retorna None quando o saldo não está presente no payload — assim não
+    classificamos como "crítico" um produto cujo estoque é apenas desconhecido.
+    # TODO: a listagem GET /produtos normalmente NÃO traz saldo; para estoque
+    # confiável, buscar via endpoint dedicado de estoques/saldos por id.
+    """
+    for chave in ("saldoVirtualTotal", "saldoFisicoTotal", "estoqueAtual"):
+        if p.get(chave) is not None:
+            return _to_int(p.get(chave))
+    est = p.get("estoque")
+    if isinstance(est, dict):
+        for chave in ("saldoVirtualTotal", "saldoFisicoTotal"):
+            if est.get(chave) is not None:
+                return _to_int(est.get(chave))
+    return None
+
+
 def _normalizar_produto(p: dict) -> dict:
     custo = _to_float(
         p.get("precoCusto", p.get("precoCompra", p.get("custo", 0)))
@@ -97,13 +119,15 @@ def _normalizar_produto(p: dict) -> dict:
         imagens = [imagens]
     elif not isinstance(imagens, list):
         imagens = []
+    sku = p.get("codigo") or p.get("sku") or (str(p.get("id")) if p.get("id") else None)
     return {
-        "sku": p.get("codigo"),
+        "sku": sku,
+        "codigo": sku,
         "nome": p.get("nome"),
         "preco": _to_float(p.get("preco", 0)),
         "custo": custo,
         "ncm": p.get("ncm", ""),
-        "estoque": _to_int(p.get("estoqueAtual", 0)),
+        "estoque": _extrair_estoque(p),
         "descricao": p.get("descricaoCurta", ""),
         "imagens": imagens,
     }
@@ -143,7 +167,12 @@ def listar_produtos() -> list[dict]:
         return []
 
 def estoques_criticos(limite: int = 20) -> list[dict]:
-    return [p for p in listar_produtos() if p["estoque"] <= limite]
+    # Só considera crítico quando o estoque é conhecido E está abaixo do limite.
+    # Estoque None (não retornado pela listagem) não é tratado como zero.
+    return [
+        p for p in listar_produtos()
+        if p.get("estoque") is not None and p["estoque"] <= limite
+    ]
 
 
 def _buscar_produto_raw(sku: str) -> dict | None:
