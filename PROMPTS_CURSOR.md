@@ -1,82 +1,102 @@
-# Prompt — Criar teste de diagnóstico Mercado Livre + NF-e (Robo-Markplaces)
+# Prompt — Agente de monitoramento do Mercado Livre (conta + ads + concorrência + recomendações)
 
-Crie um novo arquivo **`scripts/testar_ml_e_nfe.py`** no projeto Robo-Markplaces,
-seguindo o MESMO estilo do `scripts/testar_integracao.py` já existente (mesmos
-helpers `log()`, `checar()`, prefixos `[OK]/[ERRO]/[INFO]`, bloco de resultado
-final com contagem e `sys.exit(0 if falhou == 0 else 1)`, e o ajuste de
-`sys.path` para a raiz do projeto).
+Crie um novo arquivo **`agentes/ml/agente_monitor_ml.py`** no projeto
+Robo-Markplaces. Ele deve fazer uma varredura de leitura (somente análise,
+SEM alterar nada na conta) e me comunicar a situação e quais ajustes fazer.
 
-O objetivo do script é diagnosticar a operação diária em 4 blocos. Use SOMENTE
-as funções que já existem no projeto (não invente nomes nem assinaturas):
+REGRA DE OURO: este agente é SÓ DIAGNÓSTICO E RECOMENDAÇÃO. Ele NÃO pausa
+campanha, NÃO muda preço, NÃO muda orçamento. Toda ação de escrita continua
+sendo decidida por mim (o agente apenas alerta e sugere). Nunca lance exceção
+não tratada.
 
-## TESTE 1 — Mercado Livre: perguntas dos clientes
-- Importe `from integracoes.ml import ml_client`.
-- Se `ml_client._enabled()` for False, marque como IGNORADO (não como falha):
-  registre um aviso de que o ML não está configurado e siga em frente.
-- Se configurado, chame `ml_client.listar_perguntas_nao_respondidas()` e:
-  - confirme que retornou uma lista (use `checar`),
-  - imprima as 3 primeiras perguntas (campos `text` e `item_id`),
-  - chame `ml_client.obter_saude_conta()` e imprima `pendencias`, `claims_rate`
-    e `dias_sem_acesso`.
+## Reutilize as funções que JÁ existem (não reescreva):
+De `integracoes.ml.ml_client`:
+- `_enabled()` — saber se ML está configurado
+- `obter_saude_conta()` -> {configurado, pendencias, claims_rate, dias_sem_acesso}
+- `buscar_reputacao_vendedor()` -> dict de reputação
+- `listar_perguntas_nao_respondidas()` -> list
+- `listar_meus_anuncios()` -> list de anúncios (cada um com item_id)
+- `buscar_metricas_item(item_id)` -> {titulo, status, preco, estoque, visitas_7d, visitas_30d}
+- `buscar_menor_preco_concorrente(item_id)` -> float (0.0 se não houver catálogo)
+- `buscar_acos_ads(item_id, dias=14)` -> float
 
-## TESTE 2 — Mercado Livre: situação dos Product Ads
-- Importe `from integracoes.ml import ml_product_ads`.
-- Se ML não estiver configurado, marque IGNORADO.
-- Chame `ml_product_ads.obter_advertiser()`. Se vier `ok=False`:
-  - é um AVISO, não falha de código; se `codigo == "sem_permissao"`, oriente a
-    ativar em "Mercado Livre > Mi perfil > Publicidad". Marque IGNORADO.
-- Se `ok=True`: confirme que há `advertiser_id` (use `checar`), depois chame
-  `ml_product_ads.listar_campanhas(advertiser_id, dias=14)` e imprima:
-  - total de campanhas, quantas estão `active`,
-  - até 5 campanhas com `nome`, `status`, `acos`, `cost`.
-  - chame `ml_product_ads.campanhas_acos_acima_limite(campanhas)` e avise se
-    houver campanhas com ACOS acima do limite.
+De `integracoes.ml.ml_product_ads`:
+- `obter_advertiser()` -> {ok, advertiser_id, site_id, ...}
+- `listar_campanhas(advertiser_id, dias=14)` -> list de {id,nome,status,budget,acos,roas,cost,clicks}
+- `campanhas_acos_acima_limite(campanhas)` -> list
 
-## TESTE 3 — Pedidos pagos prontos para faturar (há NF-e a gerar?)
-- Se ML não configurado, marque IGNORADO.
-- Chame `ml_client.listar_pedidos(dias=7)`, confirme que é lista (use `checar`),
-  e imprima até 5 pedidos com `order_id`, `total` e os `sku` dos itens.
-- Guarde a lista de pedidos para reutilizar no TESTE 4.
+De `core.notificador`:
+- `alertar_gestor(msg)` — para me enviar o resumo/alertas (Telegram/WhatsApp)
 
-## TESTE 4 — NF-e automática: o que falta para emitir
-- Importe `from agentes.faturamento.agente_faturamento import emitir_nfe_pedido`
-  e `from core import config as cfg`.
-- IMPORTANTE: NUNCA emita nota de verdade. Chame `emitir_nfe_pedido(pedido,
-  dry_run=True)` — dry-run apenas monta e valida o payload, não envia ao Bling.
-- Monte o `pedido` assim:
-  - Se houver pedidos reais do TESTE 3, use o primeiro, convertendo seus itens
-    para o formato `{"sku","quantidade","valor_unitario"}` e cliente
-    `{"nome":"Consumidor Final","documento":""}`.
-  - Se não houver pedidos (ou itens sem SKU), use um pedido SIMULADO:
-    `{"pedido_id":"SIMULADO-1","cliente":{...},"itens":[{"sku":"ESM-001",
-    "quantidade":1,"valor_unitario":9.9}]}`.
-- Se `resultado["ok"]` for True: marque OK ("payload montado, emissão pronta").
-- Se for False: NÃO é falha de código — é o diagnóstico. Marque IGNORADO,
-  imprima o `erro` e cada item de `resultado["erros"]` como pendência.
-- Ao final, imprima um checklist fiscal lendo os defaults de `cfg`
-  (`NFE_NATUREZA_OPERACAO`, `NFE_CFOP_PADRAO`, `NFE_CST_PADRAO`,
-  `NFE_CSOSN_PADRAO`, `NFE_ORIGEM_PADRAO`, `NFE_SERIE_PADRAO`) e liste os
-  requisitos para emissão 100% automática:
-  1. Todo produto com NCM válido (8 dígitos) no Bling/catálogo fiscal.
-  2. Dados do destinatário (nome/documento/endereço) vindos do pedido.
-  3. Escopo "NFe" autorizado no app do Bling (OAuth).
-  4. Certificado digital A1 configurado na conta Bling.
-  5. Série/numeração fiscal habilitada no Bling.
+De `core.config` (limites já existentes; use com getattr e defaults seguros):
+- `ML_ADS_ORCAMENTO_MAXIMO`, `ML_ADS_ACOS_DIAS_LIMITE`, e o ACOS máximo usado no
+  projeto (procure por `ACOS_MAXIMO` em `agentes/ml/agente_ads_gatilho.py` e use o
+  mesmo valor/origem; se não achar, use 0.30 como default).
 
-## Regras gerais
-- O script NUNCA deve lançar exceção não tratada: envolva cada bloco em
-  try/except e, em erro inesperado, use `checar(False, "", f"Exceção...")`.
-- Distinga três estados: OK (passou), ERRO (falha de código → conta como falha),
-  e IGNORADO (integração não configurada / sem permissão → não conta como falha).
-  No resumo final, mostre quantas foram ignoradas separadamente das que falharam.
-- `sys.exit(0)` quando não houver ERRO (ignorados não reprovam o teste).
-- É um script de diagnóstico seguro para rodar no GitHub Actions: como tudo é
-  leitura e a NF-e é só dry-run, não há efeitos colaterais.
-- Ao terminar, confirme que o arquivo compila (`python -m py_compile
-  scripts/testar_ml_e_nfe.py`) e me diga o comando para rodar.
+## O que o agente deve produzir — função `analisar() -> dict`
+
+1. **Situação da conta**
+   - Se `_enabled()` for False: retorne {ok: False, motivo: "ML não configurado"}
+     e mande UM alerta dizendo que faltam credenciais. Não quebre.
+   - Chame `obter_saude_conta()` e `listar_perguntas_nao_respondidas()`.
+   - Gere recomendações: se houver perguntas não respondidas -> recomendar
+     responder (cite a quantidade); se `claims_rate` alto ou `dias_sem_acesso`
+     elevado -> alertar risco de reputação.
+
+2. **Situação dos Ads**
+   - `obter_advertiser()`. Se `ok=False`: registre como pendência ("Publicidade
+     não habilitada" quando `codigo == sem_permissao`) e siga.
+   - Se ok: `listar_campanhas(advertiser_id, dias=14)`.
+   - Recomendações de ads:
+     - campanhas com ACOS acima do limite -> recomendar REVISAR/baixar lance ou
+       pausar (use `campanhas_acos_acima_limite`).
+     - gasto (`cost`) somado acima de `ML_ADS_ORCAMENTO_MAXIMO` -> alertar.
+     - campanhas `active` com `clicks` altos e `roas` baixo -> recomendar ajuste.
+     - se NÃO houver nenhuma campanha ativa e a conta vende -> sugerir avaliar
+       ligar ads.
+
+3. **Pesquisa de concorrência e desempenho**
+   - Pegue meus anúncios via `listar_meus_anuncios()` (limite a, por ex., os 15
+     primeiros para não estourar rate limit).
+   - Para cada item: `buscar_metricas_item(item_id)` e
+     `buscar_menor_preco_concorrente(item_id)`.
+   - Compare meu preço com o menor preço do concorrente:
+     - se meu preço > concorrente em mais de X% (ex.: 5%) -> recomendar revisar
+       preço para baixo (mostre meu preço, o do concorrente e a diferença %).
+     - se eu já sou o menor e tenho boa visita/baixa conversão aparente
+       (visitas altas, mas estoque parado) -> recomendar revisar título/fotos.
+     - se visitas_7d caíram muito vs média de visitas_30d -> alertar queda de
+       tráfego.
+   - Produza uma lista ordenada por prioridade (maior diferença de preço ou
+     maior gasto de ads primeiro).
+
+4. **Comunicação dos ajustes (o que fazer)**
+   - Monte um texto de resumo claro, em português, com seções:
+     "📊 Conta", "📣 Ads", "🔎 Concorrência", e "✅ Ajustes recomendados"
+     (lista numerada e priorizada do que devo fazer).
+   - Envie esse resumo via `alertar_gestor(resumo)`.
+   - Retorne também um dict estruturado:
+     {ok: True, conta: {...}, ads: {...}, concorrencia: [...],
+      recomendacoes: ["...", "..."], enviado: True}
+
+## Função `main()` / execução direta
+- Permita rodar com `python -m agentes.ml.agente_monitor_ml` ou
+  `python agentes/ml/agente_monitor_ml.py`, chamando `analisar()` e imprimindo o
+  resumo no console (com os helpers de log que o projeto já usa, se houver).
+
+## Boas práticas obrigatórias
+- Cada chamada de API protegida por try/except; nunca propague exceção.
+- Respeite rate limit: não chame métricas para centenas de itens — limite a
+  quantidade e, se possível, durma alguns ms entre chamadas.
+- Não escreva NADA na conta (sem pausar/alterar preço/orçamento). Apenas leitura
+  + alerta + recomendação.
+- Ao terminar, confirme que o arquivo compila
+  (`python -m py_compile agentes/ml/agente_monitor_ml.py`) e me diga como rodar.
 
 ## Opcional
-Se possível, crie também o workflow `.github/workflows/testar_ml_e_nfe.yml` nos
-mesmos moldes do `testar_integracao.yml` existente, acionável por
-`workflow_dispatch`, instalando as dependências e rodando
-`python scripts/testar_ml_e_nfe.py`.
+Crie também `.github/workflows/monitor_ml.yml` (workflow_dispatch + schedule
+diário, ex.: 09:00 BRT) que roda este agente, nos moldes dos workflows já
+existentes no projeto.
+
+> Lembrete: o agente roda no GitHub Actions a partir do que está commitado.
+> Depois de gerar, faça commit e push na branch `main` para valer.
