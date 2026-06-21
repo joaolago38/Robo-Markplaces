@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -11,12 +13,102 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+logger = logging.getLogger("renovar_tokens")
+
+try:
+    from core.notificador import alertar_critico
+except Exception as exc:
+    logger.warning("notificador indisponível — alertas críticos só no stdout: %s", exc)
+
+    def alertar_critico(msg: str) -> bool:  # type: ignore[misc]
+        print(f"[ALERTA CRÍTICO — Telegram não configurado]\n{msg}")
+        return False
+
+
 CREDENCIAIS_ML = ["ML_CLIENT_ID", "ML_CLIENT_SECRET", "ML_REFRESH_TOKEN"]
 CREDENCIAIS_SHOPEE = ["SHOPEE_PARTNER_ID", "SHOPEE_PARTNER_KEY", "SHOPEE_SHOP_ID"]
 CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_REFRESH_TOKEN"]
 
+_provedores_alertados: set[str] = set()
+
+
 def _tem_credenciais(variaveis: list[str]) -> bool:
     return all(os.getenv(v, "").strip() for v in variaveis)
+
+
+def _sanitizar_motivo(motivo: str) -> str:
+    """Remove possíveis tokens do texto antes de enviar alerta."""
+    texto = (motivo or "").strip()
+    texto = re.sub(
+        r"(?i)\b(refresh_token|access_token|token|bearer)\b[\s:=]+[^\s,;]+",
+        r"\1=***",
+        texto,
+    )
+    return texto[:500]
+
+
+def _dica_bling_travado(motivo: str) -> tuple[str, str]:
+    """
+    Retorna (diagnóstico, ação) diferenciando refresh expirado vs client secret.
+    """
+    m = (motivo or "").lower()
+    if "credenciais bling ausentes" in m or (
+        "credenciais" in m and not os.getenv("BLING_CLIENT_SECRET", "").strip()
+    ):
+        return (
+            "BLING_CLIENT_SECRET ausente ou credenciais incompletas.",
+            "Corrija BLING_CLIENT_ID, BLING_CLIENT_SECRET e BLING_REFRESH_TOKEN nos Secrets.",
+        )
+    if "invalid_client" in m or ("client" in m and "secret" in m):
+        return (
+            "BLING_CLIENT_ID/BLING_CLIENT_SECRET incorretos.",
+            "Confira BLING_CLIENT_ID e BLING_CLIENT_SECRET no GitHub (sem aspas/espaços).",
+        )
+    if "invalid_grant" in m or "expirado" in m or "inválido" in m or "invalido" in m:
+        return (
+            "refresh_token inválido/expirado (HTTP 400 invalid_grant).",
+            "Rode `python pegar_token_bling.py SEU_CODE` e atualize BLING_ACCESS_TOKEN e "
+            "BLING_REFRESH_TOKEN nos Secrets do GitHub.",
+        )
+    return (
+        "renovação automática falhou — o ciclo não se auto-cura.",
+        "Rode `python pegar_token_bling.py SEU_CODE` e atualize BLING_ACCESS_TOKEN e "
+        "BLING_REFRESH_TOKEN nos Secrets do GitHub.",
+    )
+
+
+def _alertar_token_travado(provedor: str, motivo: str) -> None:
+    """Dispara no máximo um alerta crítico por provedor por execução."""
+    chave = (provedor or "").strip().lower()
+    if not chave or chave in _provedores_alertados:
+        return
+    _provedores_alertados.add(chave)
+
+    motivo_limpo = _sanitizar_motivo(motivo)
+    if chave == "bling":
+        diagnostico, acao = _dica_bling_travado(motivo_limpo)
+        msg = (
+            "🚨 BLING TRAVADO — renovação automática falhou.\n"
+            "O ciclo não se auto-cura: é preciso bootstrap manual.\n"
+            f"{diagnostico}\n"
+            f"Ação: {acao}\n"
+            f"Detalhe: {motivo_limpo or 'sem detalhe'}"
+        )
+    else:
+        rotulos = {
+            "mercadolivre": "MERCADO LIVRE",
+            "magalu": "MAGALU",
+            "shopee": "SHOPEE",
+            "meta": "META",
+        }
+        rotulo = rotulos.get(chave, provedor.upper())
+        msg = (
+            f"🚨 {rotulo} TRAVADO — renovação automática falhou.\n"
+            "O ciclo pode não se auto-curar sem atualizar os Secrets.\n"
+            f"Detalhe: {motivo_limpo or 'sem detalhe'}"
+        )
+
+    alertar_critico(msg)
 
 
 def _sync_secrets_github(access_token: str, refresh_token: str | None, prefix: str = "BLING") -> bool:
@@ -50,6 +142,9 @@ def _sync_secrets_github(access_token: str, refresh_token: str | None, prefix: s
 
 
 def main() -> int:
+    global _provedores_alertados
+    _provedores_alertados = set()
+
     print("=" * 60)
     print("Renovacao de tokens — Robo-Markplaces")
     print("=" * 60)
@@ -83,12 +178,15 @@ def main() -> int:
                     print(f"    BLING_ACCESS_TOKEN  -> {res_bling.get('access_token')}")
                     print(f"    BLING_REFRESH_TOKEN -> {novo_refresh}")
             else:
-                print(f"  bling: falhou — {res_bling.get('motivo', '')}")
+                motivo = str(res_bling.get("motivo", "") or "")
+                print(f"  bling: falhou — {motivo}")
                 print("  Se o refresh_token expirou, gere um novo com pegar_token_bling.py")
+                _alertar_token_travado("bling", motivo)
                 exit_code = 1
         except Exception as exc:
             print(f"  bling: ERRO — {exc}")
             print("  Renovacao manual via pegar_token_bling.py")
+            _alertar_token_travado("bling", str(exc))
             exit_code = 1
 
     print("\n[Meta]")
@@ -107,11 +205,14 @@ def main() -> int:
                 else:
                     print(f"    META_ACCESS_TOKEN -> {res_meta['access_token']}")
             else:
-                print(f"  meta: falhou — {res_meta.get('motivo', '')}")
+                motivo = str(res_meta.get("motivo", "") or "")
+                print(f"  meta: falhou — {motivo}")
                 print("  Se o token longo expirou, gere um novo com pegar_token_meta.py")
+                _alertar_token_travado("meta", motivo)
                 exit_code = 1
         except Exception as exc:
             print(f"  meta: ERRO — {exc}")
+            _alertar_token_travado("meta", str(exc))
             exit_code = 1
 
     print("\n[ML / Shopee / Magalu]")
@@ -143,11 +244,13 @@ def main() -> int:
             elif ok:
                 print(f"  {nome}: ok")
             else:
-                motivo = payload.get("motivo", "").strip()
+                motivo = str(payload.get("motivo", "") or "").strip()
                 if motivo:
                     print(f"  {nome}: falhou — {motivo}")
                 else:
                     print(f"  {nome}: falhou na renovação — ver erro acima")
+                    motivo = "falha na renovação — ver log"
+                _alertar_token_travado(nome, motivo)
                 exit_code = 1
 
         # Write-back: refresh_tokens rotativos — grava nos Secrets sem renovar de novo.
