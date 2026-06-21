@@ -1,16 +1,190 @@
-Aqui está um prompt que você pode colar em outra sessão de IA (ou usar você mesmo) para fazer a correção:
+"""
+integracoes/bling/bling_client.py
+Cliente da API Bling v3. Nunca lança exceção.
+"""
+import logging
+from core.config import BLING_ACCESS_TOKEN
+from core.http_client import request
+from core import token_manager
 
----
+logger = logging.getLogger("bling")
+BASE = "https://www.bling.com.br/Api/v3"
 
-**Prompt:**
+def _h(token: str | None = None):
+    tok = token or token_manager.get_token_bling()
+    return {"Authorization": f"Bearer {tok}"}
 
-> No projeto Robo-Markplaces, o teste `scripts/testar_integracao.py` está passando no TESTE 1 (Configuração de variáveis) mesmo quando `BLING_CLIENT_SECRET` está ausente ou incorreto, porque esse teste só confere `ANTHROPIC_API_KEY`, `BLING_ACCESS_TOKEN`, `BLING_REFRESH_TOKEN` e `BLING_CLIENT_ID` — nunca o `BLING_CLIENT_SECRET`. Isso esconde a causa real de falhas de renovação de token do Bling (erro 400 no `/Api/v3/oauth/token`), que só aparece depois, no TESTE 2.
->
-> Faça o seguinte:
->
-> 1. Em `scripts/testar_integracao.py`, dentro do TESTE 1, adicione uma checagem para `BLING_CLIENT_SECRET` (variável de ambiente), seguindo o mesmo padrão das checagens existentes (usar a função `checar()`, mostrar só os primeiros caracteres do valor por segurança, msg de erro clara se ausente).
-> 2. Confirme que `core/config.py` já expõe `BLING_CLIENT_SECRET` corretamente (já expõe, em `core/config.py` linha ~39) — não precisa duplicar, só usar `os.getenv` no próprio script de teste, igual aos outros.
-> 3. Em `core/token_manager.py`, na função `_renovar_token_bling`, garanta que a mensagem de erro logada no bloco `if r.status_code != 200` (que já existe, chamando `_dica_erro_refresh_bling`) é a que realmente aparece nos logs — ou seja, confirme que não há nenhum outro lugar (ex: em `core/http_client.py` ou em outra camada) que poderia estar chamando `raise_for_status()` antes desse bloco e mascarando a mensagem detalhada com o erro genérico do `requests` ("400 Client Error: Bad Request for url..."). Se encontrar, ajuste para que a mensagem detalhada com a dica (`invalid_grant`, `invalid_client`, etc.) seja sempre a que é logada.
-> 4. Rode os testes existentes em `tests/test_diagnostico_bling.py` e `tests/test_bling_client.py` para garantir que nada quebrou, e adicione um teste novo cobrindo o caso de `BLING_CLIENT_SECRET` ausente.
-> 5. Não altere nenhuma credencial real, apenas a lógica de diagnóstico/teste.
+def _request_bling(method: str, url: str, **kwargs):
+    """
+    Faz a chamada autenticada e, em caso de 401 (token expirado), força a
+    renovação via refresh_token e tenta UMA vez mais.
+    """
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.update(_h())
+    r = request(method, url, headers=headers, **kwargs)
 
+    if getattr(r, "status_code", None) == 401:
+        logger.warning("Bling retornou 401 — renovando token e tentando novamente.")
+        novo = token_manager.get_token_bling(forcar=True)
+        if novo:
+            headers.update(_h(novo))
+            r = request(method, url, headers=headers, **kwargs)
+    return r
+
+def _to_float(value, default=0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+def _to_int(value, default=0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(default)
+
+def _extrair_estoque(p: dict):
+    """
+    Lê o saldo de estoque conforme a API v3 do Bling.
+    Na v3 o estoque NÃO vem como 'estoqueAtual'; quando presente, vem em
+    'saldoVirtualTotal'/'saldoFisicoTotal' (ou num objeto aninhado 'estoque').
+    Retorna None quando o saldo não está presente no payload — assim não
+    classificamos como "crítico" um produto cujo estoque é apenas desconhecido.
+    # TODO: a listagem GET /produtos normalmente NÃO traz saldo; para estoque
+    # confiável, buscar via endpoint dedicado de estoques/saldos por id.
+    """
+    for chave in ("saldoVirtualTotal", "saldoFisicoTotal", "estoqueAtual"):
+        if p.get(chave) is not None:
+            return _to_int(p.get(chave))
+    est = p.get("estoque")
+    if isinstance(est, dict):
+        for chave in ("saldoVirtualTotal", "saldoFisicoTotal"):
+            if est.get(chave) is not None:
+                return _to_int(est.get(chave))
+    return None
+
+
+def _normalizar_produto(p: dict) -> dict:
+    custo = _to_float(
+        p.get("precoCusto", p.get("precoCompra", p.get("custo", 0)))
+    )
+    imagens = p.get("imagens", p.get("imagemURL", []))
+    if isinstance(imagens, str):
+        imagens = [imagens]
+    elif not isinstance(imagens, list):
+        imagens = []
+    sku = p.get("codigo") or p.get("sku") or (str(p.get("id")) if p.get("id") else None)
+    return {
+        "sku": sku,
+        "codigo": sku,
+        "nome": p.get("nome"),
+        "preco": _to_float(p.get("preco", 0)),
+        "custo": custo,
+        "ncm": p.get("ncm", ""),
+        "estoque": _extrair_estoque(p),
+        "descricao": p.get("descricaoCurta", ""),
+        "imagens": imagens,
+    }
+
+def buscar_produto(sku: str) -> dict | None:
+    try:
+        r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
+        r.raise_for_status()
+        itens = r.json().get("data", [])
+        if not itens:
+            return None
+        return _normalizar_produto(itens[0])
+    except ValueError as e:
+        logger.error("Bling buscar_produto JSON inválido sku=%s erro=%s", sku, e)
+        return None
+    except Exception as e:
+        logger.error("Bling buscar_produto erro sku=%s: %s", sku, e)
+        return None
+
+def listar_produtos() -> list[dict]:
+    try:
+        r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
+        r.raise_for_status()
+        return [_normalizar_produto(p) for p in r.json().get("data", [])]
+    except ValueError as e:
+        logger.error("Bling listar_produtos JSON inválido: %s", e)
+        return []
+    except Exception as e:
+        logger.error("Bling listar_produtos erro: %s", e)
+        return []
+
+def estoques_criticos(limite: int = 20) -> list[dict]:
+    # Só considera crítico quando o estoque é conhecido E está abaixo do limite.
+    # Estoque None (não retornado pela listagem) não é tratado como zero.
+    return [
+        p for p in listar_produtos()
+        if p.get("estoque") is not None and p["estoque"] <= limite
+    ]
+
+
+def _buscar_produto_raw(sku: str) -> dict | None:
+    """Retorna o objeto BRUTO do produto (com o id do Bling), ou None."""
+    r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
+    r.raise_for_status()
+    itens = r.json().get("data", [])
+    return itens[0] if itens else None
+
+
+def obter_produto_completo(produto_id: str | int) -> dict:
+    """GET de um produto específico (objeto completo, necessário para o PUT)."""
+    r = _request_bling("GET", f"{BASE}/produtos/{produto_id}", timeout=15)
+    r.raise_for_status()
+    return r.json().get("data") or {}
+
+
+def atualizar_ncm_produto(produto_id: str | int, ncm: str) -> dict:
+    """
+    Define o NCM de um produto no Bling com segurança: lê o produto COMPLETO,
+    altera apenas o campo ncm e grava de volta (PUT é substituição no Bling v3,
+    então read-modify-write evita apagar outros campos). Nunca lança exceção.
+    """
+    ncm_limpo = "".join(ch for ch in str(ncm) if ch.isdigit())
+    if len(ncm_limpo) != 8:
+        return {"ok": False, "erro": f"NCM inválido (esperado 8 dígitos): {ncm!r}", "produto_id": produto_id}
+    try:
+        produto = obter_produto_completo(produto_id)
+        if not produto:
+            return {"ok": False, "erro": f"produto {produto_id} não encontrado", "produto_id": produto_id}
+        produto["ncm"] = ncm_limpo
+        r = _request_bling("PUT", f"{BASE}/produtos/{produto_id}", json=produto, timeout=30)
+        r.raise_for_status()
+        return {"ok": True, "produto_id": produto_id, "ncm": ncm_limpo}
+    except Exception as e:
+        logger.error("Bling atualizar_ncm_produto erro id=%s: %s", produto_id, e)
+        return {"ok": False, "erro": str(e), "produto_id": produto_id}
+
+
+def definir_ncm_por_sku(sku: str, ncm: str) -> dict:
+    """Resolve o id do produto pelo SKU e define o NCM. Nunca lança exceção."""
+    try:
+        raw = _buscar_produto_raw(sku)
+    except Exception as e:
+        logger.error("Bling definir_ncm_por_sku busca erro sku=%s: %s", sku, e)
+        return {"ok": False, "erro": str(e), "sku": sku}
+    if not raw:
+        return {"ok": False, "erro": f"SKU {sku} não encontrado no Bling", "sku": sku}
+    resultado = atualizar_ncm_produto(raw.get("id"), ncm)
+    resultado["sku"] = sku
+    return resultado
+
+
+def criar_nfe(payload_nfe: dict) -> dict:
+    """
+    Cria NF-e no Bling. Retorna payload de resposta ou erro padronizado.
+    """
+    if not BLING_ACCESS_TOKEN:
+        return {"ok": False, "erro": "BLING_ACCESS_TOKEN não configurado"}
+    try:
+        r = _request_bling("POST", f"{BASE}/nfe", json=payload_nfe, timeout=30)
+        r.raise_for_status()
+        body = r.json()
+        data = body.get("data", body)
+        return {"ok": True, "data": data}
+    except Exception as exc:
+        logger.error("Bling criar_nfe erro: %s", exc)
+        return {"ok": False, "erro": str(exc)}
