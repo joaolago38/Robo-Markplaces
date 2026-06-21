@@ -1,0 +1,35 @@
+name: Testar ML e NF-e
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  testar:
+    name: Diagnostico ML + NF-e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Rodar diagnostico ML e NF-e
+        run: python scripts/testar_ml_e_nfe.py
+        env:
+          ML_CLIENT_ID:        ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET:    ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN:     ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN:    ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID:        ${{ secrets.ML_SELLER_ID }}
+          BLING_CLIENT_ID:     ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_ACCESS_TOKEN:  ${{ secrets.BLING_ACCESS_TOKEN }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}

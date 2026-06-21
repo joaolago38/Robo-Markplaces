@@ -1,190 +1,82 @@
-"""
-integracoes/bling/bling_client.py
-Cliente da API Bling v3. Nunca lança exceção.
-"""
-import logging
-from core.config import BLING_ACCESS_TOKEN
-from core.http_client import request
-from core import token_manager
+# Prompt — Criar teste de diagnóstico Mercado Livre + NF-e (Robo-Markplaces)
 
-logger = logging.getLogger("bling")
-BASE = "https://www.bling.com.br/Api/v3"
+Crie um novo arquivo **`scripts/testar_ml_e_nfe.py`** no projeto Robo-Markplaces,
+seguindo o MESMO estilo do `scripts/testar_integracao.py` já existente (mesmos
+helpers `log()`, `checar()`, prefixos `[OK]/[ERRO]/[INFO]`, bloco de resultado
+final com contagem e `sys.exit(0 if falhou == 0 else 1)`, e o ajuste de
+`sys.path` para a raiz do projeto).
 
-def _h(token: str | None = None):
-    tok = token or token_manager.get_token_bling()
-    return {"Authorization": f"Bearer {tok}"}
+O objetivo do script é diagnosticar a operação diária em 4 blocos. Use SOMENTE
+as funções que já existem no projeto (não invente nomes nem assinaturas):
 
-def _request_bling(method: str, url: str, **kwargs):
-    """
-    Faz a chamada autenticada e, em caso de 401 (token expirado), força a
-    renovação via refresh_token e tenta UMA vez mais.
-    """
-    headers = dict(kwargs.pop("headers", {}) or {})
-    headers.update(_h())
-    r = request(method, url, headers=headers, **kwargs)
+## TESTE 1 — Mercado Livre: perguntas dos clientes
+- Importe `from integracoes.ml import ml_client`.
+- Se `ml_client._enabled()` for False, marque como IGNORADO (não como falha):
+  registre um aviso de que o ML não está configurado e siga em frente.
+- Se configurado, chame `ml_client.listar_perguntas_nao_respondidas()` e:
+  - confirme que retornou uma lista (use `checar`),
+  - imprima as 3 primeiras perguntas (campos `text` e `item_id`),
+  - chame `ml_client.obter_saude_conta()` e imprima `pendencias`, `claims_rate`
+    e `dias_sem_acesso`.
 
-    if getattr(r, "status_code", None) == 401:
-        logger.warning("Bling retornou 401 — renovando token e tentando novamente.")
-        novo = token_manager.get_token_bling(forcar=True)
-        if novo:
-            headers.update(_h(novo))
-            r = request(method, url, headers=headers, **kwargs)
-    return r
+## TESTE 2 — Mercado Livre: situação dos Product Ads
+- Importe `from integracoes.ml import ml_product_ads`.
+- Se ML não estiver configurado, marque IGNORADO.
+- Chame `ml_product_ads.obter_advertiser()`. Se vier `ok=False`:
+  - é um AVISO, não falha de código; se `codigo == "sem_permissao"`, oriente a
+    ativar em "Mercado Livre > Mi perfil > Publicidad". Marque IGNORADO.
+- Se `ok=True`: confirme que há `advertiser_id` (use `checar`), depois chame
+  `ml_product_ads.listar_campanhas(advertiser_id, dias=14)` e imprima:
+  - total de campanhas, quantas estão `active`,
+  - até 5 campanhas com `nome`, `status`, `acos`, `cost`.
+  - chame `ml_product_ads.campanhas_acos_acima_limite(campanhas)` e avise se
+    houver campanhas com ACOS acima do limite.
 
-def _to_float(value, default=0.0) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return float(default)
+## TESTE 3 — Pedidos pagos prontos para faturar (há NF-e a gerar?)
+- Se ML não configurado, marque IGNORADO.
+- Chame `ml_client.listar_pedidos(dias=7)`, confirme que é lista (use `checar`),
+  e imprima até 5 pedidos com `order_id`, `total` e os `sku` dos itens.
+- Guarde a lista de pedidos para reutilizar no TESTE 4.
 
-def _to_int(value, default=0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return int(default)
+## TESTE 4 — NF-e automática: o que falta para emitir
+- Importe `from agentes.faturamento.agente_faturamento import emitir_nfe_pedido`
+  e `from core import config as cfg`.
+- IMPORTANTE: NUNCA emita nota de verdade. Chame `emitir_nfe_pedido(pedido,
+  dry_run=True)` — dry-run apenas monta e valida o payload, não envia ao Bling.
+- Monte o `pedido` assim:
+  - Se houver pedidos reais do TESTE 3, use o primeiro, convertendo seus itens
+    para o formato `{"sku","quantidade","valor_unitario"}` e cliente
+    `{"nome":"Consumidor Final","documento":""}`.
+  - Se não houver pedidos (ou itens sem SKU), use um pedido SIMULADO:
+    `{"pedido_id":"SIMULADO-1","cliente":{...},"itens":[{"sku":"ESM-001",
+    "quantidade":1,"valor_unitario":9.9}]}`.
+- Se `resultado["ok"]` for True: marque OK ("payload montado, emissão pronta").
+- Se for False: NÃO é falha de código — é o diagnóstico. Marque IGNORADO,
+  imprima o `erro` e cada item de `resultado["erros"]` como pendência.
+- Ao final, imprima um checklist fiscal lendo os defaults de `cfg`
+  (`NFE_NATUREZA_OPERACAO`, `NFE_CFOP_PADRAO`, `NFE_CST_PADRAO`,
+  `NFE_CSOSN_PADRAO`, `NFE_ORIGEM_PADRAO`, `NFE_SERIE_PADRAO`) e liste os
+  requisitos para emissão 100% automática:
+  1. Todo produto com NCM válido (8 dígitos) no Bling/catálogo fiscal.
+  2. Dados do destinatário (nome/documento/endereço) vindos do pedido.
+  3. Escopo "NFe" autorizado no app do Bling (OAuth).
+  4. Certificado digital A1 configurado na conta Bling.
+  5. Série/numeração fiscal habilitada no Bling.
 
-def _extrair_estoque(p: dict):
-    """
-    Lê o saldo de estoque conforme a API v3 do Bling.
-    Na v3 o estoque NÃO vem como 'estoqueAtual'; quando presente, vem em
-    'saldoVirtualTotal'/'saldoFisicoTotal' (ou num objeto aninhado 'estoque').
-    Retorna None quando o saldo não está presente no payload — assim não
-    classificamos como "crítico" um produto cujo estoque é apenas desconhecido.
-    # TODO: a listagem GET /produtos normalmente NÃO traz saldo; para estoque
-    # confiável, buscar via endpoint dedicado de estoques/saldos por id.
-    """
-    for chave in ("saldoVirtualTotal", "saldoFisicoTotal", "estoqueAtual"):
-        if p.get(chave) is not None:
-            return _to_int(p.get(chave))
-    est = p.get("estoque")
-    if isinstance(est, dict):
-        for chave in ("saldoVirtualTotal", "saldoFisicoTotal"):
-            if est.get(chave) is not None:
-                return _to_int(est.get(chave))
-    return None
+## Regras gerais
+- O script NUNCA deve lançar exceção não tratada: envolva cada bloco em
+  try/except e, em erro inesperado, use `checar(False, "", f"Exceção...")`.
+- Distinga três estados: OK (passou), ERRO (falha de código → conta como falha),
+  e IGNORADO (integração não configurada / sem permissão → não conta como falha).
+  No resumo final, mostre quantas foram ignoradas separadamente das que falharam.
+- `sys.exit(0)` quando não houver ERRO (ignorados não reprovam o teste).
+- É um script de diagnóstico seguro para rodar no GitHub Actions: como tudo é
+  leitura e a NF-e é só dry-run, não há efeitos colaterais.
+- Ao terminar, confirme que o arquivo compila (`python -m py_compile
+  scripts/testar_ml_e_nfe.py`) e me diga o comando para rodar.
 
-
-def _normalizar_produto(p: dict) -> dict:
-    custo = _to_float(
-        p.get("precoCusto", p.get("precoCompra", p.get("custo", 0)))
-    )
-    imagens = p.get("imagens", p.get("imagemURL", []))
-    if isinstance(imagens, str):
-        imagens = [imagens]
-    elif not isinstance(imagens, list):
-        imagens = []
-    sku = p.get("codigo") or p.get("sku") or (str(p.get("id")) if p.get("id") else None)
-    return {
-        "sku": sku,
-        "codigo": sku,
-        "nome": p.get("nome"),
-        "preco": _to_float(p.get("preco", 0)),
-        "custo": custo,
-        "ncm": p.get("ncm", ""),
-        "estoque": _extrair_estoque(p),
-        "descricao": p.get("descricaoCurta", ""),
-        "imagens": imagens,
-    }
-
-def buscar_produto(sku: str) -> dict | None:
-    try:
-        r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
-        r.raise_for_status()
-        itens = r.json().get("data", [])
-        if not itens:
-            return None
-        return _normalizar_produto(itens[0])
-    except ValueError as e:
-        logger.error("Bling buscar_produto JSON inválido sku=%s erro=%s", sku, e)
-        return None
-    except Exception as e:
-        logger.error("Bling buscar_produto erro sku=%s: %s", sku, e)
-        return None
-
-def listar_produtos() -> list[dict]:
-    try:
-        r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
-        r.raise_for_status()
-        return [_normalizar_produto(p) for p in r.json().get("data", [])]
-    except ValueError as e:
-        logger.error("Bling listar_produtos JSON inválido: %s", e)
-        return []
-    except Exception as e:
-        logger.error("Bling listar_produtos erro: %s", e)
-        return []
-
-def estoques_criticos(limite: int = 20) -> list[dict]:
-    # Só considera crítico quando o estoque é conhecido E está abaixo do limite.
-    # Estoque None (não retornado pela listagem) não é tratado como zero.
-    return [
-        p for p in listar_produtos()
-        if p.get("estoque") is not None and p["estoque"] <= limite
-    ]
-
-
-def _buscar_produto_raw(sku: str) -> dict | None:
-    """Retorna o objeto BRUTO do produto (com o id do Bling), ou None."""
-    r = _request_bling("GET", f"{BASE}/produtos", params={"codigo": sku}, timeout=15)
-    r.raise_for_status()
-    itens = r.json().get("data", [])
-    return itens[0] if itens else None
-
-
-def obter_produto_completo(produto_id: str | int) -> dict:
-    """GET de um produto específico (objeto completo, necessário para o PUT)."""
-    r = _request_bling("GET", f"{BASE}/produtos/{produto_id}", timeout=15)
-    r.raise_for_status()
-    return r.json().get("data") or {}
-
-
-def atualizar_ncm_produto(produto_id: str | int, ncm: str) -> dict:
-    """
-    Define o NCM de um produto no Bling com segurança: lê o produto COMPLETO,
-    altera apenas o campo ncm e grava de volta (PUT é substituição no Bling v3,
-    então read-modify-write evita apagar outros campos). Nunca lança exceção.
-    """
-    ncm_limpo = "".join(ch for ch in str(ncm) if ch.isdigit())
-    if len(ncm_limpo) != 8:
-        return {"ok": False, "erro": f"NCM inválido (esperado 8 dígitos): {ncm!r}", "produto_id": produto_id}
-    try:
-        produto = obter_produto_completo(produto_id)
-        if not produto:
-            return {"ok": False, "erro": f"produto {produto_id} não encontrado", "produto_id": produto_id}
-        produto["ncm"] = ncm_limpo
-        r = _request_bling("PUT", f"{BASE}/produtos/{produto_id}", json=produto, timeout=30)
-        r.raise_for_status()
-        return {"ok": True, "produto_id": produto_id, "ncm": ncm_limpo}
-    except Exception as e:
-        logger.error("Bling atualizar_ncm_produto erro id=%s: %s", produto_id, e)
-        return {"ok": False, "erro": str(e), "produto_id": produto_id}
-
-
-def definir_ncm_por_sku(sku: str, ncm: str) -> dict:
-    """Resolve o id do produto pelo SKU e define o NCM. Nunca lança exceção."""
-    try:
-        raw = _buscar_produto_raw(sku)
-    except Exception as e:
-        logger.error("Bling definir_ncm_por_sku busca erro sku=%s: %s", sku, e)
-        return {"ok": False, "erro": str(e), "sku": sku}
-    if not raw:
-        return {"ok": False, "erro": f"SKU {sku} não encontrado no Bling", "sku": sku}
-    resultado = atualizar_ncm_produto(raw.get("id"), ncm)
-    resultado["sku"] = sku
-    return resultado
-
-
-def criar_nfe(payload_nfe: dict) -> dict:
-    """
-    Cria NF-e no Bling. Retorna payload de resposta ou erro padronizado.
-    """
-    if not BLING_ACCESS_TOKEN:
-        return {"ok": False, "erro": "BLING_ACCESS_TOKEN não configurado"}
-    try:
-        r = _request_bling("POST", f"{BASE}/nfe", json=payload_nfe, timeout=30)
-        r.raise_for_status()
-        body = r.json()
-        data = body.get("data", body)
-        return {"ok": True, "data": data}
-    except Exception as exc:
-        logger.error("Bling criar_nfe erro: %s", exc)
-        return {"ok": False, "erro": str(exc)}
+## Opcional
+Se possível, crie também o workflow `.github/workflows/testar_ml_e_nfe.yml` nos
+mesmos moldes do `testar_integracao.yml` existente, acionável por
+`workflow_dispatch`, instalando as dependências e rodando
+`python scripts/testar_ml_e_nfe.py`.
