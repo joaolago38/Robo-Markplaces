@@ -144,7 +144,7 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             },
             timeout=25,
         )
-        if r.status_code != 200:
+        if status_http(r) != 200:
             log_http_erro_listagem(logger, "Amazon listar_pedidos", r)
             return []
         data = r.json() or {}

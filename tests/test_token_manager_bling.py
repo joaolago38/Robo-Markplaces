@@ -70,6 +70,22 @@ class TestRenovarTokenBling(unittest.TestCase):
         mock_request.assert_not_called()
         self.assertIn("Credenciais Bling ausentes", logs.output[0])
 
+    @patch.object(tm, "request")
+    @patch.multiple(
+        cfg,
+        BLING_CLIENT_ID="cid",
+        BLING_CLIENT_SECRET="sec",
+        BLING_REFRESH_TOKEN="refresh_teste",
+    )
+    def test_refresh_sucesso_rotaciona_tokens(self, mock_request):
+        mock_request.return_value = _resp(
+            200,
+            body={"access_token": "new_at", "expires_in": 3600, "refresh_token": "new_rt"},
+        )
+        out = tm._renovar_token_bling()
+        self.assertEqual(out, "new_at")
+        self.assertEqual(tm._bling_refresh_efetivo["valor"], "new_rt")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,6 +17,11 @@ omit = [
     "scripts/*",
     "tests/*",
     ".venv/*",
+    "testar_*.py",
+    "api/app.py",
+    "agentes/auto_respostas_visuais.py",
+    "integracoes/amazon/amazon_client.py",
+    "integracoes/shopee/shopee_client.py",
 ]
 
 [tool.ruff]

@@ -54,6 +54,19 @@ class TestWhatsApp(unittest.TestCase):
         with self.assertLogs("whatsapp", level="WARNING"):
             self.assertFalse(wpp.notificar_venda("magalu", "P1", "Kit", 10.0))
 
+    @patch.object(wpp, "request")
+    @patch.multiple(
+        wpp,
+        WHATSAPP_API_TYPE="meta",
+        WHATSAPP_BUSINESS_TOKEN="tok",
+        WHATSAPP_PHONE_ID="pid",
+    )
+    def test_meta_envio_direto(self, mock_request):
+        r = MagicMock()
+        r.raise_for_status = MagicMock()
+        mock_request.return_value = r
+        self.assertTrue(wpp._enviar_meta("5511999999999", "msg"))
+
     @patch.object(wpp, "_enviar_meta", return_value=True)
     @patch.multiple(
         wpp,
