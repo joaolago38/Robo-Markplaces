@@ -18,9 +18,10 @@ Use sempre dados reais do contexto fornecido.
 Nunca invente informações. Nunca prometa o que não pode cumprir.
 """
 
-def perguntar(prompt: str, max_tokens: int = 500) -> str:
+def perguntar(prompt: str, max_tokens: int = 500, contexto: str | None = None) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
+    mensagem = f"{contexto}\n\n{prompt}" if contexto else prompt
     try:
         r = request("POST", API_URL, headers={
             "x-api-key": ANTHROPIC_API_KEY,
@@ -30,7 +31,7 @@ def perguntar(prompt: str, max_tokens: int = 500) -> str:
             "model": MODELO,
             "max_tokens": max_tokens,
             "system": SYSTEM,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": mensagem}],
         }, timeout=30)
         r.raise_for_status()
         data = r.json()
