@@ -1,102 +1,149 @@
-# Prompt — Agente de monitoramento do Mercado Livre (conta + ads + concorrência + recomendações)
+# Prompt — Painel unificado com Claude: ML + Magalu + Bling (visão total, NF-e, alertas, concorrência) + cobertura 90%
 
-Crie um novo arquivo **`agentes/ml/agente_monitor_ml.py`** no projeto
-Robo-Markplaces. Ele deve fazer uma varredura de leitura (somente análise,
-SEM alterar nada na conta) e me comunicar a situação e quais ajustes fazer.
+Crie no projeto Robo-Markplaces um **orquestrador de visão geral** que dá ao
+Claude um panorama completo de Mercado Livre, Magazine Luiza (Magalu) e Bling,
+emite nota fiscal, dispara alertas e — no caso do Mercado Livre — analisa contas
+concorrentes para recomendar decisões objetivas. Entregue também testes com
+**cobertura mínima de 90%** nos arquivos novos.
 
-REGRA DE OURO: este agente é SÓ DIAGNÓSTICO E RECOMENDAÇÃO. Ele NÃO pausa
-campanha, NÃO muda preço, NÃO muda orçamento. Toda ação de escrita continua
-sendo decidida por mim (o agente apenas alerta e sugere). Nunca lance exceção
-não tratada.
+REGRA DE OURO (segurança): a coleta e a análise são automáticas, mas qualquer
+AÇÃO DE ESCRITA que tenha efeito real — emitir NF-e de verdade, mudar preço,
+pausar/escalar campanha, alterar estoque — só pode rodar com flag explícita
+(`dry_run=False` e/ou confirmação do gestor). O padrão é SEMPRE o modo seguro
+(coleta + recomendação + alerta), nunca agir sozinho.
 
-## Reutilize as funções que JÁ existem (não reescreva):
-De `integracoes.ml.ml_client`:
-- `_enabled()` — saber se ML está configurado
-- `obter_saude_conta()` -> {configurado, pendencias, claims_rate, dias_sem_acesso}
-- `buscar_reputacao_vendedor()` -> dict de reputação
-- `listar_perguntas_nao_respondidas()` -> list
-- `listar_meus_anuncios()` -> list de anúncios (cada um com item_id)
-- `buscar_metricas_item(item_id)` -> {titulo, status, preco, estoque, visitas_7d, visitas_30d}
-- `buscar_menor_preco_concorrente(item_id)` -> float (0.0 se não houver catálogo)
-- `buscar_acos_ads(item_id, dias=14)` -> float
+---
 
-De `integracoes.ml.ml_product_ads`:
-- `obter_advertiser()` -> {ok, advertiser_id, site_id, ...}
-- `listar_campanhas(advertiser_id, dias=14)` -> list de {id,nome,status,budget,acos,roas,cost,clicks}
-- `campanhas_acos_acima_limite(campanhas)` -> list
+## ARQUIVO 1 — `agentes/panorama/agente_panorama.py`
 
-De `core.notificador`:
-- `alertar_gestor(msg)` — para me enviar o resumo/alertas (Telegram/WhatsApp)
+Função principal: `gerar_panorama(enviar_alerta: bool = True, emitir_nfe: bool = False, limite_itens: int = 15) -> dict`
 
-De `core.config` (limites já existentes; use com getattr e defaults seguros):
-- `ML_ADS_ORCAMENTO_MAXIMO`, `ML_ADS_ACOS_DIAS_LIMITE`, e o ACOS máximo usado no
-  projeto (procure por `ACOS_MAXIMO` em `agentes/ml/agente_ads_gatilho.py` e use o
-  mesmo valor/origem; se não achar, use 0.30 como default).
+Reutilize SOMENTE funções já existentes no projeto (não reescreva integrações):
 
-## O que o agente deve produzir — função `analisar() -> dict`
+**Mercado Livre** (`integracoes.ml.ml_client` e `integracoes.ml.ml_product_ads`):
+- `_enabled()`, `obter_saude_conta()`, `listar_perguntas_nao_respondidas()`,
+  `buscar_reputacao_vendedor()`, `listar_meus_anuncios()`,
+  `buscar_metricas_item(item_id)`, `buscar_menor_preco_concorrente(item_id)`,
+  `buscar_acos_ads(item_id)`, `obter_advertiser()`, `listar_campanhas(...)`,
+  `campanhas_acos_acima_limite(...)`.
+- Reaproveite o agente já existente `agentes.ml.agente_monitor_ml.analisar()`
+  se ele já consolidar conta+ads+concorrência — chame-o em vez de duplicar.
 
-1. **Situação da conta**
-   - Se `_enabled()` for False: retorne {ok: False, motivo: "ML não configurado"}
-     e mande UM alerta dizendo que faltam credenciais. Não quebre.
-   - Chame `obter_saude_conta()` e `listar_perguntas_nao_respondidas()`.
-   - Gere recomendações: se houver perguntas não respondidas -> recomendar
-     responder (cite a quantidade); se `claims_rate` alto ou `dias_sem_acesso`
-     elevado -> alertar risco de reputação.
+**Magalu** (`integracoes.magalu.magalu_client`):
+- `_enabled()`, `obter_saude_conta()`, `listar_perguntas_nao_respondidas()`,
+  `listar_pedidos(dias=7)`.
 
-2. **Situação dos Ads**
-   - `obter_advertiser()`. Se `ok=False`: registre como pendência ("Publicidade
-     não habilitada" quando `codigo == sem_permissao`) e siga.
-   - Se ok: `listar_campanhas(advertiser_id, dias=14)`.
-   - Recomendações de ads:
-     - campanhas com ACOS acima do limite -> recomendar REVISAR/baixar lance ou
-       pausar (use `campanhas_acos_acima_limite`).
-     - gasto (`cost`) somado acima de `ML_ADS_ORCAMENTO_MAXIMO` -> alertar.
-     - campanhas `active` com `clicks` altos e `roas` baixo -> recomendar ajuste.
-     - se NÃO houver nenhuma campanha ativa e a conta vende -> sugerir avaliar
-       ligar ads.
+**Bling** (`integracoes.bling.bling_client`):
+- `listar_produtos()`, `estoques_criticos()`.
 
-3. **Pesquisa de concorrência e desempenho**
-   - Pegue meus anúncios via `listar_meus_anuncios()` (limite a, por ex., os 15
-     primeiros para não estourar rate limit).
-   - Para cada item: `buscar_metricas_item(item_id)` e
-     `buscar_menor_preco_concorrente(item_id)`.
-   - Compare meu preço com o menor preço do concorrente:
-     - se meu preço > concorrente em mais de X% (ex.: 5%) -> recomendar revisar
-       preço para baixo (mostre meu preço, o do concorrente e a diferença %).
-     - se eu já sou o menor e tenho boa visita/baixa conversão aparente
-       (visitas altas, mas estoque parado) -> recomendar revisar título/fotos.
-     - se visitas_7d caíram muito vs média de visitas_30d -> alertar queda de
-       tráfego.
-   - Produza uma lista ordenada por prioridade (maior diferença de preço ou
-     maior gasto de ads primeiro).
+**NF-e** (`agentes.faturamento.agente_faturamento.emitir_nfe_pedido`):
+- Para cada pedido pago (de ML e Magalu via `listar_pedidos`), monte o pedido no
+  formato esperado e chame `emitir_nfe_pedido(pedido, dry_run=not emitir_nfe)`.
+- Com `emitir_nfe=False` (padrão): dry-run — só valida o que está pronto e o que
+  falta (NCM, destinatário etc.), sem emitir nada.
+- Com `emitir_nfe=True`: emite de verdade, mas só os pedidos cujo dry-run passou.
 
-4. **Comunicação dos ajustes (o que fazer)**
-   - Monte um texto de resumo claro, em português, com seções:
-     "📊 Conta", "📣 Ads", "🔎 Concorrência", e "✅ Ajustes recomendados"
-     (lista numerada e priorizada do que devo fazer).
-   - Envie esse resumo via `alertar_gestor(resumo)`.
-   - Retorne também um dict estruturado:
-     {ok: True, conta: {...}, ads: {...}, concorrencia: [...],
-      recomendacoes: ["...", "..."], enviado: True}
+**Alertas** (`core.notificador.alertar_gestor` / `alertar_critico`).
 
-## Função `main()` / execução direta
-- Permita rodar com `python -m agentes.ml.agente_monitor_ml` ou
-  `python agentes/ml/agente_monitor_ml.py`, chamando `analisar()` e imprimindo o
-  resumo no console (com os helpers de log que o projeto já usa, se houver).
+**Síntese com Claude** (`core.claude_client.perguntar`):
+- Monte um texto com TODOS os dados coletados (conta, ads, concorrência,
+  estoque crítico, pedidos a faturar, pendências fiscais) e peça ao Claude um
+  resumo executivo curto + decisões priorizadas. Use o parâmetro `contexto`.
+- O prompt ao Claude deve pedir resposta OBJETIVA em tópicos: "Situação",
+  "Riscos", "Ações recomendadas (priorizadas)". Limite de tokens moderado.
+- Se a `ANTHROPIC_API_KEY` não estiver setada ou Claude falhar, faça fallback:
+  gere o resumo por regras (sem IA), nunca quebre.
 
-## Boas práticas obrigatórias
-- Cada chamada de API protegida por try/except; nunca propague exceção.
-- Respeite rate limit: não chame métricas para centenas de itens — limite a
-  quantidade e, se possível, durma alguns ms entre chamadas.
-- Não escreva NADA na conta (sem pausar/alterar preço/orçamento). Apenas leitura
-  + alerta + recomendação.
-- Ao terminar, confirme que o arquivo compila
-  (`python -m py_compile agentes/ml/agente_monitor_ml.py`) e me diga como rodar.
+**Análise de concorrentes no ML** (decisões concisas):
+- Para até `limite_itens` anúncios meus: compare meu preço com
+  `buscar_menor_preco_concorrente(item_id)`. Classifique cada item em uma decisão
+  objetiva: "MANTER", "BAIXAR PREÇO (estou X% acima)", "REVISAR ANÚNCIO
+  (visitas altas, sem giro)", "SEM DADOS DE CATÁLOGO".
+- Ordene por prioridade (maior diferença de preço / maior gasto de ads primeiro)
+  e inclua no panorama os 5 itens mais urgentes.
 
-## Opcional
-Crie também `.github/workflows/monitor_ml.yml` (workflow_dispatch + schedule
-diário, ex.: 09:00 BRT) que roda este agente, nos moldes dos workflows já
-existentes no projeto.
+**Retorno** (dict estruturado):
+```
+{
+  "ok": True,
+  "mercado_livre": {...},        # saúde, ads, concorrência, decisões
+  "magalu": {...},               # saúde, perguntas, pedidos
+  "bling": {...},                # total produtos, estoque crítico
+  "nfe": {"a_faturar": N, "prontos": N, "pendencias": [...], "emitidos": N},
+  "alertas": [...],
+  "resumo_claude": "texto",
+  "decisoes": ["...", "..."],
+  "enviado": True/False
+}
+```
 
-> Lembrete: o agente roda no GitHub Actions a partir do que está commitado.
-> Depois de gerar, faça commit e push na branch `main` para valer.
+**Comportamento sem credenciais:** cada marketplace ausente entra como
+"não configurado" (não quebra, não conta como erro). Se NENHUM estiver
+configurado, retorne `{ok: False, motivo: "nenhuma integração configurada"}` e
+mande um alerta.
+
+**Execução direta:** permita `python -m agentes.panorama.agente_panorama`,
+chamando `gerar_panorama(enviar_alerta=False, emitir_nfe=False)` e imprimindo o
+resultado.
+
+Boas práticas obrigatórias: try/except por bloco, nunca propagar exceção;
+respeitar rate limit (limitar nº de itens, pequenos sleeps se necessário);
+nenhuma ação de escrita no modo padrão.
+
+---
+
+## ARQUIVO 2 — `tests/test_agente_panorama.py` (cobertura ≥ 90%)
+
+Use `unittest` + `unittest.mock.patch`, no MESMO estilo de
+`tests/test_agente_monitor_ml.py` (patchando as funções de integração no módulo
+do agente, sem nenhuma chamada de rede real). Cubra TODOS os caminhos:
+
+1. Nenhuma integração configurada → `ok=False`, alerta enviado.
+2. Só ML configurado: com perguntas pendentes, com campanha de ACOS alto, e com
+   item cujo preço está acima do concorrente → decisão "BAIXAR PREÇO".
+3. Só Magalu configurado: perguntas + pedidos.
+4. Bling: estoque crítico presente e ausente.
+5. NF-e dry-run: pedido pronto (payload ok) e pedido bloqueado (sem NCM) → entra
+   em `pendencias`. Teste também `emitir_nfe=True` com `emitir_nfe_pedido`
+   mockado retornando ok.
+6. Síntese Claude: caminho com `perguntar` mockado retornando texto, e caminho de
+   fallback (perguntar lança/`⚠️`) garantindo que o resumo por regras é usado.
+7. `enviar_alerta=True` chama `alertar_gestor`; `False` não chama.
+8. Garanta que NENHUM teste faz I/O de rede (todos os clients mockados).
+
+Inclua no rodapé `if __name__ == "__main__": unittest.main()`.
+
+---
+
+## ARQUIVO 3 — Configuração de cobertura
+
+- Adicione `pytest-cov` ao `requirements-dev.txt` (já tem `pytest` e `ruff`).
+- Rode localmente e garanta ≥ 90% nos arquivos novos:
+  ```
+  pip install -r requirements-dev.txt
+  pytest tests/test_agente_panorama.py \
+    --cov=agentes.panorama.agente_panorama --cov-report=term-missing
+  ```
+- Ajuste os testes até a cobertura do `agente_panorama.py` ficar ≥ 90%
+  (idealmente cobrir também as linhas de fallback e de erro).
+
+---
+
+## ARQUIVO 4 (opcional) — Workflow
+
+Crie `.github/workflows/panorama.yml` (workflow_dispatch + schedule diário,
+ex. 08:30 BRT) que instala dependências e roda
+`python -m agentes.panorama.agente_panorama`. Sem efeitos de escrita (modo
+padrão seguro).
+
+---
+
+## Critérios de aceite (confirme ao final)
+1. `python -m py_compile agentes/panorama/agente_panorama.py` sem erros.
+2. `pytest tests/test_agente_panorama.py` todos verdes.
+3. Cobertura do `agente_panorama.py` ≥ 90% (mostre o número do `--cov-report`).
+4. Nenhuma chamada de rede real nos testes; nenhuma ação de escrita no modo padrão.
+5. Reuso das funções existentes (sem duplicar integrações).
+
+> Lembrete: roda no GitHub Actions a partir do que está commitado. Depois de
+> gerar e passar os testes, faça commit e push na branch `main`.
