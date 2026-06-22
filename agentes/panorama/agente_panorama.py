@@ -115,6 +115,7 @@ def _coletar_mercado_livre(limite_itens: int) -> dict[str, Any]:
                 "prioridade": float(item.get("prioridade") or 0),
                 "meu_preco": item.get("meu_preco"),
                 "menor_concorrente": item.get("menor_concorrente"),
+                "concorrentes": item.get("concorrentes") or [],
             }
         )
 
@@ -365,7 +366,11 @@ def _sintetizar_claude(contexto: str, fallback: str) -> str:
         prompt = (
             "Com base no contexto JSON acima, responda de forma OBJETIVA em tópicos:\n"
             "1. Situação\n2. Riscos\n3. Ações recomendadas (priorizadas)\n"
-            "Seja conciso. Priorize o que gera receita ou reduz risco hoje."
+            "Seja conciso. Priorize o que gera receita ou reduz risco hoje.\n"
+            "Ao comentar concorrência, use APENAS os campos presentes no JSON "
+            "(ex.: titulo, preco, frete_gratis, condicao, quantidade_vendida em "
+            "mercado_livre.monitor.concorrencia[].concorrentes). "
+            "Não invente dados que não estejam no contexto."
         )
         resposta = perguntar(prompt, max_tokens=800, contexto=contexto)
         if not resposta or resposta.startswith("⚠️") or "API" in resposta:

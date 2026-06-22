@@ -19,7 +19,7 @@ from core.config import (
     BUDGET_FASE_ESCALA,
 )
 from integracoes.ml.ml_client import buscar_reputacao_vendedor, buscar_acos_ads
-from integracoes.ml.ml_product_ads import aplicar_decisao_campanhas
+from integracoes.ml.ml_product_ads import aplicar_decisao_campanhas, campanhas_acos_acima_limite, listar_campanhas
 
 logger = logging.getLogger("agente_ads_gatilho")
 
@@ -146,6 +146,20 @@ def avaliar_momento_ads(
     return _executar_api_se_aprovado(resultado)
 
 
+def _calcular_acos_agregado(dias: int = 14) -> float:
+    """ACOS ponderado por gasto das campanhas com cost > 0."""
+    try:
+        campanhas = listar_campanhas(dias=dias)
+        com_gasto = [c for c in campanhas if c.get("cost", 0) > 0]
+        if not com_gasto:
+            return 0.0
+        gasto_total = sum(c["cost"] for c in com_gasto)
+        return sum(c["acos"] * c["cost"] for c in com_gasto) / gasto_total
+    except Exception as exc:
+        logger.warning("Não foi possível calcular ACOS agregado: %s", exc)
+        return 0.0
+
+
 def _executar_api_se_aprovado(resultado: dict) -> dict:
     """Após confirmação do gestor, aplica a decisão nas campanhas Product Ads via API."""
     if not resultado.get("confirmado_gestor"):
@@ -157,12 +171,19 @@ def _executar_api_se_aprovado(resultado: dict) -> dict:
     if not api_decisao:
         return resultado
 
-    aplicacoes = aplicar_decisao_campanhas(
-        api_decisao,
-        budget=float(resultado.get("budget_sugerido_dia") or 0),
-        dry_run=False,
-        confirmar=True,
-    )
+    kwargs: dict = {
+        "budget": float(resultado.get("budget_sugerido_dia") or 0),
+        "dry_run": False,
+        "confirmar": True,
+    }
+    # Pausa seletiva: só campanhas com ACOS acima do limite (ligar/escalar mantém todas).
+    if api_decisao == "pausar":
+        campanhas_acima = campanhas_acos_acima_limite()
+        ids_acima = [c["id"] for c in campanhas_acima if c.get("id")]
+        if ids_acima:
+            kwargs["campaign_ids"] = ids_acima
+
+    aplicacoes = aplicar_decisao_campanhas(api_decisao, **kwargs)
     resultado["aplicacoes_api"] = aplicacoes
     ok = sum(1 for a in aplicacoes if a.get("ok"))
     alertar_gestor(
@@ -175,9 +196,13 @@ def executar(item_id: str = "", acos_atual: float = 0.0, full_ativo: bool = Fals
     rep = buscar_reputacao_vendedor()
     if item_id and acos_atual == 0.0:
         acos_atual = buscar_acos_ads(item_id)
+    elif acos_atual == 0.0:
+        acos_atual = _calcular_acos_agregado()
     metrics = rep.get("metrics", {})
     avaliacoes = int(metrics.get("total_ratings", 0))
     nota = float(metrics.get("average_rating", 0.0))
+    if not full_ativo:
+        full_ativo = bool(metrics.get("power_seller_status") in ("gold", "platinum"))
     return avaliar_momento_ads(avaliacoes, nota, acos_atual, full_ativo)
 
 

@@ -6,6 +6,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agentes.operacao_24h import executar
+from core.config import ACOS_MAXIMO
 
 
 class Operacao24hTests(unittest.TestCase):
@@ -38,6 +39,62 @@ class Operacao24hTests(unittest.TestCase):
         self.assertEqual(out["kpis_24h"]["receita_24h"], 200.0)
         self.assertEqual(out["faturamento"]["sucesso"], 1)
         self.assertTrue(out["modo"]["nfe_dry_run"])
+
+    @patch("agentes.operacao_24h.alertar_gestor")
+    @patch("agentes.operacao_24h._faturar_pedidos_lojahub")
+    @patch("agentes.operacao_24h.executar_repricing_marketplaces")
+    @patch("agentes.operacao_24h.executar_algoritmo_marketplaces")
+    @patch("agentes.operacao_24h.repricing_impala")
+    @patch("agentes.operacao_24h.verificar_alertas_esmaltes")
+    @patch("agentes.operacao_24h.listar_pedidos_prontos_faturar")
+    @patch("agentes.operacao_24h.listar_resumo_vendas_24h")
+    @patch("agentes.operacao_24h.listar_produtos")
+    @patch("agentes.operacao_24h.listar_campanhas")
+    @patch("integracoes.ml.ml_client.buscar_reputacao_vendedor")
+    @patch("agentes.operacao_24h.verificar_gatilho_ads")
+    def test_acos_agregado_alimenta_gatilho_pausar(
+        self,
+        mock_gatilho,
+        mock_reputacao,
+        mock_campanhas,
+        mock_produtos,
+        mock_resumo,
+        mock_pedidos,
+        _mock_alertas,
+        mock_repricing_impala,
+        mock_algoritmo,
+        mock_repricing,
+        mock_faturar,
+        _mock_alerta,
+    ):
+        mock_produtos.return_value = []
+        mock_resumo.return_value = {"ok": False, "data": {}}
+        mock_pedidos.return_value = []
+        _mock_alertas.return_value = []
+        mock_repricing_impala.return_value = {}
+        mock_algoritmo.return_value = {"resumo": {}, "marketplaces": {}}
+        mock_repricing.return_value = {"total_ajustes": 0, "ajustes": []}
+        mock_faturar.return_value = {"total": 0, "sucesso": 0, "falhas": 0, "itens": []}
+        mock_reputacao.return_value = {
+            "metrics": {
+                "total_ratings": 30,
+                "average_rating": 4.9,
+                "power_seller_status": "gold",
+            }
+        }
+        mock_campanhas.return_value = [
+            {"id": "C1", "acos": 0.35, "cost": 100},
+            {"id": "C2", "acos": 0.10, "cost": 50},
+        ]
+        mock_gatilho.return_value = {"decisao": "pausar", "acos_atual": 0.2667}
+
+        executar(dry_run_repricing=True, dry_run_nfe=True)
+
+        acos_esperado = (0.35 * 100 + 0.10 * 50) / 150
+        mock_gatilho.assert_called_once()
+        acos_passado = mock_gatilho.call_args.kwargs.get("acos_atual")
+        self.assertAlmostEqual(acos_passado, acos_esperado, places=4)
+        self.assertGreater(acos_passado, ACOS_MAXIMO)
 
     @patch("agentes.operacao_24h.emitir_nfe_pedido")
     @patch("agentes.operacao_24h.listar_pedidos_prontos_faturar")

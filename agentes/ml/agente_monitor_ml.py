@@ -197,6 +197,12 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             menor_concorrente = 0.0
 
         try:
+            concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
+        except Exception as exc:
+            logger.error("monitor_ml detalhes_concorrentes %s: %s", item_id, exc)
+            concorrentes = []
+
+        try:
             acos_item = ml_client.buscar_acos_ads(item_id, dias=14)
         except Exception as exc:
             logger.error("monitor_ml acos_item %s: %s", item_id, exc)
@@ -214,6 +220,7 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             "sku": anuncio.get("sku", ""),
             "meu_preco": meu_preco,
             "menor_concorrente": menor_concorrente,
+            "concorrentes": concorrentes,
             "visitas_7d": visitas_7,
             "visitas_30d": visitas_30,
             "estoque": estoque,

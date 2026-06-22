@@ -121,6 +121,18 @@ class TestAplicarDecisao(unittest.TestCase):
         self.assertEqual(len(out), 1)
         mock_pausar.assert_called_once()
 
+    @patch.object(ads, "listar_campanhas", return_value=[
+        {"id": "C1"},
+        {"id": "C2"},
+        {"id": "C3"},
+    ])
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "A1", "site_id": "MLB"})
+    @patch.object(ads, "pausar_campanha", return_value={"ok": True, "dry_run": True})
+    def test_aplicar_pausar_somente_ids_informados(self, mock_pausar, *_):
+        out = ads.aplicar_decisao_campanhas("pausar", dry_run=True, campaign_ids=["C2"])
+        self.assertEqual(len(out), 1)
+        mock_pausar.assert_called_once_with("C2", "MLB", dry_run=True, confirmar=False)
+
 
 if __name__ == "__main__":
     unittest.main()
