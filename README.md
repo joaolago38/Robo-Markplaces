@@ -64,6 +64,12 @@ Fluxo padrão:
 
 Observação: Shopee, Magalu e Amazon podem variar endpoints/permissões por conta e app. O cliente já está preparado com autenticação e fallback seguro (não quebra o robô quando credencial/permite faltar), mas pode exigir ajuste fino de rota em produção.
 
+### Renovação automática do token Bling (GitHub Actions)
+
+O Bling rotaciona o `BLING_REFRESH_TOKEN` a cada renovação (uso único). Em workflows do GitHub Actions (`GITHUB_ACTIONS=true`), qualquer rotação feita por `core/token_manager.py` — inclusive após HTTP 401 em `bling_client.py` — sincroniza automaticamente `BLING_ACCESS_TOKEN` e `BLING_REFRESH_TOKEN` nos Secrets via `gh` CLI (`core/github_secrets.py`). Isso vale para todos os jobs que usam o Bling (`renovar_tokens.yml`, `panorama.yml`, `testar_integracao.yml`, etc.), não só o cron dedicado de renovação.
+
+Fora do Actions, o cofre local (`_salvar_store_bling`) continua ativo. Scripts como `scripts/debug_bling_refresh.py` (refresh HTTP direto) mantêm sync próprio quando rodam no Actions.
+
 ### Keepalive (Shopee e Magalu)
 
 Para reduzir risco de inatividade de conta, use `POST /marketplaces/keepalive` em um cron diário (n8n, por exemplo, 1x ao dia).

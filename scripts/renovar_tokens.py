@@ -134,14 +134,8 @@ def main() -> int:
             if res_bling.get("ok"):
                 print("  bling: ok — token renovado")
                 novo_refresh = res_bling.get("refresh_token")
-                if em_actions or quer_sync:
-                    if not _sync_secrets_github(
-                        res_bling["access_token"],
-                        novo_refresh,
-                        prefix="BLING",
-                    ):
-                        exit_code = 1
-                else:
+                # BLING_* no GitHub: sincronizado em _renovar_token_bling() quando GITHUB_ACTIONS=true.
+                if not em_actions and not quer_sync:
                     print("  ATENCAO: o Bling rotaciona o refresh_token a cada renovacao.")
                     print("  Atualize os secrets com os novos valores abaixo, senao a")
                     print("  proxima execucao falhara (o refresh_token antigo foi invalidado):")

@@ -1,64 +1,66 @@
-Corrija `scripts/debug_bling_refresh.py` para que ele NÃO descarte o novo token quando o refresh do Bling der certo.
+Centralize a sincronização do token Bling com o GitHub Secrets dentro de `core/token_manager.py`, para que QUALQUER caminho que rotacione o `BLING_REFRESH_TOKEN` (não só os scripts `renovar_tokens.py` e `debug_bling_refresh.py`) salve o valor novo no GitHub automaticamente.
 
 CONTEXTO DO BUG:
-Hoje, quando `debug_bling_refresh.py` chama `POST /oauth/token` (grant_type=refresh_token) e a resposta é HTTP 200, o script faz:
-```python
-if r.status_code == 200:
-    print("  SUCESSO — o refresh funcionou! (NÃO vou imprimir os tokens no log)")
-    print("  Pegue os novos tokens rodando a renovação normal e atualize os Secrets.")
-    sys.exit(0)
-```
-O Bling usa refresh_token rotativo de uso único: ao chamar o refresh com sucesso, o token antigo (`BLING_REFRESH_TOKEN` atual no Secret/`.env`) é invalidado e um novo é emitido — mas esse script joga esse novo token fora sem salvar nem mostrar. Resultado: a PRÓXIMA execução do workflow `renovar_tokens.yml` (que roda a cada 30 min) usa o Secret antigo (agora inválido) e falha com `HTTP 400 Invalid refresh token`. Isso é a causa principal do padrão "renova uma hora, falha na outra" nos runs do GitHub Actions.
+Hoje existem 3 lugares que podem rotacionar o refresh_token do Bling (ele é de uso único — cada renovação invalida o token antigo):
+
+1. `scripts/renovar_tokens.py` — já sincroniza com `sync_secrets_github()` (core/github_secrets.py). OK.
+2. `scripts/debug_bling_refresh.py` — já sincroniza também (corrigido recentemente). OK.
+3. `core/token_manager.py::_renovar_token_bling()` — chamada internamente por `get_token_bling(forcar=True)`, que por sua vez é chamada por `integracoes/bling/bling_client.py` (linha ~31) sempre que uma chamada à API do Bling recebe HTTP 401. Esse caminho roda dentro de QUALQUER workflow que use o Bling (`agente_principal.yml`, `cadastrar_ncm.yml`, `testar_integracao.yml`, `panorama.yml`, etc.) — e ele só persiste o token novo em memória e num "cofre" em arquivo local (`_salvar_store_bling`), nunca no GitHub Secrets. Em uma VM efêmera do GitHub Actions, esse arquivo local é destruído ao fim do job, então o token novo se perde — e o próximo run do `renovar_tokens.yml` falha com `Invalid refresh token`, mesmo que a correção dos itens 1 e 2 já esteja aplicada.
 
 OBJETIVO:
-Quando o refresh der sucesso dentro do `debug_bling_refresh.py`, o script deve:
-1. Sincronizar automaticamente os novos tokens nos Secrets do GitHub, quando possível (mesmo mecanismo já usado em `scripts/renovar_tokens.py`).
-2. Quando não for possível sincronizar automaticamente (sem `gh` CLI, sem `GH_TOKEN`, ou rodando localmente fora do GitHub Actions), imprimir os novos tokens de forma BEM destacada no terminal, para que o usuário copie e atualize os Secrets manualmente — sem deixar o token se perder silenciosamente.
+Mover a sincronização para dentro de `_renovar_token_bling()`, no ponto único onde o token de fato é rotacionado — assim TODOS os 3 caminhos passam a sincronizar automaticamente, sem precisar lembrar de fazer isso em cada script novo que tocar no Bling no futuro.
 
 TAREFA:
 
-1. Abra `scripts/renovar_tokens.py` e localize a função `_sync_secrets_github(access_token: str, refresh_token: str | None, prefix: str = "BLING") -> bool` (usa `gh secret set` via subprocess, requer `gh` CLI instalado e `GH_TOKEN`/`GH_REPO` no ambiente). Não duplique essa lógica — extraia/reaproveite.
-
-2. Para evitar duplicação de código entre os dois scripts, faça UMA das duas opções (escolha a mais simples de implementar sem quebrar nada):
-   - OPÇÃO A (preferida): mova `_sync_secrets_github` para um módulo compartilhado, ex. `core/github_secrets.py`, exportando a função `sync_secrets_github(access_token: str, refresh_token: str | None, prefix: str = "BLING") -> bool`. Atualize `scripts/renovar_tokens.py` para importar de lá em vez de definir localmente (mantenha exatamente o mesmo comportamento/assinatura, só mudando a localização). Importe essa mesma função em `scripts/debug_bling_refresh.py`.
-   - OPÇÃO B (mais rápida, se preferir não criar módulo novo): em `scripts/debug_bling_refresh.py`, importe diretamente a função já existente:
-     ```python
-     from scripts.renovar_tokens import _sync_secrets_github
-     ```
-     (ajuste o `sys.path`/imports conforme o padrão já usado no início do arquivo, que já garante a raiz do projeto no `sys.path`).
-
-3. No bloco de sucesso do refresh em `scripts/debug_bling_refresh.py`, substitua:
+1. Em `core/token_manager.py`, no topo do arquivo, importe a função já existente:
    ```python
-   if r.status_code == 200:
-       print("  SUCESSO — o refresh funcionou! (NÃO vou imprimir os tokens no log)")
-       print("  Pegue os novos tokens rodando a renovação normal e atualize os Secrets.")
-       sys.exit(0)
+   from core.github_secrets import sync_secrets_github
    ```
-   por uma lógica que:
-   a. Extraia `access_token` e `refresh_token` da resposta JSON (`dados = r.json()`).
-   b. Se `GITHUB_ACTIONS` estiver definido como `"true"` no ambiente (igual ao padrão já usado em `renovar_tokens.py` com `em_actions = os.getenv("GITHUB_ACTIONS") == "true"`) E o `gh` CLI estiver disponível, chame a função de sync (do passo 2) para atualizar `BLING_ACCESS_TOKEN` e `BLING_REFRESH_TOKEN` diretamente nos Secrets do GitHub. Imprima o resultado (sucesso/falha) sem nunca expor o valor dos tokens no log.
-   c. Caso a sincronização automática não seja possível (não está no GitHub Actions, ou `gh` ausente, ou sync falhou), imprima os tokens de forma BEM visível, com um aviso claro, por exemplo:
-      ```python
-      print("=" * 60)
-      print("SUCESSO! O refresh funcionou e o token foi ROTACIONADO.")
-      print("Copie AGORA estes valores para os Secrets do GitHub, ou a")
-      print("proxima renovacao automatica vai falhar (token antigo invalidado):")
-      print("=" * 60)
-      print(f"BLING_ACCESS_TOKEN:  {access_token}")
-      print(f"BLING_REFRESH_TOKEN: {refresh_token}")
-      print("=" * 60)
-      ```
-   d. Em ambos os casos, finalize com `sys.exit(0)`.
+   (confirme que não há import circular — `core/github_secrets.py` não importa nada de `core/token_manager.py`, então está seguro.)
 
-4. Garanta que, se a chamada de sync (passo 3b) falhar, o script caia automaticamente no fallback do passo 3c (nunca deixe o token se perder sem mostrar nem salvar).
+2. Localize a função `_renovar_token_bling()`. No trecho onde ela já persiste o token localmente:
+   ```python
+   # Persiste em disco (se o cofre estiver ativo) — resolve a rotação fora do Actions.
+   _salvar_store_bling(
+       access_token,
+       novo_refresh or refresh,
+       _token_cache_bling["expires_at"],
+   )
 
-5. Não altere o comportamento do script em caso de ERRO no refresh (HTTP != 200) — essa parte (diagnóstico de `invalid_grant`/`invalid_client`) já está correta e não deve vazar tokens, mantenha como está.
+   logger.info("Token Bling renovado com sucesso")
+   return access_token
+   ```
+   Adicione, IMEDIATAMENTE DEPOIS de `_salvar_store_bling(...)` e ANTES do `logger.info(...)`, a sincronização condicional com o GitHub:
+   ```python
+   if os.getenv("GITHUB_ACTIONS") == "true":
+       if sync_secrets_github(access_token, novo_refresh or refresh, prefix="BLING"):
+           logger.info("Secrets BLING_* sincronizados no GitHub (rotação automática).")
+       else:
+           logger.warning(
+               "Falha ao sincronizar BLING_* no GitHub após rotação — "
+               "o próximo refresh pode falhar até o sync funcionar."
+           )
+   ```
+   Confirme que `import os` já existe no topo do arquivo (deve existir, já é usado em outras partes do módulo); se não existir, adicione.
 
-6. Atualize o comentário/docstring no topo de `scripts/debug_bling_refresh.py` para refletir o novo comportamento (não é mais "só diagnóstico" — agora ele também salva/exibe o token novo em caso de sucesso).
+3. NÃO remova a chamada a `_salvar_store_bling(...)` — ela continua útil para processos locais/persistentes fora do GitHub Actions (onde `GITHUB_ACTIONS` não está definido). As duas formas de persistência (disco local + GitHub Secrets) coexistem, cada uma cobrindo um cenário diferente.
 
-7. Se criar testes novos, siga o padrão dos testes existentes (`tests/test_diagnostico_bling.py` ou crie `tests/test_debug_bling_refresh.py`), mockando a chamada HTTP (`requests.post`) e o `subprocess.run` usado pelo `gh secret set`, cobrindo os 3 cenários:
-   - sucesso + sync automático funciona (em GitHub Actions, `gh` disponível) → não imprime tokens, só confirma secrets atualizados.
-   - sucesso + sync indisponível (local, sem `gh` ou fora do Actions) → imprime os tokens destacados.
-   - sucesso + sync falha (gh existe mas o `subprocess.run` retorna erro) → cai no fallback e imprime os tokens destacados.
+4. Em `scripts/renovar_tokens.py` e `scripts/debug_bling_refresh.py`, a chamada a `sync_secrets_github(...)` para o Bling especificamente vai ficar duplicada (uma vez dentro de `_renovar_token_bling()` via passo 2, outra explícita no script). Isso não quebra nada (a segunda chamada só reenviaria o mesmo valor), mas para evitar 2 chamadas de API do GitHub por execução:
+   a. Em `scripts/renovar_tokens.py`, no bloco `[Bling]` de `main()`, REMOVA a chamada explícita a `_sync_secrets_github(res_bling["access_token"], novo_refresh, prefix="BLING")` dentro do `if em_actions or quer_sync:` — já que `_renovar_token_bling()` (chamada internamente por `renovar_token_bling_detalhado()`) agora cuida disso sozinha quando `GITHUB_ACTIONS=true`. Mantenha o `else` (impressão dos tokens) para quando NÃO estiver no GitHub Actions, já que nesse caso a sincronização automática do passo 2 não dispara (ela só age quando `GITHUB_ACTIONS == "true"`).
+   b. Ajuste a lógica de `exit_code` nesse bloco: como a sincronização do Bling passa a acontecer "dentro" da renovação, se ela falhar o script não saberá diretamente — então capture isso checando o retorno de log ou (mais simples) deixe `renovar_token_bling_detalhado()` devolver no dict também um campo `secrets_sincronizados: bool`, propagado a partir do retorno de `sync_secrets_github` dentro de `_renovar_token_bling()`. Avalie a forma mais simples de implementar isso sem complicar a assinatura de `_renovar_token_bling()` (que hoje só retorna `access_token | None`) — se for complicado demais, é aceitável manter a chamada de sync duplicada nos scripts (não traz bug, só uma chamada de API extra) em vez de mudar a assinatura interna. Documente no código a decisão tomada.
+   c. Em `scripts/debug_bling_refresh.py`, mesma avaliação: como o sucesso do refresh ali já passa por `_renovar_token_bling()` (via chamada direta ao endpoint OU indiretamente, confirme qual caminho o script usa hoje), avalie se a chamada própria a `sync_secrets_github` no script ainda é necessária. Se o script faz a chamada HTTP diretamente (sem passar por `_renovar_token_bling()`), MANTENHA a sincronização própria do script como está — ela é o único lugar que sabe que esse refresh aconteceu.
 
-8. Rode `python -m pytest -q` e `ruff check .` no final e confirme que nada quebrou (cobertura mínima de 80% continua passando).
+5. Atualize os testes em `tests/test_token_manager_providers.py`:
+   - Os testes que já mockam `_renovar_token_bling` diretamente (ex.: `test_renovar_token_bling_detalhado_ok`, `test_renovar_token_bling_detalhado_falha`) não precisam de mudança, pois eles mockam a função inteira e não exercitam o código novo internamente.
+   - Adicione um teste novo, por exemplo `test_renovar_token_bling_sincroniza_secrets_no_actions`, que:
+     a. Mocka a chamada HTTP (`core.token_manager.request` ou o que for usado internamente) para simular um refresh bem-sucedido do Bling (HTTP 200, com `access_token` e `refresh_token` novos no JSON).
+     b. Mocka `core.token_manager.sync_secrets_github` para retornar `True`.
+     c. Define a variável de ambiente `GITHUB_ACTIONS=true` (via `monkeypatch.setenv` ou `os.environ`, revertendo no fim do teste).
+     d. Chama `tm._renovar_token_bling()` diretamente.
+     e. Verifica que `sync_secrets_github` foi chamado com os valores corretos (`access_token`, `refresh_token`, `prefix="BLING"`).
+   - Adicione outro teste cobrindo o caso `GITHUB_ACTIONS` não definido (ou `"false"`): mockar `sync_secrets_github` e verificar que ele NÃO foi chamado nesse caso (preserva o comportamento de processos locais, que dependem só do `_salvar_store_bling`).
+   - Adicione um teste cobrindo falha do sync (retorna `False`): a função deve continuar retornando o `access_token` normalmente (não falhar a renovação por causa de um problema no sync), só logar o warning.
+
+6. Rode `python -m pytest -q` e `ruff check .` no final. Confirme 0 falhas e cobertura mínima de 80% mantida (`--cov-fail-under=80` em `pyproject.toml`).
+
+7. Atualize o `README.md` (seção sobre renovação de tokens/Bling, se existir) mencionando que a partir de agora a rotação do refresh_token do Bling se auto-sincroniza com os Secrets do GitHub a partir de QUALQUER chamada à API do Bling feita dentro de um workflow do GitHub Actions — não só pelo cron dedicado de renovação.
