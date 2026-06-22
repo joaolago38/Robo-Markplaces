@@ -275,6 +275,26 @@ def _montar_alertas(
     return alertas
 
 
+def _montar_parametros_financeiros() -> dict[str, float]:
+    return {
+        "acos_maximo_pct": round(cfg.ACOS_MAXIMO * 100, 1),
+        "margem_minima_pct": round(cfg.MARGEM_MINIMA, 1),
+        "margem_fase_1_pct": round(cfg.MARGEM_FASE_1_PCT, 1),
+        "margem_fase_2_pct": round(cfg.MARGEM_FASE_2_PCT, 1),
+        "margem_fase_3_pct": round(cfg.MARGEM_FASE_3_PCT, 1),
+    }
+
+
+def _formatar_linha_parametros_financeiros(params: dict[str, float]) -> str:
+    return (
+        f"⚙️ Parâmetros atuais: ACOS máx {params['acos_maximo_pct']:.0f}% | "
+        f"Margem mínima {params['margem_minima_pct']:.0f}% | "
+        f"Fases {params['margem_fase_1_pct']:.0f}/"
+        f"{params['margem_fase_2_pct']:.0f}/"
+        f"{params['margem_fase_3_pct']:.0f}%"
+    )
+
+
 def _montar_contexto_claude(
     ml: dict,
     magalu: dict,
@@ -402,11 +422,14 @@ def gerar_panorama(
     *,
     enviar_alerta: bool = True,
     emitir_nfe: bool = False,
-    limite_itens: int = 15,
+    limite_itens: int | None = None,
 ) -> dict[str, Any]:
     """
     Coleta panorama ML + Magalu + Bling, valida NF-e (dry-run por padrão) e sintetiza com Claude.
     """
+    if limite_itens is None:
+        limite_itens = agente_monitor_ml.MAX_ITENS_ANALISE
+
     if not _alguma_integracao():
         motivo = "nenhuma integração configurada"
         msg = (
@@ -452,6 +475,8 @@ def gerar_panorama(
         mercado_livre, magalu, bling, nfe, alertas, decisoes
     )
     resumo_claude = _sintetizar_claude(contexto, fallback)
+    parametros_financeiros = _montar_parametros_financeiros()
+    linha_parametros = _formatar_linha_parametros_financeiros(parametros_financeiros)
 
     if alertas:
         try:
@@ -462,7 +487,8 @@ def gerar_panorama(
     enviado = False
     if enviar_alerta:
         try:
-            enviado = bool(alertar_gestor(resumo_claude))
+            mensagem_gestor = f"{resumo_claude}\n\n{linha_parametros}"
+            enviado = bool(alertar_gestor(mensagem_gestor))
         except Exception as exc:
             logger.error("panorama alertar_gestor: %s", exc)
 
@@ -474,6 +500,8 @@ def gerar_panorama(
         "nfe": nfe,
         "alertas": alertas,
         "resumo_claude": resumo_claude,
+        "parametros_financeiros": parametros_financeiros,
+        "linha_parametros_financeiros": linha_parametros,
         "decisoes": decisoes,
         "enviado": enviado,
     }

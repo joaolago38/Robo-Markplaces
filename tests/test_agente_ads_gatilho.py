@@ -57,5 +57,16 @@ class TestPausaSeletiva(unittest.TestCase):
         self.assertNotIn("campaign_ids", kwargs)
 
 
+    @patch.object(gatilho, "campanhas_acos_acima_limite", return_value=[
+        {"id": "C1", "cost": 30.0},
+    ])
+    @patch.object(gatilho, "perguntar_gestor_e_aguardar", return_value=False)
+    @patch.object(gatilho, "alertar_gestor")
+    def test_pausar_inclui_gasto_diario_estimado(self, *_mocks):
+        out = gatilho.avaliar_momento_ads(avaliacoes=30, nota_media=4.9, acos_atual=0.35)
+        self.assertEqual(out["decisao"], "manter")
+        self.assertGreater(out.get("gasto_diario_estimado_evitado", 0), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

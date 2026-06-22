@@ -410,6 +410,32 @@ class TestHelpersPanorama(unittest.TestCase):
         self.assertIn("concorrencia", prompt.lower())
         self.assertIn("não invente", prompt.lower())
 
+    def test_parametros_financeiros_no_payload(self):
+        params = pan._montar_parametros_financeiros()
+        self.assertIn("acos_maximo_pct", params)
+        self.assertIn("margem_minima_pct", params)
+        linha = pan._formatar_linha_parametros_financeiros(params)
+        self.assertIn("Parâmetros atuais", linha)
+        self.assertIn("ACOS máx", linha)
+
+    @patch.object(pan, "alertar_gestor")
+    @patch.object(pan, "alertar_critico")
+    @patch.object(pan, "perguntar", return_value="Situação ok")
+    @patch.object(pan.cfg, "ANTHROPIC_API_KEY", "sk-test")
+    @patch.object(pan, "emitir_nfe_pedido")
+    @patch.object(pan.ml_client, "listar_pedidos", return_value=[])
+    @patch.object(pan, "_coletar_bling", return_value={"configurado": False})
+    @patch.object(pan, "_coletar_magalu", return_value={"configurado": False})
+    @patch.object(pan, "_coletar_mercado_livre", return_value={"configurado": False})
+    @patch.object(pan, "_alguma_integracao", return_value=True)
+    def test_gerar_panorama_inclui_parametros_na_mensagem(self, *_mocks):
+        out = pan.gerar_panorama(enviar_alerta=True)
+        self.assertIn("parametros_financeiros", out)
+        self.assertIn("linha_parametros_financeiros", out)
+        pan.alertar_gestor.assert_called_once()
+        msg = pan.alertar_gestor.call_args[0][0]
+        self.assertIn("Parâmetros atuais", msg)
+
 
 class TestMainModule(unittest.TestCase):
     def test_main_guard(self):

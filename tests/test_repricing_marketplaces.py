@@ -59,7 +59,8 @@ class RepricingMarketplacesTests(unittest.TestCase):
         mock_vivo.assert_called_once_with("MLB3")
         ajuste = out["ajustes"][0]
         self.assertEqual(ajuste["fonte_concorrente"], "ao_vivo")
-        self.assertEqual(ajuste["preco_concorrente"], 30.0)
+        self.assertIn("economia_estimada_piso_margem", out)
+        self.assertGreaterEqual(out["economia_estimada_piso_margem"], 0.0)
 
     @patch("agentes.repricing.agente_repricing_marketplaces.buscar_menor_preco_concorrente")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")

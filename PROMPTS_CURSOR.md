@@ -1,66 +1,93 @@
-Centralize a sincronização do token Bling com o GitHub Secrets dentro de `core/token_manager.py`, para que QUALQUER caminho que rotacione o `BLING_REFRESH_TOKEN` (não só os scripts `renovar_tokens.py` e `debug_bling_refresh.py`) salve o valor novo no GitHub automaticamente.
+Implemente as 3 melhorias abaixo no Robo-Markplaces, focadas em maximizar o ganho financeiro com a operação no Mercado Livre. São independentes entre si — implemente NA ORDEM e rode `python -m pytest -q` depois de cada item antes de seguir pro próximo.
 
-CONTEXTO DO BUG:
-Hoje existem 3 lugares que podem rotacionar o refresh_token do Bling (ele é de uso único — cada renovação invalida o token antigo):
+(Contexto: ACOS no operacao_24h, cron dedicado de ads, endpoint /ml/ads/diagnostico, pausa seletiva por campanha e enriquecimento de concorrência JÁ FORAM implementados em uma rodada anterior — não repita esses itens.)
 
-1. `scripts/renovar_tokens.py` — já sincroniza com `sync_secrets_github()` (core/github_secrets.py). OK.
-2. `scripts/debug_bling_refresh.py` — já sincroniza também (corrigido recentemente). OK.
-3. `core/token_manager.py::_renovar_token_bling()` — chamada internamente por `get_token_bling(forcar=True)`, que por sua vez é chamada por `integracoes/bling/bling_client.py` (linha ~31) sempre que uma chamada à API do Bling recebe HTTP 401. Esse caminho roda dentro de QUALQUER workflow que use o Bling (`agente_principal.yml`, `cadastrar_ncm.yml`, `testar_integracao.yml`, `panorama.yml`, etc.) — e ele só persiste o token novo em memória e num "cofre" em arquivo local (`_salvar_store_bling`), nunca no GitHub Secrets. Em uma VM efêmera do GitHub Actions, esse arquivo local é destruído ao fim do job, então o token novo se perde — e o próximo run do `renovar_tokens.yml` falha com `Invalid refresh token`, mesmo que a correção dos itens 1 e 2 já esteja aplicada.
+═══════════════════════════════════════════════════
+ITEM 1 — Tornar MAX_ITENS_ANALISE configurável e ampliar a cobertura do catálogo
+═══════════════════════════════════════════════════
+
+BUG/LIMITAÇÃO ATUAL:
+Em `agentes/ml/agente_monitor_ml.py`, linha ~21:
+```python
+MAX_ITENS_ANALISE = 15
+```
+Esse valor está hardcoded no módulo (não vem de `.env`/`core/config.py` como `ACOS_MAXIMO` e `MARGEM_MINIMA`). Isso significa que o monitoramento diário (`_analisar_concorrencia`, usado por `analisar()`) só olha os 15 primeiros itens do catálogo — se a loja tiver mais de 15 anúncios ativos, o restante nunca é analisado nem entra nas recomendações/relatório, mesmo que o resto das melhorias (ACOS, concorrência enriquecida) já estejam funcionando perfeitamente.
+
+TAREFA:
+1. Em `core/config.py`, ao lado de `ACOS_MAXIMO`, adicione:
+   ```python
+   ML_MAX_ITENS_ANALISE = int(os.getenv("ML_MAX_ITENS_ANALISE", "30"))
+   ```
+   (dobrando o padrão atual de 15 para 30 — valor seguro o suficiente para não estourar limites de rate-limit da API do ML, mas cobrindo bem mais catálogo. Documente no `.env.exemplo` com um comentário explicando o trade-off: valores muito altos aumentam o tempo de execução e o número de chamadas à API do ML por ciclo.)
+2. Em `agentes/ml/agente_monitor_ml.py`, remova a constante hardcoded `MAX_ITENS_ANALISE = 15` e importe de `core.config`:
+   ```python
+   from core.config import ML_MAX_ITENS_ANALISE as MAX_ITENS_ANALISE
+   ```
+   (mantenha o nome `MAX_ITENS_ANALISE` no módulo para não quebrar nada que já importa esse nome de `agentes.ml.agente_monitor_ml` — ex.: `api/app.py` já importa `MAX_ITENS_ANALISE` de lá.)
+3. Confirme que `api/app.py` (endpoint `/ml/ads/diagnostico`) continua funcionando sem alteração, já que ele só usa `MAX_ITENS_ANALISE` como valor default — não precisa mudar nada ali.
+4. Atualize/adicione teste em `tests/test_agente_monitor_ml.py` confirmando que `MAX_ITENS_ANALISE` reflete o valor de `cfg.ML_MAX_ITENS_ANALISE` (ex.: usando `monkeypatch`/`patch` para setar um valor diferente via env e confirmar que o módulo respeita).
+5. Atualize o `README.md` na seção de variáveis de ambiente, documentando `ML_MAX_ITENS_ANALISE` (default 30).
+
+═══════════════════════════════════════════════════
+ITEM 2 — Relatório de impacto financeiro (ROI) do robô
+═══════════════════════════════════════════════════
 
 OBJETIVO:
-Mover a sincronização para dentro de `_renovar_token_bling()`, no ponto único onde o token de fato é rotacionado — assim TODOS os 3 caminhos passam a sincronizar automaticamente, sem precisar lembrar de fazer isso em cada script novo que tocar no Bling no futuro.
+Hoje o robô toma decisões (bloqueia repricing abaixo da margem mínima, pausa campanhas com ACOS alto) mas não existe nenhum lugar que some "quanto dinheiro isso representou" — sem isso, é difícil para o dono do negócio saber se o robô está realmente valendo a pena. Adicione um relatório de impacto financeiro, calculado a partir de dados que o próprio robô já produz.
 
 TAREFA:
 
-1. Em `core/token_manager.py`, no topo do arquivo, importe a função já existente:
+1. Em `agentes/repricing/agente_repricing_marketplaces.py`, função `executar()`, no payload de retorno (variável `ajustes`, já tem por item: `preco_atual`, `novo_preco`, `ajustar`, `aplicado`, `motivo`), adicione ao payload final (ao lado de `total_ajustes`) um cálculo de impacto:
    ```python
-   from core.github_secrets import sync_secrets_github
-   ```
-   (confirme que não há import circular — `core/github_secrets.py` não importa nada de `core/token_manager.py`, então está seguro.)
-
-2. Localize a função `_renovar_token_bling()`. No trecho onde ela já persiste o token localmente:
-   ```python
-   # Persiste em disco (se o cofre estiver ativo) — resolve a rotação fora do Actions.
-   _salvar_store_bling(
-       access_token,
-       novo_refresh or refresh,
-       _token_cache_bling["expires_at"],
+   economia_estimada = sum(
+       round((a["preco_atual"] - a["preco_piso"]) , 2)
+       for a in ajustes
+       if a.get("motivo", "").endswith("bloqueado")  # bloqueios de faixa de preço
    )
-
-   logger.info("Token Bling renovado com sucesso")
-   return access_token
    ```
-   Adicione, IMEDIATAMENTE DEPOIS de `_salvar_store_bling(...)` e ANTES do `logger.info(...)`, a sincronização condicional com o GitHub:
+   Avalie a métrica mais correta dado o código real: o objetivo é estimar quanto o robô EVITOU perder ao não deixar o preço cair abaixo do piso de margem (comparando `preco_atual`/`novo_preco` vs `preco_piso` nos itens onde houve bloqueio ou onde `novo_preco` ficou no piso em vez de mais baixo). Documente a lógica escolhida com um comentário claro, já que é uma estimativa, não um valor exato.
+   Adicione esse total ao payload retornado: `"economia_estimada_piso_margem": round(economia_estimada, 2)`.
+
+2. Em `agentes/ml/agente_ads_gatilho.py`, na decisão `"pausar"` (a que já usa `campanhas_acos_acima_limite()` para pausa seletiva), calcule o gasto diário das campanhas pausadas (campo `cost`/período de cada campanha já retornado por `campanhas_acos_acima_limite`) e inclua no retorno de `executar()` um campo `gasto_diario_estimado_evitado` — soma do gasto diário das campanhas pausadas, como proxy de "quanto deixou de ser gasto em ads com ACOS ruim a partir de agora".
+
+3. Crie um agente novo `agentes/relatorio_financeiro.py`, seguindo o estilo de `agentes/relatorio.py` (mesma estrutura: função `executar() -> bool`, usa `core.notificador.alertar`/`alertar_gestor`, loga com `logger`), que:
+   a. Chama `agente_repricing_marketplaces.executar(dry_run=True)` (modo simulação, só para coletar os números, sem aplicar nada de novo) e extrai `economia_estimada_piso_margem` e `total_ajustes`.
+   b. Chama `agente_monitor_ml.analisar(enviar_alerta=False)` e extrai os dados de `ads` (campanhas com ACOS acima do limite, gasto total).
+   c. Monta um resumo consolidado, por exemplo:
+      ```
+      💰 Relatório financeiro semanal — Robo-Markplaces
+      Repricing: R$X protegidos (piso de margem) em Y ajustes
+      Ads: R$Z/dia em campanhas com ACOS acima do limite (revisar/pausar)
+      ```
+   d. Envia esse resumo via `alertar_gestor()` (não `alertar_critico`, pois não é uma falha, é um relatório informativo).
+   e. Retorna `True`/`False` conforme sucesso, igual ao padrão de `agentes/relatorio.py`.
+4. Crie um workflow novo `.github/workflows/relatorio_financeiro.yml`, no mesmo padrão dos outros (`agente_principal.yml`/`monitor_ml.yml`), rodando 1x por semana (ex.: segunda-feira de manhã, horário BRT) chamando esse novo agente.
+5. Adicione testes em `tests/test_agente_relatorio_financeiro.py` (crie esse arquivo), mockando `agente_repricing_marketplaces.executar` e `agente_monitor_ml.analisar`, cobrindo: caso de sucesso com números > 0, caso sem nenhum ajuste/alerta (números zerados, mensagem ainda deve ser enviada sem erro), e caso de exceção interna (deve logar e retornar `False`, nunca propagar exceção).
+6. Documente esse novo agente e workflow no `README.md`.
+
+═══════════════════════════════════════════════════
+ITEM 3 — Expor os parâmetros financeiros-chave (ACOS_MAXIMO, MARGEM_MINIMA, fases de margem) no relatório do panorama
+═══════════════════════════════════════════════════
+
+OBJETIVO:
+Hoje, pra revisar se `ACOS_MAXIMO` (0.20 = 20%) e `MARGEM_MINIMA`/`MARGEM_FASE_1/2/3_PCT` estão calibrados certo, é preciso abrir o código (`core/config.py`). Facilite isso expondo esses valores dentro do relatório que já existe, pra quem opera o negócio (não necessariamente quem programa) conseguir revisar e decidir se quer ajustar via `.env`/Secrets, sem precisar olhar código.
+
+TAREFA:
+1. Em `agentes/panorama/agente_panorama.py`, localize onde o resumo/JSON operacional é montado (a função que monta o contexto enviado pro Claude e pro Telegram). Adicione uma seção com os parâmetros financeiros atuais, importando de `core.config`:
    ```python
-   if os.getenv("GITHUB_ACTIONS") == "true":
-       if sync_secrets_github(access_token, novo_refresh or refresh, prefix="BLING"):
-           logger.info("Secrets BLING_* sincronizados no GitHub (rotação automática).")
-       else:
-           logger.warning(
-               "Falha ao sincronizar BLING_* no GitHub após rotação — "
-               "o próximo refresh pode falhar até o sync funcionar."
-           )
+   from core.config import ACOS_MAXIMO, MARGEM_MINIMA, MARGEM_FASE_1_PCT, MARGEM_FASE_2_PCT, MARGEM_FASE_3_PCT
    ```
-   Confirme que `import os` já existe no topo do arquivo (deve existir, já é usado em outras partes do módulo); se não existir, adicione.
+   E inclua no payload/contexto (não precisa mandar pro Claude reescrever isso, só exibir como dado de referência fixo no final da mensagem Telegram, fora do texto gerado pela IA):
+   ```
+   ⚙️ Parâmetros atuais: ACOS máx {ACOS_MAXIMO*100:.0f}% | Margem mínima {MARGEM_MINIMA:.0f}% | Fases {MARGEM_FASE_1_PCT:.0f}/{MARGEM_FASE_2_PCT:.0f}/{MARGEM_FASE_3_PCT:.0f}%
+   ```
+2. Garanta que isso não quebre o formato/teste existente do payload do panorama — adicione como um campo extra no dict (ex.: `"parametros_financeiros": {...}`) e só depois formate na mensagem final de texto.
+3. Atualize testes em `tests/test_agente_panorama.py` cobrindo a presença desses novos campos no payload/mensagem.
 
-3. NÃO remova a chamada a `_salvar_store_bling(...)` — ela continua útil para processos locais/persistentes fora do GitHub Actions (onde `GITHUB_ACTIONS` não está definido). As duas formas de persistência (disco local + GitHub Secrets) coexistem, cada uma cobrindo um cenário diferente.
-
-4. Em `scripts/renovar_tokens.py` e `scripts/debug_bling_refresh.py`, a chamada a `sync_secrets_github(...)` para o Bling especificamente vai ficar duplicada (uma vez dentro de `_renovar_token_bling()` via passo 2, outra explícita no script). Isso não quebra nada (a segunda chamada só reenviaria o mesmo valor), mas para evitar 2 chamadas de API do GitHub por execução:
-   a. Em `scripts/renovar_tokens.py`, no bloco `[Bling]` de `main()`, REMOVA a chamada explícita a `_sync_secrets_github(res_bling["access_token"], novo_refresh, prefix="BLING")` dentro do `if em_actions or quer_sync:` — já que `_renovar_token_bling()` (chamada internamente por `renovar_token_bling_detalhado()`) agora cuida disso sozinha quando `GITHUB_ACTIONS=true`. Mantenha o `else` (impressão dos tokens) para quando NÃO estiver no GitHub Actions, já que nesse caso a sincronização automática do passo 2 não dispara (ela só age quando `GITHUB_ACTIONS == "true"`).
-   b. Ajuste a lógica de `exit_code` nesse bloco: como a sincronização do Bling passa a acontecer "dentro" da renovação, se ela falhar o script não saberá diretamente — então capture isso checando o retorno de log ou (mais simples) deixe `renovar_token_bling_detalhado()` devolver no dict também um campo `secrets_sincronizados: bool`, propagado a partir do retorno de `sync_secrets_github` dentro de `_renovar_token_bling()`. Avalie a forma mais simples de implementar isso sem complicar a assinatura de `_renovar_token_bling()` (que hoje só retorna `access_token | None`) — se for complicado demais, é aceitável manter a chamada de sync duplicada nos scripts (não traz bug, só uma chamada de API extra) em vez de mudar a assinatura interna. Documente no código a decisão tomada.
-   c. Em `scripts/debug_bling_refresh.py`, mesma avaliação: como o sucesso do refresh ali já passa por `_renovar_token_bling()` (via chamada direta ao endpoint OU indiretamente, confirme qual caminho o script usa hoje), avalie se a chamada própria a `sync_secrets_github` no script ainda é necessária. Se o script faz a chamada HTTP diretamente (sem passar por `_renovar_token_bling()`), MANTENHA a sincronização própria do script como está — ela é o único lugar que sabe que esse refresh aconteceu.
-
-5. Atualize os testes em `tests/test_token_manager_providers.py`:
-   - Os testes que já mockam `_renovar_token_bling` diretamente (ex.: `test_renovar_token_bling_detalhado_ok`, `test_renovar_token_bling_detalhado_falha`) não precisam de mudança, pois eles mockam a função inteira e não exercitam o código novo internamente.
-   - Adicione um teste novo, por exemplo `test_renovar_token_bling_sincroniza_secrets_no_actions`, que:
-     a. Mocka a chamada HTTP (`core.token_manager.request` ou o que for usado internamente) para simular um refresh bem-sucedido do Bling (HTTP 200, com `access_token` e `refresh_token` novos no JSON).
-     b. Mocka `core.token_manager.sync_secrets_github` para retornar `True`.
-     c. Define a variável de ambiente `GITHUB_ACTIONS=true` (via `monkeypatch.setenv` ou `os.environ`, revertendo no fim do teste).
-     d. Chama `tm._renovar_token_bling()` diretamente.
-     e. Verifica que `sync_secrets_github` foi chamado com os valores corretos (`access_token`, `refresh_token`, `prefix="BLING"`).
-   - Adicione outro teste cobrindo o caso `GITHUB_ACTIONS` não definido (ou `"false"`): mockar `sync_secrets_github` e verificar que ele NÃO foi chamado nesse caso (preserva o comportamento de processos locais, que dependem só do `_salvar_store_bling`).
-   - Adicione um teste cobrindo falha do sync (retorna `False`): a função deve continuar retornando o `access_token` normalmente (não falhar a renovação por causa de um problema no sync), só logar o warning.
-
-6. Rode `python -m pytest -q` e `ruff check .` no final. Confirme 0 falhas e cobertura mínima de 80% mantida (`--cov-fail-under=80` em `pyproject.toml`).
-
-7. Atualize o `README.md` (seção sobre renovação de tokens/Bling, se existir) mencionando que a partir de agora a rotação do refresh_token do Bling se auto-sincroniza com os Secrets do GitHub a partir de QUALQUER chamada à API do Bling feita dentro de um workflow do GitHub Actions — não só pelo cron dedicado de renovação.
+═══════════════════════════════════════════════════
+REGRAS GERAIS
+═══════════════════════════════════════════════════
+- Não altere comportamento de escrita real (repricing/ads) — os itens 2 e 3 são só leitura/relatório, nunca devem aplicar preço ou pausar campanha por conta própria além do que já acontece hoje.
+- Toda nova função deve ter try/except e nunca propagar exceção não tratada (padrão do projeto).
+- Rode `ruff check api agentes core integracoes tests` (esse é o escopo real do lint no CI, conforme `.github/workflows/agente_principal.yml`) e `python -m pytest -q` no final de tudo — confirme 0 falhas e cobertura ≥ 80%.
+- Atualize o `README.md` para cada novo workflow, variável de ambiente ou agente adicionado.

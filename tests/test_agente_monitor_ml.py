@@ -71,6 +71,11 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(mon._pct_diff(105.0, 100.0), 5.0)
         self.assertEqual(mon._pct_diff(10.0, 0.0), 0.0)
 
+    def test_max_itens_analise_vem_do_config(self):
+        import core.config as cfg
+
+        self.assertEqual(mon.MAX_ITENS_ANALISE, cfg.ML_MAX_ITENS_ANALISE)
+
 
 if __name__ == "__main__":
     unittest.main()
