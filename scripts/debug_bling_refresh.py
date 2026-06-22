@@ -27,16 +27,16 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import requests
+
+from core.github_secrets import sync_secrets_github
+
 try:
     from dotenv import load_dotenv
 
     load_dotenv()
 except Exception:
     pass
-
-import requests
-
-from core.github_secrets import sync_secrets_github
 
 cid = os.getenv("BLING_CLIENT_ID", "")
 sec = os.getenv("BLING_CLIENT_SECRET", "")
