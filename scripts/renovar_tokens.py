@@ -4,8 +4,6 @@ from __future__ import annotations
 import logging
 import os
 import re
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -111,34 +109,7 @@ def _alertar_token_travado(provedor: str, motivo: str) -> None:
     alertar_critico(msg)
 
 
-def _sync_secrets_github(access_token: str, refresh_token: str | None, prefix: str = "BLING") -> bool:
-    if not shutil.which("gh"):
-        print(f"  gh CLI não encontrado — Secret {prefix}_* não atualizado")
-        return False
-
-    repo = (os.getenv("GH_REPO") or "").strip()
-    base_cmd = ["gh", "secret", "set"]
-    repo_args = ["--repo", repo] if repo else []
-
-    pares = [(f"{prefix}_ACCESS_TOKEN", access_token)]
-    if refresh_token:
-        pares.append((f"{prefix}_REFRESH_TOKEN", refresh_token))
-
-    ok = True
-    for nome, valor in pares:
-        try:
-            subprocess.run(
-                base_cmd + [nome] + repo_args,
-                input=valor,
-                text=True,
-                check=True,
-                capture_output=True,
-            )
-            print(f"  Secret {nome} atualizado no GitHub")
-        except subprocess.CalledProcessError as e:
-            print(f"  Falha ao atualizar {nome}: {e.stderr.strip()}")
-            ok = False
-    return ok
+from core.github_secrets import sync_secrets_github as _sync_secrets_github
 
 
 def main() -> int:
