@@ -14,6 +14,7 @@ from core.config import (
     NOTA_MINIMA_PARA_ADS,
     AVALIACOES_PARA_ESCALAR,
     ACOS_MAXIMO,
+    ML_ADS_ACOS_DIAS_LIMITE,
     BUDGET_FASE_INICIO,
     BUDGET_FASE_CRESCIMENTO,
     BUDGET_FASE_ESCALA,
@@ -33,6 +34,7 @@ def avaliar_momento_ads(
     decisao = "aguardar"
     budget_sugerido = 0.0
     motivos = []
+    gasto_diario_estimado_evitado = 0.0
 
     if avaliacoes < AVALIACOES_PARA_ADS:
         motivos.append(f"Avaliações insuficientes: {avaliacoes}/{AVALIACOES_PARA_ADS}")
@@ -47,6 +49,15 @@ def avaliar_momento_ads(
         budget_sugerido = 0.0
         motivos.append(f"ACOS alto: {acos_atual*100:.0f}% (máx {ACOS_MAXIMO*100:.0f}%)")
         motivos.append("Revisar título e preço antes de religar")
+        try:
+            campanhas_ruins = campanhas_acos_acima_limite()
+            gasto_periodo = sum(float(c.get("cost") or 0) for c in campanhas_ruins)
+            gasto_diario_estimado_evitado = round(
+                gasto_periodo / max(1, ML_ADS_ACOS_DIAS_LIMITE),
+                2,
+            )
+        except Exception as exc:
+            logger.warning("Não foi possível estimar gasto diário das campanhas: %s", exc)
 
     elif datetime.now().month in (10, 11, 12) and avaliacoes >= AVALIACOES_PARA_ADS and nota_media >= NOTA_MINIMA_PARA_ADS:
         decisao = "escalar"
@@ -75,7 +86,11 @@ def avaliar_momento_ads(
         "full_ativo": full_ativo,
         "motivos": motivos,
         "confirmado_gestor": None,
+        "gasto_diario_estimado_evitado": 0.0,
     }
+
+    if decisao == "pausar":
+        resultado["gasto_diario_estimado_evitado"] = gasto_diario_estimado_evitado
 
     if decisao == "ligar":
         pergunta = (

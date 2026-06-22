@@ -280,6 +280,7 @@ Rotinas diárias do Mercado Livre (somente leitura ou com confirmação Telegram
 | 09:00 | `.github/workflows/monitor_ml.yml` | `agentes/ml/agente_monitor_ml.py` | Diagnóstico conta + Product Ads + concorrência |
 | 10:00 | `.github/workflows/ads_gatilho_ml.yml` | `agentes/ml/agente_ads_gatilho.py` | Ligar/pausar/escalar ads (confirmação gestor) |
 | 08:30 | `.github/workflows/panorama.yml` | `agentes/panorama/agente_panorama.py` | Visão geral ML + Magalu + Bling + síntese Claude |
+| Seg 08:00 | `.github/workflows/relatorio_financeiro.yml` | `agentes/relatorio_financeiro.py` | Impacto financeiro estimado (repricing + ads) |
 
 Execução local:
 
@@ -290,6 +291,24 @@ python -m agentes.panorama.agente_panorama
 ```
 
 O gatilho de ads usa ACOS agregado das campanhas com gasto (não reputação do vendedor). Pausa afeta apenas campanhas com ACOS acima do limite (`ACOS_MAXIMO`).
+
+### Variáveis ML (monitoramento e ads)
+
+| Variável | Default | Descrição |
+|----------|---------|-----------|
+| `ML_MAX_ITENS_ANALISE` | `30` | Máximo de anúncios analisados por ciclo (concorrência + monitor). Valores altos aumentam tempo e chamadas à API do ML. |
+| `ACOS_MAXIMO` | `0.20` | Teto de ACOS (20%) para alertas e pausa seletiva de campanhas |
+
+## Relatório financeiro semanal
+
+- Agente: `agentes/relatorio_financeiro.py`
+- Workflow: `.github/workflows/relatorio_financeiro.yml` (segunda-feira 08:00 BRT)
+- Estima impacto do repricing (margem protegida no piso) e gasto diário em campanhas com ACOS alto
+- Somente leitura — não altera preços nem campanhas
+
+```bash
+python -m agentes.relatorio_financeiro
+```
 
 ## n8n pronto para uso
 

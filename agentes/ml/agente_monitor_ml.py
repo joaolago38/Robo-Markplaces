@@ -12,13 +12,13 @@ from typing import Any
 from core.config import (
     ACOS_MAXIMO,
     ML_ADS_ORCAMENTO_MAXIMO,
+    ML_MAX_ITENS_ANALISE as MAX_ITENS_ANALISE,
 )
 from core.notificador import alertar_gestor
 from integracoes.ml import ml_client, ml_product_ads
 
 logger = logging.getLogger("agente_monitor_ml")
 
-MAX_ITENS_ANALISE = 15
 PAUSA_ENTRE_CHAMADAS_S = 0.15
 LIMIAR_PRECO_CONCORRENTE = 0.05
 CLAIMS_RATE_ALTO = 0.05

@@ -97,6 +97,32 @@ def _item_ref(canal: str, canal_data: dict, sku: str):
     return canal_data.get("sku") or sku
 
 
+def _calcular_economia_estimada_piso_margem(ajustes: list[dict]) -> float:
+    """
+    Estimativa de margem protegida pelo piso/faixas (por unidade, não é receita real).
+    - Faixa bloqueada: evitou baixar de preco_atual até o preço que seria aplicado.
+    - Piso de margem: concorrente abaixo do piso — diferença entre piso e alvo competitivo.
+    """
+    total = 0.0
+    for a in ajustes:
+        preco_atual = _to_float(a.get("preco_atual"))
+        novo_preco = _to_float(a.get("novo_preco"))
+        preco_piso = _to_float(a.get("preco_piso"))
+        preco_conc = _to_float(a.get("preco_concorrente"))
+        motivo = str(a.get("motivo") or "")
+
+        if motivo.endswith("bloqueado") and novo_preco < preco_atual:
+            total += preco_atual - novo_preco
+            continue
+
+        if preco_piso > 0 and preco_conc > 0:
+            alvo = preco_conc * (1 - REPRICING_ABAIXO_CONCORRENTE_PCT / 100.0)
+            if alvo < preco_piso and abs(novo_preco - preco_piso) < 0.02:
+                total += preco_piso - alvo
+
+    return round(total, 2)
+
+
 def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_minimo_pct: float | None = None) -> dict:
     lucro_minimo = float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT)
     produtos_base = produtos if produtos is not None else listar_produtos()
@@ -171,6 +197,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
             )
 
     total_ajustes = sum(1 for a in ajustes if a["ajustar"])
+    economia_estimada = _calcular_economia_estimada_piso_margem(ajustes)
     if total_ajustes > 0:
         alertar_gestor(
             f"Repricing marketplaces: {total_ajustes} ajustes detectados\n"
@@ -182,6 +209,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
         "lucro_minimo_pct": lucro_minimo,
         "total_itens": len(ajustes),
         "total_ajustes": total_ajustes,
+        "economia_estimada_piso_margem": economia_estimada,
         "ajustes": ajustes,
     }
     logger.info("Repricing marketplaces: %s", payload)
