@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core.github_secrets import sync_secrets_github as _sync_secrets_github
+
 logger = logging.getLogger("renovar_tokens")
 
 try:
@@ -107,9 +109,6 @@ def _alertar_token_travado(provedor: str, motivo: str) -> None:
         )
 
     alertar_critico(msg)
-
-
-from core.github_secrets import sync_secrets_github as _sync_secrets_github
 
 
 def main() -> int:
