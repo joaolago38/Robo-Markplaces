@@ -210,10 +210,10 @@ class TestWriteBackBling(unittest.TestCase):
         res_bling = {"ok": True, "access_token": "acc_novo", "refresh_token": "ref_novo"}
         with patch.dict(os.environ, env, clear=False):
             with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res_bling), \
-                 patch.object(mod, "_sync_secrets_github", return_value=True) as sync, \
+                 patch.object(mod, "_sync_secrets_github") as sync, \
                  patch("builtins.print"):
                 code = mod.main()
-        sync.assert_called_once_with("acc_novo", "ref_novo", prefix="BLING")
+        sync.assert_not_called()
         self.assertEqual(code, 0)
 
     def test_bling_fora_actions_apenas_imprime(self):
@@ -233,6 +233,7 @@ class TestWriteBackBling(unittest.TestCase):
         self.assertEqual(code, 0)
 
     def test_bling_sync_falha_em_actions(self):
+        """Sync falha dentro de token_manager; renovar_tokens não altera exit_code."""
         env = dict(self._ENV_BASE)
         env["GITHUB_ACTIONS"] = "true"
         res_bling = {"ok": True, "access_token": "acc", "refresh_token": "ref"}
@@ -241,7 +242,7 @@ class TestWriteBackBling(unittest.TestCase):
                  patch.object(mod, "_sync_secrets_github", return_value=False), \
                  patch("builtins.print"):
                 code = mod.main()
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 0)
 
 
 class TestAlertaTokenTravado(unittest.TestCase):

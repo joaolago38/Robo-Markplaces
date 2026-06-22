@@ -69,7 +69,11 @@ def _imprimir_tokens_fallback(access_token: str, refresh_token: str | None) -> N
 
 
 def _handle_refresh_success(access_token: str, refresh_token: str | None) -> int:
-    """Persiste tokens novos no GitHub ou exibe para cópia manual."""
+    """Persiste tokens novos no GitHub ou exibe para cópia manual.
+
+    Este script chama o endpoint OAuth diretamente (não passa por _renovar_token_bling),
+    por isso mantém sync próprio aqui — diferente de renovar_tokens.py.
+    """
     if not access_token:
         print("  SUCESSO HTTP 200, mas access_token ausente na resposta JSON.")
         return 1

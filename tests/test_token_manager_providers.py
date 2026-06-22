@@ -205,6 +205,62 @@ class TestTokenManagerProviders(unittest.TestCase):
             self.assertIsNone(tm._renovar_token_bling())
         self.assertTrue(any("BLING_CLIENT" in line for line in logs.output))
 
+    @patch.object(tm, "_salvar_store_bling")
+    @patch.object(tm, "sync_secrets_github", return_value=True)
+    @patch.object(tm, "_bling_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, BLING_CLIENT_ID="cid", BLING_CLIENT_SECRET="sec", BLING_REFRESH_TOKEN="rt")
+    def test_renovar_token_bling_sincroniza_secrets_no_actions(
+        self, mock_request, *_mocks
+    ):
+        tm._bling_refresh_efetivo["valor"] = "old_rt"
+        tm._token_cache_bling.update({"access_token": None, "expires_at": 0})
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
+        )
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+            out = tm._renovar_token_bling()
+        self.assertEqual(out, "new_at")
+        tm.sync_secrets_github.assert_called_once_with("new_at", "new_rt", prefix="BLING")
+
+    @patch.object(tm, "_salvar_store_bling")
+    @patch.object(tm, "sync_secrets_github")
+    @patch.object(tm, "_bling_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, BLING_CLIENT_ID="cid", BLING_CLIENT_SECRET="sec", BLING_REFRESH_TOKEN="rt")
+    def test_renovar_token_bling_nao_sincroniza_fora_actions(
+        self, mock_request, *_mocks
+    ):
+        tm._bling_refresh_efetivo["valor"] = "old_rt"
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
+        )
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": ""}, clear=False):
+            out = tm._renovar_token_bling()
+        self.assertEqual(out, "new_at")
+        tm.sync_secrets_github.assert_not_called()
+
+    @patch.object(tm, "_salvar_store_bling")
+    @patch.object(tm, "sync_secrets_github", return_value=False)
+    @patch.object(tm, "_bling_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, BLING_CLIENT_ID="cid", BLING_CLIENT_SECRET="sec", BLING_REFRESH_TOKEN="rt")
+    def test_renovar_token_bling_sync_falha_ainda_retorna_token(
+        self, mock_request, *_mocks
+    ):
+        tm._bling_refresh_efetivo["valor"] = "old_rt"
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
+        )
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+            with self.assertLogs("token_manager", level="WARNING") as logs:
+                out = tm._renovar_token_bling()
+        self.assertEqual(out, "new_at")
+        self.assertTrue(any("Falha ao sincronizar BLING_*" in line for line in logs.output))
+
 
 if __name__ == "__main__":
     unittest.main()

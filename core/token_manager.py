@@ -9,6 +9,7 @@ import urllib.parse
 from pathlib import Path
 
 import core.config as cfg
+from core.github_secrets import sync_secrets_github
 from core.http_client import request
 
 logger = logging.getLogger("token_manager")
@@ -590,6 +591,15 @@ def _renovar_token_bling():
             novo_refresh or refresh,
             _token_cache_bling["expires_at"],
         )
+
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            if sync_secrets_github(access_token, novo_refresh or refresh, prefix="BLING"):
+                logger.info("Secrets BLING_* sincronizados no GitHub (rotação automática).")
+            else:
+                logger.warning(
+                    "Falha ao sincronizar BLING_* no GitHub após rotação — "
+                    "o próximo refresh pode falhar até o sync funcionar."
+                )
 
         logger.info("Token Bling renovado com sucesso")
         return access_token
