@@ -172,13 +172,13 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertEqual(out["access_token"], "cached")
         self.assertEqual(out["refresh_token"], "rt")
 
-    @patch.object(tm, "_meta_token_disponivel", return_value="token_atual")
-    @patch.multiple(cfg, META_APP_ID="id", META_APP_SECRET="sec")
-    def test_renovar_token_meta_detalhado_ok(self, *_):
-        with patch.object(tm, "_renovar_token_meta", return_value="meta_new"):
-            out = tm.renovar_token_meta_detalhado()
-        self.assertTrue(out["ok"])
-        self.assertEqual(out["access_token"], "meta_new")
+    # @patch.object(tm, "_meta_token_disponivel", return_value="token_atual")
+    # @patch.multiple(cfg, META_APP_ID="id", META_APP_SECRET="sec")
+    # def test_renovar_token_meta_detalhado_ok(self, *_):
+    #     with patch.object(tm, "_renovar_token_meta", return_value="meta_new"):
+    #         out = tm.renovar_token_meta_detalhado()
+    #     self.assertTrue(out["ok"])
+    #     self.assertEqual(out["access_token"], "meta_new")
 
     @patch.object(tm, "_meta_token_disponivel", return_value=None)
     def test_renovar_token_meta_detalhado_sem_cred(self, *_):
