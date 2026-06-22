@@ -402,6 +402,14 @@ class TestHelpersPanorama(unittest.TestCase):
         self.assertEqual(pan._safe_int("3"), 3)
         self.assertEqual(pan._safe_int(None), 0)
 
+    @patch.object(pan, "perguntar", return_value="Resumo ok")
+    @patch.object(pan.cfg, "ANTHROPIC_API_KEY", "sk-test")
+    def test_sintetizar_claude_prompt_menciona_concorrentes(self, mock_perguntar, *_):
+        pan._sintetizar_claude("{}", "fallback")
+        prompt = mock_perguntar.call_args.args[0]
+        self.assertIn("concorrencia", prompt.lower())
+        self.assertIn("não invente", prompt.lower())
+
 
 class TestMainModule(unittest.TestCase):
     def test_main_guard(self):

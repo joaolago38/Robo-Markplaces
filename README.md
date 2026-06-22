@@ -44,6 +44,7 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /operacao/24h`
 - `POST /faturamento/nfe`
 - `POST /meta/campanhas/validar`
+- `POST /ml/ads/diagnostico`
 - `POST /meta/trafego/manicures`
 - `POST /meta/trafego/manicures/resumo-madrugada`
 - `POST /marketplaces/chat/visual/rodar`
@@ -263,6 +264,26 @@ Payload opcional:
   - `MARKETPLACE_DRY_RUN_REPRICING=true`
   - `MARKETPLACE_ALERTAR_ATENCAO=false`
   - `MARKETPLACE_KEEPALIVE_LIMITE_DIAS=5`
+
+## Agentes ML — cron GitHub Actions
+
+Rotinas diárias do Mercado Livre (somente leitura ou com confirmação Telegram antes de escrita):
+
+| Horário (BRT) | Workflow | Agente | Função |
+|---------------|----------|--------|--------|
+| 09:00 | `.github/workflows/monitor_ml.yml` | `agentes/ml/agente_monitor_ml.py` | Diagnóstico conta + Product Ads + concorrência |
+| 10:00 | `.github/workflows/ads_gatilho_ml.yml` | `agentes/ml/agente_ads_gatilho.py` | Ligar/pausar/escalar ads (confirmação gestor) |
+| 08:30 | `.github/workflows/panorama.yml` | `agentes/panorama/agente_panorama.py` | Visão geral ML + Magalu + Bling + síntese Claude |
+
+Execução local:
+
+```bash
+python -m agentes.ml.agente_monitor_ml
+python -m agentes.ml.agente_ads_gatilho
+python -m agentes.panorama.agente_panorama
+```
+
+O gatilho de ads usa ACOS agregado das campanhas com gasto (não reputação do vendedor). Pausa afeta apenas campanhas com ACOS acima do limite (`ACOS_MAXIMO`).
 
 ## n8n pronto para uso
 

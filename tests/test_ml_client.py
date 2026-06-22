@@ -121,6 +121,33 @@ class TestMlClient(unittest.TestCase):
         preco = ml_client.buscar_menor_preco_concorrente("MLB123")
         self.assertIsInstance(preco, float)
 
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML13b_buscar_detalhes_concorrentes(self, _mock_en, mock_request):
+        item_body = {"catalog_product_id": "CAT1"}
+        concorrentes = {
+            "results": [
+                {
+                    "id": "MLB999",
+                    "seller_id": 999,
+                    "title": "Kit Concorrente",
+                    "price": 45.90,
+                    "condition": "new",
+                    "sold_quantity": 12,
+                    "shipping": {"free_shipping": True},
+                },
+            ]
+        }
+        mock_request.side_effect = [
+            _mock_resp(item_body),
+            _mock_resp(concorrentes),
+        ]
+        detalhes = ml_client.buscar_detalhes_concorrentes("MLB123", limite=5)
+        self.assertEqual(len(detalhes), 1)
+        self.assertEqual(detalhes[0]["titulo"], "Kit Concorrente")
+        self.assertTrue(detalhes[0]["frete_gratis"])
+        self.assertEqual(detalhes[0]["quantidade_vendida"], 12)
+
 
 class TestMlAnuncioStatus(unittest.TestCase):
     @classmethod

@@ -41,6 +41,9 @@ class TestAnalisar(unittest.TestCase):
     @patch.object(mon, "alertar_gestor", return_value=True)
     @patch.object(mon.ml_client, "_enabled", return_value=True)
     @patch.object(mon.ml_client, "buscar_acos_ads", return_value=0.0)
+    @patch.object(mon.ml_client, "buscar_detalhes_concorrentes", return_value=[
+        {"id": "MLB9", "titulo": "Concorrente", "preco": 50.0, "frete_gratis": True, "condicao": "new", "quantidade_vendida": 10}
+    ])
     @patch.object(mon.ml_client, "buscar_menor_preco_concorrente", return_value=50.0)
     @patch.object(mon.ml_client, "buscar_metricas_item", return_value={"preco": 60.0, "visitas_7d": 10, "visitas_30d": 100, "titulo": "Kit"})
     @patch.object(mon.ml_client, "listar_meus_anuncios", return_value=[{"item_id": "MLB1", "titulo": "Kit", "preco": 60.0}])
@@ -54,6 +57,9 @@ class TestAnalisar(unittest.TestCase):
         out = mon.analisar(enviar_alerta=False, limite_itens=1)
         self.assertTrue(out["ok"])
         self.assertTrue(any("revisar preço" in r.lower() for r in out["recomendacoes"]))
+        conc = out["concorrencia"][0]
+        self.assertIn("concorrentes", conc)
+        self.assertEqual(conc["concorrentes"][0]["titulo"], "Concorrente")
 
     @patch.object(mon, "analisar", return_value={"ok": True, "resumo": "ok", "recomendacoes": [], "enviado": True})
     def test_main_imprime_resumo(self, *_):

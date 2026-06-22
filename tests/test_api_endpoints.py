@@ -46,6 +46,18 @@ class TestApiEndpoints(unittest.TestCase):
         resp = self.client.post("/meta/campanhas/validar", json={})
         self.assertEqual(resp.status_code, 200)
 
+    @patch("api.app.analisar_monitor_ml", return_value={"ok": True, "resumo": "ok"})
+    def test_EP10_ml_ads_diagnostico_200(self, *_patches):
+        resp = self.client.post("/ml/ads/diagnostico", json={"enviar_alerta": False})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["ok"])
+
+    @patch("api.app.analisar_monitor_ml", return_value={"ok": False, "motivo": "ML não configurado"})
+    def test_EP11_ml_ads_diagnostico_503(self, *_patches):
+        resp = self.client.post("/ml/ads/diagnostico", json={})
+        self.assertEqual(resp.status_code, 503)
+        self.assertFalse(resp.get_json()["ok"])
+
     @patch("api.app.executar_repricing_marketplaces", return_value={"ajustes": []})
     def test_EP06_monitorar_produtos_200(self, *_patches):
         resp = self.client.post("/marketplaces/produtos/monitorar", json={"dry_run": True})

@@ -37,6 +37,7 @@ from agentes.social.agente_trafego_manicures import (
 from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
 from agentes.operacao_24h import executar as executar_operacao_24h
 from agentes.auto_respostas_visuais import executar as executar_auto_respostas_visuais
+from agentes.ml.agente_monitor_ml import analisar as analisar_monitor_ml, MAX_ITENS_ANALISE
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -554,6 +555,28 @@ def meta_validar_campanhas():
     return jsonify({"ok": True, **resultado})
 
 
+@app.route("/ml/ads/diagnostico", methods=["POST"])
+def ml_ads_diagnostico():
+    """
+    POST /ml/ads/diagnostico
+    Roda o diagnóstico somente-leitura de conta + Product Ads + concorrência no ML.
+    Body opcional:
+    {
+        "limite_itens": 20,
+        "enviar_alerta": false
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    limite_itens = int(dados.get("limite_itens", MAX_ITENS_ANALISE))
+    enviar_alerta = bool(dados.get("enviar_alerta", False))
+    resultado = analisar_monitor_ml(limite_itens=limite_itens, enviar_alerta=enviar_alerta)
+    status_code = 200 if resultado.get("ok") else 503
+    return jsonify(resultado), status_code
+
+
 @app.route("/marketplaces/produtos/monitorar", methods=["POST"])
 def monitorar_produtos_marketplaces():
     """
@@ -713,6 +736,7 @@ if __name__ == "__main__":
     print("   POST /operacao/24h         — monitora vendas/lucro e gera NF via Lojahub+Bling")
     print("   POST /faturamento/nfe     — emite NF-e no Bling para pedido pago")
     print("   POST /meta/campanhas/validar — valida métricas Meta Ads e recomenda ajustes")
+    print("   POST /ml/ads/diagnostico — diagnóstico ML conta + Product Ads + concorrência")
     print("   POST /meta/trafego/manicures — mede eficiência p/ Impala, Anita e kits")
     print("   POST /meta/trafego/manicures/resumo-madrugada — top 3 piores campanhas")
     print("   POST /marketplaces/chat/visual/rodar — respostas automáticas com contexto de fotos")

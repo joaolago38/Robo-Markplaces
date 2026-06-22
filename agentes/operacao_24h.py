@@ -16,6 +16,7 @@ from core.alertas_esmaltes import verificar_todos as verificar_alertas_esmaltes
 from core.notificador import alertar_gestor
 from integracoes.bling.bling_client import listar_produtos
 from integracoes.lojahub.lojahub_client import listar_pedidos_prontos_faturar, listar_resumo_vendas_24h
+from integracoes.ml.ml_product_ads import listar_campanhas
 
 logger = logging.getLogger("operacao_24h")
 
@@ -118,21 +119,31 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     pedidos_faturar = listar_pedidos_prontos_faturar(limit=100)
     kpis = _calcular_kpis_24h(produtos, pedidos_faturar, analytics)
 
-    # Busca reputação real da conta ML para usar nos alertas e gatilho de ads
+    # Busca reputação real da conta ML para alertas e gatilho de ads
     try:
         from integracoes.ml.ml_client import buscar_reputacao_vendedor
         _rep = buscar_reputacao_vendedor()
         _metrics = _rep.get("metrics", {})
         _total_avaliacoes = int(_metrics.get("total_ratings", 0) or 0)
         _nota_media = float(_metrics.get("average_rating", 0.0) or 0.0)
-        _acos_atual = float(_metrics.get("acos", 0.0) or 0.0)
         _full_ativo = bool(_metrics.get("power_seller_status") in ("gold", "platinum"))
     except Exception as _e:
         logger.warning("Não foi possível buscar reputação ML: %s", _e)
         _total_avaliacoes = 0
         _nota_media = 0.0
-        _acos_atual = 0.0
         _full_ativo = False
+
+    try:
+        _campanhas = listar_campanhas(dias=14)
+        _campanhas_com_gasto = [c for c in _campanhas if c.get("cost", 0) > 0]
+        if _campanhas_com_gasto:
+            _gasto_total = sum(c["cost"] for c in _campanhas_com_gasto)
+            _acos_atual = sum(c["acos"] * c["cost"] for c in _campanhas_com_gasto) / _gasto_total
+        else:
+            _acos_atual = 0.0
+    except Exception as _e:
+        logger.warning("Não foi possível calcular ACOS agregado de Product Ads: %s", _e)
+        _acos_atual = 0.0
 
     # Alertas específicos de esmaltes com dados reais
     alertas_esmaltes = verificar_alertas_esmaltes(

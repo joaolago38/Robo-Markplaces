@@ -384,6 +384,87 @@ def buscar_metricas_item(item_id: str) -> dict:
         return {}
 
 
+def _extrair_seller_id(row: dict) -> str:
+    sid = row.get("seller_id")
+    if sid is None and isinstance(row.get("seller"), dict):
+        sid = row["seller"].get("id")
+    return str(sid).strip() if sid is not None else ""
+
+
+def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
+    """Retorna linhas de concorrentes ativos no catálogo (exclui o próprio vendedor)."""
+    if not _enabled() or not (item_id or "").strip():
+        return []
+    item_id = item_id.strip()
+    ri = request("GET", f"{BASE}/items/{item_id}", headers=_h(), timeout=20)
+    ri.raise_for_status()
+    body = ri.json() or {}
+    catalog_pid = body.get("catalog_product_id")
+    if not catalog_pid:
+        return []
+
+    rp = request(
+        "GET",
+        f"{BASE}/products/{catalog_pid}/items",
+        headers=_h(),
+        params={"status": "active"},
+        timeout=20,
+    )
+    rp.raise_for_status()
+    pdata = rp.json() or {}
+    results = pdata.get("results") or pdata.get("items") or []
+
+    seller_self = str(ML_SELLER_ID or "").strip()
+    concorrentes: list[dict] = []
+    for row in results:
+        if not isinstance(row, dict):
+            continue
+        if _extrair_seller_id(row) == seller_self:
+            continue
+        concorrentes.append(row)
+    return concorrentes
+
+
+def _normalizar_concorrente(row: dict) -> dict:
+    shipping = row.get("shipping") or {}
+    try:
+        preco = float(row.get("price") or 0)
+    except (TypeError, ValueError):
+        preco = 0.0
+    try:
+        vendidos = int(row.get("sold_quantity", 0) or 0)
+    except (TypeError, ValueError):
+        vendidos = 0
+    return {
+        "id": str(row.get("id", "") or ""),
+        "titulo": str(row.get("title", "") or ""),
+        "preco": preco,
+        "frete_gratis": bool(shipping.get("free_shipping", False)),
+        "condicao": str(row.get("condition", "") or ""),
+        "quantidade_vendida": vendidos,
+    }
+
+
+def buscar_detalhes_concorrentes(item_id: str, limite: int = 5) -> list[dict]:
+    """
+    Lista concorrentes no mesmo catálogo com título, preço, frete, condição e vendas.
+    Retorna lista vazia em caso de erro. Nunca lança exceção.
+    """
+    if not _enabled() or not (item_id or "").strip():
+        return []
+    try:
+        linhas = _listar_linhas_concorrentes_catalogo(item_id)
+        detalhes: list[dict] = []
+        for row in linhas[: max(0, limite)]:
+            norm = _normalizar_concorrente(row)
+            if norm.get("preco", 0) > 0:
+                detalhes.append(norm)
+        return detalhes
+    except Exception as exc:
+        logger.error("ML buscar_detalhes_concorrentes erro item_id=%s: %s", item_id, exc)
+        return []
+
+
 def buscar_menor_preco_concorrente(item_id: str) -> float:
     """
     Busca o menor preço praticado por outros vendedores no mesmo anúncio/produto.
@@ -393,44 +474,14 @@ def buscar_menor_preco_concorrente(item_id: str) -> float:
     if not _enabled() or not (item_id or "").strip():
         return 0.0
     try:
-        item_id = item_id.strip()
-        ri = request("GET", f"{BASE}/items/{item_id}", headers=_h(), timeout=20)
-        ri.raise_for_status()
-        body = ri.json() or {}
-        catalog_pid = body.get("catalog_product_id")
-        if not catalog_pid:
-            return 0.0
-
-        rp = request(
-            "GET",
-            f"{BASE}/products/{catalog_pid}/items",
-            headers=_h(),
-            params={"status": "active"},
-            timeout=20,
-        )
-        rp.raise_for_status()
-        pdata = rp.json() or {}
-        results = pdata.get("results") or pdata.get("items") or []
-
-        seller_self = str(ML_SELLER_ID or "").strip()
         precos: list[float] = []
-        for row in results:
-            if not isinstance(row, dict):
-                continue
-            sid = row.get("seller_id")
-            if sid is None and isinstance(row.get("seller"), dict):
-                sid = row["seller"].get("id")
-            if sid is None:
-                continue
-            if str(sid).strip() == seller_self:
-                continue
+        for row in _listar_linhas_concorrentes_catalogo(item_id):
             try:
                 p = float(row.get("price") or 0)
             except (TypeError, ValueError):
                 continue
             if p > 0:
                 precos.append(p)
-
         return min(precos) if precos else 0.0
     except Exception as exc:
         logger.error("ML buscar_menor_preco_concorrente erro item_id=%s: %s", item_id, exc)

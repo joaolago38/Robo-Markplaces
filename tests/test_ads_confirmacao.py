@@ -27,15 +27,18 @@ class TestAdsConfirmacao(unittest.TestCase):
         self.assertEqual(resultado["decisao"], "aguardar")
         self.assertFalse(resultado["confirmado_gestor"])
 
+    @patch("agentes.ml.agente_ads_gatilho.campanhas_acos_acima_limite", return_value=[{"id": "C1"}])
     @patch("agentes.ml.agente_ads_gatilho.aplicar_decisao_campanhas", return_value=[{"ok": True}])
     @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar", return_value=True)
     @patch("agentes.ml.agente_ads_gatilho.alertar_gestor")
-    def test_pausar_ads_gestor_aprova(self, mock_alerta, mock_pergunta, mock_api):
+    def test_pausar_ads_gestor_aprova(self, mock_alerta, mock_pergunta, mock_api, *_):
         """ACOS alto + gestor aprova: decisão permanece 'pausar' e chama API"""
         resultado = avaliar_momento_ads(avaliacoes=30, nota_media=4.9, acos_atual=0.30)
         self.assertEqual(resultado["decisao"], "pausar")
         self.assertTrue(resultado["confirmado_gestor"])
         mock_api.assert_called_once()
+        kwargs = mock_api.call_args.kwargs
+        self.assertEqual(kwargs.get("campaign_ids"), ["C1"])
 
     @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar", return_value=False)
     @patch("agentes.ml.agente_ads_gatilho.alertar_gestor")
