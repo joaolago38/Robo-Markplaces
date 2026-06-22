@@ -1,14 +1,27 @@
 """
 tests/test_testar_integracao.py
-Cobre TESTE 1 de scripts/testar_integracao.py (variáveis de ambiente).
+Cobre scripts/testar_integracao.py (config e integração Claude+Bling).
 """
+import importlib.util
 import os
 import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def _load_testar_integracao():
+    spec = importlib.util.spec_from_file_location(
+        "testar_integracao",
+        ROOT / "scripts" / "testar_integracao.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    return mod
 
 
 class TestTestarIntegracaoConfig(unittest.TestCase):
@@ -47,6 +60,22 @@ class TestTestarIntegracaoConfig(unittest.TestCase):
         )
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("BLING_CLIENT_SECRET ausente", r.stdout)
+
+
+class TestIntegracaoClaudeBling(unittest.TestCase):
+    @patch("core.claude_client.perguntar", return_value="Recomendo o kit com 12 cores.")
+    @patch.object(sys, "exit")
+    def test_perguntar_com_contexto_compoe_prompt(self, _mock_exit, mock_perguntar):
+        mod = _load_testar_integracao()
+        mock_perguntar.reset_mock()
+        ctx = "Produtos disponiveis: Kit Impala."
+        pergunta = "Qual kit recomenda?"
+        out = mod.perguntar_com_contexto(pergunta, ctx)
+        self.assertEqual(out, "Recomendo o kit com 12 cores.")
+        mock_perguntar.assert_called_once_with(
+            f"{ctx}\n\n{pergunta}",
+            max_tokens=500,
+        )
 
 
 if __name__ == "__main__":

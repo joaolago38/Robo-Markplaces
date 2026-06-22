@@ -42,6 +42,14 @@ def checar(ok: bool, msg_ok: str, msg_erro: str = "") -> bool:
     return ok
 
 
+def perguntar_com_contexto(pergunta: str, contexto: str, max_tokens: int = 500) -> str:
+    """Envia pergunta à Claude com contexto embutido no prompt (sem kwarg contexto=)."""
+    from core.claude_client import perguntar
+
+    prompt = f"{contexto}\n\n{pergunta}" if contexto else pergunta
+    return perguntar(prompt, max_tokens=max_tokens)
+
+
 # ══════════════════════════════════════════════════════════════
 # TESTE 1 — Configuracao
 # ══════════════════════════════════════════════════════════════
@@ -115,7 +123,7 @@ try:
         log(INFO, "Primeiros 3 produtos:")
         for p in produtos[:3]:
             nome   = p.get("nome", "?")[:40]
-            codigo = p.get("codigo", "?")
+            codigo = p.get("codigo") or p.get("sku", "?")
             preco  = p.get("preco", 0)
             log(INFO, f"  {codigo}: {nome} | R$ {preco}")
 
@@ -166,8 +174,6 @@ print("=" * 55)
 
 if produtos and resposta_claude and "API" not in resposta_claude:
     try:
-        from core.claude_client import perguntar
-
         nomes = [p.get("nome", "?") for p in produtos[:5]]
         catalogo = ", ".join(nomes)
 
@@ -180,7 +186,7 @@ if produtos and resposta_claude and "API" not in resposta_claude:
 
         log(INFO, f"Pergunta: {pergunta}")
         inicio = time.time()
-        resposta = perguntar(pergunta, contexto=contexto)
+        resposta = perguntar_com_contexto(pergunta, contexto)
         latencia = round(time.time() - inicio, 2)
 
         ok_integracao = bool(resposta) and len(resposta) > 20 and "API" not in resposta
