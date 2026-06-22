@@ -1,77 +1,30 @@
-# Prompt — Alertar quando o Bling entrar em estado "travado" (refresh não se auto-cura)
+Corrija o teste com falha em `tests/test_token_manager_providers.py::TestTokenManagerProviders::test_renovar_token_meta_detalhado_ok`.
 
-No projeto Robo-Markplaces, o script `scripts/renovar_tokens.py` renova os tokens
-dos marketplaces e grava os refresh_tokens rotacionados de volta nos GitHub
-Secrets (via `_sync_secrets_github`). ML e Magalu se auto-curam porque a renovação
-deles funciona. O Bling, porém, pode entrar num estado TRAVADO: quando o
-`BLING_REFRESH_TOKEN` já está inválido/expirado, a renovação falha com HTTP 400
-ANTES de gravar um token novo — então o ciclo nunca se recupera sozinho e exige um
-bootstrap manual com `pegar_token_bling.py`.
+CONTEXTO DO BUG:
+O teste falha com `AssertionError: False is not true` porque ele faz mock de `tm.get_token_meta` e `tm._renovar_token_meta`, mas a função testada `renovar_token_meta_detalhado()` (em `core/token_manager.py`) primeiro valida `cfg.META_APP_ID`, `cfg.META_APP_SECRET` e o retorno de `_meta_token_disponivel()` lendo direto das variáveis de config/ambiente — sem nenhum mock. Em qualquer ambiente sem essas variáveis configuradas (ex.: CI limpo, clone novo sem `.env`), esses valores ficam vazios/None, então a função retorna `{"ok": False, "motivo": "credenciais Meta ausentes"}` antes de chegar à lógica que foi mockada — e o teste falha.
 
-Hoje esse estado só aparece no log do GitHub Actions (e o job termina com exit 1),
-o que é fácil de passar despercebido. Quero um ALERTA ATIVO quando isso acontecer.
+Outro teste no mesmo arquivo, `test_renovar_token_bling_detalhado_ok`, já resolve esse mesmo problema corretamente usando:
+```python
+@patch.multiple(cfg, BLING_CLIENT_ID="c", BLING_CLIENT_SECRET="s", BLING_REFRESH_TOKEN="r")
+```
 
-## Alterações em `scripts/renovar_tokens.py`
+TAREFA:
+1. Abra `tests/test_token_manager_providers.py`.
+2. Corrija `test_renovar_token_meta_detalhado_ok` adicionando o isolamento das credenciais Meta via `@patch.multiple(cfg, META_APP_ID="id", META_APP_SECRET="sec")`, seguindo o mesmo padrão usado no teste do Bling.
+3. Garanta que `_meta_token_disponivel()` também retorne um valor truthy nesse teste — mocke-o com `@patch.object(tm, "_meta_token_disponivel", return_value="token_atual")` (não use o mock de `get_token_meta`, que não é o que `renovar_token_meta_detalhado` consulta).
+4. Mantenha o mock existente de `_renovar_token_meta` retornando `"meta_new"`.
+5. O teste final deve ficar assim (ajuste apenas se necessário para bater com a assinatura real das funções):
 
-1. Importe o notificador já existente:
-   ```python
-   from core.notificador import alertar_critico  # ou alertar_gestor
-   ```
-   (Use try/except no import para o script não quebrar caso o módulo falhe.)
+```python
+@patch.object(tm, "_meta_token_disponivel", return_value="token_atual")
+@patch.multiple(cfg, META_APP_ID="id", META_APP_SECRET="sec")
+def test_renovar_token_meta_detalhado_ok(self, *_):
+    with patch.object(tm, "_renovar_token_meta", return_value="meta_new"):
+        out = tm.renovar_token_meta_detalhado()
+    self.assertTrue(out["ok"])
+    self.assertEqual(out["access_token"], "meta_new")
+```
 
-2. No bloco do Bling, quando a renovação falhar (`res_bling.get("ok")` é False)
-   OU quando o import/execução levantar exceção, dispare UM alerta claro e
-   acionável, por exemplo:
-   ```
-   🚨 BLING TRAVADO — renovação automática falhou (refresh inválido/expirado).
-   O ciclo não se auto-cura: é preciso bootstrap manual.
-   Ação: rode `python pegar_token_bling.py SEU_CODE` e atualize os Secrets
-   BLING_ACCESS_TOKEN e BLING_REFRESH_TOKEN no GitHub.
-   Detalhe: <motivo retornado>
-   ```
-   - Inclua no texto o `motivo`/erro retornado, mas NUNCA imprima o token em si.
-   - Envie via `alertar_critico(...)`.
-
-3. Evite spam: dispare o alerta do Bling apenas UMA vez por execução (não dentro
-   de loop). Se já existir um mecanismo de deduplicação de alertas no projeto,
-   reutilize-o; senão, basta garantir um único envio por run.
-
-4. Diferencie os dois sub-casos no texto do alerta, se detectável:
-   - "refresh inválido/expirado" (HTTP 400 invalid_grant) → precisa bootstrap.
-   - "BLING_CLIENT_SECRET ausente/errado" → precisa corrigir o Secret.
-   Use a informação que `renovar_token_bling_detalhado()` já retorna (motivo/dica).
-
-5. Não altere o comportamento de sucesso: quando o Bling renovar normalmente e o
-   `_sync_secrets_github` gravar os tokens, NÃO envie alerta.
-
-6. Mantenha o `exit code` atual (1 quando algo essencial falha), mas garanta que o
-   alerta seja enviado ANTES do `return`/`sys.exit`.
-
-## Opcional (recomendado)
-- Faça o mesmo padrão de alerta para os OUTROS provedores quando entrarem em
-  estado equivalente de "não renovou e não se auto-cura" (ex.: ML/Magalu falhando
-  na renovação), reutilizando uma função auxiliar única
-  `_alertar_token_travado(provedor: str, motivo: str)` para não duplicar texto.
-- Se `alertar_critico` não estiver configurado (sem Telegram), o próprio
-  notificador já imprime no stdout — apenas garanta que isso registre um
-  `logger.warning` de "alerta não entregue" (alinhado com a correção de pontos
-  cegos da camada de alertas).
-
-## Testes
-- Em `tests/`, adicione/atualize testes (estilo `unittest` + `patch`) que:
-  - mockam `renovar_token_bling_detalhado()` retornando `{ok: False, motivo: ...}`
-    e verificam que `alertar_critico` foi chamado UMA vez com texto contendo
-    "BLING" e a orientação de bootstrap.
-  - mockam o caminho de SUCESSO e verificam que `alertar_critico` NÃO é chamado.
-  - garantem que nenhum token aparece no texto do alerta.
-  - nenhum teste deve fazer chamada de rede real (mocke `_sync_secrets_github` e
-    o notificador).
-
-## Critérios de aceite
-1. `python -m pytest -q` — tudo verde, sem regressão.
-2. Ao simular Bling travado, um alerta crítico é enviado com instrução de
-   bootstrap; no sucesso, nenhum alerta.
-3. Nenhum token é exposto em log/alerta.
-
-> Lembrete: roda no GitHub Actions a partir do que está commitado — depois de
-> aplicar e passar os testes, faça commit + push na branch `main`.
+6. Não altere o código de produção em `core/token_manager.py` — o bug é exclusivamente de isolamento do teste (falta de mock das credenciais), a lógica da função está correta.
+7. Rode a suíte completa depois da correção: `python -m pytest -q`. Confirme que esse teste passa e que nenhum outro teste foi afetado (devem continuar 488 passando, 0 falhando, cobertura ≥ 80%).
+8. Não remova nem altere o teste `test_renovar_token_meta_detalhado_sem_cred`, que já está correto e cobre o caminho de falha por credencial ausente.
