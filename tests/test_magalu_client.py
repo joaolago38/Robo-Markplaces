@@ -4,7 +4,6 @@ tests/test_magalu_client.py — cobertura do cliente Magalu (sem rede).
 import os
 import sys
 import unittest
-from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -13,6 +12,8 @@ import integracoes.magalu.magalu_client as mag
 
 
 def _iso_utc_days_ago(days: int) -> str:
+    from datetime import datetime, timedelta, timezone
+
     return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
 
