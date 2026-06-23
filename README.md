@@ -318,6 +318,11 @@ Para reativar escritas: `ROBO_PAUSAR_ESCRITA=false` ou remova a variável.
   - `MARKETPLACE_ALERTAR_ATENCAO=false`
   - `MARKETPLACE_KEEPALIVE_LIMITE_DIAS=5`
 
+## CI (GitHub Actions)
+
+- **Qualidade em todo push/PR para `main`:** `.github/workflows/ci.yml` — roda `ruff check` e `pytest -q` automaticamente. Não usa Secrets nem executa rotinas de produção.
+- **Orquestrador de produção:** `.github/workflows/agente_principal.yml` — continua disparado apenas por `schedule` e `workflow_dispatch` (relatório, chat, vendas WhatsApp, keepalive/algoritmo). Não roda em push/PR para evitar efeitos colaterais reais a cada commit.
+
 ## Agentes ML — cron GitHub Actions
 
 Rotinas diárias do Mercado Livre (somente leitura ou com confirmação Telegram antes de escrita):
