@@ -143,5 +143,7 @@ BUDGET_FASE_ESCALA = float(os.getenv("BUDGET_FASE_ESCALA", "80.0"))
 
 # Product Ads ML — guardrails
 ML_ADS_KILL_SWITCH = os.getenv("ML_ADS_KILL_SWITCH", "false").lower() in {"1", "true", "yes"}
+# Kill switch global de emergência — bloqueia TODA escrita real (NF-e, estoque, preço, anúncios, ads)
+ROBO_PAUSAR_ESCRITA = os.getenv("ROBO_PAUSAR_ESCRITA", "false").lower() in {"1", "true", "yes"}
 ML_ADS_ORCAMENTO_MAXIMO = float(os.getenv("ML_ADS_ORCAMENTO_MAXIMO", "500.0"))
 ML_ADS_ACOS_DIAS_LIMITE = int(os.getenv("ML_ADS_ACOS_DIAS_LIMITE", "3"))

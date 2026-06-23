@@ -180,6 +180,11 @@ def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
 
 
 def atualizar_estoque_item(sku: str, novo_estoque: int) -> bool:
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        logger.warning("Magalu atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
+        return False
     if not _enabled():
         logger.warning("Magalu não configurado para atualização de estoque.")
         return False

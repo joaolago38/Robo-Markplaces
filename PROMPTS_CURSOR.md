@@ -1,27 +1,53 @@
-Corrija os workflows do n8n em `n8n/workflows/*.json` para não usarem mais `$env` nas expressões, trocando por `$vars`.
+Implemente um kill switch global no Robo-Markplaces: uma única variável de ambiente, `ROBO_PAUSAR_ESCRITA`, que bloqueia TODA escrita real (NF-e, repricing, estoque, anúncios) em qualquer canal, de uma vez, independente do `dry_run` de cada chamada individual.
 
-CONTEXTO DO BUG:
-Todos os nodes HTTP nos workflows do n8n (`n8n/workflows/robo_markplaces_rotinas.json`, `robo_markplaces_meta_metricas.json`, `robo_markplaces_chat_visual.json`, e possivelmente outros) usam expressões como:
-```
-{{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/algoritmo/ajustar
-```
-O n8n bloqueia o acesso a `$env` (variáveis de ambiente do sistema) dentro da interface — ao testar qualquer node manualmente ("Execute step"), o n8n lança o erro `access to env vars denied`, independente do fallback `||` configurado na expressão (o bloqueio acontece antes de avaliar o fallback). Isso afeta TODOS os nodes que leem `$env`, em todos os workflows.
-
-A solução correta é usar as **Variables nativas do n8n** (`$vars`), que não têm essa restrição, em vez de variáveis de ambiente do sistema operacional (`$env`).
+CONTEXTO:
+Hoje cada escrita real depende do parâmetro `dry_run` de cada chamada — funciona bem, mas não existe um único botão para travar tudo de emergência sem precisar mudar `dry_run` em vários lugares (Secrets do GitHub, corpo das requisições do n8n, etc.). Já existe um precedente parecido, só que restrito a Ads do ML: `ML_ADS_KILL_SWITCH` em `core/config.py`, checado dentro de `integracoes/ml/ml_product_ads.py::_guardrails_escrita()`. Vamos generalizar essa ideia para o projeto todo.
 
 TAREFA:
 
-1. Abra a pasta `n8n/workflows/` e, em cada arquivo `.json`, substitua TODAS as ocorrências de `$env.` por `$vars.`. As variáveis usadas no projeto, pelo que já mapeei, são:
-   - `$env.ROBO_API_BASE_URL` → `$vars.ROBO_API_BASE_URL`
-   - `$env.ROBO_KEEPALIVE_DIAS` → `$vars.ROBO_KEEPALIVE_DIAS`
-   - `$env.ROBO_ALERTAR_ATENCAO` → `$vars.ROBO_ALERTAR_ATENCAO`
-   - `$env.ROBO_HORA_FATURAMENTO_DIA_SEGUINTE` → `$vars.ROBO_HORA_FATURAMENTO_DIA_SEGUINTE`
-   Faça uma busca por `$env.` em TODOS os arquivos `.json` dentro de `n8n/workflows/` (não só nos 3 que já identifiquei) para garantir que nenhuma ocorrência fique de fora — pode haver outras variáveis em workflows que eu não listei aqui (ex.: `robo_markplaces_repricing_marketplaces.json`, `robo_markplaces_operacao_24h.json`, `robo_markplaces_trafego_manicures_noite.json`, `robo_markplaces_resumo_madrugada.json`, `robo_markplaces_faturamento_webhook.json`, `robo_markplaces_chat_webhook.json`).
-2. NÃO altere o restante da expressão (mantenha os fallbacks `|| 'valor_padrao'` como estão, só troque `$env` por `$vars` — o fallback continua útil caso a variável não esteja cadastrada nas Variables do n8n).
-3. Atualize `n8n/README.md`:
-   - Troque a seção "Variáveis no n8n" para deixar claro que essas variáveis devem ser cadastradas em **Settings → Variables** do n8n (não como variável de ambiente do sistema/Docker), já que `$env` é bloqueado pela interface do n8n para testes manuais.
-   - Mantenha a lista de variáveis e seus exemplos de valor (`ROBO_API_BASE_URL`, `ROBO_KEEPALIVE_DIAS`, `ROBO_ALERTAR_ATENCAO`, `ROBO_HORA_FATURAMENTO_DIA_SEGUINTE`), só mudando onde/como configurá-las.
-   - Adicione um aviso curto explicando o erro `access to env vars denied` e por que a solução é usar `$vars` em vez de `$env`, para quem importar os workflows no futuro não precisar descobrir isso de novo.
-4. Se existir `n8n/env.exemplo`, mantenha esse arquivo como está (ele continua útil como referência de quais variáveis existem e seus valores padrão — só não documente mais que elas devem ser variáveis de ambiente do n8n/Docker; ajuste o comentário/cabeçalho do arquivo se ele disser isso explicitamente).
-5. Não há testes Python para arquivos `.json` do n8n no projeto — não é necessário criar testes automatizados para essa correção, mas confirme ao final, listando (via `grep -ro '\$env\.' n8n/workflows/*.json` ou equivalente) que não restou nenhuma ocorrência de `$env.` em nenhum arquivo de workflow.
-6. Essa correção é só nos arquivos `.json`/`.md` do n8n — não altere nenhum código Python (`api/app.py`, `agentes/`, `core/`, etc.), já que o problema é só do lado do n8n.
+1. Em `core/config.py`, adicione, próximo a `ML_ADS_KILL_SWITCH`:
+   ```python
+   ROBO_PAUSAR_ESCRITA = os.getenv("ROBO_PAUSAR_ESCRITA", "false").lower() in {"1", "true", "yes"}
+   ```
+   Documente no `.env.exemplo` com um comentário curto explicando que é o kill switch global de emergência — quando `true`, nenhuma escrita real acontece em nenhum canal, mesmo que `dry_run=False` seja passado.
+
+2. Crie uma função auxiliar compartilhada em `core/config.py` (ou em um módulo novo `core/guardrails.py`, se preferir manter `config.py` só com declarações de variáveis — escolha o que for mais consistente com o resto do projeto):
+   ```python
+   def bloqueio_escrita_global() -> dict | None:
+       """Retorna dict de erro padronizado se o kill switch global estiver ativo; None se a escrita pode seguir."""
+       if ROBO_PAUSAR_ESCRITA:
+           return {"ok": False, "erro": "ROBO_PAUSAR_ESCRITA ativo — toda escrita real está bloqueada globalmente"}
+       return None
+   ```
+
+3. Adicione a checagem dessa função (`if (bloqueio := bloqueio_escrita_global()): return bloqueio` ou equivalente, adaptando ao formato de retorno de cada função) NO INÍCIO de cada uma das seguintes funções, ANTES de qualquer chamada de escrita real à API do canal (a checagem deve valer mesmo quando `dry_run=False` for passado — ela é mais forte que o `dry_run` de cada chamada):
+
+   a. `integracoes/bling/bling_client.py::criar_nfe(payload_nfe)` — retornar `{"ok": False, "erro": "..."}` igual ao padrão de erro já usado nessa função.
+
+   b. `integracoes/ml/ml_client.py::atualizar_estoque_item(item_id, novo_estoque)` — função retorna `bool`; se bloqueado, logar com `logger.warning` e retornar `False` (sem chamar a API).
+
+   c. `integracoes/ml/ml_client.py::pausar_anuncio(item_id, *, dry_run, confirmar)` e `encerrar_anuncio(item_id, *, dry_run, confirmar)` — essas já retornam dict; adicione a checagem antes da lógica de `dry_run`/`confirmar`, retornando o erro do kill switch se ativo.
+
+   d. `integracoes/magalu/magalu_client.py::atualizar_estoque_item(sku, novo_estoque)` — mesmo padrão do item (b): retorna `bool`, loga e retorna `False` se bloqueado.
+
+   e. `integracoes/shopee/shopee_client.py::atualizar_estoque_item(item_id, novo_estoque, model_id=None)` — mesmo padrão.
+
+   f. `integracoes/ml/ml_product_ads.py::_guardrails_escrita(budget=None)` — adicione a checagem do kill switch global ALI TAMBÉM, antes (ou junto) da checagem já existente do `ML_ADS_KILL_SWITCH`, para que `ROBO_PAUSAR_ESCRITA=true` também pause ads do ML, além do switch específico que já existe.
+
+4. Além dos pontos de escrita de baixo nível (passo 3), adicione TAMBÉM uma checagem no início das funções de entrada dos agentes (defesa em profundidade — assim o bloqueio aparece de forma clara e cedo no log/payload, antes de gastar tempo processando):
+   - `agentes/repricing/agente_repricing_marketplaces.py::executar(...)`
+   - `agentes/faturamento/agente_faturamento.py::emitir_nfe_pedido(...)`
+   - `agentes/sincronizar_estoque_marketplaces.py::executar(...)`
+   - `agentes/operacao_24h.py::executar(...)`
+
+   Em cada uma, se `cfg.ROBO_PAUSAR_ESCRITA` estiver ativo E a chamada não for puramente `dry_run=True` (ou seja, se o caller pediu escrita real), retorne imediatamente um payload de erro claro (seguindo o formato de retorno já usado por cada função) e envie UM alerta único via `alertar_gestor()` ou `alertar_critico()` avisando que o kill switch global está ativo e bloqueou a execução — para deixar bem visível que o motivo de "nada aconteceu" foi intencional, não uma falha.
+
+5. NÃO bloqueie operações de LEITURA (monitoramento, relatórios, diagnóstico) — o kill switch global é só para escrita real. Funções como `agente_monitor_ml.analisar()`, `agente_panorama` (na parte de leitura/relatório), `verificar_marketplaces.py`, etc. devem continuar funcionando normalmente mesmo com `ROBO_PAUSAR_ESCRITA=true`.
+
+6. Atualize o `README.md`:
+   - Documente `ROBO_PAUSAR_ESCRITA` numa seção clara, tipo "Kill switch de emergência", explicando que ele tem prioridade sobre qualquer `dry_run=False` e lista todos os pontos que ele afeta (NF-e, estoque em todos os canais, anúncios ML, ads ML).
+   - Mencione que, para reativar a escrita, basta voltar `ROBO_PAUSAR_ESCRITA=false` (ou remover a variável) nos Secrets/`.env`.
+
+7. Adicione testes cobrindo, para CADA função alterada nos passos 3 e 4: com `ROBO_PAUSAR_ESCRITA=true` (via `patch.object`/`monkeypatch` na variável de `core.config`), a função NÃO deve chamar a API externa (mocke a chamada HTTP/cliente e use `assert_not_called()`) e deve retornar o erro/False esperado. Com `ROBO_PAUSAR_ESCRITA=false` (padrão), o comportamento deve continuar exatamente como já é hoje.
+
+8. Rode `python -m pytest -q` e `ruff check api agentes core integracoes tests` no final. Confirme 0 falhas e cobertura ≥ 80% (`--cov-fail-under=80` em `pyproject.toml`).

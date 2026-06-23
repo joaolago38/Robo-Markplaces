@@ -105,6 +105,11 @@ def _executar_acao_status(
 
 def pausar_anuncio(item_id: str, *, dry_run: bool = True, confirmar: bool = False) -> dict:
     """Pausa um anúncio (status=paused). Não lança exceção."""
+    if not dry_run:
+        from core.guardrails import bloqueio_escrita_global
+
+        if bloqueio := bloqueio_escrita_global():
+            return {**bloqueio, "dry_run": False, "acao": "pausar", "item_id": (item_id or "").strip()}
     return _executar_acao_status(item_id, "paused", "pausar", dry_run=dry_run, confirmar=confirmar)
 
 
@@ -118,6 +123,11 @@ def encerrar_anuncio(item_id: str, *, dry_run: bool = True, confirmar: bool = Fa
     Encerra um anúncio (status=closed) — praticamente irreversível.
     Exige confirmar=True quando dry_run=False.
     """
+    if not dry_run:
+        from core.guardrails import bloqueio_escrita_global
+
+        if bloqueio := bloqueio_escrita_global():
+            return {**bloqueio, "dry_run": False, "acao": "encerrar", "item_id": (item_id or "").strip()}
     return _executar_acao_status(item_id, "closed", "encerrar", dry_run=dry_run, confirmar=confirmar)
 
 
@@ -256,6 +266,11 @@ def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
 
 
 def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        logger.warning("ML atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
+        return False
     if not _enabled():
         logger.warning("Mercado Livre não configurado para atualização de estoque.")
         return False

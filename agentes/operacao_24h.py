@@ -114,6 +114,17 @@ def _faturar_pedidos_lojahub(dry_run_nfe: bool = True, limite: int = 20) -> dict
 
 
 def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
+    if not dry_run_repricing or not dry_run_nfe:
+        from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
+
+        if bloqueio := bloqueio_escrita_global():
+            alertar_bloqueio_escrita_global()
+            return {
+                **bloqueio,
+                "bloqueado": True,
+                "modo": {"repricing_dry_run": dry_run_repricing, "nfe_dry_run": dry_run_nfe},
+            }
+
     produtos = listar_produtos()
     analytics = listar_resumo_vendas_24h()
     pedidos_faturar = listar_pedidos_prontos_faturar(limit=100)

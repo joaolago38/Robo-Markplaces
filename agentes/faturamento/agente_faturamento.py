@@ -99,6 +99,13 @@ def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
       "itens": [{"sku": "ESM-001", "quantidade": 2, "valor_unitario": 9.9}]
     }
     """
+    if not dry_run:
+        from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
+
+        if bloqueio := bloqueio_escrita_global():
+            alertar_bloqueio_escrita_global()
+            return {**bloqueio, "pedido_id": str(pedido.get("pedido_id", "")).strip()}
+
     pedido_id = str(pedido.get("pedido_id", "")).strip()
     itens = pedido.get("itens") or []
     cliente = pedido.get("cliente") or {}

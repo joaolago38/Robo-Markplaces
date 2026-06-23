@@ -27,7 +27,7 @@
         "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/keepalive",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"limite_dias_sem_acesso\": Number($vars.ROBO_KEEPALIVE_DIAS || 5)}",
+        "jsonBody": "={\"limite_dias_sem_acesso\": {{ Number($vars.ROBO_KEEPALIVE_DIAS || 5) }} }",
         "options": {
           "timeout": 60000
         }
@@ -66,7 +66,7 @@
         "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/algoritmo/ajustar",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"alertar_quando_atencao\": ($vars.ROBO_ALERTAR_ATENCAO || 'false') === 'true'}",
+        "jsonBody": "={\"alertar_quando_atencao\": {{ ($vars.ROBO_ALERTAR_ATENCAO || 'false') === 'true' }} }",
         "options": {
           "timeout": 60000
         }

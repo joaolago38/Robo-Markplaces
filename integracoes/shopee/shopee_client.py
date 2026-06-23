@@ -281,6 +281,11 @@ def atualizar_preco_item(item_id: int, novo_preco: float, model_id: int | None =
 
 
 def atualizar_estoque_item(item_id: int, novo_estoque: int, model_id: int | None = None) -> bool:
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        logger.warning("Shopee atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
+        return False
     if not _enabled():
         logger.warning("Shopee não configurado para atualização de estoque.")
         return False

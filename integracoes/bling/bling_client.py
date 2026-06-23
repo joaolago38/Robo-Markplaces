@@ -230,6 +230,10 @@ def criar_nfe(payload_nfe: dict) -> dict:
     """
     Cria NF-e no Bling. Retorna payload de resposta ou erro padronizado.
     """
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        return bloqueio
     if not BLING_ACCESS_TOKEN:
         return {"ok": False, "erro": "BLING_ACCESS_TOKEN não configurado"}
     try:

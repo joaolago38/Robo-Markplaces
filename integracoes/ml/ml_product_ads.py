@@ -30,6 +30,10 @@ def _notificar_dry_run(acao: str, detalhe: str) -> None:
 
 def _guardrails_escrita(budget: float | None = None) -> dict | None:
     """Retorna dict de erro se algum guardrail bloquear; None se OK."""
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        return bloqueio
     if ML_ADS_KILL_SWITCH:
         return {"ok": False, "erro": "ML_ADS_KILL_SWITCH ativo — escrita bloqueada"}
     if budget is not None and budget > ML_ADS_ORCAMENTO_MAXIMO:
