@@ -39,6 +39,7 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /relatorio`
 - `POST /campanha/avaliar`
 - `POST /marketplaces/keepalive`
+- `POST /marketplaces/estoque/sincronizar`
 - `POST /marketplaces/algoritmo/ajustar`
 - `POST /marketplaces/produtos/monitorar`
 - `POST /operacao/24h`
@@ -86,6 +87,33 @@ Esse fluxo:
 - executa uma chamada leve em Shopee e Magalu,
 - registra último acesso com sucesso em `logs/marketplace_keepalive.json`,
 - alerta gestor quando falha acesso ou quando ultrapassa limite configurado.
+
+### Sincronização de estoque (Bling → marketplaces)
+
+Use `POST /marketplaces/estoque/sincronizar` para alinhar o estoque dos canais ativos (`catalogo/produtos.json`) com o saldo real do Bling — evita overselling entre ML, Magalu e Shopee.
+
+Payload opcional:
+
+```json
+{
+  "dry_run": true
+}
+```
+
+Esse fluxo:
+- lê `catalogo/produtos.json` (mapeamento SKU → `item_id` por canal),
+- consulta estoque real via `bling_client.buscar_produto(sku)` (pula SKU sem saldo conhecido),
+- compara com o `estoque` salvo em cada canal ativo e aplica `atualizar_estoque_item` quando `dry_run=false`,
+- atualiza o JSON do catálogo após sincronização bem-sucedida (escrita atômica),
+- alerta gestor quando há ajustes e alerta crítico quando estoque chega a zero (pausa anúncio no ML quando possível).
+
+Agente: `agentes/sincronizar_estoque_marketplaces.py`  
+Workflow: `.github/workflows/sincronizar_estoque.yml` (a cada 2h, `dry_run=false`)
+
+```bash
+python -m agentes.sincronizar_estoque_marketplaces
+# Local com simulação: ESTOQUE_SYNC_DRY_RUN=true python -m agentes.sincronizar_estoque_marketplaces
+```
 
 ### Saúde da conta + ajuste de algoritmo
 
@@ -180,6 +208,7 @@ Regras:
 - Se algum item ficar sem NCM válido, a emissão é bloqueada e alerta crítico é disparado.
 - Em `dry_run=true`, retorna o payload fiscal para conferência antes da emissão real.
 - O item já sai com campos fiscais base (`cfop`, `cst`, `csosn`, `origem`) configuráveis no `.env`.
+- Antes de emitir (`dry_run=false`), consulta o Bling por NF-e existente com o mesmo `numeroPedidoLoja` — evita duplicidade quando panorama e operação 24h processam o mesmo pedido.
 
 ### Repricing de produtos por marketplace
 
@@ -216,6 +245,8 @@ Payload opcional:
   "dry_run_nfe": false
 }
 ```
+
+**Cron de segurança (GitHub Actions):** `.github/workflows/operacao_24h_seguranca.yml` roda a cada 2h com `dry_run_repricing=false` e `dry_run_nfe=false`. Não substitui o n8n — é camada redundante para repricing/faturamento não ficarem parados se o orquestrador externo falhar. A checagem de NF-e duplicada (via `buscar_nfe_por_pedido`) torna seguro o n8n e este cron rodarem em paralelo.
 
 ## Exemplos de payload
 
@@ -281,6 +312,8 @@ Rotinas diárias do Mercado Livre (somente leitura ou com confirmação Telegram
 | 10:00 | `.github/workflows/ads_gatilho_ml.yml` | `agentes/ml/agente_ads_gatilho.py` | Ligar/pausar/escalar ads (confirmação gestor) |
 | 08:30 | `.github/workflows/panorama.yml` | `agentes/panorama/agente_panorama.py` | Visão geral ML + Magalu + Bling + síntese Claude |
 | Seg 08:00 | `.github/workflows/relatorio_financeiro.yml` | `agentes/relatorio_financeiro.py` | Impacto financeiro estimado (repricing + ads) |
+| A cada 2h | `.github/workflows/sincronizar_estoque.yml` | `agentes/sincronizar_estoque_marketplaces.py` | Estoque Bling → ML/Magalu/Shopee |
+| A cada 2h | `.github/workflows/operacao_24h_seguranca.yml` | `agentes/operacao_24h.py` | Repricing + faturamento (camada redundante ao n8n) |
 
 Execução local:
 

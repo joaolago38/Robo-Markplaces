@@ -281,5 +281,29 @@ class TestBlingNcm(unittest.TestCase):
         self.assertEqual(completo["nome"], "Kit")
 
 
+class TestBuscarNfePorPedido(unittest.TestCase):
+    @patch.object(bling_client, "_request_bling")
+    def test_encontra_nfe_existente(self, mock_req):
+        mock_req.return_value = _mock_resp(
+            {
+                "data": [
+                    {"numeroPedidoLoja": "OUTRO", "id": 1},
+                    {"numeroPedidoLoja": "PED-1", "id": 42, "dataEmissao": "2026-06-01"},
+                ]
+            }
+        )
+        out = bling_client.buscar_nfe_por_pedido("PED-1")
+        self.assertEqual(out["id"], 42)
+
+    @patch.object(bling_client, "_request_bling")
+    def test_nao_encontra_lista_vazia(self, mock_req):
+        mock_req.return_value = _mock_resp({"data": []})
+        self.assertIsNone(bling_client.buscar_nfe_por_pedido("PED-404"))
+
+    @patch.object(bling_client, "_request_bling", side_effect=RuntimeError("rede"))
+    def test_erro_rede_retorna_none(self, *_):
+        self.assertIsNone(bling_client.buscar_nfe_por_pedido("PED-ERR"))
+
+
 if __name__ == "__main__":
     unittest.main()
