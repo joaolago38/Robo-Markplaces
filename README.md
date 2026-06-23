@@ -46,6 +46,7 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `POST /faturamento/nfe`
 - `POST /meta/campanhas/validar`
 - `POST /ml/ads/diagnostico`
+- `POST /ml/listing/otimizar`
 - `POST /meta/trafego/manicures`
 - `POST /meta/trafego/manicures/resumo-madrugada`
 - `POST /marketplaces/chat/visual/rodar`
@@ -264,6 +265,31 @@ Operações de **leitura** (monitoramento, panorama, relatórios, diagnóstico) 
 
 Para reativar escritas: `ROBO_PAUSAR_ESCRITA=false` ou remova a variável.
 
+### Otimização de título ML (somente sugestão)
+
+Use `POST /ml/listing/otimizar` para receber sugestões de título via Claude, comparando seu anúncio com concorrentes do mesmo catálogo no Mercado Livre.
+
+Payload opcional:
+
+```json
+{
+  "item_id": "MLB123456",
+  "limite_itens": 10
+}
+```
+
+- Com `item_id`: analisa só esse anúncio.
+- Sem `item_id`: analisa até `limite_itens` produtos ML ativos em `catalogo/produtos.json` e envia resumo ao gestor via Telegram.
+
+**Este agente é SOMENTE SUGESTÃO** — não altera título, descrição nem qualquer dado no Mercado Livre. A revisão e publicação são sempre manuais.
+
+Agente: `agentes/ml/agente_otimizador_listing.py`  
+Workflow semanal: `.github/workflows/otimizar_listing.yml` (terça-feira 08:00 BRT)
+
+```bash
+python -m agentes.ml.agente_otimizador_listing
+```
+
 ## Exemplos de payload
 
 ### Repricing
@@ -333,6 +359,7 @@ Rotinas diárias do Mercado Livre (somente leitura ou com confirmação Telegram
 | 10:00 | `.github/workflows/ads_gatilho_ml.yml` | `agentes/ml/agente_ads_gatilho.py` | Ligar/pausar/escalar ads (confirmação gestor) |
 | 08:30 | `.github/workflows/panorama.yml` | `agentes/panorama/agente_panorama.py` | Visão geral ML + Magalu + Bling + síntese Claude |
 | Seg 08:00 | `.github/workflows/relatorio_financeiro.yml` | `agentes/relatorio_financeiro.py` | Impacto financeiro estimado (repricing + ads) |
+| Ter 08:00 | `.github/workflows/otimizar_listing.yml` | `agentes/ml/agente_otimizador_listing.py` | Sugestões de título ML via IA (somente leitura) |
 | A cada 2h | `.github/workflows/sincronizar_estoque.yml` | `agentes/sincronizar_estoque_marketplaces.py` | Estoque Bling → ML/Magalu/Shopee |
 | A cada 2h | `.github/workflows/operacao_24h_seguranca.yml` | `agentes/operacao_24h.py` | Repricing + faturamento (camada redundante ao n8n) |
 
@@ -341,6 +368,7 @@ Execução local:
 ```bash
 python -m agentes.ml.agente_monitor_ml
 python -m agentes.ml.agente_ads_gatilho
+python -m agentes.ml.agente_otimizador_listing
 python -m agentes.panorama.agente_panorama
 ```
 

@@ -64,6 +64,24 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 503)
         self.assertFalse(resp.get_json()["ok"])
 
+    @patch("api.app.analisar_item", return_value={"ok": True, "item_id": "MLB1", "sugestoes_texto": "sugestão"})
+    def test_EP13_ml_listing_otimizar_item_200(self, *_patches):
+        resp = self.client.post("/ml/listing/otimizar", json={"item_id": "MLB1"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["ok"])
+
+    @patch("api.app.analisar_catalogo", return_value={"ok": True, "total_analisados": 2, "resultados": []})
+    def test_EP14_ml_listing_otimizar_catalogo_200(self, *_patches):
+        resp = self.client.post("/ml/listing/otimizar", json={"limite_itens": 2})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["ok"])
+
+    @patch("api.app.analisar_item", return_value={"ok": False, "erro": "item não encontrado"})
+    def test_EP15_ml_listing_otimizar_503(self, *_patches):
+        resp = self.client.post("/ml/listing/otimizar", json={"item_id": "MLB-X"})
+        self.assertEqual(resp.status_code, 503)
+        self.assertFalse(resp.get_json()["ok"])
+
     @patch("api.app.executar_repricing_marketplaces", return_value={"ajustes": []})
     def test_EP06_monitorar_produtos_200(self, *_patches):
         resp = self.client.post("/marketplaces/produtos/monitorar", json={"dry_run": True})

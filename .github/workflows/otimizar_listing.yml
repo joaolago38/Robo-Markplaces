@@ -1,0 +1,37 @@
+name: Otimizar listing ML
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Terça 08:00 BRT (UTC-3) = 11:00 UTC — separado do relatório financeiro (segunda)
+    - cron: "0 11 * * 2"
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  otimizar_listing:
+    name: Sugestões de título ML (somente leitura)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Rodar otimizador de listing
+        run: python -m agentes.ml.agente_otimizador_listing
+        env:
+          ANTHROPIC_API_KEY:         ${{ secrets.ANTHROPIC_API_KEY }}
+          ML_CLIENT_ID:              ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET:          ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN:           ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN:          ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
+          TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID:   ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}

@@ -839,6 +839,26 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 3
       }
+    },
+    {
+      "ts": "2026-06-23T19:46:44.185578+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-06-23T19:55:26.698021+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
     }
   ],
   "market_x_test": [
@@ -1681,6 +1701,26 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 0
       }
+    },
+    {
+      "ts": "2026-06-23T19:46:44.198325+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-23T19:55:26.709543+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
     }
   ],
   "market_ok_test": [
@@ -2516,6 +2556,26 @@
     },
     {
       "ts": "2026-06-23T19:04:40.714891+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-23T19:46:44.211636+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-23T19:55:26.721609+00:00",
       "score": 100,
       "metrics": {
         "configurado": true,
@@ -4298,6 +4358,50 @@
     },
     {
       "ts": "2026-06-23T19:04:40.678295+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_17ca1c6b": [
+    {
+      "ts": "2026-06-23T19:46:44.162691+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-23T19:46:44.173896+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_ff91ed56": [
+    {
+      "ts": "2026-06-23T19:55:26.675555+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-23T19:55:26.686295+00:00",
       "score": 77,
       "metrics": {
         "configurado": true,
