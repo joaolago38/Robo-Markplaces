@@ -18,7 +18,7 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/faturamento/nfe",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/faturamento/nfe",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{$json.body}}",

@@ -21,14 +21,24 @@ Este diretório contém o pacote pronto para orquestrar a API pelo n8n.
 2. n8n em execução.
 3. Credencial HTTP no n8n (opcional se API não exigir auth).
 
-## Variáveis no n8n
+## Variáveis no n8n (Settings → Variables)
 
-No n8n, configure as variáveis de ambiente:
+Os workflows usam **`$vars`** (Variables nativas do n8n), **não** `$env` (variáveis de ambiente do sistema/Docker).
+
+Cadastre em **Settings → Variables** no n8n:
 
 - `ROBO_API_BASE_URL` (ex: `http://localhost:5000`)
 - `ROBO_KEEPALIVE_DIAS` (ex: `5`)
 - `ROBO_ALERTAR_ATENCAO` (`true` ou `false`)
 - `ROBO_HORA_FATURAMENTO_DIA_SEGUINTE` (ex: `06:15`)
+
+Os fallbacks nas expressões (`|| 'valor_padrao'`) continuam válidos se alguma variável não estiver cadastrada.
+
+### Erro `access to env vars denied`
+
+Se um workflow importado ainda usar `$env.ROBO_*`, o n8n bloqueia o acesso ao testar um node manualmente ("Execute step") — o erro aparece **antes** de avaliar o fallback `||`. A correção é usar `$vars` e configurar os valores em **Settings → Variables**. Os JSON deste repositório já vêm com `$vars`.
+
+O arquivo `env.exemplo` lista nomes e valores de referência; não é necessário exportá-los como variáveis de ambiente do container n8n.
 
 ## Importação
 
