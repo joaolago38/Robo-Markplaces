@@ -206,6 +206,7 @@ def atualizar_ncm_produto(produto_id: str | int, ncm: str) -> dict:
         produto["ncm"] = ncm_limpo
         r = _request_bling("PUT", f"{BASE}/produtos/{produto_id}", json=produto, timeout=30)
         r.raise_for_status()
+        logger.info("Bling NCM atualizado com sucesso produto_id=%s ncm=%s", produto_id, ncm_limpo)
         return {"ok": True, "produto_id": produto_id, "ncm": ncm_limpo}
     except Exception as e:
         logger.error("Bling atualizar_ncm_produto erro id=%s: %s", produto_id, e)
@@ -241,6 +242,10 @@ def criar_nfe(payload_nfe: dict) -> dict:
         r.raise_for_status()
         body = r.json()
         data = body.get("data", body)
+        logger.info(
+            "Bling NF-e criada com sucesso numeroPedidoLoja=%s",
+            payload_nfe.get("numeroPedidoLoja"),
+        )
         return {"ok": True, "data": data}
     except Exception as exc:
         logger.error("Bling criar_nfe erro: %s", exc)

@@ -349,6 +349,24 @@ python -m agentes.ml.agente_otimizador_listing
 - **Qualidade em todo push/PR para `main`:** `.github/workflows/ci.yml` — roda `ruff check` e `pytest -q` automaticamente. Não usa Secrets nem executa rotinas de produção.
 - **Orquestrador de produção:** `.github/workflows/agente_principal.yml` — continua disparado apenas por `schedule` e `workflow_dispatch` (relatório, chat, vendas WhatsApp, keepalive/algoritmo). Não roda em push/PR para evitar efeitos colaterais reais a cada commit.
 
+## Observabilidade com Datadog
+
+O projeto pode enviar logs automaticamente para o **Datadog Log Management** via HTTP Intake API (sem Agent nem servidor). Basta configurar:
+
+| Variável | Descrição |
+|----------|-----------|
+| `DD_API_KEY` | Chave de API — Datadog → Organization Settings → API Keys |
+| `DD_SITE` | Região do site (padrão: `datadoghq.com`) |
+| `DD_LOGS_ENABLED` | `true`/`false` — desligue com `false` para parar o envio sem alterar código |
+
+**Opcional:** sem `DD_API_KEY`, o sistema funciona exatamente como antes — só não envia logs ao Datadog.
+
+**Custo:** o Datadog cobra Log Management por volume ingerido (GB). O handler envia apenas nível **INFO ou superior** (nunca DEBUG). Se o custo for uma preocupação, use `DD_LOGS_ENABLED=false`.
+
+**Filtros úteis no Datadog:** `service:robo-markplaces`, `marketplace:bling`, `marketplace:mercadolivre`, `level:info`, `level:warning`, `level:error`.
+
+Módulo: `core/datadog_logger.py` — ativado automaticamente ao importar `core.config`.
+
 ## Agentes ML — cron GitHub Actions
 
 Rotinas diárias do Mercado Livre (somente leitura ou com confirmação Telegram antes de escrita):

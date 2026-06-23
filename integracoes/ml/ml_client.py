@@ -259,6 +259,7 @@ def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
             timeout=30,
         )
         r.raise_for_status()
+        logger.info("ML preço atualizado com sucesso item_id=%s novo_preco=%.2f", item_id, float(novo_preco))
         return True
     except Exception as exc:
         logger.error("ML atualizar_preco_item erro item_id=%s: %s", item_id, exc)
@@ -283,6 +284,7 @@ def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
             timeout=30,
         )
         r.raise_for_status()
+        logger.info("ML estoque atualizado com sucesso item_id=%s novo_estoque=%s", item_id, int(max(0, novo_estoque)))
         return True
     except Exception as exc:
         logger.error("ML atualizar_estoque_item erro item_id=%s: %s", item_id, exc)
