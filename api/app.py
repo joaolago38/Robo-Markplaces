@@ -39,6 +39,7 @@ from agentes.repricing.agente_repricing_marketplaces import executar as executar
 from agentes.operacao_24h import executar as executar_operacao_24h
 from agentes.auto_respostas_visuais import executar as executar_auto_respostas_visuais
 from agentes.ml.agente_monitor_ml import analisar as analisar_monitor_ml, MAX_ITENS_ANALISE
+from agentes.ml.agente_otimizador_listing import analisar_catalogo, analisar_item
 from integracoes.bling.bling_client import (
     buscar_produto,
     listar_produtos,
@@ -590,6 +591,33 @@ def ml_ads_diagnostico():
     limite_itens = int(dados.get("limite_itens", MAX_ITENS_ANALISE))
     enviar_alerta = bool(dados.get("enviar_alerta", False))
     resultado = analisar_monitor_ml(limite_itens=limite_itens, enviar_alerta=enviar_alerta)
+    status_code = 200 if resultado.get("ok") else 503
+    return jsonify(resultado), status_code
+
+
+@app.route("/ml/listing/otimizar", methods=["POST"])
+def ml_listing_otimizar():
+    """
+    POST /ml/listing/otimizar
+    Sugere melhorias de título de anúncios do ML via IA, comparando com concorrentes.
+    Não altera nada no Mercado Livre — apenas sugestão para revisão humana.
+    Body opcional:
+    {
+        "item_id": "MLB123...",     // se informado, analisa só esse item
+        "limite_itens": 10           // se item_id não for informado, analisa o catálogo
+    }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    item_id = str(dados.get("item_id") or "").strip()
+    if item_id:
+        resultado = analisar_item(item_id)
+    else:
+        limite_itens = int(dados.get("limite_itens", 10))
+        resultado = analisar_catalogo(limite_itens=limite_itens)
+
     status_code = 200 if resultado.get("ok") else 503
     return jsonify(resultado), status_code
 

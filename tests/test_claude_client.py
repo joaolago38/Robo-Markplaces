@@ -36,6 +36,22 @@ class TestClaudePerguntar(unittest.TestCase):
         out = claude_client.perguntar("teste")
         self.assertTrue(out.startswith("⚠️"))
 
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC06_pergunta_system_customizado(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("pergunta", system="outro system")
+        payload = mock_request.call_args.kwargs["json"]
+        self.assertEqual(payload["system"], "outro system")
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC07_pergunta_sem_system_usa_padrao(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("pergunta")
+        payload = mock_request.call_args.kwargs["json"]
+        self.assertEqual(payload["system"], claude_client.SYSTEM)
+
 
 class TestClaudeResponderGerar(unittest.TestCase):
     @patch.object(claude_client, "perguntar", return_value="ok")
