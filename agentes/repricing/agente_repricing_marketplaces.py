@@ -124,6 +124,21 @@ def _calcular_economia_estimada_piso_margem(ajustes: list[dict]) -> float:
 
 
 def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_minimo_pct: float | None = None) -> dict:
+    if not dry_run:
+        from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
+
+        if bloqueio := bloqueio_escrita_global():
+            alertar_bloqueio_escrita_global()
+            return {
+                **bloqueio,
+                "dry_run": False,
+                "lucro_minimo_pct": float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT),
+                "total_itens": 0,
+                "total_ajustes": 0,
+                "economia_estimada_piso_margem": 0.0,
+                "ajustes": [],
+            }
+
     lucro_minimo = float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT)
     produtos_base = produtos if produtos is not None else listar_produtos()
     ajustes = []

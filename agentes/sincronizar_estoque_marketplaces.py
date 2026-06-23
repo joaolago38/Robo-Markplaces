@@ -96,6 +96,20 @@ def _aplicar_estoque(canal: str, ref: Any, estoque: int, dados: dict) -> bool:
 
 
 def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
+    if not dry_run:
+        from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
+
+        if bloqueio := bloqueio_escrita_global():
+            alertar_bloqueio_escrita_global()
+            return {
+                **bloqueio,
+                "dry_run": False,
+                "total_produtos": 0,
+                "total_ajustes": 0,
+                "ajustes": [],
+                "produtos_sem_estoque_bling": [],
+            }
+
     catalogo = produtos if produtos is not None else _carregar_catalogo()
     ajustes: list[dict] = []
     sem_estoque_bling: list[str] = []

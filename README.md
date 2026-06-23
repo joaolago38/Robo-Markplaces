@@ -248,6 +248,22 @@ Payload opcional:
 
 **Cron de segurança (GitHub Actions):** `.github/workflows/operacao_24h_seguranca.yml` roda a cada 2h com `dry_run_repricing=false` e `dry_run_nfe=false`. Não substitui o n8n — é camada redundante para repricing/faturamento não ficarem parados se o orquestrador externo falhar. A checagem de NF-e duplicada (via `buscar_nfe_por_pedido`) torna seguro o n8n e este cron rodarem em paralelo.
 
+### Kill switch de emergência (`ROBO_PAUSAR_ESCRITA`)
+
+Variável global que **tem prioridade sobre qualquer `dry_run=False`** individual. Quando `ROBO_PAUSAR_ESCRITA=true` (no `.env` ou nos Secrets do GitHub Actions), **nenhuma escrita real** é executada nos canais:
+
+- NF-e no Bling (`criar_nfe` / `emitir_nfe_pedido`)
+- Repricing de preços (`agente_repricing_marketplaces`)
+- Estoque em ML, Magalu e Shopee (`atualizar_estoque_item`)
+- Pausa/encerramento de anúncios no ML
+- Product Ads do ML (além do `ML_ADS_KILL_SWITCH` específico)
+- Sincronização de estoque (`sincronizar_estoque_marketplaces`)
+- Operação 24h quando `dry_run_repricing=false` ou `dry_run_nfe=false`
+
+Operações de **leitura** (monitoramento, panorama, relatórios, diagnóstico) continuam normais.
+
+Para reativar escritas: `ROBO_PAUSAR_ESCRITA=false` ou remova a variável.
+
 ## Exemplos de payload
 
 ### Repricing
