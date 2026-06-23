@@ -23,6 +23,7 @@ from core.config import (
 )
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
+from agentes.sincronizar_estoque_marketplaces import executar as executar_sincronizar_estoque
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from agentes.social.agente_metricas_meta import executar as executar_metricas_meta
 from integracoes.meta.meta_ads_client import (
@@ -482,6 +483,22 @@ def keepalive_marketplaces():
     return jsonify({"ok": True, **resultado})
 
 
+@app.route("/marketplaces/estoque/sincronizar", methods=["POST"])
+def sincronizar_estoque_marketplaces():
+    """
+    POST /marketplaces/estoque/sincronizar
+    Sincroniza estoque do Bling para os marketplaces ativos no catalogo/produtos.json.
+    Body opcional: { "dry_run": true }
+    """
+    dados = _get_json_payload()
+    if dados is None:
+        return jsonify({"ok": False, "erro": "JSON inválido"}), 400
+
+    dry_run = bool(dados.get("dry_run", True))
+    resultado = executar_sincronizar_estoque(dry_run=dry_run)
+    return jsonify({"ok": True, **resultado})
+
+
 @app.route("/marketplaces/algoritmo/ajustar", methods=["POST"])
 def ajustar_algoritmo_marketplaces():
     """
@@ -731,6 +748,7 @@ if __name__ == "__main__":
     print("   POST /relatorio           — gera relatório diário")
     print("   POST /campanha/avaliar    — avalia métricas e decide ação")
     print("   POST /marketplaces/keepalive — mantém sessão ativa nos marketplaces")
+    print("   POST /marketplaces/estoque/sincronizar — estoque Bling → marketplaces ativos")
     print("   POST /marketplaces/algoritmo/ajustar — avalia saúde e ajusta estratégia")
     print("   POST /marketplaces/produtos/monitorar — repricing com lucro mínimo por canal")
     print("   POST /operacao/24h         — monitora vendas/lucro e gera NF via Lojahub+Bling")

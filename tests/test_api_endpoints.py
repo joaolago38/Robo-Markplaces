@@ -25,6 +25,12 @@ class TestApiEndpoints(unittest.TestCase):
         resp = self.client.post("/marketplaces/keepalive", json={})
         self.assertEqual(resp.status_code, 200)
 
+    @patch("api.app.executar_sincronizar_estoque", return_value={"total_ajustes": 0, "dry_run": True})
+    def test_EP12_estoque_sincronizar_200(self, *_patches):
+        resp = self.client.post("/marketplaces/estoque/sincronizar", json={"dry_run": True})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["ok"])
+
     @patch("api.app.executar_algoritmo_marketplaces", return_value={"resumo": {}})
     def test_EP03_algoritmo_ajustar_200(self, *_patches):
         resp = self.client.post("/marketplaces/algoritmo/ajustar", json={})

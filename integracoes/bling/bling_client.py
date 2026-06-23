@@ -241,3 +241,63 @@ def criar_nfe(payload_nfe: dict) -> dict:
     except Exception as exc:
         logger.error("Bling criar_nfe erro: %s", exc)
         return {"ok": False, "erro": str(exc)}
+
+
+def buscar_nfe_por_pedido(numero_pedido_loja: str, dias: int = 30) -> dict | None:
+    """
+    Verifica se já existe NF-e emitida para numeroPedidoLoja no Bling.
+    Retorna None se não encontrar ou em caso de erro (nunca lança exceção).
+    """
+    pedido_ref = str(numero_pedido_loja or "").strip()
+    if not pedido_ref:
+        return None
+    try:
+        from datetime import datetime, timedelta
+
+        corte = datetime.now() - timedelta(days=max(1, int(dias)))
+        pagina = 1
+        while pagina <= 20:
+            r = _request_bling(
+                "GET",
+                f"{BASE}/nfe",
+                params={"pagina": pagina, "limite": 100},
+                timeout=20,
+            )
+            r.raise_for_status()
+            data = r.json().get("data", []) or []
+            if not data:
+                break
+            for nfe in data:
+                if not isinstance(nfe, dict):
+                    continue
+                ref = str(
+                    nfe.get("numeroPedidoLoja")
+                    or nfe.get("numero_pedido_loja")
+                    or ""
+                ).strip()
+                if ref != pedido_ref:
+                    continue
+                data_em = str(nfe.get("dataEmissao") or nfe.get("data_emissao") or "")[:10]
+                if data_em:
+                    try:
+                        if datetime.strptime(data_em, "%Y-%m-%d") < corte:
+                            continue
+                    except ValueError:
+                        pass
+                return nfe
+            if len(data) < 100:
+                break
+            pagina += 1
+        return None
+    except Exception as exc:
+        logger.error(
+            "Bling buscar_nfe_por_pedido erro pedido=%s: %s",
+            pedido_ref,
+            exc,
+        )
+        logger.warning(
+            "Checagem de duplicidade NF-e não pôde ser confirmada para pedido %s — "
+            "prosseguindo como se não existisse.",
+            pedido_ref,
+        )
+        return None

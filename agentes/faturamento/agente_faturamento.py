@@ -17,7 +17,7 @@ from core.config import (
     NFE_SERIE_PADRAO,
 )
 from core.notificador import alertar_critico
-from integracoes.bling.bling_client import buscar_produto, criar_nfe
+from integracoes.bling.bling_client import buscar_nfe_por_pedido, buscar_produto, criar_nfe
 
 logger = logging.getLogger("agente_faturamento")
 
@@ -126,6 +126,16 @@ def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
 
     if dry_run:
         return {"ok": True, "dry_run": True, "payload_nfe": payload_nfe, "itens_total": len(itens_nfe)}
+
+    existente = buscar_nfe_por_pedido(pedido_id)
+    if existente:
+        logger.info("NF-e já existente para pedido %s — pulando emissão duplicada.", pedido_id)
+        return {
+            "ok": True,
+            "pedido_id": pedido_id,
+            "ja_emitida": True,
+            "nfe": existente,
+        }
 
     resposta = criar_nfe(payload_nfe)
     if not resposta.get("ok"):
