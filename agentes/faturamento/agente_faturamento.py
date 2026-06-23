@@ -149,6 +149,7 @@ def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
         alertar_critico(f"Erro ao emitir NF-e no Bling pedido {pedido_id}: {resposta.get('erro')}")
         return {"ok": False, "erro": resposta.get("erro"), "payload_nfe": payload_nfe}
 
+    logger.info("NF-e emitida com sucesso pedido_id=%s", pedido_id)
     return {
         "ok": True,
         "pedido_id": pedido_id,

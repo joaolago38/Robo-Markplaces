@@ -147,3 +147,17 @@ ML_ADS_KILL_SWITCH = os.getenv("ML_ADS_KILL_SWITCH", "false").lower() in {"1", "
 ROBO_PAUSAR_ESCRITA = os.getenv("ROBO_PAUSAR_ESCRITA", "false").lower() in {"1", "true", "yes"}
 ML_ADS_ORCAMENTO_MAXIMO = float(os.getenv("ML_ADS_ORCAMENTO_MAXIMO", "500.0"))
 ML_ADS_ACOS_DIAS_LIMITE = int(os.getenv("ML_ADS_ACOS_DIAS_LIMITE", "3"))
+
+# Datadog Log Management (opcional — HTTP Intake, sem Agent)
+DD_API_KEY = os.getenv("DD_API_KEY", "").strip()
+DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
+DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
+
+
+def _init_datadog_logging() -> None:
+    from core.datadog_logger import configurar_logging_datadog
+
+    configurar_logging_datadog()
+
+
+_init_datadog_logging()
