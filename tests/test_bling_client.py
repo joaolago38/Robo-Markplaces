@@ -4,6 +4,7 @@ tests/test_bling_client.py — BL01–BL20+
 import os
 import sys
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -284,11 +285,12 @@ class TestBlingNcm(unittest.TestCase):
 class TestBuscarNfePorPedido(unittest.TestCase):
     @patch.object(bling_client, "_request_bling")
     def test_encontra_nfe_existente(self, mock_req):
+        data_emissao_recente = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%d")
         mock_req.return_value = _mock_resp(
             {
                 "data": [
                     {"numeroPedidoLoja": "OUTRO", "id": 1},
-                    {"numeroPedidoLoja": "PED-1", "id": 42, "dataEmissao": "2026-06-01"},
+                    {"numeroPedidoLoja": "PED-1", "id": 42, "dataEmissao": data_emissao_recente},
                 ]
             }
         )
