@@ -12,6 +12,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import integracoes.magalu.magalu_client as mag
 
 
+def _iso_utc_days_ago(days: int) -> str:
+    return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+
 def _resp(status: int, body: dict | None = None, text: str = "") -> MagicMock:
     r = MagicMock()
     r.status_code = status
@@ -107,7 +111,6 @@ class TestMagaluClient(unittest.TestCase):
     @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_listar_pedidos_ok(self, mock_request):
-        created_recente = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
         mock_request.return_value = _resp(
             200,
             {
@@ -116,7 +119,7 @@ class TestMagaluClient(unittest.TestCase):
                         "code": "ORD1",
                         "status": "paid",
                         "total": 99.9,
-                        "created_at": created_recente,
+                        "created_at": _iso_utc_days_ago(2),
                         "items": [{"sku": "SKU1", "quantity": 1, "price": 99.9}],
                     }
                 ]
