@@ -23,10 +23,10 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/meta/campanhas/validar",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/meta/campanhas/validar",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"alertar_quando_atencao\": ($env.ROBO_ALERTAR_ATENCAO || 'false') === 'true', \"periodo_dias\": 1}",
+        "jsonBody": "={\"alertar_quando_atencao\": ($vars.ROBO_ALERTAR_ATENCAO || 'false') === 'true', \"periodo_dias\": 1}",
         "options": {
           "timeout": 60000
         }

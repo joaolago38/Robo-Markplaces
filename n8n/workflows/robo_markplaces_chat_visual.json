@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/chat/visual/rodar",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/chat/visual/rodar",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={}",

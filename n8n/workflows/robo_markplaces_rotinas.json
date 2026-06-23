@@ -24,10 +24,10 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/keepalive",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/keepalive",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"limite_dias_sem_acesso\": Number($env.ROBO_KEEPALIVE_DIAS || 5)}",
+        "jsonBody": "={\"limite_dias_sem_acesso\": Number($vars.ROBO_KEEPALIVE_DIAS || 5)}",
         "options": {
           "timeout": 60000
         }
@@ -63,10 +63,10 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/algoritmo/ajustar",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/marketplaces/algoritmo/ajustar",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"alertar_quando_atencao\": ($env.ROBO_ALERTAR_ATENCAO || 'false') === 'true'}",
+        "jsonBody": "={\"alertar_quando_atencao\": ($vars.ROBO_ALERTAR_ATENCAO || 'false') === 'true'}",
         "options": {
           "timeout": 60000
         }
@@ -103,7 +103,7 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/relatorio",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/relatorio",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={}",
@@ -142,7 +142,7 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/estoque/criticos",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/estoque/criticos",
         "options": {
           "timeout": 60000
         }
@@ -178,7 +178,7 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/operacao/24h",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/operacao/24h",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"dry_run_repricing\": true, \"dry_run_nfe\": true}",
@@ -227,7 +227,7 @@
             {
               "id": "hora-faturamento-dia-seguinte",
               "leftValue": "={{$now.setZone('America/Sao_Paulo').toFormat('HH:mm')}}",
-              "rightValue": "={{$env.ROBO_HORA_FATURAMENTO_DIA_SEGUINTE || '06:15'}}",
+              "rightValue": "={{$vars.ROBO_HORA_FATURAMENTO_DIA_SEGUINTE || '06:15'}}",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -249,7 +249,7 @@
     },
     {
       "parameters": {
-        "url": "={{$env.ROBO_API_BASE_URL || 'http://localhost:5000'}}/operacao/24h",
+        "url": "={{$vars.ROBO_API_BASE_URL || 'http://localhost:5000'}}/operacao/24h",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"dry_run_repricing\": true, \"dry_run_nfe\": false}",
