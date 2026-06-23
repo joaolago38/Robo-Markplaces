@@ -115,7 +115,7 @@ class TestMlProductAdsGuardrails(unittest.TestCase):
 
 
 class TestAgentesEntrada(unittest.TestCase):
-    @patch("agentes.faturamento.agente_faturamento.alertar_bloqueio_escrita_global")
+    @patch("core.guardrails.alertar_bloqueio_escrita_global")
     @patch("agentes.faturamento.agente_faturamento.buscar_produto")
     @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)
     def test_emitir_nfe_bloqueado(self, mock_buscar, mock_alerta):
@@ -131,7 +131,7 @@ class TestAgentesEntrada(unittest.TestCase):
         self.assertFalse(out["ok"])
         mock_alerta.assert_called_once()
 
-    @patch("agentes.repricing.agente_repricing_marketplaces.alertar_bloqueio_escrita_global")
+    @patch("core.guardrails.alertar_bloqueio_escrita_global")
     @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos", return_value=[])
     @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)
     def test_repricing_bloqueado(self, *_):
@@ -139,14 +139,14 @@ class TestAgentesEntrada(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertEqual(out["total_ajustes"], 0)
 
-    @patch("agentes.sincronizar_estoque_marketplaces.alertar_bloqueio_escrita_global")
+    @patch("core.guardrails.alertar_bloqueio_escrita_global")
     @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)
     def test_sincronizar_estoque_bloqueado(self, *_):
         out = estoque_executar(produtos=[], dry_run=False)
         self.assertFalse(out["ok"])
         self.assertEqual(out["total_ajustes"], 0)
 
-    @patch("agentes.operacao_24h.alertar_bloqueio_escrita_global")
+    @patch("core.guardrails.alertar_bloqueio_escrita_global")
     @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)
     def test_operacao_24h_bloqueada(self, mock_alerta):
         out = operacao_24h.executar(dry_run_repricing=False, dry_run_nfe=True)
@@ -154,6 +154,13 @@ class TestAgentesEntrada(unittest.TestCase):
         self.assertTrue(out.get("bloqueado"))
         mock_alerta.assert_called_once()
 
+    @patch("agentes.operacao_24h.alertar_gestor")
+    @patch("agentes.operacao_24h._faturar_pedidos_lojahub", return_value={"total": 0, "sucesso": 0, "falhas": 0, "itens": []})
+    @patch("agentes.operacao_24h.executar_repricing_marketplaces", return_value={"total_ajustes": 0})
+    @patch("agentes.operacao_24h.executar_algoritmo_marketplaces", return_value={})
+    @patch("agentes.operacao_24h.repricing_impala", return_value={})
+    @patch("agentes.operacao_24h.verificar_gatilho_ads", return_value={})
+    @patch("agentes.operacao_24h.verificar_alertas_esmaltes", return_value=[])
     @patch("agentes.operacao_24h.listar_produtos", return_value=[])
     @patch("agentes.operacao_24h.listar_resumo_vendas_24h", return_value={})
     @patch("agentes.operacao_24h.listar_pedidos_prontos_faturar", return_value=[])
