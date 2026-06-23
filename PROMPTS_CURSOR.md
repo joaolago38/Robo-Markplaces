@@ -1,36 +1,26 @@
-Corrija o teste `tests/test_magalu_client.py::TestMagaluClient::test_listar_pedidos_ok`.
+Corrija o erro de lint `F401` (import não utilizado) em `tests/test_magalu_client.py`, linha 7:
+```
+from datetime import datetime, timedelta, timezone
+```
 
-CONTEXTO DO BUG:
-O teste usa uma data fixa no mock:
+CONTEXTO:
+Esse import foi adicionado numa correção anterior, que pedia para o teste `test_listar_pedidos_ok` parar de usar uma data fixa (`"created_at": "2026-06-16T10:00:00+00:00"`) e passar a calcular uma data relativa ao momento da execução, usando algo como:
 ```python
-"created_at": "2026-06-16T10:00:00+00:00",
+created_recente = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
 ```
-A função real `integracoes/magalu/magalu_client.py::listar_pedidos()` filtra pedidos mais antigos que `dias=7` comparando `created_at` com `datetime.now(timezone.utc)` — ou seja, com a data REAL de quando o código roda, não com uma data fixa.
-
-Como já passou mais de 7 dias desde 16/06/2026 10:00 UTC, o próprio código de produção, corretamente, descarta esse pedido por estar fora da janela de 7 dias — e o teste, que espera 1 pedido no retorno, passa a falhar:
-```
-AssertionError: 0 != 1
-```
-Isso é um bug de teste (data "chumbada" no código), não um bug de produção — a lógica de filtro por `dias` em `listar_pedidos()` está correta e não deve ser alterada.
+O lint está acusando que `datetime`, `timedelta` e `timezone` foram importados mas não são usados em nenhum lugar do arquivo — ou seja, essa parte da correção anterior não foi aplicada de fato no corpo do teste (só o import foi adicionado).
 
 TAREFA:
 
-1. Abra `tests/test_magalu_client.py`.
-2. No topo do arquivo, garanta que `datetime`, `timedelta` e `timezone` estão importados de `datetime` (adicione o import se não existir).
-3. Em `test_listar_pedidos_ok`, substitua a data fixa por uma data calculada relativa ao momento do teste, dentro da janela de `dias=7` usada na chamada (`mag.listar_pedidos(dias=7)`), por exemplo:
+1. Abra `tests/test_magalu_client.py` e localize o teste `test_listar_pedidos_ok`.
+2. Verifique se o mock de `created_at` ainda está com uma data fixa (string literal tipo `"2026-06-16T10:00:00+00:00"`) em vez de calculada com `datetime.now(timezone.utc)`.
+3. Se ainda estiver com data fixa: corrija para usar uma data relativa dentro da janela de `dias=7` usada por `mag.listar_pedidos(dias=7)`, por exemplo:
    ```python
    created_recente = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
    ```
-   E use essa variável no mock:
-   ```python
-   "created_at": created_recente,
-   ```
-4. Procure em TODO o projeto por outros testes que usem datas absolutas fixas (strings como `"2026-06-..."`, `"2025-..."`, etc.) para simular "pedido/evento recente" em conjunto com um filtro por `dias`/janela de tempo — verifique especialmente:
-   - `tests/test_ml_client.py` (função `listar_pedidos`)
-   - `tests/test_shopee_client.py` (função `listar_pedidos`)
-   - `tests/test_amazon_client.py` (função `listar_pedidos`)
-   - qualquer outro teste que mocke `listar_pedidos`, `buscar_metricas_item`, ou funções com parâmetro `dias`
-   Esses clientes seguem o mesmo padrão de filtro por `dias` que o Magalu, então podem ter o mesmo problema, mesmo que ainda não tenham "vencido" (vão quebrar sozinhos no futuro se não forem corrigidos agora). Aplique a mesma correção (data relativa a `datetime.now(timezone.utc)`) em todos que encontrar.
-5. NÃO altere nenhum código de produção (`integracoes/*/*.py`) — a correção é só nos testes.
-6. Rode `python -m pytest -q` no final e confirme 0 falhas e cobertura ≥ 80% (`--cov-fail-under=80` em `pyproject.toml`).
-7. Rode também `ruff check api agentes core integracoes tests` para confirmar que os imports novos (`timedelta`, `timezone`) não geram nenhum aviso de lint.
+   E use essa variável no campo `"created_at"` do mock, em vez da string fixa.
+4. Confirme se existe algum outro teste no mesmo arquivo que também deveria ter sido corrigido na rodada anterior (mock de pedido "recente" para testar filtro por `dias`) e que também ficou com import não utilizado — aplique a mesma correção se encontrar.
+5. Só remova o import de `datetime`/`timedelta`/`timezone` se, depois de revisar tudo, ficar claro que nenhum teste do arquivo realmente precisa dele — o que não deveria ser o caso aqui.
+6. NÃO altere nenhum código de produção (`integracoes/magalu/magalu_client.py`) — a correção é só no teste.
+7. Rode `ruff check api agentes core integracoes tests` — confirme 0 erros de lint (nem o `F401` nem nenhum outro).
+8. Rode `python -m pytest -q` — confirme 0 falhas e cobertura ≥ 80% (`--cov-fail-under=80` em `pyproject.toml`).
