@@ -29,6 +29,7 @@ PADRÃO A SEGUIR:
 - Crie um helper `_resp(status_code, json_body)` que devolve um mock de resposta HTTP com `.status_code`, `.json()` e `.raise_for_status()` coerentes com o `status_code` (lance exceção em `raise_for_status()` quando `status_code >= 400`), reaproveitando o padrão já usado nos outros arquivos de teste de cliente.
 
 VALIDAÇÃO FINAL:
+
 1. Rode `python -m pytest tests/test_magalu_client.py -v --cov=integracoes/magalu/magalu_client.py --cov-report=term-missing` e itere até a cobertura desse arquivo ficar em pelo menos 90% (mire em ficar parecido com `integracoes/bling/bling_client.py`, que está em 96%).
 2. Rode a suíte completa `python -m pytest -q` e confirme cobertura TOTAL do projeto ≥ 80%.
 3. Rode `ruff check api agentes core integracoes tests` e confirme 0 erros de lint.
