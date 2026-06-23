@@ -102,6 +102,30 @@ class TestMagaluClient(unittest.TestCase):
     def test_atualizar_estoque_erro_rede(self, *_):
         with self.assertLogs("magalu_client", level="ERROR"):
             self.assertFalse(mag.atualizar_estoque_item("SKU1", 5))
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_listar_pedidos_ok(self, mock_request):
+        created_recente = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+        mock_request.return_value = _resp(
+            200,
+            {
+                "data": [
+                    {
+                        "code": "ORD1",
+                        "status": "paid",
+                        "total": 99.9,
+                        "created_at": created_recente,
+                        "items": [{"sku": "SKU1", "quantity": 1, "price": 99.9}],
+                    }
+                ]
+            },
+        )
+        pedidos = mag.listar_pedidos(dias=7)
+        self.assertEqual(len(pedidos), 1)
+        self.assertEqual(pedidos[0]["order_id"], "ORD1")
+
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
