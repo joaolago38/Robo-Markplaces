@@ -4,6 +4,7 @@ tests/test_magalu_client.py — cobertura do cliente Magalu (sem rede).
 import os
 import sys
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -106,6 +107,7 @@ class TestMagaluClient(unittest.TestCase):
     @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_listar_pedidos_ok(self, mock_request):
+        created_recente = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
         mock_request.return_value = _resp(
             200,
             {
@@ -114,7 +116,7 @@ class TestMagaluClient(unittest.TestCase):
                         "code": "ORD1",
                         "status": "paid",
                         "total": 99.9,
-                        "created_at": "2026-06-16T10:00:00+00:00",
+                        "created_at": created_recente,
                         "items": [{"sku": "SKU1", "quantity": 1, "price": 99.9}],
                     }
                 ]
