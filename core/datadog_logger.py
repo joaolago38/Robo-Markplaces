@@ -65,12 +65,15 @@ class DatadogLogHandler(logging.Handler):
 
 def configurar_logging_datadog() -> None:
     """Anexa DatadogLogHandler ao logger raiz (idempotente)."""
+    root = logging.getLogger()
+    if root.level == logging.NOTSET or root.level > logging.INFO:
+        root.setLevel(logging.INFO)
+
     from core.config import DD_API_KEY, DD_LOGS_ENABLED
 
     if not DD_LOGS_ENABLED or not DD_API_KEY:
         return
 
-    root = logging.getLogger()
     for handler in root.handlers:
         if isinstance(handler, DatadogLogHandler):
             return
