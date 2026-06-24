@@ -1,4 +1,4 @@
-# Configuração do ruff — alinhada ao CI: ruff check api agentes core integracoes tests
+# Configuração do ruff — alinhada ao CI: ruff check .
 
 [lint]
-per-file-ignores = { "tests/**" = ["E402"] }
+per-file-ignores = { "tests/**" = ["E402"], "scripts/**" = ["E402"] }

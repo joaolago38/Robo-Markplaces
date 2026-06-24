@@ -77,7 +77,7 @@ checar(bool(bling_refresh) and bling_refresh != "...",
        "BLING_REFRESH_TOKEN ausente")
 
 checar(bool(bling_id),
-       f"BLING_CLIENT_ID configurado",
+       "BLING_CLIENT_ID configurado",
        "BLING_CLIENT_ID ausente")
 
 checar(bool(bling_secret) and bling_secret != "...",
@@ -109,7 +109,7 @@ try:
     latencia = round(time.time() - inicio, 2)
 
     checar(isinstance(produtos, list),
-           f"listar_produtos() retornou lista",
+           "listar_produtos() retornou lista",
            "listar_produtos() retornou tipo invalido")
 
     if probe["ok"]:

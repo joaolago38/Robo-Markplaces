@@ -811,7 +811,7 @@ python -c "from agentes.ml.agente_ml import executar; executar()"
 """)
 
 print("\n✅ Estrutura criada com sucesso!")
-print(f"\nPróximos passos:")
+print("\nPróximos passos:")
 print("  1. Instale as dependências: pip install -r requirements.txt")
 print("  2. Copie .env.exemplo para .env e preencha as credenciais")
 print("  3. Rode os testes: python tests/test_behaviors.py")
