@@ -22,9 +22,7 @@ Testa 6 pontos:
 from __future__ import annotations
 
 import base64
-import json
 import os
-import sys
 from pathlib import Path
 
 import requests
@@ -74,8 +72,8 @@ def _linha(ok: bool, descricao: str, detalhe: str = "") -> bool:
 
 def _instrucao(linhas: list[str]) -> None:
     print()
-    for l in linhas:
-        print(f"     {l}")
+    for linha in linhas:
+        print(f"     {linha}")
     print()
 
 

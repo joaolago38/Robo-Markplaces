@@ -1,54 +1,34 @@
-Em `core/datadog_logger.py`, dentro da função `configurar_logging_datadog()`, adicione UMA linha que está faltando: definir o nível do logger raiz para INFO.
+Inclua scripts/ e o nível raiz no escopo de lint do CI, hoje o ci.yml só verifica
+api/agentes/core/integracoes/tests e isso deixou passar 12 erros de ruff em
+scripts/*.py e setup_projeto.py sem ningúem notar.
 
-PROVA DO BUG (reproduzi e confirmei):
-```python
-import logging
-logging.getLogger().level            # -> 30 (WARNING), o padrão do Python
-logging.getLogger("bling_client").isEnabledFor(logging.INFO)  # -> False
-```
-Como o logger raiz fica no nível padrão `WARNING` (nenhum lugar do projeto, fora de `api/app.py`, chama `setLevel`/`basicConfig` com `INFO`), toda chamada `logger.info(...)` em `bling_client.py`, `ml_client.py`, `token_manager.py`, etc. é descartada pelo próprio Python ANTES de chegar a qualquer handler — inclusive o `DatadogLogHandler`. Por isso nenhum log chega ao Datadog quando o código roda fora da API Flask (ou seja, na maioria dos workflows do GitHub Actions).
+CONTEXTO:
+ruff.toml já tem per-file-ignores para tests/** (E402) e acabei de adicionar
+scripts/** também (E402, por causa do padrão sys.path.insert(...) antes de
+importar módulos locais nesses scripts). Mas o .github/workflows/ci.yml roda
+"ruff check api agentes core integracoes tests" — não inclui scripts/ nem os
+arquivos .py da raiz (setup_projeto.py, pegar_token_*.py, testar_*.py). Quero
+que o CI passe a cobrir 100% do código Python do repositório.
 
-CORREÇÃO EXATA:
+TAREFA:
 
-Em `core/datadog_logger.py`, função `configurar_logging_datadog()`, adicione a definição do nível do root logger ANTES do `return` antecipado (ou seja, mesmo que o Datadog não esteja configurado, vale a pena ter o nível INFO ativo para qualquer handler futuro/console). Fique assim:
+1. Em .github/workflows/ci.yml, localize o passo que roda `ruff check` e
+   amplie o escopo para cobrir todo o projeto, por exemplo:
+   ruff check .
+   (em vez de listar pastas manualmente) — assim qualquer novo
+   arquivo/pasta criado no futuro já entra automaticamente no lint, sem
+   precisar editar o workflow de novo.
 
-```python
-def configurar_logging_datadog() -> None:
-    """Anexa DatadogLogHandler ao logger raiz (idempotente)."""
-    root = logging.getLogger()
-    if root.level == logging.NOTSET or root.level > logging.INFO:
-        root.setLevel(logging.INFO)
+2. Confirme que ruff.toml já ignora corretamente os casos intencionais:
+   - E402 em tests/** e scripts/** (padrão sys.path.insert antes de
+     imports locais).
+   Se ao rodar `ruff check .` localmente aparecer algum erro novo fora
+   desses casos já conhecidos, corrija o código (não silencie com ignore
+   genérico).
 
-    from core.config import DD_API_KEY, DD_LOGS_ENABLED
+3. Rode `ruff check .` e `python -m pytest -q` localmente antes de
+   finalizar. Confirme 0 erros de lint e cobertura de teste >= 80%
+   (limite já configurado no projeto).
 
-    if not DD_LOGS_ENABLED or not DD_API_KEY:
-        return
-
-    for handler in root.handlers:
-        if isinstance(handler, DatadogLogHandler):
-            return
-
-    handler = DatadogLogHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    root.addHandler(handler)
-```
-
-Note que o `root.setLevel(...)` foi movido para ANTES do `if not DD_LOGS_ENABLED or not DD_API_KEY: return` — isso é proposital: o nível INFO deve ficar ativo mesmo que o Datadog não esteja configurado (melhora a visibilidade geral de logs do projeto em qualquer ambiente, não só quando o Datadog está habilitado).
-
-VALIDAÇÃO (faça exatamente este teste manual para confirmar a correção, antes de rodar a suíte completa):
-```python
-import os, logging
-os.environ["DD_API_KEY"] = "fake-key-123"
-os.environ["DD_LOGS_ENABLED"] = "true"
-import core.config as cfg
-root = logging.getLogger()
-assert root.level <= logging.INFO, f"Esperado <= INFO, veio {root.level}"
-logger = logging.getLogger("bling_client")
-assert logger.isEnabledFor(logging.INFO) is True
-print("OK — nível de log corrigido")
-```
-Esse script deve imprimir "OK" sem nenhum AssertionError.
-
-Depois disso, rode `python -m pytest -q` e `ruff check api agentes core integracoes tests`. Confirme 0 falhas e cobertura ≥ 80%.
-
-NÃO altere mais nada nesse arquivo além dessa correção pontual — o resto da implementação (handler, tags por marketplace, payload) já está correto.
+4. Não altere a lógica de nenhum agente/integração — esta tarefa é
+   apenas de configuração de CI e limpeza de lint.
