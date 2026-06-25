@@ -203,6 +203,12 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             concorrentes = []
 
         try:
+            sugestao = ml_client.buscar_sugestao_preco(item_id)
+        except Exception as exc:
+            logger.error("monitor_ml sugestao_preco %s: %s", item_id, exc)
+            sugestao = {}
+
+        try:
             acos_item = ml_client.buscar_acos_ads(item_id, dias=14)
         except Exception as exc:
             logger.error("monitor_ml acos_item %s: %s", item_id, exc)
@@ -221,12 +227,26 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             "meu_preco": meu_preco,
             "menor_concorrente": menor_concorrente,
             "concorrentes": concorrentes,
+            "sugestao_preco": sugestao,
             "visitas_7d": visitas_7,
             "visitas_30d": visitas_30,
             "estoque": estoque,
             "acos_ads": acos_item,
             "alertas": [],
         }
+
+        if sugestao.get("aplicavel") and sugestao.get("preco_sugerido", 0) > 0:
+            preco_sugerido = sugestao["preco_sugerido"]
+            diff_sugestao = sugestao.get("percent_difference", 0)
+            if abs(diff_sugestao) >= LIMIAR_PRECO_CONCORRENTE * 100:
+                msg = (
+                    f"Item {item_id}: ML sugere R$ {preco_sugerido:.2f} "
+                    f"(seu preço R$ {meu_preco:.2f}, diferença {diff_sugestao:.1f}%) "
+                    "com base em produtos similares dentro/fora da ML."
+                )
+                analise["alertas"].append(msg)
+                recomendacoes.append(msg)
+                prioridade = max(prioridade, abs(diff_sugestao))
 
         if menor_concorrente > 0 and meu_preco > menor_concorrente:
             diff = _pct_diff(meu_preco, menor_concorrente)

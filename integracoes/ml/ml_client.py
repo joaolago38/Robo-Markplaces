@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
+from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID, ML_SITE_ID
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
@@ -503,6 +503,132 @@ def buscar_menor_preco_concorrente(item_id: str) -> float:
     except Exception as exc:
         logger.error("ML buscar_menor_preco_concorrente erro item_id=%s: %s", item_id, exc)
         return 0.0
+
+
+def _normalizar_resultado_busca(row: dict) -> dict:
+    shipping = row.get("shipping") or {}
+    try:
+        preco = float(row.get("price") or 0)
+    except (TypeError, ValueError):
+        preco = 0.0
+    try:
+        vendidos = int(row.get("sold_quantity", 0) or 0)
+    except (TypeError, ValueError):
+        vendidos = 0
+    seller = row.get("seller") or {}
+    return {
+        "item_id": str(row.get("id", "") or ""),
+        "titulo": str(row.get("title", "") or ""),
+        "preco": preco,
+        "frete_gratis": bool(shipping.get("free_shipping", False)),
+        "condicao": str(row.get("condition", "") or ""),
+        "quantidade_vendida": vendidos,
+        "seller_id": str(seller.get("id", "") or ""),
+        "permalink": str(row.get("permalink", "") or ""),
+    }
+
+
+def buscar_concorrentes_por_termo(termo: str, limite: int = 10) -> list[dict]:
+    """
+    Pesquisa o Mercado Livre por palavra-chave (busca pública do site, sem precisar
+    que o produto já esteja no seu catálogo/anúncio). Útil para monitorar concorrência
+    de produtos que você define livremente (por nome/termo), e não só dos seus próprios
+    anúncios.
+
+    Exclui resultados do próprio vendedor (ML_SELLER_ID) quando configurado.
+    Retorna lista vazia em caso de termo vazio ou erro. Nunca lança exceção.
+    """
+    termo = (termo or "").strip()
+    if not termo:
+        return []
+    try:
+        r = request(
+            "GET",
+            f"{BASE}/sites/{ML_SITE_ID}/search",
+            params={"q": termo, "limit": max(1, min(50, limite))},
+            timeout=20,
+        )
+        r.raise_for_status()
+        body = r.json() or {}
+        results = body.get("results") or []
+
+        seller_self = str(ML_SELLER_ID or "").strip()
+        encontrados: list[dict] = []
+        for row in results:
+            if not isinstance(row, dict):
+                continue
+            norm = _normalizar_resultado_busca(row)
+            if seller_self and norm["seller_id"] == seller_self:
+                continue
+            if norm["preco"] > 0:
+                encontrados.append(norm)
+            if len(encontrados) >= limite:
+                break
+        return encontrados
+    except Exception as exc:
+        logger.error("ML buscar_concorrentes_por_termo erro termo=%s: %s", termo, exc)
+        return []
+
+
+def listar_itens_com_sugestao_preco() -> list[str]:
+    """
+    API oficial de Sugestões de Preço da ML (/suggestions/...).
+    Lista os item_ids do vendedor que têm referência de preço disponível
+    (a ML já compara com produtos similares dentro e fora da plataforma,
+    histórico de vendas e demanda — não depende de catalog_product_id).
+    Retorna [] se não configurado ou em caso de erro. Nunca lança exceção.
+    """
+    if not _enabled():
+        return []
+    try:
+        r = _request_ml("GET", f"{BASE}/suggestions/user/{ML_SELLER_ID}/items", timeout=20)
+        r.raise_for_status()
+        body = r.json() or {}
+        itens = body.get("items") or []
+        return [str(i) for i in itens]
+    except Exception as exc:
+        logger.error("ML listar_itens_com_sugestao_preco erro: %s", exc)
+        return []
+
+
+def _extrair_amount(campo: Any) -> float:
+    if isinstance(campo, dict):
+        try:
+            return float(campo.get("amount") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    try:
+        return float(campo or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def buscar_sugestao_preco(item_id: str) -> dict:
+    """
+    API oficial de Sugestões de Preço da ML (/suggestions/items/{itemId}/details).
+    Consulta a referência de preço calculada pela própria ML para um item — não
+    depende de catalog_product_id, então funciona mesmo fora de catálogo/buy-box.
+    Retorna {} se item_id vazio, não configurado ou em caso de erro. Nunca lança exceção.
+    """
+    item_id = (item_id or "").strip()
+    if not _enabled() or not item_id:
+        return {}
+    try:
+        r = _request_ml("GET", f"{BASE}/suggestions/items/{item_id}/details", timeout=20)
+        r.raise_for_status()
+        body = r.json() or {}
+        return {
+            "item_id": str(body.get("item_id", item_id)),
+            "status": str(body.get("status", "")),
+            "preco_atual": _extrair_amount(body.get("current_price")),
+            "preco_sugerido": _extrair_amount(body.get("suggested_price")),
+            "ratio": float(body.get("ratio") or 0),
+            "percent_difference": float(body.get("percent_difference") or 0),
+            "aplicavel": bool(body.get("applicable_suggestion", False)),
+        }
+    except Exception as exc:
+        logger.error("ML buscar_sugestao_preco erro item_id=%s: %s", item_id, exc)
+        return {}
 
 
 def buscar_acos_ads(item_id: str, dias: int = 14) -> float:

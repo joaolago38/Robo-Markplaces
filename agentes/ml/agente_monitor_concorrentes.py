@@ -1,0 +1,185 @@
+"""
+agentes/ml/agente_monitor_concorrentes.py
+Monitor de concorrentes ML por termo de busca (catalogo/concorrentes_monitorados.json).
+Somente leitura — não altera preços nem anúncios.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timezone
+from typing import Any
+
+from core.config import (
+    MONITOR_CONCORRENTES_ARQUIVO,
+    MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT,
+    ROOT,
+)
+from core.notificador import alertar_gestor
+from integracoes.ml import ml_client
+
+logger = logging.getLogger("agente_monitor_concorrentes")
+
+HISTORY_PATH = ROOT / "logs" / "concorrentes_ml_history.json"
+
+
+def _carregar_lista() -> list[dict]:
+    caminho = ROOT / MONITOR_CONCORRENTES_ARQUIVO
+    try:
+        if not caminho.is_file():
+            logger.warning("Arquivo de monitoramento não encontrado: %s", caminho)
+            return []
+        with caminho.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except Exception as exc:
+        logger.error("Erro ao carregar %s: %s", caminho, exc)
+        return []
+
+
+def _carregar_historico() -> dict[str, Any]:
+    try:
+        if not HISTORY_PATH.is_file():
+            return {}
+        with HISTORY_PATH.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception as exc:
+        logger.error("Erro ao carregar histórico: %s", exc)
+        return {}
+
+
+def _salvar_historico(historico: dict[str, Any]) -> None:
+    try:
+        HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = HISTORY_PATH.with_suffix(".json.tmp")
+        with tmp.open("w", encoding="utf-8") as f:
+            json.dump(historico, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        tmp.replace(HISTORY_PATH)
+    except Exception as exc:
+        logger.error("Erro ao salvar histórico: %s", exc)
+
+
+def _pct_variacao(anterior: float, atual: float) -> float:
+    if anterior <= 0 or atual <= 0:
+        return 0.0
+    return abs(atual - anterior) / anterior * 100.0
+
+
+def _menor_preco(concorrentes: list[dict]) -> float:
+    precos = [float(c.get("preco") or 0) for c in concorrentes if float(c.get("preco") or 0) > 0]
+    return min(precos) if precos else 0.0
+
+
+def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
+    eid = str(entrada.get("id") or "").strip()
+    nome = str(entrada.get("nome") or eid)
+    termo = str(entrada.get("termo_busca") or "").strip()
+    meu_preco = float(entrada.get("meu_preco") or 0)
+    limite = int(entrada.get("limite_resultados") or 10)
+
+    if not termo:
+        return {"id": eid, "ok": False, "erro": "termo_busca vazio", "alertas": []}
+
+    concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+    menor = _menor_preco(concorrentes)
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    menor_ant = float(anterior.get("menor_preco") or 0)
+
+    alertas: list[str] = []
+    if menor > 0 and meu_preco > menor:
+        diff = (meu_preco - menor) / menor * 100.0
+        if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            alertas.append(
+                f"{nome}: seu preço R$ {meu_preco:.2f} está {diff:.1f}% acima do menor "
+                f"concorrente (R$ {menor:.2f}) no termo '{termo}'."
+            )
+
+    if menor_ant > 0 and menor > 0:
+        var = _pct_variacao(menor_ant, menor)
+        if var >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            direcao = "caiu" if menor < menor_ant else "subiu"
+            alertas.append(
+                f"{nome}: menor preço do termo '{termo}' {direcao} de R$ {menor_ant:.2f} "
+                f"para R$ {menor:.2f} ({var:.1f}%)."
+            )
+
+    historico[eid] = {
+        "menor_preco": menor,
+        "meu_preco": meu_preco,
+        "total_concorrentes": len(concorrentes),
+        "atualizado_em": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return {
+        "id": eid,
+        "ok": True,
+        "nome": nome,
+        "termo_busca": termo,
+        "meu_preco": meu_preco,
+        "menor_preco": menor,
+        "total_concorrentes": len(concorrentes),
+        "concorrentes_amostra": concorrentes[:5],
+        "alertas": alertas,
+    }
+
+
+def executar(enviar_alerta: bool = True) -> dict[str, Any]:
+    """Monitora todos os itens ativos da lista. Nunca lança exceção."""
+    try:
+        lista = _carregar_lista()
+        historico = _carregar_historico()
+        resultados: list[dict[str, Any]] = []
+        alertas_todos: list[str] = []
+
+        for entrada in lista:
+            if not isinstance(entrada, dict) or not entrada.get("ativo"):
+                continue
+            resultado = _monitorar_entrada(entrada, historico)
+            resultados.append(resultado)
+            alertas_todos.extend(resultado.get("alertas") or [])
+
+        _salvar_historico(historico)
+
+        enviado = False
+        if enviar_alerta and alertas_todos:
+            msg = "🔎 Monitor concorrentes ML\n\n" + "\n".join(f"• {a}" for a in alertas_todos)
+            enviado = bool(alertar_gestor(msg))
+
+        payload = {
+            "ok": True,
+            "total_monitorados": len(resultados),
+            "total_alertas": len(alertas_todos),
+            "alertas": alertas_todos,
+            "resultados": resultados,
+            "enviado": enviado,
+        }
+        logger.info(
+            "Monitor concorrentes: %s itens, %s alertas, enviado=%s",
+            len(resultados),
+            len(alertas_todos),
+            enviado,
+        )
+        return payload
+    except Exception as exc:
+        logger.error("Monitor concorrentes erro: %s", exc)
+        return {"ok": False, "erro": str(exc), "resultados": []}
+
+
+def main() -> int:
+    logger.info("=== Monitor concorrentes ML ===")
+    resultado = executar(enviar_alerta=True)
+    if not resultado.get("ok"):
+        logger.error("Falha: %s", resultado.get("erro"))
+        return 1
+    if resultado.get("alertas"):
+        for linha in resultado["alertas"]:
+            print(f"[ALERTA] {linha}")
+    else:
+        print(f"[OK] {resultado.get('total_monitorados', 0)} item(ns) monitorado(s), sem alertas.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

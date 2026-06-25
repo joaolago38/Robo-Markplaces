@@ -40,6 +40,34 @@ class TestAnalisar(unittest.TestCase):
     @patch.object(mon, "time")
     @patch.object(mon, "alertar_gestor", return_value=True)
     @patch.object(mon.ml_client, "_enabled", return_value=True)
+    @patch.object(mon.ml_client, "buscar_sugestao_preco", return_value={
+        "aplicavel": True,
+        "preco_sugerido": 45.0,
+        "percent_difference": -10.0,
+    })
+    @patch.object(mon.ml_client, "buscar_acos_ads", return_value=0.0)
+    @patch.object(mon.ml_client, "buscar_detalhes_concorrentes", return_value=[])
+    @patch.object(mon.ml_client, "buscar_menor_preco_concorrente", return_value=0.0)
+    @patch.object(mon.ml_client, "buscar_metricas_item", return_value={"preco": 60.0, "visitas_7d": 10, "visitas_30d": 100, "titulo": "Kit"})
+    @patch.object(mon.ml_client, "listar_meus_anuncios", return_value=[{"item_id": "MLB1", "titulo": "Kit", "preco": 60.0}])
+    @patch.object(mon.ml_product_ads, "campanhas_acos_acima_limite", return_value=[])
+    @patch.object(mon.ml_product_ads, "listar_campanhas", return_value=[])
+    @patch.object(mon.ml_product_ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "adv1"})
+    @patch.object(mon.ml_client, "buscar_reputacao_vendedor", return_value={})
+    @patch.object(mon.ml_client, "listar_perguntas_nao_respondidas", return_value=[])
+    @patch.object(mon.ml_client, "obter_saude_conta", return_value={"pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 0})
+    def test_alerta_sugestao_preco_ml(self, *_):
+        out = mon.analisar(enviar_alerta=False, limite_itens=1)
+        self.assertTrue(out["ok"])
+        self.assertTrue(any("ML sugere" in r for r in out["recomendacoes"]))
+        conc = out["concorrencia"][0]
+        self.assertIn("sugestao_preco", conc)
+        self.assertTrue(conc["sugestao_preco"].get("aplicavel"))
+
+    @patch.object(mon, "time")
+    @patch.object(mon, "alertar_gestor", return_value=True)
+    @patch.object(mon.ml_client, "_enabled", return_value=True)
+    @patch.object(mon.ml_client, "buscar_sugestao_preco", return_value={})
     @patch.object(mon.ml_client, "buscar_acos_ads", return_value=0.0)
     @patch.object(mon.ml_client, "buscar_detalhes_concorrentes", return_value=[
         {"id": "MLB9", "titulo": "Concorrente", "preco": 50.0, "frete_gratis": True, "condicao": "new", "quantidade_vendida": 10}
