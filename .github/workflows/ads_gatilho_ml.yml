@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # 10:00 BRT (UTC-3) = 13:00 UTC — após o monitor das 09:00
-    - cron: "0 13 * * *"
+    - cron: "0 11 * * *"
 
 env:
   PYTHON_VERSION: "3.11"
