@@ -1,0 +1,39 @@
+name: Monitor Concorrentes ML
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 06:00 BRT (UTC-3) = 09:00 UTC
+    - cron: "0 9 * * *"
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Buscar concorrentes por termo (lista catalogo/concorrentes_monitorados.json)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Rodar monitor de concorrentes
+        run: python -m agentes.ml.agente_monitor_concorrentes
+        env:
+          ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID:                ${{ secrets.ML_SITE_ID }}
+          TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID:   ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar historico atualizado
+        uses: actions/upload-artifact@v4
+        with:
+          name: concorrentes-ml-history
+          path: logs/concorrentes_ml_history.json
+          retention-days: 90

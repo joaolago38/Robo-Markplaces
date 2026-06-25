@@ -46,6 +46,15 @@ ML_CLIENT_SECRET = os.getenv("ML_CLIENT_SECRET", "").strip()
 ML_ACCESS_TOKEN  = os.getenv("ML_ACCESS_TOKEN", "").strip()
 ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "").strip()
 ML_SELLER_ID     = os.getenv("ML_SELLER_ID", "").strip()
+ML_SITE_ID       = os.getenv("ML_SITE_ID", "MLB").strip()  # MLB = Brasil
+
+# Monitor de concorrentes (busca pública por palavra-chave, sem precisar de item próprio)
+MONITOR_CONCORRENTES_ARQUIVO = os.getenv(
+    "MONITOR_CONCORRENTES_ARQUIVO", "catalogo/concorrentes_monitorados.json"
+).strip()
+MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
+    os.getenv("MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT", "5.0")
+)
 
 # Shopee
 SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "").strip()
