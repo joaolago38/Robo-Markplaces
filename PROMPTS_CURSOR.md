@@ -1,23 +1,47 @@
-Aplique as 4 correções abaixo no repositório Robo-Markplaces, literalmente,
-sem reinterpretar a lógica. São pontos cegos reais encontrados em revisão:
-(1) ML pode perder o refresh_token rotacionado entre workflows do GitHub
-Actions; (2) algumas funções de escrita do ML não renovam token em 401;
-(3) o kill switch ROBO_PAUSAR_ESCRITA não cobre atualizar_preco_item em
-nenhum marketplace; (4) o Bling pode emitir NF-e duplicada se a checagem
-de duplicidade falhar por erro de rede.
+Confira se as 4 correções abaixo (já entregues antes em
+PROMPT_CORRECAO_PONTOS_CEGOS.md) estão de fato aplicadas no repositório
+atual. Para cada uma: se já estiver aplicada, não faça nada e me confirme
+o "ok". Se não estiver (ou estiver parcial), aplique agora, literalmente,
+sem reinterpretar a lógica. No final, rode os testes/lint e me dê um
+checklist de status de cada item — e IMPORTANTE: commite as mudanças e
+gere o zip/export final a partir da pasta de trabalho ATUAL (não de um
+branch ou pasta antiga), porque o último export que recebi veio idêntico
+ao original, sem nenhuma das correções.
 
-Depois de aplicar, rode `pytest` e `ruff check .` e me avise se algo quebrar.
+═══════════════════════════════════════════════════════════════
+COMO VERIFICAR (rode antes de qualquer alteração)
+═══════════════════════════════════════════════════════════════
+
+```bash
+echo "--- Correção 1 (cofre/sync ML) ---"
+grep -n "_ml_store_path\|ML_TOKEN_STORE\|_salvar_store_ml\|_hidratar_cache_ml_do_store" core/token_manager.py
+
+echo "--- Correção 2 (retry 401 padronizado no ML) ---"
+grep -n "request(" integracoes/ml/ml_client.py | grep -v "_request_ml\|def _request_ml\|import"
+
+echo "--- Correção 3 (kill switch em atualizar_preco_item) ---"
+grep -n -A3 "def atualizar_preco_item" integracoes/ml/ml_client.py integracoes/shopee/shopee_client.py integracoes/magalu/magalu_client.py integracoes/amazon/amazon_client.py
+
+echo "--- Correção 4 (NfeVerificacaoIndisponivel) ---"
+grep -rn "NfeVerificacaoIndisponivel" integracoes/bling/bling_client.py agentes/faturamento/agente_faturamento.py
+```
+
+Interprete assim:
+- Correção 1: ok se o `grep` devolver as 4 funções.
+- Correção 2: ok se o `grep` devolver VAZIO (ou seja, nenhuma chamada
+  `request(` direta sobrou fora de `_request_ml`/import).
+- Correção 3: ok se as 4 funções `atualizar_preco_item` mostrarem
+  `bloqueio_escrita_global` nas linhas seguintes ao `def`.
+- Correção 4: ok se o `grep` devolver ocorrências nos dois arquivos.
+
+Se qualquer um vier vazio/incompleto, aplique o item correspondente abaixo.
 
 ═══════════════════════════════════════════════════════════════
 CORREÇÃO 1 — core/token_manager.py
-Persistir/sincronizar o refresh_token do ML do mesmo jeito que já é
-feito para o Bling, para que renovações disparadas por QUALQUER
-workflow (não só renovar_tokens.yml) não "torrem" o refresh_token.
 ═══════════════════════════════════════════════════════════════
 
-1a. Adicionar, depois da função `_ml_refresh_disponivel()` (e antes de
-`_renovar_token_ml`), as funções de cofre em disco (mesmo padrão de
-`_bling_store_path` / `_carregar_store_bling` / `_salvar_store_bling`):
+Adicionar (se ainda não existir) depois de `_ml_refresh_disponivel()` e
+antes de `_renovar_token_ml`:
 
 ```python
 def _ml_store_path() -> Path | None:
@@ -80,8 +104,7 @@ def _hidratar_cache_ml_do_store() -> None:
             _ml_refresh_efetivo["valor"] = store["refresh_token"]
 ```
 
-1b. Em `_ml_refresh_disponivel()`, hidratar do store ANTES do .env (mesma
-prioridade usada no Bling: disco > .env/secret). Trocar:
+Trocar `_ml_refresh_disponivel()`:
 
 ```python
 def _ml_refresh_disponivel() -> str | None:
@@ -103,9 +126,7 @@ def _ml_refresh_disponivel() -> str | None:
     return _ml_refresh_efetivo["valor"]
 ```
 
-1c. Em `_renovar_token_ml()`, depois do bloco que atualiza
-`_ml_refresh_efetivo`/`cfg.ML_REFRESH_TOKEN` e ANTES do `logger.info("Token ML renovado com sucesso")`,
-persistir em disco e sincronizar no GitHub (mesmo padrão do Bling). Trocar:
+Em `_renovar_token_ml()`, trocar:
 
 ```python
         if novo_refresh:
@@ -126,17 +147,12 @@ por:
 
         cfg.ML_ACCESS_TOKEN = access_token
 
-        # Persiste em disco (se o cofre estiver ativo) — resolve a rotação fora do Actions.
         _salvar_store_ml(
             access_token,
             novo_refresh or refresh,
             _token_cache_ml["expires_at"],
         )
 
-        # CRÍTICO: o ML invalida o refresh_token a cada uso. Se este renovar
-        # rodou fora do renovar_tokens.py (ex.: 401 disparado por monitor_ml.yml),
-        # sem este sync o Secret antigo fica órfão e a próxima renovação falha
-        # com invalid_grant.
         if os.getenv("GITHUB_ACTIONS") == "true":
             if sync_secrets_github(access_token, novo_refresh or refresh, prefix="ML"):
                 logger.info("Secrets ML_* sincronizados no GitHub (rotação automática).")
@@ -151,8 +167,7 @@ por:
         return access_token
 ```
 
-1d. Em `get_token_ml()`, hidratar do store antes de checar o cache (mesmo
-padrão do Bling). Trocar:
+Trocar `get_token_ml()`:
 
 ```python
 def get_token_ml():
@@ -179,14 +194,10 @@ def get_token_ml(forcar: bool = False):
     return _renovar_token_ml()
 ```
 
-1e. Conferir que `core/token_manager.py` já importa `sync_secrets_github`
-(já importa — usado pelo Bling). Não precisa adicionar import novo.
-
-1f. Nos workflows `.github/workflows/monitor_ml.yml`,
+Nos workflows que rodam código do ML (`monitor_ml.yml`,
 `monitor_concorrentes_ml.yml`, `ads_gatilho_ml.yml`, `panorama.yml`,
-`operacao_24h_seguranca.yml`, `agente_principal.yml` (qualquer workflow
-que rode código que chama `ml_client`), adicionar no step que executa
-o agente:
+`operacao_24h_seguranca.yml`, `agente_principal.yml`), garantir no step
+que executa o agente:
 
 ```yaml
         env:
@@ -194,248 +205,83 @@ o agente:
           GH_REPO: ${{ github.repository }}
 ```
 
-(mantendo os envs ML_* já existentes). Sem isso, mesmo com o código
-corrigido, o `gh secret set` não vai funcionar dentro desses workflows.
-
 ═══════════════════════════════════════════════════════════════
 CORREÇÃO 2 — integracoes/ml/ml_client.py
-Padronizar TODAS as chamadas autenticadas para usar `_request_ml`
-(que já tem o retry automático em 401), em vez de `request(...,
-headers=_h())` direto.
 ═══════════════════════════════════════════════════════════════
 
-Trocar, em cada função abaixo, a chamada `request("MÉTODO", url, headers=_h(), ...)`
-por `_request_ml("MÉTODO", url, ...)` (remover o `headers=_h()` manual —
-`_request_ml` já injeta o header e faz o retry em 401):
+Trocar toda chamada `request("MÉTODO", url, headers=_h(), ...)` por
+`_request_ml("MÉTODO", url, ...)` (sem `headers=_h()` manual) nestas
+funções: `atualizar_preco_item`, `atualizar_estoque_item`,
+`listar_pedidos`, `buscar_metricas_item` (as 3 chamadas),
+`_listar_linhas_concorrentes_catalogo` (as 2 chamadas),
+`listar_perguntas_nao_respondidas`, `responder_pergunta`,
+`buscar_reputacao_vendedor`.
 
-- `atualizar_preco_item` (linha ~254): `request("PUT", ...)` → `_request_ml("PUT", ...)`
-- `atualizar_estoque_item` (linha ~279): `request("PUT", ...)` → `_request_ml("PUT", ...)`
-- `listar_pedidos` (linha ~306): `request("GET", ...)` → `_request_ml("GET", ...)`
-- `buscar_metricas_item` (linhas ~360, ~364, ~374 — as 3 chamadas): `request("GET", ...)` → `_request_ml("GET", ...)`
-- `_listar_linhas_concorrentes_catalogo` (linhas ~416, ~423): `request("GET", ...)` → `_request_ml("GET", ...)`
-- `listar_perguntas_nao_respondidas` (linha ~181): `request("GET", ...)` → `_request_ml("GET", ...)`
-- `responder_pergunta` (linha ~202): `request("POST", ...)` → `_request_ml("POST", ...)`
-- `buscar_reputacao_vendedor` (linha ~221): `request("GET", ...)` → `_request_ml("GET", ...)`
-
-Exemplo concreto (`atualizar_preco_item`) — trocar:
-
-```python
-        r = request(
-            "PUT",
-            f"{BASE}/items/{item_id}",
-            headers=_h(),
-            json={"price": float(novo_preco)},
-            timeout=30,
-        )
-```
-
-por:
-
-```python
-        r = _request_ml(
-            "PUT",
-            f"{BASE}/items/{item_id}",
-            json={"price": float(novo_preco)},
-            timeout=30,
-        )
-```
-
-NÃO alterar `probe_conexao` e `buscar_concorrentes_por_termo` — o primeiro
-é diagnóstico intencional ("sem mascarar erros HTTP") e o segundo é busca
-pública sem autenticação.
+NÃO alterar `probe_conexao` (diagnóstico intencional) nem
+`buscar_concorrentes_por_termo` (busca pública sem autenticação).
 
 ═══════════════════════════════════════════════════════════════
-CORREÇÃO 3 — kill switch em atualizar_preco_item (todos os marketplaces)
-Hoje só atualizar_estoque_item checa ROBO_PAUSAR_ESCRITA. Replicar a mesma
-checagem em atualizar_preco_item nos 4 clientes, para que o kill switch
-proteja preço mesmo se alguém chamar a função fora do agente de repricing.
+CORREÇÃO 3 — kill switch em atualizar_preco_item (4 marketplaces)
 ═══════════════════════════════════════════════════════════════
 
-3a. integracoes/ml/ml_client.py — em `atualizar_preco_item`, adicionar o
-guardrail logo no início (mesmo padrão de `atualizar_estoque_item`):
+Em `integracoes/ml/ml_client.py`, `integracoes/shopee/shopee_client.py`,
+`integracoes/magalu/magalu_client.py` e `integracoes/amazon/amazon_client.py`,
+adicionar no INÍCIO de `atualizar_preco_item` (mesmo padrão já usado em
+`atualizar_estoque_item` de cada cliente):
 
 ```python
-def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
     from core.guardrails import bloqueio_escrita_global
 
     if bloqueio := bloqueio_escrita_global():
-        logger.warning("ML atualizar_preco_item bloqueado: %s", bloqueio["erro"])
+        logger.warning("<NOME_MARKETPLACE> atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
-    if not _enabled():
-        logger.warning("Mercado Livre não configurado para atualização de preço.")
-        return False
-    try:
-        r = _request_ml(
-            "PUT",
-            f"{BASE}/items/{item_id}",
-            json={"price": float(novo_preco)},
-            timeout=30,
-        )
-        r.raise_for_status()
-        logger.info("ML preço atualizado com sucesso item_id=%s novo_preco=%.2f", item_id, float(novo_preco))
-        return True
-    except Exception as exc:
-        logger.error("ML atualizar_preco_item erro item_id=%s: %s", item_id, exc)
-        return False
-```
-
-3b. integracoes/shopee/shopee_client.py — mesmo padrão em
-`atualizar_preco_item`:
-
-```python
-def atualizar_preco_item(item_id: int, novo_preco: float, model_id: int | None = None) -> bool:
-    from core.guardrails import bloqueio_escrita_global
-
-    if bloqueio := bloqueio_escrita_global():
-        logger.warning("Shopee atualizar_preco_item bloqueado: %s", bloqueio["erro"])
-        return False
-    if not _enabled():
-        logger.warning("Shopee não configurado para atualização de preço.")
-        return False
-    ...
-```
-(manter o restante do corpo da função igual, só adicionar as 4 linhas do
-guardrail antes do `if not _enabled()`)
-
-3c. integracoes/magalu/magalu_client.py — mesmo padrão em
-`atualizar_preco_item` (adicionar o guardrail no início, igual ao item 3b).
-
-3d. integracoes/amazon/amazon_client.py — mesmo padrão em
-`atualizar_preco_item`:
-
-```python
-def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
-    from core.guardrails import bloqueio_escrita_global
-
-    if bloqueio := bloqueio_escrita_global():
-        logger.warning("Amazon atualizar_preco_item bloqueado: %s", bloqueio["erro"])
-        return False
-    if not _enabled():
-        logger.warning("Amazon não configurado para atualização de preço.")
-        return False
-    ...
-```
+```//substituir <NOME_MARKETPLACE> por ML / Shopee / Magalu / Amazon em cada arquivo
 
 ═══════════════════════════════════════════════════════════════
-CORREÇÃO 4 — integracoes/bling/bling_client.py + agentes/faturamento/agente_faturamento.py
-buscar_nfe_por_pedido não deve devolver "não existe" quando a checagem
-falhou por erro de rede/API — isso pode gerar NF-e duplicada (problema
-fiscal). Separar os dois casos: "não encontrado" (None) vs "não foi
-possível verificar" (exceção dedicada).
+CORREÇÃO 4 — Bling: não tratar erro de verificação como "não existe"
 ═══════════════════════════════════════════════════════════════
 
-4a. No topo de integracoes/bling/bling_client.py, adicionar a exceção
-dedicada (depois dos imports, antes de `logger = ...`):
+Em `integracoes/bling/bling_client.py`, adicionar antes do `logger =`:
 
 ```python
 class NfeVerificacaoIndisponivel(Exception):
     """Levantada quando não foi possível confirmar se já existe NF-e para o pedido."""
 ```
 
-4b. Em `buscar_nfe_por_pedido`, trocar o bloco final de except — hoje ele
-loga e retorna `None` (= "não existe"). Trocar:
+Em `buscar_nfe_por_pedido`, trocar o `except Exception` final (o que loga
+e devolve `None`) para levantar essa exceção em vez de retornar `None`:
 
 ```python
     except Exception as exc:
-        logger.error(
-            "Bling buscar_nfe_por_pedido erro pedido=%s: %s",
-            pedido_ref,
-            exc,
-        )
-        logger.warning(
-            "Checagem de duplicidade NF-e não pôde ser confirmada para pedido %s — "
-            "prosseguindo como se não existisse.",
-            pedido_ref,
-        )
-        return None
-```
-
-por:
-
-```python
-    except Exception as exc:
-        logger.error(
-            "Bling buscar_nfe_por_pedido erro pedido=%s: %s",
-            pedido_ref,
-            exc,
-        )
+        logger.error("Bling buscar_nfe_por_pedido erro pedido=%s: %s", pedido_ref, exc)
         raise NfeVerificacaoIndisponivel(
             f"não foi possível confirmar duplicidade de NF-e para pedido {pedido_ref}: {exc}"
         ) from exc
 ```
 
-4c. Em agentes/faturamento/agente_faturamento.py, importar a exceção e
-tratar no `emitir_nfe_pedido`. Trocar o import:
-
-```python
-from integracoes.bling.bling_client import buscar_nfe_por_pedido, buscar_produto, criar_nfe
-```
-
-por:
-
-```python
-from integracoes.bling.bling_client import (
-    NfeVerificacaoIndisponivel,
-    buscar_nfe_por_pedido,
-    buscar_produto,
-    criar_nfe,
-)
-```
-
-4d. Ainda em `emitir_nfe_pedido`, trocar:
-
-```python
-    existente = buscar_nfe_por_pedido(pedido_id)
-    if existente:
-        logger.info("NF-e já existente para pedido %s — pulando emissão duplicada.", pedido_id)
-        return {
-            "ok": True,
-            "pedido_id": pedido_id,
-            "ja_emitida": True,
-            "nfe": existente,
-        }
-```
-
-por:
-
-```python
-    try:
-        existente = buscar_nfe_por_pedido(pedido_id)
-    except NfeVerificacaoIndisponivel as exc:
-        msg = f"NF-e NÃO emitida para pedido {pedido_id}: checagem de duplicidade falhou ({exc})"
-        alertar_critico(msg)
-        return {"ok": False, "erro": msg, "pedido_id": pedido_id}
-
-    if existente:
-        logger.info("NF-e já existente para pedido %s — pulando emissão duplicada.", pedido_id)
-        return {
-            "ok": True,
-            "pedido_id": pedido_id,
-            "ja_emitida": True,
-            "nfe": existente,
-        }
-```
+Em `agentes/faturamento/agente_faturamento.py`, importar
+`NfeVerificacaoIndisponivel` e, em `emitir_nfe_pedido`, envolver a chamada
+a `buscar_nfe_por_pedido(pedido_id)` em try/except, abortando a emissão
+(com `alertar_critico`) em vez de seguir para `criar_nfe` quando a
+exceção for levantada.
 
 ═══════════════════════════════════════════════════════════════
-TESTES — atualizar/criar para cobrir os 4 cenários
+DEPOIS DE APLICAR — checklist final obrigatório
 ═══════════════════════════════════════════════════════════════
 
-- tests/test_token_manager_providers.py: adicionar teste equivalente ao
-  já existente para Bling, confirmando que `_renovar_token_ml` chama
-  `sync_secrets_github` quando `GITHUB_ACTIONS=true` e persiste em
-  `ML_TOKEN_STORE` quando definido.
-- tests/test_ml_client.py: adicionar teste garantindo que
-  `atualizar_preco_item`, `atualizar_estoque_item`, `listar_pedidos` e
-  `buscar_metricas_item` chamam `_request_ml` (e não `request` direto) —
-  mockar `_request_ml` e checar que foi chamado.
-- tests/test_ml_client.py / test_shopee_client.py / test_magalu_client.py /
-  test_amazon_client.py: teste novo garantindo que `atualizar_preco_item`
-  retorna `False` e não chama a API quando `ROBO_PAUSAR_ESCRITA=true`.
-- tests/test_bling_client.py: teste novo garantindo que
-  `buscar_nfe_por_pedido` levanta `NfeVerificacaoIndisponivel` quando a
-  request falha (em vez de devolver `None`).
-- tests/test_agente_faturamento.py: teste novo garantindo que
-  `emitir_nfe_pedido` retorna `{"ok": False, ...}` e NÃO chama `criar_nfe`
-  quando `buscar_nfe_por_pedido` levanta `NfeVerificacaoIndisponivel`.
-
-Rode `pytest -q` e `ruff check .` no final e cole o resultado.
+1. Rode de novo os 4 comandos de verificação do topo e confirme que
+   agora todos retornam "ok" pelos critérios descritos.
+2. Rode `pytest -q` e `ruff check .` — cole o resultado.
+3. Rode `git status` e `git diff --stat` para eu ver exatamente quais
+   arquivos mudaram.
+4. Confirme explicitamente: "estou gerando o zip/export a partir do
+   diretório de trabalho atual, com as mudanças acima já salvas em
+   disco" — não a partir de um commit antigo, branch separado ou cache.
+5. Devolva um checklist final no formato:
+   - [ ] Correção 1 (cofre/sync token ML) — aplicada e verificada
+   - [ ] Correção 2 (retry 401 padronizado) — aplicada e verificada
+   - [ ] Correção 3 (kill switch em atualizar_preco_item) — aplicada e verificada
+   - [ ] Correção 4 (NfeVerificacaoIndisponivel) — aplicada e verificada
+   - [ ] pytest passando
+   - [ ] ruff sem erros
+   - [ ] zip/export gerado a partir do estado atual do código
