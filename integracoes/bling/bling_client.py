@@ -10,6 +10,11 @@ from core import token_manager
 logger = logging.getLogger("bling")
 BASE = "https://www.bling.com.br/Api/v3"
 
+
+class NfeVerificacaoIndisponivel(Exception):
+    """Levantada quando não foi possível confirmar se já existe NF-e para o pedido."""
+
+
 def _h(token: str | None = None):
     tok = token or token_manager.get_token_bling()
     return {"Authorization": f"Bearer {tok}"}
@@ -304,9 +309,6 @@ def buscar_nfe_por_pedido(numero_pedido_loja: str, dias: int = 30) -> dict | Non
             pedido_ref,
             exc,
         )
-        logger.warning(
-            "Checagem de duplicidade NF-e não pôde ser confirmada para pedido %s — "
-            "prosseguindo como se não existisse.",
-            pedido_ref,
-        )
-        return None
+        raise NfeVerificacaoIndisponivel(
+            f"não foi possível confirmar duplicidade de NF-e para pedido {pedido_ref}: {exc}"
+        ) from exc

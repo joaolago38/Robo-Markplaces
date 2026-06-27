@@ -161,6 +161,11 @@ def obter_saude_conta() -> dict:
 
 
 def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        logger.warning("Magalu atualizar_preco_item bloqueado: %s", bloqueio["erro"])
+        return False
     if not _enabled():
         logger.warning("Magalu não configurado para atualização de preço.")
         return False

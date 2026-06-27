@@ -31,10 +31,72 @@ _meta_token_efetivo = {"valor": None}
 
 
 def _ml_refresh_disponivel() -> str | None:
-    """Prioriza o refresh_token rotacionado (em memória) sobre o do .env/secret."""
+    """Prioridade: refresh_token rotacionado em memória > disco (ML_TOKEN_STORE) > .env/secret."""
+    if _ml_refresh_efetivo["valor"] is None:
+        _hidratar_cache_ml_do_store()
     if _ml_refresh_efetivo["valor"] is None:
         _ml_refresh_efetivo["valor"] = (cfg.ML_REFRESH_TOKEN or "").strip() or None
     return _ml_refresh_efetivo["valor"]
+
+
+def _ml_store_path() -> Path | None:
+    """
+    Cofre do token ML em disco, opcional (ativo só quando ML_TOKEN_STORE
+    está definido). Resolve o caso de processos efêmeros (Actions) que
+    renovam o token mas não tinham como persistir o refresh_token novo.
+        ML_TOKEN_STORE=dados/ml_token.json
+    """
+    p = (os.getenv("ML_TOKEN_STORE") or "").strip()
+    return Path(p) if p else None
+
+
+def _carregar_store_ml() -> dict:
+    p = _ml_store_path()
+    if not p or not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        logger.error("Falha ao ler store ML (%s): %s", p, e)
+        return {}
+
+
+def _salvar_store_ml(access_token: str, refresh_token: str | None, expires_at: float) -> None:
+    p = _ml_store_path()
+    if not p:
+        return
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps(
+                {
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "expires_at": expires_at,
+                    "atualizado_em": time.time(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        try:
+            os.chmod(p, 0o600)
+        except OSError:
+            pass
+        logger.info("Tokens ML persistidos em %s", p)
+    except Exception as e:
+        logger.error("Falha ao gravar store ML (%s): %s", p, e)
+
+
+def _hidratar_cache_ml_do_store() -> None:
+    """Na partida de um processo novo, usa o token/refresh do disco em vez do .env estático."""
+    if _token_cache_ml["access_token"] is None:
+        store = _carregar_store_ml()
+        if store.get("access_token"):
+            _token_cache_ml["access_token"] = store["access_token"]
+            _token_cache_ml["expires_at"] = store.get("expires_at", 0)
+        if store.get("refresh_token"):
+            _ml_refresh_efetivo["valor"] = store["refresh_token"]
 
 
 def _renovar_token_ml():
@@ -72,6 +134,28 @@ def _renovar_token_ml():
             _ml_refresh_efetivo["valor"] = novo_refresh
             cfg.ML_REFRESH_TOKEN = novo_refresh
 
+        cfg.ML_ACCESS_TOKEN = access_token
+
+        # Persiste em disco (se o cofre estiver ativo) — resolve a rotação fora do Actions.
+        _salvar_store_ml(
+            access_token,
+            novo_refresh or refresh,
+            _token_cache_ml["expires_at"],
+        )
+
+        # CRÍTICO: o ML invalida o refresh_token a cada uso. Se este renovar
+        # rodou fora do renovar_tokens.py (ex.: 401 disparado por monitor_ml.yml),
+        # sem este sync o Secret antigo fica órfão e a próxima renovação falha
+        # com invalid_grant.
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            if sync_secrets_github(access_token, novo_refresh or refresh, prefix="ML"):
+                logger.info("Secrets ML_* sincronizados no GitHub (rotação automática).")
+            else:
+                logger.warning(
+                    "Falha ao sincronizar ML_* no GitHub após rotação — "
+                    "a próxima renovação pode falhar até o sync funcionar."
+                )
+
         logger.info("Token ML renovado com sucesso")
 
         return access_token
@@ -84,11 +168,14 @@ def _renovar_token_ml():
         return None
 
 
-def get_token_ml():
+def get_token_ml(forcar: bool = False):
     now = time.time()
 
-    if _token_cache_ml["access_token"] and now < _token_cache_ml["expires_at"]:
-        return _token_cache_ml["access_token"]
+    _hidratar_cache_ml_do_store()
+
+    if not forcar:
+        if _token_cache_ml["access_token"] and now < _token_cache_ml["expires_at"]:
+            return _token_cache_ml["access_token"]
 
     return _renovar_token_ml()
 

@@ -53,11 +53,18 @@ class TestCriarNfe(unittest.TestCase):
 
 
 class TestMlEstoqueEAnuncios(unittest.TestCase):
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)
     def test_atualizar_estoque_bloqueado(self, *_):
         self.assertFalse(ml_client.atualizar_estoque_item("MLB1", 5))
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)
+    def test_atualizar_preco_bloqueado(self, mock_req, *_):
+        self.assertFalse(ml_client.atualizar_preco_item("MLB1", 5))
+        mock_req.assert_not_called()
 
     @patch.object(ml_client, "_executar_acao_status")
     @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)

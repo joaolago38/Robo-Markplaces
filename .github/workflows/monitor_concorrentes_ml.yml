@@ -27,6 +27,8 @@ jobs:
       - name: Rodar monitor de concorrentes
         run: python -m agentes.ml.agente_monitor_concorrentes
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID:                ${{ secrets.ML_SITE_ID }}
           TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}

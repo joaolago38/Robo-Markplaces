@@ -303,8 +303,9 @@ class TestBuscarNfePorPedido(unittest.TestCase):
         self.assertIsNone(bling_client.buscar_nfe_por_pedido("PED-404"))
 
     @patch.object(bling_client, "_request_bling", side_effect=RuntimeError("rede"))
-    def test_erro_rede_retorna_none(self, *_):
-        self.assertIsNone(bling_client.buscar_nfe_por_pedido("PED-ERR"))
+    def test_erro_rede_levanta_nfe_verificacao_indisponivel(self, *_):
+        with self.assertRaises(bling_client.NfeVerificacaoIndisponivel):
+            bling_client.buscar_nfe_por_pedido("PED-ERR")
 
 
 if __name__ == "__main__":

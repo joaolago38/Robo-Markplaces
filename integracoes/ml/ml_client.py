@@ -178,10 +178,9 @@ def listar_perguntas_nao_respondidas() -> list[dict]:
         logger.warning("Mercado Livre não configurado.")
         return []
     try:
-        r = request(
+        r = _request_ml(
             "GET",
             f"{BASE}/my/received_questions/search",
-            headers=_h(),
             params={"status": "UNANSWERED", "seller_id": ML_SELLER_ID},
             timeout=20,
         )
@@ -199,10 +198,9 @@ def responder_pergunta(question_id: str, texto: str) -> bool:
         logger.warning("Mercado Livre não configurado para responder pergunta.")
         return False
     try:
-        r = request(
+        r = _request_ml(
             "POST",
             f"{BASE}/answers",
-            headers=_h(),
             json={"question_id": question_id, "text": texto},
             timeout=30,
         )
@@ -218,7 +216,7 @@ def buscar_reputacao_vendedor() -> dict:
         logger.warning("Mercado Livre não configurado para reputação.")
         return {}
     try:
-        r = request("GET", f"{BASE}/users/{ML_SELLER_ID}", headers=_h(), timeout=20)
+        r = _request_ml("GET", f"{BASE}/users/{ML_SELLER_ID}", timeout=20)
         if status_http(r) != 200:
             log_http_erro_listagem(logger, "ML buscar_reputacao_vendedor", r)
             return {}
@@ -247,14 +245,18 @@ def obter_saude_conta() -> dict:
 
 
 def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        logger.warning("ML atualizar_preco_item bloqueado: %s", bloqueio["erro"])
+        return False
     if not _enabled():
         logger.warning("Mercado Livre não configurado para atualização de preço.")
         return False
     try:
-        r = request(
+        r = _request_ml(
             "PUT",
             f"{BASE}/items/{item_id}",
-            headers=_h(),
             json={"price": float(novo_preco)},
             timeout=30,
         )
@@ -276,10 +278,9 @@ def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
         logger.warning("Mercado Livre não configurado para atualização de estoque.")
         return False
     try:
-        r = request(
+        r = _request_ml(
             "PUT",
             f"{BASE}/items/{item_id}",
-            headers=_h(),
             json={"available_quantity": int(max(0, novo_estoque))},
             timeout=30,
         )
@@ -303,10 +304,9 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
     try:
         tz = timezone(timedelta(hours=-3))
         data_from = (datetime.now(tz) - timedelta(days=dias)).isoformat()
-        r = request(
+        r = _request_ml(
             "GET",
             f"{BASE}/orders/search",
-            headers=_h(),
             params={
                 "seller": ML_SELLER_ID,
                 "order.status": "paid",
@@ -357,24 +357,22 @@ def buscar_metricas_item(item_id: str) -> dict:
         return {}
     try:
         item_id = item_id.strip()
-        r_item = request("GET", f"{BASE}/items/{item_id}", headers=_h(), timeout=20)
+        r_item = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
         r_item.raise_for_status()
         item = r_item.json() or {}
 
-        r7 = request(
+        r7 = _request_ml(
             "GET",
             f"{BASE}/items/{item_id}/visits/time_window",
-            headers=_h(),
             params={"last": 7, "unit": "day"},
             timeout=20,
         )
         r7.raise_for_status()
         v7 = int((r7.json() or {}).get("total_visits", 0) or 0)
 
-        r30 = request(
+        r30 = _request_ml(
             "GET",
             f"{BASE}/items/{item_id}/visits/time_window",
-            headers=_h(),
             params={"last": 30, "unit": "day"},
             timeout=20,
         )
@@ -413,17 +411,16 @@ def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
     if not _enabled() or not (item_id or "").strip():
         return []
     item_id = item_id.strip()
-    ri = request("GET", f"{BASE}/items/{item_id}", headers=_h(), timeout=20)
+    ri = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
     ri.raise_for_status()
     body = ri.json() or {}
     catalog_pid = body.get("catalog_product_id")
     if not catalog_pid:
         return []
 
-    rp = request(
+    rp = _request_ml(
         "GET",
         f"{BASE}/products/{catalog_pid}/items",
-        headers=_h(),
         params={"status": "active"},
         timeout=20,
     )
