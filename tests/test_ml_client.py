@@ -13,6 +13,7 @@ from integracoes.ml import ml_client
 
 def _mock_resp(body: dict) -> MagicMock:
     r = MagicMock()
+    r.status_code = 200
     r.raise_for_status = MagicMock()
     r.json.return_value = body
     return r
@@ -32,7 +33,7 @@ class TestMlClient(unittest.TestCase):
     def tearDownClass(cls):
         cls._patch.stop()
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML01_listar_perguntas_sucesso(self, _mock_en, mock_request):
         mock_request.return_value = _mock_resp({"questions": [{"id": "q1", "text": "Tem frete?"}]})
@@ -43,18 +44,18 @@ class TestMlClient(unittest.TestCase):
     def test_ML02_listar_perguntas_nao_configurado(self, *_patches):
         self.assertEqual(ml_client.listar_perguntas_nao_respondidas(), [])
 
-    @patch.object(ml_client, "request", side_effect=Exception("boom"))
+    @patch.object(ml_client, "_request_ml", side_effect=Exception("boom"))
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML03_listar_perguntas_excecao(self, *_patches):
         self.assertEqual(ml_client.listar_perguntas_nao_respondidas(), [])
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML04_responder_pergunta_sucesso(self, _mock_en, mock_request):
         mock_request.return_value = _mock_resp({})
         self.assertTrue(ml_client.responder_pergunta("q1", "Sim, temos!"))
 
-    @patch.object(ml_client, "request", side_effect=Exception("boom"))
+    @patch.object(ml_client, "_request_ml", side_effect=Exception("boom"))
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML05_responder_pergunta_excecao(self, *_patches):
         self.assertFalse(ml_client.responder_pergunta("q1", "texto"))
@@ -63,14 +64,14 @@ class TestMlClient(unittest.TestCase):
     def test_ML06_responder_pergunta_nao_configurado(self, *_patches):
         self.assertFalse(ml_client.responder_pergunta("q1", "texto"))
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML07_buscar_reputacao(self, _mock_en, mock_request):
         mock_request.return_value = _mock_resp({"seller_reputation": {"level_id": "5_green"}})
         rep = ml_client.buscar_reputacao_vendedor()
         self.assertEqual(rep.get("level_id"), "5_green")
 
-    @patch.object(ml_client, "request", side_effect=Exception("boom"))
+    @patch.object(ml_client, "_request_ml", side_effect=Exception("boom"))
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML08_buscar_reputacao_excecao(self, *_patches):
         self.assertEqual(ml_client.buscar_reputacao_vendedor(), {})
@@ -85,26 +86,26 @@ class TestMlClient(unittest.TestCase):
         self.assertIn("configurado", saude)
         self.assertTrue(saude["configurado"])
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML10_atualizar_preco_sucesso(self, _mock_en, mock_request):
         mock_request.return_value = _mock_resp({})
         self.assertTrue(ml_client.atualizar_preco_item("MLB123", 59.90))
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML11_atualizar_estoque_sucesso(self, _mock_en, mock_request):
         mock_request.return_value = _mock_resp({})
         self.assertTrue(ml_client.atualizar_estoque_item("MLB123", 50))
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML12_listar_pedidos(self, _mock_en, mock_request):
         mock_request.return_value = _mock_resp({"results": [{"id": "1", "status": "paid"}]})
         pedidos = ml_client.listar_pedidos()
         self.assertGreaterEqual(len(pedidos), 1)
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML13_buscar_menor_preco_concorrente_float(self, _mock_en, mock_request):
         item_body = {"catalog_product_id": "CAT1"}
@@ -121,7 +122,7 @@ class TestMlClient(unittest.TestCase):
         preco = ml_client.buscar_menor_preco_concorrente("MLB123")
         self.assertIsInstance(preco, float)
 
-    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML13b_buscar_detalhes_concorrentes(self, _mock_en, mock_request):
         item_body = {"catalog_product_id": "CAT1"}
@@ -206,6 +207,29 @@ class TestMlAnuncioStatus(unittest.TestCase):
         out = ml_client._request_ml("GET", f"{ml_client.BASE}/items/MLB1")
         self.assertEqual(out.status_code, 200)
         self.assertEqual(mock_request.call_count, 2)
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML20_funcoes_autenticadas_usam_request_ml(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({})
+        ml_client.atualizar_preco_item("MLB1", 9.9)
+        ml_client.atualizar_estoque_item("MLB1", 5)
+        mock_req.return_value = _mock_resp({"results": []})
+        ml_client.listar_pedidos(dias=1)
+        mock_req.side_effect = [
+            _mock_resp({"title": "Kit", "status": "active", "price": 10, "available_quantity": 1}),
+            _mock_resp({"total_visits": 1}),
+            _mock_resp({"total_visits": 2}),
+        ]
+        ml_client.buscar_metricas_item("MLB1")
+        self.assertGreaterEqual(mock_req.call_count, 5)
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML21_atualizar_preco_bloqueado_kill_switch(self, _en, mock_req):
+        with patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "ROBO_PAUSAR_ESCRITA"}):
+            self.assertFalse(ml_client.atualizar_preco_item("MLB1", 10.0))
+        mock_req.assert_not_called()
 
 
 if __name__ == "__main__":

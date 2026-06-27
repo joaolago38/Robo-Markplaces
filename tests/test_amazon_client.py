@@ -60,6 +60,13 @@ class TestAmazonClient(unittest.TestCase):
         mock_request.return_value = _mock_resp({"payload": {"Orders": []}})
         self.assertIsInstance(amazon_client.listar_pedidos(), list)
 
+    @patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "ROBO_PAUSAR_ESCRITA"})
+    @patch.object(amazon_client, "request")
+    @patch.object(amazon_client, "_enabled", return_value=True)
+    def test_AZ08_atualizar_preco_bloqueado_kill_switch(self, mock_request, *_):
+        self.assertFalse(amazon_client.atualizar_preco_item("SKU1", 19.9))
+        mock_request.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

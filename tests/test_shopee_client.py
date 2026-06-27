@@ -257,6 +257,13 @@ class ShopeeClientTests(unittest.TestCase):
         self.assertFalse(shopee_client.atualizar_preco_item(item_id=10, novo_preco=10.0))
         self.assertFalse(shopee_client.atualizar_estoque_item(item_id=10, novo_estoque=5))
 
+    @patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "ROBO_PAUSAR_ESCRITA"})
+    @patch("integracoes.shopee.shopee_client.request")
+    @patch("integracoes.shopee.shopee_client._enabled", return_value=True)
+    def test_atualizar_preco_bloqueado_kill_switch(self, _mock_enabled, mock_request, *_):
+        self.assertFalse(shopee_client.atualizar_preco_item(item_id=10, novo_preco=10.0))
+        mock_request.assert_not_called()
+
     @patch("integracoes.shopee.shopee_client.dias_sem_acesso", return_value=0)
     def test_manter_conta_ativa_retorna_ja_acessado_hoje(self, mock_dias):
         out = shopee_client.manter_conta_ativa()

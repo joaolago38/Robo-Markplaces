@@ -30,6 +30,8 @@ jobs:
       - name: Rodar operacao 24h (repricing + NF-e reais)
         run: python -c "from agentes.operacao_24h import executar; executar(dry_run_repricing=False, dry_run_nfe=False)"
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY:       ${{ secrets.ANTHROPIC_API_KEY }}
           BLING_CLIENT_ID:         ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET:     ${{ secrets.BLING_CLIENT_SECRET }}

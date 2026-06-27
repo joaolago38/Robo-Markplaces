@@ -53,15 +53,19 @@ class TestEmitirNfeDuplicidade(unittest.TestCase):
         self.assertNotIn("ja_emitida", out)
         mock_criar.assert_called_once()
 
+    @patch("agentes.faturamento.agente_faturamento.alertar_critico")
     @patch("agentes.faturamento.agente_faturamento.criar_nfe", return_value={"ok": True, "data": {"id": 2}})
-    @patch("agentes.faturamento.agente_faturamento.buscar_nfe_por_pedido", return_value=None)
+    @patch("agentes.faturamento.agente_faturamento.buscar_nfe_por_pedido")
     @patch("agentes.faturamento.agente_faturamento.buscar_produto")
-    def test_checagem_falha_nao_bloqueia_emissao(self, mock_buscar, mock_buscar_nfe, mock_criar):
+    def test_checagem_falha_bloqueia_emissao(self, mock_buscar, mock_buscar_nfe, mock_criar, mock_alertar):
+        from integracoes.bling.bling_client import NfeVerificacaoIndisponivel
+
         mock_buscar.return_value = {
             "sku": "IMP-MIMO-003",
             "nome": "Kit",
             "preco": 44.9,
         }
+        mock_buscar_nfe.side_effect = NfeVerificacaoIndisponivel("rede")
         pedido = {
             "pedido_id": "PED-FALHA",
             "cliente": {"nome": "Cliente"},
@@ -70,8 +74,9 @@ class TestEmitirNfeDuplicidade(unittest.TestCase):
 
         out = emitir_nfe_pedido(pedido, dry_run=False)
 
-        self.assertTrue(out["ok"])
-        mock_criar.assert_called_once()
+        self.assertFalse(out["ok"])
+        mock_criar.assert_not_called()
+        mock_alertar.assert_called_once()
 
 
 if __name__ == "__main__":

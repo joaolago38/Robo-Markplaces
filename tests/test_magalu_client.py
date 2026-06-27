@@ -255,6 +255,14 @@ class TestAtualizarPreco(unittest.TestCase):
     def test_excecao(self, *_):
         self.assertFalse(mag.atualizar_preco_item("SKU", 10))
 
+    @patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "ROBO_PAUSAR_ESCRITA"})
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_kill_switch_bloqueia_preco(self, mock_request, *_):
+        self.assertFalse(mag.atualizar_preco_item("SKU1", 19.9))
+        mock_request.assert_not_called()
+
 
 class TestAtualizarEstoque(unittest.TestCase):
     @patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "bloqueado"})

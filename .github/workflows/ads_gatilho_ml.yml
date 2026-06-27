@@ -30,6 +30,8 @@ jobs:
       - name: Rodar agente gatilho ads ML
         run: python -m agentes.ml.agente_ads_gatilho
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           ML_CLIENT_ID:              ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET:          ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN:           ${{ secrets.ML_ACCESS_TOKEN }}

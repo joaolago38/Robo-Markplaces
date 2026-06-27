@@ -44,6 +44,39 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertEqual(out, "new_at")
         self.assertEqual(tm._ml_refresh_efetivo["valor"], "new_rt")
 
+    @patch.object(tm, "_salvar_store_ml")
+    @patch.object(tm, "sync_secrets_github", return_value=True)
+    @patch.object(tm, "_ml_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
+    def test_renovar_token_ml_sincroniza_secrets_no_actions(self, mock_request, *_mocks):
+        tm._ml_refresh_efetivo["valor"] = "old_rt"
+        tm._token_cache_ml.update({"access_token": None, "expires_at": 0})
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
+        )
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+            out = tm._renovar_token_ml()
+        self.assertEqual(out, "new_at")
+        tm.sync_secrets_github.assert_called_once_with("new_at", "new_rt", prefix="ML")
+
+    @patch.object(tm, "_salvar_store_ml")
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
+    def test_renovar_token_ml_persiste_store(self, mock_request, mock_salvar):
+        tm._ml_refresh_efetivo["valor"] = "rt"
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 3600},
+        )
+        out = tm._renovar_token_ml()
+        self.assertEqual(out, "new_at")
+        mock_salvar.assert_called_once()
+        args = mock_salvar.call_args[0]
+        self.assertEqual(args[0], "new_at")
+        self.assertEqual(args[1], "new_rt")
+
     @patch.object(tm, "request")
     @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
     def test_ml_refresh_401(self, mock_request):
