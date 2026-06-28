@@ -250,6 +250,15 @@ class TestMlAnuncioStatus(unittest.TestCase):
     def test_ML24_buscar_descricao_excecao(self, *_):
         self.assertEqual(ml_client.buscar_descricao_item("MLB1"), "")
 
+    @patch.object(ml_client, "_enabled", return_value=False)
+    def test_ML25_buscar_descricao_nao_configurado(self, *_):
+        self.assertEqual(ml_client.buscar_descricao_item("MLB1"), "")
+
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML26_buscar_descricao_item_id_vazio(self, *_):
+        self.assertEqual(ml_client.buscar_descricao_item(""), "")
+        self.assertEqual(ml_client.buscar_descricao_item("   "), "")
+
 
 if __name__ == "__main__":
     unittest.main()

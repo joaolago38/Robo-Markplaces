@@ -86,6 +86,23 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertIn("boom", out["erro"])
 
+    @patch.object(opt, "perguntar", side_effect=[
+        "1. Título sugerido",
+        "⚠️ Erro na IA: falha de comunicação com o provedor.",
+    ])
+    @patch.object(opt.ml_client, "buscar_descricao_item", return_value="Desc antiga")
+    @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "C", "preco": 10, "quantidade_vendida": 1}])
+    @patch.object(
+        opt.ml_client,
+        "buscar_metricas_item",
+        return_value={"titulo": "Meu", "preco": 10, "estoque": 1, "visitas_7d": 2, "visitas_30d": 3, "status": "active"},
+    )
+    def test_ia_falhou_apenas_descricao(self, *_):
+        out = opt.analisar_item("MLB3")
+        self.assertTrue(out["ok"])
+        self.assertNotIn("ia_falhou", out)
+        self.assertTrue(out.get("ia_falhou_descricao"))
+
     @patch.object(opt, "perguntar", side_effect=["1. Título sugerido", "Texto de descrição sugerida"])
     @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
     @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "C", "preco": 10, "quantidade_vendida": 1}])
