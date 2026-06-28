@@ -1,6 +1,6 @@
 """
 agentes/ml/agente_otimizador_listing.py
-Sugestões de título para anúncios do Mercado Livre via Claude.
+Sugestões de título e descrição para anúncios do Mercado Livre via Claude.
 Somente leitura + recomendação — NÃO altera título nem descrição no ML.
 """
 from __future__ import annotations
@@ -31,6 +31,22 @@ SYSTEM_OTIMIZADOR = (
 _PROMPT_SUGESTOES = (
     "Com base nos dados acima, sugira até 3 títulos alternativos (máx. 60 caracteres cada) "
     "e um motivo curto para cada um, observando padrões dos concorrentes com mais vendas."
+)
+
+SYSTEM_DESCRICAO = (
+    "Você escreve descrições de anúncio para o Mercado Livre com base em dados reais "
+    "fornecidos (próprio anúncio, descrição atual se houver, e concorrentes). "
+    "Nunca invente especificações, certificações, prazos de garantia ou características "
+    "do produto que não estejam no contexto fornecido — se faltar informação, escreva a "
+    "descrição sem inventar esse dado, em vez de supor. Use linguagem direta, sem emojis, "
+    "organizada em parágrafos curtos e, se fizer sentido, uma lista de bullet points com "
+    "as principais características. Limite total: até 2000 caracteres."
+)
+
+_PROMPT_DESCRICAO = (
+    "Com base nos dados acima (anúncio próprio, descrição atual se houver, e concorrentes), "
+    "escreva uma sugestão de descrição completa para este anúncio. Se já existir uma "
+    "descrição atual, aponte em 1 frase o que está sendo melhorado antes do texto novo."
 )
 
 
@@ -78,7 +94,7 @@ def _listar_itens_ml_ativos(catalogo: list[dict]) -> list[dict]:
     return itens
 
 
-def _montar_contexto(metricas: dict, concorrentes: list[dict]) -> str:
+def _montar_contexto(metricas: dict, concorrentes: list[dict], descricao_atual: str = "") -> str:
     linhas = [
         "=== ANÚNCIO PRÓPRIO ===",
         f"Título atual: {metricas.get('titulo', '')}",
@@ -87,6 +103,7 @@ def _montar_contexto(metricas: dict, concorrentes: list[dict]) -> str:
         f"Visitas 7 dias: {metricas.get('visitas_7d', 0)}",
         f"Visitas 30 dias: {metricas.get('visitas_30d', 0)}",
         f"Status: {metricas.get('status', '')}",
+        f"Descrição atual: {descricao_atual.strip() or '(sem descrição cadastrada)'}",
         "",
         "=== CONCORRENTES (mesmo catálogo) ===",
     ]
@@ -130,26 +147,38 @@ def analisar_item(item_id: str) -> dict:
         if not metricas:
             return {"ok": False, "erro": f"item não encontrado ou indisponível: {item_id}"}
 
+        descricao_atual = ml_client.buscar_descricao_item(item_id)
         concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
-        contexto = _montar_contexto(metricas, concorrentes)
-        sugestoes = perguntar(
+        contexto = _montar_contexto(metricas, concorrentes, descricao_atual)
+
+        sugestoes_titulo = perguntar(
             _PROMPT_SUGESTOES,
             max_tokens=600,
             contexto=contexto,
             system=SYSTEM_OTIMIZADOR,
+        )
+        sugestao_descricao = perguntar(
+            _PROMPT_DESCRICAO,
+            max_tokens=900,
+            contexto=contexto,
+            system=SYSTEM_DESCRICAO,
         )
 
         resultado: dict[str, Any] = {
             "ok": True,
             "item_id": item_id,
             "titulo_atual": metricas.get("titulo", ""),
+            "descricao_atual": descricao_atual,
             "visitas_7d": metricas.get("visitas_7d", 0),
             "visitas_30d": metricas.get("visitas_30d", 0),
-            "sugestoes_texto": sugestoes,
+            "sugestoes_texto": sugestoes_titulo,
+            "sugestao_descricao": sugestao_descricao,
             "concorrentes_analisados": len(concorrentes),
         }
-        if _ia_falhou(sugestoes):
+        if _ia_falhou(sugestoes_titulo):
             resultado["ia_falhou"] = True
+        if _ia_falhou(sugestao_descricao):
+            resultado["ia_falhou_descricao"] = True
         return resultado
     except Exception as exc:
         logger.error("analisar_item erro item_id=%s: %s", item_id, exc)
@@ -168,9 +197,12 @@ def _montar_resumo_telegram(resultados: list[dict]) -> str:
         if not sugestao:
             continue
         incluidos += 1
+        descricao_preview = str(r.get("sugestao_descricao") or "").strip().replace("\n", " ")[:120]
         linhas.append(f"• {r.get('item_id')} — {r.get('titulo_atual', '')[:50]}")
         linhas.append(f"  Visitas 7d: {r.get('visitas_7d', 0)}")
-        linhas.append(f"  Sugestão: {sugestao}")
+        linhas.append(f"  Sugestão título: {sugestao}")
+        if descricao_preview:
+            linhas.append(f"  Sugestão descrição (preview): {descricao_preview}...")
         linhas.append("")
 
     if incluidos == 0:

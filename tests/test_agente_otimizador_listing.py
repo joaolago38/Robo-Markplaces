@@ -23,7 +23,11 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertIn("não encontrado", out["erro"].lower())
 
-    @patch.object(opt, "perguntar", return_value="1. Kit Impala 12 Cores - Profissional\nMotivo: palavras-chave")
+    @patch.object(opt, "perguntar", side_effect=[
+        "1. Kit Impala 12 Cores - Profissional\nMotivo: palavras-chave",
+        "Descrição completa sugerida para o anúncio com bullet points.",
+    ])
+    @patch.object(opt.ml_client, "buscar_descricao_item", return_value="Descrição antiga curta")
     @patch.object(
         opt.ml_client,
         "buscar_detalhes_concorrentes",
@@ -39,18 +43,23 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["item_id"], "MLB123")
         self.assertEqual(out["titulo_atual"], "Kit Atual")
+        self.assertEqual(out["descricao_atual"], "Descrição antiga curta")
         self.assertEqual(out["visitas_7d"], 5)
         self.assertEqual(out["concorrentes_analisados"], 1)
         self.assertIn("Kit Impala", out["sugestoes_texto"])
+        self.assertIn("bullet points", out["sugestao_descricao"])
 
         mock_perguntar = opt.perguntar
-        mock_perguntar.assert_called_once()
-        kwargs = mock_perguntar.call_args.kwargs
-        self.assertEqual(kwargs.get("system"), opt.SYSTEM_OTIMIZADOR)
-        self.assertIn("Kit Atual", kwargs.get("contexto", ""))
-        self.assertIn("Concorrente", kwargs.get("contexto", ""))
+        self.assertEqual(mock_perguntar.call_count, 2)
+        titulo_call = mock_perguntar.call_args_list[0]
+        self.assertEqual(titulo_call.kwargs.get("system"), opt.SYSTEM_OTIMIZADOR)
+        self.assertIn("Kit Atual", titulo_call.kwargs.get("contexto", ""))
+        self.assertIn("Descrição antiga curta", titulo_call.kwargs.get("contexto", ""))
+        desc_call = mock_perguntar.call_args_list[1]
+        self.assertEqual(desc_call.kwargs.get("system"), opt.SYSTEM_DESCRICAO)
 
     @patch.object(opt, "perguntar", return_value="⚠️ Erro na IA: falha de comunicação com o provedor.")
+    @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
     @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "X", "preco": 10, "quantidade_vendida": 1}])
     @patch.object(
         opt.ml_client,
@@ -61,9 +70,11 @@ class TestAnalisarItem(unittest.TestCase):
         out = opt.analisar_item("MLB1")
         self.assertTrue(out["ok"])
         self.assertTrue(out.get("ia_falhou"))
+        self.assertTrue(out.get("ia_falhou_descricao"))
         self.assertTrue(out["sugestoes_texto"].startswith("⚠️"))
 
     @patch.object(opt, "perguntar", side_effect=RuntimeError("boom"))
+    @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
     @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[])
     @patch.object(
         opt.ml_client,
@@ -74,6 +85,22 @@ class TestAnalisarItem(unittest.TestCase):
         out = opt.analisar_item("MLB-ERR")
         self.assertFalse(out["ok"])
         self.assertIn("boom", out["erro"])
+
+    @patch.object(opt, "perguntar", side_effect=["1. Título sugerido", "Texto de descrição sugerida"])
+    @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
+    @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "C", "preco": 10, "quantidade_vendida": 1}])
+    @patch.object(
+        opt.ml_client,
+        "buscar_metricas_item",
+        return_value={"titulo": "Meu", "preco": 10, "estoque": 1, "visitas_7d": 2, "visitas_30d": 3, "status": "active"},
+    )
+    def test_sem_descricao_atual_no_contexto(self, *_):
+        out = opt.analisar_item("MLB2")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["descricao_atual"], "")
+        self.assertIn("sugestao_descricao", out)
+        ctx = opt.perguntar.call_args_list[0].kwargs.get("contexto", "")
+        self.assertIn("(sem descrição cadastrada)", ctx)
 
 
 class TestExecutar(unittest.TestCase):
@@ -203,6 +230,7 @@ class TestAnalisarCatalogo(unittest.TestCase):
         msg = mock_alertar.call_args[0][0]
         self.assertIn("MLB-A", msg)
         self.assertIn("Novo título", msg)
+        self.assertIn("Sugestão título", msg)
 
 
 class TestHelpers(unittest.TestCase):
@@ -220,6 +248,44 @@ class TestHelpers(unittest.TestCase):
     def test_montar_contexto_sem_concorrentes(self):
         ctx = opt._montar_contexto({"titulo": "X", "preco": 1, "estoque": 0, "visitas_7d": 0, "visitas_30d": 0, "status": "active"}, [])
         self.assertIn("nenhum concorrente", ctx.lower())
+
+    def test_montar_contexto_sem_descricao(self):
+        ctx = opt._montar_contexto(
+            {"titulo": "X", "preco": 1, "estoque": 0, "visitas_7d": 0, "visitas_30d": 0, "status": "active"},
+            [],
+            "",
+        )
+        self.assertIn("(sem descrição cadastrada)", ctx)
+
+    def test_montar_resumo_telegram_com_preview_descricao(self):
+        msg = opt._montar_resumo_telegram([
+            {
+                "ok": True,
+                "item_id": "MLB1",
+                "titulo_atual": "Kit",
+                "visitas_7d": 4,
+                "sugestoes_texto": "1. Novo título",
+                "sugestao_descricao": "Primeira linha da descrição sugerida pela IA.",
+                "concorrentes_analisados": 2,
+            }
+        ])
+        self.assertIn("Sugestão descrição (preview)", msg)
+        self.assertIn("Primeira linha", msg)
+
+    def test_montar_resumo_telegram_sem_preview_quando_descricao_vazia(self):
+        msg = opt._montar_resumo_telegram([
+            {
+                "ok": True,
+                "item_id": "MLB1",
+                "titulo_atual": "Kit",
+                "visitas_7d": 4,
+                "sugestoes_texto": "1. Novo título",
+                "sugestao_descricao": "",
+                "concorrentes_analisados": 2,
+            }
+        ])
+        self.assertIn("Sugestão título", msg)
+        self.assertNotIn("Sugestão descrição (preview)", msg)
 
     def test_primeira_sugestao_vazia(self):
         self.assertEqual(opt._primeira_sugestao("⚠️ erro"), "")

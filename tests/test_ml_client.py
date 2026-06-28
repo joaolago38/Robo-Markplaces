@@ -231,6 +231,25 @@ class TestMlAnuncioStatus(unittest.TestCase):
             self.assertFalse(ml_client.atualizar_preco_item("MLB1", 10.0))
         mock_req.assert_not_called()
 
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML22_buscar_descricao_sucesso(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"plain_text": "Descrição do kit Impala"})
+        self.assertEqual(ml_client.buscar_descricao_item("MLB1"), "Descrição do kit Impala")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML23_buscar_descricao_404(self, _en, mock_req):
+        r = _mock_resp({})
+        r.status_code = 404
+        mock_req.return_value = r
+        self.assertEqual(ml_client.buscar_descricao_item("MLB1"), "")
+
+    @patch.object(ml_client, "_request_ml", side_effect=RuntimeError("rede"))
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML24_buscar_descricao_excecao(self, *_):
+        self.assertEqual(ml_client.buscar_descricao_item("MLB1"), "")
+
 
 if __name__ == "__main__":
     unittest.main()

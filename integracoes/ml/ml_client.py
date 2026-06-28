@@ -399,6 +399,27 @@ def buscar_metricas_item(item_id: str) -> dict:
         return {}
 
 
+def buscar_descricao_item(item_id: str) -> str:
+    """
+    Busca a descrição (plain_text) de um anúncio do ML.
+    Retorna string vazia se não houver descrição ou em caso de erro.
+    Nunca lança exceção.
+    """
+    if not _enabled() or not (item_id or "").strip():
+        return ""
+    try:
+        item_id = item_id.strip()
+        r = _request_ml("GET", f"{BASE}/items/{item_id}/description", timeout=20)
+        if r.status_code == 404:
+            return ""
+        r.raise_for_status()
+        data = r.json() or {}
+        return str(data.get("plain_text", "") or "")
+    except Exception as exc:
+        logger.error("ML buscar_descricao_item erro item_id=%s: %s", item_id, exc)
+        return ""
+
+
 def _extrair_seller_id(row: dict) -> str:
     sid = row.get("seller_id")
     if sid is None and isinstance(row.get("seller"), dict):
