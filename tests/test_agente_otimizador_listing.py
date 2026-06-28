@@ -48,6 +48,7 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertEqual(out["concorrentes_analisados"], 1)
         self.assertIn("Kit Impala", out["sugestoes_texto"])
         self.assertIn("bullet points", out["sugestao_descricao"])
+        opt.ml_client.buscar_descricao_item.assert_called_once_with("MLB123")
 
         mock_perguntar = opt.perguntar
         self.assertEqual(mock_perguntar.call_count, 2)
@@ -140,6 +141,12 @@ class TestCarregarCatalogo(unittest.TestCase):
         mock_path.is_file.return_value = False
         self.assertEqual(opt._carregar_catalogo(), [])
 
+    @patch.object(opt, "CATALOGO_PATH")
+    def test_catalogo_json_invalido_retorna_vazio(self, mock_path):
+        mock_path.is_file.return_value = True
+        mock_path.open.side_effect = RuntimeError("io")
+        self.assertEqual(opt._carregar_catalogo(), [])
+
     def test_listar_itens_ignora_entradas_invalidas(self):
         itens = opt._listar_itens_ml_ativos(
             [
@@ -229,6 +236,36 @@ class TestAnalisarCatalogo(unittest.TestCase):
         self.assertIn("Nenhum item", msg)
 
     @patch("core.notificador.alertar_gestor", return_value=True)
+    @patch.object(opt, "analisar_item", side_effect=RuntimeError("catalogo boom"))
+    @patch.object(opt, "_carregar_catalogo", return_value=_CATALOGO_FIXTURE[:1])
+    def test_analisar_catalogo_excecao(self, *_):
+        out = opt.analisar_catalogo(limite_itens=5)
+        self.assertFalse(out["ok"])
+        self.assertIn("catalogo boom", out["erro"])
+        self.assertEqual(out["resultados"], [])
+
+    @patch("core.notificador.alertar_gestor", return_value=True)
+    @patch.object(
+        opt,
+        "analisar_item",
+        return_value={
+            "ok": True,
+            "item_id": "MLB-A",
+            "titulo_atual": "A",
+            "visitas_7d": 3,
+            "sugestoes_texto": "1. Novo título",
+            "sugestao_descricao": "Descrição longa sugerida",
+            "concorrentes_analisados": 2,
+        },
+    )
+    @patch.object(opt, "_carregar_catalogo", return_value=_CATALOGO_FIXTURE[:1])
+    def test_alertar_gestor_com_preview_descricao(self, _cat, _analisar, mock_alertar):
+        opt.analisar_catalogo(limite_itens=5)
+        msg = mock_alertar.call_args[0][0]
+        self.assertIn("Sugestão descrição (preview)", msg)
+        self.assertIn("Descrição longa", msg)
+
+    @patch("core.notificador.alertar_gestor", return_value=True)
     @patch.object(
         opt,
         "analisar_item",
@@ -258,9 +295,65 @@ class TestHelpers(unittest.TestCase):
         ctx = opt._montar_contexto(
             {"titulo": "Meu Kit", "preco": 50, "estoque": 3, "visitas_7d": 7, "visitas_30d": 30, "status": "active"},
             [{"titulo": "Conc", "preco": 45, "quantidade_vendida": 99, "frete_gratis": True, "condicao": "new"}],
+            "Minha descrição atual",
         )
         self.assertIn("Meu Kit", ctx)
         self.assertIn("Conc", ctx)
+        self.assertIn("Minha descrição atual", ctx)
+
+    def test_montar_resumo_telegram_ignora_resultado_nao_ok(self):
+        msg = opt._montar_resumo_telegram([
+            {"ok": False, "item_id": "MLB-X"},
+            {
+                "ok": True,
+                "item_id": "MLB1",
+                "titulo_atual": "Kit",
+                "visitas_7d": 1,
+                "sugestoes_texto": "1. Título",
+                "sugestao_descricao": "Desc",
+                "concorrentes_analisados": 1,
+            },
+        ])
+        self.assertIn("MLB1", msg)
+        self.assertNotIn("MLB-X", msg)
+
+    def test_montar_resumo_telegram_ignora_sem_sugestao_titulo(self):
+        msg = opt._montar_resumo_telegram([
+            {
+                "ok": True,
+                "item_id": "MLB1",
+                "titulo_atual": "Kit",
+                "visitas_7d": 1,
+                "sugestoes_texto": "⚠️ falhou",
+                "sugestao_descricao": "Desc",
+                "concorrentes_analisados": 1,
+            },
+            {
+                "ok": True,
+                "item_id": "MLB2",
+                "titulo_atual": "Kit 2",
+                "visitas_7d": 2,
+                "sugestoes_texto": "1. Título ok",
+                "concorrentes_analisados": 1,
+            },
+        ])
+        self.assertIn("MLB2", msg)
+        self.assertNotIn("MLB1", msg)
+
+    def test_montar_resumo_telegram_preview_normaliza_quebras_linha(self):
+        msg = opt._montar_resumo_telegram([
+            {
+                "ok": True,
+                "item_id": "MLB1",
+                "titulo_atual": "Kit",
+                "visitas_7d": 1,
+                "sugestoes_texto": "1. Título",
+                "sugestao_descricao": "Linha um\nLinha dois com mais texto",
+                "concorrentes_analisados": 1,
+            }
+        ])
+        self.assertIn("Linha um Linha dois", msg)
+        self.assertNotIn("\nLinha dois", msg.split("preview:")[-1] if "preview:" in msg else msg)
 
     def test_montar_contexto_sem_concorrentes(self):
         ctx = opt._montar_contexto({"titulo": "X", "preco": 1, "estoque": 0, "visitas_7d": 0, "visitas_30d": 0, "status": "active"}, [])
