@@ -1,245 +1,190 @@
-Crie um agente de observabilidade que mede, para CADA marketplace
-(ML, Bling, Shopee, Magalu, Amazon), a sequência de verificações sem
-quebra da cadeia de token (probe de conexão usando o token
-atualmente configurado — sem forçar renovação), grava essa série
-histórica (streak atual, maior streak já visto, falhas consecutivas),
-envia log estruturado pro Datadog a cada execução, e alerta o gestor
-ANTES que a "surpresa" aconteça (ou seja, no primeiro sinal de quebra,
-não depois de já ter causado problema operacional). Aplique
-literalmente. Crie a branch `feature/agente-saude-tokens` antes de
-começar. Se algo não bater exatamente com o arquivo atual, pare e
-mostre o trecho real antes de aplicar.
+Crie as 3 extensões abaixo (faixa de preço sugerida, radar de
+oportunidade de nicho, e o scaffold do painel consolidado de 4 canais),
+cada uma atrás do seu próprio toggle, desligado por padrão. Aplique
+literalmente, na ordem dos passos. Crie a branch
+`feature/extensoes-toggle-preco-nicho-painel` antes de começar. Se algo
+não bater exatamente com o arquivo atual, pare e mostre o trecho real
+antes de aplicar.
 
 ═══════════════════════════════════════════════════════════════
-DECISÃO DE DESIGN — IMPORTANTE, NÃO MUDAR
+GARANTIA OBRIGATÓRIA (mesmo princípio do toggle multi-tenant)
 ═══════════════════════════════════════════════════════════════
 
-Este agente NÃO deve chamar get_token_ml()/get_token_bling()/etc. com
-`forcar=True`, e não deve fazer nada que force uma renovação. Ele só
-chama as funções `probe_conexao()` (ou `probe_produtos()` no caso do
-Bling, que não tem `probe_conexao`) de cada cliente — essas funções
-usam o token JÁ CONFIGURADO no ambiente, sem disparar renovação. Isso é
-proposital: se o agente forçasse renovação a cada execução (e ele vai
-rodar com frequência), ele mesmo causaria rotação desnecessária de
-refresh_token e poderia ser a causa do problema que deveria estar
-monitorando.
-
-A leitura correta do sinal é: "o token que está configurado AGORA
-funciona?" — se sim, a cadeia de renovação anterior funcionou e
-sincronizou corretamente. Se não (401/erro), a cadeia quebrou em algum
-ponto anterior (renovação falhou, ou renovou mas não sincronizou no
-Secret) — e é exatamente isso que deve gerar alerta.
+Com os 3 toggles desligados (padrão), o comportamento atual do robô
+não muda em NADA — nenhum agente existente é modificado, e os 3 agentes
+novos saem (no-op) na primeira linha se a própria flag estiver
+desligada, sem chamar nenhuma API de marketplace. Ao final, confirme
+que os testes que já existiam continuam passando sem alteração.
 
 ═══════════════════════════════════════════════════════════════
-PASSO 1 — core/saude_tokens.py (novo arquivo: estado persistido)
+PASSO 1 — core/feature_flags.py (novo arquivo — base para os 3 toggles)
 ═══════════════════════════════════════════════════════════════
-
-Seguir o mesmo padrão de `core/marketplace_keepalive.py` (arquivo JSON
-em `logs/`), mas guardando sequência/streak por provider, não só
-timestamp:
 
 ```python
 """
-core/saude_tokens.py
-Histórico de saúde da cadeia de renovação de token, por marketplace.
-Mede sequência de verificações sem quebra (streak), maior streak já
-visto, e falhas consecutivas — para detectar degradação antes que
-vire problema operacional. Nunca lança exceção.
+core/feature_flags.py
+Toggles de funcionalidades em construção. Cada flag é lida de
+ROBO_FEATURE_<NOME> e, por padrão (variável ausente), é considerada
+desligada — comportamento seguro por padrão.
+"""
+from __future__ import annotations
+
+import os
+
+
+def feature_ativa(nome: str) -> bool:
+    """True somente se ROBO_FEATURE_<nome> estiver definida como 'true' (case-insensitive)."""
+    return (os.getenv(f"ROBO_FEATURE_{nome}", "") or "").strip().lower() == "true"
+```
+
+═══════════════════════════════════════════════════════════════
+PASSO 2 — Extensão 1: agentes/precificacao/agente_faixa_preco_sugerida.py
+Toggle: ROBO_FEATURE_FAIXA_PRECO_SUGERIDA
+Só leitura + sugestão — nunca chama atualizar_preco_item.
+═══════════════════════════════════════════════════════════════
+
+Criar a pasta `agentes/precificacao/` com `__init__.py` vazio, e:
+
+```python
+"""
+agentes/precificacao/agente_faixa_preco_sugerida.py
+Sugere uma faixa de preço (piso de margem + média de concorrentes) por
+SKU ativo no ML, comparando com o preço atual. Somente leitura e
+notificação — NUNCA altera preço. Atrás de feature flag desligada por
+padrão (ROBO_FEATURE_FAIXA_PRECO_SUGERIDA).
 """
 from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-logger = logging.getLogger("saude_tokens")
-
-ROOT = Path(__file__).parent.parent
-STATE_FILE = ROOT / "logs" / "saude_tokens.json"
-
-
-def _load_state() -> dict:
-    if not STATE_FILE.exists():
-        return {}
-    try:
-        with open(STATE_FILE, encoding="utf-8") as f:
-            return json.load(f) or {}
-    except Exception as exc:
-        logger.error("Falha ao ler saude_tokens.json: %s", exc)
-        return {}
-
-
-def _save_state(state: dict) -> None:
-    try:
-        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(state, f, ensure_ascii=False, indent=2)
-    except Exception as exc:
-        logger.error("Falha ao gravar saude_tokens.json: %s", exc)
-
-
-def registrar_verificacao(provider: str, ok: bool, detalhe: str = "") -> dict:
-    """
-    Atualiza o estado de um provider após uma verificação (probe) e
-    devolve o registro atualizado:
-        {
-          "ok": bool,
-          "detalhe": str,
-          "ultima_verificacao": iso8601,
-          "sequencia_atual": int,       # verificações OK consecutivas
-          "maior_sequencia": int,       # maior streak já visto
-          "falhas_consecutivas": int,
-          "houve_quebra_agora": bool,   # True só no instante em que streak > 0 zera
-        }
-    Nunca lança exceção.
-    """
-    state = _load_state()
-    anterior = state.get(provider, {})
-    seq_anterior = int(anterior.get("sequencia_atual", 0) or 0)
-    maior_anterior = int(anterior.get("maior_sequencia", 0) or 0)
-    falhas_anteriores = int(anterior.get("falhas_consecutivas", 0) or 0)
-
-    houve_quebra_agora = bool(ok is False and seq_anterior > 0)
-
-    if ok:
-        seq_atual = seq_anterior + 1
-        falhas_atual = 0
-    else:
-        seq_atual = 0
-        falhas_atual = falhas_anteriores + 1
-
-    maior_atual = max(maior_anterior, seq_atual)
-
-    registro = {
-        "ok": bool(ok),
-        "detalhe": str(detalhe or "")[:300],
-        "ultima_verificacao": datetime.now(timezone.utc).isoformat(),
-        "sequencia_atual": seq_atual,
-        "maior_sequencia": maior_atual,
-        "falhas_consecutivas": falhas_atual,
-        "houve_quebra_agora": houve_quebra_agora,
-    }
-
-    state[provider] = registro
-    _save_state(state)
-    return registro
-
-
-def obter_estado_completo() -> dict:
-    """Devolve o estado atual de todos os providers já registrados. Nunca lança exceção."""
-    return _load_state()
-```
-
-═══════════════════════════════════════════════════════════════
-PASSO 2 — agentes/observabilidade/agente_saude_tokens.py (novo)
-═══════════════════════════════════════════════════════════════
-
-Criar a pasta `agentes/observabilidade/` com `__init__.py` vazio, e o
-agente:
-
-```python
-"""
-agentes/observabilidade/agente_saude_tokens.py
-Verifica, para cada marketplace, se o token atualmente configurado
-ainda autentica (sem forçar renovação), atualiza a sequência histórica
-de verificações sem quebra, loga estruturado para o Datadog, e alerta
-o gestor no instante em que uma sequência se quebra ou em que falhas
-se acumulam — antes que isso vire um problema operacional silencioso.
-"""
-from __future__ import annotations
-
-import logging
-
-from core.saude_tokens import registrar_verificacao
-from core.notificador import alertar_critico
+from core.config import TAXA_CANAL_PADRAO_PCT, MARGEM_FASE_1_PCT, MARGEM_FASE_2_PCT, MARGEM_FASE_3_PCT
+from core.feature_flags import feature_ativa
+from core.notificador import alertar_gestor
 from integracoes.ml import ml_client
-from integracoes.bling import bling_client
-from integracoes.shopee import shopee_client
-from integracoes.magalu import magalu_client
-from integracoes.amazon import amazon_client
 
-logger = logging.getLogger("agente_saude_tokens")
+logger = logging.getLogger("agente_faixa_preco_sugerida")
 
-LIMITE_FALHAS_PARA_ALERTA = 2  # alerta já na 2ª falha consecutiva, não espera acumular
+ROOT = Path(__file__).resolve().parent.parent.parent
+CATALOGO_PATH = ROOT / "catalogo" / "produtos.json"
 
 
-def _probe(provider: str) -> dict:
-    """Executa o probe correto por provider. Nunca lança exceção."""
+def _margem_minima_por_fase(fase_atual) -> float:
+    fase = str(fase_atual or "1").strip()
+    if fase == "2":
+        return MARGEM_FASE_2_PCT
+    if fase == "3":
+        return MARGEM_FASE_3_PCT
+    return MARGEM_FASE_1_PCT
+
+
+def _calcular_preco_piso(custo: float, taxa_canal_pct: float, margem_minima_pct: float) -> float:
+    taxa = max(0.0, min(99.0, taxa_canal_pct)) / 100.0
+    margem = max(0.0, min(99.0, margem_minima_pct)) / 100.0
+    denominador = 1 - taxa - margem
+    if custo <= 0 or denominador <= 0:
+        return 0.0
+    return custo / denominador
+
+
+def _carregar_catalogo() -> list[dict]:
     try:
-        if provider == "bling":
-            r = bling_client.probe_produtos()
-        elif provider == "mercadolivre":
-            r = ml_client.probe_conexao()
-        elif provider == "shopee":
-            r = shopee_client.probe_conexao()
-        elif provider == "magalu":
-            r = magalu_client.probe_conexao()
-        elif provider == "amazon":
-            r = amazon_client.probe_conexao()
-        else:
-            return {"ok": False, "msg": f"provider desconhecido: {provider}"}
-        return r if isinstance(r, dict) else {"ok": False, "msg": "resposta inesperada do probe"}
+        if not CATALOGO_PATH.is_file():
+            logger.warning("catalogo/produtos.json não encontrado")
+            return []
+        with CATALOGO_PATH.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
     except Exception as exc:
-        logger.error("Probe de %s levantou exceção: %s", provider, exc)
-        return {"ok": False, "msg": str(exc)}
+        logger.error("Erro ao carregar catalogo: %s", exc)
+        return []
 
 
-def verificar_provider(provider: str) -> dict:
+def analisar_sku(produto: dict) -> dict | None:
     """
-    Roda o probe de um provider, atualiza o histórico de sequência, loga
-    estruturado, e alerta se necessário. Devolve o registro atualizado.
+    Compara preço atual x piso de margem x concorrentes para 1 SKU.
+    Devolve dict de sugestão, ou None se não houver item_id ML válido.
     Nunca lança exceção.
     """
-    resultado_probe = _probe(provider)
-    ok = bool(resultado_probe.get("ok"))
-    detalhe = str(resultado_probe.get("msg", "") or resultado_probe.get("status", ""))
+    canais = produto.get("canais") or {}
+    ml = canais.get("mercadolivre") or {} if isinstance(canais, dict) else {}
+    item_id = str(ml.get("item_id") or "").strip()
+    if not item_id or "PREENCHER" in item_id.upper() or not ml.get("ativo"):
+        return None
 
-    registro = registrar_verificacao(provider, ok, detalhe)
+    try:
+        custo = float(produto.get("custo_total", 0) or 0)
+        preco_atual = float(produto.get("preco", 0) or 0)
+        margem_min = _margem_minima_por_fase(produto.get("fase_atual"))
+        piso = _calcular_preco_piso(custo, TAXA_CANAL_PADRAO_PCT, margem_min)
 
-    logger.info(
-        "saude_token provider=%s ok=%s sequencia_atual=%s maior_sequencia=%s "
-        "falhas_consecutivas=%s houve_quebra_agora=%s detalhe=%s",
-        provider,
-        registro["ok"],
-        registro["sequencia_atual"],
-        registro["maior_sequencia"],
-        registro["falhas_consecutivas"],
-        registro["houve_quebra_agora"],
-        registro["detalhe"],
-    )
+        concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
+        precos_concorrentes = [
+            float(c.get("preco", 0) or 0) for c in concorrentes if float(c.get("preco", 0) or 0) > 0
+        ]
 
-    if registro["houve_quebra_agora"]:
-        alertar_critico(
-            f"⚠️ Token de {provider} parou de autenticar agora (sequência anterior "
-            f"quebrada). Detalhe: {registro['detalhe']}. Verifique a renovação/sync "
-            f"do refresh_token antes que afete operações."
+        media_concorrente = (
+            round(sum(precos_concorrentes) / len(precos_concorrentes), 2) if precos_concorrentes else 0.0
         )
-    elif registro["falhas_consecutivas"] >= LIMITE_FALHAS_PARA_ALERTA:
-        alertar_critico(
-            f"🚨 Token de {provider} sem autenticar há {registro['falhas_consecutivas']} "
-            f"verificações consecutivas. Detalhe: {registro['detalhe']}."
-        )
+        min_concorrente = round(min(precos_concorrentes), 2) if precos_concorrentes else 0.0
 
-    return registro
+        alerta = None
+        if piso > 0 and preco_atual < piso:
+            alerta = f"preço atual (R$ {preco_atual:.2f}) está ABAIXO do piso de margem (R$ {piso:.2f})"
+        elif media_concorrente > 0 and preco_atual > media_concorrente * 1.15:
+            alerta = (
+                f"preço atual (R$ {preco_atual:.2f}) está 15%+ acima da média dos "
+                f"concorrentes (R$ {media_concorrente:.2f}) — risco de perder competitividade"
+            )
+
+        return {
+            "sku": produto.get("sku", ""),
+            "item_id": item_id,
+            "preco_atual": preco_atual,
+            "piso_margem": piso,
+            "media_concorrente": media_concorrente,
+            "min_concorrente": min_concorrente,
+            "concorrentes_analisados": len(precos_concorrentes),
+            "alerta": alerta,
+        }
+    except Exception as exc:
+        logger.error("analisar_sku erro sku=%s: %s", produto.get("sku"), exc)
+        return None
 
 
-PROVIDERS = ["mercadolivre", "bling", "shopee", "magalu", "amazon"]
+def _montar_resumo(analises: list[dict]) -> str:
+    relevantes = [a for a in analises if a.get("alerta")]
+    if not relevantes:
+        return "💰 Faixa de preço sugerida — Robo-Markplaces\n\nNenhum SKU fora da faixa recomendada hoje."
+    linhas = ["💰 Faixa de preço sugerida — Robo-Markplaces", ""]
+    for a in relevantes:
+        linhas.append(f"• {a['sku']} ({a['item_id']})")
+        linhas.append(f"  {a['alerta']}")
+        linhas.append("")
+    return "\n".join(linhas).strip()
 
 
 def executar() -> dict:
-    """Entrada para cron/workflow — verifica todos os providers. Nunca lança exceção."""
-    logger.info("=== Agente de saúde dos tokens (sequência sem quebra) ===")
-    resultados: dict[str, dict] = {}
-    for provider in PROVIDERS:
-        resultados[provider] = verificar_provider(provider)
-    return resultados
+    """Entrada para cron/workflow. Nunca lança exceção."""
+    if not feature_ativa("FAIXA_PRECO_SUGERIDA"):
+        logger.info("Feature FAIXA_PRECO_SUGERIDA desligada — nada a fazer.")
+        return {"ok": True, "ativo": False}
+
+    logger.info("=== Agente de faixa de preço sugerida (somente leitura) ===")
+    catalogo = _carregar_catalogo()
+    analises = [a for a in (analisar_sku(p) for p in catalogo if isinstance(p, dict)) if a is not None]
+
+    msg = _montar_resumo(analises)
+    alerta_enviado = bool(alertar_gestor(msg))
+
+    return {"ok": True, "ativo": True, "total_analisados": len(analises), "alerta_enviado": alerta_enviado}
 
 
 def main() -> int:
-    resultados = executar()
-    falhou_algum = any(not r.get("ok") for r in resultados.values())
-    return 1 if falhou_algum else 0
+    resultado = executar()
+    return 0 if resultado.get("ok") else 1
 
 
 if __name__ == "__main__":
@@ -247,135 +192,229 @@ if __name__ == "__main__":
 ```
 
 ═══════════════════════════════════════════════════════════════
-PASSO 3 — core/datadog_logger.py: registrar o novo logger
+PASSO 3 — Extensão 2: agentes/inteligencia/agente_radar_nicho.py
+Toggle: ROBO_FEATURE_RADAR_NICHO
+Só leitura + notificação. Score simples e explícito, sem prometer
+precisão que a API não entrega.
 ═══════════════════════════════════════════════════════════════
 
-No dict `_MARKETPLACE_POR_LOGGER`, adicionar:
-
-```python
-    "agente_saude_tokens": "saude_tokens_todos_marketplaces",
-    "saude_tokens": "saude_tokens_todos_marketplaces",
-```
-
-(mantendo todas as entradas já existentes — só adicionar essas 2 linhas)
-
-═══════════════════════════════════════════════════════════════
-PASSO 4 — Workflow dedicado, rodando com frequência, com persistência
-real do histórico entre execuções
-═══════════════════════════════════════════════════════════════
-
-IMPORTANTE: `logs/saude_tokens.json` precisa sobreviver entre execuções
-do GitHub Actions (cada execução é um runner novo, sem disco
-compartilhado) — senão a "sequência" reseta toda hora e a métrica não
-significa nada. A solução é o próprio workflow commitar o arquivo
-atualizado de volta no repositório a cada execução.
-
-Criar `.github/workflows/saude_tokens.yml`:
+3a. Adicionar em `spec/spec.yaml`, no final do arquivo:
 
 ```yaml
-name: Saude dos Tokens (todos marketplaces)
-
-on:
-  workflow_dispatch:
-  schedule:
-    # a cada 30 minutos
-    - cron: "*/30 * * * *"
-
-permissions:
-  contents: write
-
-env:
-  PYTHON_VERSION: "3.11"
-  DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
-
-jobs:
-  saude_tokens:
-    name: Verificar sequencia sem quebra de token (ML, Bling, Shopee, Magalu, Amazon)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Instalar dependencias
-        run: pip install -r requirements.txt
-
-      - name: Rodar agente de saude dos tokens
-        run: python -m agentes.observabilidade.agente_saude_tokens
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          ML_ACCESS_TOKEN:      ${{ secrets.ML_ACCESS_TOKEN }}
-          ML_REFRESH_TOKEN:     ${{ secrets.ML_REFRESH_TOKEN }}
-          ML_SELLER_ID:         ${{ secrets.ML_SELLER_ID }}
-          BLING_ACCESS_TOKEN:   ${{ secrets.BLING_ACCESS_TOKEN }}
-          BLING_CLIENT_ID:      ${{ secrets.BLING_CLIENT_ID }}
-          BLING_CLIENT_SECRET:  ${{ secrets.BLING_CLIENT_SECRET }}
-          SHOPEE_PARTNER_ID:    ${{ secrets.SHOPEE_PARTNER_ID }}
-          SHOPEE_PARTNER_KEY:   ${{ secrets.SHOPEE_PARTNER_KEY }}
-          SHOPEE_SHOP_ID:       ${{ secrets.SHOPEE_SHOP_ID }}
-          SHOPEE_ACCESS_TOKEN:  ${{ secrets.SHOPEE_ACCESS_TOKEN }}
-          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
-          MAGALU_ACCESS_TOKEN:  ${{ secrets.MAGALU_ACCESS_TOKEN }}
-          MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
-          MAGALU_MERCHANT_ID:   ${{ secrets.MAGALU_MERCHANT_ID }}
-          AMAZON_ACCESS_TOKEN:  ${{ secrets.AMAZON_ACCESS_TOKEN }}
-          TELEGRAM_TOKEN:           ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID:  ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-          TELEGRAM_CHAT_ID:         ${{ secrets.TELEGRAM_CHAT_ID }}
-
-      - name: Persistir historico de sequencia (commit do logs/saude_tokens.json)
-        run: |
-          git config user.name "robo-markplaces-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add logs/saude_tokens.json
-          git diff --cached --quiet || git commit -m "chore: atualiza saude_tokens.json [skip ci]"
-          git push
+radar_nicho:
+  termos:
+    - "esmalte impala"
+    - "kit esmalte"
+    - "removedor esmalte"
+  limite_concorrentes_por_termo: 10
+  vendas_concorrente_forte: 500   # quantidade_vendida acima disso conta como "concorrente forte"
+  score_minimo_para_alertar: 0.5
 ```
 
-Adicione `[skip ci]` exatamente como mostrado, para esse commit
-automático não disparar outros workflows em loop.
+3b. Criar a pasta `agentes/inteligencia/` com `__init__.py` vazio, e:
+
+```python
+"""
+agentes/inteligencia/agente_radar_nicho.py
+Varre termos de busca do nicho configurado e calcula um score simples
+de oportunidade: quanto menos concorrentes "fortes" (alto volume de
+vendas) aparecerem pra um termo, maior o score. NÃO mede volume de
+busca real (a API do ML não expõe isso) — é um proxy de saturação de
+oferta, não de demanda. Atrás de feature flag desligada por padrão
+(ROBO_FEATURE_RADAR_NICHO).
+"""
+from __future__ import annotations
+
+import logging
+
+from core.config import SPEC
+from core.feature_flags import feature_ativa
+from core.notificador import alertar_gestor
+from integracoes.ml import ml_client
+
+logger = logging.getLogger("agente_radar_nicho")
+
+_CONFIG_RADAR = SPEC.get("radar_nicho", {}) if isinstance(SPEC, dict) else {}
+TERMOS = _CONFIG_RADAR.get("termos") or []
+LIMITE_POR_TERMO = int(_CONFIG_RADAR.get("limite_concorrentes_por_termo", 10) or 10)
+VENDAS_CONCORRENTE_FORTE = int(_CONFIG_RADAR.get("vendas_concorrente_forte", 500) or 500)
+SCORE_MINIMO_ALERTA = float(_CONFIG_RADAR.get("score_minimo_para_alertar", 0.5) or 0.5)
+
+
+def analisar_termo(termo: str) -> dict:
+    """
+    Busca um termo no ML e calcula o score de oportunidade.
+    score = 1 / (1 + numero_de_concorrentes_fortes)
+    Nunca lança exceção.
+    """
+    try:
+        resultados = ml_client.buscar_concorrentes_por_termo(termo, limite=LIMITE_POR_TERMO)
+        fortes = [
+            r for r in resultados if int(r.get("quantidade_vendida", 0) or 0) >= VENDAS_CONCORRENTE_FORTE
+        ]
+        score = round(1.0 / (1 + len(fortes)), 3)
+        return {
+            "termo": termo,
+            "total_resultados": len(resultados),
+            "concorrentes_fortes": len(fortes),
+            "score": score,
+        }
+    except Exception as exc:
+        logger.error("analisar_termo erro termo=%s: %s", termo, exc)
+        return {"termo": termo, "total_resultados": 0, "concorrentes_fortes": 0, "score": 0.0, "erro": str(exc)}
+
+
+def _montar_resumo(analises: list[dict]) -> str:
+    relevantes = [a for a in analises if a.get("score", 0) >= SCORE_MINIMO_ALERTA]
+    if not relevantes:
+        return "🧭 Radar de oportunidade de nicho — Robo-Markplaces\n\nNenhum termo com sinal de oportunidade hoje."
+    linhas = ["🧭 Radar de oportunidade de nicho — Robo-Markplaces", ""]
+    for a in sorted(relevantes, key=lambda x: x["score"], reverse=True):
+        linhas.append(f"• {a['termo']} — score {a['score']} ({a['concorrentes_fortes']} concorrentes fortes)")
+    return "\n".join(linhas).strip()
+
+
+def executar() -> dict:
+    """Entrada para cron/workflow. Nunca lança exceção."""
+    if not feature_ativa("RADAR_NICHO"):
+        logger.info("Feature RADAR_NICHO desligada — nada a fazer.")
+        return {"ok": True, "ativo": False}
+
+    if not TERMOS:
+        logger.warning("radar_nicho.termos vazio em spec.yaml — nada a analisar.")
+        return {"ok": True, "ativo": True, "total_termos": 0}
+
+    logger.info("=== Agente radar de oportunidade de nicho (somente leitura) ===")
+    analises = [analisar_termo(t) for t in TERMOS]
+    msg = _montar_resumo(analises)
+    alerta_enviado = bool(alertar_gestor(msg))
+
+    return {"ok": True, "ativo": True, "total_termos": len(analises), "alerta_enviado": alerta_enviado}
+
+
+def main() -> int:
+    resultado = executar()
+    return 0 if resultado.get("ok") else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
 
 ═══════════════════════════════════════════════════════════════
-PASSO 5 — Testes (cobertura ≥ 90%, mesmo padrão já adotado no projeto)
+PASSO 4 — Extensão 3 (SCAFFOLD, não a feature completa):
+agentes/panorama/agente_panorama.py
+Toggle: ROBO_FEATURE_PAINEL_4_CANAIS
 ═══════════════════════════════════════════════════════════════
 
-Criar `tests/test_saude_tokens.py`:
+IMPORTANTE: hoje só o `ml_client` tem uma função de status por anúncio
+(`obter_status_anuncio`). Shopee, Magalu e Amazon ainda não têm
+equivalente — então este passo é DELIBERADAMENTE só o scaffold (toggle
++ checagem de pré-requisito), não o painel completo. O painel real
+(por SKU, nos 4 canais) é uma etapa futura, depois que Amazon/Shopee
+tiverem token resolvido E as funções de status por anúncio existirem
+nesses 3 clientes.
 
-- `registrar_verificacao` com `ok=True` repetido 3x incrementa
-  `sequencia_atual` 1,2,3 e mantém `falhas_consecutivas=0`.
-- `ok=False` após uma sequência positiva zera `sequencia_atual`,
-  incrementa `falhas_consecutivas`, e marca `houve_quebra_agora=True`
-  só nessa transição (não nas falhas seguintes).
-- `ok=False` repetido (já sem sequência prévia) NÃO marca
-  `houve_quebra_agora=True` de novo — só na transição inicial.
-- `maior_sequencia` nunca diminui mesmo após quebra.
-- Estado persiste corretamente entre chamadas (usar `tmp_path`/
-  monkeypatch no `STATE_FILE`, não escrever no repo de verdade).
-- Arquivo JSON corrompido ou ausente -> `_load_state` devolve `{}`,
-  sem lançar exceção.
+Adicionar em `agentes/panorama/agente_panorama.py` (sem remover nada
+existente), uma função nova:
 
-Criar `tests/test_agente_saude_tokens.py`:
+```python
+def _resumo_conectividade_4_canais() -> dict | None:
+    """
+    Scaffold da Extensão 3 (painel consolidado). Hoje só verifica
+    conectividade (probe) dos 4 canais — NÃO é o painel por SKU, que
+    depende de Amazon/Shopee terem token resolvido e funções de status
+    por anúncio equivalentes às do ML. Atrás de feature flag
+    (ROBO_FEATURE_PAINEL_4_CANAIS). Nunca lança exceção.
+    """
+    from core.feature_flags import feature_ativa
 
-- `verificar_provider` para cada um dos 5 providers chama o probe
-  certo (mockar `ml_client.probe_conexao`, `bling_client.probe_produtos`,
-  `shopee_client.probe_conexao`, `magalu_client.probe_conexao`,
-  `amazon_client.probe_conexao` individualmente) e NUNCA chama
-  `get_token_*` nem qualquer função de renovação — testar isso
-  explicitamente (mockar e afirmar que não foi chamado).
-- Quando o probe levanta exceção, `verificar_provider` não propaga
-  (captura e trata como falha).
-- `alertar_critico` é chamado quando `houve_quebra_agora=True`.
-- `alertar_critico` é chamado quando `falhas_consecutivas >= 2`, mesmo
-  sem quebra "agora" (cenário de degradação persistente).
-- `alertar_critico` NÃO é chamado quando está tudo ok.
-- `executar()` roda os 5 providers e devolve dict com 5 chaves.
-- `main()` devolve `1` se qualquer provider falhou, `0` se todos ok.
+    if not feature_ativa("PAINEL_4_CANAIS"):
+        return None
+
+    from integracoes.ml import ml_client
+    from integracoes.shopee import shopee_client
+    from integracoes.magalu import magalu_client
+    from integracoes.amazon import amazon_client
+
+    canais = {
+        "mercadolivre": ml_client,
+        "shopee": shopee_client,
+        "magalu": magalu_client,
+        "amazon": amazon_client,
+    }
+    resultado = {}
+    for nome, cliente in canais.items():
+        try:
+            resultado[nome] = cliente.probe_conexao()
+        except Exception as exc:
+            resultado[nome] = {"ok": False, "msg": str(exc)}
+    return resultado
+```
+
+Chamar essa função dentro do fluxo já existente de `agente_panorama.py`
+(no ponto que fizer mais sentido junto ao restante do relatório), e
+incluir o resultado no relatório final SOMENTE quando não for `None`
+(ou seja, só aparece no relatório se a flag estiver ligada — se estiver
+desligada, o relatório fica idêntico ao de hoje).
+
+═══════════════════════════════════════════════════════════════
+PASSO 5 — Documentação e .env.example
+═══════════════════════════════════════════════════════════════
+
+Adicionar ao `.env.example`:
+
+```
+# Extensões em construção (desligadas por padrão)
+# ROBO_FEATURE_FAIXA_PRECO_SUGERIDA=false
+# ROBO_FEATURE_RADAR_NICHO=false
+# ROBO_FEATURE_PAINEL_4_CANAIS=false
+```
+
+═══════════════════════════════════════════════════════════════
+PASSO 6 — Workflows (criados, mas inofensivos com toggle desligado)
+═══════════════════════════════════════════════════════════════
+
+Criar `.github/workflows/faixa_preco_sugerida.yml` e
+`.github/workflows/radar_nicho.yml`, seguindo exatamente o mesmo
+formato de `.github/workflows/otimizar_listing.yml` (mesmas envs de
+ML_*, TELEGRAM_*, DD_*), trocando só o `cron` (sugestão: 1x por dia
+pros dois) e o comando (`python -m agentes.precificacao.agente_faixa_preco_sugerida`
+e `python -m agentes.inteligencia.agente_radar_nicho`). Como o agente
+sai imediatamente se a flag estiver desligada, esses workflows não têm
+custo nem risco mesmo antes de você decidir ativar.
+
+═══════════════════════════════════════════════════════════════
+PASSO 7 — Testes (cobertura ≥ 90%)
+═══════════════════════════════════════════════════════════════
+
+Criar `tests/test_feature_flags.py`:
+- `feature_ativa` é `False` por padrão (env ausente).
+- `feature_ativa` só é `True` com valor exatamente `"true"` (case-insensitive).
+
+Criar `tests/test_agente_faixa_preco_sugerida.py`:
+- `executar()` com flag desligada devolve `{"ok": True, "ativo": False}`
+  e NÃO chama `ml_client.buscar_detalhes_concorrentes` nem `alertar_gestor`
+  (mockar e afirmar não-chamado).
+- `_calcular_preco_piso`: custo zero, denominador zero/negativo (margem+taxa >= 100%) -> 0.0.
+- `analisar_sku`: sem item_id válido -> `None`; preço abaixo do piso -> alerta de piso;
+  preço 15%+ acima da média -> alerta de competitividade; preço dentro da faixa -> sem alerta.
+- `executar()` com flag ligada (mockar catálogo e `ml_client`) chama `alertar_gestor` uma vez.
+
+Criar `tests/test_agente_radar_nicho.py`:
+- `executar()` com flag desligada não chama `buscar_concorrentes_por_termo`.
+- `analisar_termo`: 0 concorrentes fortes -> score 1.0; vários concorrentes fortes -> score menor.
+- `_montar_resumo`: nenhum termo acima do score mínimo -> mensagem de "nenhum sinal".
+- `executar()` com `TERMOS` vazio -> não chama `alertar_gestor`, devolve `total_termos=0`.
+
+Criar `tests/test_agente_panorama_painel_4_canais.py` (ou adicionar ao
+arquivo de teste do panorama já existente):
+- `_resumo_conectividade_4_canais()` com flag desligada devolve `None`
+  e não chama nenhum `probe_conexao`.
+- Com flag ligada (mockar os 4 `probe_conexao`), devolve dict com as
+  4 chaves.
+- Se um `probe_conexao` lançar exceção, essa chave vem com
+  `{"ok": False, "msg": ...}` em vez de propagar.
 
 Rodar no final:
 
@@ -385,29 +424,29 @@ ruff check .
 ```
 
 ═══════════════════════════════════════════════════════════════
-NÃO FAZER (fora de escopo)
+NÃO FAZER (fora de escopo deste prompt — propositalmente)
 ═══════════════════════════════════════════════════════════════
 
-- Não chamar `get_token_*`/`_renovar_token_*` de nenhum provider —
-  reforçando o Passo de design acima.
-- Não duplicar a lógica de `core/marketplace_keepalive.py` — são
-  propósitos diferentes (keepalive = "faz tempo que não chamamos a
-  API"; saude_tokens = "sequência sem quebra de autenticação").
-- Não mexer em nenhum cliente de marketplace (`ml_client.py`,
-  `bling_client.py`, etc.) — eles só são consumidos via
-  `probe_conexao`/`probe_produtos`, que já existem.
+- Não implementar o painel por SKU dos 4 canais de verdade — isso
+  depende de Amazon/Shopee terem função de status por anúncio, que
+  ainda não existe. Este prompt só entrega o scaffold de conectividade.
+- Não chamar `atualizar_preco_item` em nenhum lugar da Extensão 1 —
+  ela é só sugestão.
+- Não criar agendamento de alta frequência pros 2 novos workflows —
+  1x por dia é suficiente, já que são sugestões, não tempo real.
 
 ═══════════════════════════════════════════════════════════════
 CHECKLIST FINAL
 ═══════════════════════════════════════════════════════════════
 
-- [ ] Branch `feature/agente-saude-tokens` criada
-- [ ] `core/saude_tokens.py` criado e testado
-- [ ] `agentes/observabilidade/agente_saude_tokens.py` criado e testado
-- [ ] `core/datadog_logger.py` atualizado (2 linhas no dict)
-- [ ] `.github/workflows/saude_tokens.yml` criado, com `permissions: contents: write`
-      e step de commit do `logs/saude_tokens.json`
-- [ ] Testes novos passando
+- [ ] Branch `feature/extensoes-toggle-preco-nicho-painel` criada
+- [ ] `core/feature_flags.py` criado e testado
+- [ ] Extensão 1 (`agente_faixa_preco_sugerida.py`) criada, testada, atrás do toggle
+- [ ] Extensão 2 (`agente_radar_nicho.py`) criada, testada, atrás do toggle, com termos em spec.yaml
+- [ ] Extensão 3 (scaffold `_resumo_conectividade_4_canais`) criada, testada, atrás do toggle
+- [ ] `.env.example` atualizado com os 3 toggles (comentados, default false)
+- [ ] 2 workflows novos criados (`faixa_preco_sugerida.yml`, `radar_nicho.yml`)
+- [ ] Todos os testes antigos continuam passando, sem alteração de comportamento
 - [ ] Cobertura total ≥ 90%
 - [ ] `ruff check .` sem erros
 - [ ] `git diff --stat` colado para revisão antes de qualquer commit
