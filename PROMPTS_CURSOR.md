@@ -1,425 +1,452 @@
-Implemente os 3 itens abaixo, na ordem, literalmente. Antes de começar,
-crie uma branch isolada (`fix/tokens-amazon-shopee-magalu`). Se algum
-trecho "trocar X por Y" não bater exatamente com o arquivo atual, PARE e
-me mostre o trecho real antes de aplicar — não tente adivinhar onde
-encaixar. Ao final, é obrigatório manter cobertura de testes em **90%
-ou mais** (hoje o `pyproject.toml` exige 80% — aumente para 90% e
-garanta que o código novo tenha teste suficiente pra não furar isso).
+Crie as 3 extensões abaixo (faixa de preço sugerida, radar de
+oportunidade de nicho, e o scaffold do painel consolidado de 4 canais),
+cada uma atrás do seu próprio toggle, desligado por padrão. Aplique
+literalmente, na ordem dos passos. Crie a branch
+`feature/extensoes-toggle-preco-nicho-painel` antes de começar. Se algo
+não bater exatamente com o arquivo atual, pare e mostre o trecho real
+antes de aplicar.
 
 ═══════════════════════════════════════════════════════════════
-ITEM 1 — Amazon: criar renovação automática de token (LWA)
-Hoje `amazon_client.py` só lê AMAZON_ACCESS_TOKEN estático do .env —
-sem isso o token expira em ~1h e exige troca manual sempre.
+GARANTIA OBRIGATÓRIA (mesmo princípio do toggle multi-tenant)
 ═══════════════════════════════════════════════════════════════
 
-1a. Em core/token_manager.py, adicionar (perto das outras seções de
-provider, ex.: depois da seção Magalu) o cache e a função de renovação,
-seguindo o MESMO padrão usado em `_renovar_token_magalu`/`get_token_magalu`,
-mas usando o endpoint LWA da Amazon:
-
-```python
-_token_cache_amazon = {"access_token": None, "expires_at": 0}
-_amazon_refresh_efetivo = {"valor": None}
-
-
-def _amazon_refresh_disponivel() -> str | None:
-    if _amazon_refresh_efetivo["valor"] is None:
-        _amazon_refresh_efetivo["valor"] = (cfg.AMAZON_REFRESH_TOKEN or "").strip() or None
-    return _amazon_refresh_efetivo["valor"]
-
-
-def _renovar_token_amazon():
-    refresh = _amazon_refresh_disponivel()
-    if not all([cfg.AMAZON_LWA_CLIENT_ID, cfg.AMAZON_LWA_CLIENT_SECRET, refresh]):
-        logger.error("Credenciais Amazon (LWA) ausentes para renovação de token.")
-        return None
-
-    try:
-        r = request(
-            "POST",
-            "https://api.amazon.com/auth/o2/token",
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            data={
-                "grant_type": "refresh_token",
-                "refresh_token": refresh,
-                "client_id": cfg.AMAZON_LWA_CLIENT_ID,
-                "client_secret": cfg.AMAZON_LWA_CLIENT_SECRET,
-            },
-            timeout=20,
-        )
-        r.raise_for_status()
-        body = r.json() or {}
-
-        access_token = body.get("access_token")
-        if not access_token:
-            logger.error("Amazon refresh sem access_token na resposta.")
-            return None
-
-        expires_in = int(body.get("expires_in") or 3600)
-        novo_refresh = body.get("refresh_token")  # LWA normalmente não rotaciona, mas trata se vier
-
-        _token_cache_amazon["access_token"] = access_token
-        _token_cache_amazon["expires_at"] = time.time() + max(60, expires_in) - 60
-
-        if novo_refresh:
-            _amazon_refresh_efetivo["valor"] = novo_refresh
-            cfg.AMAZON_REFRESH_TOKEN = novo_refresh
-
-        cfg.AMAZON_ACCESS_TOKEN = access_token
-
-        if os.getenv("GITHUB_ACTIONS") == "true":
-            if sync_secrets_github(access_token, novo_refresh or refresh, prefix="AMAZON"):
-                logger.info("Secrets AMAZON_* sincronizados no GitHub (rotação automática).")
-            else:
-                logger.warning("Falha ao sincronizar AMAZON_* no GitHub após renovação.")
-
-        logger.info("Token Amazon renovado com sucesso")
-        return access_token
-
-    except Exception as e:
-        logger.error("Erro ao renovar token Amazon: %s", e)
-        return None
-
-
-def get_token_amazon():
-    if not _amazon_refresh_disponivel():
-        return cfg.AMAZON_ACCESS_TOKEN or None
-
-    now = time.time()
-
-    if _token_cache_amazon["access_token"] and now < _token_cache_amazon["expires_at"]:
-        return _token_cache_amazon["access_token"]
-
-    novo = _renovar_token_amazon()
-    return novo or cfg.AMAZON_ACCESS_TOKEN or None
-```
-
-1b. Em integracoes/amazon/amazon_client.py, trocar o import e a função
-`_h()` para usar a renovação automática (mesmo padrão do `magalu_client.py`).
-Trocar:
-
-```python
-from core.config import AMAZON_ACCESS_TOKEN, AMAZON_MARKETPLACE_ID
-from core.http_client import request
-from core.http_errors import log_http_erro_listagem, status_http
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
-
-logger = logging.getLogger("amazon_client")
-BASE = "https://sellingpartnerapi-na.amazon.com"
-
-
-def _enabled() -> bool:
-    return bool(AMAZON_ACCESS_TOKEN)
-
-
-def _h():
-    return {
-        "x-amz-access-token": AMAZON_ACCESS_TOKEN,
-        "Content-Type": "application/json",
-    }
-```
-
-por:
-
-```python
-from core.config import AMAZON_ACCESS_TOKEN, AMAZON_MARKETPLACE_ID, AMAZON_REFRESH_TOKEN
-from core.http_client import request
-from core.http_errors import log_http_erro_listagem, status_http
-from core.token_manager import get_token_amazon
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
-
-logger = logging.getLogger("amazon_client")
-BASE = "https://sellingpartnerapi-na.amazon.com"
-
-
-def _enabled() -> bool:
-    return bool(AMAZON_ACCESS_TOKEN or AMAZON_REFRESH_TOKEN)
-
-
-def _h():
-    tok = AMAZON_ACCESS_TOKEN
-    if AMAZON_REFRESH_TOKEN:
-        tok = get_token_amazon() or AMAZON_ACCESS_TOKEN
-    return {
-        "x-amz-access-token": tok,
-        "Content-Type": "application/json",
-    }
-```
-
-Mantém retrocompatibilidade: quem só tiver AMAZON_ACCESS_TOKEN estático
-continua funcionando igual a hoje; quem configurar AMAZON_REFRESH_TOKEN
-passa a ter renovação automática.
+Com os 3 toggles desligados (padrão), o comportamento atual do robô
+não muda em NADA — nenhum agente existente é modificado, e os 3 agentes
+novos saem (no-op) na primeira linha se a própria flag estiver
+desligada, sem chamar nenhuma API de marketplace. Ao final, confirme
+que os testes que já existiam continuam passando sem alteração.
 
 ═══════════════════════════════════════════════════════════════
-ITEM 2 — Shopee: criar script de obtenção inicial do token
-Hoje existe pegar_token_ml.py, pegar_token_bling.py, pegar_token_magalu.py
-e pegar_token_amazon.py — mas NÃO existe pegar_token_shopee.py.
+PASSO 1 — core/feature_flags.py (novo arquivo — base para os 3 toggles)
 ═══════════════════════════════════════════════════════════════
-
-Criar `pegar_token_shopee.py` na raiz do projeto (mesmo nível dos outros
-`pegar_token_*.py`), com este conteúdo:
 
 ```python
 """
-pegar_token_shopee.py
-Bootstrap inicial do OAuth2 da Shopee Open Platform: gera a URL de
-autorização, e depois troca o "code" + "shop_id" do redirect pelo
-primeiro access_token + refresh_token.
-
-Credenciais vêm de variáveis de ambiente / .env (NUNCA hardcoded):
-    SHOPEE_PARTNER_ID, SHOPEE_PARTNER_KEY
-    SHOPEE_REDIRECT_URI   (opcional; default https://www.google.com)
-
-Como usar:
-    1) Rode sem argumentos para gerar a URL de autorização:
-           python pegar_token_shopee.py
-       Abra a URL impressa, faça login como o vendedor e autorize o app.
-    2) A Shopee redireciona para a Redirect URI com ?code=XXXX&shop_id=YYYY
-       na query string. Copie os dois valores. ATENÇÃO: o code expira
-       em poucos minutos.
-    3) Rode IMEDIATAMENTE passando os dois valores:
-           python pegar_token_shopee.py SEU_CODE SEU_SHOP_ID
+core/feature_flags.py
+Toggles de funcionalidades em construção. Cada flag é lida de
+ROBO_FEATURE_<NOME> e, por padrão (variável ausente), é considerada
+desligada — comportamento seguro por padrão.
 """
 from __future__ import annotations
 
-import hashlib
-import hmac
 import os
-import sys
-import time
-import urllib.parse
-
-import requests
-
-HOST = "https://partner.shopeemobile.com"
 
 
-def _carregar_dotenv() -> None:
+def feature_ativa(nome: str) -> bool:
+    """True somente se ROBO_FEATURE_<nome> estiver definida como 'true' (case-insensitive)."""
+    return (os.getenv(f"ROBO_FEATURE_{nome}", "") or "").strip().lower() == "true"
+```
+
+═══════════════════════════════════════════════════════════════
+PASSO 2 — Extensão 1: agentes/precificacao/agente_faixa_preco_sugerida.py
+Toggle: ROBO_FEATURE_FAIXA_PRECO_SUGERIDA
+Só leitura + sugestão — nunca chama atualizar_preco_item.
+═══════════════════════════════════════════════════════════════
+
+Criar a pasta `agentes/precificacao/` com `__init__.py` vazio, e:
+
+```python
+"""
+agentes/precificacao/agente_faixa_preco_sugerida.py
+Sugere uma faixa de preço (piso de margem + média de concorrentes) por
+SKU ativo no ML, comparando com o preço atual. Somente leitura e
+notificação — NUNCA altera preço. Atrás de feature flag desligada por
+padrão (ROBO_FEATURE_FAIXA_PRECO_SUGERIDA).
+"""
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+from core.config import TAXA_CANAL_PADRAO_PCT, MARGEM_FASE_1_PCT, MARGEM_FASE_2_PCT, MARGEM_FASE_3_PCT
+from core.feature_flags import feature_ativa
+from core.notificador import alertar_gestor
+from integracoes.ml import ml_client
+
+logger = logging.getLogger("agente_faixa_preco_sugerida")
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+CATALOGO_PATH = ROOT / "catalogo" / "produtos.json"
+
+
+def _margem_minima_por_fase(fase_atual) -> float:
+    fase = str(fase_atual or "1").strip()
+    if fase == "2":
+        return MARGEM_FASE_2_PCT
+    if fase == "3":
+        return MARGEM_FASE_3_PCT
+    return MARGEM_FASE_1_PCT
+
+
+def _calcular_preco_piso(custo: float, taxa_canal_pct: float, margem_minima_pct: float) -> float:
+    taxa = max(0.0, min(99.0, taxa_canal_pct)) / 100.0
+    margem = max(0.0, min(99.0, margem_minima_pct)) / 100.0
+    denominador = 1 - taxa - margem
+    if custo <= 0 or denominador <= 0:
+        return 0.0
+    return custo / denominador
+
+
+def _carregar_catalogo() -> list[dict]:
     try:
-        from dotenv import load_dotenv
-
-        load_dotenv()
-    except Exception:
-        pass
-
-
-_carregar_dotenv()
-
-PARTNER_ID = os.getenv("SHOPEE_PARTNER_ID", "").strip()
-PARTNER_KEY = os.getenv("SHOPEE_PARTNER_KEY", "").strip()
-REDIRECT_URI = os.getenv("SHOPEE_REDIRECT_URI", "https://www.google.com").strip()
+        if not CATALOGO_PATH.is_file():
+            logger.warning("catalogo/produtos.json não encontrado")
+            return []
+        with CATALOGO_PATH.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except Exception as exc:
+        logger.error("Erro ao carregar catalogo: %s", exc)
+        return []
 
 
-def _assinar(path: str, timestamp: int) -> str:
-    base = f"{PARTNER_ID}{path}{timestamp}"
-    return hmac.new(PARTNER_KEY.encode("utf-8"), base.encode("utf-8"), hashlib.sha256).hexdigest()
+def analisar_sku(produto: dict) -> dict | None:
+    """
+    Compara preço atual x piso de margem x concorrentes para 1 SKU.
+    Devolve dict de sugestão, ou None se não houver item_id ML válido.
+    Nunca lança exceção.
+    """
+    canais = produto.get("canais") or {}
+    ml = canais.get("mercadolivre") or {} if isinstance(canais, dict) else {}
+    item_id = str(ml.get("item_id") or "").strip()
+    if not item_id or "PREENCHER" in item_id.upper() or not ml.get("ativo"):
+        return None
 
+    try:
+        custo = float(produto.get("custo_total", 0) or 0)
+        preco_atual = float(produto.get("preco", 0) or 0)
+        margem_min = _margem_minima_por_fase(produto.get("fase_atual"))
+        piso = _calcular_preco_piso(custo, TAXA_CANAL_PADRAO_PCT, margem_min)
 
-def gerar_url_autorizacao() -> str:
-    path = "/api/v2/shop/auth_partner"
-    ts = int(time.time())
-    sign = _assinar(path, ts)
-    qs = urllib.parse.urlencode(
-        {
-            "partner_id": int(PARTNER_ID),
-            "timestamp": ts,
-            "sign": sign,
-            "redirect": REDIRECT_URI,
+        concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
+        precos_concorrentes = [
+            float(c.get("preco", 0) or 0) for c in concorrentes if float(c.get("preco", 0) or 0) > 0
+        ]
+
+        media_concorrente = (
+            round(sum(precos_concorrentes) / len(precos_concorrentes), 2) if precos_concorrentes else 0.0
+        )
+        min_concorrente = round(min(precos_concorrentes), 2) if precos_concorrentes else 0.0
+
+        alerta = None
+        if piso > 0 and preco_atual < piso:
+            alerta = f"preço atual (R$ {preco_atual:.2f}) está ABAIXO do piso de margem (R$ {piso:.2f})"
+        elif media_concorrente > 0 and preco_atual > media_concorrente * 1.15:
+            alerta = (
+                f"preço atual (R$ {preco_atual:.2f}) está 15%+ acima da média dos "
+                f"concorrentes (R$ {media_concorrente:.2f}) — risco de perder competitividade"
+            )
+
+        return {
+            "sku": produto.get("sku", ""),
+            "item_id": item_id,
+            "preco_atual": preco_atual,
+            "piso_margem": piso,
+            "media_concorrente": media_concorrente,
+            "min_concorrente": min_concorrente,
+            "concorrentes_analisados": len(precos_concorrentes),
+            "alerta": alerta,
         }
-    )
-    return f"{HOST}{path}?{qs}"
+    except Exception as exc:
+        logger.error("analisar_sku erro sku=%s: %s", produto.get("sku"), exc)
+        return None
 
 
-def trocar_code_por_token(code: str, shop_id: str) -> tuple[requests.Response, dict]:
-    path = "/api/v2/auth/token/get"
-    ts = int(time.time())
-    sign = _assinar(path, ts)
-    qs = urllib.parse.urlencode({"partner_id": int(PARTNER_ID), "timestamp": ts, "sign": sign})
-
-    resp = requests.post(
-        f"{HOST}{path}?{qs}",
-        json={"code": code, "shop_id": int(shop_id), "partner_id": int(PARTNER_ID)},
-        headers={"Content-Type": "application/json"},
-        timeout=15,
-    )
-    try:
-        dados = resp.json()
-    except ValueError:
-        dados = {}
-    return resp, dados
+def _montar_resumo(analises: list[dict]) -> str:
+    relevantes = [a for a in analises if a.get("alerta")]
+    if not relevantes:
+        return "💰 Faixa de preço sugerida — Robo-Markplaces\n\nNenhum SKU fora da faixa recomendada hoje."
+    linhas = ["💰 Faixa de preço sugerida — Robo-Markplaces", ""]
+    for a in relevantes:
+        linhas.append(f"• {a['sku']} ({a['item_id']})")
+        linhas.append(f"  {a['alerta']}")
+        linhas.append("")
+    return "\n".join(linhas).strip()
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = argv if argv is not None else sys.argv[1:]
+def executar() -> dict:
+    """Entrada para cron/workflow. Nunca lança exceção."""
+    if not feature_ativa("FAIXA_PRECO_SUGERIDA"):
+        logger.info("Feature FAIXA_PRECO_SUGERIDA desligada — nada a fazer.")
+        return {"ok": True, "ativo": False}
 
-    if not PARTNER_ID or not PARTNER_KEY:
-        print("Defina SHOPEE_PARTNER_ID e SHOPEE_PARTNER_KEY no .env / ambiente.")
-        return 1
+    logger.info("=== Agente de faixa de preço sugerida (somente leitura) ===")
+    catalogo = _carregar_catalogo()
+    analises = [a for a in (analisar_sku(p) for p in catalogo if isinstance(p, dict)) if a is not None]
 
-    if len(args) < 2:
-        print("Nenhum code/shop_id informado. Abra esta URL, autorize o app, e copie")
-        print("'code' e 'shop_id' da URL de retorno:\n")
-        print(gerar_url_autorizacao())
-        print("\nDepois rode: python pegar_token_shopee.py SEU_CODE SEU_SHOP_ID")
-        return 0
+    msg = _montar_resumo(analises)
+    alerta_enviado = bool(alertar_gestor(msg))
 
-    code, shop_id = args[0].strip(), args[1].strip()
+    return {"ok": True, "ativo": True, "total_analisados": len(analises), "alerta_enviado": alerta_enviado}
 
-    print("Enviando requisicao para a Shopee...")
-    resp, dados = trocar_code_por_token(code, shop_id)
-    print(f"Status: {resp.status_code}")
 
-    if dados.get("access_token"):
-        print("=" * 60)
-        print("SUCESSO! Copie para o GitHub Secrets:")
-        print("=" * 60)
-        print(f"SHOPEE_SHOP_ID:       {shop_id}")
-        print(f"SHOPEE_ACCESS_TOKEN:  {dados['access_token']}")
-        print(f"SHOPEE_REFRESH_TOKEN: {dados.get('refresh_token', '')}")
-        print(f"Expira em:            {int(dados.get('expire_in', 0)) // 3600}h")
-        print("=" * 60)
-        return 0
-
-    print("ERRO:", dados.get("message") or dados)
-    print("Dica: o code expira rápido — gere uma nova URL e refaça o fluxo.")
-    return 1
+def main() -> int:
+    resultado = executar()
+    return 0 if resultado.get("ok") else 1
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-Adicionar uma seção curta no README (mesmo padrão da seção do Bling/ML)
-explicando esses 3 passos, perto de onde o Shopee já é mencionado.
-
 ═══════════════════════════════════════════════════════════════
-ITEM 3 — Replicar o cofre em disco + sync GitHub (já existe no ML/Bling)
-para Shopee e Magalu
+PASSO 3 — Extensão 2: agentes/inteligencia/agente_radar_nicho.py
+Toggle: ROBO_FEATURE_RADAR_NICHO
+Só leitura + notificação. Score simples e explícito, sem prometer
+precisão que a API não entrega.
 ═══════════════════════════════════════════════════════════════
 
-Para CADA provider (Shopee e Magalu), seguir o mesmo padrão já usado em
-`_salvar_store_bling`/`_carregar_store_bling`/`_hidratar_cache_bling_do_store`
-(e replicado no ML): variável de ambiente `SHOPEE_TOKEN_STORE` e
-`MAGALU_TOKEN_STORE`, funções de leitura/escrita em disco, hidratação no
-início de `get_token_shopee`/`get_token_magalu`, e persistência dentro de
-`_renovar_token_shopee`/`_renovar_token_magalu` (logo após atualizar o
-cache em memória, no mesmo ponto onde hoje só atualiza `cfg.SHOPEE_*`/
-`cfg.MAGALU_*`).
+3a. Adicionar em `spec/spec.yaml`, no final do arquivo:
 
-Para reduzir duplicação, criar uma função genérica reaproveitável em vez
-de copiar 2x o boilerplate:
+```yaml
+radar_nicho:
+  termos:
+    - "esmalte impala"
+    - "kit esmalte"
+    - "removedor esmalte"
+  limite_concorrentes_por_termo: 10
+  vendas_concorrente_forte: 500   # quantidade_vendida acima disso conta como "concorrente forte"
+  score_minimo_para_alertar: 0.5
+```
+
+3b. Criar a pasta `agentes/inteligencia/` com `__init__.py` vazio, e:
 
 ```python
-def _store_path(env_var: str) -> Path | None:
-    p = (os.getenv(env_var) or "").strip()
-    return Path(p) if p else None
+"""
+agentes/inteligencia/agente_radar_nicho.py
+Varre termos de busca do nicho configurado e calcula um score simples
+de oportunidade: quanto menos concorrentes "fortes" (alto volume de
+vendas) aparecerem pra um termo, maior o score. NÃO mede volume de
+busca real (a API do ML não expõe isso) — é um proxy de saturação de
+oferta, não de demanda. Atrás de feature flag desligada por padrão
+(ROBO_FEATURE_RADAR_NICHO).
+"""
+from __future__ import annotations
+
+import logging
+
+from core.config import SPEC
+from core.feature_flags import feature_ativa
+from core.notificador import alertar_gestor
+from integracoes.ml import ml_client
+
+logger = logging.getLogger("agente_radar_nicho")
+
+_CONFIG_RADAR = SPEC.get("radar_nicho", {}) if isinstance(SPEC, dict) else {}
+TERMOS = _CONFIG_RADAR.get("termos") or []
+LIMITE_POR_TERMO = int(_CONFIG_RADAR.get("limite_concorrentes_por_termo", 10) or 10)
+VENDAS_CONCORRENTE_FORTE = int(_CONFIG_RADAR.get("vendas_concorrente_forte", 500) or 500)
+SCORE_MINIMO_ALERTA = float(_CONFIG_RADAR.get("score_minimo_para_alertar", 0.5) or 0.5)
 
 
-def _carregar_store(env_var: str) -> dict:
-    p = _store_path(env_var)
-    if not p or not p.exists():
-        return {}
+def analisar_termo(termo: str) -> dict:
+    """
+    Busca um termo no ML e calcula o score de oportunidade.
+    score = 1 / (1 + numero_de_concorrentes_fortes)
+    Nunca lança exceção.
+    """
     try:
-        return json.loads(p.read_text(encoding="utf-8")) or {}
-    except Exception as e:
-        logger.error("Falha ao ler store (%s): %s", p, e)
-        return {}
+        resultados = ml_client.buscar_concorrentes_por_termo(termo, limite=LIMITE_POR_TERMO)
+        fortes = [
+            r for r in resultados if int(r.get("quantidade_vendida", 0) or 0) >= VENDAS_CONCORRENTE_FORTE
+        ]
+        score = round(1.0 / (1 + len(fortes)), 3)
+        return {
+            "termo": termo,
+            "total_resultados": len(resultados),
+            "concorrentes_fortes": len(fortes),
+            "score": score,
+        }
+    except Exception as exc:
+        logger.error("analisar_termo erro termo=%s: %s", termo, exc)
+        return {"termo": termo, "total_resultados": 0, "concorrentes_fortes": 0, "score": 0.0, "erro": str(exc)}
 
 
-def _salvar_store(env_var: str, access_token: str, refresh_token: str | None, expires_at: float) -> None:
-    p = _store_path(env_var)
-    if not p:
-        return
-    try:
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(
-            json.dumps(
-                {
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expires_at": expires_at,
-                    "atualizado_em": time.time(),
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+def _montar_resumo(analises: list[dict]) -> str:
+    relevantes = [a for a in analises if a.get("score", 0) >= SCORE_MINIMO_ALERTA]
+    if not relevantes:
+        return "🧭 Radar de oportunidade de nicho — Robo-Markplaces\n\nNenhum termo com sinal de oportunidade hoje."
+    linhas = ["🧭 Radar de oportunidade de nicho — Robo-Markplaces", ""]
+    for a in sorted(relevantes, key=lambda x: x["score"], reverse=True):
+        linhas.append(f"• {a['termo']} — score {a['score']} ({a['concorrentes_fortes']} concorrentes fortes)")
+    return "\n".join(linhas).strip()
+
+
+def executar() -> dict:
+    """Entrada para cron/workflow. Nunca lança exceção."""
+    if not feature_ativa("RADAR_NICHO"):
+        logger.info("Feature RADAR_NICHO desligada — nada a fazer.")
+        return {"ok": True, "ativo": False}
+
+    if not TERMOS:
+        logger.warning("radar_nicho.termos vazio em spec.yaml — nada a analisar.")
+        return {"ok": True, "ativo": True, "total_termos": 0}
+
+    logger.info("=== Agente radar de oportunidade de nicho (somente leitura) ===")
+    analises = [analisar_termo(t) for t in TERMOS]
+    msg = _montar_resumo(analises)
+    alerta_enviado = bool(alertar_gestor(msg))
+
+    return {"ok": True, "ativo": True, "total_termos": len(analises), "alerta_enviado": alerta_enviado}
+
+
+def main() -> int:
+    resultado = executar()
+    return 0 if resultado.get("ok") else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+═══════════════════════════════════════════════════════════════
+PASSO 4 — Extensão 3 (SCAFFOLD, não a feature completa):
+agentes/panorama/agente_panorama.py
+Toggle: ROBO_FEATURE_PAINEL_4_CANAIS
+═══════════════════════════════════════════════════════════════
+
+IMPORTANTE: hoje só o `ml_client` tem uma função de status por anúncio
+(`obter_status_anuncio`). Shopee, Magalu e Amazon ainda não têm
+equivalente — então este passo é DELIBERADAMENTE só o scaffold (toggle
++ checagem de pré-requisito), não o painel completo. O painel real
+(por SKU, nos 4 canais) é uma etapa futura, depois que Amazon/Shopee
+tiverem token resolvido E as funções de status por anúncio existirem
+nesses 3 clientes.
+
+Adicionar em `agentes/panorama/agente_panorama.py` (sem remover nada
+existente), uma função nova:
+
+```python
+def _resumo_conectividade_4_canais() -> dict | None:
+    """
+    Scaffold da Extensão 3 (painel consolidado). Hoje só verifica
+    conectividade (probe) dos 4 canais — NÃO é o painel por SKU, que
+    depende de Amazon/Shopee terem token resolvido e funções de status
+    por anúncio equivalentes às do ML. Atrás de feature flag
+    (ROBO_FEATURE_PAINEL_4_CANAIS). Nunca lança exceção.
+    """
+    from core.feature_flags import feature_ativa
+
+    if not feature_ativa("PAINEL_4_CANAIS"):
+        return None
+
+    from integracoes.ml import ml_client
+    from integracoes.shopee import shopee_client
+    from integracoes.magalu import magalu_client
+    from integracoes.amazon import amazon_client
+
+    canais = {
+        "mercadolivre": ml_client,
+        "shopee": shopee_client,
+        "magalu": magalu_client,
+        "amazon": amazon_client,
+    }
+    resultado = {}
+    for nome, cliente in canais.items():
         try:
-            os.chmod(p, 0o600)
-        except OSError:
-            pass
-    except Exception as e:
-        logger.error("Falha ao gravar store (%s): %s", p, e)
+            resultado[nome] = cliente.probe_conexao()
+        except Exception as exc:
+            resultado[nome] = {"ok": False, "msg": str(exc)}
+    return resultado
 ```
 
-E usar essas funções genéricas dentro de `_shopee_refresh_disponivel`
-(hidratar de `_carregar_store("SHOPEE_TOKEN_STORE")` antes do `.env`,
-igual já foi feito pro ML em `_ml_refresh_disponivel`), de
-`_renovar_token_shopee` (chamar `_salvar_store("SHOPEE_TOKEN_STORE", ...)`
-+ `sync_secrets_github(..., prefix="SHOPEE")` quando `GITHUB_ACTIONS=true`),
-e o equivalente para `_magalu_refresh_disponivel`/`_renovar_token_magalu`
-com `MAGALU_TOKEN_STORE`/`prefix="MAGALU"`.
-
-NÃO duplicar as funções já existentes `_ml_store_path`/`_salvar_store_ml`/
-`_bling_store_path`/`_salvar_store_bling` — se quiser, pode migrá-las para
-usar as novas funções genéricas também, mas isso é opcional; o obrigatório
-é que Shopee e Magalu passem a ter o mesmo comportamento de persistência
-que ML e Bling já têm.
+Chamar essa função dentro do fluxo já existente de `agente_panorama.py`
+(no ponto que fizer mais sentido junto ao restante do relatório), e
+incluir o resultado no relatório final SOMENTE quando não for `None`
+(ou seja, só aparece no relatório se a flag estiver ligada — se estiver
+desligada, o relatório fica idêntico ao de hoje).
 
 ═══════════════════════════════════════════════════════════════
-ITEM 4 — Cobertura de testes: subir o piso de 80% para 90%
+PASSO 5 — Documentação e .env.example
 ═══════════════════════════════════════════════════════════════
 
-4a. Em pyproject.toml, trocar:
+Adicionar ao `.env.example`:
 
 ```
-"--cov-fail-under=80",
+# Extensões em construção (desligadas por padrão)
+# ROBO_FEATURE_FAIXA_PRECO_SUGERIDA=false
+# ROBO_FEATURE_RADAR_NICHO=false
+# ROBO_FEATURE_PAINEL_4_CANAIS=false
 ```
 
-por:
+═══════════════════════════════════════════════════════════════
+PASSO 6 — Workflows (criados, mas inofensivos com toggle desligado)
+═══════════════════════════════════════════════════════════════
 
-```
-"--cov-fail-under=90",
-```
+Criar `.github/workflows/faixa_preco_sugerida.yml` e
+`.github/workflows/radar_nicho.yml`, seguindo exatamente o mesmo
+formato de `.github/workflows/otimizar_listing.yml` (mesmas envs de
+ML_*, TELEGRAM_*, DD_*), trocando só o `cron` (sugestão: 1x por dia
+pros dois) e o comando (`python -m agentes.precificacao.agente_faixa_preco_sugerida`
+e `python -m agentes.inteligencia.agente_radar_nicho`). Como o agente
+sai imediatamente se a flag estiver desligada, esses workflows não têm
+custo nem risco mesmo antes de você decidir ativar.
 
-4b. Adicionar testes cobrindo TODO o código novo dos itens 1, 2 e 3:
+═══════════════════════════════════════════════════════════════
+PASSO 7 — Testes (cobertura ≥ 90%)
+═══════════════════════════════════════════════════════════════
 
-- `get_token_amazon`/`_renovar_token_amazon`: sucesso, credenciais
-  ausentes, resposta sem `access_token`, erro de rede, sync no GitHub
-  quando `GITHUB_ACTIONS=true` (mockado).
-- `amazon_client._h()`: usa `get_token_amazon()` quando há refresh_token
-  configurado, usa `AMAZON_ACCESS_TOKEN` estático quando não há.
-- `pegar_token_shopee.py`: criar `tests/test_pegar_token_shopee.py`
-  testando `gerar_url_autorizacao` (contém partner_id/sign/timestamp) e
-  `trocar_code_por_token` (sucesso e erro), mockando `requests.post`.
-- Funções genéricas `_store_path`/`_carregar_store`/`_salvar_store`:
-  store ativo vs. inativo (env var vazia), JSON corrompido no disco,
-  escrita com sucesso.
-- `_renovar_token_shopee`/`_renovar_token_magalu`: persistência em disco
-  e sync no GitHub quando aplicável (mesmo padrão de teste já existente
-  para Bling/ML em `tests/test_token_manager_providers.py`).
+Criar `tests/test_feature_flags.py`:
+- `feature_ativa` é `False` por padrão (env ausente).
+- `feature_ativa` só é `True` com valor exatamente `"true"` (case-insensitive).
 
-4c. Rode no final, nesta ordem, e cole os resultados:
+Criar `tests/test_agente_faixa_preco_sugerida.py`:
+- `executar()` com flag desligada devolve `{"ok": True, "ativo": False}`
+  e NÃO chama `ml_client.buscar_detalhes_concorrentes` nem `alertar_gestor`
+  (mockar e afirmar não-chamado).
+- `_calcular_preco_piso`: custo zero, denominador zero/negativo (margem+taxa >= 100%) -> 0.0.
+- `analisar_sku`: sem item_id válido -> `None`; preço abaixo do piso -> alerta de piso;
+  preço 15%+ acima da média -> alerta de competitividade; preço dentro da faixa -> sem alerta.
+- `executar()` com flag ligada (mockar catálogo e `ml_client`) chama `alertar_gestor` uma vez.
+
+Criar `tests/test_agente_radar_nicho.py`:
+- `executar()` com flag desligada não chama `buscar_concorrentes_por_termo`.
+- `analisar_termo`: 0 concorrentes fortes -> score 1.0; vários concorrentes fortes -> score menor.
+- `_montar_resumo`: nenhum termo acima do score mínimo -> mensagem de "nenhum sinal".
+- `executar()` com `TERMOS` vazio -> não chama `alertar_gestor`, devolve `total_termos=0`.
+
+Criar `tests/test_agente_panorama_painel_4_canais.py` (ou adicionar ao
+arquivo de teste do panorama já existente):
+- `_resumo_conectividade_4_canais()` com flag desligada devolve `None`
+  e não chama nenhum `probe_conexao`.
+- Com flag ligada (mockar os 4 `probe_conexao`), devolve dict com as
+  4 chaves.
+- Se um `probe_conexao` lançar exceção, essa chave vem com
+  `{"ok": False, "msg": ...}` em vez de propagar.
+
+Rodar no final:
 
 ```bash
 pytest -q
 ruff check .
 ```
 
-Se a cobertura ficar abaixo de 90% mesmo após os testes do item 4b, me
-diga exatamente quais linhas/arquivos ainda estão descobertos antes de
-inventar testes triviais só pra "engordar número" — prefiro saber a
-lacuna real.
-
 ═══════════════════════════════════════════════════════════════
-CHECKLIST FINAL — devolver nesse formato
+NÃO FAZER (fora de escopo deste prompt — propositalmente)
 ═══════════════════════════════════════════════════════════════
 
-- [ ] Branch `fix/tokens-amazon-shopee-magalu` criada
-- [ ] Item 1 (renovação automática Amazon) — aplicado e testado
-- [ ] Item 2 (`pegar_token_shopee.py`) — criado e testado
-- [ ] Item 3 (cofre/sync Shopee + Magalu) — aplicado e testado
-- [ ] Item 4 (piso de cobertura 90%) — `pyproject.toml` atualizado
-- [ ] `pytest -q` passando, cobertura real: ____%
+- Não implementar o painel por SKU dos 4 canais de verdade — isso
+  depende de Amazon/Shopee terem função de status por anúncio, que
+  ainda não existe. Este prompt só entrega o scaffold de conectividade.
+- Não chamar `atualizar_preco_item` em nenhum lugar da Extensão 1 —
+  ela é só sugestão.
+- Não criar agendamento de alta frequência pros 2 novos workflows —
+  1x por dia é suficiente, já que são sugestões, não tempo real.
+
+═══════════════════════════════════════════════════════════════
+CHECKLIST FINAL
+═══════════════════════════════════════════════════════════════
+
+- [ ] Branch `feature/extensoes-toggle-preco-nicho-painel` criada
+- [ ] `core/feature_flags.py` criado e testado
+- [ ] Extensão 1 (`agente_faixa_preco_sugerida.py`) criada, testada, atrás do toggle
+- [ ] Extensão 2 (`agente_radar_nicho.py`) criada, testada, atrás do toggle, com termos em spec.yaml
+- [ ] Extensão 3 (scaffold `_resumo_conectividade_4_canais`) criada, testada, atrás do toggle
+- [ ] `.env.example` atualizado com os 3 toggles (comentados, default false)
+- [ ] 2 workflows novos criados (`faixa_preco_sugerida.yml`, `radar_nicho.yml`)
+- [ ] Todos os testes antigos continuam passando, sem alteração de comportamento
+- [ ] Cobertura total ≥ 90%
 - [ ] `ruff check .` sem erros
 - [ ] `git diff --stat` colado para revisão antes de qualquer commit

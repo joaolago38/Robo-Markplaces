@@ -259,6 +259,23 @@ class TestMlAnuncioStatus(unittest.TestCase):
         self.assertEqual(ml_client.buscar_descricao_item(""), "")
         self.assertEqual(ml_client.buscar_descricao_item("   "), "")
 
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML27_buscar_descricao_sem_plain_text(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"plain_text": None})
+        self.assertEqual(ml_client.buscar_descricao_item("MLB1"), "")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML28_buscar_descricao_chama_endpoint_correto(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"plain_text": "ok"})
+        ml_client.buscar_descricao_item("MLB99")
+        mock_req.assert_called_once_with(
+            "GET",
+            f"{ml_client.BASE}/items/MLB99/description",
+            timeout=20,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

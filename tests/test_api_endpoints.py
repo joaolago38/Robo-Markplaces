@@ -84,6 +84,29 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(body["sugestao_descricao"], "sugestão descrição")
         self.assertFalse(body["ia_falhou_descricao"])
 
+    @patch(
+        "api.app.analisar_catalogo",
+        return_value={
+            "ok": True,
+            "total_analisados": 1,
+            "resultados": [
+                {
+                    "ok": True,
+                    "item_id": "MLB1",
+                    "descricao_atual": "",
+                    "sugestao_descricao": "Nova descrição sugerida",
+                    "ia_falhou_descricao": False,
+                }
+            ],
+        },
+    )
+    def test_EP14_ml_listing_otimizar_catalogo_propaga_descricao(self, *_patches):
+        resp = self.client.post("/ml/listing/otimizar", json={"limite_itens": 2})
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body["ok"])
+        self.assertEqual(body["resultados"][0]["sugestao_descricao"], "Nova descrição sugerida")
+
     @patch("api.app.analisar_catalogo", return_value={"ok": True, "total_analisados": 2, "resultados": []})
     def test_EP14_ml_listing_otimizar_catalogo_200(self, *_patches):
         resp = self.client.post("/ml/listing/otimizar", json={"limite_itens": 2})
