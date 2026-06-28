@@ -1,287 +1,268 @@
-Confira se as 4 correções abaixo (já entregues antes em
-PROMPT_CORRECAO_PONTOS_CEGOS.md) estão de fato aplicadas no repositório
-atual. Para cada uma: se já estiver aplicada, não faça nada e me confirme
-o "ok". Se não estiver (ou estiver parcial), aplique agora, literalmente,
-sem reinterpretar a lógica. No final, rode os testes/lint e me dê um
-checklist de status de cada item — e IMPORTANTE: commite as mudanças e
-gere o zip/export final a partir da pasta de trabalho ATUAL (não de um
-branch ou pasta antiga), porque o último export que recebi veio idêntico
-ao original, sem nenhuma das correções.
+Estenda agentes/ml/agente_otimizador_listing.py para também sugerir
+DESCRIÇÃO completa do anúncio (hoje ele só sugere título). Mantenha o
+mesmo contrato de segurança já usado no resto do robô: é só leitura +
+sugestão via IA — NUNCA escreve a descrição no ML automaticamente.
+Aplique literalmente os trechos abaixo.
 
 ═══════════════════════════════════════════════════════════════
-COMO VERIFICAR (rode antes de qualquer alteração)
+PASSO 1 — integracoes/ml/ml_client.py
+Adicionar função para buscar a descrição atual do anúncio
+(a ML só expõe descrição em endpoint separado, não vem em /items/{id}).
 ═══════════════════════════════════════════════════════════════
 
-```bash
-echo "--- Correção 1 (cofre/sync ML) ---"
-grep -n "_ml_store_path\|ML_TOKEN_STORE\|_salvar_store_ml\|_hidratar_cache_ml_do_store" core/token_manager.py
-
-echo "--- Correção 2 (retry 401 padronizado no ML) ---"
-grep -n "request(" integracoes/ml/ml_client.py | grep -v "_request_ml\|def _request_ml\|import"
-
-echo "--- Correção 3 (kill switch em atualizar_preco_item) ---"
-grep -n -A3 "def atualizar_preco_item" integracoes/ml/ml_client.py integracoes/shopee/shopee_client.py integracoes/magalu/magalu_client.py integracoes/amazon/amazon_client.py
-
-echo "--- Correção 4 (NfeVerificacaoIndisponivel) ---"
-grep -rn "NfeVerificacaoIndisponivel" integracoes/bling/bling_client.py agentes/faturamento/agente_faturamento.py
-```
-
-Interprete assim:
-- Correção 1: ok se o `grep` devolver as 4 funções.
-- Correção 2: ok se o `grep` devolver VAZIO (ou seja, nenhuma chamada
-  `request(` direta sobrou fora de `_request_ml`/import).
-- Correção 3: ok se as 4 funções `atualizar_preco_item` mostrarem
-  `bloqueio_escrita_global` nas linhas seguintes ao `def`.
-- Correção 4: ok se o `grep` devolver ocorrências nos dois arquivos.
-
-Se qualquer um vier vazio/incompleto, aplique o item correspondente abaixo.
-
-═══════════════════════════════════════════════════════════════
-CORREÇÃO 1 — core/token_manager.py
-═══════════════════════════════════════════════════════════════
-
-Adicionar (se ainda não existir) depois de `_ml_refresh_disponivel()` e
-antes de `_renovar_token_ml`:
+Adicionar depois de `buscar_metricas_item`:
 
 ```python
-def _ml_store_path() -> Path | None:
+def buscar_descricao_item(item_id: str) -> str:
     """
-    Cofre do token ML em disco, opcional (ativo só quando ML_TOKEN_STORE
-    está definido). Resolve o caso de processos efêmeros (Actions) que
-    renovam o token mas não tinham como persistir o refresh_token novo.
-        ML_TOKEN_STORE=dados/ml_token.json
+    Busca a descrição (plain_text) de um anúncio do ML.
+    Retorna string vazia se não houver descrição ou em caso de erro.
+    Nunca lança exceção.
     """
-    p = (os.getenv("ML_TOKEN_STORE") or "").strip()
-    return Path(p) if p else None
-
-
-def _carregar_store_ml() -> dict:
-    p = _ml_store_path()
-    if not p or not p.exists():
-        return {}
+    if not _enabled() or not (item_id or "").strip():
+        return ""
     try:
-        return json.loads(p.read_text(encoding="utf-8")) or {}
-    except Exception as e:
-        logger.error("Falha ao ler store ML (%s): %s", p, e)
-        return {}
-
-
-def _salvar_store_ml(access_token: str, refresh_token: str | None, expires_at: float) -> None:
-    p = _ml_store_path()
-    if not p:
-        return
-    try:
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(
-            json.dumps(
-                {
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expires_at": expires_at,
-                    "atualizado_em": time.time(),
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-        try:
-            os.chmod(p, 0o600)
-        except OSError:
-            pass
-        logger.info("Tokens ML persistidos em %s", p)
-    except Exception as e:
-        logger.error("Falha ao gravar store ML (%s): %s", p, e)
-
-
-def _hidratar_cache_ml_do_store() -> None:
-    """Na partida de um processo novo, usa o token/refresh do disco em vez do .env estático."""
-    if _token_cache_ml["access_token"] is None:
-        store = _carregar_store_ml()
-        if store.get("access_token"):
-            _token_cache_ml["access_token"] = store["access_token"]
-            _token_cache_ml["expires_at"] = store.get("expires_at", 0)
-        if store.get("refresh_token"):
-            _ml_refresh_efetivo["valor"] = store["refresh_token"]
-```
-
-Trocar `_ml_refresh_disponivel()`:
-
-```python
-def _ml_refresh_disponivel() -> str | None:
-    """Prioriza o refresh_token rotacionado (em memória) sobre o do .env/secret."""
-    if _ml_refresh_efetivo["valor"] is None:
-        _ml_refresh_efetivo["valor"] = (cfg.ML_REFRESH_TOKEN or "").strip() or None
-    return _ml_refresh_efetivo["valor"]
-```
-
-por:
-
-```python
-def _ml_refresh_disponivel() -> str | None:
-    """Prioridade: refresh_token rotacionado em memória > disco (ML_TOKEN_STORE) > .env/secret."""
-    if _ml_refresh_efetivo["valor"] is None:
-        _hidratar_cache_ml_do_store()
-    if _ml_refresh_efetivo["valor"] is None:
-        _ml_refresh_efetivo["valor"] = (cfg.ML_REFRESH_TOKEN or "").strip() or None
-    return _ml_refresh_efetivo["valor"]
-```
-
-Em `_renovar_token_ml()`, trocar:
-
-```python
-        if novo_refresh:
-            _ml_refresh_efetivo["valor"] = novo_refresh
-            cfg.ML_REFRESH_TOKEN = novo_refresh
-
-        logger.info("Token ML renovado com sucesso")
-
-        return access_token
-```
-
-por:
-
-```python
-        if novo_refresh:
-            _ml_refresh_efetivo["valor"] = novo_refresh
-            cfg.ML_REFRESH_TOKEN = novo_refresh
-
-        cfg.ML_ACCESS_TOKEN = access_token
-
-        _salvar_store_ml(
-            access_token,
-            novo_refresh or refresh,
-            _token_cache_ml["expires_at"],
-        )
-
-        if os.getenv("GITHUB_ACTIONS") == "true":
-            if sync_secrets_github(access_token, novo_refresh or refresh, prefix="ML"):
-                logger.info("Secrets ML_* sincronizados no GitHub (rotação automática).")
-            else:
-                logger.warning(
-                    "Falha ao sincronizar ML_* no GitHub após rotação — "
-                    "a próxima renovação pode falhar até o sync funcionar."
-                )
-
-        logger.info("Token ML renovado com sucesso")
-
-        return access_token
-```
-
-Trocar `get_token_ml()`:
-
-```python
-def get_token_ml():
-    now = time.time()
-
-    if _token_cache_ml["access_token"] and now < _token_cache_ml["expires_at"]:
-        return _token_cache_ml["access_token"]
-
-    return _renovar_token_ml()
-```
-
-por:
-
-```python
-def get_token_ml(forcar: bool = False):
-    now = time.time()
-
-    _hidratar_cache_ml_do_store()
-
-    if not forcar:
-        if _token_cache_ml["access_token"] and now < _token_cache_ml["expires_at"]:
-            return _token_cache_ml["access_token"]
-
-    return _renovar_token_ml()
-```
-
-Nos workflows que rodam código do ML (`monitor_ml.yml`,
-`monitor_concorrentes_ml.yml`, `ads_gatilho_ml.yml`, `panorama.yml`,
-`operacao_24h_seguranca.yml`, `agente_principal.yml`), garantir no step
-que executa o agente:
-
-```yaml
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-```
-
-═══════════════════════════════════════════════════════════════
-CORREÇÃO 2 — integracoes/ml/ml_client.py
-═══════════════════════════════════════════════════════════════
-
-Trocar toda chamada `request("MÉTODO", url, headers=_h(), ...)` por
-`_request_ml("MÉTODO", url, ...)` (sem `headers=_h()` manual) nestas
-funções: `atualizar_preco_item`, `atualizar_estoque_item`,
-`listar_pedidos`, `buscar_metricas_item` (as 3 chamadas),
-`_listar_linhas_concorrentes_catalogo` (as 2 chamadas),
-`listar_perguntas_nao_respondidas`, `responder_pergunta`,
-`buscar_reputacao_vendedor`.
-
-NÃO alterar `probe_conexao` (diagnóstico intencional) nem
-`buscar_concorrentes_por_termo` (busca pública sem autenticação).
-
-═══════════════════════════════════════════════════════════════
-CORREÇÃO 3 — kill switch em atualizar_preco_item (4 marketplaces)
-═══════════════════════════════════════════════════════════════
-
-Em `integracoes/ml/ml_client.py`, `integracoes/shopee/shopee_client.py`,
-`integracoes/magalu/magalu_client.py` e `integracoes/amazon/amazon_client.py`,
-adicionar no INÍCIO de `atualizar_preco_item` (mesmo padrão já usado em
-`atualizar_estoque_item` de cada cliente):
-
-```python
-    from core.guardrails import bloqueio_escrita_global
-
-    if bloqueio := bloqueio_escrita_global():
-        logger.warning("<NOME_MARKETPLACE> atualizar_preco_item bloqueado: %s", bloqueio["erro"])
-        return False
-```//substituir <NOME_MARKETPLACE> por ML / Shopee / Magalu / Amazon em cada arquivo
-
-═══════════════════════════════════════════════════════════════
-CORREÇÃO 4 — Bling: não tratar erro de verificação como "não existe"
-═══════════════════════════════════════════════════════════════
-
-Em `integracoes/bling/bling_client.py`, adicionar antes do `logger =`:
-
-```python
-class NfeVerificacaoIndisponivel(Exception):
-    """Levantada quando não foi possível confirmar se já existe NF-e para o pedido."""
-```
-
-Em `buscar_nfe_por_pedido`, trocar o `except Exception` final (o que loga
-e devolve `None`) para levantar essa exceção em vez de retornar `None`:
-
-```python
+        item_id = item_id.strip()
+        r = _request_ml("GET", f"{BASE}/items/{item_id}/description", timeout=20)
+        if r.status_code == 404:
+            return ""
+        r.raise_for_status()
+        data = r.json() or {}
+        return str(data.get("plain_text", "") or "")
     except Exception as exc:
-        logger.error("Bling buscar_nfe_por_pedido erro pedido=%s: %s", pedido_ref, exc)
-        raise NfeVerificacaoIndisponivel(
-            f"não foi possível confirmar duplicidade de NF-e para pedido {pedido_ref}: {exc}"
-        ) from exc
+        logger.error("ML buscar_descricao_item erro item_id=%s: %s", item_id, exc)
+        return ""
 ```
 
-Em `agentes/faturamento/agente_faturamento.py`, importar
-`NfeVerificacaoIndisponivel` e, em `emitir_nfe_pedido`, envolver a chamada
-a `buscar_nfe_por_pedido(pedido_id)` em try/except, abortando a emissão
-(com `alertar_critico`) em vez de seguir para `criar_nfe` quando a
-exceção for levantada.
-
 ═══════════════════════════════════════════════════════════════
-DEPOIS DE APLICAR — checklist final obrigatório
+PASSO 2 — agentes/ml/agente_otimizador_listing.py
+Adicionar prompt/system específico de descrição + função de sugestão.
 ═══════════════════════════════════════════════════════════════
 
-1. Rode de novo os 4 comandos de verificação do topo e confirme que
-   agora todos retornam "ok" pelos critérios descritos.
-2. Rode `pytest -q` e `ruff check .` — cole o resultado.
-3. Rode `git status` e `git diff --stat` para eu ver exatamente quais
-   arquivos mudaram.
-4. Confirme explicitamente: "estou gerando o zip/export a partir do
-   diretório de trabalho atual, com as mudanças acima já salvas em
-   disco" — não a partir de um commit antigo, branch separado ou cache.
-5. Devolva um checklist final no formato:
-   - [ ] Correção 1 (cofre/sync token ML) — aplicada e verificada
-   - [ ] Correção 2 (retry 401 padronizado) — aplicada e verificada
-   - [ ] Correção 3 (kill switch em atualizar_preco_item) — aplicada e verificada
-   - [ ] Correção 4 (NfeVerificacaoIndisponivel) — aplicada e verificada
-   - [ ] pytest passando
-   - [ ] ruff sem erros
-   - [ ] zip/export gerado a partir do estado atual do código
+2a. Trocar o docstring do topo do arquivo:
+
+```python
+"""
+agentes/ml/agente_otimizador_listing.py
+Sugestões de título para anúncios do Mercado Livre via Claude.
+Somente leitura + recomendação — NÃO altera título nem descrição no ML.
+"""
+```
+
+por:
+
+```python
+"""
+agentes/ml/agente_otimizador_listing.py
+Sugestões de título e descrição para anúncios do Mercado Livre via Claude.
+Somente leitura + recomendação — NÃO altera título nem descrição no ML.
+"""
+```
+
+2b. Adicionar, depois de `_PROMPT_SUGESTOES`, os prompts de descrição:
+
+```python
+SYSTEM_DESCRICAO = (
+    "Você escreve descrições de anúncio para o Mercado Livre com base em dados reais "
+    "fornecidos (próprio anúncio, descrição atual se houver, e concorrentes). "
+    "Nunca invente especificações, certificações, prazos de garantia ou características "
+    "do produto que não estejam no contexto fornecido — se faltar informação, escreva a "
+    "descrição sem inventar esse dado, em vez de supor. Use linguagem direta, sem emojis, "
+    "organizada em parágrafos curtos e, se fizer sentido, uma lista de bullet points com "
+    "as principais características. Limite total: até 2000 caracteres."
+)
+
+_PROMPT_DESCRICAO = (
+    "Com base nos dados acima (anúncio próprio, descrição atual se houver, e concorrentes), "
+    "escreva uma sugestão de descrição completa para este anúncio. Se já existir uma "
+    "descrição atual, aponte em 1 frase o que está sendo melhorado antes do texto novo."
+)
+```
+
+2c. Atualizar `_montar_contexto` para receber a descrição atual e incluir
+no contexto enviado à IA. Trocar a assinatura e o corpo:
+
+```python
+def _montar_contexto(metricas: dict, concorrentes: list[dict]) -> str:
+    linhas = [
+        "=== ANÚNCIO PRÓPRIO ===",
+        f"Título atual: {metricas.get('titulo', '')}",
+        f"Preço: R$ {float(metricas.get('preco', 0) or 0):.2f}",
+        f"Estoque: {metricas.get('estoque', 0)}",
+        f"Visitas 7 dias: {metricas.get('visitas_7d', 0)}",
+        f"Visitas 30 dias: {metricas.get('visitas_30d', 0)}",
+        f"Status: {metricas.get('status', '')}",
+        "",
+        "=== CONCORRENTES (mesmo catálogo) ===",
+    ]
+```
+
+por:
+
+```python
+def _montar_contexto(metricas: dict, concorrentes: list[dict], descricao_atual: str = "") -> str:
+    linhas = [
+        "=== ANÚNCIO PRÓPRIO ===",
+        f"Título atual: {metricas.get('titulo', '')}",
+        f"Preço: R$ {float(metricas.get('preco', 0) or 0):.2f}",
+        f"Estoque: {metricas.get('estoque', 0)}",
+        f"Visitas 7 dias: {metricas.get('visitas_7d', 0)}",
+        f"Visitas 30 dias: {metricas.get('visitas_30d', 0)}",
+        f"Status: {metricas.get('status', '')}",
+        f"Descrição atual: {descricao_atual.strip() or '(sem descrição cadastrada)'}",
+        "",
+        "=== CONCORRENTES (mesmo catálogo) ===",
+    ]
+```
+
+(manter o resto da função igual — o loop de concorrentes não muda)
+
+2d. Atualizar `analisar_item` para também buscar a descrição atual e
+pedir a sugestão de descrição à IA, junto com a de título. Trocar:
+
+```python
+    try:
+        metricas = ml_client.buscar_metricas_item(item_id) or {}
+        if not metricas:
+            return {"ok": False, "erro": f"item não encontrado ou indisponível: {item_id}"}
+
+        concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
+        contexto = _montar_contexto(metricas, concorrentes)
+        sugestoes = perguntar(
+            _PROMPT_SUGESTOES,
+            max_tokens=600,
+            contexto=contexto,
+            system=SYSTEM_OTIMIZADOR,
+        )
+
+        resultado: dict[str, Any] = {
+            "ok": True,
+            "item_id": item_id,
+            "titulo_atual": metricas.get("titulo", ""),
+            "visitas_7d": metricas.get("visitas_7d", 0),
+            "visitas_30d": metricas.get("visitas_30d", 0),
+            "sugestoes_texto": sugestoes,
+            "concorrentes_analisados": len(concorrentes),
+        }
+        if _ia_falhou(sugestoes):
+            resultado["ia_falhou"] = True
+        return resultado
+    except Exception as exc:
+        logger.error("analisar_item erro item_id=%s: %s", item_id, exc)
+        return {"ok": False, "erro": str(exc)}
+```
+
+por:
+
+```python
+    try:
+        metricas = ml_client.buscar_metricas_item(item_id) or {}
+        if not metricas:
+            return {"ok": False, "erro": f"item não encontrado ou indisponível: {item_id}"}
+
+        descricao_atual = ml_client.buscar_descricao_item(item_id)
+        concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
+        contexto = _montar_contexto(metricas, concorrentes, descricao_atual)
+
+        sugestoes_titulo = perguntar(
+            _PROMPT_SUGESTOES,
+            max_tokens=600,
+            contexto=contexto,
+            system=SYSTEM_OTIMIZADOR,
+        )
+        sugestao_descricao = perguntar(
+            _PROMPT_DESCRICAO,
+            max_tokens=900,
+            contexto=contexto,
+            system=SYSTEM_DESCRICAO,
+        )
+
+        resultado: dict[str, Any] = {
+            "ok": True,
+            "item_id": item_id,
+            "titulo_atual": metricas.get("titulo", ""),
+            "descricao_atual": descricao_atual,
+            "visitas_7d": metricas.get("visitas_7d", 0),
+            "visitas_30d": metricas.get("visitas_30d", 0),
+            "sugestoes_texto": sugestoes_titulo,
+            "sugestao_descricao": sugestao_descricao,
+            "concorrentes_analisados": len(concorrentes),
+        }
+        if _ia_falhou(sugestoes_titulo):
+            resultado["ia_falhou"] = True
+        if _ia_falhou(sugestao_descricao):
+            resultado["ia_falhou_descricao"] = True
+        return resultado
+    except Exception as exc:
+        logger.error("analisar_item erro item_id=%s: %s", item_id, exc)
+        return {"ok": False, "erro": str(exc)}
+```
+
+2e. Atualizar `_montar_resumo_telegram` para incluir um trecho curto da
+sugestão de descrição (sem mandar o texto completo de todos os itens no
+mesmo alerta — só um preview, pra não estourar o limite de mensagem do
+Telegram). Trocar:
+
+```python
+        sugestao = _primeira_sugestao(str(r.get("sugestoes_texto") or ""))
+        if not sugestao:
+            continue
+        incluidos += 1
+        linhas.append(f"• {r.get('item_id')} — {r.get('titulo_atual', '')[:50]}")
+        linhas.append(f"  Visitas 7d: {r.get('visitas_7d', 0)}")
+        linhas.append(f"  Sugestão: {sugestao}")
+        linhas.append("")
+```
+
+por:
+
+```python
+        sugestao = _primeira_sugestao(str(r.get("sugestoes_texto") or ""))
+        if not sugestao:
+            continue
+        incluidos += 1
+        descricao_preview = str(r.get("sugestao_descricao") or "").strip().replace("\n", " ")[:120]
+        linhas.append(f"• {r.get('item_id')} — {r.get('titulo_atual', '')[:50]}")
+        linhas.append(f"  Visitas 7d: {r.get('visitas_7d', 0)}")
+        linhas.append(f"  Sugestão título: {sugestao}")
+        if descricao_preview:
+            linhas.append(f"  Sugestão descrição (preview): {descricao_preview}...")
+        linhas.append("")
+```
+
+═══════════════════════════════════════════════════════════════
+PASSO 3 — api/app.py
+Conferir o endpoint que já expõe analisar_item/analisar_catalogo (usado
+pelo otimizador de listing) e garantir que o JSON de resposta devolve os
+novos campos (descricao_atual, sugestao_descricao, ia_falhou_descricao)
+sem filtrar/remover chaves do dict. Normalmente isso já funciona sozinho
+se o endpoint apenas faz jsonify(resultado) — só confirme que não há
+serialização manual campo a campo que precise ser atualizada.
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+PASSO 4 — Testes
+═══════════════════════════════════════════════════════════════
+
+- tests/test_ml_client.py: adicionar teste para `buscar_descricao_item`
+  cobrindo: sucesso (retorna plain_text), 404 (retorna string vazia) e
+  exceção de rede (retorna string vazia, não lança).
+- tests/test_agente_otimizador_listing.py (criar se não existir):
+  - `analisar_item` retorna `descricao_atual` e `sugestao_descricao`
+    no dict de resultado.
+  - quando `ml_client.buscar_descricao_item` retorna `""` (sem
+    descrição), o contexto montado contém "(sem descrição cadastrada)"
+    e a função não lança exceção.
+  - `_montar_resumo_telegram` inclui a linha de preview de descrição só
+    quando `sugestao_descricao` não está vazia.
+
+Rode `pytest -q` no final e cole o resultado.
+
+═══════════════════════════════════════════════════════════════
+NÃO FAZER (fora de escopo deste prompt)
+═══════════════════════════════════════════════════════════════
+- Não criar nenhuma função que escreva a descrição de volta no ML
+  (PUT /items/{id}/description). Isso fica para uma etapa futura
+  separada, com dry_run/confirmar e guardrail, igual ao padrão usado em
+  pausar_anuncio/atualizar_preco_item — não implementar "de brinde" aqui.
+- Não replicar para Shopee/Magalu/Amazon neste prompt — escopo é só ML.
