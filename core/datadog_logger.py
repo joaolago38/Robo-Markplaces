@@ -11,6 +11,8 @@ import logging
 
 import requests
 
+from core.request_context import obter_request_id
+
 # Mapa: nome do logger (o argumento passado para logging.getLogger(...))
 # -> (marketplace, componente)
 #
@@ -126,22 +128,48 @@ class DatadogLogHandler(logging.Handler):
             return
         try:
             marketplace, componente = _resolver_meta(record.name)
-            payload = [
-                {
-                    "message": self.format(record),
-                    "ddsource": "python",
-                    "service": "robo-markplaces",
-                    # `status` é um standard attribute do Datadog: além de
-                    # virar tag, alimenta o facet "Status" nativo do Log
-                    # Explorer (cores/severidade prontas, sem facet custom).
-                    "status": record.levelname.lower(),
-                    "ddtags": (
-                        f"env:{DD_ENV},logger:{record.name},"
-                        f"marketplace:{marketplace},componente:{componente},"
-                        f"level:{record.levelname.lower()}"
-                    ),
-                }
-            ]
+            ddtags = (
+                f"env:{DD_ENV},logger:{record.name},"
+                f"marketplace:{marketplace},componente:{componente},"
+                f"level:{record.levelname.lower()}"
+            )
+            request_id = obter_request_id()
+            if request_id:
+                ddtags += f",request_id:{request_id}"
+
+            payload_entry: dict = {
+                "message": self.format(record),
+                "ddsource": "python",
+                "service": "robo-markplaces",
+                # `status` é um standard attribute do Datadog: além de
+                # virar tag, alimenta o facet "Status" nativo do Log
+                # Explorer (cores/severidade prontas, sem facet custom).
+                "status": record.levelname.lower(),
+                "ddtags": ddtags,
+            }
+            if request_id:
+                payload_entry["request_id"] = request_id
+
+            # Atributos padrão de erro do Datadog (alimentam a página
+            # "Errors"/Error Tracking). `error_kind`/`error_message` são
+            # passados via logger.error(..., extra={...}) nos pontos já
+            # instrumentados (core/http_client.py, core/claude_client.py).
+            # Quando exc_info estiver presente (logger.exception ou
+            # exc_info=True), aproveitamos o stack trace real também.
+            if record.levelno >= logging.ERROR:
+                error_kind = getattr(record, "error_kind", None)
+                error_message = getattr(record, "error_message", None)
+                error_attrs: dict = {}
+                if error_kind:
+                    error_attrs["kind"] = error_kind
+                if error_message:
+                    error_attrs["message"] = error_message
+                if record.exc_info:
+                    error_attrs["stack"] = logging.Formatter().formatException(record.exc_info)
+                if error_attrs:
+                    payload_entry["error"] = error_attrs
+
+            payload = [payload_entry]
             requests.post(
                 self._url,
                 headers={"DD-API-KEY": DD_API_KEY, "Content-Type": "application/json"},

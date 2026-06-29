@@ -456,7 +456,7 @@ classificação, para eu confirmar o marketplace/componente correto de
 cada um.
 
 ═══════════════════════════════════════════════════════════════
-PASSO 5 — Resumo final
+PASSO 5 — Resumo final![img.png](img.png)
 ═══════════════════════════════════════════════════════════════
 
 Ao terminar, liste em poucas linhas:
