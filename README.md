@@ -348,6 +348,7 @@ python -m agentes.ml.agente_otimizador_listing
 
 - **Qualidade em todo push/PR para `main`:** `.github/workflows/ci.yml` — roda `ruff check` e `pytest -q` automaticamente. Não usa Secrets nem executa rotinas de produção.
 - **Orquestrador de produção:** `.github/workflows/agente_principal.yml` — continua disparado apenas por `schedule` e `workflow_dispatch` (relatório, chat, vendas WhatsApp, keepalive/algoritmo). Não roda em push/PR para evitar efeitos colaterais reais a cada commit.
+- **Keepalive do próprio repositório:** `.github/workflows/manter_repositorio_ativo.yml` — o GitHub desativa automaticamente (e silenciosamente) todos os workflows agendados de um repositório depois de **60 dias sem nenhum push**. Esse workflow roda 2x por mês e faz um commit trivial (atualiza `logs/keepalive_status.json`) só pra contar como atividade e nunca deixar o repositório chegar nesse limite — sem ele, se ninguém der push manual por 2 meses, a renovação automática de token e todos os outros crons (`renovar_tokens.yml`, `conectividade_marketplaces.yml`, etc.) param de rodar sem nenhum aviso.
 
 ## Observabilidade com Datadog
 

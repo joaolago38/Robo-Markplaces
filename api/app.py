@@ -23,6 +23,7 @@ from core.config import (
     MARGEM_FASE_3_PCT,
 )
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
+from agentes.conectividade_marketplaces import executar as executar_conectividade_marketplaces
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.sincronizar_estoque_marketplaces import executar as executar_sincronizar_estoque
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
@@ -503,6 +504,18 @@ def keepalive_marketplaces():
     return jsonify({"ok": True, **resultado})
 
 
+@app.route("/marketplaces/conectividade/testar", methods=["POST"])
+def testar_conectividade_marketplaces():
+    """
+    POST /marketplaces/conectividade/testar
+    Testa conectividade REAL com Mercado Livre e Magalu (chamada de
+    verdade contra a API, não apenas se o OAuth renovou o token).
+    Alerta automaticamente em caso de falha. Sem body necessário.
+    """
+    resultado = executar_conectividade_marketplaces()
+    return jsonify({"ok": resultado["falha"] == 0, **resultado})
+
+
 @app.route("/marketplaces/estoque/sincronizar", methods=["POST"])
 def sincronizar_estoque_marketplaces():
     """
@@ -795,6 +808,7 @@ if __name__ == "__main__":
     print("   POST /relatorio           — gera relatório diário")
     print("   POST /campanha/avaliar    — avalia métricas e decide ação")
     print("   POST /marketplaces/keepalive — mantém sessão ativa nos marketplaces")
+    print("   POST /marketplaces/conectividade/testar — testa conexão real com ML e Magalu")
     print("   POST /marketplaces/estoque/sincronizar — estoque Bling → marketplaces ativos")
     print("   POST /marketplaces/algoritmo/ajustar — avalia saúde e ajusta estratégia")
     print("   POST /marketplaces/produtos/monitorar — repricing com lucro mínimo por canal")

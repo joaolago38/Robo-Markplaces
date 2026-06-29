@@ -1,0 +1,62 @@
+name: Manter repositorio ativo (evita GitHub desligar os cron jobs)
+
+# O GitHub desativa automaticamente TODOS os workflows agendados
+# (schedule/cron) de um repositorio depois de 60 dias sem nenhum push
+# — e isso e silencioso, ninguem e avisado. Esse desligamento afeta
+# justamente os workflows que renovam token e testam conectividade
+# (renovar_tokens.yml, conectividade_marketplaces.yml, etc.).
+#
+# Este workflow existe só para isso: rodar bem antes do limite de 60
+# dias e fazer um commit trivial (atualizar um timestamp), o que
+# conta como atividade no repositorio e reseta o contador do GitHub.
+# Roda 2x por mes (a cada ~14-16 dias) de propósito — mesmo que uma
+# execucao falhe por algum motivo, ainda ha bastante margem antes de
+# chegar nos 60 dias.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 1,15 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  manter_ativo:
+    name: Commit de keepalive (mantém os cron jobs ligados)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Atualizar timestamp de keepalive
+        run: |
+          mkdir -p logs
+          python3 - << 'PYEOF'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          caminho = Path("logs/keepalive_status.json")
+          dados = {}
+          if caminho.exists():
+              try:
+                  dados = json.loads(caminho.read_text(encoding="utf-8"))
+              except Exception:
+                  dados = {}
+          dados["ultimo_keepalive_utc"] = datetime.now(timezone.utc).isoformat()
+          dados["execucoes"] = int(dados.get("execucoes", 0)) + 1
+          caminho.write_text(json.dumps(dados, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+          print(json.dumps(dados, indent=2, ensure_ascii=False))
+          PYEOF
+
+      - name: Commitar e enviar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add logs/keepalive_status.json
+          if git diff --cached --quiet; then
+            echo "Nada novo para commitar."
+            exit 0
+          fi
+          git commit -m "chore: keepalive automatico (mantem os cron jobs ativos)"
+          git push

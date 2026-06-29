@@ -73,6 +73,7 @@ _LOGGER_META = {
     # --- Agentes multi-marketplace (tocam mais de um canal por natureza) ---
     "agente_varredura_marketplaces": ("multi", "agente"),
     "manutencao_marketplaces": ("multi", "agente"),
+    "conectividade_marketplaces": ("multi", "agente"),
     "algoritmo_marketplaces": ("multi", "agente"),
     "auto_respostas_visuais": ("multi", "agente"),
     "vendas_notificador": ("multi", "agente"),

@@ -1,46 +1,6 @@
 {
   "market_mid_test": [
     {
-      "ts": "2026-04-24T20:19:29.119473+00:00",
-      "score": 68,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 20,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 3
-      }
-    },
-    {
-      "ts": "2026-04-24T20:24:27.687283+00:00",
-      "score": 68,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 20,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 3
-      }
-    },
-    {
-      "ts": "2026-04-24T20:25:00.109781+00:00",
-      "score": 68,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 20,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 3
-      }
-    },
-    {
-      "ts": "2026-04-25T01:24:00.795906+00:00",
-      "score": 68,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 20,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 3
-      }
-    },
-    {
       "ts": "2026-05-03T17:34:45.395455+00:00",
       "score": 68,
       "metrics": {
@@ -999,49 +959,49 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 3
       }
+    },
+    {
+      "ts": "2026-06-29T20:32:24.028084+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-06-29T20:47:58.524334+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-06-29T21:03:05.747440+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
+    },
+    {
+      "ts": "2026-06-29T21:10:42.539178+00:00",
+      "score": 68,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 20,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 3
+      }
     }
   ],
   "market_x_test": [
-    {
-      "ts": "2026-04-24T20:19:29.121924+00:00",
-      "score": 0,
-      "metrics": {
-        "configurado": false,
-        "pendencias": 0,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
-    {
-      "ts": "2026-04-24T20:24:27.689648+00:00",
-      "score": 0,
-      "metrics": {
-        "configurado": false,
-        "pendencias": 0,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
-    {
-      "ts": "2026-04-24T20:25:00.112381+00:00",
-      "score": 0,
-      "metrics": {
-        "configurado": false,
-        "pendencias": 0,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
-    {
-      "ts": "2026-04-25T01:24:00.800079+00:00",
-      "score": 0,
-      "metrics": {
-        "configurado": false,
-        "pendencias": 0,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
     {
       "ts": "2026-05-03T17:34:45.398656+00:00",
       "score": 0,
@@ -2001,49 +1961,49 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 0
       }
+    },
+    {
+      "ts": "2026-06-29T20:32:24.042783+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T20:47:58.542302+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T21:03:05.760994+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T21:10:42.554550+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
     }
   ],
   "market_ok_test": [
-    {
-      "ts": "2026-04-24T20:19:29.124448+00:00",
-      "score": 100,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 1,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
-    {
-      "ts": "2026-04-24T20:24:27.691954+00:00",
-      "score": 100,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 1,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
-    {
-      "ts": "2026-04-24T20:25:00.115500+00:00",
-      "score": 100,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 1,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
-    {
-      "ts": "2026-04-25T01:24:00.804413+00:00",
-      "score": 100,
-      "metrics": {
-        "configurado": true,
-        "pendencias": 1,
-        "claims_rate": 0.0,
-        "dias_sem_acesso": 0
-      }
-    },
     {
       "ts": "2026-05-03T17:34:45.401553+00:00",
       "score": 100,
@@ -2996,6 +2956,46 @@
     },
     {
       "ts": "2026-06-29T19:59:47.569549+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T20:32:24.057499+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T20:47:58.559234+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T21:03:05.774021+00:00",
+      "score": 100,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 1,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T21:10:42.569822+00:00",
       "score": 100,
       "metrics": {
         "configurado": true,
@@ -5416,6 +5416,94 @@
     },
     {
       "ts": "2026-06-29T19:59:47.528190+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_ec0e9d37": [
+    {
+      "ts": "2026-06-29T20:32:24.000982+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T20:32:24.013643+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_929be2e8": [
+    {
+      "ts": "2026-06-29T20:47:58.490166+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T20:47:58.508025+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_e40e84bb": [
+    {
+      "ts": "2026-06-29T21:03:05.719717+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T21:03:05.733375+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 11,
+        "claims_rate": 0.0106,
+        "dias_sem_acesso": 0
+      }
+    }
+  ],
+  "market_var_7e909369": [
+    {
+      "ts": "2026-06-29T21:10:42.510209+00:00",
+      "score": 77,
+      "metrics": {
+        "configurado": true,
+        "pendencias": 10,
+        "claims_rate": 0.01,
+        "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-06-29T21:10:42.524224+00:00",
       "score": 77,
       "metrics": {
         "configurado": true,
