@@ -227,7 +227,11 @@ class TestObterSaudeConta(unittest.TestCase):
 
     @patch.object(mag, "dias_sem_acesso", return_value=0)
     @patch.object(mag, "registrar_acesso")
-    @patch.object(mag, "listar_perguntas_nao_respondidas", return_value=[{"id": 1}, {"id": 2}])
+    @patch.object(
+        mag,
+        "_listar_perguntas_nao_respondidas_detalhado",
+        return_value=([{"id": 1}, {"id": 2}], True),
+    )
     @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_configurado(self, *_):

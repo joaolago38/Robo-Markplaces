@@ -1,6 +1,17 @@
 """
 scripts/verificar_marketplaces.py
-Validação rápida de configuração e conectividade dos marketplaces.
+Validação rápida de configuração e conectividade REAL dos
+marketplaces — usa probe_conexao() de cada client (uma chamada de
+verdade contra a API), em vez de chamar uma função de listagem dentro
+de um try/except.
+
+Por que a versão anterior estava quebrada: as funções de listagem
+(listar_perguntas_nao_respondidas, etc.) já capturam toda exceção
+internamente e retornam lista vazia — então o try/except deste script
+NUNCA disparava, e ele reportava "conectado: True" mesmo quando a
+chamada real tinha falhado por dentro. `probe_conexao()` não tem esse
+problema: ela já devolve {ok, status, msg} explicitamente, sem
+precisar de try/except por fora.
 
 Uso:
     py scripts/verificar_marketplaces.py
@@ -28,10 +39,10 @@ from core.config import (  # noqa: E402
     SHOPEE_REFRESH_TOKEN,
     SHOPEE_SHOP_ID,
 )
-from integracoes.amazon.amazon_client import listar_mensagens_nao_respondidas  # noqa: E402
-from integracoes.magalu.magalu_client import listar_perguntas_nao_respondidas as listar_magalu  # noqa: E402
-from integracoes.ml.ml_client import listar_perguntas_nao_respondidas as listar_ml  # noqa: E402
-from integracoes.shopee.shopee_client import listar_perguntas_nao_respondidas as listar_shopee  # noqa: E402
+from integracoes.amazon.amazon_client import probe_conexao as probe_amazon  # noqa: E402
+from integracoes.magalu.magalu_client import probe_conexao as probe_magalu  # noqa: E402
+from integracoes.ml.ml_client import probe_conexao as probe_ml  # noqa: E402
+from integracoes.shopee.shopee_client import probe_conexao as probe_shopee  # noqa: E402
 
 
 def _ok_config_ml() -> bool:
@@ -52,40 +63,35 @@ def _ok_config_amazon() -> bool:
     return bool(AMAZON_ACCESS_TOKEN)
 
 
-def _testar(nome: str, configurado: bool, fn):
+def _testar(nome: str, configurado: bool, probe) -> dict:
     if not configurado:
         return {
             "marketplace": nome,
             "configurado": False,
             "conectado": False,
+            "status_http": 0,
             "mensagem": "credenciais ausentes no .env",
-            "pendencias_detectadas": 0,
         }
-    try:
-        itens = fn() or []
-        return {
-            "marketplace": nome,
-            "configurado": True,
-            "conectado": True,
-            "mensagem": "conexão válida",
-            "pendencias_detectadas": len(itens),
-        }
-    except Exception as exc:  # pragma: no cover - rota defensiva
-        return {
-            "marketplace": nome,
-            "configurado": True,
-            "conectado": False,
-            "mensagem": f"falha de conexão: {exc}",
-            "pendencias_detectadas": 0,
-        }
+
+    resultado = probe() or {}
+    ok = bool(resultado.get("ok"))
+    status = resultado.get("status", 0)
+    msg = str(resultado.get("msg", "") or "") or ("conexão válida" if ok else "falha de conexão")
+    return {
+        "marketplace": nome,
+        "configurado": True,
+        "conectado": ok,
+        "status_http": status,
+        "mensagem": msg,
+    }
 
 
 def main() -> int:
     resultados = [
-        _testar("mercadolivre", _ok_config_ml(), listar_ml),
-        _testar("shopee", _ok_config_shopee(), lambda: listar_shopee(page_size=10, max_pages=1)),
-        _testar("magalu", _ok_config_magalu(), lambda: listar_magalu(limit=10)),
-        _testar("amazon", _ok_config_amazon(), lambda: listar_mensagens_nao_respondidas(limit=10)),
+        _testar("mercadolivre", _ok_config_ml(), probe_ml),
+        _testar("shopee", _ok_config_shopee(), probe_shopee),
+        _testar("magalu", _ok_config_magalu(), probe_magalu),
+        _testar("amazon", _ok_config_amazon(), probe_amazon),
     ]
 
     resumo = {

@@ -78,7 +78,7 @@ class TestMlClient(unittest.TestCase):
 
     @patch.object(ml_client, "dias_sem_acesso", return_value=0)
     @patch.object(ml_client, "registrar_acesso")
-    @patch.object(ml_client, "listar_perguntas_nao_respondidas", return_value=[])
+    @patch.object(ml_client, "_listar_perguntas_nao_respondidas_detalhado", return_value=([], True))
     @patch.object(ml_client, "buscar_reputacao_vendedor", return_value={})
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML09_obter_saude_conta(self, *_patches):

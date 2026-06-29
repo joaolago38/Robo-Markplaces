@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID, ML_SITE_ID
+from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
@@ -173,10 +174,12 @@ def probe_conexao() -> dict:
         return {"ok": False, "status": 0, "msg": str(exc)}
 
 
-def listar_perguntas_nao_respondidas() -> list[dict]:
+def _listar_perguntas_nao_respondidas_detalhado() -> tuple[list[dict], bool]:
+    """Retorna (perguntas, sucesso_chamada). Use isto quando precisar saber
+    se a lista vazia é "sem pendência" ou "a chamada falhou"."""
     if not _enabled():
         logger.warning("Mercado Livre não configurado.")
-        return []
+        return [], False
     try:
         r = _request_ml(
             "GET",
@@ -186,11 +189,17 @@ def listar_perguntas_nao_respondidas() -> list[dict]:
         )
         if status_http(r) != 200:
             log_http_erro_listagem(logger, "ML listar_perguntas_nao_respondidas", r)
-            return []
-        return r.json().get("questions", [])
+            return [], False
+        return r.json().get("questions", []), True
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:ML_listar_perguntas_nao_respondidas", "motivo:excecao"])
         logger.error("ML listar_perguntas_nao_respondidas erro: %s", exc)
-        return []
+        return [], False
+
+
+def listar_perguntas_nao_respondidas() -> list[dict]:
+    perguntas, _ok = _listar_perguntas_nao_respondidas_detalhado()
+    return perguntas
 
 
 def responder_pergunta(question_id: str, texto: str) -> bool:
@@ -231,9 +240,10 @@ def obter_saude_conta() -> dict:
     if not configurado:
         return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
 
-    perguntas = listar_perguntas_nao_respondidas()
+    perguntas, ok = _listar_perguntas_nao_respondidas_detalhado()
     reputacao = buscar_reputacao_vendedor()
-    registrar_acesso("mercadolivre")
+    if ok:
+        registrar_acesso("mercadolivre")
     claims_rate = reputacao.get("metrics", {}).get("claims", {}).get("rate", 0) or 0
 
     return {
@@ -292,59 +302,98 @@ def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
         return False
 
 
+def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[list[dict], bool]:
+    """
+    Busca pedidos pagos dos últimos X dias do vendedor, percorrendo TODAS
+    as páginas disponíveis (até max_paginas, por segurança).
+    Retorna (pedidos, sucesso_chamada) — use isto quando precisar saber
+    se a lista vazia é "sem venda nova" ou "a chamada falhou de verdade"
+    (ex.: token expirado, API fora do ar).
+    """
+    if not _enabled():
+        logger.warning("Mercado Livre não configurado para listar pedidos.")
+        return [], False
+
+    out: list[dict] = []
+    try:
+        tz = timezone(timedelta(hours=-3))
+        data_from = (datetime.now(tz) - timedelta(days=dias)).isoformat()
+        limit = 50
+        offset = 0
+
+        for _pagina in range(max(1, max_paginas)):
+            r = _request_ml(
+                "GET",
+                f"{BASE}/orders/search",
+                params={
+                    "seller": ML_SELLER_ID,
+                    "order.status": "paid",
+                    "sort": "date_desc",
+                    "date_created.from": data_from,
+                    "limit": limit,
+                    "offset": offset,
+                },
+                timeout=20,
+            )
+            if status_http(r) != 200:
+                log_http_erro_listagem(logger, "ML listar_pedidos", r)
+                return out, False
+
+            body = r.json() or {}
+            results = body.get("results", []) or []
+            for o in results:
+                if not isinstance(o, dict):
+                    continue
+                out.append(
+                    {
+                        "order_id": str(o.get("id", "")),
+                        "status": o.get("status", ""),
+                        "total": float(o.get("total_amount", 0) or 0),
+                        "data": o.get("date_created", ""),
+                        "itens": [
+                            {
+                                "sku": item.get("item", {}).get("seller_sku", ""),
+                                "item_id": item.get("item", {}).get("id", ""),
+                                "quantidade": item.get("quantity", 0),
+                                "preco_unitario": float(item.get("unit_price", 0) or 0),
+                            }
+                            for item in (o.get("order_items") or [])
+                            if isinstance(item, dict)
+                        ],
+                    }
+                )
+
+            total_disponivel = int((body.get("paging") or {}).get("total", 0) or 0)
+            offset += len(results)
+            if len(results) < limit or offset >= total_disponivel:
+                break
+        else:
+            # Esgotou max_paginas sem terminar — sinaliza para investigação
+            # em vez de assumir silenciosamente que pegou tudo.
+            logger.warning(
+                "ML listar_pedidos: atingiu max_paginas=%s sem esgotar resultados "
+                "(offset=%s) — pode haver pedidos não coletados.",
+                max_paginas,
+                offset,
+            )
+            incrementar("dados.degradado", tags=["contexto:ML_listar_pedidos", "motivo:paginacao_truncada"])
+            return out, False
+
+        return out, True
+    except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:ML_listar_pedidos", "motivo:excecao"])
+        logger.error("ML listar_pedidos erro: %s", exc)
+        return out, False
+
+
 def listar_pedidos(dias: int = 7) -> list[dict]:
     """
     Busca pedidos dos últimos X dias do vendedor.
     Retorna lista com order_id, status, total, data e SKUs dos itens.
     Nunca lança exceção.
     """
-    if not _enabled():
-        logger.warning("Mercado Livre não configurado para listar pedidos.")
-        return []
-    try:
-        tz = timezone(timedelta(hours=-3))
-        data_from = (datetime.now(tz) - timedelta(days=dias)).isoformat()
-        r = _request_ml(
-            "GET",
-            f"{BASE}/orders/search",
-            params={
-                "seller": ML_SELLER_ID,
-                "order.status": "paid",
-                "sort": "date_desc",
-                "date_created.from": data_from,
-            },
-            timeout=20,
-        )
-        if status_http(r) != 200:
-            log_http_erro_listagem(logger, "ML listar_pedidos", r)
-            return []
-        results = r.json().get("results", []) or []
-        out: list[dict] = []
-        for o in results:
-            if not isinstance(o, dict):
-                continue
-            out.append(
-                {
-                    "order_id": str(o.get("id", "")),
-                    "status": o.get("status", ""),
-                    "total": float(o.get("total_amount", 0) or 0),
-                    "data": o.get("date_created", ""),
-                    "itens": [
-                        {
-                            "sku": item.get("item", {}).get("seller_sku", ""),
-                            "item_id": item.get("item", {}).get("id", ""),
-                            "quantidade": item.get("quantity", 0),
-                            "preco_unitario": float(item.get("unit_price", 0) or 0),
-                        }
-                        for item in (o.get("order_items") or [])
-                        if isinstance(item, dict)
-                    ],
-                }
-            )
-        return out
-    except Exception as exc:
-        logger.error("ML listar_pedidos erro: %s", exc)
-        return []
+    pedidos, _ok = listar_pedidos_detalhado(dias)
+    return pedidos
 
 
 def buscar_metricas_item(item_id: str) -> dict:
