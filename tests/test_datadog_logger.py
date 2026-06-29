@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from core.datadog_logger import DatadogLogHandler, configurar_logging_datadog
 
 
-def _make_record(name: str = "bling_client", msg: str = "evento teste") -> logging.LogRecord:
+def _make_record(name: str = "bling", msg: str = "evento teste") -> logging.LogRecord:
     return logging.LogRecord(
         name=name,
         level=logging.INFO,
@@ -38,10 +38,11 @@ class TestDatadogLogHandler(unittest.TestCase):
     @patch("core.config.DD_API_KEY", "dd-key-test")
     @patch("core.config.DD_LOGS_ENABLED", True)
     @patch("core.config.DD_SITE", "datadoghq.com")
-    def test_emit_bling_client_tag_marketplace(self, mock_post, *_):
+    @patch("core.config.DD_ENV", "production")
+    def test_emit_bling_tag_marketplace(self, mock_post, *_):
         handler = DatadogLogHandler()
         handler.setFormatter(logging.Formatter("%(message)s"))
-        handler.emit(_make_record(name="bling_client", msg="NF-e ok"))
+        handler.emit(_make_record(name="bling", msg="NF-e ok"))
 
         mock_post.assert_called_once()
         kwargs = mock_post.call_args.kwargs
@@ -51,8 +52,11 @@ class TestDatadogLogHandler(unittest.TestCase):
         payload = json.loads(kwargs["data"])
         self.assertEqual(payload[0]["service"], "robo-markplaces")
         self.assertEqual(payload[0]["message"], "NF-e ok")
+        self.assertEqual(payload[0]["status"], "info")
+        self.assertIn("env:production", payload[0]["ddtags"])
         self.assertIn("marketplace:bling", payload[0]["ddtags"])
-        self.assertIn("logger:bling_client", payload[0]["ddtags"])
+        self.assertIn("componente:integracao", payload[0]["ddtags"])
+        self.assertIn("logger:bling", payload[0]["ddtags"])
         self.assertIn("level:info", payload[0]["ddtags"])
 
     @patch("core.datadog_logger.requests.post")
@@ -85,6 +89,67 @@ class TestDatadogLogHandler(unittest.TestCase):
         record.levelname = "DEBUG"
         handler.emit(record)
         mock_post.assert_not_called()
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    def test_logger_desconhecido_cai_em_geral(self, mock_post, *_):
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.emit(_make_record(name="logger_inexistente_xyz", msg="evento"))
+
+        payload = json.loads(mock_post.call_args.kwargs["data"])
+        self.assertIn("marketplace:geral", payload[0]["ddtags"])
+        self.assertIn("componente:outros", payload[0]["ddtags"])
+
+
+class TestCoberturaDoMapeamento(unittest.TestCase):
+    """Teste-guarda: garante que todo `logging.getLogger("nome")` usado no
+    código de produção tenha uma entrada em core.datadog_logger._LOGGER_META.
+
+    Sem isso, é fácil criar um novo módulo/agente, esquecer de mapear o
+    logger e ele cair silenciosamente em marketplace:geral no Datadog —
+    foi exatamente isso que aconteceu antes (a entrada "bling_client"
+    nunca batia com o logger real "bling").
+    """
+
+    _IGNORAR_DIRS = {
+        "tests",
+        ".git",
+        ".idea",
+        "logs",
+        "dados",
+        "__pycache__",
+        ".venv",
+        "venv",
+        "site-packages",
+    }
+
+    def test_todos_os_loggers_do_repo_estao_mapeados(self):
+        import re
+        from pathlib import Path
+
+        from core.datadog_logger import _LOGGER_META
+
+        raiz = Path(__file__).resolve().parent.parent
+        padrao = re.compile(r'getLogger\(\s*["\']([^"\']+)["\']\s*\)')
+        encontrados: set[str] = set()
+
+        for caminho in raiz.rglob("*.py"):
+            if any(parte in self._IGNORAR_DIRS for parte in caminho.parts):
+                continue
+            texto = caminho.read_text(encoding="utf-8", errors="ignore")
+            for nome in padrao.findall(texto):
+                encontrados.add(nome)
+
+        sem_mapeamento = sorted(encontrados - set(_LOGGER_META.keys()))
+        self.assertEqual(
+            sem_mapeamento,
+            [],
+            f"Loggers sem marketplace/componente mapeado em "
+            f"core/datadog_logger.py::_LOGGER_META: {sem_mapeamento}. "
+            f"Adicione uma entrada para cada um.",
+        )
 
 
 class TestConfigurarLoggingDatadog(unittest.TestCase):
