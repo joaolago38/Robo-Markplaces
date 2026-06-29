@@ -36,6 +36,9 @@ def _score_from_metrics(metrics: dict) -> tuple[int, list[str]]:
     if not metrics.get("configurado", False):
         return 0, ["configuração ausente para este marketplace"]
 
+    if metrics.get("api_ok") is False:
+        return 65, ["falha na API de saúde (credenciais presentes; verifique token/conectividade)"]
+
     pendencias = int(metrics.get("pendencias", 0) or 0)
     claims_rate = float(metrics.get("claims_rate", 0) or 0)
     dias_sem_acesso = int(metrics.get("dias_sem_acesso", 0) or 0)

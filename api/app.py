@@ -508,8 +508,8 @@ def keepalive_marketplaces():
 def testar_conectividade_marketplaces():
     """
     POST /marketplaces/conectividade/testar
-    Testa conectividade REAL com Mercado Livre e Magalu (chamada de
-    verdade contra a API, não apenas se o OAuth renovou o token).
+    Testa conectividade REAL com Mercado Livre, Magalu, Shopee e Amazon
+    (chamada de verdade contra a API, não apenas se o OAuth renovou o token).
     Alerta automaticamente em caso de falha. Sem body necessário.
     """
     resultado = executar_conectividade_marketplaces()

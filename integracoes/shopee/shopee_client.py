@@ -17,6 +17,7 @@ from core.config import (
 )
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
+from core.datadog_metrics import incrementar
 from core.token_manager import get_token_shopee
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
@@ -147,6 +148,7 @@ def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: 
 
         return comentarios, True
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:Shopee_listar_perguntas_nao_respondidas", "motivo:excecao"])
         logger.error("Shopee listar_perguntas_nao_respondidas erro: %s", exc)
         return comentarios, False
 
@@ -249,6 +251,7 @@ def obter_saude_conta() -> dict:
 
     return {
         "configurado": True,
+        "api_ok": ok,
         "pendencias": len(pendencias),
         "claims_rate": 0.0,
         "dias_sem_acesso": dias_sem_acesso("shopee") or 0,
@@ -315,15 +318,16 @@ def atualizar_estoque_item(item_id: int, novo_estoque: int, model_id: int | None
         return False
 
 
-def listar_pedidos(dias: int = 7) -> list[dict]:
+def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[list[dict], bool]:
     """
     Lista pedidos recentes (pagos / em processamento).
-    Retorno alinhado ao padrão do ML: order_id, status, total, data, itens.
-    Nunca lança exceção.
+    Retorna (pedidos, sucesso_chamada) — lista vazia com ok=True significa
+    "sem vendas novas"; ok=False significa falha de token/API.
+    Retorno alinhado ao padrão do ML. Nunca lança exceção.
     """
     if not _enabled():
         logger.warning("Shopee não configurado para listar pedidos.")
-        return []
+        return [], False
     try:
         path_list = "/api/v2/order/get_order_list"
         now = datetime.now(timezone.utc)
@@ -331,8 +335,9 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
         time_from = int((now - timedelta(days=max(1, int(dias)))).timestamp())
         order_sns: list[str] = []
         cursor: str | None = None
+        truncado = False
 
-        for _ in range(40):
+        for _pagina in range(max(1, max_paginas)):
             params: dict = {
                 **_params(path_list),
                 "time_range_field": "create_time",
@@ -345,11 +350,11 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             r = request("GET", f"{BASE}{path_list}", params=params, timeout=30)
             if status_http(r) != 200:
                 log_http_erro_listagem(logger, "Shopee listar_pedidos", r)
-                return []
+                return [], False
             body = r.json()
             if _tem_erro_api(body):
                 logger.error("Shopee listar_pedidos erro de API: %s", body.get("error"))
-                return []
+                return [], False
             resp = body.get("response") or {}
             order_list = resp.get("order_list") or []
             if not isinstance(order_list, list):
@@ -368,9 +373,14 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
             if not has_next or not next_c:
                 break
             cursor = str(next_c)
+        else:
+            truncado = True
 
         if not order_sns:
-            return []
+            if truncado:
+                incrementar("dados.degradado", tags=["contexto:Shopee_listar_pedidos", "motivo:paginacao_truncada"])
+                return [], False
+            return [], True
 
         seen: set[str] = set()
         unique_sns: list[str] = []
@@ -444,7 +454,16 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
                         "itens": itens,
                     }
                 )
-        return out
+        if truncado:
+            incrementar("dados.degradado", tags=["contexto:Shopee_listar_pedidos", "motivo:paginacao_truncada"])
+            return out, False
+        return out, True
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:Shopee_listar_pedidos", "motivo:excecao"])
         logger.error("Shopee listar_pedidos erro: %s", exc)
-        return []
+        return [], False
+
+
+def listar_pedidos(dias: int = 7) -> list[dict]:
+    pedidos, _ok = listar_pedidos_detalhado(dias)
+    return pedidos

@@ -2,15 +2,69 @@
 core/notificador.py
 Envia alertas via Telegram. Nunca lança exceção.
 """
+import hashlib
 import json
 import logging
 import time
 from datetime import datetime
-from core.config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_GESTOR_CHAT_ID
+
+from core.config import (
+    ALERTA_COOLDOWN_SEG,
+    ROOT,
+    TELEGRAM_CHAT_ID,
+    TELEGRAM_GESTOR_CHAT_ID,
+    TELEGRAM_TOKEN,
+)
 from core.http_client import request
 from core.http_errors import mascarar_url_telegram
 
 logger = logging.getLogger("notificador")
+
+_COOLDOWN_PATH = ROOT / "logs" / "alertas_cooldown.json"
+
+
+def _chave_msg(msg: str) -> str:
+    return hashlib.sha256(msg.encode("utf-8")).hexdigest()[:24]
+
+
+def _carregar_cooldown() -> dict:
+    try:
+        if _COOLDOWN_PATH.exists():
+            data = json.loads(_COOLDOWN_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data
+    except Exception as exc:
+        logger.warning("Cooldown: falha ao ler %s: %s", _COOLDOWN_PATH, exc)
+    return {}
+
+
+def _salvar_cooldown(estado: dict) -> None:
+    try:
+        _COOLDOWN_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _COOLDOWN_PATH.write_text(json.dumps(estado, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as exc:
+        logger.warning("Cooldown: falha ao gravar %s: %s", _COOLDOWN_PATH, exc)
+
+
+def _deve_suprimir(chave: str, cooldown_segundos: int) -> bool:
+    """True se o alerta deve ser suprimido (ainda dentro do cooldown)."""
+    try:
+        estado = _carregar_cooldown()
+        if chave not in estado:
+            return False
+        ultimo = float(estado[chave])
+        return (time.time() - ultimo) < cooldown_segundos
+    except Exception:
+        return False
+
+
+def _marcar_enviado(chave: str) -> None:
+    try:
+        estado = _carregar_cooldown()
+        estado[chave] = time.time()
+        _salvar_cooldown(estado)
+    except Exception as exc:
+        logger.warning("Cooldown: falha ao marcar envio %s: %s", chave, exc)
 
 
 def _enviar(chat_id: str, msg: str) -> bool:
@@ -35,20 +89,48 @@ def _enviar(chat_id: str, msg: str) -> bool:
         return False
 
 
-def alertar(msg: str) -> bool:
+def alertar(msg: str, *, _ignorar_cooldown: bool = False) -> bool:
+    del _ignorar_cooldown
     return _enviar(TELEGRAM_CHAT_ID, f"🔔 *Alerta* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}")
 
 
-def alertar_gestor(msg: str) -> bool:
-    return _enviar(
+def alertar_gestor(
+    msg: str,
+    *,
+    chave: str | None = None,
+    cooldown_segundos: int | None = None,
+    _ignorar_cooldown: bool = False,
+) -> bool:
+    cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
+    chave_final = chave or _chave_msg(msg)
+    if not _ignorar_cooldown and _deve_suprimir(chave_final, cooldown):
+        logger.info("Alerta gestor suprimido (cooldown %ss): %s", cooldown, chave_final)
+        return False
+    ok = _enviar(
         TELEGRAM_GESTOR_CHAT_ID,
         f"📊 *Gestor* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}",
     )
+    if ok and not _ignorar_cooldown:
+        _marcar_enviado(chave_final)
+    return ok
 
 
-def alertar_critico(msg: str) -> bool:
-    alertar_gestor(f"🚨 CRÍTICO\n{msg}")
-    return alertar(f"🚨 CRÍTICO\n{msg}")
+def alertar_critico(
+    msg: str,
+    *,
+    chave: str | None = None,
+    cooldown_segundos: int | None = None,
+) -> bool:
+    cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
+    chave_final = chave or _chave_msg(msg)
+    if _deve_suprimir(chave_final, cooldown):
+        logger.info("Alerta crítico suprimido (cooldown %ss): %s", cooldown, chave_final)
+        return False
+    alertar_gestor(f"🚨 CRÍTICO\n{msg}", _ignorar_cooldown=True)
+    ok = alertar(f"🚨 CRÍTICO\n{msg}", _ignorar_cooldown=True)
+    if ok:
+        _marcar_enviado(chave_final)
+    return ok
 
 
 def notificar_venda_whatsapp(

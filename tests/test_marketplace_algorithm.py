@@ -17,6 +17,20 @@ class MarketplaceAlgorithmTests(unittest.TestCase):
         self.assertEqual(out["score"], 0)
         self.assertEqual(out["status"], "critico")
 
+    def test_marketplace_api_falha_nao_vira_critico_score_zero(self):
+        out = avaliar_marketplace(
+            "magalu_api_fail",
+            {
+                "configurado": True,
+                "api_ok": False,
+                "pendencias": 0,
+                "claims_rate": 0.0,
+                "dias_sem_acesso": 0,
+            },
+        )
+        self.assertGreater(out["score"], 0)
+        self.assertEqual(out["status"], "atencao")
+
     def test_marketplace_saudavel(self):
         out = avaliar_marketplace(
             "market_ok_test",

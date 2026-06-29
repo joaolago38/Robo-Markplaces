@@ -59,7 +59,8 @@ def _checar_busca_falhou(marketplace: str, ok: bool) -> None:
         alertar_critico(
             f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
             "Isso pode significar que vendas reais não estão sendo notificadas. "
-            "Verifique o token/credenciais e o status da API."
+            "Verifique o token/credenciais e o status da API.",
+            chave=f"falha_pedidos:{marketplace}",
         )
 
 
@@ -132,18 +133,20 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
             pedidos, ok = lp_detalhado(dias=1)
             _checar_busca_falhou("Mercado Livre", ok)
         elif mp == "shopee":
-            from integracoes.shopee.shopee_client import listar_pedidos as lp
+            from integracoes.shopee.shopee_client import listar_pedidos_detalhado as lp_detalhado
 
-            pedidos = lp(dias=1)
+            pedidos, ok = lp_detalhado(dias=1)
+            _checar_busca_falhou("Shopee", ok)
         elif mp == "magalu":
             from integracoes.magalu.magalu_client import listar_pedidos_detalhado as lp_detalhado
 
             pedidos, ok = lp_detalhado(dias=1)
             _checar_busca_falhou("Magalu", ok)
         elif mp == "amazon":
-            from integracoes.amazon.amazon_client import listar_pedidos as lp
+            from integracoes.amazon.amazon_client import listar_pedidos_detalhado as lp_detalhado
 
-            pedidos = lp(dias=1)
+            pedidos, ok = lp_detalhado(dias=1)
+            _checar_busca_falhou("Amazon", ok)
         else:
             logger.warning("Marketplace desconhecido para vendas WhatsApp: %s", marketplace)
             return res
@@ -180,9 +183,10 @@ def executar() -> dict:
         resumo["mercadolivre"] = 0
 
     try:
-        from integracoes.shopee.shopee_client import listar_pedidos as shopee_pedidos
+        from integracoes.shopee.shopee_client import listar_pedidos_detalhado as shopee_pedidos_detalhado
 
-        pedidos_shopee = shopee_pedidos(dias=1)
+        pedidos_shopee, ok_shopee = shopee_pedidos_detalhado(dias=1)
+        _checar_busca_falhou("Shopee", ok_shopee)
         novos_shopee = _notificar_novos_pedidos("shopee", pedidos_shopee, notificados)
         resumo["shopee"] = len(novos_shopee)
         novos_total.update(novos_shopee)
@@ -205,9 +209,10 @@ def executar() -> dict:
         resumo["magalu"] = 0
 
     try:
-        from integracoes.amazon.amazon_client import listar_pedidos as amazon_pedidos
+        from integracoes.amazon.amazon_client import listar_pedidos_detalhado as amazon_pedidos_detalhado
 
-        pedidos_amazon = amazon_pedidos(dias=1)
+        pedidos_amazon, ok_amazon = amazon_pedidos_detalhado(dias=1)
+        _checar_busca_falhou("Amazon", ok_amazon)
         novos_amazon = _notificar_novos_pedidos("amazon", pedidos_amazon, notificados)
         resumo["amazon"] = len(novos_amazon)
         novos_total.update(novos_amazon)

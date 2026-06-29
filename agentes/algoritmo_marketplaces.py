@@ -34,7 +34,8 @@ def executar(alertar_quando_atencao: bool = False) -> dict:
                 bloco_variacoes = f"\nVariações: {top}"
             alertar_gestor(
                 f"Saúde {nome}: {status.upper()} (score {avaliacao['score']})\n"
-                f"Ajustes: {'; '.join(avaliacao['acoes_recomendadas'][:3])}{bloco_variacoes}"
+                f"Ajustes: {'; '.join(avaliacao['acoes_recomendadas'][:3])}{bloco_variacoes}",
+                chave=f"saude:{nome}:{status}",
             )
 
     resumo = {

@@ -48,11 +48,12 @@ class TestAmazonClient(unittest.TestCase):
 
     @patch.object(amazon_client, "dias_sem_acesso", return_value=0)
     @patch.object(amazon_client, "registrar_acesso")
-    @patch.object(amazon_client, "listar_mensagens_nao_respondidas", return_value=[])
+    @patch.object(amazon_client, "listar_mensagens_nao_respondidas_detalhado", return_value=([], True))
     @patch.object(amazon_client, "_enabled", return_value=True)
     def test_AZ06_obter_saude_conta(self, *_patches):
         saude = amazon_client.obter_saude_conta()
         self.assertIn("configurado", saude)
+        amazon_client.registrar_acesso.assert_called_once()
 
     @patch.object(amazon_client, "request")
     @patch.object(amazon_client, "_enabled", return_value=True)

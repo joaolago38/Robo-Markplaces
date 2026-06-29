@@ -22,6 +22,8 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from tests._stdout_utf8 import capturar_stdout_utf8
+
 
 def _mock_resp(body: dict, status: int = 200) -> MagicMock:
     r = MagicMock()
@@ -178,7 +180,8 @@ class TestExecutar(unittest.TestCase):
             {"access_token": "A", "refresh_token": "R", "expires_in": 21600}, 200
         )
         from scripts.diagnostico_bling import executar
-        r = executar()
+        with capturar_stdout_utf8():
+            r = executar()
         self.assertIn("score_pct", r)
         self.assertGreaterEqual(r["score_pct"], 0)
         self.assertLessEqual(r["score_pct"], 100)
@@ -198,7 +201,8 @@ class TestExecutar(unittest.TestCase):
             {"access_token": "NOVO_ACCESS", "refresh_token": "NOVO_REFRESH", "expires_in": 21600}, 200
         )
         from scripts.diagnostico_bling import executar
-        r = executar()
+        with capturar_stdout_utf8():
+            r = executar()
         # Deve ter tentado renovar
         mock_post.assert_called()
         self.assertIn("score_pct", r)

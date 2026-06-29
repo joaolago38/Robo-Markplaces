@@ -72,9 +72,9 @@ class TestWhatsAppVendas(unittest.TestCase):
         novos = _notificar_novos_pedidos("mercadolivre", PEDIDOS_MOCK_ML, set())
         self.assertEqual(len(novos), 0)
 
-    @patch("integracoes.amazon.amazon_client.listar_pedidos", return_value=[])
+    @patch("integracoes.amazon.amazon_client.listar_pedidos_detalhado", return_value=([], True))
     @patch("integracoes.magalu.magalu_client.listar_pedidos_detalhado", return_value=([], True))
-    @patch("integracoes.shopee.shopee_client.listar_pedidos", return_value=[])
+    @patch("integracoes.shopee.shopee_client.listar_pedidos_detalhado", return_value=([], True))
     @patch("agentes.vendas_notificador._salvar_notificados")
     @patch("agentes.vendas_notificador._carregar_notificados", return_value=set())
     @patch("agentes.vendas_notificador.notificar_venda", return_value=True)

@@ -173,6 +173,7 @@ def obter_saude_conta() -> dict:
 
     return {
         "configurado": True,
+        "api_ok": ok,
         "pendencias": len(perguntas),
         "claims_rate": 0.0,
         "dias_sem_acesso": dias_sem_acesso("magalu") or 0,
