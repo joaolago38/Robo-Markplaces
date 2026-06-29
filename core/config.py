@@ -161,6 +161,8 @@ ML_ADS_ACOS_DIAS_LIMITE = int(os.getenv("ML_ADS_ACOS_DIAS_LIMITE", "3"))
 DD_API_KEY = os.getenv("DD_API_KEY", "").strip()
 DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
 DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
+# Ambiente exibido na tag `env:` no Datadog (production/staging/dev). Antes era fixo em "production".
+DD_ENV = os.getenv("DD_ENV", "production").strip() or "production"
 
 
 def _init_datadog_logging() -> None:

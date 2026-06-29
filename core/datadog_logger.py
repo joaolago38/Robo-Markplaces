@@ -11,19 +11,103 @@ import logging
 
 import requests
 
-_MARKETPLACE_POR_LOGGER = {
-    "bling_client": "bling",
-    "token_manager": "bling_e_ml",
-    "ml_client": "mercadolivre",
-    "ml_product_ads": "mercadolivre_ads",
-    "magalu_client": "magalu",
-    "shopee_client": "shopee",
-    "agente_faturamento": "bling",
-    "agente_repricing_marketplaces": "mercadolivre_e_outros",
-    "sincronizar_estoque_marketplaces": "mercadolivre_e_outros",
-    "agente_monitor_ml": "mercadolivre",
-    "agente_ads_gatilho": "mercadolivre_ads",
+# Mapa: nome do logger (o argumento passado para logging.getLogger(...))
+# -> (marketplace, componente)
+#
+# IMPORTANTE: a chave aqui é o nome efetivamente passado para getLogger(),
+# não o nome do arquivo/módulo. Ex.: integracoes/bling/bling_client.py usa
+# logging.getLogger("bling"), então a chave é "bling" — não "bling_client".
+#
+# `marketplace` alimenta a tag `marketplace:` (facet principal para filtrar
+# por canal de venda no Log Explorer / dashboards).
+# `componente` alimenta a tag `componente:` (camada: integracao, agente,
+# core, script, api) — útil para separar "client de API" de "regra de
+# negócio" mesmo dentro do mesmo marketplace.
+#
+# A cobertura deste dicionário é validada por
+# tests/test_datadog_logger.py::test_todos_os_loggers_do_repo_estao_mapeados,
+# que varre o código em busca de getLogger(...) e falha se algum nome novo
+# não tiver entrada aqui — isso evita que logs voltem a cair em "geral"
+# silenciosamente quando um novo módulo for criado.
+_LOGGER_META = {
+    # --- Integrações (clientes de API por marketplace) ---
+    "bling": ("bling", "integracao"),
+    "ml_client": ("mercadolivre", "integracao"),
+    "ml_product_ads": ("mercadolivre_ads", "integracao"),
+    "magalu_client": ("magalu", "integracao"),
+    "shopee_client": ("shopee", "integracao"),
+    "amazon_client": ("amazon", "integracao"),
+    "meta": ("meta", "integracao"),
+    "meta_ads_client": ("meta_ads", "integracao"),
+    "lojahub": ("lojahub", "integracao"),
+
+    # --- Core (infraestrutura compartilhada, não é um marketplace) ---
+    "token_manager": ("bling_e_ml", "core"),
+    "notificador": ("infra", "core"),
+    "claude": ("infra", "core"),
+    "alertas_esmaltes": ("infra", "core"),
+    "whatsapp": ("infra", "core"),
+    "http_client": ("infra", "core"),
+    "config": ("infra", "core"),
+
+    # --- Agentes (regras de negócio por marketplace) ---
+    "agente_faturamento": ("bling", "agente"),
+    "agente_repricing_marketplaces": ("mercadolivre_e_outros", "agente"),
+    "agente_repricing_impala": ("mercadolivre_e_outros", "agente"),
+    "sincronizar_estoque_marketplaces": ("mercadolivre_e_outros", "agente"),
+    "agente_monitor_ml": ("mercadolivre", "agente"),
+    "agente_ads_gatilho": ("mercadolivre_ads", "agente"),
+    "agente_otimizador_listing": ("mercadolivre", "agente"),
+    "agente_monitor_concorrentes": ("mercadolivre", "agente"),
+    "agente_ml": ("mercadolivre", "agente"),
+    "agente_shopee": ("shopee", "agente"),
+    "agente_magalu": ("magalu", "agente"),
+    "agente_amazon": ("amazon", "agente"),
+    "agente_metricas_meta": ("meta", "agente"),
+    "agente_trafego_manicures": ("meta", "agente"),
+    "publicador": ("social", "agente"),
+    "relatorio": ("bling", "agente"),
+
+    # --- Agentes multi-marketplace (tocam mais de um canal por natureza) ---
+    "agente_varredura_marketplaces": ("multi", "agente"),
+    "manutencao_marketplaces": ("multi", "agente"),
+    "algoritmo_marketplaces": ("multi", "agente"),
+    "auto_respostas_visuais": ("multi", "agente"),
+    "vendas_notificador": ("multi", "agente"),
+    "agente_panorama": ("multi", "agente"),
+    "relatorio_financeiro": ("multi", "agente"),
+    "operacao_24h": ("infra", "agente"),
+
+    # --- Diagnóstico interno deste módulo ---
+    "datadog_logger": ("infra", "core"),
+
+    # --- Scripts / API ---
+    "renovar_tokens": ("multi", "script"),
+    "renovar_bling_local": ("bling", "script"),
+    "scheduler_varredura_marketplaces": ("multi", "script"),
+    "api": ("infra", "api"),
 }
+
+_DEFAULT_META = ("geral", "outros")
+
+# Evita inundar o Datadog com o mesmo aviso de "logger não mapeado" a cada
+# linha de log — avisa uma única vez por nome de logger, por processo.
+_avisados_sem_mapeamento: set[str] = set()
+
+
+def _resolver_meta(nome_logger: str) -> tuple[str, str]:
+    meta = _LOGGER_META.get(nome_logger)
+    if meta is not None:
+        return meta
+    if nome_logger not in _avisados_sem_mapeamento:
+        _avisados_sem_mapeamento.add(nome_logger)
+        logging.getLogger("datadog_logger").warning(
+            "Logger '%s' sem marketplace/componente mapeado em "
+            "_LOGGER_META — caindo em tags 'geral/outros'. Adicione uma "
+            "entrada em core/datadog_logger.py.",
+            nome_logger,
+        )
+    return _DEFAULT_META
 
 
 class DatadogLogHandler(logging.Handler):
@@ -36,20 +120,25 @@ class DatadogLogHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         if record.levelno < logging.INFO:
             return
-        from core.config import DD_API_KEY, DD_LOGS_ENABLED
+        from core.config import DD_API_KEY, DD_ENV, DD_LOGS_ENABLED
 
         if not DD_LOGS_ENABLED or not DD_API_KEY:
             return
         try:
-            marketplace = _MARKETPLACE_POR_LOGGER.get(record.name, "geral")
+            marketplace, componente = _resolver_meta(record.name)
             payload = [
                 {
                     "message": self.format(record),
                     "ddsource": "python",
                     "service": "robo-markplaces",
+                    # `status` é um standard attribute do Datadog: além de
+                    # virar tag, alimenta o facet "Status" nativo do Log
+                    # Explorer (cores/severidade prontas, sem facet custom).
+                    "status": record.levelname.lower(),
                     "ddtags": (
-                        f"env:production,logger:{record.name},"
-                        f"marketplace:{marketplace},level:{record.levelname.lower()}"
+                        f"env:{DD_ENV},logger:{record.name},"
+                        f"marketplace:{marketplace},componente:{componente},"
+                        f"level:{record.levelname.lower()}"
                     ),
                 }
             ]
