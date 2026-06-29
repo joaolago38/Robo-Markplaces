@@ -6,11 +6,12 @@ Contratos: spec/spec.yaml > modulos[chat_responder, publicador_social, relatorio
 """
 import logging
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from werkzeug.exceptions import BadRequest
 
 from core.claude_client import responder_chat, gerar_post, perguntar
 from core.notificador import alertar, alertar_critico, alertar_gestor
+from core.request_context import novo_request_id, definir_request_id, obter_request_id
 from core.config import (
     MARGEM_MINIMA,
     ESTOQUE_CRITICO,
@@ -53,6 +54,24 @@ logging.basicConfig(
 logger = logging.getLogger("api")
 
 app = Flask(__name__)
+
+
+@app.before_request
+def _atribuir_request_id() -> None:
+    """Correlation ID por requisição: permite filtrar no Datadog Log
+    Explorer (`request_id:<id>`) todas as linhas geradas por uma mesma
+    chamada do n8n, mesmo atravessando vários agentes/integrações."""
+    rid = request.headers.get("X-Request-Id") or novo_request_id()
+    definir_request_id(rid)
+    g.request_id = rid
+
+
+@app.after_request
+def _anexar_request_id_na_resposta(response):
+    rid = obter_request_id()
+    if rid:
+        response.headers["X-Request-Id"] = rid
+    return response
 
 
 def _get_json_payload():

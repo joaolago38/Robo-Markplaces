@@ -9,6 +9,7 @@ import urllib.parse
 from pathlib import Path
 
 import core.config as cfg
+from core.datadog_metrics import incrementar
 from core.github_secrets import sync_secrets_github
 from core.http_client import request
 
@@ -157,6 +158,7 @@ def _renovar_token_ml():
                 )
 
         logger.info("Token ML renovado com sucesso")
+        incrementar("token.renovado", tags=["provider:mercadolivre"])
 
         return access_token
 
@@ -164,6 +166,7 @@ def _renovar_token_ml():
         logger.error("Erro de parse da resposta do token ML: %s", e)
         return None
     except Exception as e:
+        incrementar("token.falha", tags=["provider:mercadolivre"])
         logger.error("Erro ao renovar token ML: %s", e)
         return None
 
@@ -304,12 +307,14 @@ def _renovar_token_meta():
         _salvar_store_meta(access_token, _token_cache_meta["expires_at"])
 
         logger.info("Token Meta renovado com sucesso")
+        incrementar("token.renovado", tags=["provider:meta"])
         return access_token
 
     except ValueError as e:
         logger.error("Erro de parse da resposta do token Meta: %s", e)
         return None
     except Exception as e:
+        incrementar("token.falha", tags=["provider:meta"])
         logger.error("Erro ao renovar token Meta: %s", e)
         return None
 
@@ -426,9 +431,11 @@ def _renovar_token_shopee():
             cfg.SHOPEE_REFRESH_TOKEN = novo_refresh
 
         logger.info("Token Shopee renovado com sucesso")
+        incrementar("token.renovado", tags=["provider:shopee"])
         return access_token
 
     except Exception as e:
+        incrementar("token.falha", tags=["provider:shopee"])
         logger.error("Erro ao renovar token Shopee: %s", e)
         return None
 
@@ -503,9 +510,11 @@ def _renovar_token_magalu():
             cfg.MAGALU_REFRESH_TOKEN = novo_refresh
 
         logger.info("Token Magazine Luiza renovado com sucesso")
+        incrementar("token.renovado", tags=["provider:magalu"])
         return access_token
 
     except Exception as e:
+        incrementar("token.falha", tags=["provider:magalu"])
         logger.error("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
         return None
 
@@ -689,12 +698,14 @@ def _renovar_token_bling():
                 )
 
         logger.info("Token Bling renovado com sucesso")
+        incrementar("token.renovado", tags=["provider:bling"])
         return access_token
 
     except ValueError as e:
         logger.error("Erro de parse da resposta do token Bling: %s", e)
         return None
     except Exception as e:
+        incrementar("token.falha", tags=["provider:bling"])
         logger.error("Erro ao renovar token Bling: %s", e)
         return None
 

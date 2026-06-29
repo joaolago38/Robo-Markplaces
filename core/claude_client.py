@@ -4,7 +4,10 @@ Cliente centralizado para o Claude (Anthropic).
 Nunca lança exceção — erro retorna string de fallback.
 """
 import logging
+import time
+
 from core.config import ANTHROPIC_API_KEY
+from core.datadog_metrics import gauge, incrementar
 from core.http_client import request
 
 logger = logging.getLogger("claude")
@@ -27,6 +30,8 @@ def perguntar(
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
     mensagem = f"{contexto}\n\n{prompt}" if contexto else prompt
+    _tags = [f"modelo:{MODELO}"]
+    inicio = time.monotonic()
     try:
         r = request("POST", API_URL, headers={
             "x-api-key": ANTHROPIC_API_KEY,
@@ -40,16 +45,31 @@ def perguntar(
         }, timeout=30)
         r.raise_for_status()
         data = r.json()
+        duracao_ms = (time.monotonic() - inicio) * 1000
+        gauge("ia.latencia_ms", duracao_ms, tags=_tags)
+        uso = data.get("usage") or {}
+        if uso:
+            incrementar("ia.tokens_entrada", uso.get("input_tokens", 0) or 0, tags=_tags)
+            incrementar("ia.tokens_saida", uso.get("output_tokens", 0) or 0, tags=_tags)
         content = data.get("content", [])
         if not content:
+            incrementar("ia.resposta_vazia", tags=_tags)
             logger.error("Claude sem conteúdo na resposta: %s", data)
             return "⚠️ Erro na IA: resposta vazia."
         return content[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
     except ValueError as e:
-        logger.error("Claude retornou JSON inválido: %s", e)
+        incrementar("ia.erro", tags=[*_tags, "tipo:json_invalido"])
+        logger.error(
+            "Claude retornou JSON inválido: %s", e,
+            extra={"error_kind": type(e).__name__, "error_message": str(e)},
+        )
         return "⚠️ Erro na IA: resposta inválida."
     except Exception as e:
-        logger.error("Claude erro: %s", e)
+        incrementar("ia.erro", tags=[*_tags, "tipo:comunicacao"])
+        logger.error(
+            "Claude erro: %s", e,
+            extra={"error_kind": type(e).__name__, "error_message": str(e)},
+        )
         return "⚠️ Erro na IA: falha de comunicação com o provedor."
 
 def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
