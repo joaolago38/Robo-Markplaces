@@ -11,6 +11,7 @@ import logging
 from pathlib import Path
 
 from core.config import ROOT
+from core.notificador import alertar_critico
 from core.whatsapp import notificar_venda
 
 logger = logging.getLogger("vendas_notificador")
@@ -41,6 +42,25 @@ def _salvar_notificados(ids: set[str]) -> None:
         )
     except Exception as exc:
         logger.error("Erro ao salvar pedidos notificados: %s", exc)
+
+
+def _checar_busca_falhou(marketplace: str, ok: bool) -> None:
+    """
+    Quando a chamada à API falhou de verdade (token expirado, API fora do
+    ar, etc.), `pedidos` volta vazio igual a "sem venda nova" — sem isto,
+    as duas situações são indistinguíveis e o time nunca saberia que está
+    cego para vendas reais enquanto o problema persistir.
+    """
+    if not ok:
+        logger.error(
+            "%s: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
+            marketplace,
+        )
+        alertar_critico(
+            f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
+            "Isso pode significar que vendas reais não estão sendo notificadas. "
+            "Verifique o token/credenciais e o status da API."
+        )
 
 
 def _notificar_novos_pedidos(
@@ -107,17 +127,19 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
         notificados = _carregar_notificados()
         pedidos: list[dict] = []
         if mp == "mercadolivre":
-            from integracoes.ml.ml_client import listar_pedidos as lp
+            from integracoes.ml.ml_client import listar_pedidos_detalhado as lp_detalhado
 
-            pedidos = lp(dias=1)
+            pedidos, ok = lp_detalhado(dias=1)
+            _checar_busca_falhou("Mercado Livre", ok)
         elif mp == "shopee":
             from integracoes.shopee.shopee_client import listar_pedidos as lp
 
             pedidos = lp(dias=1)
         elif mp == "magalu":
-            from integracoes.magalu.magalu_client import listar_pedidos as lp
+            from integracoes.magalu.magalu_client import listar_pedidos_detalhado as lp_detalhado
 
-            pedidos = lp(dias=1)
+            pedidos, ok = lp_detalhado(dias=1)
+            _checar_busca_falhou("Magalu", ok)
         elif mp == "amazon":
             from integracoes.amazon.amazon_client import listar_pedidos as lp
 
@@ -145,9 +167,10 @@ def executar() -> dict:
     resumo: dict[str, int] = {}
 
     try:
-        from integracoes.ml.ml_client import listar_pedidos
+        from integracoes.ml.ml_client import listar_pedidos_detalhado
 
-        pedidos_ml = listar_pedidos(dias=1)
+        pedidos_ml, ok_ml = listar_pedidos_detalhado(dias=1)
+        _checar_busca_falhou("Mercado Livre", ok_ml)
         novos_ml = _notificar_novos_pedidos("mercadolivre", pedidos_ml, notificados)
         resumo["mercadolivre"] = len(novos_ml)
         novos_total.update(novos_ml)
@@ -169,9 +192,10 @@ def executar() -> dict:
         resumo["shopee"] = 0
 
     try:
-        from integracoes.magalu.magalu_client import listar_pedidos as magalu_pedidos
+        from integracoes.magalu.magalu_client import listar_pedidos_detalhado as magalu_pedidos_detalhado
 
-        pedidos_magalu = magalu_pedidos(dias=1)
+        pedidos_magalu, ok_magalu = magalu_pedidos_detalhado(dias=1)
+        _checar_busca_falhou("Magalu", ok_magalu)
         novos_magalu = _notificar_novos_pedidos("magalu", pedidos_magalu, notificados)
         resumo["magalu"] = len(novos_magalu)
         novos_total.update(novos_magalu)

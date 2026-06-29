@@ -453,7 +453,74 @@ def get_token_shopee():
     return novo or cfg.SHOPEE_ACCESS_TOKEN or None
 
 
+def _magalu_store_path() -> Path | None:
+    """
+    Cofre do token Magalu em disco, opcional (ativo só quando
+    MAGALU_TOKEN_STORE está definido). Mesmo papel do ML_TOKEN_STORE:
+    sem isso, um refresh feito "fora" do script agendado (ex.: dentro do
+    próprio processo da API, quando o cache em memória expira no meio de
+    uma chamada) nunca é persistido — na próxima reinicialização o
+    processo volta a usar o refresh_token antigo do .env/Secret, que já
+    pode ter sido rotacionado, travando a Magalu até reautenticação manual.
+        MAGALU_TOKEN_STORE=dados/magalu_token.json
+    """
+    p = (os.getenv("MAGALU_TOKEN_STORE") or "").strip()
+    return Path(p) if p else None
+
+
+def _carregar_store_magalu() -> dict:
+    p = _magalu_store_path()
+    if not p or not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        logger.error("Falha ao ler store Magalu (%s): %s", p, e)
+        return {}
+
+
+def _salvar_store_magalu(access_token: str, refresh_token: str | None, expires_at: float) -> None:
+    p = _magalu_store_path()
+    if not p:
+        return
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps(
+                {
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "expires_at": expires_at,
+                    "atualizado_em": time.time(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        try:
+            os.chmod(p, 0o600)
+        except OSError:
+            pass
+        logger.info("Tokens Magalu persistidos em %s", p)
+    except Exception as e:
+        logger.error("Falha ao gravar store Magalu (%s): %s", p, e)
+
+
+def _hidratar_cache_magalu_do_store() -> None:
+    """Na partida de um processo novo, usa o token/refresh do disco em vez do .env estático."""
+    if _token_cache_magalu["access_token"] is None:
+        store = _carregar_store_magalu()
+        if store.get("access_token"):
+            _token_cache_magalu["access_token"] = store["access_token"]
+            _token_cache_magalu["expires_at"] = store.get("expires_at", 0)
+        if store.get("refresh_token"):
+            _magalu_refresh_efetivo["valor"] = store["refresh_token"]
+
+
 def _magalu_refresh_disponivel() -> str | None:
+    """Prioridade: refresh_token rotacionado em memória > disco (MAGALU_TOKEN_STORE) > .env/secret."""
+    if _magalu_refresh_efetivo["valor"] is None:
+        _hidratar_cache_magalu_do_store()
     if _magalu_refresh_efetivo["valor"] is None:
         _magalu_refresh_efetivo["valor"] = (cfg.MAGALU_REFRESH_TOKEN or "").strip() or None
     return _magalu_refresh_efetivo["valor"]
@@ -509,6 +576,28 @@ def _renovar_token_magalu():
         if novo_refresh:
             cfg.MAGALU_REFRESH_TOKEN = novo_refresh
 
+        # Persiste em disco (se o cofre estiver ativo) — resolve o caso de o
+        # processo da API renovar "fora" do scripts/renovar_tokens.py e o
+        # refresh_token novo nunca chegar a ser salvo em lugar nenhum.
+        _salvar_store_magalu(
+            access_token,
+            novo_refresh or rt,
+            _token_cache_magalu["expires_at"],
+        )
+
+        # Mesmo cuidado do ML: se a Magalu rotacionar o refresh_token (uso
+        # único) e este renovar rodar dentro do GitHub Actions, sem este
+        # sync o Secret antigo fica órfão e a próxima renovação agendada
+        # falha com refresh_token inválido.
+        if novo_refresh and os.getenv("GITHUB_ACTIONS") == "true":
+            if sync_secrets_github(access_token, novo_refresh, prefix="MAGALU"):
+                logger.info("Secrets MAGALU_* sincronizados no GitHub (rotação automática).")
+            else:
+                logger.warning(
+                    "Falha ao sincronizar MAGALU_* no GitHub após rotação — "
+                    "a próxima renovação pode falhar até o sync funcionar."
+                )
+
         logger.info("Token Magazine Luiza renovado com sucesso")
         incrementar("token.renovado", tags=["provider:magalu"])
         return access_token
@@ -520,6 +609,8 @@ def _renovar_token_magalu():
 
 
 def get_token_magalu():
+    _hidratar_cache_magalu_do_store()
+
     if not _magalu_refresh_disponivel():
         return cfg.MAGALU_ACCESS_TOKEN or None
 

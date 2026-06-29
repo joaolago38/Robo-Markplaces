@@ -7,6 +7,8 @@ from __future__ import annotations
 import logging
 import re
 
+from core.datadog_metrics import incrementar
+
 
 def status_http(resposta) -> int:
     """Retorna status HTTP inteiro; mocks sem status_code explícito tratados como 200."""
@@ -24,10 +26,17 @@ def trecho_corpo(resposta, limite: int = 200) -> str:
 
 
 def log_http_erro_listagem(logger: logging.Logger, contexto: str, resposta) -> None:
-    """Registra ERROR quando uma leitura HTTP não retornou 200."""
+    """Registra ERROR quando uma leitura HTTP não retornou 200.
+
+    Também incrementa `robo.dados.degradado` no Datadog: sem isso, uma
+    listagem que falhou (token expirado, sem permissão, etc.) e caiu de
+    volta para lista vazia é, hoje, indistinguível — em logs e métricas —
+    de uma listagem que teve sucesso e genuinamente não encontrou nada.
+    """
     status = status_http(resposta)
     if status == 200:
         return
+    incrementar("dados.degradado", tags=[f"contexto:{contexto}", f"status_code:{status}"])
     corpo = trecho_corpo(resposta)
     if status == 403:
         logger.error(

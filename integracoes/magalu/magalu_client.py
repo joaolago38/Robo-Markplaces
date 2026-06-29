@@ -6,6 +6,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from core.config import MAGALU_ACCESS_TOKEN, MAGALU_MERCHANT_ID, MAGALU_REFRESH_TOKEN
+from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
 from core.token_manager import get_token_magalu
@@ -60,26 +61,43 @@ def probe_conexao() -> dict:
         return {"ok": False, "status": 0, "msg": str(exc)}
 
 
-def listar_perguntas_nao_respondidas(limit: int = 20) -> list[dict]:
+def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: int = 5) -> tuple[list[dict], bool]:
+    """Retorna (perguntas, sucesso_chamada), percorrendo páginas via offset."""
     if not _enabled():
         logger.warning("Magalu não configurado.")
-        return []
+        return [], False
+    out: list[dict] = []
+    offset = 0
     try:
-        r = request(
-            "GET",
-            f"{BASE}/seller/questions",
-            headers=_h(),
-            params={"status": "pending", "limit": limit},
-            timeout=20,
-        )
-        if status_http(r) != 200:
-            log_http_erro_listagem(logger, "Magalu listar_perguntas_nao_respondidas", r)
-            return []
-        body = r.json()
-        return body.get("data", body.get("items", []))
+        for _pagina in range(max(1, max_paginas)):
+            r = request(
+                "GET",
+                f"{BASE}/seller/questions",
+                headers=_h(),
+                params={"status": "pending", "limit": limit, "offset": offset},
+                timeout=20,
+            )
+            if status_http(r) != 200:
+                log_http_erro_listagem(logger, "Magalu listar_perguntas_nao_respondidas", r)
+                return out, False
+            body = r.json()
+            pagina = body.get("data", body.get("items", []))
+            if not isinstance(pagina, list):
+                pagina = []
+            out.extend(pagina)
+            if len(pagina) < limit:
+                break
+            offset += limit
+        return out, True
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:Magalu_listar_perguntas_nao_respondidas", "motivo:excecao"])
         logger.error("Magalu listar_perguntas_nao_respondidas erro: %s", exc)
-        return []
+        return out, False
+
+
+def listar_perguntas_nao_respondidas(limit: int = 20) -> list[dict]:
+    perguntas, _ok = _listar_perguntas_nao_respondidas_detalhado(limit=limit)
+    return perguntas
 
 
 def responder_pergunta(question_id: str, texto: str) -> bool:
@@ -149,8 +167,9 @@ def obter_saude_conta() -> dict:
     if not _enabled():
         return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
 
-    perguntas = listar_perguntas_nao_respondidas(limit=50)
-    registrar_acesso("magalu")
+    perguntas, ok = _listar_perguntas_nao_respondidas_detalhado(limit=50)
+    if ok:
+        registrar_acesso("magalu")
 
     return {
         "configurado": True,
@@ -208,91 +227,127 @@ def atualizar_estoque_item(sku: str, novo_estoque: int) -> bool:
         return False
 
 
-def listar_pedidos(dias: int = 7) -> list[dict]:
+def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[list[dict], bool]:
     """
-    Lista pedidos recentes via GET /seller/v1/orders.
-    Retorno alinhado ao padrão do ML. Nunca lança exceção.
+    Lista pedidos recentes via GET /seller/v1/orders, percorrendo páginas
+    via offset até esgotar ou atingir max_paginas.
+    Retorna (pedidos, sucesso_chamada) — use isto quando precisar saber se
+    a lista vazia é "sem venda nova" ou "a chamada falhou de verdade".
+    Retorno alinhado ao padrão do ML.
     """
     if not _enabled():
         logger.warning("Magalu não configurado para listar pedidos.")
-        return []
+        return [], False
+
+    out: list[dict] = []
+    limite_data = datetime.now(timezone.utc) - timedelta(days=max(1, int(dias)))
+    limit = 50
+    offset = 0
     try:
-        r = request(
-            "GET",
-            f"{BASE}/seller/v1/orders",
-            headers=_h(),
-            params={"limit": 50},
-            timeout=25,
-        )
-        if status_http(r) != 200:
-            log_http_erro_listagem(logger, "Magalu listar_pedidos", r)
-            return []
-        body = r.json() or {}
-        rows = body.get("data") or body.get("items") or body.get("orders") or []
-        if not isinstance(rows, list):
-            return []
-
-        limite = datetime.now(timezone.utc) - timedelta(days=max(1, int(dias)))
-        out: list[dict] = []
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            oid = str(row.get("code") or row.get("id") or row.get("order_id") or "")
-            if not oid:
-                continue
-            created_raw = (
-                row.get("created_at")
-                or row.get("createdAt")
-                or row.get("inserted_at")
-                or row.get("ordered_at")
+        for _pagina in range(max(1, max_paginas)):
+            r = request(
+                "GET",
+                f"{BASE}/seller/v1/orders",
+                headers=_h(),
+                params={"limit": limit, "offset": offset},
+                timeout=25,
             )
-            if created_raw:
+            if status_http(r) != 200:
+                log_http_erro_listagem(logger, "Magalu listar_pedidos", r)
+                return out, False
+            body = r.json() or {}
+            rows = body.get("data") or body.get("items") or body.get("orders") or []
+            if not isinstance(rows, list):
+                return out, False
+
+            pagina_chegou_no_limite_de_data = False
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                oid = str(row.get("code") or row.get("id") or row.get("order_id") or "")
+                if not oid:
+                    continue
+                created_raw = (
+                    row.get("created_at")
+                    or row.get("createdAt")
+                    or row.get("inserted_at")
+                    or row.get("ordered_at")
+                )
+                if created_raw:
+                    try:
+                        created = datetime.fromisoformat(str(created_raw).replace("Z", "+00:00"))
+                        if created.tzinfo is None:
+                            created = created.replace(tzinfo=timezone.utc)
+                        if created < limite_data:
+                            # Lista vem ordenada do mais recente pro mais antigo;
+                            # ao achar o primeiro pedido fora da janela, as
+                            # próximas páginas só teriam pedidos ainda mais
+                            # antigos — para de paginar (não é falha).
+                            pagina_chegou_no_limite_de_data = True
+                            continue
+                    except (TypeError, ValueError):
+                        pass
+
+                items_src = row.get("items") or row.get("products") or row.get("order_items") or []
+                itens: list[dict] = []
+                if isinstance(items_src, list):
+                    for it in items_src:
+                        if not isinstance(it, dict):
+                            continue
+                        try:
+                            qty = int(it.get("quantity") or it.get("qty") or 1)
+                        except (TypeError, ValueError):
+                            qty = 1
+                        try:
+                            pu = float(it.get("price") or it.get("unit_price") or 0)
+                        except (TypeError, ValueError):
+                            pu = 0.0
+                        itens.append(
+                            {
+                                "sku": str(it.get("sku") or it.get("id") or it.get("product_id") or ""),
+                                "item_id": str(it.get("id") or it.get("product_id") or ""),
+                                "quantidade": qty,
+                                "preco_unitario": pu,
+                            }
+                        )
                 try:
-                    created = datetime.fromisoformat(str(created_raw).replace("Z", "+00:00"))
-                    if created.tzinfo is None:
-                        created = created.replace(tzinfo=timezone.utc)
-                    if created < limite:
-                        continue
+                    total = float(row.get("total") or row.get("amount") or row.get("total_price") or 0)
                 except (TypeError, ValueError):
-                    pass
+                    total = 0.0
 
-            items_src = row.get("items") or row.get("products") or row.get("order_items") or []
-            itens: list[dict] = []
-            if isinstance(items_src, list):
-                for it in items_src:
-                    if not isinstance(it, dict):
-                        continue
-                    try:
-                        qty = int(it.get("quantity") or it.get("qty") or 1)
-                    except (TypeError, ValueError):
-                        qty = 1
-                    try:
-                        pu = float(it.get("price") or it.get("unit_price") or 0)
-                    except (TypeError, ValueError):
-                        pu = 0.0
-                    itens.append(
-                        {
-                            "sku": str(it.get("sku") or it.get("id") or it.get("product_id") or ""),
-                            "item_id": str(it.get("id") or it.get("product_id") or ""),
-                            "quantidade": qty,
-                            "preco_unitario": pu,
-                        }
-                    )
-            try:
-                total = float(row.get("total") or row.get("amount") or row.get("total_price") or 0)
-            except (TypeError, ValueError):
-                total = 0.0
+                status_raw = row.get("status")
+                out.append(
+                    {
+                        "order_id": oid,
+                        # Sem assumir "paid" quando a API não manda status —
+                        # um valor ausente/nulo não pode virar "pago" por padrão.
+                        "status": str(status_raw).lower() if status_raw else "desconhecido",
+                        "total": total,
+                        "data": str(created_raw or ""),
+                        "itens": itens,
+                    }
+                )
 
-            out.append(
-                {
-                    "order_id": oid,
-                    "status": str(row.get("status", "paid") or "paid").lower(),
-                    "total": total,
-                    "data": str(created_raw or ""),
-                    "itens": itens,
-                }
+            if pagina_chegou_no_limite_de_data or len(rows) < limit:
+                break
+            offset += limit
+        else:
+            logger.warning(
+                "Magalu listar_pedidos: atingiu max_paginas=%s sem esgotar resultados "
+                "(offset=%s) — pode haver pedidos não coletados.",
+                max_paginas,
+                offset,
             )
-        return out
+            incrementar("dados.degradado", tags=["contexto:Magalu_listar_pedidos", "motivo:paginacao_truncada"])
+            return out, False
+
+        return out, True
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:Magalu_listar_pedidos", "motivo:excecao"])
         logger.error("Magalu listar_pedidos erro: %s", exc)
-        return []
+        return out, False
+
+
+def listar_pedidos(dias: int = 7) -> list[dict]:
+    pedidos, _ok = listar_pedidos_detalhado(dias)
+    return pedidos

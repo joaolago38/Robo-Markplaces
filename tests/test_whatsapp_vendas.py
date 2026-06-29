@@ -73,12 +73,12 @@ class TestWhatsAppVendas(unittest.TestCase):
         self.assertEqual(len(novos), 0)
 
     @patch("integracoes.amazon.amazon_client.listar_pedidos", return_value=[])
-    @patch("integracoes.magalu.magalu_client.listar_pedidos", return_value=[])
+    @patch("integracoes.magalu.magalu_client.listar_pedidos_detalhado", return_value=([], True))
     @patch("integracoes.shopee.shopee_client.listar_pedidos", return_value=[])
     @patch("agentes.vendas_notificador._salvar_notificados")
     @patch("agentes.vendas_notificador._carregar_notificados", return_value=set())
     @patch("agentes.vendas_notificador.notificar_venda", return_value=True)
-    @patch("integracoes.ml.ml_client.listar_pedidos", return_value=PEDIDOS_MOCK_ML)
+    @patch("integracoes.ml.ml_client.listar_pedidos_detalhado", return_value=(PEDIDOS_MOCK_ML, True))
     def test_executar_retorna_resumo(
         self,
         mock_ml,

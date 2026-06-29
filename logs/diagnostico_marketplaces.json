@@ -1,36 +1,36 @@
 {
-  "ok": true,
+  "ok": false,
   "total_marketplaces": 4,
-  "configurados": 3,
+  "configurados": 4,
   "conectados": 3,
   "resultados": [
     {
       "marketplace": "mercadolivre",
       "configurado": true,
-      "conectado": true,
-      "mensagem": "conexão válida",
-      "pendencias_detectadas": 0
+      "conectado": false,
+      "status_http": 401,
+      "mensagem": "token expirado ou inválido"
     },
     {
       "marketplace": "shopee",
       "configurado": true,
       "conectado": true,
-      "mensagem": "conexão válida",
-      "pendencias_detectadas": 0
+      "status_http": 200,
+      "mensagem": "autenticado"
     },
     {
       "marketplace": "magalu",
-      "configurado": false,
-      "conectado": false,
-      "mensagem": "credenciais ausentes no .env",
-      "pendencias_detectadas": 0
+      "configurado": true,
+      "conectado": true,
+      "status_http": 200,
+      "mensagem": "autenticado"
     },
     {
       "marketplace": "amazon",
       "configurado": true,
       "conectado": true,
-      "mensagem": "conexão válida",
-      "pendencias_detectadas": 0
+      "status_http": 200,
+      "mensagem": "autenticado"
     }
   ]
 }

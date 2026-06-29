@@ -1,6 +1,15 @@
 """
 agentes/manutencao_marketplaces.py
 Executa keepalive de marketplaces para evitar longos períodos sem acesso.
+
+Mercado Livre NÃO está neste agente de propósito — ele não tem uma
+função `manter_conta_ativa()` própria, e criar uma seria redundante:
+`agentes/conectividade_marketplaces.py` já chama `probe_conexao()` do
+ML (e do Magalu) a cada hora e, em caso de sucesso, já chama
+`registrar_acesso("mercadolivre")` — o que é exatamente o efeito que
+um keepalive teria. Ou seja, o ML está coberto, só que por outro
+agente, com uma checagem mais forte (testa conectividade real, não só
+"faz uma chamada qualquer").
 """
 import logging
 
