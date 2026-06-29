@@ -8,7 +8,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from api.app import app
-from core.request_context import definir_request_id, obter_request_id
+from core.request_context import definir_request_id
 
 
 class TestRequestIdMiddleware(unittest.TestCase):
