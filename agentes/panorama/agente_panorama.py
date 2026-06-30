@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
@@ -184,6 +185,30 @@ def _coletar_bling() -> dict[str, Any]:
         bloco["estoque_critico_total"] = 0
 
     return bloco
+
+
+def _coletar_dados_ml(limite_itens: int) -> dict[str, Any]:
+    try:
+        return _coletar_mercado_livre(limite_itens)
+    except Exception as exc:
+        logger.error("panorama coletar ml: %s", exc)
+        return {"erro": str(exc)}
+
+
+def _coletar_dados_magalu() -> dict[str, Any]:
+    try:
+        return _coletar_magalu()
+    except Exception as exc:
+        logger.error("panorama coletar magalu: %s", exc)
+        return {"erro": str(exc)}
+
+
+def _coletar_dados_bling() -> dict[str, Any]:
+    try:
+        return _coletar_bling()
+    except Exception as exc:
+        logger.error("panorama coletar bling: %s", exc)
+        return {"erro": str(exc)}
 
 
 def _processar_nfe(
@@ -448,9 +473,16 @@ def gerar_panorama(
             "resumo_claude": msg,
         }
 
-    mercado_livre = _coletar_mercado_livre(limite_itens)
-    magalu = _coletar_magalu()
-    bling = _coletar_bling()
+    mercado_livre: dict[str, Any]
+    magalu: dict[str, Any]
+    bling: dict[str, Any]
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        fut_ml = ex.submit(_coletar_dados_ml, limite_itens)
+        fut_magalu = ex.submit(_coletar_dados_magalu)
+        fut_bling = ex.submit(_coletar_dados_bling)
+        mercado_livre = fut_ml.result()
+        magalu = fut_magalu.result()
+        bling = fut_bling.result()
 
     pedidos_brutos: list[tuple[str, dict]] = []
     if mercado_livre.get("configurado"):
