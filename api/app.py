@@ -4,6 +4,7 @@ Servidor Flask — ponte entre o n8n e o Python/SDD.
 O n8n chama estes endpoints via HTTP POST com JSON.
 Contratos: spec/spec.yaml > modulos[chat_responder, publicador_social, relatorio]
 """
+import hmac
 import logging
 from datetime import datetime
 from flask import Flask, request, jsonify, g
@@ -21,6 +22,7 @@ from core.config import (
     MARGEM_FASE_1_PCT,
     MARGEM_FASE_2_PCT,
     MARGEM_FASE_3_PCT,
+    ROBO_API_KEY,
 )
 from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
 from agentes.conectividade_marketplaces import executar as executar_conectividade_marketplaces
@@ -56,15 +58,46 @@ logger = logging.getLogger("api")
 
 app = Flask(__name__)
 
+if not ROBO_API_KEY:
+    logger.warning(
+        "ROBO_API_KEY não configurada — a API está rodando SEM autenticação. "
+        "Qualquer pessoa com acesso à URL pode chamar endpoints de escrita real "
+        "(NF-e, repricing, estoque, posts). Defina ROBO_API_KEY para exigir o "
+        "header 'X-API-Key' em todas as chamadas (exceto /health)."
+    )
+
 
 @app.before_request
 def _atribuir_request_id() -> None:
     """Correlation ID por requisição: permite filtrar no Datadog Log
     Explorer (`request_id:<id>`) todas as linhas geradas por uma mesma
-    chamada do n8n, mesmo atravessando vários agentes/integrações."""
+    chamada do n8n, mesmo atravessando vários agentes/integrações.
+    Roda ANTES da checagem de autenticação, de propósito — assim até
+    tentativas rejeitadas (401) aparecem correlacionadas nos logs."""
     rid = request.headers.get("X-Request-Id") or novo_request_id()
     definir_request_id(rid)
     g.request_id = rid
+
+
+@app.before_request
+def _exigir_api_key():
+    """
+    Autenticação por chave compartilhada simples (header X-API-Key).
+    /health fica sempre aberta (monitoramento/load balancer não tem
+    como mandar header customizado). Se ROBO_API_KEY não estiver
+    configurada, a API roda em modo aberto (compatibilidade com quem
+    já estava em produção antes desta variável existir) — o aviso já
+    foi logado no startup acima.
+    """
+    if request.path == "/health":
+        return None
+    if not ROBO_API_KEY:
+        return None
+    chave_recebida = request.headers.get("X-API-Key", "")
+    if not hmac.compare_digest(chave_recebida, ROBO_API_KEY):
+        logger.warning("Tentativa de acesso não autorizado em %s", request.path)
+        return jsonify({"ok": False, "erro": "não autorizado"}), 401
+    return None
 
 
 @app.after_request

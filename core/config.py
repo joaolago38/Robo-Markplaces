@@ -46,7 +46,7 @@ ML_CLIENT_SECRET = os.getenv("ML_CLIENT_SECRET", "").strip()
 ML_ACCESS_TOKEN  = os.getenv("ML_ACCESS_TOKEN", "").strip()
 ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "").strip()
 ML_SELLER_ID     = os.getenv("ML_SELLER_ID", "").strip()
-ML_SITE_ID       = os.getenv("ML_SITE_ID", "MLB").strip()  # MLB = Brasil
+ML_SITE_ID       = (os.getenv("ML_SITE_ID", "MLB").strip() or "MLB")  # MLB = Brasil
 
 # Monitor de concorrentes (busca pública por palavra-chave, sem precisar de item próprio)
 MONITOR_CONCORRENTES_ARQUIVO = os.getenv(
@@ -157,6 +157,12 @@ ML_ADS_KILL_SWITCH = os.getenv("ML_ADS_KILL_SWITCH", "false").lower() in {"1", "
 ROBO_PAUSAR_ESCRITA = os.getenv("ROBO_PAUSAR_ESCRITA", "false").lower() in {"1", "true", "yes"}
 ML_ADS_ORCAMENTO_MAXIMO = float(os.getenv("ML_ADS_ORCAMENTO_MAXIMO", "500.0"))
 ML_ADS_ACOS_DIAS_LIMITE = int(os.getenv("ML_ADS_ACOS_DIAS_LIMITE", "3"))
+
+# Autenticação da API (api/app.py) — header obrigatório: X-API-Key
+# Se ficar vazia, a API roda em modo aberto (compatibilidade com quem
+# já estava em produção antes desta variável existir) — um aviso é
+# logado no startup. Defina esta variável para exigir autenticação.
+ROBO_API_KEY = os.getenv("ROBO_API_KEY", "").strip()
 
 # Datadog Log Management (opcional — HTTP Intake, sem Agent)
 DD_API_KEY = os.getenv("DD_API_KEY", "").strip()

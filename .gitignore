@@ -197,6 +197,9 @@ cython_debug/
 # Controle local de pedidos já notificados (WhatsApp)
 dados/pedidos_notificados.json
 
+# Arquivos de lock entre processos (core/atomic_io.py) — efêmeros, recriados sob demanda
+*.lock
+
 # Cofre de tokens do Bling (rotacionado localmente — NUNCA commitar)
 dados/bling_token.json
 

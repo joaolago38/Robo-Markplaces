@@ -15,6 +15,7 @@ from core.config import (
     MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT,
     ROOT,
 )
+from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
 from integracoes.ml import ml_client
 
@@ -111,6 +112,22 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         "total_concorrentes": len(concorrentes),
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
     }
+
+    # ── Datadog ──────────────────────────────────────────────────────────
+    # tag `produto` usa o `id` do JSON (ex.: "kit3-mimo-carmed") para
+    # aparecer como facet no Metrics Explorer e facilitar filtrar por SKU.
+    _tags = [f"produto:{eid}", f"termo:{termo[:40]}"]
+    if meu_preco > 0:
+        gauge("mercado.meu_preco", meu_preco, tags=_tags)
+    if menor > 0:
+        gauge("mercado.menor_preco_concorrente", menor, tags=_tags)
+    if meu_preco > 0 and menor > 0:
+        gap_pct = (meu_preco - menor) / menor * 100.0
+        gauge("mercado.gap_preco_pct", gap_pct, tags=_tags)
+    gauge("mercado.total_concorrentes", float(len(concorrentes)), tags=_tags)
+    if alertas:
+        incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
+    # ─────────────────────────────────────────────────────────────────────
 
     return {
         "id": eid,
