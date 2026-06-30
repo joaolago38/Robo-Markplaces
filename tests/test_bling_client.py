@@ -7,18 +7,17 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from tests.http_fixtures import make_http_response
 
 from integracoes.bling import bling_client
 
 
 def _mock_resp(body: dict, status: int = 200) -> MagicMock:
-    r = MagicMock()
-    r.status_code = status
-    r.raise_for_status = MagicMock()
-    r.json.return_value = body
-    r.text = str(body)
-    return r
+    return make_http_response(status_code=status, json_body=body, text=str(body))
 
 
 class TestHelpers(unittest.TestCase):
@@ -58,15 +57,18 @@ class TestHelpers(unittest.TestCase):
 
 
 class TestRequestBling(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def _http(self, mock_http):
+        self.mock_http = mock_http
+
     @patch.object(bling_client.token_manager, "get_token_bling", return_value="novo_tok")
-    @patch.object(bling_client, "request")
-    def test_renova_token_em_401(self, mock_request, *_):
-        r401 = MagicMock(status_code=401)
-        r200 = MagicMock(status_code=200)
-        mock_request.side_effect = [r401, r200]
+    def test_renova_token_em_401(self, _mock_token):
+        r401 = make_http_response(status_code=401)
+        r200 = make_http_response(status_code=200)
+        self.mock_http.side_effect = [r401, r200]
         out = bling_client._request_bling("GET", "http://x")
         self.assertEqual(out.status_code, 200)
-        self.assertEqual(mock_request.call_count, 2)
+        self.assertEqual(self.mock_http.call_count, 2)
 
 
 class TestProbeProdutos(unittest.TestCase):
@@ -113,11 +115,15 @@ class TestProbeProdutos(unittest.TestCase):
         self.assertIn("rede", out["msg"])
 
 
+@pytest.mark.usefixtures("env_tokens")
 class TestBlingBuscar(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def _http(self, mock_http):
+        self.mock_http = mock_http
+
     @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
-    @patch.object(bling_client, "request")
-    def test_BL01_buscar_produto_normalizado(self, mock_request, *_patches):
-        mock_request.return_value = _mock_resp(
+    def test_BL01_buscar_produto_normalizado(self):
+        self.mock_http.return_value = _mock_resp(
             {
                 "data": [
                     {
@@ -136,14 +142,13 @@ class TestBlingBuscar(unittest.TestCase):
         self.assertEqual(produto["estoque"], 100)
 
     @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
-    @patch.object(bling_client, "request")
-    def test_BL02_buscar_produto_data_vazia(self, mock_request, *_patches):
-        mock_request.return_value = _mock_resp({"data": []})
+    def test_BL02_buscar_produto_data_vazia(self):
+        self.mock_http.return_value = _mock_resp({"data": []})
         self.assertIsNone(bling_client.buscar_produto("SKU_INEXISTENTE"))
 
     @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
-    @patch.object(bling_client, "request", side_effect=Exception("timeout"))
-    def test_BL03_buscar_produto_none_em_rede(self, *_patches):
+    def test_BL03_buscar_produto_none_em_rede(self):
+        self.mock_http.side_effect = Exception("timeout")
         self.assertIsNone(bling_client.buscar_produto("SKU1"))
 
     @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")

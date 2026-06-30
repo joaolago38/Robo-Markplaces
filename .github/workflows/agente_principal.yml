@@ -41,32 +41,10 @@ env:
   # vendas_whatsapp, algoritmo_marketplaces) — nunca no `qualidade`.
 
 jobs:
-  qualidade:
-    name: Qualidade (lint + testes)
-    runs-on: ubuntu-latest
-    # Qualquer schedule ou disparo manual precisa passar aqui primeiro (needs dos outros jobs).
-    if: |
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-      - name: Instalar dependências
-        run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-      - name: Lint
-        run: ruff check api agentes core integracoes tests
-      - name: Testes
-        run: python -m pytest -q
-
   relatorio:
     name: Relatório diário
     runs-on: ubuntu-latest
-    needs: qualidade
+    # Qualidade garantida pelo ci.yml (push/PR). Este workflow só executa rotinas.
     if: |
       (github.event_name == 'schedule' && github.event.schedule == '0 9 * * *') ||
       github.event.inputs.rotina == 'todos' ||
@@ -100,7 +78,7 @@ jobs:
   chat_marketplaces:
     name: Chat marketplaces
     runs-on: ubuntu-latest
-    needs: qualidade
+    # Qualidade garantida pelo ci.yml (push/PR). Este workflow só executa rotinas.
     if: |
       (github.event_name == 'schedule' && (github.event.schedule == '*/30 9-21 * * *' || github.event.schedule == '*/30 22 * * *')) ||
       github.event.inputs.rotina == 'todos' ||
@@ -154,7 +132,7 @@ jobs:
   vendas_whatsapp:
     name: Notificações de vendas WhatsApp
     runs-on: ubuntu-latest
-    needs: qualidade
+    # Qualidade garantida pelo ci.yml (push/PR). Este workflow só executa rotinas.
     if: |
       (github.event_name == 'schedule' && github.event.schedule == '*/30 9-21 * * *') ||
       github.event.inputs.rotina == 'todos' ||
@@ -212,7 +190,7 @@ jobs:
   algoritmo_marketplaces:
     name: Saúde e algoritmo marketplaces
     runs-on: ubuntu-latest
-    needs: qualidade
+    # Qualidade garantida pelo ci.yml (push/PR). Este workflow só executa rotinas.
     if: |
       (github.event_name == 'schedule' && (github.event.schedule == '0 3 * * *' || github.event.schedule == '0 9 * * *' || github.event.schedule == '0 15 * * *' || github.event.schedule == '0 21 * * *')) ||
       github.event.inputs.rotina == 'todos' ||

@@ -2,9 +2,11 @@
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = [
+    "-n", "auto",
     "--cov=.",
     "--cov-report=term-missing",
     "--cov-fail-under=80",
+    "--cov-config=pyproject.toml",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

@@ -6,57 +6,59 @@ import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from tests.http_fixtures import make_http_response
 
 from integracoes.ml import ml_client
 
 
 def _mock_resp(body: dict, status: int = 200) -> MagicMock:
-    r = MagicMock()
-    r.status_code = status
-    r.raise_for_status = MagicMock()
-    r.json.return_value = body
-    if status >= 400:
-        r.raise_for_status.side_effect = RuntimeError(f"HTTP {status}")
-    return r
+    return make_http_response(status_code=status, json_body=body)
 
 
+@pytest.mark.usefixtures("env_tokens")
 class TestBuscarConcorrentesPorTermo(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def _http(self, mock_http):
+        self.mock_http = mock_http
+
     def test_termo_vazio(self):
         self.assertEqual(ml_client.buscar_concorrentes_por_termo(""), [])
 
-    @patch.object(ml_client, "request")
-    @patch.object(ml_client, "ML_SELLER_ID", "999")
-    def test_exclui_proprio_vendedor(self, mock_request):
-        mock_request.return_value = _mock_resp({
-            "results": [
-                {
-                    "id": "MLB1",
-                    "title": "Meu",
-                    "price": 40,
-                    "seller": {"id": "999"},
-                    "shipping": {},
-                    "condition": "new",
-                    "sold_quantity": 1,
-                },
-                {
-                    "id": "MLB2",
-                    "title": "Concorrente",
-                    "price": 35,
-                    "seller": {"id": "888"},
-                    "shipping": {"free_shipping": True},
-                    "condition": "new",
-                    "sold_quantity": 5,
-                },
-            ]
-        })
-        out = ml_client.buscar_concorrentes_por_termo("kit impala", limite=5)
+    def test_exclui_proprio_vendedor(self):
+        with patch.object(ml_client, "ML_SELLER_ID", "999"):
+            self.mock_http.return_value = _mock_resp({
+                "results": [
+                    {
+                        "id": "MLB1",
+                        "title": "Meu",
+                        "price": 40,
+                        "seller": {"id": "999"},
+                        "shipping": {},
+                        "condition": "new",
+                        "sold_quantity": 1,
+                    },
+                    {
+                        "id": "MLB2",
+                        "title": "Concorrente",
+                        "price": 35,
+                        "seller": {"id": "888"},
+                        "shipping": {"free_shipping": True},
+                        "condition": "new",
+                        "sold_quantity": 5,
+                    },
+                ]
+            })
+            out = ml_client.buscar_concorrentes_por_termo("kit impala", limite=5)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["item_id"], "MLB2")
         self.assertEqual(out[0]["preco"], 35.0)
 
-    @patch.object(ml_client, "request", side_effect=RuntimeError("rede"))
-    def test_excecao_retorna_vazio(self, *_):
+    def test_excecao_retorna_vazio(self):
+        self.mock_http.side_effect = RuntimeError("rede")
         self.assertEqual(ml_client.buscar_concorrentes_por_termo("x"), [])
 
 
