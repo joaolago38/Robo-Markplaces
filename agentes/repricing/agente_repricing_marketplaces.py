@@ -15,7 +15,8 @@ from core.config import (
     TAXA_CANAL_PADRAO_PCT,
     REPRICING_DIFERENCA_MINIMA,
 )
-from core.notificador import alertar_gestor
+from core.datadog_metrics import incrementar
+from core.notificador import alertar_critico, alertar_gestor
 from integracoes.bling.bling_client import listar_produtos, buscar_produto
 from integracoes.ml.ml_client import atualizar_preco_item as atualizar_preco_ml
 from integracoes.ml.ml_client import buscar_menor_preco_concorrente
@@ -186,11 +187,29 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
             ajustar = abs(novo_preco - preco_atual) >= REPRICING_DIFERENCA_MINIMA and not bloqueio
 
             resultado_aplicacao = None
+            falhou_aplicacao = False
             if ajustar and not dry_run:
                 ref = _item_ref(canal, dados, sku)
                 fn = _updater(canal)
                 if fn and ref:
                     resultado_aplicacao = fn(ref, novo_preco)
+                    if not resultado_aplicacao:
+                        falhou_aplicacao = True
+                        incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}"])
+                        logger.error(
+                            "Repricing: falha ao aplicar novo preço sku=%s canal=%s ref=%s novo_preco=%.2f",
+                            sku, canal, ref, novo_preco,
+                        )
+                else:
+                    # Sem updater para o canal, ou sem referência válida do item — não é
+                    # "sem ajuste necessário", é uma falha de configuração que precisa ser
+                    # visível, não silenciosamente contada como sucesso.
+                    falhou_aplicacao = True
+                    incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}", "motivo:sem_ref_ou_updater"])
+                    logger.error(
+                        "Repricing: sem updater/ref válido para aplicar preço sku=%s canal=%s ref=%s",
+                        sku, canal, ref,
+                    )
 
             ajustes.append(
                 {
@@ -207,16 +226,34 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     "fonte_concorrente": fonte_concorrente,
                     "ajustar": ajustar,
                     "aplicado": resultado_aplicacao,
+                    "falhou_aplicacao": falhou_aplicacao,
                     "motivo": bloqueio or f"piso por fase {margem_minima:.1f}% + taxa canal {taxa_canal:.1f}%",
                 }
             )
 
     total_ajustes = sum(1 for a in ajustes if a["ajustar"])
+    total_aplicados_sucesso = sum(1 for a in ajustes if a["ajustar"] and not dry_run and a["aplicado"])
+    total_falhas_aplicacao = sum(1 for a in ajustes if a["falhou_aplicacao"])
     economia_estimada = _calcular_economia_estimada_piso_margem(ajustes)
+
     if total_ajustes > 0:
-        alertar_gestor(
-            f"Repricing marketplaces: {total_ajustes} ajustes detectados\n"
-            f"Modo: {'simulação' if dry_run else 'aplicação'} | lucro mínimo: {lucro_minimo:.1f}%"
+        if dry_run:
+            alertar_gestor(
+                f"Repricing marketplaces: {total_ajustes} ajustes detectados\n"
+                f"Modo: simulação | lucro mínimo: {lucro_minimo:.1f}%"
+            )
+        else:
+            alertar_gestor(
+                f"Repricing marketplaces: {total_aplicados_sucesso}/{total_ajustes} ajustes aplicados com sucesso\n"
+                f"Modo: aplicação | lucro mínimo: {lucro_minimo:.1f}%"
+            )
+
+    if total_falhas_aplicacao > 0:
+        skus_falha = sorted({a["sku"] for a in ajustes if a["falhou_aplicacao"]})
+        alertar_critico(
+            f"⚠️ Repricing: {total_falhas_aplicacao} ajuste(s) de preço FALHARAM ao aplicar "
+            f"(preço antigo continua valendo nos marketplaces).\n"
+            f"SKUs afetados: {', '.join(skus_falha[:10])}"
         )
 
     payload = {
@@ -224,6 +261,8 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
         "lucro_minimo_pct": lucro_minimo,
         "total_itens": len(ajustes),
         "total_ajustes": total_ajustes,
+        "total_aplicados_sucesso": total_aplicados_sucesso,
+        "total_falhas_aplicacao": total_falhas_aplicacao,
         "economia_estimada_piso_margem": economia_estimada,
         "ajustes": ajustes,
     }
