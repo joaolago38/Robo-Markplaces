@@ -141,8 +141,12 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
             }
 
     lucro_minimo = float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT)
-    produtos_base = produtos if produtos is not None else listar_produtos()
-    produtos_bling = listar_produtos_por_sku()
+    if produtos is not None:
+        produtos_base = produtos
+        produtos_bling = listar_produtos_por_sku()
+    else:
+        produtos_base = listar_produtos()
+        produtos_bling = {p["codigo"]: p for p in produtos_base if p.get("codigo")}
     ajustes = []
 
     for p in produtos_base:
