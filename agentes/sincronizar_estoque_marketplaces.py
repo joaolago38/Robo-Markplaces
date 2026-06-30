@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
+from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
 from integracoes.bling.bling_client import buscar_produto
 from integracoes.magalu.magalu_client import atualizar_estoque_item as atualizar_estoque_magalu
@@ -156,6 +157,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
                 continue
 
             aplicado = None
+            falhou_aplicacao = False
             if not dry_run:
                 aplicado = _aplicar_estoque(canal, ref, estoque_bling, dados)
                 if aplicado:
@@ -165,6 +167,13 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
                         zeros_ativos.append(f"{sku}/{canal}")
                         if canal == "mercadolivre" and _item_id_valido(ref):
                             pausar_anuncio(str(ref), dry_run=False, confirmar=True)
+                else:
+                    falhou_aplicacao = True
+                    incrementar("estoque.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}"])
+                    logger.error(
+                        "Sincronizar estoque: falha ao aplicar sku=%s canal=%s ref=%s estoque_bling=%s",
+                        sku, canal, ref, estoque_bling,
+                    )
 
             ajustes.append(
                 {
@@ -173,6 +182,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
                     "estoque_bling": estoque_bling,
                     "estoque_anterior_canal": estoque_anterior,
                     "aplicado": aplicado,
+                    "falhou_aplicacao": falhou_aplicacao,
                 }
             )
 
@@ -180,14 +190,31 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
         _salvar_catalogo(catalogo)
 
     total_ajustes = len(ajustes)
+    total_aplicados_sucesso = sum(1 for a in ajustes if not dry_run and a["aplicado"])
+    total_falhas_aplicacao = sum(1 for a in ajustes if a["falhou_aplicacao"])
+
     if total_ajustes > 0:
-        modo = "detectados" if dry_run else "aplicados"
         try:
-            alertar_gestor(
-                f"Estoque sincronizado: {total_ajustes} ajustes {modo} (dry_run={dry_run})"
-            )
+            if dry_run:
+                alertar_gestor(f"Estoque sincronizado: {total_ajustes} ajustes detectados (dry_run=True)")
+            else:
+                alertar_gestor(
+                    f"Estoque sincronizado: {total_aplicados_sucesso}/{total_ajustes} "
+                    f"ajustes aplicados com sucesso (dry_run=False)"
+                )
         except Exception as exc:
             logger.error("alertar_gestor: %s", exc)
+
+    if total_falhas_aplicacao > 0:
+        skus_falha = sorted({a["sku"] for a in ajustes if a["falhou_aplicacao"]})
+        try:
+            alertar_critico(
+                f"⚠️ Sincronização de estoque: {total_falhas_aplicacao} ajuste(s) FALHARAM ao aplicar "
+                f"(estoque exibido no marketplace pode estar desatualizado/incorreto).\n"
+                f"SKUs afetados: {', '.join(skus_falha[:10])}"
+            )
+        except Exception as exc:
+            logger.error("alertar_critico: %s", exc)
 
     if zeros_ativos:
         try:
@@ -202,6 +229,8 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
         "dry_run": dry_run,
         "total_produtos": len(catalogo),
         "total_ajustes": total_ajustes,
+        "total_aplicados_sucesso": total_aplicados_sucesso,
+        "total_falhas_aplicacao": total_falhas_aplicacao,
         "ajustes": ajustes,
         "produtos_sem_estoque_bling": sem_estoque_bling,
     }
