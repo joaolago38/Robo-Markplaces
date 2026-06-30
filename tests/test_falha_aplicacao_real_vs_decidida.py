@@ -24,11 +24,11 @@ class TestRepricingDistingueFalhaDeSucesso(unittest.TestCase):
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_critico")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
     @patch("agentes.repricing.agente_repricing_marketplaces.atualizar_preco_ml", return_value=False)
-    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
     def test_falha_na_api_nao_conta_como_aplicado(
-        self, mock_buscar_produto, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico, mock_incrementar
+        self, mock_listar_bling, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico, mock_incrementar
     ):
-        mock_buscar_produto.return_value = {"sku": "SKU1", "custo": 9.5}
+        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "custo": 9.5}}
         produtos = [
             {
                 "sku": "SKU1",
@@ -59,11 +59,11 @@ class TestRepricingDistingueFalhaDeSucesso(unittest.TestCase):
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_critico")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
     @patch("agentes.repricing.agente_repricing_marketplaces.atualizar_preco_ml", return_value=True)
-    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
     def test_sucesso_real_conta_corretamente_e_nao_alerta_falha(
-        self, mock_buscar_produto, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico
+        self, mock_listar_bling, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico
     ):
-        mock_buscar_produto.return_value = {"sku": "SKU1", "custo": 9.5}
+        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "custo": 9.5}}
         produtos = [
             {
                 "sku": "SKU1",
@@ -82,9 +82,9 @@ class TestRepricingDistingueFalhaDeSucesso(unittest.TestCase):
         self.assertIn("1/1", mock_alertar_gestor.call_args.args[0])
 
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
-    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
-    def test_dry_run_continua_so_detectando_sem_contar_falha(self, mock_buscar_produto, mock_alertar_gestor):
-        mock_buscar_produto.return_value = {"sku": "SKU1", "custo": 9.5}
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
+    def test_dry_run_continua_so_detectando_sem_contar_falha(self, mock_listar_bling, mock_alertar_gestor):
+        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "custo": 9.5}}
         produtos = [
             {
                 "sku": "SKU1",
@@ -110,11 +110,11 @@ class TestEstoqueDistingueFalhaDeSucesso(unittest.TestCase):
         "agentes.sincronizar_estoque_marketplaces._CANAIS_ESTOQUE",
         {"mercadolivre": lambda ref, estoque: False},
     )
-    @patch("agentes.sincronizar_estoque_marketplaces.buscar_produto")
+    @patch("agentes.sincronizar_estoque_marketplaces.listar_produtos_por_sku")
     def test_falha_na_api_nao_conta_como_aplicado(
-        self, mock_buscar_produto, mock_alertar_gestor, mock_alertar_critico, mock_incrementar
+        self, mock_listar_bling, mock_alertar_gestor, mock_alertar_critico, mock_incrementar
     ):
-        mock_buscar_produto.return_value = {"sku": "SKU1", "estoque": 50}
+        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "estoque": 50}}
         produtos = [
             {
                 "sku": "SKU1",
@@ -144,11 +144,11 @@ class TestEstoqueDistingueFalhaDeSucesso(unittest.TestCase):
         {"mercadolivre": lambda ref, estoque: True},
     )
     @patch("agentes.sincronizar_estoque_marketplaces._salvar_catalogo")
-    @patch("agentes.sincronizar_estoque_marketplaces.buscar_produto")
+    @patch("agentes.sincronizar_estoque_marketplaces.listar_produtos_por_sku")
     def test_sucesso_real_conta_corretamente_e_nao_alerta_falha(
-        self, mock_buscar_produto, _mock_salvar_catalogo, mock_alertar_gestor, mock_alertar_critico
+        self, mock_listar_bling, _mock_salvar_catalogo, mock_alertar_gestor, mock_alertar_critico
     ):
-        mock_buscar_produto.return_value = {"sku": "SKU1", "estoque": 50}
+        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "estoque": 50}}
         produtos = [
             {
                 "sku": "SKU1",

@@ -149,6 +149,53 @@ class TestMlClient(unittest.TestCase):
         self.assertTrue(detalhes[0]["frete_gratis"])
         self.assertEqual(detalhes[0]["quantidade_vendida"], 12)
 
+    def setUp(self):
+        ml_client._cache_concorrentes.clear()
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_cache_concorrentes_reutiliza_entre_detalhes_e_menor_preco(self, _mock_en, mock_request):
+        item_body = {"catalog_product_id": "CAT1"}
+        concorrentes = {
+            "results": [
+                {
+                    "id": "MLB999",
+                    "seller_id": 999,
+                    "title": "Kit Concorrente",
+                    "price": 45.90,
+                    "condition": "new",
+                    "sold_quantity": 12,
+                    "shipping": {"free_shipping": True},
+                },
+            ]
+        }
+        mock_request.side_effect = [
+            _mock_resp(item_body),
+            _mock_resp(concorrentes),
+        ]
+        ml_client.buscar_detalhes_concorrentes("MLB123", limite=5)
+        ml_client.buscar_menor_preco_concorrente("MLB123")
+        self.assertEqual(mock_request.call_count, 2)
+
+    @patch.object(ml_client, "time")
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_cache_concorrentes_expira_apos_ttl(self, _mock_en, mock_request, mock_time):
+        item_body = {"catalog_product_id": "CAT1"}
+        concorrentes = {
+            "results": [
+                {"seller_id": 999, "price": 45.90},
+            ]
+        }
+        mock_request.side_effect = [
+            _mock_resp(item_body),
+            _mock_resp(concorrentes),
+        ]
+        mock_time.monotonic.return_value = 100.0
+        ml_client._cache_concorrentes["MLB123"] = (0.0, [{"seller_id": 999, "price": 45.90}])
+        ml_client.buscar_menor_preco_concorrente("MLB123")
+        self.assertEqual(mock_request.call_count, 2)
+
 
 class TestMlAnuncioStatus(unittest.TestCase):
     @classmethod

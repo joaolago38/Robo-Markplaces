@@ -171,6 +171,14 @@ def listar_produtos() -> list[dict]:
         logger.error("Bling listar_produtos erro: %s", e)
         return []
 
+def listar_produtos_por_sku() -> dict[str, dict]:
+    """
+    Mesma chamada de listar_produtos() (1 request HTTP), mas indexada
+    por código/SKU para lookup O(1) em loops que hoje fariam um
+    buscar_produto(sku) por item.
+    """
+    return {p["codigo"]: p for p in listar_produtos() if p.get("codigo")}
+
 def estoques_criticos(limite: int = 20) -> list[dict]:
     # Só considera crítico quando o estoque é conhecido E está abaixo do limite.
     # Estoque None (não retornado pela listagem) não é tratado como zero.

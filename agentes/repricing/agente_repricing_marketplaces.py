@@ -17,7 +17,7 @@ from core.config import (
 )
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
-from integracoes.bling.bling_client import listar_produtos, buscar_produto
+from integracoes.bling.bling_client import listar_produtos, listar_produtos_por_sku
 from integracoes.ml.ml_client import atualizar_preco_item as atualizar_preco_ml
 from integracoes.ml.ml_client import buscar_menor_preco_concorrente
 from integracoes.shopee.shopee_client import atualizar_preco_item as atualizar_preco_shopee
@@ -142,13 +142,14 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
 
     lucro_minimo = float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT)
     produtos_base = produtos if produtos is not None else listar_produtos()
+    produtos_bling = listar_produtos_por_sku()
     ajustes = []
 
     for p in produtos_base:
         sku = p.get("sku")
         if not sku:
             continue
-        completo = buscar_produto(sku) or {}
+        completo = produtos_bling.get(sku) or {}
         custo = _to_float(p.get("custo", completo.get("custo", 0.0)))
         if custo <= 0:
             continue

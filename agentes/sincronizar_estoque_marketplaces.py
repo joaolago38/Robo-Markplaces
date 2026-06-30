@@ -12,7 +12,7 @@ from typing import Any, Callable
 
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
-from integracoes.bling.bling_client import buscar_produto
+from integracoes.bling.bling_client import listar_produtos_por_sku
 from integracoes.magalu.magalu_client import atualizar_estoque_item as atualizar_estoque_magalu
 from integracoes.ml.ml_client import atualizar_estoque_item as atualizar_estoque_ml
 from integracoes.ml.ml_client import pausar_anuncio
@@ -112,6 +112,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
             }
 
     catalogo = produtos if produtos is not None else _carregar_catalogo()
+    produtos_bling = listar_produtos_por_sku()
     ajustes: list[dict] = []
     sem_estoque_bling: list[str] = []
     catalogo_alterado = False
@@ -122,10 +123,9 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
         if not sku:
             continue
 
-        try:
-            bling = buscar_produto(sku) or {}
-        except Exception as exc:
-            logger.error("buscar_produto %s: %s", sku, exc)
+        bling = produtos_bling.get(sku) or {}
+        if not bling:
+            logger.warning("SKU %s não encontrado no catálogo Bling — pulando", sku)
             sem_estoque_bling.append(sku)
             continue
 

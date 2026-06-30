@@ -10,9 +10,9 @@ from agentes.repricing.agente_repricing_marketplaces import executar
 
 class RepricingMarketplacesTests(unittest.TestCase):
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
-    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
-    def test_garante_lucro_minimo_10(self, mock_buscar_produto, _mock_alerta):
-        mock_buscar_produto.return_value = {"sku": "SKU1", "custo": 9.5}
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
+    def test_garante_lucro_minimo_10(self, mock_listar_bling, _mock_alerta):
+        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "custo": 9.5}}
         produtos = [
             {
                 "sku": "SKU1",
@@ -29,9 +29,9 @@ class RepricingMarketplacesTests(unittest.TestCase):
         self.assertGreaterEqual(ajuste["novo_preco"], 10.0)
 
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
-    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
-    def test_nao_ajusta_sem_custo(self, mock_buscar_produto, _mock_alerta):
-        mock_buscar_produto.return_value = {"sku": "SKU2", "custo": 0.0}
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
+    def test_nao_ajusta_sem_custo(self, mock_listar_bling, _mock_alerta):
+        mock_listar_bling.return_value = {"SKU2": {"sku": "SKU2", "custo": 0.0}}
         produtos = [{"sku": "SKU2", "canais": {"shopee": {"ativo": True, "item_id": 1, "preco": 20.0}}}]
         out = executar(produtos=produtos, dry_run=True, lucro_minimo_pct=10.0)
         self.assertEqual(out["total_itens"], 0)
@@ -39,12 +39,12 @@ class RepricingMarketplacesTests(unittest.TestCase):
 
     @patch("agentes.repricing.agente_repricing_marketplaces.buscar_menor_preco_concorrente")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
-    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
     def test_busca_concorrente_ao_vivo_quando_ausente(
-        self, mock_buscar_produto, _mock_alerta, mock_vivo
+        self, mock_listar_bling, _mock_alerta, mock_vivo
     ):
         """Sem preco_concorrente no payload (ML), deve buscar ao vivo."""
-        mock_buscar_produto.return_value = {"sku": "SKU3", "custo": 9.5}
+        mock_listar_bling.return_value = {"SKU3": {"sku": "SKU3", "custo": 9.5}}
         mock_vivo.return_value = 30.0
         produtos = [
             {
@@ -64,12 +64,12 @@ class RepricingMarketplacesTests(unittest.TestCase):
 
     @patch("agentes.repricing.agente_repricing_marketplaces.buscar_menor_preco_concorrente")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
-    @patch("agentes.repricing.agente_repricing_marketplaces.buscar_produto")
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
     def test_nao_busca_ao_vivo_quando_payload_tem_preco(
-        self, mock_buscar_produto, _mock_alerta, mock_vivo
+        self, mock_listar_bling, _mock_alerta, mock_vivo
     ):
         """Com preco_concorrente no payload, NÃO chama a busca ao vivo."""
-        mock_buscar_produto.return_value = {"sku": "SKU4", "custo": 9.5}
+        mock_listar_bling.return_value = {"SKU4": {"sku": "SKU4", "custo": 9.5}}
         produtos = [
             {
                 "sku": "SKU4",

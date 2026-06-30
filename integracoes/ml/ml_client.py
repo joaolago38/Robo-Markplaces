@@ -3,6 +3,7 @@ integracoes/ml/ml_client.py
 Cliente Mercado Livre com operações essenciais de perguntas/respostas.
 """
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -477,16 +478,26 @@ def _extrair_seller_id(row: dict) -> str:
     return str(sid).strip() if sid is not None else ""
 
 
+_CACHE_CONCORRENTES_TTL_S = 60
+_cache_concorrentes: dict[str, tuple[float, list[dict]]] = {}
+
+
 def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
     """Retorna linhas de concorrentes ativos no catálogo (exclui o próprio vendedor)."""
     if not _enabled() or not (item_id or "").strip():
         return []
     item_id = item_id.strip()
+
+    cacheado = _cache_concorrentes.get(item_id)
+    if cacheado and (time.monotonic() - cacheado[0]) < _CACHE_CONCORRENTES_TTL_S:
+        return cacheado[1]
+
     ri = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
     ri.raise_for_status()
     body = ri.json() or {}
     catalog_pid = body.get("catalog_product_id")
     if not catalog_pid:
+        _cache_concorrentes[item_id] = (time.monotonic(), [])
         return []
 
     rp = _request_ml(
@@ -507,6 +518,8 @@ def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
         if _extrair_seller_id(row) == seller_self:
             continue
         concorrentes.append(row)
+
+    _cache_concorrentes[item_id] = (time.monotonic(), concorrentes)
     return concorrentes
 
 
