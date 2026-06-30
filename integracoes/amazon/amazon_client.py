@@ -6,6 +6,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from core.config import AMAZON_ACCESS_TOKEN, AMAZON_MARKETPLACE_ID
+from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
@@ -49,10 +50,10 @@ def probe_conexao() -> dict:
         return {"ok": False, "status": 0, "msg": str(exc)}
 
 
-def listar_mensagens_nao_respondidas(limit: int = 20) -> list[dict]:
+def listar_mensagens_nao_respondidas_detalhado(limit: int = 20) -> tuple[list[dict], bool]:
     if not _enabled():
         logger.warning("Amazon não configurado.")
-        return []
+        return [], False
     try:
         r = request(
             "GET",
@@ -63,11 +64,17 @@ def listar_mensagens_nao_respondidas(limit: int = 20) -> list[dict]:
         )
         if status_http(r) != 200:
             log_http_erro_listagem(logger, "Amazon listar_mensagens_nao_respondidas", r)
-            return []
-        return r.json().get("messages", [])
+            return [], False
+        return r.json().get("messages", []), True
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:Amazon_listar_mensagens", "motivo:excecao"])
         logger.error("Amazon listar_mensagens_nao_respondidas erro: %s", exc)
-        return []
+        return [], False
+
+
+def listar_mensagens_nao_respondidas(limit: int = 20) -> list[dict]:
+    mensagens, _ok = listar_mensagens_nao_respondidas_detalhado(limit=limit)
+    return mensagens
 
 
 def responder_mensagem(thread_id: str, texto: str) -> bool:
@@ -93,10 +100,12 @@ def obter_saude_conta() -> dict:
     if not _enabled():
         return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
 
-    mensagens = listar_mensagens_nao_respondidas(limit=50)
-    registrar_acesso("amazon")
+    mensagens, ok = listar_mensagens_nao_respondidas_detalhado(limit=50)
+    if ok:
+        registrar_acesso("amazon")
     return {
         "configurado": True,
+        "api_ok": ok,
         "pendencias": len(mensagens),
         "claims_rate": 0.0,
         "dias_sem_acesso": dias_sem_acesso("amazon") or 0,
@@ -127,97 +136,118 @@ def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
         return False
 
 
-def listar_pedidos(dias: int = 7) -> list[dict]:
+def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[list[dict], bool]:
     """
     Lista pedidos recentes (Orders API v0).
-    Retorno alinhado ao padrão do ML. Nunca lança exceção.
+    Retorna (pedidos, sucesso_chamada). Retorno alinhado ao padrão do ML.
+    Nunca lança exceção.
     """
     if not _enabled():
         logger.warning("Amazon não configurada para listar pedidos.")
-        return []
+        return [], False
+    out: list[dict] = []
     try:
         ts = datetime.now(timezone.utc) - timedelta(days=max(1, int(dias)))
         created_after = ts.strftime("%Y-%m-%dT%H:%M:%SZ")
-        r = request(
-            "GET",
-            f"{BASE}/orders/v0/orders",
-            headers=_h(),
-            params={
+        next_token: str | None = None
+
+        for _pagina in range(max(1, max_paginas)):
+            params: dict = {
                 "MarketplaceIds": AMAZON_MARKETPLACE_ID,
                 "CreatedAfter": created_after,
                 "MaxResultsPerPage": 30,
-            },
-            timeout=25,
-        )
-        if status_http(r) != 200:
-            log_http_erro_listagem(logger, "Amazon listar_pedidos", r)
-            return []
-        data = r.json() or {}
-        payload = data.get("payload") or {}
-        orders = payload.get("Orders") or payload.get("orders") or []
-        if not isinstance(orders, list):
-            return []
-
-        out: list[dict] = []
-        for o in orders[:25]:
-            if not isinstance(o, dict):
-                continue
-            oid = str(o.get("AmazonOrderId", "") or "")
-            if not oid:
-                continue
-            ot = o.get("OrderTotal") or {}
-            try:
-                total = float(ot.get("Amount", 0) or 0)
-            except (TypeError, ValueError):
-                total = 0.0
-            purchase = str(o.get("PurchaseDate", "") or "")
-
-            itens: list[dict] = []
-            try:
-                ri = request(
-                    "GET",
-                    f"{BASE}/orders/v0/orders/{oid}/orderItems",
-                    headers=_h(),
-                    timeout=25,
-                )
-                ri.raise_for_status()
-                pdata = ri.json().get("payload") or {}
-                raw_items = pdata.get("OrderItems") or pdata.get("orderItems") or []
-                if isinstance(raw_items, list):
-                    for it in raw_items:
-                        if not isinstance(it, dict):
-                            continue
-                        try:
-                            qty = int(it.get("QuantityOrdered", 1) or 1)
-                        except (TypeError, ValueError):
-                            qty = 1
-                        ip = it.get("ItemPrice") or {}
-                        try:
-                            pu = float(ip.get("Amount", 0) or 0)
-                        except (TypeError, ValueError):
-                            pu = 0.0
-                        sku = str(it.get("SellerSKU", "") or it.get("ASIN", "") or "")
-                        itens.append(
-                            {
-                                "sku": sku,
-                                "item_id": str(it.get("ASIN", "") or ""),
-                                "quantidade": qty,
-                                "preco_unitario": pu,
-                            }
-                        )
-            except Exception as exc:
-                logger.warning("Amazon orderItems order=%s: %s", oid, exc)
-
-            out.append(
-                {
-                    "order_id": oid,
-                    "status": str(o.get("OrderStatus", "paid") or "").lower(),
-                    "total": total,
-                    "data": purchase,
-                    "itens": itens,
-                }
+            }
+            if next_token:
+                params["NextToken"] = next_token
+            r = request(
+                "GET",
+                f"{BASE}/orders/v0/orders",
+                headers=_h(),
+                params=params,
+                timeout=25,
             )
-        return out
+            if status_http(r) != 200:
+                log_http_erro_listagem(logger, "Amazon listar_pedidos", r)
+                return out, False
+            data = r.json() or {}
+            payload = data.get("payload") or {}
+            orders = payload.get("Orders") or payload.get("orders") or []
+            if not isinstance(orders, list):
+                return out, False
+
+            for o in orders:
+                if not isinstance(o, dict):
+                    continue
+                oid = str(o.get("AmazonOrderId", "") or "")
+                if not oid:
+                    continue
+                ot = o.get("OrderTotal") or {}
+                try:
+                    total = float(ot.get("Amount", 0) or 0)
+                except (TypeError, ValueError):
+                    total = 0.0
+                purchase = str(o.get("PurchaseDate", "") or "")
+
+                itens: list[dict] = []
+                try:
+                    ri = request(
+                        "GET",
+                        f"{BASE}/orders/v0/orders/{oid}/orderItems",
+                        headers=_h(),
+                        timeout=25,
+                    )
+                    ri.raise_for_status()
+                    pdata = ri.json().get("payload") or {}
+                    raw_items = pdata.get("OrderItems") or pdata.get("orderItems") or []
+                    if isinstance(raw_items, list):
+                        for it in raw_items:
+                            if not isinstance(it, dict):
+                                continue
+                            try:
+                                qty = int(it.get("QuantityOrdered", 1) or 1)
+                            except (TypeError, ValueError):
+                                qty = 1
+                            ip = it.get("ItemPrice") or {}
+                            try:
+                                pu = float(ip.get("Amount", 0) or 0)
+                            except (TypeError, ValueError):
+                                pu = 0.0
+                            sku = str(it.get("SellerSKU", "") or it.get("ASIN", "") or "")
+                            itens.append(
+                                {
+                                    "sku": sku,
+                                    "item_id": str(it.get("ASIN", "") or ""),
+                                    "quantidade": qty,
+                                    "preco_unitario": pu,
+                                }
+                            )
+                except Exception as exc:
+                    logger.warning("Amazon orderItems order=%s: %s", oid, exc)
+
+                out.append(
+                    {
+                        "order_id": oid,
+                        "status": str(o.get("OrderStatus", "paid") or "").lower(),
+                        "total": total,
+                        "data": purchase,
+                        "itens": itens,
+                    }
+                )
+
+            next_token = payload.get("NextToken")
+            if not next_token:
+                break
+        else:
+            incrementar("dados.degradado", tags=["contexto:Amazon_listar_pedidos", "motivo:paginacao_truncada"])
+            return out, False
+
+        return out, True
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:Amazon_listar_pedidos", "motivo:excecao"])
         logger.error("Amazon listar_pedidos erro: %s", exc)
-        return []
+        return out, False
+
+
+def listar_pedidos(dias: int = 7) -> list[dict]:
+    pedidos, _ok = listar_pedidos_detalhado(dias)
+    return pedidos

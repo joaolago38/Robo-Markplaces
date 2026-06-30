@@ -29,6 +29,10 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - `flask --app api.app run --host 0.0.0.0 --port 5000`
 - ou `python api/app.py`
 
+### Autenticação
+
+A variável `ROBO_API_KEY` exige o header `X-API-Key` em todas as chamadas à API, exceto `GET /health`. Sem ela definida, a API roda em modo aberto (comportamento anterior — um aviso é logado no startup). Em produção, configure `ROBO_API_KEY` como secret/variável de ambiente e atualize os nós HTTP Request do n8n para enviar `X-API-Key: <valor>` em todas as requisições à API.
+
 ## Endpoints principais
 
 - `GET /health`

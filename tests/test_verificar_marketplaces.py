@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from tests._stdout_utf8 import capturar_stdout_utf8
+
 import scripts.verificar_marketplaces as vm
 
 
@@ -57,7 +59,8 @@ class TestMain(unittest.TestCase):
     @patch.object(vm, "_ok_config_shopee", return_value=True)
     @patch.object(vm, "_ok_config_ml", return_value=True)
     def test_resumo_reporta_falha_real_do_ml(self, *_mocks):
-        exit_code = vm.main()
+        with capturar_stdout_utf8():
+            exit_code = vm.main()
         self.assertEqual(exit_code, 1)  # ML falhou -> exit code != 0
 
 

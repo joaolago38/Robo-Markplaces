@@ -83,5 +83,61 @@ class TestMonitorConcorrentes(unittest.TestCase):
         self.assertEqual(out["total_monitorados"], 0)
 
 
+class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
+    """Garante que as métricas são enviadas ao Datadog a cada ciclo do agente."""
+
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
+        {"item_id": "MLB1", "titulo": "X", "preco": 38.0, "quantidade_vendida": 5},
+        {"item_id": "MLB2", "titulo": "Y", "preco": 42.0, "quantidade_vendida": 2},
+    ])
+    @patch.object(mon, "_carregar_lista", return_value=[_LISTA_ESTAVEL[0]])
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "alertar_gestor", return_value=False)
+    @patch.object(mon, "gauge")
+    @patch.object(mon, "incrementar")
+    def test_gauge_preco_e_gap_emitidos(self, mock_incrementar, mock_gauge, *_):
+        mon.executar(enviar_alerta=False)
+
+        nomes_gauge = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("mercado.meu_preco", nomes_gauge)
+        self.assertIn("mercado.menor_preco_concorrente", nomes_gauge)
+        self.assertIn("mercado.gap_preco_pct", nomes_gauge)
+        self.assertIn("mercado.total_concorrentes", nomes_gauge)
+
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
+        {"item_id": "MLB1", "titulo": "X", "preco": 30.0, "quantidade_vendida": 10},
+    ])
+    @patch.object(mon, "_carregar_lista", return_value=[_LISTA_ALERTA[0]])
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "alertar_gestor", return_value=True)
+    @patch.object(mon, "gauge")
+    @patch.object(mon, "incrementar")
+    def test_incrementa_alertas_quando_preco_acima(self, mock_incrementar, mock_gauge, *_):
+        mon.executar(enviar_alerta=True)
+
+        nomes_incr = [c.args[0] for c in mock_incrementar.call_args_list]
+        self.assertIn("mercado.alertas_preco", nomes_incr)
+
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
+        {"item_id": "MLB1", "titulo": "X", "preco": 38.0, "quantidade_vendida": 5},
+    ])
+    @patch.object(mon, "_carregar_lista", return_value=[_LISTA_ESTAVEL[0]])
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "alertar_gestor", return_value=False)
+    @patch.object(mon, "gauge")
+    @patch.object(mon, "incrementar")
+    def test_tag_produto_inclui_id_do_json(self, mock_incrementar, mock_gauge, *_):
+        mon.executar(enviar_alerta=False)
+
+        todas_tags = []
+        for c in mock_gauge.call_args_list:
+            tags = c.kwargs.get("tags") or []
+            todas_tags.extend(tags)
+        self.assertTrue(any("produto:kit1" in t for t in todas_tags))
+
+
 if __name__ == "__main__":
     unittest.main()

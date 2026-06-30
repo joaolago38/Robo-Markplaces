@@ -13,6 +13,8 @@ from unittest.mock import patch
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, ROOT)
 
+from tests._stdout_utf8 import capturar_stdout_utf8
+
 _spec = importlib.util.spec_from_file_location(
     "preencher_item_id_ml",
     os.path.join(ROOT, "scripts", "preencher_item_id_ml.py"),
@@ -54,7 +56,8 @@ class TestPreencherItemId(unittest.TestCase):
     @patch("integracoes.ml.ml_client.listar_meus_anuncios")
     def test_dry_run_match_exato(self, mock_listar):
         mock_listar.return_value = _ANUNCIOS
-        out = script.executar(aplicar=False)
+        with capturar_stdout_utf8():
+            out = script.executar(aplicar=False)
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_pendentes"], 1)
         self.assertEqual(out["resultados"][0]["tipo_match"], "EXATO")
@@ -64,7 +67,8 @@ class TestPreencherItemId(unittest.TestCase):
     @patch("integracoes.ml.ml_client.listar_meus_anuncios")
     def test_aplicar_match_exato(self, mock_listar):
         mock_listar.return_value = _ANUNCIOS
-        out = script.executar(aplicar=True)
+        with capturar_stdout_utf8():
+            out = script.executar(aplicar=True)
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_aplicados"], 1)
         data = json.loads(self.catalogo_path.read_text(encoding="utf-8"))
@@ -96,7 +100,8 @@ class TestPreencherItemId(unittest.TestCase):
             }
         ]
         mock_listar.return_value = anuncios
-        out = script.executar(aplicar=True, incluir_provaveis=False)
+        with capturar_stdout_utf8():
+            out = script.executar(aplicar=True, incluir_provaveis=False)
         self.assertEqual(out["total_aplicados"], 0)
         self.assertEqual(out["resultados"][0]["tipo_match"], "PROVÁVEL")
 

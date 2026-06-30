@@ -1,4 +1,4 @@
-name: Conectividade ML e Magalu
+name: Conectividade marketplaces (ML, Magalu, Shopee, Amazon)
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ env:
 
 jobs:
   conectividade:
-    name: Testar conectividade real (probe_conexao) ML + Magalu
+    name: Testar conectividade real (probe_conexao) — 4 marketplaces
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +43,17 @@ jobs:
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
+          AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
+          AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}
+          AMAZON_REFRESH_TOKEN: ${{ secrets.AMAZON_REFRESH_TOKEN }}
+          AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
+          AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}

@@ -3,7 +3,9 @@ tests/test_notificador.py — NT01–NT07 (+ perguntar_gestor token vazio)
 """
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -19,6 +21,15 @@ def _mock_resp():
 
 
 class TestNotificadorAlertar(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self._orig_cooldown = notificador._COOLDOWN_PATH
+        notificador._COOLDOWN_PATH = Path(self._tmp.name) / "alertas_cooldown.json"
+
+    def tearDown(self):
+        notificador._COOLDOWN_PATH = self._orig_cooldown
+        self._tmp.cleanup()
+
     @patch("builtins.print")
     @patch.object(notificador, "TELEGRAM_CHAT_ID", "")
     @patch.object(notificador, "TELEGRAM_TOKEN", "")

@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from tests._stdout_utf8 import capturar_stdout_utf8
+
 import testar_magalu as tm
 
 
@@ -91,7 +93,8 @@ class TestMain(unittest.TestCase):
     @patch.object(tm, "_carregar_dotenv")
     def test_main_sucesso_retorna_0(self, *_):
         with patch.dict(os.environ, self._env_ok(), clear=False):
-            self.assertEqual(tm.main(), 0)
+            with capturar_stdout_utf8():
+                self.assertEqual(tm.main(), 0)
 
     @patch.object(tm, "renovar", return_value=(400, '{"error":"invalid_grant"}'))
     @patch.object(tm, "_carregar_dotenv")
@@ -111,7 +114,8 @@ class TestMain(unittest.TestCase):
         env = self._env_ok()
         env["MAGALU_REFRESH_TOKEN"] = ""
         with patch.dict(os.environ, env, clear=False):
-            code = tm.main()
+            with capturar_stdout_utf8():
+                code = tm.main()
         self.assertNotEqual(code, 0)
         mock_requests.post.assert_not_called()
 

@@ -10,6 +10,7 @@ import json
 import logging
 from pathlib import Path
 
+from core.atomic_io import escrever_json_atomico, lock_exclusivo
 from core.config import ROOT
 from core.notificador import alertar_critico
 from core.whatsapp import notificar_venda
@@ -17,6 +18,7 @@ from core.whatsapp import notificar_venda
 logger = logging.getLogger("vendas_notificador")
 
 PEDIDOS_NOTIFICADOS_PATH: Path = ROOT / "dados" / "pedidos_notificados.json"
+_LOCK_PATH: Path = PEDIDOS_NOTIFICADOS_PATH.with_name(PEDIDOS_NOTIFICADOS_PATH.name + ".lock")
 
 
 def _carregar_notificados() -> set[str]:
@@ -32,14 +34,10 @@ def _carregar_notificados() -> set[str]:
 
 
 def _salvar_notificados(ids: set[str]) -> None:
-    """Salva IDs de pedidos já notificados no arquivo de controle."""
+    """Salva IDs de pedidos já notificados no arquivo de controle (escrita atômica)."""
     try:
-        PEDIDOS_NOTIFICADOS_PATH.parent.mkdir(parents=True, exist_ok=True)
         lista = sorted(ids)[-1000:]
-        PEDIDOS_NOTIFICADOS_PATH.write_text(
-            json.dumps({"notificados": lista}, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        escrever_json_atomico(PEDIDOS_NOTIFICADOS_PATH, {"notificados": lista})
     except Exception as exc:
         logger.error("Erro ao salvar pedidos notificados: %s", exc)
 
@@ -59,7 +57,8 @@ def _checar_busca_falhou(marketplace: str, ok: bool) -> None:
         alertar_critico(
             f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
             "Isso pode significar que vendas reais não estão sendo notificadas. "
-            "Verifique o token/credenciais e o status da API."
+            "Verifique o token/credenciais e o status da API.",
+            chave=f"falha_pedidos:{marketplace}",
         )
 
 
@@ -132,18 +131,20 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
             pedidos, ok = lp_detalhado(dias=1)
             _checar_busca_falhou("Mercado Livre", ok)
         elif mp == "shopee":
-            from integracoes.shopee.shopee_client import listar_pedidos as lp
+            from integracoes.shopee.shopee_client import listar_pedidos_detalhado as lp_detalhado
 
-            pedidos = lp(dias=1)
+            pedidos, ok = lp_detalhado(dias=1)
+            _checar_busca_falhou("Shopee", ok)
         elif mp == "magalu":
             from integracoes.magalu.magalu_client import listar_pedidos_detalhado as lp_detalhado
 
             pedidos, ok = lp_detalhado(dias=1)
             _checar_busca_falhou("Magalu", ok)
         elif mp == "amazon":
-            from integracoes.amazon.amazon_client import listar_pedidos as lp
+            from integracoes.amazon.amazon_client import listar_pedidos_detalhado as lp_detalhado
 
-            pedidos = lp(dias=1)
+            pedidos, ok = lp_detalhado(dias=1)
+            _checar_busca_falhou("Amazon", ok)
         else:
             logger.warning("Marketplace desconhecido para vendas WhatsApp: %s", marketplace)
             return res
@@ -161,63 +162,73 @@ def executar() -> dict:
     """
     Verifica novas vendas em todos os marketplaces e notifica via WhatsApp.
     Retorna resumo com total de notificações enviadas por marketplace.
+
+    Todo o ciclo (ler quem já foi notificado → buscar pedidos novos →
+    salvar quem foi notificado agora) roda dentro de um lock exclusivo
+    entre processos: sem isso, duas execuções concorrentes (ex.: a API
+    viva chamando isto ao mesmo tempo que um workflow agendado) podem
+    ler o mesmo estado antigo e uma sobrescrever o "salvar" da outra —
+    o que faria o WhatsApp notificar a mesma venda duas vezes.
     """
-    notificados = _carregar_notificados()
-    novos_total: set[str] = set()
-    resumo: dict[str, int] = {}
+    with lock_exclusivo(_LOCK_PATH):
+        notificados = _carregar_notificados()
+        novos_total: set[str] = set()
+        resumo: dict[str, int] = {}
 
-    try:
-        from integracoes.ml.ml_client import listar_pedidos_detalhado
+        try:
+            from integracoes.ml.ml_client import listar_pedidos_detalhado
 
-        pedidos_ml, ok_ml = listar_pedidos_detalhado(dias=1)
-        _checar_busca_falhou("Mercado Livre", ok_ml)
-        novos_ml = _notificar_novos_pedidos("mercadolivre", pedidos_ml, notificados)
-        resumo["mercadolivre"] = len(novos_ml)
-        novos_total.update(novos_ml)
-        notificados |= novos_ml
-    except Exception as exc:
-        logger.error("Erro ao buscar pedidos ML: %s", exc)
-        resumo["mercadolivre"] = 0
+            pedidos_ml, ok_ml = listar_pedidos_detalhado(dias=1)
+            _checar_busca_falhou("Mercado Livre", ok_ml)
+            novos_ml = _notificar_novos_pedidos("mercadolivre", pedidos_ml, notificados)
+            resumo["mercadolivre"] = len(novos_ml)
+            novos_total.update(novos_ml)
+            notificados |= novos_ml
+        except Exception as exc:
+            logger.error("Erro ao buscar pedidos ML: %s", exc)
+            resumo["mercadolivre"] = 0
 
-    try:
-        from integracoes.shopee.shopee_client import listar_pedidos as shopee_pedidos
+        try:
+            from integracoes.shopee.shopee_client import listar_pedidos_detalhado as shopee_pedidos_detalhado
 
-        pedidos_shopee = shopee_pedidos(dias=1)
-        novos_shopee = _notificar_novos_pedidos("shopee", pedidos_shopee, notificados)
-        resumo["shopee"] = len(novos_shopee)
-        novos_total.update(novos_shopee)
-        notificados |= novos_shopee
-    except Exception as exc:
-        logger.error("Erro ao buscar pedidos Shopee: %s", exc)
-        resumo["shopee"] = 0
+            pedidos_shopee, ok_shopee = shopee_pedidos_detalhado(dias=1)
+            _checar_busca_falhou("Shopee", ok_shopee)
+            novos_shopee = _notificar_novos_pedidos("shopee", pedidos_shopee, notificados)
+            resumo["shopee"] = len(novos_shopee)
+            novos_total.update(novos_shopee)
+            notificados |= novos_shopee
+        except Exception as exc:
+            logger.error("Erro ao buscar pedidos Shopee: %s", exc)
+            resumo["shopee"] = 0
 
-    try:
-        from integracoes.magalu.magalu_client import listar_pedidos_detalhado as magalu_pedidos_detalhado
+        try:
+            from integracoes.magalu.magalu_client import listar_pedidos_detalhado as magalu_pedidos_detalhado
 
-        pedidos_magalu, ok_magalu = magalu_pedidos_detalhado(dias=1)
-        _checar_busca_falhou("Magalu", ok_magalu)
-        novos_magalu = _notificar_novos_pedidos("magalu", pedidos_magalu, notificados)
-        resumo["magalu"] = len(novos_magalu)
-        novos_total.update(novos_magalu)
-        notificados |= novos_magalu
-    except Exception as exc:
-        logger.error("Erro ao buscar pedidos Magalu: %s", exc)
-        resumo["magalu"] = 0
+            pedidos_magalu, ok_magalu = magalu_pedidos_detalhado(dias=1)
+            _checar_busca_falhou("Magalu", ok_magalu)
+            novos_magalu = _notificar_novos_pedidos("magalu", pedidos_magalu, notificados)
+            resumo["magalu"] = len(novos_magalu)
+            novos_total.update(novos_magalu)
+            notificados |= novos_magalu
+        except Exception as exc:
+            logger.error("Erro ao buscar pedidos Magalu: %s", exc)
+            resumo["magalu"] = 0
 
-    try:
-        from integracoes.amazon.amazon_client import listar_pedidos as amazon_pedidos
+        try:
+            from integracoes.amazon.amazon_client import listar_pedidos_detalhado as amazon_pedidos_detalhado
 
-        pedidos_amazon = amazon_pedidos(dias=1)
-        novos_amazon = _notificar_novos_pedidos("amazon", pedidos_amazon, notificados)
-        resumo["amazon"] = len(novos_amazon)
-        novos_total.update(novos_amazon)
-        notificados |= novos_amazon
-    except Exception as exc:
-        logger.error("Erro ao buscar pedidos Amazon: %s", exc)
-        resumo["amazon"] = 0
+            pedidos_amazon, ok_amazon = amazon_pedidos_detalhado(dias=1)
+            _checar_busca_falhou("Amazon", ok_amazon)
+            novos_amazon = _notificar_novos_pedidos("amazon", pedidos_amazon, notificados)
+            resumo["amazon"] = len(novos_amazon)
+            novos_total.update(novos_amazon)
+            notificados |= novos_amazon
+        except Exception as exc:
+            logger.error("Erro ao buscar pedidos Amazon: %s", exc)
+            resumo["amazon"] = 0
 
-    if novos_total:
-        _salvar_notificados(notificados)
+        if novos_total:
+            _salvar_notificados(notificados)
 
     total = sum(resumo.values())
     logger.info("Notificações WhatsApp enviadas: %d | Detalhe: %s", total, resumo)

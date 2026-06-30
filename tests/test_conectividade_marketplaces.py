@@ -1,5 +1,5 @@
 """
-tests/test_conectividade_marketplaces.py — agente de conectividade real (ML + Magalu).
+tests/test_conectividade_marketplaces.py — agente de conectividade real (4 MPs).
 """
 import os
 import sys
@@ -34,7 +34,7 @@ class TestAvaliarUm(unittest.TestCase):
         self.assertEqual(out["status_http"], 401)
         mock_registrar.assert_not_called()
         mock_alerta.assert_called_once()
-        self.assertIn("mercadolivre", mock_alerta.call_args.args[0])
+        self.assertIn("mercadolivre", mock_alerta.call_args.kwargs.get("chave", mock_alerta.call_args.args[0]))
 
     @patch.object(agente, "registrar_acesso")
     @patch.object(agente, "dias_sem_acesso", return_value=0)
@@ -47,35 +47,59 @@ class TestAvaliarUm(unittest.TestCase):
         self.assertTrue(out["ok"])
         mock_registrar.assert_called_once_with("magalu")
 
-    def test_marketplace_desconhecido(self):
+    @patch.object(agente, "registrar_acesso")
+    @patch.object(agente, "dias_sem_acesso", return_value=0)
+    @patch(
+        "integracoes.shopee.shopee_client.probe_conexao",
+        return_value={"ok": True, "status": 200, "msg": "autenticado"},
+    )
+    def test_shopee_ok_registra_acesso(self, _probe, _dias, mock_registrar):
         out = agente._avaliar_um("shopee")
-        # Shopee não está coberto por este agente (foco ML+Magalu) — não deve
-        # quebrar, só reportar falha "marketplace desconhecido".
+        self.assertTrue(out["ok"])
+        mock_registrar.assert_called_once_with("shopee")
+
+    @patch.object(agente, "alertar_critico")
+    @patch.object(agente, "registrar_acesso")
+    @patch.object(agente, "dias_sem_acesso", return_value=1)
+    @patch(
+        "integracoes.amazon.amazon_client.probe_conexao",
+        return_value={"ok": False, "status": 403, "msg": "sem permissão"},
+    )
+    def test_amazon_falha_alerta_com_chave(self, _probe, _dias, mock_registrar, mock_alerta):
+        out = agente._avaliar_um("amazon")
+        self.assertFalse(out["ok"])
+        mock_registrar.assert_not_called()
+        mock_alerta.assert_called_once()
+        self.assertEqual(mock_alerta.call_args.kwargs.get("chave"), "conectividade:amazon")
+
+    def test_marketplace_desconhecido(self):
+        out = agente._avaliar_um("lojahub")
         self.assertFalse(out["ok"])
 
 
 class TestExecutar(unittest.TestCase):
     @patch.object(agente, "_avaliar_um")
-    def test_executar_agrega_resultado_dos_dois_marketplaces(self, mock_avaliar):
+    def test_executar_agrega_quatro_marketplaces(self, mock_avaliar):
         mock_avaliar.side_effect = [
             {"marketplace": "mercadolivre", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
             {"marketplace": "magalu", "ok": False, "status_http": 401, "msg": "x", "dias_sem_acesso": 3},
+            {"marketplace": "shopee", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
+            {"marketplace": "amazon", "ok": False, "status_http": 0, "msg": "n/c", "dias_sem_acesso": 5},
         ]
         out = agente.executar()
-        self.assertEqual(out["total"], 2)
-        self.assertEqual(out["ok"], 1)
-        self.assertEqual(out["falha"], 1)
-        self.assertEqual(mock_avaliar.call_count, 2)
+        self.assertEqual(out["total"], 4)
+        self.assertEqual(out["ok"], 2)
+        self.assertEqual(out["falha"], 2)
+        self.assertEqual(mock_avaliar.call_count, 4)
 
     @patch.object(agente, "incrementar")
     @patch.object(agente, "_avaliar_um", side_effect=RuntimeError("boom"))
-    def test_excecao_inesperada_nao_propaga_e_segue_para_o_proximo(self, _mock_avaliar, mock_incrementar):
+    def test_excecao_inesperada_nao_propaga(self, _mock_avaliar, mock_incrementar):
         out = agente.executar()
-        self.assertEqual(out["total"], 2)
-        self.assertEqual(out["falha"], 2)
+        self.assertEqual(out["total"], 4)
+        self.assertEqual(out["falha"], 4)
         self.assertEqual(out["ok"], 0)
-        # incrementou métrica de falha por exceção pros dois marketplaces
-        self.assertEqual(mock_incrementar.call_count, 2)
+        self.assertEqual(mock_incrementar.call_count, 4)
 
 
 if __name__ == "__main__":

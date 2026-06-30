@@ -4,34 +4,29 @@ Registra último acesso bem-sucedido por marketplace.
 """
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
+
+from core.atomic_io import ler_e_atualizar_json, ler_json
 
 ROOT = Path(__file__).parent.parent
 STATE_FILE = ROOT / "logs" / "marketplace_keepalive.json"
 
 
 def _load_state() -> dict:
-    if not STATE_FILE.exists():
-        return {}
-    try:
-        with open(STATE_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
-
-def _save_state(state: dict) -> None:
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    return ler_json(STATE_FILE, default={})
 
 
 def registrar_acesso(nome_marketplace: str) -> None:
-    state = _load_state()
-    state[nome_marketplace] = datetime.now(timezone.utc).isoformat()
-    _save_state(state)
+    def _atualizar(state: dict) -> dict:
+        state = dict(state or {})
+        state[nome_marketplace] = datetime.now(timezone.utc).isoformat()
+        return state
+
+    # Lê + atualiza + grava sob um único lock — evita que duas
+    # execuções concorrentes (ex.: API viva + um workflow agendado)
+    # leiam o mesmo estado antigo e uma sobrescreva o registro da outra.
+    ler_e_atualizar_json(STATE_FILE, _atualizar, default={})
 
 
 def dias_sem_acesso(nome_marketplace: str) -> int | None:

@@ -8,11 +8,6 @@ diferentes: um token pode "renovar" com sucesso no OAuth e ainda
 assim não funcionar de verdade contra a API — escopo errado, conta
 suspensa, permissão revogada etc.).
 
-Foco atual: Mercado Livre e Magalu (prioridade do momento). Shopee e
-Amazon ficam de fora por ora — para adicionar depois, basta seguir o
-mesmo padrão deste arquivo (importar o probe_conexao do client e
-incluir o nome em _MARKETPLACES).
-
 Nunca lança exceção — um erro inesperado num marketplace não pode
 impedir a checagem dos demais.
 """
@@ -26,7 +21,7 @@ from core.notificador import alertar_critico
 
 logger = logging.getLogger("conectividade_marketplaces")
 
-_MARKETPLACES = ("mercadolivre", "magalu")
+_MARKETPLACES = ("mercadolivre", "magalu", "shopee", "amazon")
 
 
 def _probe(nome_marketplace: str) -> dict:
@@ -34,6 +29,10 @@ def _probe(nome_marketplace: str) -> dict:
         from integracoes.ml.ml_client import probe_conexao
     elif nome_marketplace == "magalu":
         from integracoes.magalu.magalu_client import probe_conexao
+    elif nome_marketplace == "shopee":
+        from integracoes.shopee.shopee_client import probe_conexao
+    elif nome_marketplace == "amazon":
+        from integracoes.amazon.amazon_client import probe_conexao
     else:
         return {"ok": False, "status": 0, "msg": "marketplace desconhecido"}
     return probe_conexao()
@@ -71,7 +70,8 @@ def _avaliar_um(nome_marketplace: str) -> dict:
             "Isto é diferente de uma falha de renovação de token: o OAuth "
             "pode ter respondido com sucesso e a API mesmo assim recusar o "
             "acesso (escopo, permissão, conta suspensa). Verifique as "
-            "credenciais e os escopos do app."
+            "credenciais e os escopos do app.",
+            chave=f"conectividade:{nome_marketplace}",
         )
 
     return {
@@ -85,8 +85,8 @@ def _avaliar_um(nome_marketplace: str) -> dict:
 
 def executar() -> dict:
     """
-    Testa conectividade real (não apenas renovação de token) de ML e
-    Magalu. Retorna um resumo com o resultado de cada marketplace.
+    Testa conectividade real (não apenas renovação de token) de todos os
+    marketplaces configurados. Retorna um resumo com o resultado de cada um.
     """
     resultados: list[dict] = []
     for nome in _MARKETPLACES:
