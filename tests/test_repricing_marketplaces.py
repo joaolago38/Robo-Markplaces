@@ -88,6 +88,15 @@ class RepricingMarketplacesTests(unittest.TestCase):
         mock_vivo.assert_not_called()
         self.assertEqual(out["ajustes"][0]["fonte_concorrente"], "payload")
 
+    @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
+    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos")
+    def test_sem_produtos_chama_listar_produtos_apenas_uma_vez(self, mock_listar_produtos, _mock_alerta):
+        mock_listar_produtos.return_value = [
+            {"codigo": "SKU1", "sku": "SKU1", "custo": 9.5, "canais": {}},
+        ]
+        executar(dry_run=True, lucro_minimo_pct=10.0)
+        mock_listar_produtos.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
