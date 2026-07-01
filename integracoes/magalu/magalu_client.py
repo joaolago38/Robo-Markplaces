@@ -1,11 +1,18 @@
 """
 integracoes/magalu/magalu_client.py
-Cliente Magalu Seller API para perguntas e respostas.
+Cliente Magalu OpenAPI (developers.magalu.com) — Produtos, Pedidos e
+Perguntas & Respostas.
+
+IMPORTANTE: a autenticação é só `Authorization: Bearer <access_token>`.
+Não existe header de "seller id" — o token OAuth por si só já
+identifica o seller (fluxo Authorization Code, um consentimento por
+seller). Ver:
+https://developers.magalu.com/docs/first-steps/create-an-application/authentication-authorization
 """
 import logging
 from datetime import datetime, timedelta, timezone
 
-from core.config import MAGALU_ACCESS_TOKEN, MAGALU_MERCHANT_ID, MAGALU_REFRESH_TOKEN
+from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
@@ -14,11 +21,12 @@ from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
 logger = logging.getLogger("magalu_client")
 BASE = "https://api.magalu.com"
+# Reservado para channel.id em endpoints de portfólio (quando confirmados na doc).
+_MAGALU_CHANNEL_ID = MAGALU_CHANNEL_ID
 
 
 def _enabled() -> bool:
-    tem_token = bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
-    return bool(tem_token and MAGALU_MERCHANT_ID)
+    return bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
 
 
 def _h():
@@ -27,7 +35,6 @@ def _h():
         tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
     return {
         "Authorization": f"Bearer {tok}",
-        "X-Seller-Id": str(MAGALU_MERCHANT_ID),
         "Content-Type": "application/json",
     }
 
@@ -39,7 +46,7 @@ def probe_conexao() -> dict:
     try:
         r = request(
             "GET",
-            f"{BASE}/seller/questions",
+            f"{BASE}/v0/questions",
             headers=_h(),
             params={"limit": 1},
             timeout=15,
@@ -72,7 +79,7 @@ def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: in
         for _pagina in range(max(1, max_paginas)):
             r = request(
                 "GET",
-                f"{BASE}/seller/questions",
+                f"{BASE}/v0/questions",
                 headers=_h(),
                 params={"status": "pending", "limit": limit, "offset": offset},
                 timeout=20,
@@ -107,7 +114,7 @@ def responder_pergunta(question_id: str, texto: str) -> bool:
     try:
         r = request(
             "POST",
-            f"{BASE}/seller/questions/{question_id}/answer",
+            f"{BASE}/v0/questions/{question_id}/answer",
             headers=_h(),
             json={"text": texto},
             timeout=20,
@@ -136,7 +143,7 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
     try:
         r = request(
             "GET",
-            f"{BASE}/seller/questions",
+            f"{BASE}/v0/questions",
             headers=_h(),
             params={"limit": 1},
             timeout=20,

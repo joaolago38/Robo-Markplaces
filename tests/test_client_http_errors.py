@@ -32,7 +32,7 @@ class TestClientHttpErrors(unittest.TestCase):
             self.assertTrue(any("ESCOPO" in line or "403" in line for line in logs.output))
 
     def test_magalu_listar_perguntas_401(self):
-        with patch.object(mag, "MAGALU_MERCHANT_ID", "m"), patch.object(mag, "MAGALU_ACCESS_TOKEN", "t"):
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", "t"):
             self.mock_http.return_value = make_http_response(status_code=401)
             with self.assertLogs("magalu_client", level="ERROR"):
                 self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])

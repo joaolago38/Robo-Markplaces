@@ -66,9 +66,19 @@ SHOPEE_REFRESH_TOKEN = os.getenv("SHOPEE_REFRESH_TOKEN", "").strip()
 # Magalu
 MAGALU_CLIENT_ID     = os.getenv("MAGALU_CLIENT_ID", "").strip()
 MAGALU_CLIENT_SECRET = os.getenv("MAGALU_CLIENT_SECRET", "").strip()
-MAGALU_MERCHANT_ID   = os.getenv("MAGALU_MERCHANT_ID", "").strip()
 MAGALU_ACCESS_TOKEN  = os.getenv("MAGALU_ACCESS_TOKEN", "").strip()
 MAGALU_REFRESH_TOKEN = os.getenv("MAGALU_REFRESH_TOKEN", "").strip()
+# ID fixo do canal de venda "Magazine Luiza" na OpenAPI Magalu — é o
+# mesmo valor para qualquer seller (não é um identificador de conta).
+# Fonte: https://developers.magalu.com/docs/development-guide/sales-channel-id
+# Mantido configurável (e não hardcoded) caso o Magalu troque o ID ou
+# adicione mais canais (Netshoes/Kabum) no futuro.
+MAGALU_CHANNEL_ID = (
+    os.getenv("MAGALU_CHANNEL_ID")
+    or os.getenv("MAGALU_MERCHANT_ID", "")  # compat: nome antigo da secret
+).strip()
+# Alias legado — o valor é o channel id, não um identificador de conta do seller.
+MAGALU_MERCHANT_ID = MAGALU_CHANNEL_ID
 
 # Amazon
 AMAZON_LWA_CLIENT_ID     = os.getenv("AMAZON_LWA_CLIENT_ID", "").strip()

@@ -48,7 +48,6 @@ class TestMlRegistrarAcessoSoEmSucesso(unittest.TestCase):
 class TestMagaluRegistrarAcessoSoEmSucesso(unittest.TestCase):
     @patch.object(mag, "registrar_acesso")
     @patch.object(mag, "_listar_perguntas_nao_respondidas_detalhado", return_value=([], False))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_nao_registra_acesso_quando_busca_falha(self, *_patches):
         mag.obter_saude_conta()
@@ -56,7 +55,6 @@ class TestMagaluRegistrarAcessoSoEmSucesso(unittest.TestCase):
 
     @patch.object(mag, "registrar_acesso")
     @patch.object(mag, "_listar_perguntas_nao_respondidas_detalhado", return_value=([{"id": 1}], True))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_registra_acesso_quando_busca_funciona(self, *_patches):
         mag.obter_saude_conta()
@@ -109,7 +107,6 @@ class TestMlListarPedidosDetalhado(unittest.TestCase):
 
 class TestMagaluListarPedidosDetalhado(unittest.TestCase):
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_status_ausente_nao_assume_pago(self, mock_request):
         from datetime import datetime, timezone
@@ -124,7 +121,6 @@ class TestMagaluListarPedidosDetalhado(unittest.TestCase):
         self.assertEqual(pedidos[0]["status"], "desconhecido")
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_status_nao_200_retorna_ok_false(self, mock_request):
         mock_request.return_value = _resp(401, {})
