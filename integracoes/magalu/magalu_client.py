@@ -21,6 +21,12 @@ from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
 logger = logging.getLogger("magalu_client")
 BASE = "https://api.magalu.com"
+# Endpoints com escopo "services:*" (Perguntas & Respostas, Tickets,
+# Conversations) vivem em um host separado dos endpoints "open:*"
+# (Produtos, Pedidos). Confirmado manualmente em 01/07/2026: GET
+# https://services.magalu.com/v0/questions retornou 200, enquanto
+# https://api.magalu.com/v0/questions retorna 404 resource_not_found.
+BASE_SERVICES = "https://services.magalu.com"
 # Reservado para channel.id em endpoints de portfólio (quando confirmados na doc).
 _MAGALU_CHANNEL_ID = MAGALU_CHANNEL_ID
 
@@ -46,7 +52,7 @@ def probe_conexao() -> dict:
     try:
         r = request(
             "GET",
-            f"{BASE}/v0/questions",
+            f"{BASE_SERVICES}/v0/questions",
             headers=_h(),
             params={"limit": 1},
             timeout=15,
@@ -79,7 +85,7 @@ def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: in
         for _pagina in range(max(1, max_paginas)):
             r = request(
                 "GET",
-                f"{BASE}/v0/questions",
+                f"{BASE_SERVICES}/v0/questions",
                 headers=_h(),
                 params={"status": "pending", "limit": limit, "offset": offset},
                 timeout=20,
@@ -114,7 +120,7 @@ def responder_pergunta(question_id: str, texto: str) -> bool:
     try:
         r = request(
             "POST",
-            f"{BASE}/v0/questions/{question_id}/answer",
+            f"{BASE_SERVICES}/v0/questions/{question_id}/answer",
             headers=_h(),
             json={"text": texto},
             timeout=20,
@@ -143,7 +149,7 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
     try:
         r = request(
             "GET",
-            f"{BASE}/v0/questions",
+            f"{BASE_SERVICES}/v0/questions",
             headers=_h(),
             params={"limit": 1},
             timeout=20,

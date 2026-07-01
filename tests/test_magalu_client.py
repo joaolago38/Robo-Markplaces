@@ -83,7 +83,7 @@ class TestProbeConexao(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"], 200)
         url = mock_request.call_args[0][1]
-        self.assertIn("/v0/questions", url)
+        self.assertIn("https://services.magalu.com/v0/questions", url)
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
@@ -131,7 +131,7 @@ class TestListarPerguntas(unittest.TestCase):
         mock_request.return_value = _resp(200, {"data": [{"id": "q1"}]})
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [{"id": "q1"}])
         url = mock_request.call_args[0][1]
-        self.assertIn("/v0/questions", url)
+        self.assertIn("https://services.magalu.com/v0/questions", url)
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
@@ -163,7 +163,7 @@ class TestResponderPergunta(unittest.TestCase):
         mock_request.return_value = _resp(200)
         self.assertTrue(mag.responder_pergunta("q1", "resposta"))
         url = mock_request.call_args[0][1]
-        self.assertIn("/v0/questions/q1/answer", url)
+        self.assertIn("https://services.magalu.com/v0/questions/q1/answer", url)
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
