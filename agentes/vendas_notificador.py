@@ -11,11 +11,15 @@ import logging
 from pathlib import Path
 
 from core.atomic_io import escrever_json_atomico, lock_exclusivo
-from core.config import ROOT
+from core.config import ROOT, SPEC
 from core.notificador import alertar_critico
 from core.whatsapp import notificar_venda
 
 logger = logging.getLogger("vendas_notificador")
+
+_MARKETPLACES_ATIVOS: set[str] = {
+    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
+}
 
 PEDIDOS_NOTIFICADOS_PATH: Path = ROOT / "dados" / "pedidos_notificados.json"
 _LOCK_PATH: Path = PEDIDOS_NOTIFICADOS_PATH.with_name(PEDIDOS_NOTIFICADOS_PATH.name + ".lock")
@@ -122,6 +126,9 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
     mp = (marketplace or "").strip().lower()
     novos: set[str] = set()
     res: dict = {"marketplace": mp, "notificacoes": 0}
+    if mp == "magalu" and "magalu" not in _MARKETPLACES_ATIVOS:
+        logger.info("Magalu inativo no spec — ignorando notificação")
+        return res
     try:
         notificados = _carregar_notificados()
         pedidos: list[dict] = []
@@ -201,18 +208,19 @@ def executar() -> dict:
             logger.error("Erro ao buscar pedidos Shopee: %s", exc)
             resumo["shopee"] = 0
 
-        try:
-            from integracoes.magalu.magalu_client import listar_pedidos_detalhado as magalu_pedidos_detalhado
+        if "magalu" in _MARKETPLACES_ATIVOS:
+            try:
+                from integracoes.magalu.magalu_client import listar_pedidos_detalhado as magalu_pedidos_detalhado
 
-            pedidos_magalu, ok_magalu = magalu_pedidos_detalhado(dias=1)
-            _checar_busca_falhou("Magalu", ok_magalu)
-            novos_magalu = _notificar_novos_pedidos("magalu", pedidos_magalu, notificados)
-            resumo["magalu"] = len(novos_magalu)
-            novos_total.update(novos_magalu)
-            notificados |= novos_magalu
-        except Exception as exc:
-            logger.error("Erro ao buscar pedidos Magalu: %s", exc)
-            resumo["magalu"] = 0
+                pedidos_magalu, ok_magalu = magalu_pedidos_detalhado(dias=1)
+                _checar_busca_falhou("Magalu", ok_magalu)
+                novos_magalu = _notificar_novos_pedidos("magalu", pedidos_magalu, notificados)
+                resumo["magalu"] = len(novos_magalu)
+                novos_total.update(novos_magalu)
+                notificados |= novos_magalu
+            except Exception as exc:
+                logger.error("Erro ao buscar pedidos Magalu: %s", exc)
+                resumo["magalu"] = 0
 
         try:
             from integracoes.amazon.amazon_client import listar_pedidos_detalhado as amazon_pedidos_detalhado

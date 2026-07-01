@@ -22,11 +22,12 @@ class TestAlgoritmoMarketplaces(unittest.TestCase):
     @patch.object(algo, "saude_magalu", return_value={})
     @patch.object(algo, "saude_shopee", return_value={})
     @patch.object(algo, "saude_ml", return_value={})
-    def test_ALG01_executar_resumo_quatro_saudaveis(self, *_mocks):
+    def test_ALG01_executar_resumo_tres_saudaveis_sem_magalu_inativo(self, *_mocks):
         out = algo.executar()
         self.assertIn("resumo", out)
         self.assertIn("marketplaces", out)
-        self.assertEqual(out["resumo"]["saudavel"], 4)
+        self.assertEqual(out["resumo"]["saudavel"], 3)
+        self.assertNotIn("magalu", out["marketplaces"])
 
     @patch.object(algo, "alertar_gestor")
     @patch.object(algo, "avaliar_marketplace")
@@ -59,12 +60,11 @@ class TestAlgoritmoMarketplaces(unittest.TestCase):
         mock_aval.side_effect = [
             {"status": "saudavel", "score": 90, "acoes_recomendadas": [], "variacoes_relevantes": []},
             {"status": "saudavel", "score": 90, "acoes_recomendadas": [], "variacoes_relevantes": []},
-            {"status": "atencao", "score": 60, "acoes_recomendadas": [], "variacoes_relevantes": []},
             {"status": "critico", "score": 20, "acoes_recomendadas": [], "variacoes_relevantes": []},
         ]
         out = algo.executar()
         self.assertEqual(out["resumo"]["saudavel"], 2)
-        self.assertEqual(out["resumo"]["atencao"], 1)
+        self.assertEqual(out["resumo"]["atencao"], 0)
         self.assertEqual(out["resumo"]["critico"], 1)
 
 

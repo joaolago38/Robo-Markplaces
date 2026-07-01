@@ -14,12 +14,12 @@ from agentes import manutencao_marketplaces as manut
 class TestManutencaoMarketplaces(unittest.TestCase):
     @patch.object(manut, "keepalive_magalu")
     @patch.object(manut, "keepalive_shopee")
-    def test_MAN01_executar_dois_resultados(self, mock_sh, mock_mg):
+    def test_MAN01_executar_apenas_shopee_sem_magalu_inativo(self, mock_sh, mock_mg):
         mock_sh.return_value = {"ok": True, "acao": "já acessado hoje", "dias_sem_acesso": 0, "marketplace": "shopee"}
-        mock_mg.return_value = {"ok": True, "acao": "já acessado hoje", "dias_sem_acesso": 0, "marketplace": "magalu"}
         out = manut.executar()
         self.assertIn("resultados", out)
-        self.assertEqual(len(out["resultados"]), 2)
+        self.assertEqual(len(out["resultados"]), 1)
+        mock_mg.assert_not_called()
 
     @patch.object(manut, "alertar_gestor")
     @patch.object(manut, "keepalive_magalu")
@@ -32,18 +32,17 @@ class TestManutencaoMarketplaces(unittest.TestCase):
             "dias_sem_acesso": 3,
             "alerta": True,
         }
-        mock_mg.return_value = {"ok": True, "acao": "já acessado hoje", "dias_sem_acesso": 0, "marketplace": "magalu"}
         manut.executar()
         mock_alert.assert_called_once()
+        mock_mg.assert_not_called()
 
     @patch.object(manut, "keepalive_magalu")
     @patch.object(manut, "keepalive_shopee")
     def test_MAN03_passa_limite_dias(self, mock_sh, mock_mg):
         mock_sh.return_value = {"ok": True, "acao": "ok", "dias_sem_acesso": 0, "marketplace": "shopee"}
-        mock_mg.return_value = {"ok": True, "acao": "ok", "dias_sem_acesso": 0, "marketplace": "magalu"}
         manut.executar(limite_dias_sem_acesso=7)
         mock_sh.assert_called_once_with(limite_dias_sem_acesso=7)
-        mock_mg.assert_called_once_with(limite_dias_sem_acesso=7)
+        mock_mg.assert_not_called()
 
 
 if __name__ == "__main__":

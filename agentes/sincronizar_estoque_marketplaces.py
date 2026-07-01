@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
+from core.config import SPEC
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
 from integracoes.bling.bling_client import listar_produtos_por_sku
@@ -20,14 +21,19 @@ from integracoes.shopee.shopee_client import atualizar_estoque_item as atualizar
 
 logger = logging.getLogger("sincronizar_estoque_marketplaces")
 
+_MARKETPLACES_ATIVOS: set[str] = {
+    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
+}
+
 ROOT = Path(__file__).resolve().parent.parent
 CATALOGO_PATH = ROOT / "catalogo" / "produtos.json"
 
 _CANAIS_ESTOQUE: dict[str, Callable[..., bool]] = {
     "mercadolivre": atualizar_estoque_ml,
-    "magalu": atualizar_estoque_magalu,
     "shopee": atualizar_estoque_shopee,
 }
+if "magalu" in _MARKETPLACES_ATIVOS:
+    _CANAIS_ESTOQUE["magalu"] = atualizar_estoque_magalu
 
 
 def _carregar_catalogo() -> list[dict]:

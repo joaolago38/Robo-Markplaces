@@ -13,17 +13,25 @@ agente, com uma checagem mais forte (testa conectividade real, não só
 """
 import logging
 
+from core.config import SPEC
 from core.notificador import alertar_gestor
 from integracoes.shopee.shopee_client import manter_conta_ativa as keepalive_shopee
 from integracoes.magalu.magalu_client import manter_conta_ativa as keepalive_magalu
 
 logger = logging.getLogger("manutencao_marketplaces")
 
+_MARKETPLACES_ATIVOS: set[str] = {
+    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
+}
+
 
 def executar(limite_dias_sem_acesso: int = 5) -> dict:
     resultado_shopee = keepalive_shopee(limite_dias_sem_acesso=limite_dias_sem_acesso)
-    resultado_magalu = keepalive_magalu(limite_dias_sem_acesso=limite_dias_sem_acesso)
-    resultados = [resultado_shopee, resultado_magalu]
+    resultados = [resultado_shopee]
+
+    if "magalu" in _MARKETPLACES_ATIVOS:
+        resultado_magalu = keepalive_magalu(limite_dias_sem_acesso=limite_dias_sem_acesso)
+        resultados.append(resultado_magalu)
 
     for r in resultados:
         if not r.get("ok") or r.get("alerta"):
