@@ -15,13 +15,20 @@ from __future__ import annotations
 
 import logging
 
+from core.config import SPEC
 from core.datadog_metrics import gauge, incrementar
 from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.notificador import alertar_critico
 
 logger = logging.getLogger("conectividade_marketplaces")
 
+_MARKETPLACES_ATIVOS_SPEC: set[str] = {
+    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
+}
+
 _MARKETPLACES = ("mercadolivre", "magalu", "shopee", "amazon")
+if "magalu" not in _MARKETPLACES_ATIVOS_SPEC:
+    _MARKETPLACES = tuple(m for m in _MARKETPLACES if m != "magalu")
 
 
 def _probe(nome_marketplace: str) -> dict:

@@ -79,27 +79,26 @@ class TestAvaliarUm(unittest.TestCase):
 
 class TestExecutar(unittest.TestCase):
     @patch.object(agente, "_avaliar_um")
-    def test_executar_agrega_quatro_marketplaces(self, mock_avaliar):
+    def test_executar_agrega_tres_marketplaces_sem_magalu_inativo(self, mock_avaliar):
         mock_avaliar.side_effect = [
             {"marketplace": "mercadolivre", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
-            {"marketplace": "magalu", "ok": False, "status_http": 401, "msg": "x", "dias_sem_acesso": 3},
             {"marketplace": "shopee", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
             {"marketplace": "amazon", "ok": False, "status_http": 0, "msg": "n/c", "dias_sem_acesso": 5},
         ]
         out = agente.executar()
-        self.assertEqual(out["total"], 4)
+        self.assertEqual(out["total"], 3)
         self.assertEqual(out["ok"], 2)
-        self.assertEqual(out["falha"], 2)
-        self.assertEqual(mock_avaliar.call_count, 4)
+        self.assertEqual(out["falha"], 1)
+        self.assertEqual(mock_avaliar.call_count, 3)
 
     @patch.object(agente, "incrementar")
     @patch.object(agente, "_avaliar_um", side_effect=RuntimeError("boom"))
     def test_excecao_inesperada_nao_propaga(self, _mock_avaliar, mock_incrementar):
         out = agente.executar()
-        self.assertEqual(out["total"], 4)
-        self.assertEqual(out["falha"], 4)
+        self.assertEqual(out["total"], 3)
+        self.assertEqual(out["falha"], 3)
         self.assertEqual(out["ok"], 0)
-        self.assertEqual(mock_incrementar.call_count, 4)
+        self.assertEqual(mock_incrementar.call_count, 3)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ Monitora saúde das contas e define ajustes de algoritmo por marketplace.
 """
 import logging
 
+from core.config import SPEC
 from core.marketplace_algorithm import avaliar_marketplace
 from core.notificador import alertar_gestor
 from integracoes.ml.ml_client import obter_saude_conta as saude_ml
@@ -13,14 +14,19 @@ from integracoes.amazon.amazon_client import obter_saude_conta as saude_amazon
 
 logger = logging.getLogger("algoritmo_marketplaces")
 
+_MARKETPLACES_ATIVOS: set[str] = {
+    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
+}
+
 
 def executar(alertar_quando_atencao: bool = False) -> dict:
     saude = {
         "mercadolivre": saude_ml(),
         "shopee": saude_shopee(),
-        "magalu": saude_magalu(),
         "amazon": saude_amazon(),
     }
+    if "magalu" in _MARKETPLACES_ATIVOS:
+        saude["magalu"] = saude_magalu()
     avaliacoes = {nome: avaliar_marketplace(nome, metrics) for nome, metrics in saude.items()}
 
     for nome, avaliacao in avaliacoes.items():
