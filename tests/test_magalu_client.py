@@ -68,7 +68,6 @@ def _created_antiga(days: int = 30) -> str:
 
 
 class TestProbeConexao(unittest.TestCase):
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     def test_nao_configurado(self):
@@ -77,16 +76,16 @@ class TestProbeConexao(unittest.TestCase):
         self.assertEqual(out["status"], 0)
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_ok_200(self, mock_request):
         mock_request.return_value = _resp(200, {"data": []})
         out = mag.probe_conexao()
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"], 200)
+        url = mock_request.call_args[0][1]
+        self.assertIn("/v0/questions", url)
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_401(self, mock_request):
         mock_request.return_value = _resp(401, text="unauthorized")
@@ -96,7 +95,6 @@ class TestProbeConexao(unittest.TestCase):
         self.assertIn("token", out["msg"].lower())
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_403(self, mock_request):
         mock_request.return_value = _resp(403, text="forbidden")
@@ -106,7 +104,6 @@ class TestProbeConexao(unittest.TestCase):
         self.assertIn("permissão", out["msg"].lower())
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_outro_status(self, mock_request):
         mock_request.return_value = _resp(500, text="erro servidor")
@@ -115,7 +112,6 @@ class TestProbeConexao(unittest.TestCase):
         self.assertEqual(out["status"], 500)
 
     @patch.object(mag, "request", side_effect=RuntimeError("rede"))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_excecao_rede(self, *_):
         out = mag.probe_conexao()
@@ -124,54 +120,52 @@ class TestProbeConexao(unittest.TestCase):
 
 
 class TestListarPerguntas(unittest.TestCase):
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_ok_formato_data(self, mock_request):
         mock_request.return_value = _resp(200, {"data": [{"id": "q1"}]})
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [{"id": "q1"}])
+        url = mock_request.call_args[0][1]
+        self.assertIn("/v0/questions", url)
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_ok_formato_items(self, mock_request):
         mock_request.return_value = _resp(200, {"items": [{"id": "q2"}]})
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [{"id": "q2"}])
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_status_nao_200(self, mock_request):
         mock_request.return_value = _resp(403, text="forbidden")
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
 
     @patch.object(mag, "request", side_effect=RuntimeError("rede"))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_excecao(self, *_):
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
 
 
 class TestResponderPergunta(unittest.TestCase):
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
         self.assertFalse(mag.responder_pergunta("q1", "resposta"))
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_sucesso(self, mock_request):
         mock_request.return_value = _resp(200)
         self.assertTrue(mag.responder_pergunta("q1", "resposta"))
+        url = mock_request.call_args[0][1]
+        self.assertIn("/v0/questions/q1/answer", url)
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_excecao(self, mock_request):
         mock_request.return_value = _resp(500, text="erro")
@@ -188,7 +182,7 @@ class TestManterContaAtiva(unittest.TestCase):
         mock_dias.assert_called_with("magalu")
 
     @patch.object(mag, "dias_sem_acesso", return_value=5)
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self, *_):
         out = mag.manter_conta_ativa()
@@ -198,7 +192,6 @@ class TestManterContaAtiva(unittest.TestCase):
     @patch.object(mag, "registrar_acesso")
     @patch.object(mag, "dias_sem_acesso", side_effect=[2, 0])
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_sucesso(self, mock_request, mock_dias, mock_registrar):
         mock_request.return_value = _resp(200, {"data": []})
@@ -209,7 +202,6 @@ class TestManterContaAtiva(unittest.TestCase):
 
     @patch.object(mag, "dias_sem_acesso", side_effect=[2, 2])
     @patch.object(mag, "request", side_effect=RuntimeError("keepalive"))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_falha_keepalive(self, *_):
         out = mag.manter_conta_ativa()
@@ -218,7 +210,7 @@ class TestManterContaAtiva(unittest.TestCase):
 
 
 class TestObterSaudeConta(unittest.TestCase):
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
         out = mag.obter_saude_conta()
@@ -232,7 +224,6 @@ class TestObterSaudeConta(unittest.TestCase):
         "_listar_perguntas_nao_respondidas_detalhado",
         return_value=([{"id": 1}, {"id": 2}], True),
     )
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_configurado(self, *_):
         out = mag.obter_saude_conta()
@@ -241,27 +232,24 @@ class TestObterSaudeConta(unittest.TestCase):
 
 
 class TestAtualizarPreco(unittest.TestCase):
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
         self.assertFalse(mag.atualizar_preco_item("SKU", 10))
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_sucesso(self, mock_request):
         mock_request.return_value = _resp(200)
         self.assertTrue(mag.atualizar_preco_item("SKU1", 19.9))
 
     @patch.object(mag, "request", side_effect=RuntimeError("rede"))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_excecao(self, *_):
         self.assertFalse(mag.atualizar_preco_item("SKU", 10))
 
     @patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "ROBO_PAUSAR_ESCRITA"})
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_kill_switch_bloqueia_preco(self, mock_request, *_):
         self.assertFalse(mag.atualizar_preco_item("SKU1", 19.9))
@@ -271,21 +259,19 @@ class TestAtualizarPreco(unittest.TestCase):
 class TestAtualizarEstoque(unittest.TestCase):
     @patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "bloqueado"})
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_kill_switch_bloqueia_sem_http(self, mock_request, *_):
         self.assertFalse(mag.atualizar_estoque_item("SKU1", 5))
         mock_request.assert_not_called()
 
     @patch("core.guardrails.bloqueio_escrita_global", return_value=None)
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self, *_):
         self.assertFalse(mag.atualizar_estoque_item("SKU1", 5))
 
     @patch("core.guardrails.bloqueio_escrita_global", return_value=None)
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_sucesso(self, mock_request, *_):
         mock_request.return_value = _resp(200)
@@ -293,20 +279,18 @@ class TestAtualizarEstoque(unittest.TestCase):
 
     @patch("core.guardrails.bloqueio_escrita_global", return_value=None)
     @patch.object(mag, "request", side_effect=RuntimeError("rede"))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_excecao(self, *_):
         self.assertFalse(mag.atualizar_estoque_item("SKU1", 5))
 
 
 class TestListarPedidos(unittest.TestCase):
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
         self.assertEqual(mag.listar_pedidos(), [])
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_pedido_recente_dentro_janela(self, mock_request):
         mock_request.return_value = _resp(
@@ -329,7 +313,6 @@ class TestListarPedidos(unittest.TestCase):
         self.assertEqual(pedidos[0]["itens"][0]["sku"], "SKU1")
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_pedido_antigo_filtrado(self, mock_request):
         mock_request.return_value = _resp(
@@ -349,7 +332,6 @@ class TestListarPedidos(unittest.TestCase):
         self.assertEqual(mag.listar_pedidos(dias=7), [])
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_pedido_sem_id_ignorado(self, mock_request):
         mock_request.return_value = _resp(
@@ -368,20 +350,17 @@ class TestListarPedidos(unittest.TestCase):
         self.assertEqual(mag.listar_pedidos(dias=7), [])
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_status_nao_200(self, mock_request):
         mock_request.return_value = _resp(401, text="unauthorized")
         self.assertEqual(mag.listar_pedidos(), [])
 
     @patch.object(mag, "request", side_effect=RuntimeError("rede"))
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_excecao(self, *_):
         self.assertEqual(mag.listar_pedidos(), [])
 
     @patch.object(mag, "request")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_body_nao_lista(self, mock_request):
         mock_request.return_value = _resp(200, {"data": "invalido"})
@@ -391,11 +370,11 @@ class TestListarPedidos(unittest.TestCase):
 class TestHelpers(unittest.TestCase):
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
     @patch.object(mag, "get_token_magalu", return_value="refreshed")
-    @patch.object(mag, "MAGALU_MERCHANT_ID", "m1")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
     def test_headers_usa_token_renovado(self, *_):
         headers = mag._h()
         self.assertEqual(headers["Authorization"], "Bearer refreshed")
+        self.assertNotIn("X-Seller-Id", headers)
 
 
 if __name__ == "__main__":
