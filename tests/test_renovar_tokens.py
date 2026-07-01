@@ -10,7 +10,7 @@ Behaviors cobertos:
   RT02: _tem_credenciais retorna False quando alguma var ausente
   RT03: _tem_credenciais retorna False quando var vazia
   RT04: main retorna exit_code 0 quando sem credenciais ML/Shopee/Magalu
-  RT05: main imprime mensagem do Bling (renovacao manual)
+  RT05: main imprime mensagem de Bling pausado (renovação automática desativada)
   RT06: main imprime mensagem quando sem credenciais
   RT07: main retorna exit_code 1 quando token_manager falha com credencial real
   RT08: main nao levanta excecao quando token_manager lanca excecao
@@ -100,13 +100,14 @@ class TestMain(unittest.TestCase):
         self.assertEqual(resultado, 0)
 
     # RT05
-    def test_RT05_imprime_mensagem_bling_manual(self):
+    def test_RT05_imprime_mensagem_bling_pausado(self):
         with patch.dict(os.environ, self._env_vazio()):
             m = _reload({})
             saida = StringIO()
             with patch("sys.stdout", saida):
                 m.main()
-        self.assertIn("pegar_token_bling", saida.getvalue())
+        self.assertIn("PAUSADO", saida.getvalue())
+        self.assertIn("empresa vinculada ao token inativa", saida.getvalue())
 
     # RT06
     def test_RT06_imprime_sem_credencial_quando_vazio(self):
@@ -218,18 +219,14 @@ class TestWriteBackBling(unittest.TestCase):
 
     def test_bling_fora_actions_apenas_imprime(self):
         env = dict(self._ENV_BASE)
-        res_bling = {"ok": True, "access_token": "acc_novo", "refresh_token": "ref_novo"}
         saida = StringIO()
         with patch.dict(os.environ, env, clear=False):
-            with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res_bling), \
-                 patch.object(mod, "_sync_secrets_github") as sync, \
+            with patch.object(mod, "_sync_secrets_github") as sync, \
                  patch("sys.stdout", saida):
                 code = mod.main()
         sync.assert_not_called()
         out = saida.getvalue()
-        self.assertIn("BLING_ACCESS_TOKEN", out)
-        self.assertIn("acc_novo", out)
-        self.assertIn("ref_novo", out)
+        self.assertIn("PAUSADO", out)
         self.assertEqual(code, 0)
 
     def test_bling_sync_falha_em_actions(self):
@@ -263,19 +260,15 @@ class TestAlertaTokenTravado(unittest.TestCase):
         importlib.reload(mod)
         mod._provedores_alertados.clear()
 
-    def test_bling_travado_dispara_alerta_uma_vez(self):
+    def test_bling_travado_nao_dispara_alerta_enquanto_pausado(self):
         res = {"ok": False, "motivo": "falha ao renovar (refresh expirado/inválido?)"}
         with patch.dict(os.environ, self._ENV_BLING, clear=False):
             with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res), \
                  patch.object(mod, "alertar_critico") as mock_alerta, \
                  patch("builtins.print"):
                 code = mod.main()
-        self.assertEqual(code, 1)
-        mock_alerta.assert_called_once()
-        texto = mock_alerta.call_args[0][0]
-        self.assertIn("BLING TRAVADO", texto)
-        self.assertIn("pegar_token_bling.py", texto)
-        self.assertNotIn("old_ref", texto)
+        self.assertEqual(code, 0)
+        mock_alerta.assert_not_called()
 
     def test_bling_sucesso_nao_dispara_alerta(self):
         res = {"ok": True, "access_token": "acc_novo", "refresh_token": "ref_novo"}
@@ -287,26 +280,24 @@ class TestAlertaTokenTravado(unittest.TestCase):
         self.assertEqual(code, 0)
         mock_alerta.assert_not_called()
 
-    def test_bling_excecao_dispara_alerta(self):
+    def test_bling_excecao_nao_dispara_alerta_enquanto_pausado(self):
         with patch.dict(os.environ, self._ENV_BLING, clear=False):
             with patch(
                 "core.token_manager.renovar_token_bling_detalhado",
                 side_effect=RuntimeError("rede indisponível"),
             ), patch.object(mod, "alertar_critico") as mock_alerta, patch("builtins.print"):
                 code = mod.main()
-        self.assertEqual(code, 1)
-        mock_alerta.assert_called_once()
-        self.assertIn("BLING TRAVADO", mock_alerta.call_args[0][0])
+        self.assertEqual(code, 0)
+        mock_alerta.assert_not_called()
 
-    def test_bling_invalid_client_diferencia_secret(self):
+    def test_bling_invalid_client_nao_dispara_alerta_enquanto_pausado(self):
         res = {"ok": False, "motivo": "invalid_client — Client authentication failed"}
         with patch.dict(os.environ, self._ENV_BLING, clear=False):
             with patch("core.token_manager.renovar_token_bling_detalhado", return_value=res), \
                  patch.object(mod, "alertar_critico") as mock_alerta, \
                  patch("builtins.print"):
                 mod.main()
-        texto = mock_alerta.call_args[0][0]
-        self.assertIn("CLIENT_SECRET", texto)
+        mock_alerta.assert_not_called()
 
     def test_ml_travado_dispara_alerta(self):
         env = {
