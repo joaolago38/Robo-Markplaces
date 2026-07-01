@@ -124,34 +124,47 @@ def main() -> int:
     quer_sync = os.getenv("BLING_SYNC_GITHUB", "").strip().lower() in {"1", "true", "yes"}
 
     print("\n[Bling]")
-    tem_bling = _tem_credenciais(["BLING_CLIENT_ID", "BLING_CLIENT_SECRET", "BLING_REFRESH_TOKEN"])
-    if not tem_bling:
-        print("  Sem CLIENT_ID/SECRET/REFRESH_TOKEN — renovacao manual via pegar_token_bling.py")
-    else:
-        try:
-            from core.token_manager import renovar_token_bling_detalhado
-            res_bling = renovar_token_bling_detalhado()
-            if res_bling.get("ok"):
-                print("  bling: ok — token renovado")
-                novo_refresh = res_bling.get("refresh_token")
-                # BLING_* no GitHub: sincronizado em _renovar_token_bling() quando GITHUB_ACTIONS=true.
-                if not em_actions and not quer_sync:
-                    print("  ATENCAO: o Bling rotaciona o refresh_token a cada renovacao.")
-                    print("  Atualize os secrets com os novos valores abaixo, senao a")
-                    print("  proxima execucao falhara (o refresh_token antigo foi invalidado):")
-                    print(f"    BLING_ACCESS_TOKEN  -> {res_bling.get('access_token')}")
-                    print(f"    BLING_REFRESH_TOKEN -> {novo_refresh}")
-            else:
-                motivo = str(res_bling.get("motivo", "") or "")
-                print(f"  bling: falhou — {motivo}")
-                print("  Se o refresh_token expirou, gere um novo com pegar_token_bling.py")
-                _alertar_token_travado("bling", motivo)
-                exit_code = 1
-        except Exception as exc:
-            print(f"  bling: ERRO — {exc}")
-            print("  Renovacao manual via pegar_token_bling.py")
-            _alertar_token_travado("bling", str(exc))
-            exit_code = 1
+    # ──────────────────────────────────────────────────────────────
+    # PAUSADO em 01/07/2026: renovação automática do Bling desativada
+    # de propósito. Causa raiz NÃO é bug de código — é a empresa
+    # vinculada ao token estar marcada como inativa no painel do
+    # Bling (HTTP 403 "A empresa vinculada ao token está inativa").
+    # Renovar o token não resolve isso; é preciso resolver a
+    # ativação da conta direto no Bling primeiro.
+    #
+    # Pra reativar: descomente o bloco original abaixo (git blame /
+    # histórico deste arquivo, commit da pausa) assim que a conta
+    # Bling estiver ativa de novo, e confirme rodando manualmente:
+    #     python -c "from core.token_manager import renovar_token_bling_detalhado; print(renovar_token_bling_detalhado())"
+    # ──────────────────────────────────────────────────────────────
+    print("  bling: PAUSADO (renovação automática desativada manualmente)")
+    print("  Motivo: empresa vinculada ao token inativa no painel Bling (HTTP 403).")
+    print("  Ação: resolver a ativação da conta no Bling, depois reativar este bloco em scripts/renovar_tokens.py.")
+
+    # try:
+    #     from core.token_manager import renovar_token_bling_detalhado
+    #     res_bling = renovar_token_bling_detalhado()
+    #     if res_bling.get("ok"):
+    #         print("  bling: ok — token renovado")
+    #         novo_refresh = res_bling.get("refresh_token")
+    #         # BLING_* no GitHub: sincronizado em _renovar_token_bling() quando GITHUB_ACTIONS=true.
+    #         if not em_actions and not quer_sync:
+    #             print("  ATENCAO: o Bling rotaciona o refresh_token a cada renovacao.")
+    #             print("  Atualize os secrets com os novos valores abaixo, senao a")
+    #             print("  proxima execucao falhara (o refresh_token antigo foi invalidado):")
+    #             print(f"    BLING_ACCESS_TOKEN  -> {res_bling.get('access_token')}")
+    #             print(f"    BLING_REFRESH_TOKEN -> {novo_refresh}")
+    #     else:
+    #         motivo = str(res_bling.get("motivo", "") or "")
+    #         print(f"  bling: falhou — {motivo}")
+    #         print("  Se o refresh_token expirou, gere um novo com pegar_token_bling.py")
+    #         _alertar_token_travado("bling", motivo)
+    #         exit_code = 1
+    # except Exception as exc:
+    #     print(f"  bling: ERRO — {exc}")
+    #     print("  Renovacao manual via pegar_token_bling.py")
+    #     _alertar_token_travado("bling", str(exc))
+    #     exit_code = 1
 
     print("\n[Meta]")
     tem_meta = _tem_credenciais(["META_APP_ID", "META_APP_SECRET", "META_ACCESS_TOKEN"])
