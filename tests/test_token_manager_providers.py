@@ -234,16 +234,22 @@ class TestTokenManagerProviders(unittest.TestCase):
     @patch.object(tm, "get_token_shopee", return_value="sp")
     @patch.object(tm, "get_token_magalu", return_value="mg")
     @patch.object(tm, "get_token_bling", return_value="bl")
+    @patch.object(tm, "get_token_amazon", return_value="amz")
     def test_garantir_tokens_marketplaces(self, *_):
         out = tm.garantir_tokens_marketplaces()
         self.assertTrue(all(out.values()))
+        self.assertIn("amazon", out)
 
     @patch.object(tm, "_renovar_token_ml", return_value="ml")
     @patch.object(tm, "_renovar_token_shopee", return_value="sp")
     @patch.object(tm, "_renovar_token_magalu", return_value="mg")
+    @patch.object(tm, "_renovar_token_amazon", return_value="amz")
     def test_renovar_todos_tokens(self, *_):
         out = tm.renovar_todos_tokens()
         self.assertTrue(out["mercadolivre"]["ok"])
+        self.assertTrue(out["shopee"]["ok"])
+        self.assertTrue(out["magalu"]["ok"])
+        self.assertTrue(out["amazon"]["ok"])
 
     @patch.object(tm, "_renovar_token_bling", return_value=None)
     @patch.multiple(cfg, BLING_CLIENT_ID="c", BLING_CLIENT_SECRET="s", BLING_REFRESH_TOKEN="r")

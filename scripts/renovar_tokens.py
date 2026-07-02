@@ -28,6 +28,7 @@ except Exception as exc:
 CREDENCIAIS_ML = ["ML_CLIENT_ID", "ML_CLIENT_SECRET", "ML_REFRESH_TOKEN"]
 CREDENCIAIS_SHOPEE = ["SHOPEE_PARTNER_ID", "SHOPEE_PARTNER_KEY", "SHOPEE_SHOP_ID"]
 CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_REFRESH_TOKEN"]
+CREDENCIAIS_AMAZON = ["AMAZON_LWA_CLIENT_ID", "AMAZON_LWA_CLIENT_SECRET", "AMAZON_REFRESH_TOKEN"]
 CREDENCIAIS_BLING_PROBE = ["BLING_CLIENT_ID", "BLING_CLIENT_SECRET", "BLING_REFRESH_TOKEN"]
 
 _provedores_alertados: set[str] = set()
@@ -146,6 +147,7 @@ def _alertar_token_travado(provedor: str, motivo: str) -> None:
             "magalu": "MAGALU",
             "shopee": "SHOPEE",
             "meta": "META",
+            "amazon": "AMAZON",
         }
         rotulo = rotulos.get(chave, provedor.upper())
         msg = (
@@ -244,13 +246,14 @@ def main() -> int:
             _alertar_token_travado("meta", str(exc))
             exit_code = 1
 
-    print("\n[ML / Shopee / Magalu]")
+    print("\n[ML / Shopee / Magalu / Amazon]")
 
     tem_ml     = _tem_credenciais(CREDENCIAIS_ML)
     tem_shopee = _tem_credenciais(CREDENCIAIS_SHOPEE)
     tem_magalu = _tem_credenciais(CREDENCIAIS_MAGALU)
+    tem_amazon = _tem_credenciais(CREDENCIAIS_AMAZON)
 
-    if not tem_ml and not tem_shopee and not tem_magalu:
+    if not tem_ml and not tem_shopee and not tem_magalu and not tem_amazon:
         print("  Nenhuma credencial configurada — ignorado")
         print("\n" + "=" * 60)
         print(f"Concluido — exit code: {exit_code}")
@@ -264,6 +267,7 @@ def main() -> int:
             "mercadolivre": not tem_ml,
             "shopee":       not tem_shopee,
             "magalu":       not tem_magalu,
+            "amazon":       not tem_amazon,
         }
 
         for nome, payload in sorted(resultados.items()):
@@ -324,6 +328,14 @@ def main() -> int:
 
             tk = tokens_magalu_atuais()
             if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="MAGALU"):
+                exit_code = 1
+
+        amazon_ok = resultados.get("amazon", {}).get("ok")
+        if amazon_ok and tem_amazon and (em_actions or quer_sync):
+            from core.token_manager import tokens_amazon_atuais
+
+            tk = tokens_amazon_atuais()
+            if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="AMAZON"):
                 exit_code = 1
 
     except Exception as exc:
