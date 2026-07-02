@@ -171,7 +171,36 @@ def _responder_callback(callback_query_id: str, texto: str) -> None:
         logger.error("Telegram answerCallbackQuery erro: %s", mascarar_url_telegram(str(e)))
 
 
-def perguntar_gestor_e_aguardar(pergunta: str, timeout_segundos: int = 600) -> bool:
+def _gerar_justificativa_decisao(contexto_decisao: dict) -> str | None:
+    """Gera até 2 linhas de contexto via Claude. Retorna None se indisponível ou falhar."""
+    if not contexto_decisao:
+        return None
+    try:
+        from core.resumo_ia import sintetizar_claude
+
+        prompt_partes = [
+            "Em NO MÁXIMO 2 linhas, contextualize a decisão pendente para o gestor.",
+            "NÃO sugira SIM nem NÃO — apenas explique o contexto (gatilho, mudanças recentes).",
+        ]
+        if contexto_decisao.get("sazonalidade_out_dez"):
+            prompt_partes.append(
+                "Com sazonalidade_out_dez=true, confirme em 1 linha se o padrão sazonal "
+                "residual faz sentido dado nota média e ACOS no contexto — sem mudar a decisão, "
+                "apenas sinalize concordância ou discordância para leitura do gestor."
+            )
+        prompt = " ".join(prompt_partes)
+        texto = sintetizar_claude(prompt, contexto_decisao, "", max_tokens=150)
+        return texto.strip() or None
+    except Exception as exc:
+        logger.error("justificativa_decisao claude: %s", exc)
+        return None
+
+
+def perguntar_gestor_e_aguardar(
+    pergunta: str,
+    timeout_segundos: int = 600,
+    contexto_decisao: dict | None = None,
+) -> bool:
     """
     Envia uma pergunta ao gestor via Telegram com botões SIM/NÃO (inline keyboard).
     Aguarda resposta por até timeout_segundos (padrão: 10 minutos).
@@ -183,12 +212,18 @@ def perguntar_gestor_e_aguardar(pergunta: str, timeout_segundos: int = 600) -> b
         return True
     url_base = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
     try:
+        texto_msg = f"❓ *Confirmação necessária*\n\n{pergunta}"
+        if contexto_decisao is not None:
+            justificativa = _gerar_justificativa_decisao(contexto_decisao)
+            if justificativa:
+                texto_msg += f"\n\n💡 *Contexto:*\n{justificativa}"
+        texto_msg += "\n\n_Responda abaixo:_"
         sm = request(
             "POST",
             f"{url_base}/sendMessage",
             json={
                 "chat_id": TELEGRAM_GESTOR_CHAT_ID,
-                "text": f"❓ *Confirmação necessária*\n\n{pergunta}\n\n_Responda abaixo:_",
+                "text": texto_msg,
                 "parse_mode": "Markdown",
                 "reply_markup": {
                     "inline_keyboard": [[
