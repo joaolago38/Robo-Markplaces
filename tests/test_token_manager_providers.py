@@ -202,6 +202,22 @@ class TestTokenManagerProviders(unittest.TestCase):
         out = tm._renovar_token_shopee()
         self.assertEqual(out, "sp_at")
 
+    @patch.object(tm, "request")
+    @patch.multiple(
+        cfg,
+        SHOPEE_PARTNER_ID="...",
+        SHOPEE_PARTNER_KEY="key",
+        SHOPEE_SHOP_ID="...",
+        SHOPEE_REFRESH_TOKEN="rt",
+    )
+    def test_shopee_ids_nao_numericos(self, mock_request):
+        tm._shopee_refresh_efetivo["valor"] = "rt"
+        with self.assertLogs("token_manager", level="ERROR") as logs:
+            out = tm._renovar_token_shopee()
+        self.assertIsNone(out)
+        mock_request.assert_not_called()
+        self.assertIn("numéricos", logs.output[0])
+
     @patch.object(tm, "get_token_ml", return_value="cached")
     def test_get_token_ml_usa_cache(self, *_):
         tm._token_cache_ml["access_token"] = "cached"

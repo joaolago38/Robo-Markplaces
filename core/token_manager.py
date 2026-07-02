@@ -376,6 +376,15 @@ def _renovar_token_shopee():
         logger.error("Credenciais Shopee ausentes para renovação de token.")
         return None
 
+    pid = (cfg.SHOPEE_PARTNER_ID or "").strip()
+    sid = (cfg.SHOPEE_SHOP_ID or "").strip()
+    if not pid.isdigit() or not sid.isdigit():
+        logger.error(
+            "Shopee mal configurado: SHOPEE_PARTNER_ID/SHOPEE_SHOP_ID devem ser numéricos "
+            "(valor atual não é um ID válido)"
+        )
+        return None
+
     ts = int(time.time())
     sign = _assinar_shopee_auth_sem_acesso(path, ts)
     qs = urllib.parse.urlencode({"partner_id": int(cfg.SHOPEE_PARTNER_ID), "timestamp": ts, "sign": sign})
