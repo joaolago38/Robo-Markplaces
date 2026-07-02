@@ -13,6 +13,7 @@ from core.http_client import request
 logger = logging.getLogger("claude")
 API_URL = "https://api.anthropic.com/v1/messages"
 MODELO = "claude-sonnet-4-5"
+MODELO_RAPIDO = "claude-haiku-4-5"
 
 SYSTEM = """
 Você é o agente de vendas de uma distribuidora de esmaltes para manicures.
@@ -26,22 +27,46 @@ def perguntar(
     max_tokens: int = 500,
     contexto: str | None = None,
     system: str | None = None,
+    imagens: list[str] | None = None,
+    modelo: str | None = None,
 ) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
-    mensagem = f"{contexto}\n\n{prompt}" if contexto else prompt
-    _tags = [f"modelo:{MODELO}"]
+    mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
+
+    content: list[dict] = []
+    for url in (imagens or [])[:5]:
+        url = (url or "").strip()
+        if not url:
+            continue
+        content.append(
+            {
+                "type": "image",
+                "source": {"type": "url", "url": url},
+            }
+        )
+    content.append({"type": "text", "text": mensagem_texto})
+
+    modelo_efetivo = modelo or MODELO
+    _tags = [f"modelo:{modelo_efetivo}", f"com_imagem:{bool(imagens)}"]
     inicio = time.monotonic()
     try:
         r = request("POST", API_URL, headers={
             "x-api-key": ANTHROPIC_API_KEY,
             "anthropic-version": "2023-06-01",
+            "anthropic-beta": "prompt-caching-2024-07-31",
             "content-type": "application/json",
         }, json={
-            "model": MODELO,
+            "model": modelo_efetivo,
             "max_tokens": max_tokens,
-            "system": system or SYSTEM,
-            "messages": [{"role": "user", "content": mensagem}],
+            "system": [
+                {
+                    "type": "text",
+                    "text": system or SYSTEM,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            "messages": [{"role": "user", "content": content}],
         }, timeout=30)
         r.raise_for_status()
         data = r.json()
@@ -51,12 +76,12 @@ def perguntar(
         if uso:
             incrementar("ia.tokens_entrada", uso.get("input_tokens", 0) or 0, tags=_tags)
             incrementar("ia.tokens_saida", uso.get("output_tokens", 0) or 0, tags=_tags)
-        content = data.get("content", [])
-        if not content:
+        conteudo_resposta = data.get("content", [])
+        if not conteudo_resposta:
             incrementar("ia.resposta_vazia", tags=_tags)
             logger.error("Claude sem conteúdo na resposta: %s", data)
             return "⚠️ Erro na IA: resposta vazia."
-        return content[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
+        return conteudo_resposta[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
     except ValueError as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:json_invalido"])
         logger.error(
@@ -71,6 +96,78 @@ def perguntar(
             extra={"error_kind": type(e).__name__, "error_message": str(e)},
         )
         return "⚠️ Erro na IA: falha de comunicação com o provedor."
+
+def perguntar_estruturado(
+    prompt: str,
+    schema: dict,
+    tool_name: str,
+    *,
+    max_tokens: int = 600,
+    contexto: str | None = None,
+    system: str | None = None,
+    modelo: str | None = None,
+) -> dict | None:
+    """
+    Como `perguntar`, mas força a resposta a seguir `schema` (JSON Schema
+    de um único tool) via tool use, em vez de texto livre. Retorna o dict
+    já parseado, ou None em caso de falha (nunca lança exceção).
+    Use quando o consumidor da resposta precisa de campos previsíveis
+    (ex.: lista de sugestões) em vez de um texto pra exibir direto.
+    """
+    if not ANTHROPIC_API_KEY:
+        logger.warning("perguntar_estruturado sem ANTHROPIC_API_KEY.")
+        return None
+    mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
+    modelo_efetivo = modelo or MODELO
+    _tags = [f"modelo:{modelo_efetivo}", f"tool:{tool_name}"]
+    inicio = time.monotonic()
+    try:
+        r = request("POST", API_URL, headers={
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+            "anthropic-beta": "prompt-caching-2024-07-31",
+            "content-type": "application/json",
+        }, json={
+            "model": modelo_efetivo,
+            "max_tokens": max_tokens,
+            "system": [
+                {
+                    "type": "text",
+                    "text": system or SYSTEM,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            "messages": [{"role": "user", "content": mensagem_texto}],
+            "tools": [
+                {
+                    "name": tool_name,
+                    "description": f"Preenche a estrutura de saída para {tool_name}.",
+                    "input_schema": schema,
+                }
+            ],
+            "tool_choice": {"type": "tool", "name": tool_name},
+        }, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        duracao_ms = (time.monotonic() - inicio) * 1000
+        gauge("ia.latencia_ms", duracao_ms, tags=_tags)
+        uso = data.get("usage") or {}
+        if uso:
+            incrementar("ia.tokens_entrada", uso.get("input_tokens", 0) or 0, tags=_tags)
+            incrementar("ia.tokens_saida", uso.get("output_tokens", 0) or 0, tags=_tags)
+        for bloco in data.get("content", []):
+            if bloco.get("type") == "tool_use" and bloco.get("name") == tool_name:
+                return bloco.get("input") or {}
+        incrementar("ia.resposta_vazia", tags=_tags)
+        logger.error("Claude não retornou tool_use esperado (%s): %s", tool_name, data)
+        return None
+    except Exception as e:
+        incrementar("ia.erro", tags=[*_tags, "tipo:estruturado"])
+        logger.error(
+            "Claude erro (estruturado, tool=%s): %s", tool_name, e,
+            extra={"error_kind": type(e).__name__, "error_message": str(e)},
+        )
+        return None
 
 def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
     pergunta_txt = (pergunta or "").strip()

@@ -42,7 +42,8 @@ class TestClaudePerguntar(unittest.TestCase):
         mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
         claude_client.perguntar("pergunta", system="outro system")
         payload = mock_request.call_args.kwargs["json"]
-        self.assertEqual(payload["system"], "outro system")
+        self.assertEqual(payload["system"][0]["text"], "outro system")
+        self.assertEqual(payload["system"][0]["cache_control"], {"type": "ephemeral"})
 
     @patch.object(claude_client, "request")
     @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
@@ -50,7 +51,70 @@ class TestClaudePerguntar(unittest.TestCase):
         mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
         claude_client.perguntar("pergunta")
         payload = mock_request.call_args.kwargs["json"]
-        self.assertEqual(payload["system"], claude_client.SYSTEM)
+        self.assertEqual(payload["system"][0]["text"], claude_client.SYSTEM)
+        self.assertEqual(payload["system"][0]["cache_control"], {"type": "ephemeral"})
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC08_pergunta_com_imagens_envia_blocos_multimodal(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("pergunta", imagens=["https://x/foto.jpg"])
+        payload = mock_request.call_args.kwargs["json"]
+        content = payload["messages"][0]["content"]
+        self.assertEqual(content[0]["type"], "image")
+        self.assertEqual(content[0]["source"]["url"], "https://x/foto.jpg")
+        self.assertEqual(content[1]["type"], "text")
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC09_pergunta_sem_imagens_content_so_texto(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("pergunta")
+        content = mock_request.call_args.kwargs["json"]["messages"][0]["content"]
+        self.assertEqual(len(content), 1)
+        self.assertEqual(content[0]["type"], "text")
+        self.assertEqual(content[0]["text"], "pergunta")
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC10_pergunta_system_com_cache_control(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("pergunta")
+        system = mock_request.call_args.kwargs["json"]["system"]
+        self.assertIsInstance(system, list)
+        self.assertEqual(system[0]["cache_control"], {"type": "ephemeral"})
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC11_perguntar_estruturado_retorna_input_tool(self, mock_request, *_patches):
+        esperado = {"sugestoes": [{"titulo": "A", "motivo": "B"}]}
+        mock_request.return_value = _mock_resp({
+            "content": [{"type": "tool_use", "name": "meu_tool", "input": esperado}],
+        })
+        out = claude_client.perguntar_estruturado("p", {"type": "object"}, "meu_tool")
+        self.assertEqual(out, esperado)
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC12_perguntar_estruturado_sem_tool_use_retorna_none(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"type": "text", "text": "x"}]})
+        out = claude_client.perguntar_estruturado("p", {"type": "object"}, "meu_tool")
+        self.assertIsNone(out)
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_CC13_modelo_customizado_no_payload(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("p", modelo="claude-haiku-4-5")
+        payload = mock_request.call_args.kwargs["json"]
+        self.assertEqual(payload["model"], "claude-haiku-4-5")
+        mock_request.reset_mock()
+        mock_request.return_value = _mock_resp({
+            "content": [{"type": "tool_use", "name": "t", "input": {}}],
+        })
+        claude_client.perguntar_estruturado("p", {"type": "object"}, "t", modelo="claude-haiku-4-5")
+        payload = mock_request.call_args.kwargs["json"]
+        self.assertEqual(payload["model"], "claude-haiku-4-5")
 
 
 class TestClaudeResponderGerar(unittest.TestCase):
