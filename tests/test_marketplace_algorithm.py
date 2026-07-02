@@ -1,6 +1,10 @@
 import os
+import shutil
 import sys
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 from uuid import uuid4
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -9,6 +13,16 @@ from core.marketplace_algorithm import avaliar_marketplace
 
 
 class MarketplaceAlgorithmTests(unittest.TestCase):
+    def setUp(self):
+        self._tmpdir = tempfile.mkdtemp()
+        self._history = Path(self._tmpdir) / "marketplace_algorithm_history.json"
+        self._patch = patch("core.marketplace_algorithm.HISTORY_FILE", self._history)
+        self._patch.start()
+
+    def tearDown(self):
+        self._patch.stop()
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
     def test_marketplace_nao_configurado_vira_critico(self):
         out = avaliar_marketplace(
             "market_x_test",
