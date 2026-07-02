@@ -25,6 +25,33 @@ from integracoes.ml.ml_product_ads import aplicar_decisao_campanhas, campanhas_a
 logger = logging.getLogger("agente_ads_gatilho")
 
 
+def _contexto_decisao_ads(
+    decisao: str,
+    avaliacoes: int,
+    nota_media: float,
+    acos_atual: float,
+    full_ativo: bool,
+    budget_sugerido: float,
+    motivos: list[str],
+) -> dict:
+    """Contexto para justificativa Claude em perguntar_gestor_e_aguardar (item notificador)."""
+    ctx = {
+        "decisao": decisao,
+        "avaliacoes": avaliacoes,
+        "nota_media": nota_media,
+        "acos_atual": acos_atual,
+        "full_ativo": full_ativo,
+        "budget_sugerido_dia": budget_sugerido,
+        "motivos": motivos,
+        "mes_atual": datetime.now().month,
+    }
+    if datetime.now().month in (10, 11, 12) and any(
+        "sazonal" in m.lower() or "out-dez" in m.lower() for m in motivos
+    ):
+        ctx["sazonalidade_out_dez"] = True
+    return ctx
+
+
 def avaliar_momento_ads(
     avaliacoes: int,
     nota_media: float,
@@ -100,7 +127,8 @@ def avaliar_momento_ads(
             f"📋 Motivo: {motivos[0] if motivos else 'critérios atingidos'}\n\n"
             f"Deseja LIGAR o Product Ads agora?"
         )
-        confirmado = perguntar_gestor_e_aguardar(pergunta, timeout_segundos=600)
+        ctx = _contexto_decisao_ads(decisao, avaliacoes, nota_media, acos_atual, full_ativo, budget_sugerido, motivos)
+        confirmado = perguntar_gestor_e_aguardar(pergunta, timeout_segundos=600, contexto_decisao=ctx)
         resultado["confirmado_gestor"] = confirmado
         if confirmado:
             alertar_gestor(
@@ -121,7 +149,12 @@ def avaliar_momento_ads(
             f"📋 Motivo: {motivos[0] if motivos else 'ACOS acima do limite'}\n\n"
             f"Deseja PAUSAR o Product Ads agora?"
         )
-        confirmado = perguntar_gestor_e_aguardar(pergunta, timeout_segundos=600)
+        confirmado = perguntar_gestor_e_aguardar(
+            pergunta, timeout_segundos=600,
+            contexto_decisao=_contexto_decisao_ads(
+                decisao, avaliacoes, nota_media, acos_atual, full_ativo, budget_sugerido, motivos
+            ),
+        )
         resultado["confirmado_gestor"] = confirmado
         if confirmado:
             alertar_gestor(
@@ -143,7 +176,8 @@ def avaliar_momento_ads(
             f"📋 Motivo: {motivos[0] if motivos else 'critérios de escala atingidos'}\n\n"
             f"Deseja ESCALAR o budget de ads agora?"
         )
-        confirmado = perguntar_gestor_e_aguardar(pergunta, timeout_segundos=600)
+        ctx = _contexto_decisao_ads(decisao, avaliacoes, nota_media, acos_atual, full_ativo, budget_sugerido, motivos)
+        confirmado = perguntar_gestor_e_aguardar(pergunta, timeout_segundos=600, contexto_decisao=ctx)
         resultado["confirmado_gestor"] = confirmado
         if confirmado:
             alertar_gestor(
