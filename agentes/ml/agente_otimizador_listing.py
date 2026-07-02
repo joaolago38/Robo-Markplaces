@@ -33,6 +33,32 @@ _PROMPT_SUGESTOES = (
     "e um motivo curto para cada um, observando padrões dos concorrentes com mais vendas."
 )
 
+_SCHEMA_SUGESTOES_TITULO = {
+    "type": "object",
+    "properties": {
+        "sugestoes": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "titulo": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "description": "Título alternativo, até 60 caracteres.",
+                    },
+                    "motivo": {
+                        "type": "string",
+                        "description": "Motivo curto baseado em padrões dos concorrentes.",
+                    },
+                },
+                "required": ["titulo", "motivo"],
+            },
+        }
+    },
+    "required": ["sugestoes"],
+}
+
 SYSTEM_DESCRICAO = (
     "Você escreve descrições de anúncio para o Mercado Livre com base em dados reais "
     "fornecidos (próprio anúncio, descrição atual se houver, e concorrentes). "
@@ -151,11 +177,21 @@ def analisar_item(item_id: str) -> dict:
         concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
         contexto = _montar_contexto(metricas, concorrentes, descricao_atual)
 
-        sugestoes_titulo = perguntar(
+        from core.claude_client import perguntar_estruturado
+
+        sugestoes_estruturadas = perguntar_estruturado(
             _PROMPT_SUGESTOES,
+            _SCHEMA_SUGESTOES_TITULO,
+            tool_name="registrar_sugestoes_titulo",
             max_tokens=600,
             contexto=contexto,
             system=SYSTEM_OTIMIZADOR,
+        )
+        lista_sugestoes = (sugestoes_estruturadas or {}).get("sugestoes") or []
+        sugestoes_titulo = "\n".join(
+            f"{s.get('titulo', '')} — {s.get('motivo', '')}"
+            for s in lista_sugestoes
+            if isinstance(s, dict) and s.get("titulo")
         )
         sugestao_descricao = perguntar(
             _PROMPT_DESCRICAO,
@@ -172,10 +208,11 @@ def analisar_item(item_id: str) -> dict:
             "visitas_7d": metricas.get("visitas_7d", 0),
             "visitas_30d": metricas.get("visitas_30d", 0),
             "sugestoes_texto": sugestoes_titulo,
+            "sugestoes_estruturadas": lista_sugestoes,
             "sugestao_descricao": sugestao_descricao,
             "concorrentes_analisados": len(concorrentes),
         }
-        if _ia_falhou(sugestoes_titulo):
+        if sugestoes_estruturadas is None:
             resultado["ia_falhou"] = True
         if _ia_falhou(sugestao_descricao):
             resultado["ia_falhou_descricao"] = True

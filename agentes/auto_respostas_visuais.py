@@ -25,8 +25,7 @@ logger = logging.getLogger("auto_respostas_visuais")
 
 
 def _gerar_resposta_visual(pergunta: str, produto: dict, canal: str) -> str:
-    imagens = produto.get("imagens", [])
-    fotos_ctx = ", ".join(str(i) for i in imagens[:3]) if imagens else "sem fotos disponíveis"
+    imagens = [str(i) for i in (produto.get("imagens") or [])[:3] if i]
     prompt = f"""
 Responda como especialista em marketplace para manicures.
 Canal: {canal}
@@ -35,13 +34,18 @@ Produto: {produto.get('nome', 'N/D')}
 Preço: R$ {float(produto.get('preco', 0) or 0):.2f}
 Estoque: {produto.get('estoque') or 0}
 Descrição: {produto.get('descricao', '')}
-Fotos publicadas do produto: {fotos_ctx}
 
-Use as fotos como contexto para descrever cor/acabamento/kit quando aplicável.
-Se não houver certeza, diga que confirma detalhes visuais sem inventar.
+{"As fotos do produto estão anexadas acima — use-as para confirmar cor/acabamento/kit quando a pergunta for sobre aparência." if imagens else "Sem fotos disponíveis para este produto."}
+Se não houver certeza mesmo com as fotos, diga que confirma detalhes visuais sem inventar.
 Resposta objetiva em até 3 frases.
 """
-    return perguntar(prompt, max_tokens=220)
+    resposta = perguntar(prompt, max_tokens=220, imagens=imagens or None)
+    if resposta.startswith("⚠️"):
+        logger.warning(
+            "Resposta visual falhou com imagem, tentando sem imagem (canal=%s)", canal
+        )
+        resposta = perguntar(prompt, max_tokens=220)
+    return resposta
 
 
 def _processar_ml() -> dict:

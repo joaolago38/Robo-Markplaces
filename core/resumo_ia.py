@@ -35,6 +35,7 @@ def sintetizar_claude(
     fallback: str,
     *,
     max_tokens: int = 500,
+    modelo: str | None = None,
 ) -> str:
     """
     Chama Claude com guardrail obrigatório. Nunca propaga exceção — retorna fallback.
@@ -45,7 +46,7 @@ def sintetizar_claude(
     try:
         ctx_str = _contexto_json(contexto)
         prompt_completo = f"{GUARDRAIL}\n\n{prompt}\n\n{GUARDRAIL}"
-        resposta = perguntar(prompt_completo, max_tokens=max_tokens, contexto=ctx_str)
+        resposta = perguntar(prompt_completo, max_tokens=max_tokens, contexto=ctx_str, modelo=modelo)
         if not resposta or resposta.startswith("⚠️") or "API" in resposta:
             return fallback
         return resposta.strip()

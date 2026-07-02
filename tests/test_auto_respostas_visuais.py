@@ -15,8 +15,8 @@ class AutoRespostasVisuaisTests(unittest.TestCase):
         out = _gerar_resposta_visual("Qual o tom?", produto, "mercadolivre")
         self.assertEqual(out, "Resposta teste")
         args, kwargs = mock_perguntar.call_args
-        self.assertIn("Fotos publicadas do produto", args[0])
-        self.assertIn("https://img1", args[0])
+        self.assertIn("As fotos do produto estão anexadas acima", args[0])
+        self.assertEqual(kwargs.get("imagens"), ["https://img1"])
         self.assertEqual(kwargs["max_tokens"], 220)
 
 

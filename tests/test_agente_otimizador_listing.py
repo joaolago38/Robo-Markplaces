@@ -23,10 +23,10 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertIn("não encontrado", out["erro"].lower())
 
-    @patch.object(opt, "perguntar", side_effect=[
-        "1. Kit Impala 12 Cores - Profissional\nMotivo: palavras-chave",
-        "Descrição completa sugerida para o anúncio com bullet points.",
-    ])
+    @patch("core.claude_client.perguntar_estruturado", return_value={
+        "sugestoes": [{"titulo": "Kit Impala 12 Cores - Profissional", "motivo": "palavras-chave"}],
+    })
+    @patch.object(opt, "perguntar", return_value="Descrição completa sugerida para o anúncio com bullet points.")
     @patch.object(opt.ml_client, "buscar_descricao_item", return_value="Descrição antiga curta")
     @patch.object(
         opt.ml_client,
@@ -51,14 +51,11 @@ class TestAnalisarItem(unittest.TestCase):
         opt.ml_client.buscar_descricao_item.assert_called_once_with("MLB123")
 
         mock_perguntar = opt.perguntar
-        self.assertEqual(mock_perguntar.call_count, 2)
-        titulo_call = mock_perguntar.call_args_list[0]
-        self.assertEqual(titulo_call.kwargs.get("system"), opt.SYSTEM_OTIMIZADOR)
-        self.assertIn("Kit Atual", titulo_call.kwargs.get("contexto", ""))
-        self.assertIn("Descrição antiga curta", titulo_call.kwargs.get("contexto", ""))
-        desc_call = mock_perguntar.call_args_list[1]
+        mock_perguntar.assert_called_once()
+        desc_call = mock_perguntar.call_args
         self.assertEqual(desc_call.kwargs.get("system"), opt.SYSTEM_DESCRICAO)
 
+    @patch("core.claude_client.perguntar_estruturado", return_value=None)
     @patch.object(opt, "perguntar", return_value="⚠️ Erro na IA: falha de comunicação com o provedor.")
     @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
     @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "X", "preco": 10, "quantidade_vendida": 1}])
@@ -72,7 +69,7 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertTrue(out.get("ia_falhou"))
         self.assertTrue(out.get("ia_falhou_descricao"))
-        self.assertTrue(out["sugestoes_texto"].startswith("⚠️"))
+        self.assertEqual(out["sugestoes_texto"], "")
 
     @patch.object(opt, "perguntar", side_effect=RuntimeError("boom"))
     @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
@@ -87,10 +84,10 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertIn("boom", out["erro"])
 
-    @patch.object(opt, "perguntar", side_effect=[
-        "1. Título sugerido",
-        "⚠️ Erro na IA: falha de comunicação com o provedor.",
-    ])
+    @patch("core.claude_client.perguntar_estruturado", return_value={
+        "sugestoes": [{"titulo": "Título sugerido", "motivo": "ok"}],
+    })
+    @patch.object(opt, "perguntar", return_value="⚠️ Erro na IA: falha de comunicação com o provedor.")
     @patch.object(opt.ml_client, "buscar_descricao_item", return_value="Desc antiga")
     @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "C", "preco": 10, "quantidade_vendida": 1}])
     @patch.object(
@@ -104,7 +101,10 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertNotIn("ia_falhou", out)
         self.assertTrue(out.get("ia_falhou_descricao"))
 
-    @patch.object(opt, "perguntar", side_effect=["1. Título sugerido", "Texto de descrição sugerida"])
+    @patch("core.claude_client.perguntar_estruturado", return_value={
+        "sugestoes": [{"titulo": "Título sugerido", "motivo": "ok"}],
+    })
+    @patch.object(opt, "perguntar", return_value="Texto de descrição sugerida")
     @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
     @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "C", "preco": 10, "quantidade_vendida": 1}])
     @patch.object(
@@ -117,8 +117,24 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["descricao_atual"], "")
         self.assertIn("sugestao_descricao", out)
-        ctx = opt.perguntar.call_args_list[0].kwargs.get("contexto", "")
+        ctx = opt.perguntar.call_args.kwargs.get("contexto", "")
         self.assertIn("(sem descrição cadastrada)", ctx)
+
+    @patch("core.claude_client.perguntar_estruturado", return_value={
+        "sugestoes": [{"titulo": "X", "motivo": "Y"}],
+    })
+    @patch.object(opt, "perguntar", return_value="Descrição sugerida")
+    @patch.object(opt.ml_client, "buscar_descricao_item", return_value="")
+    @patch.object(opt.ml_client, "buscar_detalhes_concorrentes", return_value=[{"titulo": "C", "preco": 10, "quantidade_vendida": 1}])
+    @patch.object(
+        opt.ml_client,
+        "buscar_metricas_item",
+        return_value={"titulo": "Meu", "preco": 10, "estoque": 1, "visitas_7d": 2, "visitas_30d": 3, "status": "active"},
+    )
+    def test_sugestoes_estruturadas_monta_texto(self, *_):
+        out = opt.analisar_item("MLB-EST")
+        self.assertEqual(out["sugestoes_texto"], "X — Y")
+        self.assertEqual(out["sugestoes_estruturadas"], [{"titulo": "X", "motivo": "Y"}])
 
 
 class TestExecutar(unittest.TestCase):
