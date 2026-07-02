@@ -423,6 +423,76 @@ O pacote de automação está em `n8n/` com workflows prontos para importação:
 
 Guia de configuração: `n8n/README.md`.
 
+## Deploy AWS (Free Tier) — opcional
+
+Esta migração é **opcional e incremental**. Com `STORAGE_BACKEND=file` (padrão) ou sem
+deploy na AWS, o projeto continua funcionando exatamente como hoje — arquivos JSON
+locais, GitHub Actions nos crons, API via `python api/app.py`.
+
+A branch `feature/aws-free-tier-migration` adiciona suporte a:
+
+| Componente | Local (padrão) | AWS (opcional) |
+|------------|----------------|----------------|
+| Estado JSON | `core/atomic_io.py` → disco | `DynamoDBStateBackend` |
+| API Flask | `python api/app.py` :5000 | Lambda + Function URL |
+| Segredos (tokens) | GitHub Secrets (`github_secrets.py`) | SSM (`ssm_secrets.py`) |
+
+### Antes do primeiro deploy
+
+1. **Crie um AWS Budget de US$ 1** no console AWS (Billing → Budgets). Contas novas
+   usam créditos por 6 meses; se algo fora do Always Free for criado sem querer, você
+   é avisado no mesmo dia.
+2. Instale [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam.html)
+   e configure credenciais (`aws configure`).
+
+### Deploy com SAM
+
+```bash
+cd infra
+sam build
+sam deploy --guided --stack-name robo-markplaces-aws-teste
+```
+
+No `--guided`, aceite criar a role IAM e confirme a região. Anote a saída
+`ApiFunctionUrl` — é a URL para o n8n (com header `X-API-Key`).
+
+Para destruir tudo depois dos testes:
+
+```bash
+sam delete --stack-name robo-markplaces-aws-teste
+```
+
+### Trocar storage para DynamoDB
+
+1. Faça o deploy SAM (cria a tabela `robo-markplaces-estado-teste`).
+2. Migre os JSONs locais (idempotente):
+
+```bash
+export STORAGE_BACKEND=dynamodb
+export DYNAMODB_TABLE_NAME=robo-markplaces-estado-teste
+export AWS_REGION=us-east-1
+python scripts/migrar_estado_para_dynamodb.py
+# opcional: --dry-run para apenas listar
+```
+
+3. Na Lambda (ou localmente para testar), defina `STORAGE_BACKEND=dynamodb` e
+   `DYNAMODB_TABLE_NAME` com o nome da tabela criada.
+
+### Variáveis novas
+
+| Variável | Default | Descrição |
+|----------|---------|-----------|
+| `STORAGE_BACKEND` | `file` | `file` ou `dynamodb` |
+| `DYNAMODB_TABLE_NAME` | `robo-markplaces-state` | Tabela quando backend=dynamodb |
+| `AWS_REGION` | `us-east-1` | Região AWS |
+| `SSM_PARAMETER_PREFIX` | `/robo-markplaces` | Prefixo dos parâmetros SSM |
+
+### O que NÃO migra nesta fase
+
+- Workflows GitHub Actions (`.github/workflows/*.yml`) — continuam como estão.
+- `core/github_secrets.py` — continua para os crons no Actions.
+- EC2, RDS, NAT Gateway — não incluídos no template SAM.
+
 ## Qualidade recomendada
 
 - Lint: `ruff check .`

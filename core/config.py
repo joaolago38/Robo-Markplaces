@@ -181,6 +181,12 @@ DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", 
 # Ambiente exibido na tag `env:` no Datadog (production/staging/dev). Antes era fixo em "production".
 DD_ENV = os.getenv("DD_ENV", "production").strip() or "production"
 
+# Storage de estado (file = padrão local; dynamodb = AWS Free Tier)
+STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "file").strip().lower() or "file"
+DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "robo-markplaces-state").strip()
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1").strip() or "us-east-1"
+SSM_PARAMETER_PREFIX = os.getenv("SSM_PARAMETER_PREFIX", "/robo-markplaces").strip() or "/robo-markplaces"
+
 
 def _init_datadog_logging() -> None:
     from core.datadog_logger import configurar_logging_datadog

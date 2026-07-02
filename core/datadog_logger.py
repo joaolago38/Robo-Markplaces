@@ -52,6 +52,8 @@ _LOGGER_META = {
     "whatsapp": ("infra", "core"),
     "http_client": ("infra", "core"),
     "config": ("infra", "core"),
+    "state_backend": ("infra", "core"),
+    "ssm_secrets": ("infra", "core"),
 
     # --- Agentes (regras de negócio por marketplace) ---
     "agente_faturamento": ("bling", "agente"),
