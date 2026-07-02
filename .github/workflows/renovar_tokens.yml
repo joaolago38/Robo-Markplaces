@@ -1,4 +1,11 @@
 # Renovação preventiva de tokens — Shopee (~4h) e Magalu (~1–2h) especialmente curtos.
+#
+# SERIALIZAÇÃO DE RENOVAÇÃO DE TOKENS:
+# Vários workflows (renovar_tokens, chat_marketplaces, operacao_24h, etc.) podem
+# disparar renovação OAuth em paralelo. refresh_tokens de uso único (ML, Magalu,
+# Bling) rotacionam a cada refresh — duas execuções simultâneas deixam um token
+# órfão nos Secrets. O grupo `robo-markplaces-token-renewal` garante que só uma
+# renovação rode por vez em todo o repositório.
 name: Renovar tokens marketplace
 
 on:
@@ -7,6 +14,10 @@ on:
     # Shopee/Magalu têm TTL curto; reduza só se atualizar tokens por outro meio.
     - cron: "*/30 * * * *"
   workflow_dispatch:
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"

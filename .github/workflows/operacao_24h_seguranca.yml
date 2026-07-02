@@ -1,10 +1,18 @@
 name: Operacao 24h seguranca
 
+# SERIALIZAÇÃO DE RENOVAÇÃO DE TOKENS:
+# operacao_24h chama agentes que renovam tokens sob demanda; serializa com
+# renovar_tokens.yml e chat_marketplaces via grupo compartilhado abaixo.
+
 on:
   workflow_dispatch:
   schedule:
     # A cada 2h UTC (ex.: 0h UTC = 21h BRT do dia anterior)
     - cron: "0 */2 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"

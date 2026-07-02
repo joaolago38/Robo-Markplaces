@@ -1,11 +1,19 @@
 name: Conectividade marketplaces (ML, Magalu, Shopee, Amazon)
 
+# SERIALIZAÇÃO DE RENOVAÇÃO DE TOKENS:
+# probe_conexao pode disparar renovação antes da chamada real; serializa com
+# renovar_tokens.yml para não competir pelo mesmo refresh_token de uso único.
+
 on:
   workflow_dispatch:
   schedule:
     # A cada hora — checagem de conectividade REAL (não é renovação de
     # token, é confirmar que a API aceita o token de verdade).
     - cron: "0 * * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"
