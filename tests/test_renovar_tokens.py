@@ -100,7 +100,8 @@ class TestMain(unittest.TestCase):
         self.assertEqual(resultado, 0)
 
     # RT05
-    def test_RT05_imprime_mensagem_bling_pausado(self):
+    @patch.object(mod, "_probe_bling_conta_inativa", return_value="inativa")
+    def test_RT05_imprime_mensagem_bling_pausado(self, *_):
         with patch.dict(os.environ, self._env_vazio()):
             m = _reload({})
             saida = StringIO()
@@ -108,6 +109,22 @@ class TestMain(unittest.TestCase):
                 m.main()
         self.assertIn("PAUSADO", saida.getvalue())
         self.assertIn("empresa vinculada ao token inativa", saida.getvalue())
+
+    @patch.object(mod, "_probe_bling_conta_inativa", return_value="reativado")
+    def test_RT05b_avisa_quando_bling_parece_reativado(self, *_):
+        env = {
+            **self._env_vazio(),
+            "BLING_CLIENT_ID": "cid",
+            "BLING_CLIENT_SECRET": "sec",
+            "BLING_REFRESH_TOKEN": "ref",
+        }
+        with patch.dict(os.environ, env):
+            m = _reload({})
+            saida = StringIO()
+            with patch("sys.stdout", saida):
+                m.main()
+        self.assertIn("parece reativado", saida.getvalue())
+        self.assertIn("PAUSADO", saida.getvalue())
 
     # RT06
     def test_RT06_imprime_sem_credencial_quando_vazio(self):
@@ -204,6 +221,11 @@ class TestWriteBackBling(unittest.TestCase):
 
     def setUp(self):
         importlib.reload(mod)
+        self._probe_patch = patch.object(mod, "_probe_bling_conta_inativa", return_value="inativa")
+        self._probe_patch.start()
+
+    def tearDown(self):
+        self._probe_patch.stop()
 
     def test_bling_sync_em_actions(self):
         env = dict(self._ENV_BASE)
@@ -259,6 +281,11 @@ class TestAlertaTokenTravado(unittest.TestCase):
     def setUp(self):
         importlib.reload(mod)
         mod._provedores_alertados.clear()
+        self._probe_patch = patch.object(mod, "_probe_bling_conta_inativa", return_value="inativa")
+        self._probe_patch.start()
+
+    def tearDown(self):
+        self._probe_patch.stop()
 
     def test_bling_travado_nao_dispara_alerta_enquanto_pausado(self):
         res = {"ok": False, "motivo": "falha ao renovar (refresh expirado/inválido?)"}
