@@ -22,17 +22,28 @@ ENV_META = {
     "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
     "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
     "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
+    "AMAZON_LWA_CLIENT_ID": "", "AMAZON_LWA_CLIENT_SECRET": "", "AMAZON_REFRESH_TOKEN": "",
     "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
     "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
 }
 
+_RENOVAR_VAZIO = {
+    "mercadolivre": {"ok": False},
+    "shopee": {"ok": False},
+    "magalu": {"ok": False},
+    "amazon": {"ok": False},
+}
 
-def _main(env: dict):
+
+def _main(env: dict, renovar_result=None):
     """Executa main() capturando stdout. Recarrega o módulo ANTES de qualquer patch."""
+    if renovar_result is None:
+        renovar_result = _RENOVAR_VAZIO
     saida = StringIO()
     with patch.dict(os.environ, env, clear=False):
         with patch("sys.stdout", saida):
-            code = mod.main()
+            with patch("core.token_manager.renovar_todos_tokens", return_value=renovar_result):
+                code = mod.main()
     return code, saida.getvalue()
 
 

@@ -315,6 +315,19 @@ class ShopeeClientTests(unittest.TestCase):
         self.assertEqual(out["dias_sem_acesso"], 2)
         mock_registrar.assert_not_called()
 
+    def test_probe_ids_nao_numericos(self):
+        with patch.multiple(
+            shopee_client,
+            SHOPEE_PARTNER_ID="...",
+            SHOPEE_PARTNER_KEY="key",
+            SHOPEE_SHOP_ID="...",
+            SHOPEE_ACCESS_TOKEN="token",
+            SHOPEE_REFRESH_TOKEN="",
+        ):
+            out = shopee_client.probe_conexao()
+        self.assertFalse(out["ok"])
+        self.assertIn("numéricos", out["msg"])
+
 
 if __name__ == "__main__":
     unittest.main()

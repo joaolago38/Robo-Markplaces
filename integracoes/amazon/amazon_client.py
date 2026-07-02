@@ -5,23 +5,34 @@ Cliente básico da Amazon SP-API para mensagens de comprador.
 import logging
 from datetime import datetime, timedelta, timezone
 
-from core.config import AMAZON_ACCESS_TOKEN, AMAZON_MARKETPLACE_ID
+from core.config import (
+    AMAZON_ACCESS_TOKEN,
+    AMAZON_LWA_CLIENT_ID,
+    AMAZON_LWA_CLIENT_SECRET,
+    AMAZON_MARKETPLACE_ID,
+    AMAZON_REFRESH_TOKEN,
+)
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
 from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
+from core.token_manager import get_token_amazon
 
 logger = logging.getLogger("amazon_client")
 BASE = "https://sellingpartnerapi-na.amazon.com"
 
 
 def _enabled() -> bool:
-    return bool(AMAZON_ACCESS_TOKEN)
+    tem_refresh = bool(
+        AMAZON_LWA_CLIENT_ID and AMAZON_LWA_CLIENT_SECRET and AMAZON_REFRESH_TOKEN
+    )
+    return bool(AMAZON_ACCESS_TOKEN or tem_refresh)
 
 
 def _h():
+    tok = get_token_amazon() or AMAZON_ACCESS_TOKEN or ""
     return {
-        "x-amz-access-token": AMAZON_ACCESS_TOKEN,
+        "x-amz-access-token": tok,
         "Content-Type": "application/json",
     }
 

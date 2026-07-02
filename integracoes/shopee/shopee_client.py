@@ -24,10 +24,23 @@ from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 logger = logging.getLogger("shopee_client")
 BASE = "https://partner.shopeemobile.com"
 
+_MSG_IDS_INVALIDOS = (
+    "Shopee mal configurado: SHOPEE_PARTNER_ID/SHOPEE_SHOP_ID devem ser numéricos "
+    "(valor atual não é um ID válido)"
+)
+
+
+def _ids_validos() -> bool:
+    pid = str(SHOPEE_PARTNER_ID or "").strip()
+    sid = str(SHOPEE_SHOP_ID or "").strip()
+    return bool(pid.isdigit() and sid.isdigit())
+
 
 def _enabled() -> bool:
     tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
-    return bool(SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token)
+    if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token):
+        return False
+    return _ids_validos()
 
 
 def _token_para_assinatura() -> str:
@@ -76,8 +89,11 @@ def _tem_erro_api(body: dict) -> bool:
 
 
 def probe_conexao() -> dict:
-    if not _enabled():
+    tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
+    if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token):
         return {"ok": False, "status": 0, "msg": "Shopee não configurado"}
+    if not _ids_validos():
+        return {"ok": False, "status": 0, "msg": _MSG_IDS_INVALIDOS}
     path = "/api/v2/product/get_comment"
     try:
         r = request(

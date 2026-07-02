@@ -28,8 +28,55 @@ except Exception as exc:
 CREDENCIAIS_ML = ["ML_CLIENT_ID", "ML_CLIENT_SECRET", "ML_REFRESH_TOKEN"]
 CREDENCIAIS_SHOPEE = ["SHOPEE_PARTNER_ID", "SHOPEE_PARTNER_KEY", "SHOPEE_SHOP_ID"]
 CREDENCIAIS_MAGALU = ["MAGALU_CLIENT_ID", "MAGALU_CLIENT_SECRET", "MAGALU_REFRESH_TOKEN"]
+CREDENCIAIS_AMAZON = ["AMAZON_LWA_CLIENT_ID", "AMAZON_LWA_CLIENT_SECRET", "AMAZON_REFRESH_TOKEN"]
+CREDENCIAIS_BLING_PROBE = ["BLING_CLIENT_ID", "BLING_CLIENT_SECRET", "BLING_REFRESH_TOKEN"]
 
 _provedores_alertados: set[str] = set()
+
+
+def _probe_bling_conta_inativa() -> str:
+    """
+    Probe único de verificação (NÃO é reativação automática).
+
+    Tenta uma renovação controlada para detectar se a empresa deixou de estar
+    inativa no painel Bling. Retorna:
+      - "inativa"       → motivo ainda é empresa inativa (comportamento pausado)
+      - "reativado"     → refresh retornou 200 (conta parece ativa de novo)
+      - "motivo_mudou"  → falhou por outro motivo (não é mais "empresa inativa")
+      - "indeterminado" → rede/parse ou credenciais ausentes
+    """
+    if not _tem_credenciais(CREDENCIAIS_BLING_PROBE):
+        return "indeterminado"
+    try:
+        import base64
+
+        from core.http_client import request
+
+        client_id = os.getenv("BLING_CLIENT_ID", "").strip()
+        client_secret = os.getenv("BLING_CLIENT_SECRET", "").strip()
+        refresh_token = os.getenv("BLING_REFRESH_TOKEN", "").strip()
+        credenciais = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+        r = request(
+            "POST",
+            "https://www.bling.com.br/Api/v3/oauth/token",
+            headers={
+                "Authorization": f"Basic {credenciais}",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+            },
+            data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+            timeout=25,
+        )
+        if r.status_code == 200:
+            return "reativado"
+        texto = (getattr(r, "text", "") or "").lower()
+        if "inativa" in texto or "inativo" in texto:
+            return "inativa"
+        if r.status_code >= 500:
+            return "indeterminado"
+        return "motivo_mudou"
+    except Exception:
+        return "indeterminado"
 
 
 def _tem_credenciais(variaveis: list[str]) -> bool:
@@ -100,6 +147,7 @@ def _alertar_token_travado(provedor: str, motivo: str) -> None:
             "magalu": "MAGALU",
             "shopee": "SHOPEE",
             "meta": "META",
+            "amazon": "AMAZON",
         }
         rotulo = rotulos.get(chave, provedor.upper())
         msg = (
@@ -137,6 +185,12 @@ def main() -> int:
     # Bling estiver ativa de novo, e confirme rodando manualmente:
     #     python -c "from core.token_manager import renovar_token_bling_detalhado; print(renovar_token_bling_detalhado())"
     # ──────────────────────────────────────────────────────────────
+    probe_bling = _probe_bling_conta_inativa()
+    if probe_bling in {"reativado", "motivo_mudou"}:
+        print(
+            "  ⚠️ Bling parece reativado (motivo mudou) — revisar manualmente e "
+            "reativar o bloco de renovação automática em scripts/renovar_tokens.py"
+        )
     print("  bling: PAUSADO (renovação automática desativada manualmente)")
     print("  Motivo: empresa vinculada ao token inativa no painel Bling (HTTP 403).")
     print("  Ação: resolver a ativação da conta no Bling, depois reativar este bloco em scripts/renovar_tokens.py.")
@@ -192,13 +246,14 @@ def main() -> int:
             _alertar_token_travado("meta", str(exc))
             exit_code = 1
 
-    print("\n[ML / Shopee / Magalu]")
+    print("\n[ML / Shopee / Magalu / Amazon]")
 
     tem_ml     = _tem_credenciais(CREDENCIAIS_ML)
     tem_shopee = _tem_credenciais(CREDENCIAIS_SHOPEE)
     tem_magalu = _tem_credenciais(CREDENCIAIS_MAGALU)
+    tem_amazon = _tem_credenciais(CREDENCIAIS_AMAZON)
 
-    if not tem_ml and not tem_shopee and not tem_magalu:
+    if not tem_ml and not tem_shopee and not tem_magalu and not tem_amazon:
         print("  Nenhuma credencial configurada — ignorado")
         print("\n" + "=" * 60)
         print(f"Concluido — exit code: {exit_code}")
@@ -212,6 +267,7 @@ def main() -> int:
             "mercadolivre": not tem_ml,
             "shopee":       not tem_shopee,
             "magalu":       not tem_magalu,
+            "amazon":       not tem_amazon,
         }
 
         for nome, payload in sorted(resultados.items()):
@@ -272,6 +328,14 @@ def main() -> int:
 
             tk = tokens_magalu_atuais()
             if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="MAGALU"):
+                exit_code = 1
+
+        amazon_ok = resultados.get("amazon", {}).get("ok")
+        if amazon_ok and tem_amazon and (em_actions or quer_sync):
+            from core.token_manager import tokens_amazon_atuais
+
+            tk = tokens_amazon_atuais()
+            if not _sync_secrets_github(tk["access_token"], tk["refresh_token"], prefix="AMAZON"):
                 exit_code = 1
 
     except Exception as exc:

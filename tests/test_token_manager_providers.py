@@ -202,6 +202,22 @@ class TestTokenManagerProviders(unittest.TestCase):
         out = tm._renovar_token_shopee()
         self.assertEqual(out, "sp_at")
 
+    @patch.object(tm, "request")
+    @patch.multiple(
+        cfg,
+        SHOPEE_PARTNER_ID="...",
+        SHOPEE_PARTNER_KEY="key",
+        SHOPEE_SHOP_ID="...",
+        SHOPEE_REFRESH_TOKEN="rt",
+    )
+    def test_shopee_ids_nao_numericos(self, mock_request):
+        tm._shopee_refresh_efetivo["valor"] = "rt"
+        with self.assertLogs("token_manager", level="ERROR") as logs:
+            out = tm._renovar_token_shopee()
+        self.assertIsNone(out)
+        mock_request.assert_not_called()
+        self.assertIn("numéricos", logs.output[0])
+
     @patch.object(tm, "get_token_ml", return_value="cached")
     def test_get_token_ml_usa_cache(self, *_):
         tm._token_cache_ml["access_token"] = "cached"
@@ -218,16 +234,22 @@ class TestTokenManagerProviders(unittest.TestCase):
     @patch.object(tm, "get_token_shopee", return_value="sp")
     @patch.object(tm, "get_token_magalu", return_value="mg")
     @patch.object(tm, "get_token_bling", return_value="bl")
+    @patch.object(tm, "get_token_amazon", return_value="amz")
     def test_garantir_tokens_marketplaces(self, *_):
         out = tm.garantir_tokens_marketplaces()
         self.assertTrue(all(out.values()))
+        self.assertIn("amazon", out)
 
     @patch.object(tm, "_renovar_token_ml", return_value="ml")
     @patch.object(tm, "_renovar_token_shopee", return_value="sp")
     @patch.object(tm, "_renovar_token_magalu", return_value="mg")
+    @patch.object(tm, "_renovar_token_amazon", return_value="amz")
     def test_renovar_todos_tokens(self, *_):
         out = tm.renovar_todos_tokens()
         self.assertTrue(out["mercadolivre"]["ok"])
+        self.assertTrue(out["shopee"]["ok"])
+        self.assertTrue(out["magalu"]["ok"])
+        self.assertTrue(out["amazon"]["ok"])
 
     @patch.object(tm, "_renovar_token_bling", return_value=None)
     @patch.multiple(cfg, BLING_CLIENT_ID="c", BLING_CLIENT_SECRET="s", BLING_REFRESH_TOKEN="r")

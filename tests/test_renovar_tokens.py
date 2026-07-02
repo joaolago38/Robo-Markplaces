@@ -86,6 +86,7 @@ class TestMain(unittest.TestCase):
             "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
             "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
             "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
+            "AMAZON_LWA_CLIENT_ID": "", "AMAZON_LWA_CLIENT_SECRET": "", "AMAZON_REFRESH_TOKEN": "",
             "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
             "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
             "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
@@ -100,7 +101,8 @@ class TestMain(unittest.TestCase):
         self.assertEqual(resultado, 0)
 
     # RT05
-    def test_RT05_imprime_mensagem_bling_pausado(self):
+    @patch.object(mod, "_probe_bling_conta_inativa", return_value="inativa")
+    def test_RT05_imprime_mensagem_bling_pausado(self, *_):
         with patch.dict(os.environ, self._env_vazio()):
             m = _reload({})
             saida = StringIO()
@@ -108,6 +110,22 @@ class TestMain(unittest.TestCase):
                 m.main()
         self.assertIn("PAUSADO", saida.getvalue())
         self.assertIn("empresa vinculada ao token inativa", saida.getvalue())
+
+    @patch.object(mod, "_probe_bling_conta_inativa", return_value="reativado")
+    def test_RT05b_avisa_quando_bling_parece_reativado(self, *_):
+        env = {
+            **self._env_vazio(),
+            "BLING_CLIENT_ID": "cid",
+            "BLING_CLIENT_SECRET": "sec",
+            "BLING_REFRESH_TOKEN": "ref",
+        }
+        with patch.dict(os.environ, env):
+            m = _reload({})
+            saida = StringIO()
+            with patch("sys.stdout", saida):
+                m.main()
+        self.assertIn("parece reativado", saida.getvalue())
+        self.assertIn("PAUSADO", saida.getvalue())
 
     # RT06
     def test_RT06_imprime_sem_credencial_quando_vazio(self):
@@ -160,6 +178,7 @@ class TestMain(unittest.TestCase):
                 "mercadolivre": {"ok": True},
                 "shopee":       {"ok": False, "motivo": "sem credencial"},
                 "magalu":       {"ok": False, "motivo": "sem credencial"},
+                "amazon":       {"ok": False, "motivo": "sem credencial"},
             }
             saida = StringIO()
             with patch("core.token_manager.renovar_todos_tokens", return_value=mock_result):
@@ -179,6 +198,7 @@ class TestMain(unittest.TestCase):
                 "mercadolivre": {"ok": False},
                 "shopee": {"ok": False},
                 "magalu": {"ok": False},
+                "amazon": {"ok": False},
             }
             saida = StringIO()
             with patch("core.token_manager.renovar_todos_tokens", return_value=mock_result):
@@ -198,12 +218,18 @@ class TestWriteBackBling(unittest.TestCase):
         "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
         "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
         "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
+        "AMAZON_LWA_CLIENT_ID": "", "AMAZON_LWA_CLIENT_SECRET": "", "AMAZON_REFRESH_TOKEN": "",
         "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
         "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
     }
 
     def setUp(self):
         importlib.reload(mod)
+        self._probe_patch = patch.object(mod, "_probe_bling_conta_inativa", return_value="inativa")
+        self._probe_patch.start()
+
+    def tearDown(self):
+        self._probe_patch.stop()
 
     def test_bling_sync_em_actions(self):
         env = dict(self._ENV_BASE)
@@ -252,6 +278,7 @@ class TestAlertaTokenTravado(unittest.TestCase):
         "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
         "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
         "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
+        "AMAZON_LWA_CLIENT_ID": "", "AMAZON_LWA_CLIENT_SECRET": "", "AMAZON_REFRESH_TOKEN": "",
         "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
         "GITHUB_ACTIONS": "", "BLING_SYNC_GITHUB": "",
     }
@@ -259,6 +286,11 @@ class TestAlertaTokenTravado(unittest.TestCase):
     def setUp(self):
         importlib.reload(mod)
         mod._provedores_alertados.clear()
+        self._probe_patch = patch.object(mod, "_probe_bling_conta_inativa", return_value="inativa")
+        self._probe_patch.start()
+
+    def tearDown(self):
+        self._probe_patch.stop()
 
     def test_bling_travado_nao_dispara_alerta_enquanto_pausado(self):
         res = {"ok": False, "motivo": "falha ao renovar (refresh expirado/inválido?)"}
@@ -308,7 +340,7 @@ class TestAlertaTokenTravado(unittest.TestCase):
         with patch.dict(os.environ, env, clear=False):
             with patch(
                 "core.token_manager.renovar_todos_tokens",
-                return_value={"mercadolivre": {"ok": False, "motivo": "invalid_grant"}, "shopee": {"ok": False}, "magalu": {"ok": False}},
+                return_value={"mercadolivre": {"ok": False, "motivo": "invalid_grant"}, "shopee": {"ok": False}, "magalu": {"ok": False}, "amazon": {"ok": False}},
             ), patch.object(mod, "alertar_critico") as mock_alerta, patch("builtins.print"):
                 code = mod.main()
         self.assertEqual(code, 1)
@@ -322,13 +354,14 @@ class TestAlertaTokenTravado(unittest.TestCase):
 
 
 class TestWriteBackShopeeMagalu(unittest.TestCase):
-    """Write-back de Shopee e Magalu após renovar_todos_tokens."""
+    """Write-back de Shopee, Magalu e Amazon após renovar_todos_tokens."""
 
     _ENV_SHOPEE = {
         "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
         "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
         "SHOPEE_PARTNER_ID": "1", "SHOPEE_PARTNER_KEY": "key", "SHOPEE_SHOP_ID": "99",
         "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
+        "AMAZON_LWA_CLIENT_ID": "", "AMAZON_LWA_CLIENT_SECRET": "", "AMAZON_REFRESH_TOKEN": "",
         "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
         "GITHUB_ACTIONS": "true", "BLING_SYNC_GITHUB": "",
     }
@@ -338,6 +371,17 @@ class TestWriteBackShopeeMagalu(unittest.TestCase):
         "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
         "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
         "MAGALU_CLIENT_ID": "cid", "MAGALU_CLIENT_SECRET": "sec", "MAGALU_REFRESH_TOKEN": "ref",
+        "AMAZON_LWA_CLIENT_ID": "", "AMAZON_LWA_CLIENT_SECRET": "", "AMAZON_REFRESH_TOKEN": "",
+        "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
+        "GITHUB_ACTIONS": "true", "BLING_SYNC_GITHUB": "",
+    }
+
+    _ENV_AMAZON = {
+        "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
+        "ML_CLIENT_ID": "", "ML_CLIENT_SECRET": "", "ML_REFRESH_TOKEN": "",
+        "SHOPEE_PARTNER_ID": "", "SHOPEE_PARTNER_KEY": "", "SHOPEE_SHOP_ID": "",
+        "MAGALU_CLIENT_ID": "", "MAGALU_CLIENT_SECRET": "", "MAGALU_REFRESH_TOKEN": "",
+        "AMAZON_LWA_CLIENT_ID": "cid", "AMAZON_LWA_CLIENT_SECRET": "sec", "AMAZON_REFRESH_TOKEN": "ref",
         "META_APP_ID": "", "META_APP_SECRET": "", "META_ACCESS_TOKEN": "",
         "GITHUB_ACTIONS": "true", "BLING_SYNC_GITHUB": "",
     }
@@ -348,7 +392,7 @@ class TestWriteBackShopeeMagalu(unittest.TestCase):
     def test_shopee_sync_em_actions(self):
         with patch.dict(os.environ, self._ENV_SHOPEE, clear=False):
             with patch("core.token_manager.renovar_todos_tokens",
-                       return_value={"mercadolivre": {"ok": False}, "shopee": {"ok": True}, "magalu": {"ok": False}}), \
+                       return_value={"mercadolivre": {"ok": False}, "shopee": {"ok": True}, "magalu": {"ok": False}, "amazon": {"ok": False}}), \
                  patch("core.token_manager.tokens_shopee_atuais",
                        return_value={"access_token": "sp_acc", "refresh_token": "sp_ref"}), \
                  patch.object(mod, "_sync_secrets_github", return_value=True) as sync, \
@@ -360,13 +404,25 @@ class TestWriteBackShopeeMagalu(unittest.TestCase):
     def test_magalu_sync_em_actions(self):
         with patch.dict(os.environ, self._ENV_MAGALU, clear=False):
             with patch("core.token_manager.renovar_todos_tokens",
-                       return_value={"mercadolivre": {"ok": False}, "shopee": {"ok": False}, "magalu": {"ok": True}}), \
+                       return_value={"mercadolivre": {"ok": False}, "shopee": {"ok": False}, "magalu": {"ok": True}, "amazon": {"ok": False}}), \
                  patch("core.token_manager.tokens_magalu_atuais",
                        return_value={"access_token": "mg_acc", "refresh_token": "mg_ref"}), \
                  patch.object(mod, "_sync_secrets_github", return_value=True) as sync, \
                  patch("builtins.print"):
                 code = mod.main()
         sync.assert_called_once_with("mg_acc", "mg_ref", prefix="MAGALU")
+        self.assertEqual(code, 0)
+
+    def test_amazon_sync_em_actions(self):
+        with patch.dict(os.environ, self._ENV_AMAZON, clear=False):
+            with patch("core.token_manager.renovar_todos_tokens",
+                       return_value={"mercadolivre": {"ok": False}, "shopee": {"ok": False}, "magalu": {"ok": False}, "amazon": {"ok": True}}), \
+                 patch("core.token_manager.tokens_amazon_atuais",
+                       return_value={"access_token": "amz_acc", "refresh_token": "amz_ref"}), \
+                 patch.object(mod, "_sync_secrets_github", return_value=True) as sync, \
+                 patch("builtins.print"):
+                code = mod.main()
+        sync.assert_called_once_with("amz_acc", "amz_ref", prefix="AMAZON")
         self.assertEqual(code, 0)
 
 

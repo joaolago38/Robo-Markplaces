@@ -30,6 +30,9 @@ _bling_refresh_efetivo = {"valor": None}
 _token_cache_meta = {"access_token": None, "expires_at": 0}
 _meta_token_efetivo = {"valor": None}
 
+_token_cache_amazon = {"access_token": None, "expires_at": 0}
+_amazon_refresh_efetivo = {"valor": None}
+
 
 def _ml_refresh_disponivel() -> str | None:
     """Prioridade: refresh_token rotacionado em memória > disco (ML_TOKEN_STORE) > .env/secret."""
@@ -374,6 +377,15 @@ def _renovar_token_shopee():
 
     if not all([cfg.SHOPEE_PARTNER_ID, cfg.SHOPEE_PARTNER_KEY, cfg.SHOPEE_SHOP_ID, refresh]):
         logger.error("Credenciais Shopee ausentes para renovação de token.")
+        return None
+
+    pid = (cfg.SHOPEE_PARTNER_ID or "").strip()
+    sid = (cfg.SHOPEE_SHOP_ID or "").strip()
+    if not pid.isdigit() or not sid.isdigit():
+        logger.error(
+            "Shopee mal configurado: SHOPEE_PARTNER_ID/SHOPEE_SHOP_ID devem ser numéricos "
+            "(valor atual não é um ID válido)"
+        )
         return None
 
     ts = int(time.time())
@@ -842,6 +854,179 @@ def renovar_token_bling_detalhado() -> dict:
     }
 
 
+def _amazon_store_path() -> Path | None:
+    """
+    Cofre opcional do token Amazon em disco (AMAZON_TOKEN_STORE).
+    Mesmo papel do MAGALU_TOKEN_STORE para processos persistentes.
+        AMAZON_TOKEN_STORE=dados/amazon_token.json
+    """
+    p = (os.getenv("AMAZON_TOKEN_STORE") or "").strip()
+    return Path(p) if p else None
+
+
+def _carregar_store_amazon() -> dict:
+    p = _amazon_store_path()
+    if not p or not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) or {}
+    except Exception as e:
+        logger.error("Falha ao ler store Amazon (%s): %s", p, e)
+        return {}
+
+
+def _salvar_store_amazon(access_token: str, refresh_token: str | None, expires_at: float) -> None:
+    p = _amazon_store_path()
+    if not p:
+        return
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps(
+                {
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "expires_at": expires_at,
+                    "atualizado_em": time.time(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        try:
+            os.chmod(p, 0o600)
+        except OSError:
+            pass
+        logger.info("Tokens Amazon persistidos em %s", p)
+    except Exception as e:
+        logger.error("Falha ao gravar store Amazon (%s): %s", p, e)
+
+
+def _hidratar_cache_amazon_do_store() -> None:
+    if _token_cache_amazon["access_token"] is None:
+        store = _carregar_store_amazon()
+        if store.get("access_token"):
+            _token_cache_amazon["access_token"] = store["access_token"]
+            _token_cache_amazon["expires_at"] = store.get("expires_at", 0)
+        if store.get("refresh_token"):
+            _amazon_refresh_efetivo["valor"] = store["refresh_token"]
+
+
+def _amazon_refresh_disponivel() -> str | None:
+    if _amazon_refresh_efetivo["valor"] is None:
+        _hidratar_cache_amazon_do_store()
+    if _amazon_refresh_efetivo["valor"] is None:
+        _amazon_refresh_efetivo["valor"] = (cfg.AMAZON_REFRESH_TOKEN or "").strip() or None
+    return _amazon_refresh_efetivo["valor"]
+
+
+def _renovar_token_amazon():
+    """
+    Renova access_token LWA da Amazon SP-API via refresh_token de longa duração.
+    """
+    refresh = _amazon_refresh_disponivel()
+    if not all([cfg.AMAZON_LWA_CLIENT_ID, cfg.AMAZON_LWA_CLIENT_SECRET, refresh]):
+        logger.error(
+            "Credenciais Amazon ausentes para renovação "
+            "(AMAZON_LWA_CLIENT_ID/SECRET ou AMAZON_REFRESH_TOKEN)."
+        )
+        return None
+
+    body = urllib.parse.urlencode(
+        {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh,
+            "client_id": cfg.AMAZON_LWA_CLIENT_ID,
+            "client_secret": cfg.AMAZON_LWA_CLIENT_SECRET,
+        }
+    )
+
+    try:
+        r = request(
+            "POST",
+            "https://api.amazon.com/auth/o2/token",
+            data=body,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=25,
+        )
+        if r.status_code >= 400:
+            logger.error(
+                "Amazon refresh falhou (HTTP %s): %s",
+                r.status_code,
+                (r.text or "")[:500],
+            )
+            incrementar("token.falha", tags=["provider:amazon"])
+            return None
+
+        tokens = r.json()
+        access_token = tokens.get("access_token")
+        expires_in = int(tokens.get("expires_in") or 3600)
+        novo_refresh = tokens.get("refresh_token")
+
+        if not access_token:
+            logger.error("Amazon refresh sem access_token na resposta.")
+            return None
+
+        _token_cache_amazon["access_token"] = access_token
+        _token_cache_amazon["expires_at"] = time.time() + max(120, expires_in) - 300
+
+        if novo_refresh:
+            _amazon_refresh_efetivo["valor"] = novo_refresh
+            cfg.AMAZON_REFRESH_TOKEN = novo_refresh
+
+        cfg.AMAZON_ACCESS_TOKEN = access_token
+
+        _salvar_store_amazon(
+            access_token,
+            novo_refresh or refresh,
+            _token_cache_amazon["expires_at"],
+        )
+
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            if sync_secrets_github(access_token, novo_refresh or refresh, prefix="AMAZON"):
+                logger.info("Secrets AMAZON_* sincronizados no GitHub.")
+            else:
+                logger.warning("Falha ao sincronizar AMAZON_* no GitHub após renovação.")
+
+        logger.info("Token Amazon renovado com sucesso")
+        incrementar("token.renovado", tags=["provider:amazon"])
+        return access_token
+
+    except Exception as e:
+        incrementar("token.falha", tags=["provider:amazon"])
+        logger.error("Erro ao renovar token Amazon: %s", e)
+        return None
+
+
+def get_token_amazon(forcar: bool = False):
+    """
+    Retorna access_token LWA válido da Amazon.
+
+    - forcar=True → tenta renovar imediatamente (ex.: após 401).
+    - cache válido → devolve token em cache.
+    - sem refresh configurado → devolve AMAZON_ACCESS_TOKEN estático.
+    """
+    _hidratar_cache_amazon_do_store()
+    now = time.time()
+
+    if not forcar:
+        if _token_cache_amazon["access_token"] and now < _token_cache_amazon["expires_at"]:
+            return _token_cache_amazon["access_token"]
+        if not _amazon_refresh_disponivel():
+            return cfg.AMAZON_ACCESS_TOKEN or None
+
+    novo = _renovar_token_amazon()
+    return novo or cfg.AMAZON_ACCESS_TOKEN or None
+
+
+def tokens_amazon_atuais() -> dict:
+    """Tokens Amazon mais recentes em memória — sem disparar nova renovação."""
+    return {
+        "access_token": _token_cache_amazon["access_token"] or cfg.AMAZON_ACCESS_TOKEN,
+        "refresh_token": _amazon_refresh_efetivo["valor"] or cfg.AMAZON_REFRESH_TOKEN,
+    }
+
+
 def garantir_tokens_marketplaces() -> dict[str, bool]:
     """
     Renova caches em sequência (útil na entrada de agentes longos).
@@ -861,6 +1046,9 @@ def garantir_tokens_marketplaces() -> dict[str, bool]:
     bl = get_token_bling()
     out["bling"] = bool(bl)
 
+    amz = get_token_amazon()
+    out["amazon"] = bool(amz)
+
     return out
 
 
@@ -872,6 +1060,7 @@ def renovar_todos_tokens() -> dict[str, dict]:
     ml = _renovar_token_ml()
     sp = _renovar_token_shopee()
     mg = _renovar_token_magalu()
+    amz = _renovar_token_amazon()
     # Bling NÃO entra aqui: é renovado separadamente (renovar_token_bling_detalhado),
     # pois o refresh_token rotaciona e seria consumido duas vezes.
 
@@ -879,4 +1068,5 @@ def renovar_todos_tokens() -> dict[str, dict]:
         "mercadolivre": {"ok": bool(ml)},
         "shopee": {"ok": bool(sp)},
         "magalu": {"ok": bool(mg)},
+        "amazon": {"ok": bool(amz)},
     }
