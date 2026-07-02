@@ -63,6 +63,7 @@ _LOGGER_META = {
     "agente_otimizador_listing": ("mercadolivre", "agente"),
     "agente_monitor_concorrentes": ("mercadolivre", "agente"),
     "agente_ml": ("mercadolivre", "agente"),
+    "painel_item": ("mercadolivre", "agente"),
     "agente_shopee": ("shopee", "agente"),
     "agente_magalu": ("magalu", "agente"),
     "agente_amazon": ("amazon", "agente"),
