@@ -47,6 +47,7 @@ _LOGGER_META = {
     "token_manager": ("bling_e_ml", "core"),
     "notificador": ("infra", "core"),
     "claude": ("infra", "core"),
+    "resumo_ia": ("infra", "core"),
     "alertas_esmaltes": ("infra", "core"),
     "whatsapp": ("infra", "core"),
     "http_client": ("infra", "core"),

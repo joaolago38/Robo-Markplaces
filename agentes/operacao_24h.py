@@ -14,6 +14,7 @@ from agentes.repricing.agente_repricing_impala import executar as repricing_impa
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from core.alertas_esmaltes import verificar_todos as verificar_alertas_esmaltes
 from core.notificador import alertar_gestor
+from core.resumo_ia import sintetizar_claude
 from integracoes.bling.bling_client import listar_produtos
 from integracoes.lojahub.lojahub_client import listar_pedidos_prontos_faturar, listar_resumo_vendas_24h
 from integracoes.ml.ml_product_ads import listar_campanhas
@@ -113,6 +114,67 @@ def _faturar_pedidos_lojahub(dry_run_nfe: bool = True, limite: int = 20) -> dict
     return {"total": len(resultados), "sucesso": sucesso, "falhas": len(resultados) - sucesso, "itens": resultados}
 
 
+def _payload_para_contexto_claude(payload: dict) -> dict:
+    """Extrai só dados já calculados — nunca inventa métricas novas."""
+    mp = payload.get("marketplaces") or {}
+    gatilho = payload.get("gatilho_ads") or {}
+    repricing = payload.get("repricing") or {}
+    return {
+        "kpis_24h": payload.get("kpis_24h"),
+        "marketplaces_resumo": mp.get("resumo") or {},
+        "marketplaces_status": {
+            nome: {"status": av.get("status"), "score": av.get("score")}
+            for nome, av in (mp.get("marketplaces") or {}).items()
+        },
+        "repricing_total_ajustes": repricing.get("total_ajustes"),
+        "gatilho_ads": {
+            "decisao": gatilho.get("decisao"),
+            "acos_atual": gatilho.get("acos_atual"),
+            "motivos": gatilho.get("motivos"),
+        },
+        "alertas_esmaltes_qtd": len(payload.get("alertas_esmaltes") or []),
+    }
+
+
+def _fallback_resumo_operacao(payload: dict) -> str:
+    mp = (payload.get("marketplaces") or {}).get("resumo") or {}
+    gatilho = payload.get("gatilho_ads") or {}
+    linhas: list[str] = []
+    if mp.get("critico", 0) > 0:
+        linhas.append(f"{mp['critico']} marketplace(s) em estado crítico — priorizar estabilização.")
+    if mp.get("atencao", 0) > 0:
+        linhas.append(f"{mp['atencao']} marketplace(s) em atenção.")
+    decisao = gatilho.get("decisao")
+    if decisao and decisao not in ("aguardar", "manter"):
+        linhas.append(f"Gatilho de ads: {decisao} — revisar nas próximas horas.")
+    if not linhas:
+        linhas.append("Operação 24h sem sinais críticos imediatos; manter monitoramento.")
+    return "\n".join(linhas[:5])
+
+
+def _sintetizar_claude_operacao(payload: dict) -> str:
+    contexto = _payload_para_contexto_claude(payload)
+    fallback = _fallback_resumo_operacao(payload)
+    prompt = (
+        "Com base no contexto JSON acima, escreva um resumo executivo de NO MÁXIMO 5 linhas, "
+        "objetivo, priorizando o que muda receita ou risco nas próximas horas. "
+        "Não repita números brutos que já aparecem no relatório detalhado; foque em interpretação "
+        "(ex.: vendas 24h abaixo da média, ACOS subindo, estoque crítico bloqueando repricing)."
+    )
+    return sintetizar_claude(prompt, contexto, fallback, max_tokens=400)
+
+
+def _formatar_notas_repricing(repricing: dict) -> str:
+    notas = [
+        str(a.get("nota_concorrencia")).strip()
+        for a in (repricing.get("ajustes") or [])
+        if a.get("nota_concorrencia")
+    ]
+    if not notas:
+        return ""
+    return "Notas concorrência:\n" + "\n".join(f"• {n}" for n in notas[:5])
+
+
 def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     if not dry_run_repricing or not dry_run_nfe:
         from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
@@ -183,12 +245,17 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
         "modo": {"repricing_dry_run": dry_run_repricing, "nfe_dry_run": dry_run_nfe},
     }
 
-    alertar_gestor(
+    resumo_ia = _sintetizar_claude_operacao(payload)
+    bloco_notas = _formatar_notas_repricing(repricing)
+    msg_bruta = (
         f"Operação 24h:\n"
         f"Receita: R$ {kpis['receita_24h']:.2f} | Lucro estimado: R$ {kpis['lucro_estimado_24h']:.2f}\n"
         f"Preço médio: R$ {kpis['preco_medio_cadastrado']:.2f} | Ticket médio: R$ {kpis['ticket_medio_24h']:.2f}\n"
         f"NF geradas: {faturamento['sucesso']}/{faturamento['total']} | Ajustes preço: {repricing['total_ajustes']}"
     )
+    if bloco_notas:
+        msg_bruta = f"{msg_bruta}\n{bloco_notas}"
+    alertar_gestor(f"📝 *Resumo IA*\n{resumo_ia}\n\n{msg_bruta}")
     logger.info("Operacao24h: %s", payload)
     return payload
 

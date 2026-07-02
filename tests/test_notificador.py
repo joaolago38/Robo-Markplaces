@@ -104,6 +104,51 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_perguntar_gestor_sem_contexto_mensagem_inalterada(self, mock_request, mock_time):
+        mock_time.monotonic.side_effect = [0, 100]
+        mock_time.sleep = MagicMock()
+        mock_request.return_value = _mock_resp()
+        notificador.perguntar_gestor_e_aguardar("ligar ads?", timeout_segundos=5)
+        texto = mock_request.call_args[1]["json"]["text"]
+        self.assertIn("ligar ads?", texto)
+        self.assertIn("_Responda abaixo:_", texto)
+        self.assertNotIn("*Contexto:*", texto)
+
+    @patch.object(notificador, "_gerar_justificativa_decisao", return_value="ACOS subiu nas últimas 2 semanas.")
+    @patch.object(notificador, "time")
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_perguntar_gestor_com_contexto_inclui_justificativa(
+        self, mock_request, mock_time, mock_just
+    ):
+        mock_time.monotonic.side_effect = [0, 100]
+        mock_time.sleep = MagicMock()
+        mock_request.return_value = _mock_resp()
+        ctx = {"decisao": "pausar", "acos_atual": 0.35}
+        notificador.perguntar_gestor_e_aguardar("pausar?", timeout_segundos=5, contexto_decisao=ctx)
+        mock_just.assert_called_once_with(ctx)
+        texto = mock_request.call_args[1]["json"]["text"]
+        self.assertIn("ACOS subiu", texto)
+
+    @patch.object(notificador, "_gerar_justificativa_decisao", return_value=None)
+    @patch.object(notificador, "time")
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_perguntar_gestor_fallback_sem_justificativa(self, mock_request, mock_time, *_):
+        mock_time.monotonic.side_effect = [0, 100]
+        mock_time.sleep = MagicMock()
+        mock_request.return_value = _mock_resp()
+        notificador.perguntar_gestor_e_aguardar("?", timeout_segundos=5, contexto_decisao={"x": 1})
+        texto = mock_request.call_args[1]["json"]["text"]
+        self.assertNotIn("*Contexto:*", texto)
+        self.assertIn("_Responda abaixo:_", texto)
+
+    @patch.object(notificador, "time")
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
     def test_perguntar_gestor_sim_via_callback(self, mock_request, mock_time):
         mock_time.monotonic.side_effect = [0, 1, 2, 100]
         mock_time.sleep = MagicMock()

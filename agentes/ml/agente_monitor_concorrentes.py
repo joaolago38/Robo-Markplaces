@@ -73,6 +73,56 @@ def _menor_preco(concorrentes: list[dict]) -> float:
     return min(precos) if precos else 0.0
 
 
+def _leituras_recentes(entrada_hist: dict, limite: int = 5) -> list[dict]:
+    leituras = entrada_hist.get("leituras")
+    if isinstance(leituras, list) and leituras:
+        return [x for x in leituras if isinstance(x, dict)][-limite:]
+    if entrada_hist.get("menor_preco"):
+        return [{"menor_preco": float(entrada_hist["menor_preco"]), "ts": entrada_hist.get("atualizado_em")}]
+    return []
+
+
+def _classificar_variacao_preco(
+    eid: str,
+    nome: str,
+    termo: str,
+    menor_atual: float,
+    historico: dict[str, Any],
+) -> str | None:
+    """
+    Classifica padrão de variação com histórico (3-5 leituras). Retorna None se <2 pontos.
+    """
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    leituras = _leituras_recentes(anterior, limite=5)
+    if len(leituras) < 2:
+        return None
+    contexto = {
+        "produto": nome,
+        "termo_busca": termo,
+        "menor_preco_atual": menor_atual,
+        "leituras_recentes": leituras,
+    }
+    quedas = 0
+    for i in range(1, len(leituras)):
+        p_ant = float(leituras[i - 1].get("menor_preco") or 0)
+        p_at = float(leituras[i].get("menor_preco") or 0)
+        if p_ant > 0 and p_at < p_ant:
+            quedas += 1
+    fallback = "queda pontual"
+    if quedas >= 3:
+        fallback = f"tendência de baixa ({quedas}ª queda seguida)"
+    elif quedas >= 2:
+        fallback = "tendência de baixa (2 quedas seguidas)"
+    from core.resumo_ia import sintetizar_claude
+
+    prompt = (
+        "Em UMA linha, classifique o padrão da variação de preço do concorrente "
+        "(ex.: 'queda pontual' vs 'tendência de baixa (3ª queda seguida)')."
+    )
+    texto = sintetizar_claude(prompt, contexto, fallback, max_tokens=60)
+    return (texto or "").strip() or None
+
+
 def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     eid = str(entrada.get("id") or "").strip()
     nome = str(entrada.get("nome") or eid)
@@ -101,16 +151,25 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         var = _pct_variacao(menor_ant, menor)
         if var >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
             direcao = "caiu" if menor < menor_ant else "subiu"
-            alertas.append(
+            linha = (
                 f"{nome}: menor preço do termo '{termo}' {direcao} de R$ {menor_ant:.2f} "
                 f"para R$ {menor:.2f} ({var:.1f}%)."
             )
+            classificacao = _classificar_variacao_preco(eid, nome, termo, menor, historico)
+            if classificacao:
+                linha += f" [{classificacao}]"
+            alertas.append(linha)
 
+    leituras_ant = _leituras_recentes(anterior, limite=4)
+    leituras_ant.append(
+        {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
+    )
     historico[eid] = {
         "menor_preco": menor,
         "meu_preco": meu_preco,
         "total_concorrentes": len(concorrentes),
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        "leituras": leituras_ant[-5:],
     }
 
     # ── Datadog ──────────────────────────────────────────────────────────

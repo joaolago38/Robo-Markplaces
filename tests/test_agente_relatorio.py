@@ -13,7 +13,7 @@ from agentes import relatorio
 
 class TestAgenteRelatorio(unittest.TestCase):
     @patch.object(relatorio, "alertar", return_value=True)
-    @patch.object(relatorio, "perguntar", return_value="• Tudo ok")
+    @patch.object(relatorio, "sintetizar_claude", return_value="• Tudo ok")
     @patch.object(relatorio, "estoques_criticos", return_value=[])
     @patch.object(
         relatorio,
@@ -26,7 +26,7 @@ class TestAgenteRelatorio(unittest.TestCase):
 
     @patch.object(relatorio, "alertar_critico")
     @patch.object(relatorio, "alertar", return_value=True)
-    @patch.object(relatorio, "perguntar", return_value="ok")
+    @patch.object(relatorio, "sintetizar_claude", return_value="ok")
     @patch.object(relatorio, "estoques_criticos", return_value=[{"nome": "Kit B", "estoque": 5}])
     @patch.object(relatorio, "listar_produtos", return_value=[])
     def test_RL02_executar_estoque_critico(self, *_patches):
