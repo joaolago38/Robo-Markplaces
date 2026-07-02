@@ -4,6 +4,7 @@ Monitora produtos nos marketplaces e ajusta preço com lucro mínimo.
 """
 from __future__ import annotations
 
+import json
 import logging
 
 from core.config import (
@@ -14,6 +15,8 @@ from core.config import (
     MARGEM_FASE_3_PCT,
     TAXA_CANAL_PADRAO_PCT,
     REPRICING_DIFERENCA_MINIMA,
+    MONITOR_CONCORRENTES_ARQUIVO,
+    ROOT,
 )
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
@@ -124,6 +127,86 @@ def _calcular_economia_estimada_piso_margem(ajustes: list[dict]) -> float:
     return round(total, 2)
 
 
+def _carregar_monitor_por_sku() -> dict[str, dict]:
+    caminho = ROOT / MONITOR_CONCORRENTES_ARQUIVO
+    try:
+        if not caminho.is_file():
+            return {}
+        data = json.loads(caminho.read_text(encoding="utf-8"))
+        if not isinstance(data, list):
+            return {}
+        out: dict[str, dict] = {}
+        for ent in data:
+            if isinstance(ent, dict) and ent.get("ativo") and ent.get("sku"):
+                out[str(ent["sku"]).strip()] = ent
+        return out
+    except Exception as exc:
+        logger.warning("repricing monitor por sku: %s", exc)
+        return {}
+
+
+def _amostra_concorrente_monitor(entrada: dict) -> dict | None:
+    termo = str(entrada.get("termo_busca") or "").strip()
+    if not termo:
+        return None
+    try:
+        from integracoes.ml.ml_client import buscar_concorrentes_por_termo
+
+        limite = int(entrada.get("limite_resultados") or 10)
+        concorrentes = buscar_concorrentes_por_termo(termo, limite=limite)
+        precos = [c for c in concorrentes if _to_float(c.get("preco"), 0) > 0]
+        if not precos:
+            return None
+        return min(precos, key=lambda c: _to_float(c.get("preco"), 0))
+    except Exception as exc:
+        logger.warning("repricing amostra concorrente: %s", exc)
+        return None
+
+
+def _gerar_nota_concorrencia(
+    nome: str,
+    preco_atual: float,
+    preco_concorrente: float,
+    novo_preco: float,
+    sku: str,
+    monitor_por_sku: dict[str, dict],
+) -> str | None:
+    entrada = monitor_por_sku.get(sku)
+    if not entrada:
+        return None
+    amostra = _amostra_concorrente_monitor(entrada)
+    contexto = {
+        "produto": nome,
+        "preco_atual": round(preco_atual, 2),
+        "preco_concorrente": round(preco_concorrente, 2),
+        "novo_preco_calculado": round(novo_preco, 2),
+        "monitor": {
+            "termo_busca": entrada.get("termo_busca"),
+            "nome": entrada.get("nome"),
+        },
+    }
+    if amostra:
+        contexto["concorrente_destaque"] = {
+            "frete_gratis": amostra.get("frete_gratis"),
+            "quantidade_vendida": amostra.get("quantidade_vendida"),
+            "condicao": amostra.get("condicao"),
+            "preco": amostra.get("preco"),
+        }
+    fallback = (
+        f"{nome}: concorrente R$ {preco_concorrente:.2f}, "
+        f"novo preço calculado R$ {novo_preco:.2f}."
+    )
+    from core.resumo_ia import sintetizar_claude
+
+    prompt = (
+        "Em UMA linha curta, comente a nuance competitiva para o gestor "
+        "(ex.: concorrente sem frete grátis e baixo volume — considere manter preço). "
+        "Não altere nem recomende bloquear o ajuste — apenas informe."
+    )
+    nota = sintetizar_claude(prompt, contexto, fallback, max_tokens=80)
+    return (nota or "")[:200] or None
+
+
 def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_minimo_pct: float | None = None) -> dict:
     if not dry_run:
         from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
@@ -148,6 +231,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
         produtos_base = listar_produtos()
         produtos_bling = {p["codigo"]: p for p in produtos_base if p.get("codigo")}
     ajustes = []
+    monitor_por_sku = _carregar_monitor_por_sku()
 
     for p in produtos_base:
         sku = p.get("sku")
@@ -191,6 +275,12 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
             bloqueio = _faixa_bloqueada(nome, novo_preco)
             ajustar = abs(novo_preco - preco_atual) >= REPRICING_DIFERENCA_MINIMA and not bloqueio
 
+            nota_concorrencia = None
+            if ajustar and fonte_concorrente == "ao_vivo" and sku in monitor_por_sku:
+                nota_concorrencia = _gerar_nota_concorrencia(
+                    nome, preco_atual, preco_concorrente, novo_preco, sku, monitor_por_sku
+                )
+
             resultado_aplicacao = None
             falhou_aplicacao = False
             if ajustar and not dry_run:
@@ -229,6 +319,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     "margem_pct": round(margem, 2),
                     "preco_concorrente": round(preco_concorrente, 2),
                     "fonte_concorrente": fonte_concorrente,
+                    "nota_concorrencia": nota_concorrencia,
                     "ajustar": ajustar,
                     "aplicado": resultado_aplicacao,
                     "falhou_aplicacao": falhou_aplicacao,
@@ -242,15 +333,17 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
     economia_estimada = _calcular_economia_estimada_piso_margem(ajustes)
 
     if total_ajustes > 0:
+        notas = [a["nota_concorrencia"] for a in ajustes if a.get("nota_concorrencia")]
+        bloco_notas = ("\n" + "\n".join(f"• {n}" for n in notas[:5])) if notas else ""
         if dry_run:
             alertar_gestor(
                 f"Repricing marketplaces: {total_ajustes} ajustes detectados\n"
-                f"Modo: simulação | lucro mínimo: {lucro_minimo:.1f}%"
+                f"Modo: simulação | lucro mínimo: {lucro_minimo:.1f}%{bloco_notas}"
             )
         else:
             alertar_gestor(
                 f"Repricing marketplaces: {total_aplicados_sucesso}/{total_ajustes} ajustes aplicados com sucesso\n"
-                f"Modo: aplicação | lucro mínimo: {lucro_minimo:.1f}%"
+                f"Modo: aplicação | lucro mínimo: {lucro_minimo:.1f}%{bloco_notas}"
             )
 
     if total_falhas_aplicacao > 0:
