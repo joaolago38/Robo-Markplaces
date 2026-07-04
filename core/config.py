@@ -59,7 +59,9 @@ MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
 LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )
-LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "0.8"))
+LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "2.5"))
+LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", "3"))
+LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", "5"))
 
 ALIBABA_IMPORTACAO_CATALOGO = os.getenv(
     "ALIBABA_IMPORTACAO_CATALOGO", "catalogo/alibaba_produtos_importacao.json"

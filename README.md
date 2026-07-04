@@ -506,7 +506,7 @@ Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**
 - Histórico: `logs/leilao_veiculos_history.json` (restaurado via cache entre execuções no GitHub Actions)
 - Preflight: `python scripts/preflight_monitor_telegram.py` (valida token antes de rodar)
 
-A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Sites com bloqueio anti-bot podem retornar menos resultados; ajuste `termos_extra` no catálogo para refinar.
+A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Se aparecer **DDG HTTP 403** no Datadog, é rate limit temporário do DuckDuckGo (muitas buscas seguidas); o agente faz retry automático e tenta de novo no próximo ciclo. Ajuste `LEILAO_PAUSA_ENTRE_FONTES_SEG` (padrão 2.5s) ou `ORQUESTRADOR_EXCLUIR=leilao` se quiser aliviar carga.
 
 ## Orquestrador 30 minutos (todos os agentes)
 
