@@ -97,9 +97,9 @@ def _executar_agente(registro: AgenteRegistrado) -> dict[str, Any]:
     return resultado
 
 
-def _montar_resumo_telegram(ciclo: dict[str, Any]) -> str:
+def _montar_resumo_telegram(ciclo: dict[str, Any], *, titulo: str) -> str:
     linhas = [
-        "🔄 *Orquestrador 30min — ciclo completo*",
+        titulo,
         "",
         (
             f"✅ {ciclo['ok']} ok | ❌ {ciclo['falhas']} falha | "
@@ -115,38 +115,44 @@ def _montar_resumo_telegram(ciclo: dict[str, Any]) -> str:
     return "\n".join(linhas).strip()
 
 
-def _enviar_metricas_ciclo(ciclo: dict[str, Any]) -> None:
-    gauge("orquestrador.ciclo.duracao_ms", ciclo["duracao_ms"])
-    gauge("orquestrador.ciclo.agentes_ok", ciclo["ok"])
-    gauge("orquestrador.ciclo.agentes_falha", ciclo["falhas"])
-    gauge("orquestrador.ciclo.agentes_total", ciclo["total"])
-    incrementar("orquestrador.ciclo", tags=[f"falhas:{ciclo['falhas']}"])
+def _enviar_metricas_ciclo(ciclo: dict[str, Any], *, prefixo: str) -> None:
+    gauge(f"{prefixo}.ciclo.duracao_ms", ciclo["duracao_ms"])
+    gauge(f"{prefixo}.ciclo.agentes_ok", ciclo["ok"])
+    gauge(f"{prefixo}.ciclo.agentes_falha", ciclo["falhas"])
+    gauge(f"{prefixo}.ciclo.agentes_total", ciclo["total"])
+    incrementar(f"{prefixo}.ciclo", tags=[f"falhas:{ciclo['falhas']}"])
 
 
-def executar(
+def executar_ciclo(
     *,
+    agentes: list[AgenteRegistrado],
+    titulo_resumo: str,
+    chave_cooldown: str,
+    cooldown_segundos: int,
+    prefixo_metrica: str = "orquestrador",
     enviar_resumo_telegram: bool = True,
-    agentes: list[AgenteRegistrado] | None = None,
+    log_prefix: str = "Orquestrador",
+    pausa_entre_agentes_seg: float | None = None,
 ) -> dict[str, Any]:
     """
-    Executa todos os agentes registrados em sequência (isolamento por try/except).
-    Nunca lança exceção.
+    Executa agentes em sequência (isolamento por try/except). Nunca lança exceção.
     """
+    pausa = ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG if pausa_entre_agentes_seg is None else pausa_entre_agentes_seg
     inicio_ciclo = time.monotonic()
-    registrados = agentes if agentes is not None else listar_agentes()
     resultados: list[dict[str, Any]] = []
 
     if enviar_resumo_telegram and not gestor_telegram_configurado():
         logger.warning(
-            "Telegram gestor não configurado — resumo do orquestrador não será entregue"
+            "%s: Telegram gestor não configurado — resumo não será entregue",
+            log_prefix,
         )
 
-    logger.info("Orquestrador: iniciando ciclo com %s agente(s)", len(registrados))
+    logger.info("%s: iniciando ciclo com %s agente(s)", log_prefix, len(agentes))
 
-    for registro in registrados:
+    for registro in agentes:
         resultados.append(_executar_agente(registro))
-        if ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG > 0:
-            time.sleep(ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG)
+        if pausa > 0:
+            time.sleep(pausa)
 
     ok_count = sum(1 for r in resultados if r.get("ok"))
     falhas = len(resultados) - ok_count
@@ -163,26 +169,44 @@ def executar(
         "resumo_telegram_enviado": False,
     }
 
-    _enviar_metricas_ciclo(ciclo)
+    _enviar_metricas_ciclo(ciclo, prefixo=prefixo_metrica)
 
     if enviar_resumo_telegram and resultados:
-        msg = _montar_resumo_telegram(ciclo)
+        msg = _montar_resumo_telegram(ciclo, titulo=titulo_resumo)
         ciclo["resumo_telegram_enviado"] = bool(
             alertar_gestor(
                 msg,
-                chave="orquestrador:30min:resumo",
-                cooldown_segundos=ORQUESTRADOR_COOLDOWN_RESUMO_SEG,
+                chave=chave_cooldown,
+                cooldown_segundos=cooldown_segundos,
             )
         )
 
     logger.info(
-        "Orquestrador: ciclo concluído — %s ok, %s falha(s), %.0fs, telegram=%s",
+        "%s: ciclo concluído — %s ok, %s falha(s), %.0fs, telegram=%s",
+        log_prefix,
         ok_count,
         falhas,
         duracao_ms / 1000,
         ciclo.get("resumo_telegram_enviado"),
     )
     return {"ok": falhas == 0, **ciclo}
+
+
+def executar(
+    *,
+    enviar_resumo_telegram: bool = True,
+    agentes: list[AgenteRegistrado] | None = None,
+) -> dict[str, Any]:
+    """Ciclo padrão de 30 minutos."""
+    return executar_ciclo(
+        agentes=agentes if agentes is not None else listar_agentes(),
+        titulo_resumo="🔄 *Orquestrador 30min — ciclo completo*",
+        chave_cooldown="orquestrador:30min:resumo",
+        cooldown_segundos=ORQUESTRADOR_COOLDOWN_RESUMO_SEG,
+        prefixo_metrica="orquestrador",
+        enviar_resumo_telegram=enviar_resumo_telegram,
+        log_prefix="Orquestrador",
+    )
 
 
 def main() -> int:

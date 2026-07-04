@@ -23,6 +23,7 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "sincronizar_estoque.yml",
     "conectividade_marketplaces.yml",
     "orquestrador_30min.yml",
+    "push_main_rotinas.yml",
     "leilao_veiculo.yml",
     "alibaba_importacao.yml",
 )
