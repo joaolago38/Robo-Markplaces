@@ -1,0 +1,12 @@
+[
+  {
+    "id": "exemplo-fiat-uno",
+    "ativo": false,
+    "marca": "Fiat",
+    "modelo": "Uno",
+    "ano_min": 2010,
+    "ano_max": 2015,
+    "termos_extra": [],
+    "notas": "Exemplo — defina ativo:true e ajuste marca/modelo/ano para o veículo desejado"
+  }
+]

@@ -7,6 +7,9 @@ de "lost update" (dois processos lendo o mesmo estado, cada um
 escrevendo por cima da escrita do outro) nem de corrupção por
 escrita parcial.
 
+A implementação concreta é delegada a core/state_backend.py
+(STORAGE_BACKEND=file|dynamodb). O padrão continua sendo arquivo local.
+
 - Escrita atômica: grava num arquivo temporário no mesmo diretório e
   troca com os.replace() — no Linux/macOS isso é atômico, então o
   arquivo final nunca fica "pela metade" mesmo se o processo morrer
@@ -19,23 +22,15 @@ escrita parcial.
 """
 from __future__ import annotations
 
-import json
-import os
-import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
-try:
-    import fcntl
-
-    _TEM_FLOCK = True
-except ImportError:  # pragma: no cover - Windows não tem fcntl
-    _TEM_FLOCK = False
+from core.state_backend import _TEM_FLOCK, get_state_backend
 
 
 @contextmanager
-def lock_exclusivo(caminho_lock: Path | str):
+def lock_exclusivo(caminho_lock: Path | str) -> Iterator[None]:
     """
     Lock exclusivo entre processos baseado em arquivo (fcntl.flock,
     somente POSIX). Use para serializar todo o ciclo "ler estado →
@@ -43,48 +38,18 @@ def lock_exclusivo(caminho_lock: Path | str):
     uma operação (e por isso não pode usar só `ler_e_atualizar_json`).
     Em ambientes sem fcntl, vira um no-op (sem lock).
     """
-    caminho_lock = Path(caminho_lock)
-    if not _TEM_FLOCK:
-        caminho_lock.parent.mkdir(parents=True, exist_ok=True)
+    with get_state_backend().lock_exclusivo(caminho_lock):
         yield
-        return
-    caminho_lock.parent.mkdir(parents=True, exist_ok=True)
-    with open(caminho_lock, "w", encoding="utf-8") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def escrever_json_atomico(caminho: Path | str, dados: Any) -> None:
     """Grava `dados` como JSON em `caminho` de forma atômica (sem deixar
     o arquivo corrompido caso o processo seja interrompido no meio)."""
-    caminho = Path(caminho)
-    caminho.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=str(caminho.parent), prefix=f".{caminho.name}.", suffix=".tmp"
-    )
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(dados, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_path, caminho)
-    except Exception:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
-        raise
+    get_state_backend().escrever_json_atomico(caminho, dados)
 
 
 def ler_json(caminho: Path | str, default: Any = None) -> Any:
-    caminho = Path(caminho)
-    if not caminho.exists():
-        return {} if default is None else default
-    try:
-        return json.loads(caminho.read_text(encoding="utf-8"))
-    except Exception:
-        return {} if default is None else default
+    return get_state_backend().ler_json(caminho, default=default)
 
 
 def ler_e_atualizar_json(
@@ -97,10 +62,4 @@ def ler_e_atualizar_json(
     exclusivo por arquivo, para nenhum outro processo conseguir
     ler/escrever no meio do ciclo.
     """
-    caminho = Path(caminho)
-    lock_path = caminho.with_name(caminho.name + ".lock")
-    with lock_exclusivo(lock_path):
-        dados = ler_json(caminho, default)
-        dados_novos = funcao_atualizar(dados)
-        escrever_json_atomico(caminho, dados_novos)
-        return dados_novos
+    return get_state_backend().ler_e_atualizar_json(caminho, funcao_atualizar, default=default)

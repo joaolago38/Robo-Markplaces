@@ -1,0 +1,38 @@
+name: Monitor Leilões Veículos
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada hora (UTC) — cobertura contínua 24h via GitHub Actions
+    - cron: "0 * * * *"
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Varredura leiloeiros + DETRAN (todos os estados)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Rodar monitor de leilões de veículos
+        run: python -m agentes.leilao.agente_leilao_veiculo
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar historico de achados
+        uses: actions/upload-artifact@v4
+        with:
+          name: leilao-veiculos-history
+          path: logs/leilao_veiculos_history.json
+          retention-days: 90
+          if-no-files-found: ignore

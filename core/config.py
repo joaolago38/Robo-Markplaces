@@ -56,6 +56,11 @@ MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
     os.getenv("MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT", "5.0")
 )
 
+LEILAO_VEICULOS_CATALOGO = os.getenv(
+    "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
+)
+LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "0.8"))
+
 # Shopee
 SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "").strip()
 SHOPEE_PARTNER_KEY = os.getenv("SHOPEE_PARTNER_KEY", "").strip()
@@ -180,6 +185,12 @@ DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
 DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
 # Ambiente exibido na tag `env:` no Datadog (production/staging/dev). Antes era fixo em "production".
 DD_ENV = os.getenv("DD_ENV", "production").strip() or "production"
+
+# Storage de estado (file = padrão local; dynamodb = AWS Free Tier)
+STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "file").strip().lower() or "file"
+DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "robo-markplaces-state").strip()
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1").strip() or "us-east-1"
+SSM_PARAMETER_PREFIX = os.getenv("SSM_PARAMETER_PREFIX", "/robo-markplaces").strip() or "/robo-markplaces"
 
 
 def _init_datadog_logging() -> None:
