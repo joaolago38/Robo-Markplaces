@@ -4,7 +4,7 @@ tests/test_leilao_busca.py
 import os
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -21,6 +21,17 @@ class TestMontarTermo(unittest.TestCase):
         self.assertIn("Uno", termo)
         self.assertIn("2012", termo)
 
+    def test_termo_site_enxuto_sem_perfil_duplicado(self):
+        veiculo = {
+            "marca": "Volkswagen",
+            "modelo": "Gol",
+            "perfil": "recuperado_furto_media_monta",
+        }
+        completo = busca.montar_termo_busca(veiculo)
+        site = busca._termo_query_site(veiculo)
+        self.assertIn("recuperado", completo)
+        self.assertNotIn("recuperado", site)
+        self.assertIn("Gol", site)
 
     def test_monta_termo_com_perfil_recuperado(self):
         termo = busca.montar_termo_busca(
@@ -75,6 +86,22 @@ class TestExtrairDdg(unittest.TestCase):
         itens = busca._extrair_resultados_ddg(html)
         self.assertEqual(len(itens), 1)
         self.assertIn("copart.com.br", itens[0]["url"])
+
+
+class TestDdgRetry(unittest.TestCase):
+    @patch.object(busca.time, "sleep")
+    @patch("integracoes.leilao.busca.request")
+    def test_retry_403_depois_ok(self, mock_request, _sleep):
+        ok = MagicMock()
+        ok.status_code = 200
+        ok.text = ""
+        bloqueado = MagicMock()
+        bloqueado.status_code = 403
+        mock_request.side_effect = [bloqueado, ok]
+        with patch.object(busca, "_extrair_resultados_ddg", return_value=[{"titulo": "x", "url": "http://a", "snippet": ""}]):
+            out = busca.buscar_duckduckgo("teste")
+        self.assertEqual(len(out), 1)
+        self.assertEqual(mock_request.call_count, 2)
 
 
 class TestRelevancia(unittest.TestCase):

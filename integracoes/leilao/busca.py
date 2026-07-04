@@ -19,8 +19,10 @@ from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS
 logger = logging.getLogger("leilao_busca")
 
 _DDG_HTML = "https://html.duckduckgo.com/html/"
+# User-Agent de navegador real — o identificador "Bot" no DDG Lite dispara HTTP 403 em volume.
 _USER_AGENT = (
-    "Mozilla/5.0 (compatible; RoboMarkplaces-LeilaoBot/1.0; +https://github.com/joaolago38/Robo-Markplaces)"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 )
 _PALAVRAS_LEILAO = ("leilao", "leilão", "lote", "arremate", "edital", "veiculo", "veículo", "automotor")
 _PERFIL_RECUPERADO_FURTO = "recuperado_furto_media_monta"
@@ -48,6 +50,35 @@ def montar_termo_busca(veiculo: dict[str, Any]) -> str:
     if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
         partes.extend(_TERMOS_PERFIL_BUSCA)
     return " ".join(p for p in partes if p)
+
+
+def _termo_query_site(veiculo: dict[str, Any]) -> str:
+    """
+    Termo enxuto para `site:dominio` — evita query gigante (perfil já vai no sufixo).
+    Reduz 403 por rate limit no DuckDuckGo.
+    """
+    partes = [
+        str(veiculo.get("marca") or "").strip(),
+        str(veiculo.get("modelo") or "").strip(),
+    ]
+    ano_min = veiculo.get("ano_min")
+    ano_max = veiculo.get("ano_max")
+    if ano_min and ano_max and ano_min == ano_max:
+        partes.append(str(ano_min))
+    for extra in veiculo.get("termos_extra") or []:
+        if extra:
+            partes.append(str(extra).strip())
+    return " ".join(p for p in partes if p)
+
+
+def _headers_ddg() -> dict[str, str]:
+    return {
+        "User-Agent": _USER_AGENT,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Referer": "https://duckduckgo.com/",
+    }
 
 
 def _normalizar(texto: str) -> str:
@@ -111,22 +142,51 @@ def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
 
 
 def buscar_duckduckgo(query: str, *, max_resultados: int = 8) -> list[dict[str, str]]:
-    """Busca no DuckDuckGo HTML (sem API key). Nunca lança exceção."""
-    try:
-        r = request(
-            "POST",
-            _DDG_HTML,
-            data={"q": query, "kl": "br-pt"},
-            headers={"User-Agent": _USER_AGENT, "Content-Type": "application/x-www-form-urlencoded"},
-            timeout=20,
-        )
-        if r.status_code >= 400:
-            logger.warning("DDG HTTP %s para query=%r", r.status_code, query[:80])
+    """Busca no DuckDuckGo HTML (sem API key). Retry em 403/429. Nunca lança exceção."""
+    from core.config import LEILAO_DDG_RETRY_BASE_SEG, LEILAO_DDG_RETRY_MAX
+
+    tentativas = max(1, LEILAO_DDG_RETRY_MAX)
+    for n in range(tentativas):
+        try:
+            r = request(
+                "POST",
+                _DDG_HTML,
+                data={"q": query, "kl": "br-pt"},
+                headers=_headers_ddg(),
+                timeout=20,
+            )
+            if r.status_code in (403, 429):
+                if n + 1 < tentativas:
+                    espera = LEILAO_DDG_RETRY_BASE_SEG * (2**n)
+                    logger.info(
+                        "DDG HTTP %s — retry %s/%s em %.0fs (query=%r)",
+                        r.status_code,
+                        n + 2,
+                        tentativas,
+                        espera,
+                        query[:60],
+                    )
+                    time.sleep(espera)
+                    continue
+                logger.warning(
+                    "DDG HTTP %s após %s tentativas — rate limit/bot; "
+                    "próximo ciclo tenta de novo. query=%r",
+                    r.status_code,
+                    tentativas,
+                    query[:80],
+                )
+                return []
+            if r.status_code >= 400:
+                logger.warning("DDG HTTP %s para query=%r", r.status_code, query[:80])
+                return []
+            return _extrair_resultados_ddg(r.text)[:max_resultados]
+        except Exception as exc:
+            if n + 1 < tentativas:
+                time.sleep(LEILAO_DDG_RETRY_BASE_SEG)
+                continue
+            logger.error("DDG busca falhou: %s", exc)
             return []
-        return _extrair_resultados_ddg(r.text)[:max_resultados]
-    except Exception as exc:
-        logger.error("DDG busca falhou: %s", exc)
-        return []
+    return []
 
 
 def _ano_no_intervalo(texto: str, veiculo: dict[str, Any]) -> bool:
@@ -215,6 +275,7 @@ def buscar_veiculo_em_fontes(
     Retorna lista deduplicada por URL. Nunca lança exceção.
     """
     termo = montar_termo_busca(veiculo)
+    termo_site = _termo_query_site(veiculo)
     if not termo.strip():
         return []
 
@@ -238,7 +299,7 @@ def buscar_veiculo_em_fontes(
         try:
             lote = _buscar_em_dominio(
                 dominio,
-                termo,
+                termo_site,
                 tipo_fonte=tipo,
                 fonte_id=fid,
                 fonte_nome=nome,
