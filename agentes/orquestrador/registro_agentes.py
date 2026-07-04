@@ -134,6 +134,45 @@ def listar_agentes(*, excluir: set[str] | None = None) -> list[AgenteRegistrado]
     return [a for a in _AGENTES_PADRAO if a.id not in bloqueados]
 
 
+_AGENTES_PUSH_MAIN_EXTRA: tuple[AgenteRegistrado, ...] = (
+    AgenteRegistrado(
+        "renovar_tokens",
+        "Renovar tokens OAuth",
+        "infra",
+        "agentes.orquestrador.runners:executar_renovar_tokens",
+    ),
+    AgenteRegistrado("relatorio", "Relatório GitHub", "relatorio", "agentes.relatorio:executar"),
+    AgenteRegistrado(
+        "relatorio_financeiro",
+        "Relatório financeiro",
+        "relatorio",
+        "agentes.relatorio_financeiro:executar",
+    ),
+    AgenteRegistrado(
+        "otimizador_listing",
+        "Otimizador listing ML",
+        "monitor",
+        "agentes.ml.agente_otimizador_listing:executar",
+        {"limite_itens": 5},
+    ),
+)
+
+
+def listar_agentes_push_main(*, excluir: set[str] | None = None) -> list[AgenteRegistrado]:
+    """
+    Todos os agentes do ciclo 30min + rotinas extras de deploy (push main).
+    Os crons dos workflows individuais permanecem inalterados.
+    """
+    vistos: set[str] = set()
+    resultado: list[AgenteRegistrado] = []
+    for registro in (*listar_agentes(excluir=excluir), *_AGENTES_PUSH_MAIN_EXTRA):
+        if registro.id in vistos:
+            continue
+        vistos.add(registro.id)
+        resultado.append(registro)
+    return resultado
+
+
 def executar_registro(registro: AgenteRegistrado) -> Any:
     fn = _resolver_fn(registro)
     return fn(**registro.kwargs)

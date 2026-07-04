@@ -71,6 +71,22 @@ class TestOrquestrador(unittest.TestCase):
     def test_extrair_resumo(self):
         self.assertIn("2 novos", orq._extrair_resumo({"com_novos": 2}))
 
+    @patch.object(orq, "alertar_gestor", return_value=True)
+    @patch.object(orq, "executar_registro", return_value={"ok": True})
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    def test_executar_ciclo_metricas(self, *_):
+        out = orq.executar_ciclo(
+            agentes=[self._agente_fake("x")],
+            titulo_resumo="teste",
+            chave_cooldown="teste:1",
+            cooldown_segundos=60,
+            prefixo_metrica="teste_metrica",
+            enviar_resumo_telegram=True,
+            log_prefix="Teste",
+        )
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

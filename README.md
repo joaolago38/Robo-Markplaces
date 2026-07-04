@@ -522,6 +522,37 @@ Agente que **a cada 30 minutos** executa todos os monitores do robô em sequênc
 
 **Não incluídos** (rotinas diárias/semanais ou destrutivas): `publicador`, `relatorio`, `relatorio_financeiro`, `otimizador_listing`.
 
+## Sync push main (todos os agentes após deploy)
+
+Agente que roda **uma vez após cada push na `main` com CI verde**, executando **todos** os agentes (incluindo relatórios e renovação de tokens). **Não remove** os crons dos workflows abaixo — eles continuam nos horários cadastrados.
+
+- Módulo: `python -m agentes.orquestrador.agente_sync_push_main`
+- Workflow: `.github/workflows/push_main_rotinas.yml` (dispara após workflow **CI** concluir com sucesso na `main`)
+- Métricas Datadog: `robo.push_main.*`
+- Extras além do orquestrador 30min: renovar tokens, relatório GitHub, relatório financeiro, otimizador listing
+
+### Horários cadastrados (crons UTC — mantidos)
+
+| Workflow | Cron (UTC) | Frequência aprox. (BRT) |
+|----------|------------|-------------------------|
+| `orquestrador_30min.yml` | `*/30 * * * *` | A cada 30 min |
+| `renovar_tokens.yml` | `*/30 * * * *` | A cada 30 min |
+| `agente_principal.yml` | `*/30 9-21`, `*/30 22` | Chat/vendas ~08h–21h30 |
+| `agente_principal.yml` | `0 3,9,15,21` | Keepalive 00/06/12/18h |
+| `agente_principal.yml` | `0 9` | Relatório 08h |
+| `operacao_24h_seguranca.yml` | `0 */2 * * *` | A cada 2h |
+| `sincronizar_estoque.yml` | `0 */2 * * *` | A cada 2h |
+| `leilao_veiculo.yml` | `0 * * * *` | A cada hora |
+| `alibaba_importacao.yml` | `0 */2 * * *` | A cada 2h |
+| `conectividade_marketplaces.yml` | `0 * * * *` | A cada hora |
+| `panorama.yml` | `30 9 * * *` | 08:30 diário |
+| `monitor_ml.yml` | `0 10 * * *` | 09:00 diário |
+| `monitor_concorrentes_ml.yml` | `0 9 * * *` | 08:00 diário |
+| `ads_gatilho_ml.yml` | `0 11 * * *` | 10:00 diário |
+| `relatorio_financeiro.yml` | `0 9 * * 1` | Segunda 08h |
+| `otimizar_listing.yml` | `0 9 * * 2` | Terça 08h |
+| `push_main_rotinas.yml` | após CI na `main` | Extra por deploy |
+
 ## Monitor Alibaba — oportunidades de importação (2h)
 
 Agente que varre [Alibaba.com](https://www.alibaba.com/) buscando fornecedores para produtos que você configurar (preço máximo USD, MOQ máximo).

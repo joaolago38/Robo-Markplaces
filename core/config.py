@@ -73,6 +73,9 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip() for x in os.getenv("ORQUESTRADOR_EXCLUIR", "").split(",") if x.strip()
 }
 
+# Sync após push na main (não substitui crons dos workflows)
+PUSH_MAIN_COOLDOWN_RESUMO_SEG = int(os.getenv("PUSH_MAIN_COOLDOWN_RESUMO_SEG", "300"))
+
 # Shopee
 SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "").strip()
 SHOPEE_PARTNER_KEY = os.getenv("SHOPEE_PARTNER_KEY", "").strip()
