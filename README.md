@@ -503,7 +503,8 @@ Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**
 - Agente: `python -m agentes.leilao.agente_leilao_veiculo`
 - Workflow: `.github/workflows/leilao_veiculo.yml` (cron **a cada hora**, 24×7)
 - Alertas: Telegram gestor quando aparecer **leilão novo** (não repetido)
-- Histórico: `logs/leilao_veiculos_history.json`
+- Histórico: `logs/leilao_veiculos_history.json` (restaurado via cache entre execuções no GitHub Actions)
+- Preflight: `python scripts/preflight_monitor_telegram.py` (valida token antes de rodar)
 
 A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Sites com bloqueio anti-bot podem retornar menos resultados; ajuste `termos_extra` no catálogo para refinar.
 
@@ -515,7 +516,8 @@ Agente que varre [Alibaba.com](https://www.alibaba.com/) buscando fornecedores p
 - Agente: `python -m agentes.importacao.agente_alibaba_importacao`
 - Workflow: `.github/workflows/alibaba_importacao.yml` (cron **a cada 2 horas**)
 - Alertas: Telegram gestor quando surgir **anúncio novo** dentro dos critérios
-- Histórico: `logs/alibaba_importacao_history.json`
+- Histórico: `logs/alibaba_importacao_history.json` (restaurado via cache entre execuções no GitHub Actions)
+- Preflight: `python scripts/preflight_monitor_telegram.py`
 
 Exemplo de produto no catálogo:
 

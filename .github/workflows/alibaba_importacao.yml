@@ -24,12 +24,31 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar histórico de oportunidades
+        uses: actions/cache@v4
+        with:
+          path: logs/alibaba_importacao_history.json
+          key: alibaba-importacao-history-${{ github.run_id }}
+          restore-keys: |
+            alibaba-importacao-history-
+      - name: Restaurar cooldown de alertas Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Rodar monitor Alibaba
         run: python -m agentes.importacao.agente_alibaba_importacao
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Salvar historico
+      - name: Salvar historico (backup)
         uses: actions/upload-artifact@v4
         with:
           name: alibaba-importacao-history

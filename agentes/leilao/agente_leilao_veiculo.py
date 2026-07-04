@@ -17,7 +17,7 @@ from typing import Any
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import LEILAO_PAUSA_ENTRE_FONTES_SEG, LEILAO_VEICULOS_CATALOGO, ROOT
 from core.datadog_metrics import gauge, incrementar
-from core.notificador import alertar_gestor
+from core.notificador import alertar_gestor, gestor_telegram_configurado
 from integracoes.leilao.busca import buscar_veiculo_em_fontes
 
 logger = logging.getLogger("agente_leilao_veiculo")
@@ -121,6 +121,12 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     Alerta apenas achados novos (não repetidos). Nunca lança exceção.
     """
     try:
+        if enviar_alerta and not gestor_telegram_configurado():
+            logger.warning(
+                "Telegram gestor não configurado (TELEGRAM_TOKEN / TELEGRAM_GESTOR_CHAT_ID) — "
+                "alertas de leilão não serão entregues"
+            )
+
         veiculos = _carregar_veiculos()
         if not veiculos:
             logger.info("Nenhum veículo ativo em %s", LEILAO_VEICULOS_CATALOGO)
@@ -147,6 +153,11 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 alerta_enviado = bool(
                     alertar_gestor(msg, chave="leilao:veiculos:novos", cooldown_segundos=3600)
                 )
+                if not alerta_enviado:
+                    logger.warning(
+                        "%s achado(s) novo(s) mas alerta não enviado (cooldown ou falha Telegram)",
+                        sum(len(r.get("novos") or []) for r in com_novos),
+                    )
 
         return {
             "ok": True,

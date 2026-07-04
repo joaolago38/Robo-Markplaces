@@ -24,12 +24,31 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar histórico de achados
+        uses: actions/cache@v4
+        with:
+          path: logs/leilao_veiculos_history.json
+          key: leilao-veiculos-history-${{ github.run_id }}
+          restore-keys: |
+            leilao-veiculos-history-
+      - name: Restaurar cooldown de alertas Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Rodar monitor de leilões de veículos
         run: python -m agentes.leilao.agente_leilao_veiculo
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Salvar historico de achados
+      - name: Salvar historico de achados (backup)
         uses: actions/upload-artifact@v4
         with:
           name: leilao-veiculos-history

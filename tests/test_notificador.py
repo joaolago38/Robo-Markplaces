@@ -181,5 +181,17 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         self.assertFalse(notificador.perguntar_gestor_e_aguardar("?", timeout_segundos=5))
 
 
+class TestGestorTelegramConfigurado(unittest.TestCase):
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    def test_configurado(self):
+        self.assertTrue(notificador.gestor_telegram_configurado())
+
+    @patch.object(notificador, "TELEGRAM_TOKEN", "")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    def test_sem_token(self):
+        self.assertFalse(notificador.gestor_telegram_configurado())
+
+
 if __name__ == "__main__":
     unittest.main()

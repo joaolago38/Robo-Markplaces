@@ -18,7 +18,7 @@ from core.config import (
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
-from core.notificador import alertar_gestor
+from core.notificador import alertar_gestor, gestor_telegram_configurado
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
 
 logger = logging.getLogger("agente_alibaba_importacao")
@@ -111,6 +111,12 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     """Varre Alibaba para cada produto ativo. Nunca lança exceção."""
     try:
+        if enviar_alerta and not gestor_telegram_configurado():
+            logger.warning(
+                "Telegram gestor não configurado (TELEGRAM_TOKEN / TELEGRAM_GESTOR_CHAT_ID) — "
+                "alertas Alibaba não serão entregues"
+            )
+
         produtos = _carregar_produtos()
         if not produtos:
             logger.info("Nenhum produto ativo em %s", ALIBABA_IMPORTACAO_CATALOGO)
@@ -136,6 +142,11 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 alerta_enviado = bool(
                     alertar_gestor(msg, chave="alibaba:importacao:novos", cooldown_segundos=7200)
                 )
+                if not alerta_enviado:
+                    logger.warning(
+                        "%s oportunidade(s) nova(s) mas alerta não enviado (cooldown ou falha Telegram)",
+                        sum(len(r.get("novos") or []) for r in com_novos),
+                    )
 
         return {
             "ok": True,

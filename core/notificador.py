@@ -23,6 +23,11 @@ logger = logging.getLogger("notificador")
 _COOLDOWN_PATH = ROOT / "logs" / "alertas_cooldown.json"
 
 
+def gestor_telegram_configurado() -> bool:
+    """True se token e chat do gestor estão definidos."""
+    return bool((TELEGRAM_TOKEN or "").strip() and (TELEGRAM_GESTOR_CHAT_ID or "").strip())
+
+
 def _chave_msg(msg: str) -> str:
     return hashlib.sha256(msg.encode("utf-8")).hexdigest()[:24]
 
