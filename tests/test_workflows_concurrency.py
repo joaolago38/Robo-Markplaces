@@ -22,6 +22,9 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "operacao_24h_seguranca.yml",
     "sincronizar_estoque.yml",
     "conectividade_marketplaces.yml",
+    "orquestrador_30min.yml",
+    "leilao_veiculo.yml",
+    "alibaba_importacao.yml",
 )
 
 _GROUP_ESPERADO = "robo-markplaces-token-renewal"

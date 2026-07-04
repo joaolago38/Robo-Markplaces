@@ -1,0 +1,104 @@
+name: Orquestrador 30min
+
+# Executa todos os agentes de monitoramento a cada 30 minutos e envia
+# resumo consolidado ao Telegram gestor + métricas ao Datadog.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  orquestrador:
+    name: Ciclo completo — todos os agentes
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown de alertas Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Restaurar historico leiloes
+        uses: actions/cache@v4
+        with:
+          path: logs/leilao_veiculos_history.json
+          key: leilao-veiculos-history-${{ github.run_id }}
+          restore-keys: |
+            leilao-veiculos-history-
+      - name: Restaurar historico Alibaba
+        uses: actions/cache@v4
+        with:
+          path: logs/alibaba_importacao_history.json
+          key: alibaba-importacao-history-${{ github.run_id }}
+          restore-keys: |
+            alibaba-importacao-history-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar orquestrador 30min
+        run: python -m agentes.orquestrador.agente_orquestrador
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
+          LOJAHUB_TOKEN: ${{ secrets.LOJAHUB_TOKEN }}
+          LOJAHUB_ANALYTICS_TOKEN: ${{ secrets.LOJAHUB_ANALYTICS_TOKEN }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
+          MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
+          MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
+          AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
+          AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}
+          AMAZON_REFRESH_TOKEN: ${{ secrets.AMAZON_REFRESH_TOKEN }}
+          AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
+          AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          WHATSAPP_API_TYPE: ${{ secrets.WHATSAPP_API_TYPE }}
+          WHATSAPP_API_URL: ${{ secrets.WHATSAPP_API_URL }}
+          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
+          WHATSAPP_INSTANCE: ${{ secrets.WHATSAPP_INSTANCE }}
+          WHATSAPP_NUMERO_DESTINO: ${{ secrets.WHATSAPP_NUMERO_DESTINO }}
+          WHATSAPP_BUSINESS_TOKEN: ${{ secrets.WHATSAPP_BUSINESS_TOKEN }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}

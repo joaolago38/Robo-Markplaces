@@ -26,7 +26,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
-from core.state_backend import _TEM_FLOCK, get_state_backend
+from core.state_backend import get_state_backend
 
 
 @contextmanager

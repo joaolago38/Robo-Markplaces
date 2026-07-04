@@ -68,6 +68,7 @@ _LOGGER_META = {
     "agente_monitor_concorrentes": ("mercadolivre", "agente"),
     "agente_leilao_veiculo": ("multi", "agente"),
     "agente_alibaba_importacao": ("multi", "agente"),
+    "agente_orquestrador": ("multi", "orquestrador"),
     "agente_ml": ("mercadolivre", "agente"),
     "painel_item": ("mercadolivre", "agente"),
     "agente_shopee": ("shopee", "agente"),

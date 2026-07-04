@@ -66,6 +66,13 @@ ALIBABA_IMPORTACAO_CATALOGO = os.getenv(
 )
 ALIBABA_PAUSA_ENTRE_BUSCAS_SEG = float(os.getenv("ALIBABA_PAUSA_ENTRE_BUSCAS_SEG", "1.0"))
 
+# Orquestrador 30 min
+ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))
+ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "1.5"))
+ORQUESTRADOR_EXCLUIR = {
+    x.strip() for x in os.getenv("ORQUESTRADOR_EXCLUIR", "").split(",") if x.strip()
+}
+
 # Shopee
 SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "").strip()
 SHOPEE_PARTNER_KEY = os.getenv("SHOPEE_PARTNER_KEY", "").strip()
