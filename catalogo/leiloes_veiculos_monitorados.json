@@ -1,12 +1,52 @@
 [
   {
-    "id": "exemplo-fiat-uno",
-    "ativo": false,
+    "id": "fiat-fiorino-furgao",
+    "ativo": true,
+    "prioridade": 1,
     "marca": "Fiat",
-    "modelo": "Uno",
-    "ano_min": 2010,
-    "ano_max": 2015,
+    "modelo": "Fiorino",
+    "perfil": "recuperado_furto_media_monta",
+    "termos_extra": ["furgão", "furgao", "furgão trabalho"],
+    "notas": "Prioridade máxima — utilitário furto recuperado média monta"
+  },
+  {
+    "id": "vw-gol",
+    "ativo": true,
+    "prioridade": 2,
+    "marca": "Volkswagen",
+    "modelo": "Gol",
+    "perfil": "recuperado_furto_media_monta",
     "termos_extra": [],
-    "notas": "Exemplo — defina ativo:true e ajuste marca/modelo/ano para o veículo desejado"
+    "notas": "Hatch popular em leilões DETRAN"
+  },
+  {
+    "id": "honda-civic",
+    "ativo": true,
+    "prioridade": 3,
+    "marca": "Honda",
+    "modelo": "Civic",
+    "perfil": "recuperado_furto_media_monta",
+    "termos_extra": [],
+    "notas": ""
+  },
+  {
+    "id": "honda-city",
+    "ativo": true,
+    "prioridade": 4,
+    "marca": "Honda",
+    "modelo": "City",
+    "perfil": "recuperado_furto_media_monta",
+    "termos_extra": [],
+    "notas": ""
+  },
+  {
+    "id": "honda-fit",
+    "ativo": true,
+    "prioridade": 5,
+    "marca": "Honda",
+    "modelo": "Fit",
+    "perfil": "recuperado_furto_media_monta",
+    "termos_extra": [],
+    "notas": ""
   }
 ]

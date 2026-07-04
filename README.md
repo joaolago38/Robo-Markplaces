@@ -495,15 +495,42 @@ python scripts/migrar_estado_para_dynamodb.py
 
 ## Monitor de leilões de veículos (24h)
 
-Agente opcional que varre **leiloeiros principais** e portais **DETRAN de todos os 27 estados** buscando um veículo específico configurado por você.
+Agente opcional que varre **leiloeiros principais** e portais **DETRAN de todos os 27 estados** buscando veículos **recuperados de furto com média monta**.
 
-- Catálogo: `catalogo/leiloes_veiculos_monitorados.json` (marca, modelo, ano, `ativo: true`)
+Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**, **Civic**, **City**, **Fit**.
+
+- Catálogo: `catalogo/leiloes_veiculos_monitorados.json` — campo `perfil: recuperado_furto_media_monta` e `prioridade` (1 = mais importante)
 - Agente: `python -m agentes.leilao.agente_leilao_veiculo`
 - Workflow: `.github/workflows/leilao_veiculo.yml` (cron **a cada hora**, 24×7)
 - Alertas: Telegram gestor quando aparecer **leilão novo** (não repetido)
 - Histórico: `logs/leilao_veiculos_history.json`
 
 A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Sites com bloqueio anti-bot podem retornar menos resultados; ajuste `termos_extra` no catálogo para refinar.
+
+## Monitor Alibaba — oportunidades de importação (2h)
+
+Agente que varre [Alibaba.com](https://www.alibaba.com/) buscando fornecedores para produtos que você configurar (preço máximo USD, MOQ máximo).
+
+- Catálogo: `catalogo/alibaba_produtos_importacao.json`
+- Agente: `python -m agentes.importacao.agente_alibaba_importacao`
+- Workflow: `.github/workflows/alibaba_importacao.yml` (cron **a cada 2 horas**)
+- Alertas: Telegram gestor quando surgir **anúncio novo** dentro dos critérios
+- Histórico: `logs/alibaba_importacao_history.json`
+
+Exemplo de produto no catálogo:
+
+```json
+{
+  "id": "frasco-esmalte",
+  "ativo": true,
+  "nome": "Frasco esmalte 15ml",
+  "termo_busca": "nail polish bottle 15ml empty",
+  "preco_max_usd": 0.35,
+  "moq_max": 5000
+}
+```
+
+O Alibaba é muito JavaScript — a busca combina página pública de search + fallback `site:alibaba.com`. Resultados podem variar; use termos em inglês em `termo_busca` para melhor cobertura.
 
 ## Qualidade recomendada
 

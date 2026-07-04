@@ -1,0 +1,38 @@
+name: Monitor Alibaba Importação
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 2 horas (UTC)
+    - cron: "0 */2 * * *"
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Oportunidades de importação no Alibaba.com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Rodar monitor Alibaba
+        run: python -m agentes.importacao.agente_alibaba_importacao
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar historico
+        uses: actions/upload-artifact@v4
+        with:
+          name: alibaba-importacao-history
+          path: logs/alibaba_importacao_history.json
+          retention-days: 90
+          if-no-files-found: ignore
