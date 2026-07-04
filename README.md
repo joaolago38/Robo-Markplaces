@@ -493,6 +493,18 @@ python scripts/migrar_estado_para_dynamodb.py
 - `core/github_secrets.py` — continua para os crons no Actions.
 - EC2, RDS, NAT Gateway — não incluídos no template SAM.
 
+## Monitor de leilões de veículos (24h)
+
+Agente opcional que varre **leiloeiros principais** e portais **DETRAN de todos os 27 estados** buscando um veículo específico configurado por você.
+
+- Catálogo: `catalogo/leiloes_veiculos_monitorados.json` (marca, modelo, ano, `ativo: true`)
+- Agente: `python -m agentes.leilao.agente_leilao_veiculo`
+- Workflow: `.github/workflows/leilao_veiculo.yml` (cron **a cada hora**, 24×7)
+- Alertas: Telegram gestor quando aparecer **leilão novo** (não repetido)
+- Histórico: `logs/leilao_veiculos_history.json`
+
+A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Sites com bloqueio anti-bot podem retornar menos resultados; ajuste `termos_extra` no catálogo para refinar.
+
 ## Qualidade recomendada
 
 - Lint: `ruff check .`
