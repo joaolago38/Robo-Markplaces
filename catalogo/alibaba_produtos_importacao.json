@@ -1,0 +1,13 @@
+[
+  {
+    "id": "exemplo-frasco-esmalte",
+    "ativo": false,
+    "nome": "Frasco esmalte 15ml",
+    "termo_busca": "nail polish bottle 15ml empty",
+    "termo_busca_pt": "frasco vidro esmalte 15ml atacado",
+    "preco_max_usd": 0.35,
+    "moq_max": 5000,
+    "termos_extra": ["ODM", "wholesale"],
+    "notas": "Exemplo — ativo:true e ajuste termos/preço/MOQ para seu produto"
+  }
+]
