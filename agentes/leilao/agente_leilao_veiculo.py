@@ -1,6 +1,8 @@
 """
 agentes/leilao/agente_leilao_veiculo.py
-Monitor 24h de leilões de veículos em leiloeiros principais e portais DETRAN (todos os estados).
+Monitor 24h de leilões de veículos **recuperados de furto / média monta** em leiloeiros
+e portais DETRAN (todos os estados). Modelos prioritários no catálogo padrão:
+Fiorino Furgão → Gol → Civic → City → Fit.
 
 Configuração: catalogo/leiloes_veiculos_monitorados.json
 Somente leitura + alertas — não participa de leilões.
@@ -87,6 +89,7 @@ def _monitorar_veiculo(
     return {
         "id": vid,
         "veiculo": nome,
+        "prioridade": int(veiculo.get("prioridade") or 99),
         "achados_total": len(achados),
         "novos": novos,
         "ok": True,
@@ -94,8 +97,9 @@ def _monitorar_veiculo(
 
 
 def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
-    linhas = ["🚗 *Leilões de veículos — novos achados*", ""]
-    for r in resultados:
+    linhas = ["🚗 *Leilões — recuperado furto / média monta*", ""]
+    ordenados = sorted(resultados, key=lambda r: int(r.get("prioridade") or 99))
+    for r in ordenados:
         novos = r.get("novos") or []
         if not novos:
             continue
@@ -122,6 +126,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             logger.info("Nenhum veículo ativo em %s", LEILAO_VEICULOS_CATALOGO)
             return {"ok": True, "total_veiculos": 0, "resultados": [], "alerta_enviado": False}
 
+        veiculos = sorted(veiculos, key=lambda v: int(v.get("prioridade") or 99))
         historico = _carregar_historico()
         resultados: list[dict[str, Any]] = []
 

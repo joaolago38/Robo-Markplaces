@@ -495,9 +495,11 @@ python scripts/migrar_estado_para_dynamodb.py
 
 ## Monitor de leilões de veículos (24h)
 
-Agente opcional que varre **leiloeiros principais** e portais **DETRAN de todos os 27 estados** buscando um veículo específico configurado por você.
+Agente opcional que varre **leiloeiros principais** e portais **DETRAN de todos os 27 estados** buscando veículos **recuperados de furto com média monta**.
 
-- Catálogo: `catalogo/leiloes_veiculos_monitorados.json` (marca, modelo, ano, `ativo: true`)
+Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**, **Civic**, **City**, **Fit**.
+
+- Catálogo: `catalogo/leiloes_veiculos_monitorados.json` — campo `perfil: recuperado_furto_media_monta` e `prioridade` (1 = mais importante)
 - Agente: `python -m agentes.leilao.agente_leilao_veiculo`
 - Workflow: `.github/workflows/leilao_veiculo.yml` (cron **a cada hora**, 24×7)
 - Alertas: Telegram gestor quando aparecer **leilão novo** (não repetido)

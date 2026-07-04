@@ -22,6 +22,48 @@ class TestMontarTermo(unittest.TestCase):
         self.assertIn("2012", termo)
 
 
+    def test_monta_termo_com_perfil_recuperado(self):
+        termo = busca.montar_termo_busca(
+            {
+                "marca": "Fiat",
+                "modelo": "Fiorino",
+                "perfil": "recuperado_furto_media_monta",
+                "termos_extra": ["furgão"],
+            }
+        )
+        self.assertIn("recuperado", termo)
+        self.assertIn("média monta", termo)
+        self.assertIn("furgão", termo)
+
+
+class TestPerfilRecuperado(unittest.TestCase):
+    def test_aceita_recuperado_media_monta(self):
+        blob = "Fiat Fiorino leilão recuperado furto média monta DETRAN"
+        self.assertTrue(busca._bate_perfil_recuperado_furto(blob))
+
+    def test_rejeita_grande_monta(self):
+        blob = "Gol leilão recuperado furto grande monta"
+        self.assertFalse(busca._bate_perfil_recuperado_furto(blob))
+
+    def test_relevante_exige_perfil(self):
+        ok = busca._relevante_para_veiculo(
+            {"titulo": "Honda Civic leilão", "snippet": "lote normal", "url": "http://x"},
+            {"marca": "Honda", "modelo": "Civic", "perfil": "recuperado_furto_media_monta"},
+        )
+        self.assertFalse(ok)
+
+    def test_relevante_civic_recuperado(self):
+        ok = busca._relevante_para_veiculo(
+            {
+                "titulo": "Civic leilão recuperado furto média monta",
+                "snippet": "DETRAN",
+                "url": "http://x/leilao",
+            },
+            {"marca": "Honda", "modelo": "Civic", "perfil": "recuperado_furto_media_monta"},
+        )
+        self.assertTrue(ok)
+
+
 class TestExtrairDdg(unittest.TestCase):
     def test_parse_resultado(self):
         html = '''
@@ -63,14 +105,20 @@ class TestFontesCadastro(unittest.TestCase):
 class TestBuscarVeiculo(unittest.TestCase):
     @patch.object(busca, "buscar_duckduckgo", return_value=[
         {
-            "titulo": "Fiat Uno 2012 leilão Copart",
+            "titulo": "Fiat Uno 2012 leilão recuperado furto média monta",
             "url": "https://www.copart.com.br/lote/123",
-            "snippet": "veículo em leilão",
+            "snippet": "veículo recuperado furto média monta",
         }
     ])
     @patch.object(busca.time, "sleep")
     def test_deduplica_e_filtra(self, _sleep, _ddg):
-        veiculo = {"marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015}
+        veiculo = {
+            "marca": "Fiat",
+            "modelo": "Uno",
+            "ano_min": 2010,
+            "ano_max": 2015,
+            "perfil": "recuperado_furto_media_monta",
+        }
         achados = busca.buscar_veiculo_em_fontes(
             veiculo,
             incluir_detran=False,

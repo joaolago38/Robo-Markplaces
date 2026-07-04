@@ -23,11 +23,12 @@ _USER_AGENT = (
     "Mozilla/5.0 (compatible; RoboMarkplaces-LeilaoBot/1.0; +https://github.com/joaolago38/Robo-Markplaces)"
 )
 _PALAVRAS_LEILAO = ("leilao", "leilão", "lote", "arremate", "edital", "veiculo", "veículo", "automotor")
-
-
-def _normalizar(texto: str) -> str:
-    texto = unicodedata.normalize("NFKD", (texto or "").lower())
-    return "".join(c for c in texto if not unicodedata.combining(c))
+_PERFIL_RECUPERADO_FURTO = "recuperado_furto_media_monta"
+_TERMOS_PERFIL_BUSCA = ("recuperado", "furto", "média monta", "media monta")
+_PALAVRAS_RECUPERADO = ("recuperado", "furto", "furtado", "roubado", "judicial", "detran")
+_PALAVRAS_MEDIA_MONTA = ("media monta", "média monta", "medio", "médio", "avaria media", "avaria média")
+_PALAVRAS_EXCLUIR_MONTA = ("grande monta", "perda total", "irrecuperavel", "irrecuperável", "sucata")
+_MODELOS_MARCA_OPCIONAL = frozenset({"gol", "civic", "city", "fit", "fiorino", "furgao", "furgão"})
 
 
 def montar_termo_busca(veiculo: dict[str, Any]) -> str:
@@ -44,7 +45,33 @@ def montar_termo_busca(veiculo: dict[str, Any]) -> str:
     for extra in veiculo.get("termos_extra") or []:
         if extra:
             partes.append(str(extra).strip())
+    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
+        partes.extend(_TERMOS_PERFIL_BUSCA)
     return " ".join(p for p in partes if p)
+
+
+def _normalizar(texto: str) -> str:
+    texto = unicodedata.normalize("NFKD", (texto or "").lower())
+    return "".join(c for c in texto if not unicodedata.combining(c))
+
+
+def _sufixo_query_leilao(veiculo: dict[str, Any], *, tipo_fonte: str) -> str:
+    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
+        base = "leilão veículo recuperado furto média monta"
+    else:
+        base = "leilão veículo"
+    if tipo_fonte == "detran":
+        return f"{base} DETRAN"
+    return base
+
+
+def _bate_perfil_recuperado_furto(texto: str) -> bool:
+    norm = _normalizar(texto)
+    if any(x in norm for x in _PALAVRAS_EXCLUIR_MONTA):
+        return False
+    if not any(x in norm for x in _PALAVRAS_RECUPERADO):
+        return False
+    return any(x in norm for x in _PALAVRAS_MEDIA_MONTA)
 
 
 def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
@@ -129,13 +156,18 @@ def _relevante_para_veiculo(resultado: dict[str, str], veiculo: dict[str, Any]) 
     norm = _normalizar(blob)
     marca = _normalizar(str(veiculo.get("marca") or ""))
     modelo = _normalizar(str(veiculo.get("modelo") or ""))
-    if marca and marca not in norm:
-        return False
     if modelo and modelo not in norm:
         return False
+    if marca and marca not in norm:
+        if modelo not in _MODELOS_MARCA_OPCIONAL:
+            return False
     if not _ano_no_intervalo(blob, veiculo):
         return False
-    return _parece_leilao(blob) or _parece_leilao(resultado.get("url", ""))
+    if not (_parece_leilao(blob) or _parece_leilao(resultado.get("url", ""))):
+        return False
+    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
+        return _bate_perfil_recuperado_furto(blob)
+    return True
 
 
 def _hash_url(url: str) -> str:
@@ -202,7 +234,7 @@ def buscar_veiculo_em_fontes(
         nome = fonte.get("nome", dominio)
         if not dominio:
             continue
-        sufixo = "leilão veículo" if tipo == "leiloeiro" else "leilão veículos DETRAN"
+        sufixo = _sufixo_query_leilao(veiculo, tipo_fonte=tipo)
         try:
             lote = _buscar_em_dominio(
                 dominio,
@@ -227,7 +259,7 @@ def buscar_veiculo_em_fontes(
 
     # Busca ampla (fallback)
     try:
-        query_geral = f'leilão {termo} veículo Brasil'
+        query_geral = f'{_sufixo_query_leilao(veiculo, tipo_fonte="web")} {termo} Brasil'
         for item in buscar_duckduckgo(query_geral, max_resultados=10):
             enriquecido = {
                 "url": item["url"],
