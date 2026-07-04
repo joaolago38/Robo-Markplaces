@@ -508,6 +508,20 @@ Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**
 
 A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Sites com bloqueio anti-bot podem retornar menos resultados; ajuste `termos_extra` no catálogo para refinar.
 
+## Orquestrador 30 minutos (todos os agentes)
+
+Agente que **a cada 30 minutos** executa todos os monitores do robô em sequência, envia **resumo consolidado** ao Telegram gestor e **métricas** ao Datadog (`robo.orquestrador.*`).
+
+- Módulo: `python -m agentes.orquestrador.agente_orquestrador`
+- Workflow: `.github/workflows/orquestrador_30min.yml` (cron `*/30 * * * *` UTC)
+- Catálogo de agentes: `agentes/orquestrador/registro_agentes.py` (21 agentes)
+- Excluir agentes lentos: env `ORQUESTRADOR_EXCLUIR=leilao,alibaba` (vírgula)
+- Cooldown do resumo: `ORQUESTRADOR_COOLDOWN_RESUMO_SEG` (padrão 1500s)
+
+**Segurança:** repricing, estoque, NF-e e operação 24h rodam em **dry-run** dentro do orquestrador; escrita real continua nos workflows dedicados (`operacao_24h_seguranca`, etc.).
+
+**Não incluídos** (rotinas diárias/semanais ou destrutivas): `publicador`, `relatorio`, `relatorio_financeiro`, `otimizador_listing`.
+
 ## Monitor Alibaba — oportunidades de importação (2h)
 
 Agente que varre [Alibaba.com](https://www.alibaba.com/) buscando fornecedores para produtos que você configurar (preço máximo USD, MOQ máximo).

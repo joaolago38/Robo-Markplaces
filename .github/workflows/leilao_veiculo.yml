@@ -6,6 +6,10 @@ on:
     # A cada hora (UTC) — cobertura contínua 24h via GitHub Actions
     - cron: "0 * * * *"
 
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
 env:
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}

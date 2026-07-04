@@ -6,6 +6,10 @@ on:
     # A cada 2 horas (UTC)
     - cron: "0 */2 * * *"
 
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
 env:
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}

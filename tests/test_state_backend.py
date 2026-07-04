@@ -1,7 +1,6 @@
 """
 tests/test_state_backend.py — backends file e DynamoDB (moto).
 """
-import json
 import os
 import sys
 import tempfile
