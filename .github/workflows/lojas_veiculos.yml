@@ -1,0 +1,62 @@
+name: Monitor Lojas Veículos FIPE
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 */2 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Lucinei + Leopardo vs FIPE
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar histórico de achados
+        uses: actions/cache@v4
+        with:
+          path: logs/lojas_veiculos_history.json
+          key: lojas-veiculos-history-${{ github.run_id }}
+          restore-keys: |
+            lojas-veiculos-history-
+      - name: Restaurar cooldown de alertas Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor de lojas veículos
+        run: python -m agentes.veiculos.agente_monitor_lojas_veiculos
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          LOJAS_VEICULOS_PRECO_MAX: "20000"
+          LOJAS_VEICULOS_MARGEM_FIPE_MIN_PCT: "25"
+      - name: Salvar historico de achados (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lojas-veiculos-history
+          path: logs/lojas_veiculos_history.json
+          retention-days: 90
+          if-no-files-found: ignore

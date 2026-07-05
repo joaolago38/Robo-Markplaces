@@ -27,6 +27,7 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "leilao_veiculo.yml",
     "alibaba_importacao.yml",
     "licitacoes.yml",
+    "lojas_veiculos.yml",
     "push_deploy.yml",
 )
 

@@ -12,7 +12,7 @@ import time
 import unicodedata
 from html import unescape
 from typing import Any
-from urllib.parse import parse_qs, quote_plus, unquote, urlparse
+from urllib.parse import parse_qs, quote_plus, unquote, urlparse, urlunparse
 
 from core.http_client import request
 
@@ -41,7 +41,56 @@ def montar_termo_busca(produto: dict[str, Any]) -> str:
 
 
 def _hash_url(url: str) -> str:
-    return hashlib.sha256((url or "").strip().encode()).hexdigest()[:16]
+    return hashlib.sha256(normalizar_url_alibaba(url).encode()).hexdigest()[:16]
+
+
+def normalizar_url_alibaba(url: str) -> str:
+    """
+    Corrige URLs do Alibaba extraídas com slug/ID colados (ex.: ...1kg1601242225300.html → ...1kg_1601242225300.html).
+    """
+    bruto = unescape((url or "").strip())
+    if not bruto:
+        return ""
+    if bruto.startswith("//"):
+        bruto = "https:" + bruto
+    elif not bruto.startswith("http"):
+        bruto = "https://" + bruto.lstrip("/")
+
+    parsed = urlparse(bruto)
+    host = (parsed.netloc or "").lower()
+    if host == "alibaba.com":
+        parsed = parsed._replace(netloc="www.alibaba.com")
+        host = "www.alibaba.com"
+
+    path = parsed.path or ""
+    m = re.search(r"(/product-detail/)(.+?)(\.html?)$", path, re.IGNORECASE)
+    if m:
+        prefix, slug, ext = m.groups()
+        slug_corrigido = re.sub(r"([a-zA-Z0-9])(\d{10,})$", r"\1_\2", slug)
+        if slug_corrigido != slug:
+            path = f"{prefix}{slug_corrigido}{ext}"
+            parsed = parsed._replace(path=path)
+
+    # Remove query/fragment de tracking — evita links quebrados no Telegram
+    parsed = parsed._replace(query="", fragment="")
+    return urlunparse(parsed)
+
+
+def montar_url_busca_alibaba(termo: str) -> str:
+    termo_limpo = (termo or "").strip()
+    if not termo_limpo:
+        return _ALIBABA_SEARCH
+    return f"{_ALIBABA_SEARCH}?fsb=y&IndexArea=product_en&SearchText={quote_plus(termo_limpo)}"
+
+
+def _aplicar_url_item(item: dict[str, Any]) -> dict[str, Any]:
+    url = normalizar_url_alibaba(str(item.get("url") or ""))
+    if url:
+        item["url"] = url
+        item["url_busca"] = montar_url_busca_alibaba(
+            str(item.get("termo_busca") or item.get("titulo") or "")
+        )
+    return item
 
 
 def _extrair_preco_usd(texto: str) -> float | None:
@@ -168,7 +217,9 @@ def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
         if snippet_m:
             snippet = unescape(re.sub(r"<[^>]+>", "", snippet_m.group(1))).strip()
         if url.startswith("http"):
-            resultados.append({"titulo": titulo, "url": url, "snippet": snippet})
+            resultados.append(
+                _aplicar_url_item({"titulo": titulo, "url": url, "snippet": snippet})
+            )
     return resultados
 
 
@@ -202,13 +253,15 @@ def _extrair_links_html(html: str) -> list[dict[str, str]]:
         re.IGNORECASE,
     ):
         url = unescape(m.group(1)).split("&")[0]
-        achados.append({"url": url, "titulo": "", "snippet": ""})
+        achados.append(_aplicar_url_item({"url": url, "titulo": "", "snippet": ""}))
     for m in re.finditer(
         r'data-title="([^"]+)"[^>]*data-href="([^"]+)"',
         html,
         re.IGNORECASE,
     ):
-        achados.append({"titulo": unescape(m.group(1)), "url": unescape(m.group(2)), "snippet": ""})
+        achados.append(
+            _aplicar_url_item({"titulo": unescape(m.group(1)), "url": unescape(m.group(2)), "snippet": ""})
+        )
     return achados
 
 
@@ -240,14 +293,17 @@ def buscar_alibaba_direto(termo: str, *, max_resultados: int = 15) -> list[dict[
                 continue
             vistos.add(link)
             blob = f"{raw.get('titulo', '')} {html[max(0, html.find(link) - 200):html.find(link) + 400]}"
-            item = {
-                "url": link,
-                "titulo": raw.get("titulo") or termo,
-                "snippet": raw.get("snippet") or "",
-                "preco_usd": _extrair_preco_usd(blob),
-                "moq": _extrair_moq(blob),
-                "fonte": "alibaba_search",
-            }
+            item = _aplicar_url_item(
+                {
+                    "url": link,
+                    "titulo": raw.get("titulo") or termo,
+                    "snippet": raw.get("snippet") or "",
+                    "preco_usd": _extrair_preco_usd(blob),
+                    "moq": _extrair_moq(blob),
+                    "fonte": "alibaba_search",
+                    "termo_busca": termo,
+                }
+            )
             itens.append(_enriquecer_distribuidor(item))
 
         # Contexto ao redor do termo no HTML (preços em listagens)
@@ -258,14 +314,17 @@ def buscar_alibaba_direto(termo: str, *, max_resultados: int = 15) -> list[dict[
                 if link in vistos or not _url_e_produto_alibaba(link):
                     continue
                 vistos.add(link)
-                item = {
-                    "url": link,
-                    "titulo": termo,
-                    "snippet": re.sub(r"<[^>]+>", " ", trecho)[:300],
-                    "preco_usd": _extrair_preco_usd(trecho),
-                    "moq": _extrair_moq(trecho),
-                    "fonte": "alibaba_search",
-                }
+                item = _aplicar_url_item(
+                    {
+                        "url": link,
+                        "titulo": termo,
+                        "snippet": re.sub(r"<[^>]+>", " ", trecho)[:300],
+                        "preco_usd": _extrair_preco_usd(trecho),
+                        "moq": _extrair_moq(trecho),
+                        "fonte": "alibaba_search",
+                        "termo_busca": termo,
+                    }
+                )
                 itens.append(_enriquecer_distribuidor(item))
 
         return itens[:max_resultados]
@@ -360,15 +419,18 @@ def buscar_oportunidades(
                 continue
             vistos.add(h)
             blob = f"{raw.get('titulo', '')} {raw.get('snippet', '')}"
-            item = {
-                "url": raw["url"],
-                "titulo": raw.get("titulo") or termo,
-                "snippet": raw.get("snippet") or "",
-                "preco_usd": _extrair_preco_usd(blob),
-                "moq": _extrair_moq(blob),
-                "fonte": "duckduckgo",
-                "hash": h,
-            }
+            item = _aplicar_url_item(
+                {
+                    "url": raw["url"],
+                    "titulo": raw.get("titulo") or termo,
+                    "snippet": raw.get("snippet") or "",
+                    "preco_usd": _extrair_preco_usd(blob),
+                    "moq": _extrair_moq(blob),
+                    "fonte": "duckduckgo",
+                    "hash": h,
+                    "termo_busca": termo,
+                }
+            )
             candidatos.append(_enriquecer_distribuidor(item))
 
     oportunidades: list[dict[str, Any]] = []

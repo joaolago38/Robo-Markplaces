@@ -193,7 +193,9 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
             dist = _formatar_distribuidor(item)
             linhas.append(f"• {titulo} — {preco}, {moq_txt}")
             linhas.append(f"  🏭 {dist}")
-            linhas.append(f"  {item.get('url', '')}")
+            linhas.append(f"  🔗 {item.get('url', '')}")
+            if item.get("url_busca"):
+                linhas.append(f"  🔍 Busca: {item['url_busca']}")
         if len(novos) > 6:
             linhas.append(f"  … e mais {len(novos) - 6}")
         linhas.append("")
