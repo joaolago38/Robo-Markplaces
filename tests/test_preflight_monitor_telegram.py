@@ -29,16 +29,21 @@ class TestPreflightMonitorTelegram(unittest.TestCase):
     def test_falha_sem_gestor(self):
         self.assertEqual(preflight.main(), 1)
 
-    @patch("core.http_client.request")
+    @patch("core.telegram_gate.verificar_token", return_value=True)
+    @patch("core.telegram_gate.token_formato_valido", return_value=True)
     @patch("core.config.TELEGRAM_TOKEN", "tok")
     @patch("core.config.TELEGRAM_GESTOR_CHAT_ID", "99")
-    def test_ok_getme(self, mock_request):
-        resp = MagicMock()
-        resp.json.return_value = {"ok": True, "result": {"username": "meubot"}}
-        mock_request.return_value = resp
+    def test_ok_getme(self, *_):
         self.assertEqual(preflight.main(), 0)
 
-    @patch("core.http_client.request", side_effect=RuntimeError("404"))
+    @patch("core.telegram_gate.token_formato_valido", return_value=False)
+    @patch("core.config.TELEGRAM_TOKEN", "tok")
+    @patch("core.config.TELEGRAM_GESTOR_CHAT_ID", "99")
+    def test_falha_formato(self, *_):
+        self.assertEqual(preflight.main(), 1)
+
+    @patch("core.telegram_gate.verificar_token", return_value=False)
+    @patch("core.telegram_gate.token_formato_valido", return_value=True)
     @patch("core.config.TELEGRAM_TOKEN", "tok")
     @patch("core.config.TELEGRAM_GESTOR_CHAT_ID", "99")
     def test_falha_getme(self, *_):

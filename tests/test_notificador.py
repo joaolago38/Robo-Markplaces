@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import core.notificador as notificador
+from core import telegram_gate as tg
 
 
 def _mock_resp():
@@ -22,6 +23,7 @@ def _mock_resp():
 
 class TestNotificadorAlertar(unittest.TestCase):
     def setUp(self):
+        tg.reset()
         self._tmp = tempfile.TemporaryDirectory()
         self._orig_cooldown = notificador._COOLDOWN_PATH
         notificador._COOLDOWN_PATH = Path(self._tmp.name) / "alertas_cooldown.json"

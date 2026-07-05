@@ -141,11 +141,19 @@ def executar_ciclo(
     inicio_ciclo = time.monotonic()
     resultados: list[dict[str, Any]] = []
 
-    if enviar_resumo_telegram and not gestor_telegram_configurado():
-        logger.warning(
-            "%s: Telegram gestor não configurado — resumo não será entregue",
-            log_prefix,
-        )
+    if enviar_resumo_telegram:
+        from core.telegram_gate import verificar_token
+
+        if not gestor_telegram_configurado():
+            logger.warning(
+                "%s: Telegram gestor não configurado — resumo não será entregue",
+                log_prefix,
+            )
+        elif not verificar_token():
+            logger.warning(
+                "%s: TELEGRAM_TOKEN inválido — resumo não será entregue (corrija no @BotFather)",
+                log_prefix,
+            )
 
     logger.info("%s: iniciando ciclo com %s agente(s)", log_prefix, len(agentes))
 

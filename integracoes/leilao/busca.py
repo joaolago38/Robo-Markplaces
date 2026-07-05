@@ -9,21 +9,15 @@ import logging
 import re
 import time
 import unicodedata
-from html import unescape
 from typing import Any
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import urlparse
 
-from core.http_client import request
+from core.ddg_lite import buscar as ddg_buscar
 from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS
 
 logger = logging.getLogger("leilao_busca")
 
-_DDG_HTML = "https://html.duckduckgo.com/html/"
-# User-Agent de navegador real — o identificador "Bot" no DDG Lite dispara HTTP 403 em volume.
-_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-)
+_DDG_HTML = "https://html.duckduckgo.com/html/"  # compat testes legados
 _PALAVRAS_LEILAO = ("leilao", "leilão", "lote", "arremate", "edital", "veiculo", "veículo", "automotor")
 _PERFIL_RECUPERADO_FURTO = "recuperado_furto_media_monta"
 _TERMOS_PERFIL_BUSCA = ("recuperado", "furto", "média monta", "media monta")
@@ -72,13 +66,9 @@ def _termo_query_site(veiculo: dict[str, Any]) -> str:
 
 
 def _headers_ddg() -> dict[str, str]:
-    return {
-        "User-Agent": _USER_AGENT,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Referer": "https://duckduckgo.com/",
-    }
+    from core.ddg_lite import _headers
+
+    return _headers()
 
 
 def _normalizar(texto: str) -> str:
@@ -106,87 +96,14 @@ def _bate_perfil_recuperado_furto(texto: str) -> bool:
 
 
 def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
-    """Extrai título, URL e snippet do HTML do DuckDuckGo Lite."""
-    resultados: list[dict[str, str]] = []
-    if not html:
-        return resultados
-    blocos = re.split(r'class="result\s', html)
-    for bloco in blocos[1:]:
-        titulo_m = re.search(
-            r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>',
-            bloco,
-            re.DOTALL | re.IGNORECASE,
-        )
-        if not titulo_m:
-            continue
-        href_bruto = unescape(titulo_m.group(1))
-        titulo = re.sub(r"<[^>]+>", "", titulo_m.group(2))
-        titulo = unescape(titulo).strip()
-        url = href_bruto
-        if "uddg=" in href_bruto:
-            parsed = urlparse(href_bruto)
-            qs = parse_qs(parsed.query)
-            url = unquote((qs.get("uddg") or [href_bruto])[0])
-        snippet_m = re.search(
-            r'class="result__snippet"[^>]*>(.*?)</(?:a|td|div)>',
-            bloco,
-            re.DOTALL | re.IGNORECASE,
-        )
-        snippet = ""
-        if snippet_m:
-            snippet = re.sub(r"<[^>]+>", "", snippet_m.group(1))
-            snippet = unescape(snippet).strip()
-        if url.startswith("http"):
-            resultados.append({"titulo": titulo, "url": url, "snippet": snippet})
-    return resultados
+    from core.ddg_lite import extrair_resultados
+
+    return extrair_resultados(html)
 
 
 def buscar_duckduckgo(query: str, *, max_resultados: int = 8) -> list[dict[str, str]]:
-    """Busca no DuckDuckGo HTML (sem API key). Retry em 403/429. Nunca lança exceção."""
-    from core.config import LEILAO_DDG_RETRY_BASE_SEG, LEILAO_DDG_RETRY_MAX
-
-    tentativas = max(1, LEILAO_DDG_RETRY_MAX)
-    for n in range(tentativas):
-        try:
-            r = request(
-                "POST",
-                _DDG_HTML,
-                data={"q": query, "kl": "br-pt"},
-                headers=_headers_ddg(),
-                timeout=20,
-            )
-            if r.status_code in (403, 429):
-                if n + 1 < tentativas:
-                    espera = LEILAO_DDG_RETRY_BASE_SEG * (2**n)
-                    logger.info(
-                        "DDG HTTP %s — retry %s/%s em %.0fs (query=%r)",
-                        r.status_code,
-                        n + 2,
-                        tentativas,
-                        espera,
-                        query[:60],
-                    )
-                    time.sleep(espera)
-                    continue
-                logger.warning(
-                    "DDG HTTP %s após %s tentativas — rate limit/bot; "
-                    "próximo ciclo tenta de novo. query=%r",
-                    r.status_code,
-                    tentativas,
-                    query[:80],
-                )
-                return []
-            if r.status_code >= 400:
-                logger.warning("DDG HTTP %s para query=%r", r.status_code, query[:80])
-                return []
-            return _extrair_resultados_ddg(r.text)[:max_resultados]
-        except Exception as exc:
-            if n + 1 < tentativas:
-                time.sleep(LEILAO_DDG_RETRY_BASE_SEG)
-                continue
-            logger.error("DDG busca falhou: %s", exc)
-            return []
-    return []
+    """Busca no DuckDuckGo HTML (rate limit global + retry). Nunca lança exceção."""
+    return ddg_buscar(query, max_resultados=max_resultados, contexto="leilao")
 
 
 def _ano_no_intervalo(texto: str, veiculo: dict[str, Any]) -> bool:
@@ -234,6 +151,96 @@ def _hash_url(url: str) -> str:
     return hashlib.sha256((url or "").strip().encode()).hexdigest()[:16]
 
 
+def _extrair_ano(texto: str, veiculo: dict[str, Any] | None = None) -> int | None:
+    anos = [int(a) for a in re.findall(r"\b(?:19|20)\d{2}\b", texto or "")]
+    if not anos:
+        return None
+    if veiculo:
+        ano_min = int(veiculo.get("ano_min") or 0) or None
+        ano_max = int(veiculo.get("ano_max") or 0) or None
+        for ano in sorted(anos, reverse=True):
+            if ano_min and ano < ano_min:
+                continue
+            if ano_max and ano > ano_max:
+                continue
+            return ano
+    return max(anos)
+
+
+def _extrair_valor(texto: str) -> str | None:
+    norm = texto or ""
+    for padrao in (
+        r"R\$\s*([\d]{1,3}(?:\.\d{3})*,\d{2})",
+        r"R\$\s*([\d]+)",
+        r"valor[:\s]+R\$\s*([\d.,]+)",
+        r"lance[:\s]+R\$\s*([\d.,]+)",
+        r"arremate[:\s]+R\$\s*([\d.,]+)",
+    ):
+        m = re.search(padrao, norm, re.IGNORECASE)
+        if not m:
+            continue
+        bruto = m.group(1).strip()
+        if "," in bruto:
+            return f"R$ {bruto}"
+        try:
+            return f"R$ {int(bruto):,}".replace(",", ".")
+        except ValueError:
+            return f"R$ {bruto}"
+    return None
+
+
+def _extrair_cidade_uf(texto: str) -> tuple[str | None, str | None]:
+    blob = texto or ""
+    m = re.search(
+        r"([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+"
+        r"(?:\s+(?:do|da|de|dos|das)\s+[A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)?)"
+        r"\s*/\s*([A-Z]{2})\b",
+        blob,
+    )
+    if m:
+        return m.group(1).strip(), m.group(2).upper()
+    m = re.search(
+        r"\bem\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+"
+        r"(?:\s+[A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)?)"
+        r"(?:\s*[-–]\s*|\s+)([A-Z]{2})\b",
+        blob,
+    )
+    if m:
+        return m.group(1).strip(), m.group(2).upper()
+    return None, None
+
+
+def enriquecer_achado_leilao(item: dict[str, Any], veiculo: dict[str, Any]) -> dict[str, Any]:
+    """Extrai cidade, DETRAN, ano e valor do título/snippet para o alerta."""
+    blob = f"{item.get('titulo', '')} {item.get('snippet', '')}"
+    cidade, uf_texto = _extrair_cidade_uf(blob)
+    ano = _extrair_ano(blob, veiculo)
+    valor = _extrair_valor(blob)
+
+    out = {
+        **item,
+        "marca": str(veiculo.get("marca") or "").strip(),
+        "modelo": str(veiculo.get("modelo") or "").strip(),
+    }
+    if ano:
+        out["ano"] = ano
+    if valor:
+        out["valor"] = valor
+
+    if item.get("fonte_tipo") == "detran":
+        out["detran_nome"] = item.get("fonte_nome") or f"DETRAN {item.get('fonte_id', '')}"
+        out["uf"] = item.get("uf") or item.get("fonte_id") or uf_texto
+        if cidade:
+            out["cidade"] = cidade
+    else:
+        if cidade:
+            out["cidade"] = cidade
+        if uf_texto:
+            out["uf"] = uf_texto
+
+    return out
+
+
 def _buscar_em_dominio(
     dominio: str,
     termo: str,
@@ -258,6 +265,7 @@ def _buscar_em_dominio(
                 "fonte_nome": fonte_nome,
                 "dominio": dominio,
                 "hash": _hash_url(item["url"]),
+                **({"uf": fonte_id} if tipo_fonte == "detran" else {}),
             }
         )
     return achados
@@ -312,7 +320,7 @@ def buscar_veiculo_em_fontes(
                 if h in vistos:
                     continue
                 vistos.add(h)
-                todos.append(item)
+                todos.append(enriquecer_achado_leilao(item, veiculo))
         except Exception as exc:
             logger.warning("Fonte %s (%s) falhou: %s", nome, dominio, exc)
         if pausa_entre_fontes_seg > 0:
@@ -337,7 +345,7 @@ def buscar_veiculo_em_fontes(
             if enriquecido["hash"] in vistos:
                 continue
             vistos.add(enriquecido["hash"])
-            todos.append(enriquecido)
+            todos.append(enriquecer_achado_leilao(enriquecido, veiculo))
     except Exception as exc:
         logger.warning("Busca geral falhou: %s", exc)
 

@@ -57,14 +57,19 @@ jobs:
           key: alibaba-importacao-history-${{ github.run_id }}
           restore-keys: |
             alibaba-importacao-history-
-      - name: Preflight Telegram (gestor)
-        run: python scripts/preflight_monitor_telegram.py
+      - name: Preflight producao (Telegram + ML)
+        run: python scripts/preflight_producao.py
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
       - name: Rodar sync push main
         run: python -m agentes.orquestrador.agente_sync_push_main
         env:
+          ORQUESTRADOR_EXCLUIR: leilao,alibaba
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}

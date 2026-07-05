@@ -95,6 +95,38 @@ def _monitorar_veiculo(
     }
 
 
+def _formatar_local_item(item: dict[str, Any]) -> str:
+    cidade = str(item.get("cidade") or "").strip()
+    uf = str(item.get("uf") or "").strip()
+    if item.get("fonte_tipo") == "detran":
+        detran = str(item.get("detran_nome") or item.get("fonte_nome") or "").strip()
+        if cidade and detran:
+            return f"{cidade} — {detran}"
+        if cidade and uf:
+            return f"{cidade} — DETRAN {uf}"
+        return detran or (f"DETRAN {uf}" if uf else str(item.get("fonte_nome") or "?"))
+    partes: list[str] = []
+    if cidade and uf:
+        partes.append(f"{cidade}/{uf}")
+    elif cidade:
+        partes.append(cidade)
+    fonte = str(item.get("fonte_nome") or item.get("fonte_id") or "").strip()
+    if fonte:
+        partes.append(fonte)
+    return " — ".join(partes) if partes else "?"
+
+
+def _formatar_veiculo_item(item: dict[str, Any]) -> str:
+    marca = str(item.get("marca") or "").strip()
+    modelo = str(item.get("modelo") or "").strip()
+    ano = item.get("ano")
+    partes = [p for p in (marca, modelo) if p]
+    desc = " ".join(partes)
+    if ano:
+        desc = f"{desc} {ano}".strip()
+    return desc or str(item.get("titulo") or "Veículo")[:60]
+
+
 def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
     linhas = ["🚗 *Leilões — recuperado furto / média monta*", ""]
     ordenados = sorted(resultados, key=lambda r: int(r.get("prioridade") or 99))
@@ -104,12 +136,17 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
             continue
         linhas.append(f"*{r.get('veiculo', r.get('id', ''))}* ({len(novos)} novo(s)):")
         for item in novos[:8]:
-            titulo = str(item.get("titulo") or "Sem título")[:80]
-            fonte = item.get("fonte_nome") or item.get("fonte_id") or "?"
-            linhas.append(f"• [{fonte}] {titulo}")
-            linhas.append(f"  {item.get('url', '')}")
+            linhas.append(f"📍 {_formatar_local_item(item)}")
+            linhas.append(f"🚙 {_formatar_veiculo_item(item)}")
+            if item.get("valor"):
+                linhas.append(f"💰 {item['valor']}")
+            titulo = str(item.get("titulo") or "").strip()
+            if titulo and titulo != _formatar_veiculo_item(item):
+                linhas.append(f"_{titulo[:70]}_")
+            linhas.append(f"🔗 {item.get('url', '')}")
+            linhas.append("")
         if len(novos) > 8:
-            linhas.append(f"  … e mais {len(novos) - 8}")
+            linhas.append(f"… e mais {len(novos) - 8}")
         linhas.append("")
     return "\n".join(linhas).strip()
 
