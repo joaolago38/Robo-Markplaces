@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-07-05T21:32:38.150708+00:00",
+  "resultados": [
+    {
+      "id": "p1",
+      "produto": "Frasco",
+      "oportunidades_total": 1,
+      "novos": [],
+      "ok": true
+    }
+  ],
+  "avaliacao_ia_parametros": null
+}

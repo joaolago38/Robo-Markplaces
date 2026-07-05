@@ -125,6 +125,11 @@ LEILAO_LAUDO_BRL = float(os.getenv("LEILAO_LAUDO_BRL", "200.0"))
 LEILAO_PRECO_MAX_LANCE = float(os.getenv("LEILAO_PRECO_MAX_LANCE", "20000"))
 LEILAO_MARGEM_FIPE_MIN_PCT = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_PCT", "25"))
 LEILAO_MARGEM_FIPE_MIN_REAIS = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_REAIS", "3000"))
+LEILAO_IA_AVALIAR_PARAMETROS = os.getenv("LEILAO_IA_AVALIAR_PARAMETROS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Sumaré Leilões (PREFEITURA/DETRAN — veículos com documento)
 SUMARE_LEILOES_CATALOGO = os.getenv(
@@ -191,6 +196,11 @@ ALIBABA_INTELIGENCIA_ALERTA_RESUMO = os.getenv("ALIBABA_INTELIGENCIA_ALERTA_RESU
     "no",
 )
 ALIBABA_INTELIGENCIA_COOLDOWN_SEG = int(os.getenv("ALIBABA_INTELIGENCIA_COOLDOWN_SEG", "7200"))
+ALIBABA_IA_AVALIAR_PARAMETROS = os.getenv("ALIBABA_IA_AVALIAR_PARAMETROS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 DESCOBERTA_NICHOS_CATALOGO = os.getenv(
     "DESCOBERTA_NICHOS_CATALOGO", "catalogo/descoberta_nichos.json"
