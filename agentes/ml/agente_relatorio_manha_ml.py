@@ -154,7 +154,55 @@ def _montar_secao_anita(anita: dict[str, Any]) -> list[str]:
     return linhas
 
 
-def _montar_secao_acoes(ml: dict[str, Any], propostas: list[dict[str, Any]]) -> list[str]:
+def _montar_secao_mercado_esmaltes(mercado: dict[str, Any]) -> list[str]:
+    consolidado = mercado.get("consolidado") or {}
+    propostas = consolidado.get("propostas") or []
+    if not propostas and not consolidado.get("total_anuncios_unicos"):
+        return []
+
+    linhas = [
+        "",
+        "💄 *Mercado esmaltes — competir com margem*",
+        "",
+        f"_{consolidado.get('total_anuncios_unicos', 0)} anúncios | "
+        f"{consolidado.get('total_oportunidades_margem', 0)} oportunidade(s) viável(eis)_",
+        "",
+    ]
+
+    ranking = consolidado.get("ranking_marcas_global") or []
+    if ranking:
+        top = ", ".join(f"{x['marca']} ({x['vendidos']})" for x in ranking[:3])
+        linhas.append(f"Marcas líderes: {top}")
+        linhas.append("")
+
+    altas = [p for p in propostas if p.get("prioridade") == "alta"]
+    medias = [p for p in propostas if p.get("prioridade") == "media"]
+
+    for p in altas[:4]:
+        texto = str(p.get("texto") or "").replace("*", "")
+        linhas.append(f"• {texto}")
+    for p in medias[:3]:
+        texto = str(p.get("texto") or "").replace("*", "")
+        linhas.append(f"• {texto}")
+
+    top_anuncios = consolidado.get("top_anuncios") or []
+    if top_anuncios:
+        linhas.append("")
+        linhas.append("_Top anúncios (cores e kits):_")
+        for an in top_anuncios[:3]:
+            titulo = str(an.get("titulo") or "")[:45]
+            linhas.append(
+                f"  {titulo} — {_fmt_brl(an.get('preco'))} | "
+                f"{an.get('descricao_kit', '')}"
+            )
+    return linhas
+
+
+def _montar_secao_acoes(
+    ml: dict[str, Any],
+    propostas: list[dict[str, Any]],
+    mercado: dict[str, Any] | None = None,
+) -> list[str]:
     recs = list(ml.get("recomendacoes") or [])[:5]
     linhas = ["", "✅ *Prioridades do dia*", ""]
     n = 1
@@ -163,6 +211,15 @@ def _montar_secao_acoes(ml: dict[str, Any], propostas: list[dict[str, Any]]) -> 
             continue
         linhas.append(f"{n}. Ajustar *{p.get('sku')}* → {_fmt_brl(p.get('preco_sugerido'))}")
         n += 1
+    if mercado:
+        for p in (mercado.get("consolidado") or {}).get("propostas") or []:
+            if p.get("prioridade") != "alta" or n > 8:
+                continue
+            sku = p.get("sku") or "esmalte"
+            preco = p.get("preco_sugerido")
+            if preco:
+                linhas.append(f"{n}. Mercado *{sku}* → {_fmt_brl(preco)}")
+                n += 1
     for rec in recs:
         if n > 8:
             break
@@ -178,6 +235,7 @@ def _montar_relatorio(
     precos: dict[str, Any],
     conc: dict[str, Any],
     anita: dict[str, Any],
+    mercado: dict[str, Any] | None = None,
 ) -> str:
     analises = precos.get("analises") or []
     analises_ml = [a for a in analises if str(a.get("canal", "")).lower() == "mercadolivre"]
@@ -190,7 +248,7 @@ def _montar_relatorio(
 
     agora = datetime.now(timezone(timedelta(hours=-3)))
     linhas = [
-        f"☀️ *Relatório manhã — Mercado Livre*",
+        "☀️ *Relatório manhã — Mercado Livre*",
         f"_{agora.strftime('%d/%m/%Y %H:%M')}_",
         "",
         "_Lucro = preço − taxa ML − custo | respeita margem mínima por fase_",
@@ -200,7 +258,9 @@ def _montar_relatorio(
     linhas.extend(_montar_secao_propostas(analises_ml))
     linhas.extend(_montar_secao_concorrentes_termo(conc))
     linhas.extend(_montar_secao_anita(anita))
-    linhas.extend(_montar_secao_acoes(ml, propostas))
+    if mercado:
+        linhas.extend(_montar_secao_mercado_esmaltes(mercado))
+    linhas.extend(_montar_secao_acoes(ml, propostas, mercado))
     return "\n".join(linhas).strip()
 
 
@@ -210,6 +270,7 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             logger.warning("Telegram gestor não configurado — relatório manhã não será enviado")
 
         from agentes.esmaltes.agente_monitor_anita import executar as executar_anita
+        from agentes.esmaltes.agente_monitor_mercado_esmaltes import executar as executar_mercado_esmaltes
         from agentes.ml.agente_monitor_concorrentes import executar as executar_concorrentes
         from agentes.ml.agente_monitor_ml import analisar as analisar_ml
         from agentes.precificacao.agente_inteligencia_precos import executar as executar_precos
@@ -219,8 +280,9 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         precos = executar_precos(enviar_alerta=False)
         conc = executar_concorrentes(enviar_alerta=False)
         anita = executar_anita(enviar_alerta=False)
+        mercado = executar_mercado_esmaltes(enviar_alerta=False)
 
-        relatorio = _montar_relatorio(ml, precos, conc, anita)
+        relatorio = _montar_relatorio(ml, precos, conc, anita, mercado)
         agora = datetime.now(timezone.utc).isoformat()
 
         snapshot = {
@@ -255,6 +317,7 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             "precos": precos,
             "concorrentes": conc,
             "anita": anita,
+            "mercado_esmaltes": mercado,
             "alerta_enviado": alerta_enviado,
             "relatorio": relatorio,
             "snapshot": str(SNAPSHOT_PATH),

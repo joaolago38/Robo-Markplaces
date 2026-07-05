@@ -72,11 +72,14 @@ _LOGGER_META = {
     "agente_otimizador_listing": ("mercadolivre", "agente"),
     "agente_monitor_concorrentes": ("mercadolivre", "agente"),
     "agente_monitor_anita": ("mercadolivre", "agente"),
+    "agente_monitor_mercado_esmaltes": ("mercadolivre", "agente"),
     "analise_anita": ("mercadolivre", "integracao"),
     "agente_descoberta_produtos": ("multi", "agente"),
     "descoberta_coletores": ("multi", "integracao"),
     "descoberta_alibaba": ("multi", "integracao"),
     "agente_leilao_veiculo": ("multi", "agente"),
+    "agente_monitor_sumare_leiloes": ("multi", "agente"),
+    "sumare_leiloes": ("multi", "integracao"),
     "agente_monitor_lojas_veiculos": ("multi", "agente"),
     "agente_licitacoes": ("multi", "agente"),
     "licitacao_busca": ("multi", "integracao"),
@@ -85,6 +88,7 @@ _LOGGER_META = {
     "agente_alibaba_importacao_inteligente": ("multi", "agente"),
     "cotacao_usd": ("infra", "integracao"),
     "custo_landed": ("infra", "integracao"),
+    "analise_margem_importacao": ("multi", "integracao"),
     "agente_orquestrador": ("multi", "orquestrador"),
     "agente_sync_push_main": ("multi", "orquestrador"),
     "agente_push_deploy": ("multi", "orquestrador"),
@@ -115,6 +119,10 @@ _LOGGER_META = {
     "agente_panorama": ("multi", "agente"),
     "relatorio_financeiro": ("multi", "agente"),
     "operacao_24h": ("infra", "agente"),
+    "agente_vigia_datadog": ("infra", "agente"),
+    "buffer_erros_datadog": ("infra", "core"),
+    "consulta_erros_datadog": ("infra", "core"),
+    "vigia_saude_datadog": ("infra", "core"),
 
     # --- Diagnóstico interno deste módulo ---
     "datadog_logger": ("infra", "core"),
@@ -204,6 +212,20 @@ class DatadogLogHandler(logging.Handler):
                     error_attrs["stack"] = logging.Formatter().formatException(record.exc_info)
                 if error_attrs:
                     payload_entry["error"] = error_attrs
+
+            if record.levelno >= logging.ERROR:
+                try:
+                    from integracoes.datadog.buffer_erros import registrar_erro_local
+
+                    registrar_erro_local(
+                        nome_logger=record.name,
+                        mensagem=self.format(record),
+                        status=record.levelname.lower(),
+                        error_kind=getattr(record, "error_kind", None),
+                        error_message=getattr(record, "error_message", None),
+                    )
+                except Exception:
+                    pass
 
             payload = [payload_entry]
             requests.post(

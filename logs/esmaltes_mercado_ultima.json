@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-07-05T19:47:50.565913+00:00",
+  "consolidado": {
+    "total_anuncios_unicos": 0,
+    "total_segmentos": 1,
+    "ranking_marcas_global": [],
+    "top_anuncios": [],
+    "propostas": [],
+    "total_oportunidades_margem": 0
+  },
+  "segmentos": [
+    {
+      "id": "s1",
+      "nome": "Kit 5",
+      "total_anuncios": 0,
+      "oportunidades": 0,
+      "propostas": []
+    }
+  ]
+}

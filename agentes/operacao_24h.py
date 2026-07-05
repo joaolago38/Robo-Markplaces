@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime, timezone
 
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
 from agentes.ml.agente_ads_gatilho import executar as verificar_gatilho_ads
@@ -13,6 +14,9 @@ from agentes.repricing.agente_repricing_marketplaces import executar as executar
 from agentes.repricing.agente_repricing_impala import executar as repricing_impala
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from core.alertas_esmaltes import verificar_todos as verificar_alertas_esmaltes
+from core.atomic_io import escrever_json_atomico
+from core.config import ROOT
+from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor
 from core.resumo_ia import sintetizar_claude
 from integracoes.bling.bling_client import listar_produtos
@@ -257,6 +261,14 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
         msg_bruta = f"{msg_bruta}\n{bloco_notas}"
     alertar_gestor(f"📝 *Resumo IA*\n{resumo_ia}\n\n{msg_bruta}")
     logger.info("Operacao24h: %s", payload)
+    try:
+        escrever_json_atomico(
+            ROOT / "logs" / "operacao_24h_ultima.json",
+            {"timestamp": datetime.now(timezone.utc).isoformat(), "ok": True},
+        )
+        incrementar("operacao_24h.rodadas")
+    except Exception as exc:
+        logger.warning("Operacao24h: falha ao gravar heartbeat: %s", exc)
     return payload
 
 

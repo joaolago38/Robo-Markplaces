@@ -19,6 +19,7 @@ LEILOEIROS_PRINCIPAIS: list[dict[str, str]] = [
     {"id": "pestana", "nome": "Pestana Leilões", "dominio": "pestanaleiloes.com.br"},
     {"id": "santander", "nome": "Santander Leilões", "dominio": "santander.com.br"},
     {"id": "bradesco", "nome": "Bradesco Leilões", "dominio": "bradescoleiloes.com.br"},
+    {"id": "sumare", "nome": "Sumaré Leilões", "dominio": "sumareleiloes.com.br"},
 ]
 
 # DETRAN — um portal por UF (busca via site:dominio)

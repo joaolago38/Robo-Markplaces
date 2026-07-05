@@ -30,6 +30,14 @@ def _resolver_fn(registro: AgenteRegistrado) -> Callable[..., Any]:
 # - relatorio / relatorio_financeiro / otimizador_listing: rotinas diárias/semanais
 _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
     AgenteRegistrado("conectividade", "Conectividade marketplaces", "infra", "agentes.conectividade_marketplaces:executar"),
+    AgenteRegistrado(
+        "vigia_datadog",
+        "Vigia Datadog",
+        "infra",
+        "agentes.infra.agente_vigia_datadog:executar",
+        {"enviar_alerta": True},
+        notas="Erros DD + inatividade 2h — alerta crítico se não verificado",
+    ),
     AgenteRegistrado("vendas_whatsapp", "Vendas WhatsApp", "vendas", "agentes.vendas_notificador:executar"),
     AgenteRegistrado("chat_ml", "Chat Mercado Livre", "chat", "agentes.ml.agente_ml:executar"),
     AgenteRegistrado("chat_shopee", "Chat Shopee", "chat", "agentes.shopee.agente_shopee:executar"),
@@ -87,6 +95,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.leilao.agente_leilao_veiculo:executar",
         {"enviar_alerta": True},
+    ),
+    AgenteRegistrado(
+        "sumare_leiloes",
+        "Sumaré Leilões PREFEITURA/DETRAN",
+        "monitor",
+        "agentes.leilao.agente_monitor_sumare_leiloes:executar",
+        {"enviar_alerta": True},
+        notas="Veículos com documento no site oficial — alerta de lances",
     ),
     AgenteRegistrado(
         "lojas_veiculos",
@@ -148,6 +164,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "agentes.esmaltes.agente_monitor_anita:executar",
         {"enviar_alerta": True},
         notas="Cores/kits vs preferência + ranking marcas + margem",
+    ),
+    AgenteRegistrado(
+        "monitor_mercado_esmaltes",
+        "Monitor mercado esmaltes ML",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_mercado_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="Todos esmaltes ML: cores, kits, margem viável e propostas de competição",
     ),
     AgenteRegistrado(
         "descoberta_produtos",

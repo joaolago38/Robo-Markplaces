@@ -1,0 +1,9 @@
+{
+  "ativo": true,
+  "comitentes": ["prefeitura", "detran"],
+  "lance_minimo_brl": 2000,
+  "exigir_documento": true,
+  "excluir_sucata": true,
+  "alertar_mudanca_lance": true,
+  "notas": "Somente veículos com DOCUMENTO no site oficial sumareleiloes.com.br — exclui sucata"
+}

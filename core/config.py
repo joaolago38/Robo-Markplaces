@@ -66,6 +66,20 @@ ANITA_PAUSA_ENTRE_BUSCAS_SEG = float(os.getenv("ANITA_PAUSA_ENTRE_BUSCAS_SEG", "
 ANITA_ALERTA_RESUMO = os.getenv("ANITA_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
 ANITA_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("ANITA_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
 
+# Monitor mercado esmaltes ML (cores, kits, margem viável, competição)
+ESMALTES_MERCADO_CATALOGO = os.getenv(
+    "ESMALTES_MERCADO_CATALOGO", "catalogo/esmaltes_mercado_segmentos.json"
+)
+ESMALTES_MERCADO_PAUSA_SEG = float(os.getenv("ESMALTES_MERCADO_PAUSA_SEG", "1.5"))
+ESMALTES_MERCADO_ALERTA_RESUMO = os.getenv("ESMALTES_MERCADO_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ESMALTES_MERCADO_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_MERCADO_ALERTA_COOLDOWN_SEG", "14400"))
+ESMALTES_MERCADO_VENDAS_MIN = int(os.getenv("ESMALTES_MERCADO_VENDAS_MIN", "5"))
+ESMALTES_MERCADO_ABAIXO_CONCORRENTE_PCT = float(os.getenv("ESMALTES_MERCADO_ABAIXO_CONCORRENTE_PCT", "2.0"))
+
 LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )
@@ -84,6 +98,14 @@ LEILAO_LAUDO_BRL = float(os.getenv("LEILAO_LAUDO_BRL", "200.0"))
 LEILAO_PRECO_MAX_LANCE = float(os.getenv("LEILAO_PRECO_MAX_LANCE", "20000"))
 LEILAO_MARGEM_FIPE_MIN_PCT = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_PCT", "25"))
 LEILAO_MARGEM_FIPE_MIN_REAIS = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_REAIS", "3000"))
+
+# Sumaré Leilões (PREFEITURA/DETRAN — veículos com documento)
+SUMARE_LEILOES_CATALOGO = os.getenv(
+    "SUMARE_LEILOES_CATALOGO", "catalogo/sumare_leiloes_monitorados.json"
+)
+SUMARE_LEILOES_LANCE_MIN_BRL = float(os.getenv("SUMARE_LEILOES_LANCE_MIN_BRL", "2000"))
+SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG = float(os.getenv("SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG", "1.5"))
+SUMARE_LEILOES_ALERTA_COOLDOWN_SEG = int(os.getenv("SUMARE_LEILOES_ALERTA_COOLDOWN_SEG", "7200"))
 
 # DuckDuckGo Lite (compartilhado leilão + Alibaba)
 DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "2.5"))
@@ -190,8 +212,16 @@ FIPE_PAUSA_ENTRE_CHAMADAS_SEG = float(os.getenv("FIPE_PAUSA_ENTRE_CHAMADAS_SEG",
 ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))
 ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "1.5"))
 ORQUESTRADOR_EXCLUIR = {
-    x.strip() for x in os.getenv("ORQUESTRADOR_EXCLUIR", "").split(",") if x.strip()
+    x.strip() for x in os.getenv("ORQUESTRADOR_EXCLUIR", "vigia_datadog").split(",") if x.strip()
 }
+
+# Vigia Datadog (erros + inatividade 2h)
+DATADOG_VIGIA_CATALOGO_FONTES = os.getenv(
+    "DATADOG_VIGIA_CATALOGO_FONTES", "catalogo/datadog_vigia_fontes.json"
+)
+DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE", "2"))
+DATADOG_VIGIA_LIMITE_HORAS_ERRO = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_ERRO", "2"))
+DATADOG_VIGIA_ALERTA_COOLDOWN_SEG = int(os.getenv("DATADOG_VIGIA_ALERTA_COOLDOWN_SEG", "3600"))
 
 # Sync após push na main (não substitui crons dos workflows)
 PUSH_MAIN_COOLDOWN_RESUMO_SEG = int(os.getenv("PUSH_MAIN_COOLDOWN_RESUMO_SEG", "300"))
@@ -370,6 +400,7 @@ ROBO_API_KEY = os.getenv("ROBO_API_KEY", "").strip()
 
 # Datadog Log Management (opcional — HTTP Intake, sem Agent)
 DD_API_KEY = os.getenv("DD_API_KEY", "").strip()
+DD_APPLICATION_KEY = os.getenv("DD_APPLICATION_KEY", "").strip()
 DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
 DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
 # Ambiente exibido na tag `env:` no Datadog (production/staging/dev). Antes era fixo em "production".

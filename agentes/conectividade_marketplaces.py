@@ -14,8 +14,10 @@ impedir a checagem dos demais.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 
-from core.config import SPEC
+from core.atomic_io import escrever_json_atomico
+from core.config import ROOT, SPEC
 from core.datadog_metrics import gauge, incrementar
 from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.notificador import alertar_critico
@@ -121,6 +123,13 @@ def executar() -> dict:
         "falha": sum(1 for r in resultados if not r["ok"]),
         "resultados": resultados,
     }
+    try:
+        escrever_json_atomico(
+            ROOT / "logs" / "conectividade_ultima.json",
+            {"timestamp": datetime.now(timezone.utc).isoformat(), "ok": payload["falha"] == 0},
+        )
+    except Exception as exc:
+        logger.warning("Conectividade: falha ao gravar heartbeat: %s", exc)
     logger.info("Conectividade marketplaces: %s", payload)
     return payload
 
