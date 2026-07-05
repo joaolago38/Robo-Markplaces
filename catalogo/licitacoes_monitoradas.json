@@ -1,0 +1,54 @@
+[
+  {
+    "id": "esmaltes-manicure-nacional",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Esmaltes e materiais de manicure",
+    "termos_busca": [
+      "esmalte",
+      "manicure",
+      "embelezamento",
+      "cosmetico",
+      "kit manicure",
+      "alicate cutícula"
+    ],
+    "ufs": [],
+    "modalidades": [6, 8, 4],
+    "valor_min": 3000,
+    "valor_max": null,
+    "excluir_termos": ["obra civil", "engenharia", "pavimentacao", "asfalto"],
+    "notas": "ufs vazio = todos os 27 estados via PNCP"
+  },
+  {
+    "id": "higiene-perfumaria",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Higiene pessoal e perfumaria",
+    "termos_busca": [
+      "sabonete",
+      "shampoo",
+      "higiene pessoal",
+      "perfumaria",
+      "cosmetico"
+    ],
+    "ufs": [],
+    "modalidades": [6, 8],
+    "valor_min": 5000,
+    "valor_max": null,
+    "excluir_termos": ["medicamento", "hospitalar"],
+    "notas": "Pregão eletrônico e dispensa"
+  },
+  {
+    "id": "kits-presente-sp-sul",
+    "ativo": false,
+    "prioridade": 3,
+    "nome": "Kits presente — SP e Sul",
+    "termos_busca": ["kit presente", "brinde", "cesta"],
+    "ufs": ["SP", "PR", "SC", "RS"],
+    "modalidades": [6],
+    "valor_min": 10000,
+    "valor_max": 500000,
+    "excluir_termos": [],
+    "notas": "Exemplo regional — ative quando quiser foco SP/Sul"
+  }
+]

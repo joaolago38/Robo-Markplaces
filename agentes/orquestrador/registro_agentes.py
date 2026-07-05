@@ -89,6 +89,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "licitacoes",
+        "Licitações públicas",
+        "monitor",
+        "agentes.licitacao.agente_licitacoes:executar",
+        {"enviar_alerta": True},
+        notas="PNCP todos os estados + portais estaduais; somente leitura",
+    ),
+    AgenteRegistrado(
         "alibaba",
         "Alibaba importação",
         "monitor",
