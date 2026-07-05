@@ -153,6 +153,40 @@ PUSH_DEPLOY_PATHS_EXCLUIR = tuple(
     x.strip() for x in os.getenv("PUSH_DEPLOY_PATHS_EXCLUIR", "arquivos-java-21,.env").split(",") if x.strip()
 )
 
+# Gestão de branches (limpeza pós-push + criar nova a partir da main)
+GIT_BRANCH_BASE = os.getenv("GIT_BRANCH_BASE", "main").strip() or "main"
+GIT_BRANCH_REMOTE = os.getenv("GIT_BRANCH_REMOTE", "origin").strip() or "origin"
+GIT_BRANCH_PROTEGIDAS = frozenset(
+    x.strip()
+    for x in os.getenv("GIT_BRANCH_PROTEGIDAS", "main,master").split(",")
+    if x.strip()
+)
+GIT_BRANCH_PREFIXOS_LIMPEZA = tuple(
+    x.strip()
+    for x in os.getenv(
+        "GIT_BRANCH_PREFIXOS_LIMPEZA",
+        "feature/,chore/,cursor/,agent/,fix/,hotfix/",
+    ).split(",")
+    if x.strip()
+)
+GIT_BRANCH_LIMPAR_APOS_PUSH = os.getenv("GIT_BRANCH_LIMPAR_APOS_PUSH", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+GIT_BRANCH_LIMPAR_REMOTAS = os.getenv("GIT_BRANCH_LIMPAR_REMOTAS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+GIT_BRANCH_LIMPAR_LOCAIS = os.getenv("GIT_BRANCH_LIMPAR_LOCAIS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+GIT_BRANCH_NOVA_PREFIXO = os.getenv("GIT_BRANCH_NOVA_PREFIXO", "cursor/").strip()
+PUSH_DEPLOY_CRIAR_BRANCH = os.getenv("PUSH_DEPLOY_CRIAR_BRANCH", "").strip()
+
 # Shopee
 SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "").strip()
 SHOPEE_PARTNER_KEY = os.getenv("SHOPEE_PARTNER_KEY", "").strip()

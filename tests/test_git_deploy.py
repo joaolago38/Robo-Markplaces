@@ -165,6 +165,73 @@ class GitDeployTests(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertEqual(out["etapa"], "status")
 
+    def test_branch_elegivel_respeita_protegidas_e_prefixos(self):
+        self.assertFalse(
+            gd._branch_elegivel_para_limpeza(
+                "main",
+                branch_atual="feature/x",
+                protegidas=frozenset({"main"}),
+                prefixos=("feature/",),
+            )
+        )
+        self.assertTrue(
+            gd._branch_elegivel_para_limpeza(
+                "feature/foo",
+                branch_atual="main",
+                protegidas=frozenset({"main"}),
+                prefixos=("feature/",),
+            )
+        )
+        self.assertFalse(
+            gd._branch_elegivel_para_limpeza(
+                "release/1.0",
+                branch_atual="main",
+                protegidas=frozenset({"main"}),
+                prefixos=("feature/",),
+            )
+        )
+
+    @patch("core.git_deploy.deletar_branch_remota")
+    @patch("core.git_deploy.listar_branches_locais_mergeadas", return_value=[])
+    @patch("core.git_deploy.listar_branches_remotas_mergeadas", return_value=["feature/old"])
+    @patch("core.git_deploy.fetch_remote", return_value={"ok": True})
+    @patch("core.git_deploy.obter_branch_atual", return_value="main")
+    def test_limpeza_deleta_remotas_mergeadas(self, _mock_atual, _mock_fetch, _mock_listar_r, _mock_listar_l, mock_del):
+        mock_del.return_value = {"ok": True}
+        out = gd.executar_limpeza_branches(
+            prefixos=("feature/",),
+            protegidas=frozenset({"main"}),
+            limpar_locais=False,
+        )
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["remotas_deletadas"], ["feature/old"])
+        mock_del.assert_called_once_with("feature/old", remote="origin", cwd=None)
+
+    @patch("core.git_deploy.listar_branches_remotas_mergeadas", return_value=["feature/x"])
+    @patch("core.git_deploy.fetch_remote", return_value={"ok": True})
+    @patch("core.git_deploy.obter_branch_atual", return_value="main")
+    def test_limpeza_dry_run(self, _mock_atual, _mock_fetch, _mock_listar):
+        out = gd.executar_limpeza_branches(prefixos=("feature/",), dry_run=True)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["remotas_planejadas"], ["feature/x"])
+        self.assertEqual(out["remotas_deletadas"], [])
+
+    @patch("core.git_deploy.push")
+    @patch("core.git_deploy._run_git")
+    @patch("core.git_deploy.fetch_remote", return_value={"ok": True})
+    @patch("core.git_deploy.obter_status", return_value={"ok": True, "tem_alteracoes": False})
+    def test_criar_branch_de_main(self, _mock_status, _mock_fetch, mock_git, mock_push):
+        mock_git.side_effect = [
+            MagicMock(returncode=0, stdout="", stderr=""),  # checkout main
+            MagicMock(returncode=0, stdout="", stderr=""),  # pull
+            MagicMock(returncode=1, stdout="", stderr=""),  # rev-parse (não existe)
+            MagicMock(returncode=0, stdout="", stderr=""),  # checkout -b
+        ]
+        out = gd.criar_branch_de_main("cursor/teste", push_upstream=True)
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["criada"])
+        mock_push.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

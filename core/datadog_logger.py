@@ -81,6 +81,7 @@ _LOGGER_META = {
     "agente_orquestrador": ("multi", "orquestrador"),
     "agente_sync_push_main": ("multi", "orquestrador"),
     "agente_push_deploy": ("multi", "orquestrador"),
+    "agente_git_branches": ("multi", "orquestrador"),
     "git_deploy": ("infra", "core"),
     "fipe_client": ("infra", "integracao"),
     "veiculos_scrapers": ("multi", "integracao"),

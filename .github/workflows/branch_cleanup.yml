@@ -1,0 +1,47 @@
+name: Limpeza de branches (pós-push main)
+
+# Após CI verde na main, remove branches já mergeadas (local + remoto).
+# Mantém main/master e a branch atual; só remove prefixos configurados.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  limpar_branches:
+    name: Limpar branches mergeadas
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Limpar branches mergeadas
+        run: python -m agentes.orquestrador.agente_git_branches --limpar
+        env:
+          GIT_BRANCH_BASE: main
+          GIT_BRANCH_REMOTE: origin
+          GIT_BRANCH_LIMPAR_REMOTAS: "1"
+          GIT_BRANCH_LIMPAR_LOCAIS: "0"

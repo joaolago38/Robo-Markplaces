@@ -13,15 +13,18 @@ from agentes.orquestrador import agente_push_deploy as deploy
 
 class AgentePushDeployTests(unittest.TestCase):
     @patch("agentes.orquestrador.agente_push_deploy.executar_sync_push_main")
+    @patch("agentes.orquestrador.agente_push_deploy.executar_limpar")
     @patch("agentes.orquestrador.agente_push_deploy.executar_push_deploy_git")
     @patch("agentes.orquestrador.agente_push_deploy._preflight_qualidade")
-    def test_fluxo_completo(self, mock_pre, mock_git, mock_sync):
+    def test_fluxo_completo(self, mock_pre, mock_git, mock_limpar, mock_sync):
         mock_pre.return_value = {"ok": True, "etapas": [], "falhas": 0}
         mock_git.return_value = {"ok": True, "push_enviado": True, "branch": "main"}
+        mock_limpar.return_value = {"ok": True, "remotas_deletadas": []}
         mock_sync.return_value = {"ok": True, "falhas": 0}
         out = deploy.executar(mensagem_commit="teste deploy")
         self.assertTrue(out["ok"])
         mock_git.assert_called_once()
+        mock_limpar.assert_called_once()
         mock_sync.assert_called_once()
 
     @patch("agentes.orquestrador.agente_push_deploy.executar_sync_push_main")
