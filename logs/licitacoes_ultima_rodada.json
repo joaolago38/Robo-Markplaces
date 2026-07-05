@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-07-05T16:53:07.966934+00:00",
+  "total_itens": 1,
+  "resultados": [
+    {
+      "id": "esm",
+      "nome": "Esmaltes",
+      "prioridade": 1,
+      "achados_total": 1,
+      "novos": [],
+      "ok": true
+    }
+  ]
+}

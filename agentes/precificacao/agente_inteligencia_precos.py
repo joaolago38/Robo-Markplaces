@@ -133,18 +133,40 @@ def _analisar_canal(
         "sku": sku,
         "nome": produto.get("nome") or sku,
         "canal": canal,
+        "custo": ideal.get("custo", custo),
+        "taxa_canal_pct": ideal.get("taxa_canal_pct", taxa_canal),
         "preco_atual": preco_atual,
         "preco_sugerido": ideal["preco_sugerido"],
+        "preco_piso": ideal.get("preco_piso"),
         "delta": delta,
         "acao": ideal["acao"],
         "comportamento": ideal["comportamento"],
         "motivos": ideal["motivos"],
         "margem_pct": ideal["margem_pct"],
+        "margem_minima_pct": ideal.get("margem_minima_pct", margem_minima),
+        "lucro_operacao": ideal.get("lucro_operacao", {}),
         "preco_concorrente": ideal.get("preco_concorrente"),
         "prioridade": prioridade,
         "sinais": {**ideal.get("sinais", {}), "termo_busca": termo or None},
         "sinais_brutos": sinais_raw,
     }
+
+
+def _formatar_lucro_operacao(item: dict[str, Any]) -> str:
+    lucro = item.get("lucro_operacao") or {}
+    atual = lucro.get("atual_reais")
+    sugerido = lucro.get("sugerido_reais")
+    margem_sug = lucro.get("margem_sugerida_pct")
+    margem_min = item.get("margem_minima_pct")
+    if atual is None or sugerido is None:
+        return ""
+    delta_lucro = lucro.get("delta_lucro_reais", round(sugerido - atual, 2))
+    sinal = f"{delta_lucro:+.2f}"
+    status = "✓" if lucro.get("lucro_ok", True) else "⚠ piso"
+    return (
+        f"\n  💵 Lucro operação: R$ {atual:.2f} → R$ {sugerido:.2f} ({sinal}) | "
+        f"margem {margem_sug:.1f}% (mín {margem_min:.0f}%) {status}"
+    )
 
 
 def _formatar_linha(item: dict[str, Any]) -> str:
@@ -154,10 +176,11 @@ def _formatar_linha(item: dict[str, Any]) -> str:
     vendas = item.get("sinais", {}).get("unidades_vendidas_7d")
     visitas_txt = f" | 👁 {visitas}v/7d" if visitas is not None else ""
     vendas_txt = f" | 🛒 {vendas}u/7d" if vendas is not None else ""
+    lucro_txt = _formatar_lucro_operacao(item)
     return (
         f"• {item['sku']} ({item['canal']}): R$ {item['preco_atual']:.2f} → "
         f"R$ {item['preco_sugerido']:.2f} ({sinal_delta}) — {item['acao']}"
-        f"{visitas_txt}{vendas_txt}"
+        f"{visitas_txt}{vendas_txt}{lucro_txt}"
     )
 
 
@@ -174,8 +197,9 @@ def _montar_painel_telegram(analises: list[dict[str, Any]], *, total_skus: int) 
     subir = sum(1 for a in analises if "subir" in str(a.get("acao", "")))
 
     return (
-        "💰 Inteligência de preços (comportamento do comprador)\n"
+        "💰 Inteligência de preços (comportamento + lucro operação)\n"
         f"SKUs no catálogo: {total_skus} | canais analisados: {len(analises)}\n"
+        f"Lucro = preço − taxa marketplace − custo | mínimo por fase em spec\n"
         f"Sugestões: ↓{reduzir} reduzir | 👀{monitorar} monitorar | ↑{subir} subir\n\n"
         + ("\n".join(linhas) if linhas else "Nenhum canal ativo no catálogo.")
     )
@@ -204,14 +228,14 @@ def executar(*, enviar_alerta: bool = True, lucro_minimo_pct: float | None = Non
             if item:
                 analises.append(item)
                 logger.info(
-                    "Precificação %s/%s: atual=%.2f sugerido=%.2f acao=%s visitas_7d=%s vendas_7d=%s",
+                    "Precificação %s/%s: atual=%.2f sugerido=%.2f lucro=%.2f→%.2f acao=%s",
                     item["sku"],
                     item["canal"],
                     item["preco_atual"],
                     item["preco_sugerido"],
+                    (item.get("lucro_operacao") or {}).get("atual_reais", 0),
+                    (item.get("lucro_operacao") or {}).get("sugerido_reais", 0),
                     item["acao"],
-                    item.get("sinais", {}).get("visitas_7d"),
-                    item.get("sinais", {}).get("unidades_vendidas_7d"),
                 )
 
     agora = datetime.now(timezone.utc).isoformat()
@@ -264,7 +288,7 @@ def executar(*, enviar_alerta: bool = True, lucro_minimo_pct: float | None = Non
         if urgentes:
             linhas_urg = [_formatar_linha(u) for u in urgentes[:5]]
             alertar_gestor(
-                "⚡ Preço para atrair vendas (tráfego sem conversão ou concorrência forte):\n"
+                "⚡ Preço para atrair vendas (com lucro operacional):\n"
                 + "\n".join(linhas_urg)
             )
 

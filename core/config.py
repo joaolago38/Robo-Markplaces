@@ -107,6 +107,19 @@ DESCOBERTA_ALIBABA_MOQ_MAX = int(os.getenv("DESCOBERTA_ALIBABA_MOQ_MAX", "1000")
 DESCOBERTA_CAMBIO_USD_BRL = float(os.getenv("DESCOBERTA_CAMBIO_USD_BRL", "5.5"))
 DESCOBERTA_ALERTA_PAINEL_COOLDOWN_SEG = int(os.getenv("DESCOBERTA_ALERTA_PAINEL_COOLDOWN_SEG", "86400"))
 
+LICITACOES_CATALOGO = os.getenv("LICITACOES_CATALOGO", "catalogo/licitacoes_monitoradas.json")
+LICITACOES_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LICITACOES_PAUSA_ENTRE_FONTES_SEG", "1.5"))
+LICITACOES_ALERTA_RESUMO = os.getenv("LICITACOES_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
+LICITACOES_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LICITACOES_ALERTA_RESUMO_COOLDOWN_SEG", "14400"))
+LICITACOES_DIAS_PROPOSTA_FRENTE = int(os.getenv("LICITACOES_DIAS_PROPOSTA_FRENTE", "45"))
+LICITACOES_MAX_PAGINAS_PNCP = int(os.getenv("LICITACOES_MAX_PAGINAS_PNCP", "2"))
+LICITACOES_TAMANHO_PAGINA_PNCP = int(os.getenv("LICITACOES_TAMANHO_PAGINA_PNCP", "50"))
+LICITACOES_BUSCAR_PORTAIS_ESTADUAIS = os.getenv("LICITACOES_BUSCAR_PORTAIS_ESTADUAIS", "0").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+
 # Orquestrador 30 min
 ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))
 ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "1.5"))
@@ -116,6 +129,15 @@ ORQUESTRADOR_EXCLUIR = {
 
 # Sync após push na main (não substitui crons dos workflows)
 PUSH_MAIN_COOLDOWN_RESUMO_SEG = int(os.getenv("PUSH_MAIN_COOLDOWN_RESUMO_SEG", "300"))
+
+PUSH_DEPLOY_MENSAGEM_COMMIT = os.getenv("PUSH_DEPLOY_MENSAGEM_COMMIT", "chore: deploy automático robo-markplaces")
+PUSH_DEPLOY_BRANCH = os.getenv("PUSH_DEPLOY_BRANCH", "").strip()
+PUSH_DEPLOY_REMOTE = os.getenv("PUSH_DEPLOY_REMOTE", "origin").strip()
+PUSH_DEPLOY_RODAR_TESTES = os.getenv("PUSH_DEPLOY_RODAR_TESTES", "1").strip().lower() not in ("0", "false", "no")
+PUSH_DEPLOY_RODAR_RUFF = os.getenv("PUSH_DEPLOY_RODAR_RUFF", "1").strip().lower() not in ("0", "false", "no")
+PUSH_DEPLOY_PATHS_EXCLUIR = tuple(
+    x.strip() for x in os.getenv("PUSH_DEPLOY_PATHS_EXCLUIR", "arquivos-java-21,.env").split(",") if x.strip()
+)
 
 # Shopee
 SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "").strip()

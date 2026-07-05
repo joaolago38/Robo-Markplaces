@@ -1,12 +1,20 @@
-name: Orquestrador 30min
-
-# Executa todos os agentes de monitoramento a cada 30 minutos e envia
-# resumo consolidado ao Telegram gestor + métricas ao Datadog.
+name: Push deploy local (manual)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/30 * * * *"
+    inputs:
+      sem_push:
+        description: "Pular git push (só rodar agentes)"
+        type: boolean
+        default: false
+      sem_preflight:
+        description: "Pular ruff e pytest"
+        type: boolean
+        default: false
+      mensagem_commit:
+        description: "Mensagem do commit (se houver alterações)"
+        type: string
+        default: "chore: deploy via workflow manual"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -19,54 +27,43 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
 
 jobs:
-  orquestrador:
-    name: Ciclo completo — todos os agentes
+  push_deploy:
+    name: Push + sync completo
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
-      - name: Restaurar cooldown de alertas Telegram
+      - name: Restaurar cooldown Telegram
         uses: actions/cache@v4
         with:
           path: logs/alertas_cooldown.json
           key: telegram-cooldown-${{ github.run_id }}
           restore-keys: |
             telegram-cooldown-
-      - name: Restaurar historico leiloes
-        uses: actions/cache@v4
-        with:
-          path: logs/leilao_veiculos_history.json
-          key: leilao-veiculos-history-${{ github.run_id }}
-          restore-keys: |
-            leilao-veiculos-history-
-      - name: Restaurar historico Alibaba
-        uses: actions/cache@v4
-        with:
-          path: logs/alibaba_importacao_history.json
-          key: alibaba-importacao-history-${{ github.run_id }}
-          restore-keys: |
-            alibaba-importacao-history-
-      - name: Preflight producao (Telegram + ML)
-        run: python scripts/preflight_producao.py
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
-          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
-          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
-          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
-      - name: Rodar orquestrador 30min
-        run: python -m agentes.orquestrador.agente_orquestrador
+      - name: Push deploy (git + todos os agentes)
+        run: |
+          ARGS=""
+          if [ "${{ inputs.sem_push }}" = "true" ]; then ARGS="$ARGS --sem-push"; fi
+          if [ "${{ inputs.sem_preflight }}" = "true" ]; then ARGS="$ARGS --sem-preflight"; fi
+          python -m agentes.orquestrador.agente_push_deploy \
+            --mensagem "${{ inputs.mensagem_commit }}" \
+            $ARGS
         env:
           ORQUESTRADOR_EXCLUIR: leilao,alibaba,licitacoes
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
@@ -107,3 +104,5 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          PUSH_DEPLOY_RODAR_TESTES: "0"
+          PUSH_DEPLOY_RODAR_RUFF: "0"

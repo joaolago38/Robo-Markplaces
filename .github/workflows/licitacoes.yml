@@ -1,0 +1,63 @@
+name: Monitor Licitações Públicas
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 4 horas (UTC) — PNCP + estados
+    - cron: "0 */4 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Varredura PNCP (27 UFs) + portais estaduais
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar histórico de achados
+        uses: actions/cache@v4
+        with:
+          path: logs/licitacoes_history.json
+          key: licitacoes-history-${{ github.run_id }}
+          restore-keys: |
+            licitacoes-history-
+      - name: Restaurar cooldown de alertas Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor de licitações
+        run: python -m agentes.licitacao.agente_licitacoes
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          LICITACOES_MAX_PAGINAS_PNCP: "2"
+          LICITACOES_BUSCAR_PORTAIS_ESTADUAIS: "0"
+      - name: Salvar historico de achados (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: licitacoes-history
+          path: logs/licitacoes_history.json
+          retention-days: 90
+          if-no-files-found: ignore

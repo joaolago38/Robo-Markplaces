@@ -23,6 +23,23 @@ def calcular_preco_piso(custo: float, taxa_canal_pct: float, margem_minima_pct: 
     return custo / denominador
 
 
+def calcular_lucro_operacao(preco: float, custo: float, taxa_canal_pct: float) -> dict[str, float]:
+    """
+    Lucro líquido da operação: receita após taxa do marketplace menos custo do produto.
+    """
+    preco = _f(preco)
+    custo = _f(custo)
+    taxa = max(0.0, min(99.0, taxa_canal_pct)) / 100.0
+    receita_liquida = preco * (1 - taxa)
+    lucro = receita_liquida - custo
+    margem_pct = (lucro / preco * 100) if preco > 0 else 0.0
+    return {
+        "receita_liquida": round(receita_liquida, 2),
+        "lucro_reais": round(lucro, 2),
+        "margem_operacional_pct": round(margem_pct, 2),
+    }
+
+
 def calcular_preco_ideal(
     *,
     preco_atual: float,
@@ -100,6 +117,10 @@ def calcular_preco_ideal(
     preco_sugerido = round(max(preco_piso, custo, base + ajuste_comportamento), 2)
     margem_pct = ((preco_sugerido - custo) / preco_sugerido * 100) if preco_sugerido > 0 else 0.0
 
+    lucro_atual = calcular_lucro_operacao(preco_atual, custo, taxa_canal_pct)
+    lucro_sugerido = calcular_lucro_operacao(preco_sugerido, custo, taxa_canal_pct)
+    lucro_ok = lucro_sugerido["margem_operacional_pct"] >= margem_minima_pct - 0.05
+
     motivos = [c[1] for c in candidatos if abs(c[0] - preco_sugerido) < 0.05]
     if ajuste_comportamento != 0:
         motivos.append(comportamento)
@@ -107,7 +128,9 @@ def calcular_preco_ideal(
         motivos.append("manter preço atual")
 
     acao = "manter"
-    if preco_sugerido < preco_atual - 0.49:
+    if not lucro_ok and preco_sugerido <= preco_piso + 0.02:
+        acao = "manter — piso de lucro operacional"
+    elif preco_sugerido < preco_atual - 0.49:
         acao = "reduzir para atrair vendas"
     elif preco_sugerido > preco_atual + 0.49:
         acao = "subir — demanda suporta"
@@ -120,6 +143,17 @@ def calcular_preco_ideal(
         "preco_piso": round(preco_piso, 2),
         "preco_concorrente": round(conc, 2) if conc > 0 else None,
         "margem_pct": round(margem_pct, 2),
+        "margem_minima_pct": round(margem_minima_pct, 2),
+        "taxa_canal_pct": round(taxa_canal_pct, 2),
+        "custo": round(custo, 2),
+        "lucro_operacao": {
+            "atual_reais": lucro_atual["lucro_reais"],
+            "sugerido_reais": lucro_sugerido["lucro_reais"],
+            "margem_atual_pct": lucro_atual["margem_operacional_pct"],
+            "margem_sugerida_pct": lucro_sugerido["margem_operacional_pct"],
+            "delta_lucro_reais": round(lucro_sugerido["lucro_reais"] - lucro_atual["lucro_reais"], 2),
+            "lucro_ok": lucro_ok,
+        },
         "comportamento": comportamento,
         "acao": acao,
         "motivos": motivos,

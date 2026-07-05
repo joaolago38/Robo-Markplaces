@@ -4,7 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.precificacao_comportamento import calcular_preco_ideal
+from core.precificacao_comportamento import calcular_lucro_operacao, calcular_preco_ideal
 
 
 class PrecificacaoComportamentoTests(unittest.TestCase):
@@ -80,6 +80,24 @@ class PrecificacaoComportamentoTests(unittest.TestCase):
             sinais={"quantidade_vendida_lider": 20, "unidades_vendidas_7d": 1},
         )
         self.assertLessEqual(out["preco_sugerido"], 50.0)
+
+    def test_lucro_operacao_desconta_taxa_canal(self):
+        lucro = calcular_lucro_operacao(59.90, 34.44, 18.0)
+        self.assertAlmostEqual(lucro["lucro_reais"], 14.68, places=1)
+        self.assertGreater(lucro["margem_operacional_pct"], 20.0)
+
+    def test_preco_ideal_inclui_lucro_operacao(self):
+        out = calcular_preco_ideal(
+            preco_atual=59.90,
+            custo=34.44,
+            preco_concorrente=52.0,
+            margem_minima_pct=10.0,
+            taxa_canal_pct=18.0,
+            abaixo_concorrente_pct=3.0,
+        )
+        self.assertIn("lucro_operacao", out)
+        self.assertGreater(out["lucro_operacao"]["sugerido_reais"], 0)
+        self.assertTrue(out["lucro_operacao"]["lucro_ok"])
 
 
 if __name__ == "__main__":

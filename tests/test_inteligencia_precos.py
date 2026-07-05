@@ -39,6 +39,32 @@ class InteligenciaPrecosTests(unittest.TestCase):
         self.assertEqual(out["analises"][0]["sku"], "KIT-TEST")
         self.assertEqual(out["analises"][0]["canal"], "mercadolivre")
 
+    @patch("agentes.precificacao.agente_inteligencia_precos.alertar_gestor", return_value=True)
+    @patch("agentes.precificacao.agente_inteligencia_precos.gestor_telegram_configurado", return_value=True)
+    @patch("agentes.precificacao.agente_inteligencia_precos.coletar_sinais")
+    @patch("agentes.precificacao.agente_inteligencia_precos.carregar_produtos_para_operacao")
+    def test_envia_alerta_telegram(self, mock_catalogo, mock_sinais, _mock_tg, mock_alerta):
+        mock_catalogo.return_value = [
+            {
+                "sku": "KIT-URG",
+                "nome": "Kit Urgente",
+                "custo": 20.0,
+                "fase_atual": 1,
+                "canais": {"mercadolivre": {"ativo": True, "preco": 49.9}},
+            }
+        ]
+        mock_sinais.return_value = {
+            "visitas_7d": 25,
+            "visitas_30d": 30,
+            "unidades_vendidas_7d": 0,
+            "menor_preco": 44.0,
+        }
+        out = intel.executar(enviar_alerta=True)
+        self.assertTrue(out["alerta_enviado"])
+        self.assertGreaterEqual(mock_alerta.call_count, 1)
+        texto = mock_alerta.call_args_list[0].args[0]
+        self.assertIn("Lucro operação", texto)
+
 
 if __name__ == "__main__":
     unittest.main()

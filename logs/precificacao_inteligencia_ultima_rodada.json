@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-05T15:27:26.273277+00:00",
+  "timestamp": "2026-07-05T16:53:08.243259+00:00",
   "total_produtos_catalogo": 1,
   "total_analises": 1,
   "analises": [
@@ -7,8 +7,11 @@
       "sku": "KIT-TEST",
       "nome": "Kit Teste",
       "canal": "mercadolivre",
+      "custo": 20.0,
+      "taxa_canal_pct": 18.0,
       "preco_atual": 49.9,
       "preco_sugerido": 43.5,
+      "preco_piso": 27.78,
       "delta": -6.4,
       "acao": "reduzir para atrair vendas",
       "comportamento": "muito interesse, zero vendas — testar preço mais atrativo",
@@ -16,6 +19,15 @@
         "muito interesse, zero vendas — testar preço mais atrativo"
       ],
       "margem_pct": 54.02,
+      "margem_minima_pct": 10.0,
+      "lucro_operacao": {
+        "atual_reais": 20.92,
+        "sugerido_reais": 15.67,
+        "margem_atual_pct": 41.92,
+        "margem_sugerida_pct": 36.02,
+        "delta_lucro_reais": -5.25,
+        "lucro_ok": true
+      },
       "preco_concorrente": 44.0,
       "prioridade": "alta",
       "sinais": {
