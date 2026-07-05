@@ -139,7 +139,6 @@ class TestAgentesEntrada(unittest.TestCase):
         mock_alerta.assert_called_once()
 
     @patch("core.guardrails.alertar_bloqueio_escrita_global")
-    @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos", return_value=[])
     @patch.object(config, "ROBO_PAUSAR_ESCRITA", True)
     def test_repricing_bloqueado(self, *_):
         out = repricing_executar(dry_run=False)

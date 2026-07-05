@@ -45,6 +45,42 @@ class PrecificacaoComportamentoTests(unittest.TestCase):
         )
         self.assertGreater(out["preco_sugerido"], 50.0)
 
+    def test_usa_sugestao_ml_quando_disponivel(self):
+        out = calcular_preco_ideal(
+            preco_atual=60.0,
+            custo=25.0,
+            preco_concorrente=None,
+            margem_minima_pct=10.0,
+            taxa_canal_pct=18.0,
+            abaixo_concorrente_pct=3.0,
+            sinais={"preco_sugerido_ml": 55.0},
+        )
+        self.assertEqual(out["preco_sugerido"], 55.0)
+
+    def test_trafego_caindo_monitora(self):
+        out = calcular_preco_ideal(
+            preco_atual=50.0,
+            custo=20.0,
+            preco_concorrente=None,
+            margem_minima_pct=10.0,
+            taxa_canal_pct=18.0,
+            abaixo_concorrente_pct=3.0,
+            sinais={"visitas_7d": 7, "visitas_30d": 90, "unidades_vendidas_7d": 0},
+        )
+        self.assertIn("caindo", out["comportamento"])
+
+    def test_lider_vende_mais_com_preco_similar(self):
+        out = calcular_preco_ideal(
+            preco_atual=50.0,
+            custo=20.0,
+            preco_concorrente=49.0,
+            margem_minima_pct=10.0,
+            taxa_canal_pct=18.0,
+            abaixo_concorrente_pct=3.0,
+            sinais={"quantidade_vendida_lider": 20, "unidades_vendidas_7d": 1},
+        )
+        self.assertLessEqual(out["preco_sugerido"], 50.0)
+
 
 if __name__ == "__main__":
     unittest.main()
