@@ -194,6 +194,8 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         escrever_json_atomico(SNAPSHOT_PATH, snapshot)
 
         gauge("sumare.leiloes", float(resultado.get("leiloes_encontrados") or 0))
+        gauge("sumare.leiloes_coleta_ok", float(resultado.get("leiloes_coletados_ok") or 0))
+        incrementar("sumare.leilao_falha", int(resultado.get("leiloes_coleta_falha") or 0))
         gauge("sumare.lotes_documento", float(len(lotes)))
         incrementar("sumare.novos", len(novos))
         incrementar("sumare.mudancas_lance", len(mudancas))
@@ -234,8 +236,10 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             )
 
         logger.info(
-            "Sumaré: %s leilões, %s lotes doc, %s novos, %s mudanças, alerta=%s",
+            "Sumaré: %s leilões (%s OK, %s falha), %s lotes doc, %s novos, %s mudanças, alerta=%s",
             resultado.get("leiloes_encontrados"),
+            resultado.get("leiloes_coletados_ok"),
+            resultado.get("leiloes_coleta_falha"),
             len(lotes),
             len(novos),
             len(mudancas),
@@ -244,6 +248,8 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         return {
             "ok": True,
             "leiloes_encontrados": resultado.get("leiloes_encontrados"),
+            "leiloes_coletados_ok": resultado.get("leiloes_coletados_ok"),
+            "leiloes_coleta_falha": resultado.get("leiloes_coleta_falha"),
             "lotes_veiculo_documento": len(lotes),
             "novos": novos,
             "mudancas_lance": mudancas,

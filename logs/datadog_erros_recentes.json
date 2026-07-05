@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "33e3e52faccc20bdedf0",
+      "primeira_vez": "2026-07-05T23:00:32.683215+00:00",
+      "ultima_vez": "2026-07-05T23:00:32.683215+00:00",
+      "logger": "claude",
+      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_sumare): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "status": "error",
+      "error_kind": "HTTPError",
+      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "ocorrencias": 1
+    },
+    {
       "fingerprint": "c5815e54cd35b0e512eb",
       "primeira_vez": "2026-07-05T21:32:38.531132+00:00",
       "ultima_vez": "2026-07-05T21:32:38.531132+00:00",
@@ -1442,5 +1453,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-05T21:32:38.531132+00:00"
+  "atualizado_em": "2026-07-05T23:00:32.683215+00:00"
 }
