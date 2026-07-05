@@ -18,9 +18,12 @@ import subprocess
 import sys
 from typing import Any
 
+from agentes.orquestrador.agente_git_branches import executar_criar, executar_limpar
 from agentes.orquestrador.agente_sync_push_main import executar as executar_sync_push_main
 from core.config import (
+    GIT_BRANCH_LIMPAR_APOS_PUSH,
     PUSH_DEPLOY_BRANCH,
+    PUSH_DEPLOY_CRIAR_BRANCH,
     PUSH_DEPLOY_MENSAGEM_COMMIT,
     PUSH_DEPLOY_PATHS_EXCLUIR,
     PUSH_DEPLOY_REMOTE,
@@ -85,14 +88,18 @@ def executar(
     pular_qualidade: bool = False,
     pular_push: bool = False,
     pular_agentes: bool = False,
+    pular_limpeza_branches: bool = False,
+    criar_branch: str | None = None,
     enviar_resumo_telegram: bool = True,
     rodar_testes: bool | None = None,
     rodar_ruff: bool | None = None,
 ) -> dict[str, Any]:
     """
     1. Preflight (ruff + pytest) opcional
-    2. Git add/commit/push seguro
-    3. Executa todos os agentes (listar_agentes_push_main)
+    2. (Opcional) Criar branch a partir da main
+    3. Git add/commit/push seguro
+    4. Limpar branches mergeadas (local + remoto)
+    5. Executa todos os agentes (listar_agentes_push_main)
     """
     msg = (mensagem_commit or PUSH_DEPLOY_MENSAGEM_COMMIT).strip()
     if not msg:
@@ -105,7 +112,9 @@ def executar(
     resultado: dict[str, Any] = {
         "ok": True,
         "preflight": None,
+        "branch_nova": None,
         "git": None,
+        "limpeza_branches": None,
         "agentes": None,
     }
 
@@ -124,6 +133,16 @@ def executar(
                     "Corrija antes de enviar ao remoto."
                 )
             return resultado
+
+    nome_nova_branch = (criar_branch or PUSH_DEPLOY_CRIAR_BRANCH).strip() or None
+    if nome_nova_branch:
+        branch_res = executar_criar(nome_nova_branch, push_upstream=False)
+        resultado["branch_nova"] = branch_res
+        if not branch_res.get("ok"):
+            resultado["ok"] = False
+            incrementar("push_deploy.branch_nova.falha")
+            return resultado
+        br = branch_res.get("branch") or br
 
     if not pular_push:
         git_res = executar_push_deploy_git(
@@ -148,6 +167,18 @@ def executar(
         status = obter_status(cwd=ROOT)
         resultado["git"] = {"ok": True, "pulado": True, "status": status}
 
+    push_enviado = bool((resultado.get("git") or {}).get("push_enviado"))
+    if (
+        not pular_limpeza_branches
+        and GIT_BRANCH_LIMPAR_APOS_PUSH
+        and (push_enviado or pular_push)
+    ):
+        limpeza = executar_limpar(dry_run=dry_run_git)
+        resultado["limpeza_branches"] = limpeza
+        if not limpeza.get("ok"):
+            logger.warning("Push deploy: limpeza de branches com falhas parciais")
+            incrementar("push_deploy.limpeza_branches.falha")
+
     if not pular_agentes:
         logger.info("Push deploy: iniciando sync completo de agentes")
         agentes_res = executar_sync_push_main(enviar_resumo_telegram=enviar_resumo_telegram)
@@ -171,6 +202,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sem-agentes", action="store_true", help="Só faz push, não roda agentes")
     parser.add_argument("--sem-preflight", action="store_true", help="Pula ruff e pytest")
     parser.add_argument("--sem-telegram", action="store_true", help="Não envia resumo Telegram")
+    parser.add_argument("--sem-limpeza-branches", action="store_true", help="Não remove branches mergeadas")
+    parser.add_argument(
+        "--criar-branch",
+        metavar="NOME",
+        default=None,
+        help="Cria branch a partir da main antes do push (use 'auto')",
+    )
     args = parser.parse_args(argv)
 
     logger.info("=== Push deploy (git + todos os agentes) ===")
@@ -182,6 +220,8 @@ def main(argv: list[str] | None = None) -> int:
         pular_qualidade=args.sem_preflight,
         pular_push=args.sem_push,
         pular_agentes=args.sem_agentes,
+        pular_limpeza_branches=args.sem_limpeza_branches,
+        criar_branch=args.criar_branch,
         enviar_resumo_telegram=not args.sem_telegram,
     )
 
