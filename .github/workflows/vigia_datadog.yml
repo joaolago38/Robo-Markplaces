@@ -1,0 +1,70 @@
+name: Vigia Datadog
+
+# Monitora erros no Datadog, inatividade e ausência de resposta (2h).
+# Alerta crítico quando problema não é verificado.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 30 min — detecta janela de 2h sem resposta
+    - cron: "*/30 * * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_APPLICATION_KEY: ${{ secrets.DD_APPLICATION_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  vigia:
+    name: Vigia erros Datadog e inatividade
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Restaurar buffer erros e historico vigia
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/datadog_erros_recentes.json
+            logs/datadog_vigia_history.json
+            logs/orquestrador_ultimo_ciclo.json
+            logs/operacao_24h_ultima.json
+            logs/conectividade_ultima.json
+            logs/renovacao_tokens_ultima.json
+          key: vigia-datadog-${{ github.run_id }}
+          restore-keys: |
+            vigia-datadog-
+      - name: Rodar vigia Datadog
+        run: python -m agentes.infra.agente_vigia_datadog
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Salvar snapshot vigia
+        uses: actions/upload-artifact@v4
+        with:
+          name: vigia-datadog-snapshot
+          path: |
+            logs/datadog_vigia_ultima.json
+            logs/datadog_erros_recentes.json
+          retention-days: 30
+          if-no-files-found: ignore

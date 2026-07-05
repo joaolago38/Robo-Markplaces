@@ -97,6 +97,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "sumare_leiloes",
+        "Sumaré Leilões PREFEITURA/DETRAN",
+        "monitor",
+        "agentes.leilao.agente_monitor_sumare_leiloes:executar",
+        {"enviar_alerta": True},
+        notas="Veículos com documento no site oficial — alerta de lances",
+    ),
+    AgenteRegistrado(
         "lojas_veiculos",
         "Lojas veículos FIPE",
         "monitor",

@@ -78,6 +78,8 @@ _LOGGER_META = {
     "descoberta_coletores": ("multi", "integracao"),
     "descoberta_alibaba": ("multi", "integracao"),
     "agente_leilao_veiculo": ("multi", "agente"),
+    "agente_monitor_sumare_leiloes": ("multi", "agente"),
+    "sumare_leiloes": ("multi", "integracao"),
     "agente_monitor_lojas_veiculos": ("multi", "agente"),
     "agente_licitacoes": ("multi", "agente"),
     "licitacao_busca": ("multi", "integracao"),

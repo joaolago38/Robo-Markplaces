@@ -1,0 +1,59 @@
+name: Monitor Sumare Leiloes
+
+# PREFEITURA/DETRAN no site oficial — veículos com documento, alerta de lances.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 2 horas
+    - cron: "0 */2 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Sumare — prefeitura/DETRAN com documento
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Restaurar historico Sumare
+        uses: actions/cache@v4
+        with:
+          path: logs/sumare_leiloes_history.json
+          key: sumare-leiloes-${{ github.run_id }}
+          restore-keys: |
+            sumare-leiloes-
+      - name: Rodar monitor Sumare Leiloes
+        run: python -m agentes.leilao.agente_monitor_sumare_leiloes
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: sumare-leiloes-snapshot
+          path: logs/sumare_leiloes_ultima.json
+          retention-days: 60
+          if-no-files-found: ignore

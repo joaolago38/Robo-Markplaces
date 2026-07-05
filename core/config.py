@@ -99,6 +99,14 @@ LEILAO_PRECO_MAX_LANCE = float(os.getenv("LEILAO_PRECO_MAX_LANCE", "20000"))
 LEILAO_MARGEM_FIPE_MIN_PCT = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_PCT", "25"))
 LEILAO_MARGEM_FIPE_MIN_REAIS = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_REAIS", "3000"))
 
+# Sumaré Leilões (PREFEITURA/DETRAN — veículos com documento)
+SUMARE_LEILOES_CATALOGO = os.getenv(
+    "SUMARE_LEILOES_CATALOGO", "catalogo/sumare_leiloes_monitorados.json"
+)
+SUMARE_LEILOES_LANCE_MIN_BRL = float(os.getenv("SUMARE_LEILOES_LANCE_MIN_BRL", "2000"))
+SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG = float(os.getenv("SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG", "1.5"))
+SUMARE_LEILOES_ALERTA_COOLDOWN_SEG = int(os.getenv("SUMARE_LEILOES_ALERTA_COOLDOWN_SEG", "7200"))
+
 # DuckDuckGo Lite (compartilhado leilão + Alibaba)
 DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "2.5"))
 DDG_RETRY_MAX = int(os.getenv("DDG_RETRY_MAX", "3"))

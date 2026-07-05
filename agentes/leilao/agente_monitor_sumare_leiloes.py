@@ -1,0 +1,249 @@
+"""
+agentes/leilao/agente_monitor_sumare_leiloes.py
+Monitora Sumaré Leilões (PREFEITURA/DETRAN): veículos com documento, alerta de lances.
+
+Site oficial: https://www.sumareleiloes.com.br
+
+Uso:
+  python -m agentes.leilao.agente_monitor_sumare_leiloes
+"""
+from __future__ import annotations
+
+import argparse
+import logging
+from datetime import datetime, timezone
+from typing import Any
+
+from core.atomic_io import escrever_json_atomico, ler_json
+from core.config import (
+    ROOT,
+    SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
+    SUMARE_LEILOES_CATALOGO,
+    SUMARE_LEILOES_LANCE_MIN_BRL,
+    SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG,
+)
+from core.datadog_metrics import gauge, incrementar
+from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
+from integracoes.leilao.sumare_leiloes import varredura_sumare
+
+logger = logging.getLogger("agente_monitor_sumare_leiloes")
+
+HISTORY_PATH = ROOT / "logs" / "sumare_leiloes_history.json"
+SNAPSHOT_PATH = ROOT / "logs" / "sumare_leiloes_ultima.json"
+
+
+def _carregar_config() -> dict[str, Any]:
+    caminho = ROOT / SUMARE_LEILOES_CATALOGO
+    cfg = ler_json(caminho, default={})
+    if not isinstance(cfg, dict):
+        cfg = {}
+    if not cfg.get("lance_minimo_brl"):
+        cfg["lance_minimo_brl"] = SUMARE_LEILOES_LANCE_MIN_BRL
+    return cfg
+
+
+def _fmt_brl(valor: Any) -> str:
+    if valor is None:
+        return "n/d"
+    try:
+        return f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except (TypeError, ValueError):
+        return "n/d"
+
+
+def _montar_linha_lote(item: dict[str, Any]) -> list[str]:
+    tipo = str(item.get("tipo_comitente") or "leilão").upper()
+    comitente = str(item.get("comitente") or "")[:50]
+    lance = _fmt_brl(item.get("lance_brl"))
+    local = item.get("cidade") and item.get("uf")
+    loc_txt = f"{item.get('cidade')}/{item.get('uf')}" if local else (item.get("local_data") or "")
+    linhas = [
+        f"• *LOTE {item.get('numero_lote', '?')}* — {item.get('titulo', '?')}",
+        f"  {tipo}: {comitente}",
+        f"  💰 Lance: *{lance}*",
+    ]
+    if loc_txt:
+        linhas.append(f"  📍 {loc_txt}")
+    if item.get("data_fechamento"):
+        linhas.append(f"  📅 Fecha {item['data_fechamento']}")
+    linhas.append("  ✅ Com documento")
+    linhas.append(f"  🔗 {item.get('url', '')}")
+    return linhas
+
+
+def _montar_alerta(novos: list[dict[str, Any]], mudancas: list[dict[str, Any]], resumo: dict[str, Any]) -> str:
+    linhas = [
+        "🏛️ *Sumaré Leilões — PREFEITURA/DETRAN*",
+        "",
+        f"_{resumo.get('leiloes_encontrados', 0)} leilão(ões) | "
+        f"{resumo.get('lotes_veiculo_documento', 0)} veículo(s) com documento "
+        f"(lance ≥ {_fmt_brl(resumo.get('lance_minimo_brl'))})_",
+        "",
+        "⚠️ _Site oficial: sumareleiloes.com.br — ignore domínios falsos_",
+        "",
+    ]
+
+    if novos:
+        linhas.append(f"🆕 *Novos lotes ({len(novos)})*")
+        for item in sorted(novos, key=lambda x: float(x.get("lance_brl") or 0), reverse=True)[:12]:
+            linhas.extend(_montar_linha_lote(item))
+            linhas.append("")
+    if mudancas:
+        linhas.append(f"📈 *Lance alterado ({len(mudancas)})*")
+        for item in mudancas[:8]:
+            ant = _fmt_brl(item.get("lance_anterior_brl"))
+            atu = _fmt_brl(item.get("lance_brl"))
+            linhas.append(f"• LOTE {item.get('numero_lote')} — {item.get('titulo', '')[:45]}")
+            linhas.append(f"  {ant} → *{atu}*")
+            linhas.append(f"  🔗 {item.get('url', '')}")
+        linhas.append("")
+
+    if not novos and not mudancas:
+        top = resumo.get("lotes_destaque") or []
+        if top:
+            linhas.append("*Destaques (lances atuais)*")
+            for item in top[:6]:
+                linhas.extend(_montar_linha_lote(item))
+                linhas.append("")
+        else:
+            linhas.append("_Nenhum veículo com documento acima do lance mínimo nesta rodada._")
+
+    return "\n".join(linhas).strip()
+
+
+def executar(enviar_alerta: bool = True) -> dict[str, Any]:
+    try:
+        if enviar_alerta and not gestor_telegram_configurado():
+            logger.warning("Telegram gestor não configurado — alertas Sumaré não serão entregues")
+
+        config = _carregar_config()
+        if not config.get("ativo", True):
+            return {"ok": True, "motivo": "monitor desativado no catálogo", "lotes": []}
+
+        resultado = varredura_sumare(
+            config,
+            pausa_entre_leiloes_seg=SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG,
+        )
+        lotes = resultado.get("lotes") or []
+        agora = datetime.now(timezone.utc).isoformat()
+
+        historico = ler_json(HISTORY_PATH, default={})
+        vistos: dict[str, Any] = dict(historico.get("lotes") or {})
+
+        novos: list[dict[str, Any]] = []
+        mudancas: list[dict[str, Any]] = []
+
+        for lote in lotes:
+            h = str(lote.get("hash") or "")
+            if not h:
+                continue
+            lance = float(lote.get("lance_brl") or 0)
+            anterior = vistos.get(h)
+            if not anterior:
+                registro = {**lote, "visto_em": agora}
+                vistos[h] = registro
+                novos.append(registro)
+            else:
+                lance_ant = float(anterior.get("lance_brl") or 0)
+                if lance and lance_ant and abs(lance - lance_ant) >= 1.0:
+                    atualizado = {**lote, "lance_anterior_brl": lance_ant, "visto_em": agora}
+                    vistos[h] = atualizado
+                    if config.get("alertar_mudanca_lance", True):
+                        mudancas.append(atualizado)
+                else:
+                    vistos[h] = {**anterior, **lote, "ultima_varredura": agora}
+
+        historico["lotes"] = vistos
+        historico["ultima_varredura"] = agora
+        historico["total_lotes"] = len(lotes)
+        escrever_json_atomico(HISTORY_PATH, historico)
+
+        lance_min = float(config.get("lance_minimo_brl") or SUMARE_LEILOES_LANCE_MIN_BRL)
+        snapshot = {
+            "timestamp": agora,
+            "leiloes_encontrados": resultado.get("leiloes_encontrados"),
+            "lotes_veiculo_documento": len(lotes),
+            "lance_minimo_brl": lance_min,
+            "novos": len(novos),
+            "mudancas_lance": len(mudancas),
+            "lotes": lotes[:50],
+        }
+        escrever_json_atomico(SNAPSHOT_PATH, snapshot)
+
+        gauge("sumare.leiloes", float(resultado.get("leiloes_encontrados") or 0))
+        gauge("sumare.lotes_documento", float(len(lotes)))
+        incrementar("sumare.novos", len(novos))
+        incrementar("sumare.mudancas_lance", len(mudancas))
+
+        alerta_enviado = False
+        itens_alerta = novos + mudancas
+        if enviar_alerta and itens_alerta:
+            resumo = {
+                **resultado,
+                "lance_minimo_brl": lance_min,
+                "lotes_destaque": sorted(lotes, key=lambda x: float(x.get("lance_brl") or 0), reverse=True)[:8],
+            }
+            msg = _montar_alerta(novos, mudancas, resumo)
+            alerta_enviado = bool(
+                alertar_gestor(
+                    msg,
+                    chave=chave_itens_novos("sumare:leiloes:lances", itens_alerta),
+                    cooldown_segundos=SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
+                )
+            )
+        elif enviar_alerta and lotes:
+            msg = _montar_alerta(
+                [],
+                [],
+                {
+                    **resultado,
+                    "lance_minimo_brl": lance_min,
+                    "lotes_destaque": sorted(lotes, key=lambda x: float(x.get("lance_brl") or 0), reverse=True)[:8],
+                },
+            )
+            alerta_enviado = bool(
+                alertar_gestor(
+                    msg,
+                    chave=chave_resumo_periodo("sumare:leiloes", horas_por_bucket=4),
+                    cooldown_segundos=SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
+                )
+            )
+
+        logger.info(
+            "Sumaré: %s leilões, %s lotes doc, %s novos, %s mudanças, alerta=%s",
+            resultado.get("leiloes_encontrados"),
+            len(lotes),
+            len(novos),
+            len(mudancas),
+            alerta_enviado,
+        )
+        return {
+            "ok": True,
+            "leiloes_encontrados": resultado.get("leiloes_encontrados"),
+            "lotes_veiculo_documento": len(lotes),
+            "novos": novos,
+            "mudancas_lance": mudancas,
+            "alerta_enviado": alerta_enviado,
+            "lotes": lotes,
+        }
+    except Exception as exc:
+        logger.error("Agente Sumaré leilões erro: %s", exc)
+        incrementar("sumare.erro")
+        return {"ok": False, "erro": str(exc), "lotes": []}
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Monitor Sumaré Leilões PREFEITURA/DETRAN")
+    parser.add_argument("--sem-alerta", action="store_true")
+    args = parser.parse_args(argv)
+
+    logger.info("=== Monitor Sumaré Leilões ===")
+    out = executar(enviar_alerta=not args.sem_alerta)
+    if not out.get("ok"):
+        logger.error("Falhou: %s", out.get("erro"))
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
