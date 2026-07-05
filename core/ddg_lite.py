@@ -36,6 +36,25 @@ def _headers() -> dict[str, str]:
     }
 
 
+def circuit_breaker_ativo() -> bool:
+    """True se o circuit breaker DDG está bloqueando buscas."""
+    return time.time() < _circuit_breaker_ate
+
+
+def segundos_restantes_circuit_breaker() -> int:
+    """Segundos até o circuit breaker expirar (0 se inativo)."""
+    if not circuit_breaker_ativo():
+        return 0
+    return max(0, int(_circuit_breaker_ate - time.time()))
+
+
+def mensagem_circuit_breaker() -> str | None:
+    """Texto para logs de agentes quando não há resultados por bloqueio DDG."""
+    if not circuit_breaker_ativo():
+        return None
+    return f"DDG circuit breaker ativo — liberação em ~{segundos_restantes_circuit_breaker()}s"
+
+
 def extrair_resultados(html: str) -> list[dict[str, str]]:
     resultados: list[dict[str, str]] = []
     if not html:
@@ -106,7 +125,13 @@ def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> l
 
     global _falhas_403_consecutivas
 
-    if time.time() < _circuit_breaker_ate:
+    if circuit_breaker_ativo():
+        logger.info(
+            "DDG bloqueado [%s] — circuit breaker, faltam %ss — query=%r",
+            contexto,
+            segundos_restantes_circuit_breaker(),
+            query[:80],
+        )
         return []
 
     tentativas = max(1, DDG_RETRY_MAX)

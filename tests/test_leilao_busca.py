@@ -149,10 +149,27 @@ class TestEnriquecerAchado(unittest.TestCase):
             "snippet": "arremate R$ 12000",
             "fonte_tipo": "leiloeiro",
             "fonte_nome": "Copart Brasil",
+            "dominio": "copart.com.br",
+            "url": "https://www.copart.com.br/lote/1",
         }
         out = busca.enriquecer_achado_leilao(item, {"marca": "Volkswagen", "modelo": "Gol"})
         self.assertEqual(out["ano"], 2014)
         self.assertEqual(out["valor"], "R$ 12.000")
+        self.assertIn("copart.com.br", out.get("url_cadastro", ""))
+
+    def test_extrai_data_e_url_cadastro_do_snippet(self):
+        item = {
+            "titulo": "Honda Civic leilão dia 15/07/2026",
+            "snippet": "inscrição em https://www.detran.pr.gov.br/cadastro-leilao",
+            "fonte_tipo": "detran",
+            "fonte_id": "PR",
+            "fonte_nome": "DETRAN Paraná",
+            "dominio": "detran.pr.gov.br",
+            "url": "https://www.detran.pr.gov.br/edital/1",
+        }
+        out = busca.enriquecer_achado_leilao(item, {"marca": "Honda", "modelo": "Civic"})
+        self.assertEqual(out["data_leilao"], "15/07/2026")
+        self.assertIn("cadastro-leilao", out["url_cadastro"])
 
 
 class TestFontesCadastro(unittest.TestCase):

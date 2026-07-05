@@ -22,6 +22,29 @@ class TestAlibabaBuscaHelpers(unittest.TestCase):
     def test_extrair_moq(self):
         self.assertEqual(busca._extrair_moq("MOQ: 500 pieces"), 500)
 
+    def test_extrair_distribuidor_do_snippet(self):
+        nome = busca._extrair_distribuidor(
+            "PLA filament by Shenzhen ABC Technology Co., Ltd. MOQ 100",
+        )
+        self.assertIn("Shenzhen ABC", nome or "")
+
+    def test_extrair_distribuidor_da_url(self):
+        nome = busca._extrair_distribuidor(
+            "",
+            url="https://shenzhen-abc-tech.en.alibaba.com/product-detail/123.html",
+        )
+        self.assertEqual(nome, "Shenzhen Abc Tech")
+
+    def test_enriquecer_distribuidor(self):
+        item = busca._enriquecer_distribuidor(
+            {
+                "url": "https://xyz-filament.en.alibaba.com/product-detail/1.html",
+                "titulo": "PLA filament",
+                "snippet": "wholesale factory",
+            }
+        )
+        self.assertEqual(item.get("distribuidor"), "Xyz Filament")
+
     def test_e_oportunidade_respeita_preco_max(self):
         produto = {"preco_max_usd": 0.5}
         self.assertTrue(busca._e_oportunidade(produto, {"preco_usd": 0.3, "url": "http://x"}))

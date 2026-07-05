@@ -18,6 +18,7 @@ from core.config import (
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
+from core.ddg_lite import mensagem_circuit_breaker
 from core.notificador import alertar_gestor, gestor_telegram_configurado
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
 
@@ -69,6 +70,7 @@ def _monitorar_produto(produto: dict[str, Any], historico: dict[str, Any]) -> di
 
     gauge("alibaba.oportunidades_por_produto", len(achados), tags=[f"produto:{pid}"])
     incrementar("alibaba.novos", len(novos), tags=[f"produto:{pid}"])
+    _logar_oportunidades(produto, achados, novos)
 
     return {
         "id": pid,
@@ -88,6 +90,93 @@ def _formatar_preco(preco: Any) -> str:
         return "preço n/d"
 
 
+def _formatar_moq(moq: Any) -> str:
+    if moq is None:
+        return "MOQ n/d"
+    try:
+        return f"MOQ {int(moq)}"
+    except (TypeError, ValueError):
+        return "MOQ n/d"
+
+
+def _formatar_distribuidor(item: dict[str, Any]) -> str:
+    nome = str(item.get("distribuidor") or item.get("fornecedor") or "").strip()
+    return nome or "distribuidor n/d"
+
+
+def _resumo_precos(itens: list[dict[str, Any]]) -> str:
+    precos: list[float] = []
+    for item in itens:
+        try:
+            if item.get("preco_usd") is not None:
+                precos.append(float(item["preco_usd"]))
+        except (TypeError, ValueError):
+            continue
+    if not precos:
+        return "sem preço parseado"
+    if len(precos) == 1:
+        return f"menor {_formatar_preco(precos[0])}"
+    return f"menor {_formatar_preco(min(precos))} — maior {_formatar_preco(max(precos))}"
+
+
+def _logar_oportunidades(
+    produto: dict[str, Any],
+    achados: list[dict[str, Any]],
+    novos: list[dict[str, Any]],
+) -> None:
+    nome = str(produto.get("nome") or montar_termo_busca(produto) or produto.get("id") or "?")
+    preco_max = produto.get("preco_max_usd")
+    moq_max = produto.get("moq_max")
+    criterios = []
+    if preco_max is not None:
+        criterios.append(f"até {_formatar_preco(preco_max)}")
+    if moq_max is not None:
+        criterios.append(f"MOQ ≤ {moq_max}")
+    criterio_txt = f" ({', '.join(criterios)})" if criterios else ""
+
+    if not achados:
+        logger.info("Alibaba %s: nenhuma oportunidade nesta rodada%s", nome, criterio_txt)
+        ddg = mensagem_circuit_breaker()
+        if ddg:
+            logger.warning("Alibaba %s: %s", nome, ddg)
+        return
+
+    logger.info(
+        "Alibaba %s: %s oportunidade(s) encontrada(s) — %s%s",
+        nome,
+        len(achados),
+        _resumo_precos(achados),
+        criterio_txt,
+    )
+    for item in achados[:8]:
+        titulo = str(item.get("titulo") or "Anúncio")[:70]
+        logger.info(
+            "  • %s | %s | %s | %s | %s",
+            titulo,
+            _formatar_preco(item.get("preco_usd")),
+            _formatar_moq(item.get("moq")),
+            _formatar_distribuidor(item),
+            item.get("url", ""),
+        )
+    if len(achados) > 8:
+        logger.info("  … e mais %s anúncio(s) nesta rodada", len(achados) - 8)
+
+    if novos:
+        logger.info("Alibaba %s: %s anúncio(s) NOVO(S) nesta rodada", nome, len(novos))
+        for item in novos[:5]:
+            titulo = str(item.get("titulo") or "Anúncio")[:70]
+            logger.info(
+                "  ★ NOVO: %s | %s | %s | %s | %s",
+                titulo,
+                _formatar_preco(item.get("preco_usd")),
+                _formatar_moq(item.get("moq")),
+                _formatar_distribuidor(item),
+                item.get("url", ""),
+            )
+        if len(novos) > 5:
+            logger.info("  … e mais %s novo(s)", len(novos) - 5)
+
+
 def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
     linhas = ["📦 *Alibaba — oportunidades de importação*", ""]
     for r in resultados:
@@ -98,9 +187,10 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
         for item in novos[:6]:
             titulo = str(item.get("titulo") or "Anúncio")[:70]
             preco = _formatar_preco(item.get("preco_usd"))
-            moq = item.get("moq")
-            moq_txt = f"MOQ {moq}" if moq else "MOQ n/d"
+            moq_txt = _formatar_moq(item.get("moq"))
+            dist = _formatar_distribuidor(item)
             linhas.append(f"• {titulo} — {preco}, {moq_txt}")
+            linhas.append(f"  🏭 {dist}")
             linhas.append(f"  {item.get('url', '')}")
         if len(novos) > 6:
             linhas.append(f"  … e mais {len(novos) - 6}")

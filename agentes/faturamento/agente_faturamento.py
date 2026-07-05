@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
+
 from core.fiscal_mapper import resolver_ncm_item
 from core.config import (
     NFE_NATUREZA_OPERACAO,

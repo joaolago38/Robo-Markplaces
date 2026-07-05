@@ -13,7 +13,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from core.ddg_lite import buscar as ddg_buscar
-from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS
+from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS, URLS_CADASTRO_POR_DOMINIO
 
 logger = logging.getLogger("leilao_busca")
 
@@ -25,6 +25,21 @@ _PALAVRAS_RECUPERADO = ("recuperado", "furto", "furtado", "roubado", "judicial",
 _PALAVRAS_MEDIA_MONTA = ("media monta", "média monta", "medio", "médio", "avaria media", "avaria média")
 _PALAVRAS_EXCLUIR_MONTA = ("grande monta", "perda total", "irrecuperavel", "irrecuperável", "sucata")
 _MODELOS_MARCA_OPCIONAL = frozenset({"gol", "civic", "city", "fit", "fiorino", "furgao", "furgão"})
+_MESES_PT = {
+    "janeiro": 1,
+    "fevereiro": 2,
+    "marco": 3,
+    "março": 3,
+    "abril": 4,
+    "maio": 5,
+    "junho": 6,
+    "julho": 7,
+    "agosto": 8,
+    "setembro": 9,
+    "outubro": 10,
+    "novembro": 11,
+    "dezembro": 12,
+}
 
 
 def montar_termo_busca(veiculo: dict[str, Any]) -> str:
@@ -210,22 +225,85 @@ def _extrair_cidade_uf(texto: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _formatar_data(dia: int, mes: int, ano: int) -> str:
+    if ano < 100:
+        ano += 2000
+    return f"{dia:02d}/{mes:02d}/{ano}"
+
+
+def _extrair_data_leilao(texto: str) -> str | None:
+    blob = texto or ""
+    candidatas: list[str] = []
+
+    for m in re.finditer(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b", blob):
+        try:
+            candidatas.append(_formatar_data(int(m.group(1)), int(m.group(2)), int(m.group(3))))
+        except ValueError:
+            continue
+
+    for m in re.finditer(
+        r"\b(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]+)\s+de\s+(\d{4})\b",
+        blob,
+        re.IGNORECASE,
+    ):
+        mes_nome = _normalizar(m.group(2))
+        mes = _MESES_PT.get(mes_nome)
+        if mes:
+            try:
+                candidatas.append(_formatar_data(int(m.group(1)), mes, int(m.group(3))))
+            except ValueError:
+                continue
+
+    if not candidatas:
+        return None
+
+    palavras_data = ("leilao", "leilão", "arremate", "pregao", "pregão", "edital", "dia")
+    for data in candidatas:
+        pos = blob.find(data)
+        trecho = _normalizar(blob[max(0, pos - 40) : pos + len(data) + 40])
+        if any(p in trecho for p in palavras_data):
+            return data
+    return candidatas[0]
+
+
+def _extrair_url_cadastro(texto: str, *, url: str = "", dominio: str = "") -> str | None:
+    blob = texto or ""
+    for link in re.findall(r"https?://[^\s<>\"']+", blob, re.IGNORECASE):
+        norm = link.lower()
+        if any(x in norm for x in ("cadastro", "inscricao", "inscrição", "registro", "credenciamento")):
+            return link.rstrip(".,;)")
+    dom = (dominio or urlparse(url).netloc or "").lower().replace("www.", "")
+    if dom in URLS_CADASTRO_POR_DOMINIO:
+        return URLS_CADASTRO_POR_DOMINIO[dom]
+    if dom.startswith("detran.") and dom.endswith(".gov.br"):
+        return f"https://www.{dom}/leilao"
+    return None
+
+
 def enriquecer_achado_leilao(item: dict[str, Any], veiculo: dict[str, Any]) -> dict[str, Any]:
-    """Extrai cidade, DETRAN, ano e valor do título/snippet para o alerta."""
+    """Extrai cidade, DETRAN, ano, valor, data e URL de cadastro para o alerta."""
     blob = f"{item.get('titulo', '')} {item.get('snippet', '')}"
     cidade, uf_texto = _extrair_cidade_uf(blob)
     ano = _extrair_ano(blob, veiculo)
     valor = _extrair_valor(blob)
+    data_leilao = _extrair_data_leilao(blob)
+    dominio = str(item.get("dominio") or urlparse(str(item.get("url") or "")).netloc)
+    url_cadastro = _extrair_url_cadastro(blob, url=str(item.get("url") or ""), dominio=dominio)
 
     out = {
         **item,
         "marca": str(veiculo.get("marca") or "").strip(),
         "modelo": str(veiculo.get("modelo") or "").strip(),
+        "url_anuncio": str(item.get("url") or "").strip(),
     }
     if ano:
         out["ano"] = ano
     if valor:
         out["valor"] = valor
+    if data_leilao:
+        out["data_leilao"] = data_leilao
+    if url_cadastro:
+        out["url_cadastro"] = url_cadastro
 
     if item.get("fonte_tipo") == "detran":
         out["detran_nome"] = item.get("fonte_nome") or f"DETRAN {item.get('fonte_id', '')}"
