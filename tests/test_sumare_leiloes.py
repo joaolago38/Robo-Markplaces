@@ -4,6 +4,7 @@ tests/test_sumare_leiloes.py
 import os
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -59,6 +60,107 @@ class SumareLeiloesTests(unittest.TestCase):
         leilao = {"leilao_id": "5075", "comitente": "PREFEITURA - RIBEIRÃO DO SUL", "tipo_comitente": "prefeitura"}
         lotes = sl._extrair_lotes_html(_LOTE_DOC + _LOTE_SUCATA, leilao)
         self.assertEqual(len(lotes), 2)
+
+    def test_enriquecer_lance_lote_html(self):
+        lote = {"url": "https://www.sumareleiloes.com.br/lotes/x", "titulo": "FIAT/UNO"}
+        html = """
+        <table>
+        <tr><td>Lance Inicial:</td><td>R$ 5.500,00</td></tr>
+        <tr><td>Lance Atual:</td><td>R$ 6.200,00</td></tr>
+        </table>
+        COM DIREITO A DOCUMENTO/CIRCULAÇÃO
+        """
+        class FakeResp:
+            status_code = 200
+            text = html
+
+        class FakeSess:
+            headers = {}
+
+            def get(self, url, timeout=25):
+                return FakeResp()
+
+        out = sl.enriquecer_lance_lote(lote, FakeSess())
+        self.assertEqual(out["lance_brl"], 6200.0)
+        self.assertTrue(out["tem_documento"])
+
+    def test_varredura_sumare_mock(self):
+        leilao = {"leilao_id": "5075", "comitente": "PREFEITURA X", "tipo_comitente": "prefeitura", "url": "http://x"}
+        lote = sl._parse_lote_card(_LOTE_DOC, leilao=leilao)
+        with patch.object(sl, "listar_leiloes_home", return_value=[leilao]):
+            with patch.object(sl, "buscar_leiloes_detran_ddg", return_value=[]):
+                with patch.object(sl, "coletar_lotes_leilao", return_value=[lote]):
+                    with patch.object(sl, "enriquecer_lance_lote", side_effect=lambda l, s: l):
+                        out = sl.varredura_sumare(
+                            {"comitentes": ["prefeitura"], "lance_minimo_brl": 2000},
+                            pausa_entre_leiloes_seg=0,
+                            enriquecer_lances=False,
+                        )
+        self.assertEqual(out["leiloes_encontrados"], 1)
+        self.assertEqual(out["lotes_veiculo_documento"], 1)
+
+    def test_listar_leiloes_home_mock(self):
+        html = """
+        <div class="auction-item">
+            <div class="card-img-overlay-top">
+                <div class="card-title">PREFEITURA DE TESTE</div>
+            </div>
+            <a href="https://www.sumareleiloes.com.br/leiloes/5075" class="goToAuction">Ver</a>
+        </div>
+        """
+        class FakeResp:
+            status_code = 200
+            text = html
+
+        class FakeSess:
+            headers = {}
+
+            def get(self, url, timeout=30):
+                return FakeResp()
+
+        leiloes = sl.listar_leiloes_home(FakeSess())
+        self.assertEqual(len(leiloes), 1)
+        self.assertEqual(leiloes[0]["tipo_comitente"], "prefeitura")
+
+    def test_buscar_leiloes_detran_ddg_mock(self):
+        with patch.object(
+            sl,
+            "ddg_buscar",
+            return_value=[{"url": "https://www.sumareleiloes.com.br/leiloes/9999", "titulo": "DETRAN SP"}],
+        ):
+            leiloes = sl.buscar_leiloes_detran_ddg(max_resultados=5)
+        self.assertEqual(len(leiloes), 1)
+        self.assertEqual(leiloes[0]["tipo_comitente"], "detran")
+
+    def test_parse_preco_invalido(self):
+        self.assertIsNone(sl.parse_preco_brl(""))
+        self.assertIsNone(sl.parse_preco_brl("sem preco"))
+
+    def test_coletar_lotes_leilao_com_paginacao(self):
+        leilao = {"leilao_id": "5075", "url": "https://www.sumareleiloes.com.br/leiloes/5075", "comitente": "PREFEITURA"}
+        html_pag1 = f"var listaLotsTotal = 2; {_LOTE_DOC}"
+        html_pag2 = _LOTE_SUCATA
+
+        class FakeResp:
+            def __init__(self, text, status_code=200):
+                self.text = text
+                self.status_code = status_code
+
+        class FakeSess:
+            headers = {}
+
+            def get(self, url, timeout=35):
+                return FakeResp(html_pag1)
+
+            def post(self, url, data=None, timeout=30, headers=None):
+                return FakeResp(html_pag2)
+
+        lotes = sl.coletar_lotes_leilao(leilao, FakeSess(), pausa_paginas_seg=0)
+        self.assertEqual(len(lotes), 2)
+
+    def test_eh_veiculo_blindado_rejeitado(self):
+        lote = {"titulo": "FIAT/UNO BLINDADO", "tem_documento": True}
+        self.assertFalse(sl.eh_veiculo_com_documento(lote))
 
 
 if __name__ == "__main__":

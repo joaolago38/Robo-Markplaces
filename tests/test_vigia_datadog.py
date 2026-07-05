@@ -10,6 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from integracoes.datadog import buffer_erros as buf
+from integracoes.datadog import consulta_erros as ce
 from integracoes.datadog import vigia_saude as vs
 
 
@@ -74,6 +75,112 @@ class VigiaDatadogTests(unittest.TestCase):
         )
         self.assertIn("GRAVE", msg.upper())
         self.assertIn("Orquestrador", msg)
+
+    def test_analisar_saude_ok(self):
+        with patch.object(vs, "verificar_inatividade", return_value=[]):
+            with patch.object(vs, "verificar_erros_nao_tratados", return_value=[]):
+                out = vs.analisar_saude([])
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["tem_critico"])
+
+    def test_buscar_erros_datadog_desabilitado(self):
+        with patch("core.config.DD_LOGS_ENABLED", False):
+            with patch("core.config.DD_API_KEY", ""):
+                out = ce.buscar_erros_datadog()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "datadog_desabilitado")
+
+    def test_buscar_erros_datadog_sem_application_key(self):
+        with patch("core.config.DD_LOGS_ENABLED", True):
+            with patch("core.config.DD_API_KEY", "key"):
+                with patch("core.config.DD_APPLICATION_KEY", ""):
+                    out = ce.buscar_erros_datadog()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "dd_application_key_ausente")
+
+    def test_buscar_erros_datadog_sucesso(self):
+        class FakeResp:
+            status_code = 200
+
+            def json(self):
+                return {
+                    "data": [
+                        {
+                            "id": "1",
+                            "attributes": {
+                                "timestamp": "2026-07-05T10:00:00Z",
+                                "message": "erro teste",
+                                "status": "error",
+                                "service": "robo-markplaces",
+                                "tags": ["env:prod"],
+                            },
+                        }
+                    ]
+                }
+
+        with patch("core.config.DD_LOGS_ENABLED", True):
+            with patch("core.config.DD_API_KEY", "key"):
+                with patch("core.config.DD_APPLICATION_KEY", "app"):
+                    with patch("core.config.DD_ENV", "prod"):
+                        with patch("core.config.DD_SITE", "datadoghq.com"):
+                            with patch("integracoes.datadog.consulta_erros.requests.post", return_value=FakeResp()):
+                                out = ce.buscar_erros_datadog()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total"], 1)
+
+    def test_verificar_inatividade_stale(self):
+        antigo = (datetime.now(timezone.utc) - timedelta(hours=5)).isoformat()
+        fontes = [
+            {
+                "id": "hb",
+                "nome": "Heartbeat",
+                "path": "logs/hb_test.json",
+                "campo": "timestamp",
+                "max_horas": 2,
+                "critico": True,
+                "ativo": True,
+            }
+        ]
+        with patch("integracoes.datadog.vigia_saude.ROOT", buf.ROOT):
+            with patch("integracoes.datadog.vigia_saude.ler_json", return_value={"timestamp": antigo}):
+                with patch.object(buf.ROOT.__class__, "is_file", return_value=True):
+                    with patch("pathlib.Path.is_file", return_value=True):
+                        alertas = vs.verificar_inatividade(fontes)
+        self.assertEqual(len(alertas), 1)
+        self.assertEqual(alertas[0]["motivo"], "sem_resposta")
+
+    def test_verificar_erros_com_api_datadog(self):
+        with patch("integracoes.datadog.vigia_saude.listar_erros_recentes", return_value=[]):
+            with patch(
+                "integracoes.datadog.vigia_saude.buscar_erros_datadog",
+                return_value={
+                    "ok": True,
+                    "erros": [{"mensagem": "falha na API externa"}],
+                },
+            ):
+                alertas = vs.verificar_erros_nao_tratados(limite_horas=2)
+        self.assertEqual(len(alertas), 1)
+        self.assertEqual(alertas[0]["tipo"], "erro_datadog_api")
+
+    def test_parse_iso_e_fmt_horas(self):
+        self.assertIsNone(vs._parse_iso(""))
+        dt = vs._parse_iso("2026-07-05T10:00:00Z")
+        self.assertIsNotNone(dt)
+        self.assertIn("min", vs._fmt_horas(0.5))
+        self.assertIn("h", vs._fmt_horas(3.0))
+
+    def test_montar_mensagem_com_outros_alertas(self):
+        msg = vs.montar_mensagem_critica(
+            [{"gravidade": "alta", "texto": "Componente secundário parado"}],
+            [{"gravidade": "alta", "texto": "Erro API recente"}],
+        )
+        self.assertIn("Componente secundário", msg)
+        self.assertIn("Erro API recente", msg)
+
+    def test_listar_erros_recentes(self):
+        with patch("integracoes.datadog.buffer_erros.ler_json", return_value={"erros": [{"fingerprint": "a"}]}):
+            erros = buf.listar_erros_recentes(limite=5)
+        self.assertEqual(len(erros), 1)
 
     @patch("agentes.infra.agente_vigia_datadog.alertar_critico", return_value=True)
     @patch("integracoes.datadog.vigia_saude.analisar_saude")

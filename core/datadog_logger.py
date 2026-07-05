@@ -88,6 +88,7 @@ _LOGGER_META = {
     "agente_alibaba_importacao_inteligente": ("multi", "agente"),
     "cotacao_usd": ("infra", "integracao"),
     "custo_landed": ("infra", "integracao"),
+    "analise_margem_importacao": ("multi", "integracao"),
     "agente_orquestrador": ("multi", "orquestrador"),
     "agente_sync_push_main": ("multi", "orquestrador"),
     "agente_push_deploy": ("multi", "orquestrador"),
