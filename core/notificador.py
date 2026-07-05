@@ -33,6 +33,22 @@ def _chave_msg(msg: str) -> str:
     return hashlib.sha256(msg.encode("utf-8")).hexdigest()[:24]
 
 
+def chave_itens_novos(prefix: str, itens: list[dict]) -> str:
+    """Chave de cooldown por conjunto de hashes — cada lote novo pode alertar de novo."""
+    hashes = sorted(str(i.get("hash") or "") for i in itens if i.get("hash"))
+    if not hashes:
+        return prefix
+    digest = hashlib.sha256("|".join(hashes).encode("utf-8")).hexdigest()[:16]
+    return f"{prefix}:{digest}"
+
+
+def chave_resumo_periodo(prefix: str, *, horas_por_bucket: int = 1) -> str:
+    """Chave de cooldown para resumo periódico (ex.: 1x por hora no leilão)."""
+    agora = datetime.now()
+    bucket_h = (agora.hour // max(1, horas_por_bucket)) * max(1, horas_por_bucket)
+    return f"{prefix}:resumo:{agora:%Y-%m-%d}-H{bucket_h:02d}"
+
+
 def _carregar_cooldown() -> dict:
     try:
         if _COOLDOWN_PATH.exists():

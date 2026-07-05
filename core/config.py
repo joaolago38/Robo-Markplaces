@@ -62,6 +62,8 @@ LEILAO_VEICULOS_CATALOGO = os.getenv(
 LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "2.5"))
 LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", os.getenv("DDG_RETRY_MAX", "3")))
 LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", os.getenv("DDG_RETRY_BASE_SEG", "5")))
+LEILAO_ALERTA_RESUMO = os.getenv("LEILAO_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
+LEILAO_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LEILAO_ALERTA_RESUMO_COOLDOWN_SEG", "3600"))
 
 # DuckDuckGo Lite (compartilhado leilão + Alibaba)
 DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "2.5"))
@@ -86,6 +88,8 @@ ALIBABA_IMPORTACAO_CATALOGO = os.getenv(
     "ALIBABA_IMPORTACAO_CATALOGO", "catalogo/alibaba_produtos_importacao.json"
 )
 ALIBABA_PAUSA_ENTRE_BUSCAS_SEG = float(os.getenv("ALIBABA_PAUSA_ENTRE_BUSCAS_SEG", "1.0"))
+ALIBABA_ALERTA_RESUMO = os.getenv("ALIBABA_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
+ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
 
 # Orquestrador 30 min
 ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))

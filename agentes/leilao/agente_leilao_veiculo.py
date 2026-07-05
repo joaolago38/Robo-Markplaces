@@ -14,10 +14,16 @@ from datetime import datetime, timezone
 from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json
-from core.config import LEILAO_PAUSA_ENTRE_FONTES_SEG, LEILAO_VEICULOS_CATALOGO, ROOT
+from core.config import (
+    LEILAO_ALERTA_RESUMO,
+    LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
+    LEILAO_PAUSA_ENTRE_FONTES_SEG,
+    LEILAO_VEICULOS_CATALOGO,
+    ROOT,
+)
 from core.datadog_metrics import gauge, incrementar
 from core.ddg_lite import mensagem_circuit_breaker
-from core.notificador import alertar_gestor, gestor_telegram_configurado
+from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.leilao.busca import buscar_veiculo_em_fontes
 
 logger = logging.getLogger("agente_leilao_veiculo")
@@ -212,6 +218,36 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
     return "\n".join(linhas).strip()
 
 
+def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
+    total_achados = sum(int(r.get("achados_total") or 0) for r in resultados)
+    total_novos = sum(len(r.get("novos") or []) for r in resultados)
+    linhas = [
+        "🚗 *Leilões — resumo da varredura*",
+        "",
+        f"Veículos monitorados: {len(resultados)}",
+        f"Achados nesta rodada: {total_achados}",
+        f"Novos: {total_novos}",
+        "",
+    ]
+    for r in sorted(resultados, key=lambda x: int(x.get("prioridade") or 99)):
+        achados = int(r.get("achados_total") or 0)
+        novos = len(r.get("novos") or [])
+        linhas.append(f"• {r.get('veiculo', r.get('id', '?'))}: {achados} achado(s), {novos} novo(s)")
+    ddg = mensagem_circuit_breaker()
+    if ddg:
+        linhas.extend(["", f"⚠️ {ddg}"])
+    elif total_achados == 0:
+        linhas.extend(["", "_Nenhum anúncio encontrado nesta rodada (DDG/leiloeiros)._"])
+    return "\n".join(linhas).strip()
+
+
+def _todos_novos(resultados: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    itens: list[dict[str, Any]] = []
+    for r in resultados:
+        itens.extend(r.get("novos") or [])
+    return itens
+
+
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     """
     Varre leiloeiros + DETRAN (27 UFs) para cada veículo ativo no catálogo.
@@ -243,24 +279,45 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         _salvar_historico(historico)
 
         com_novos = [r for r in resultados if r.get("novos")]
-        alerta_enviado = False
+        alerta_novos_enviado = False
+        alerta_resumo_enviado = False
+
         if enviar_alerta and com_novos:
+            novos_itens = _todos_novos(com_novos)
             msg = _montar_alerta(com_novos)
             if msg:
-                alerta_enviado = bool(
-                    alertar_gestor(msg, chave="leilao:veiculos:novos", cooldown_segundos=3600)
-                )
-                if not alerta_enviado:
-                    logger.warning(
-                        "%s achado(s) novo(s) mas alerta não enviado (cooldown ou falha Telegram)",
-                        sum(len(r.get("novos") or []) for r in com_novos),
+                alerta_novos_enviado = bool(
+                    alertar_gestor(
+                        msg,
+                        chave=chave_itens_novos("leilao:veiculos:novos", novos_itens),
+                        cooldown_segundos=86400,
                     )
+                )
+                if not alerta_novos_enviado:
+                    logger.warning(
+                        "%s achado(s) novo(s) mas alerta detalhado não enviado (cooldown ou Telegram)",
+                        len(novos_itens),
+                    )
+
+        if enviar_alerta and LEILAO_ALERTA_RESUMO:
+            msg_resumo = _montar_resumo_varredura(resultados)
+            alerta_resumo_enviado = bool(
+                alertar_gestor(
+                    msg_resumo,
+                    chave=chave_resumo_periodo("leilao", horas_por_bucket=1),
+                    cooldown_segundos=LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
+                )
+            )
+            if not alerta_resumo_enviado:
+                logger.info("Leilão: resumo não enviado (cooldown ou Telegram indisponível)")
 
         return {
             "ok": True,
             "total_veiculos": len(resultados),
             "com_novos": len(com_novos),
-            "alerta_enviado": alerta_enviado,
+            "alerta_enviado": alerta_novos_enviado or alerta_resumo_enviado,
+            "alerta_novos_enviado": alerta_novos_enviado,
+            "alerta_resumo_enviado": alerta_resumo_enviado,
             "resultados": resultados,
         }
     except Exception as exc:

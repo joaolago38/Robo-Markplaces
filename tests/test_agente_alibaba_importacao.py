@@ -101,7 +101,9 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
             }
         ]
         hist = self.tmp_path / "hist.json"
-        with patch.object(agente, "HISTORY_PATH", hist):
+        with patch.object(agente, "HISTORY_PATH", hist), patch.object(
+            agente, "ALIBABA_ALERTA_RESUMO", False
+        ):
             out1 = agente.executar(enviar_alerta=True)
             out2 = agente.executar(enviar_alerta=True)
 
@@ -109,6 +111,34 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
         self.assertEqual(out1["com_novos"], 1)
         mock_alertar.assert_called_once()
         self.assertEqual(out2["com_novos"], 0)
+
+    def test_montar_resumo_varredura(self):
+        msg = agente._montar_resumo_varredura(
+            [
+                {
+                    "produto": "Filamento 3D",
+                    "oportunidades_total": 3,
+                    "novos": [{"hash": "a"}],
+                }
+            ]
+        )
+        self.assertIn("resumo da varredura", msg)
+        self.assertIn("Filamento 3D", msg)
+        self.assertIn("3 oportunidade(s)", msg)
+
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "buscar_oportunidades", return_value=[])
+    @patch.object(agente, "_carregar_produtos")
+    def test_envia_resumo_mesmo_sem_novos(self, mock_produtos, _mock_busca, mock_alertar):
+        mock_produtos.return_value = [
+            {"id": "p1", "ativo": True, "nome": "Filamento 3D", "termo_busca": "filament"}
+        ]
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "ALIBABA_ALERTA_RESUMO", True
+        ):
+            out = agente.executar(enviar_alerta=True)
+        self.assertTrue(out["alerta_resumo_enviado"])
+        self.assertIn("resumo da varredura", mock_alertar.call_args[0][0])
 
     @patch.object(agente, "_carregar_produtos", side_effect=RuntimeError("boom"))
     def test_nunca_lanca_excecao(self, *_):
