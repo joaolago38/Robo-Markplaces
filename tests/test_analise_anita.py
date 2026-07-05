@@ -62,6 +62,10 @@ class AnaliseAnitaTests(unittest.TestCase):
         ]
         out = aa.analisar_produto(produto, anuncios)
         self.assertEqual(out["total_anita"], 1)
+        self.assertEqual(out["total_impala"], 1)
+        self.assertEqual(out["unidades_vendidas_impala"], 50)
+        self.assertTrue(out["impala_lider_vendas"])
+        self.assertAlmostEqual(out["share_impala_pct"], 50 / 80 * 100, places=1)
         self.assertIn("margem_minha", out)
 
 

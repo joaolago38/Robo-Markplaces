@@ -52,8 +52,46 @@ class AgenteMonitorAnitaTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_produtos"], 1)
         self.assertTrue(out["alerta_enviado"])
+        self.assertIn("resumo_orquestrador", out)
+        self.assertIn("Impala", out["resumo_orquestrador"])
+
+    def test_consolidar_impala(self):
+        c = agente.consolidar_impala(
+            [
+                {
+                    "ok": True,
+                    "impala_lider_vendas": True,
+                    "total_impala": 2,
+                    "unidades_vendidas_impala": 200,
+                    "unidades_vendidas_anita": 100,
+                    "menor_preco_impala": 39.9,
+                    "margem_minha": {"margem_operacional_pct": 30.0},
+                },
+                {
+                    "ok": True,
+                    "impala_lider_vendas": False,
+                    "total_impala": 1,
+                    "unidades_vendidas_impala": 50,
+                    "unidades_vendidas_anita": 80,
+                    "share_impala_pct": 38.5,
+                    "margem_minha": {"margem_operacional_pct": 28.0},
+                },
+            ]
+        )
+        self.assertEqual(c["termos_impala_lider"], 1)
+        self.assertEqual(c["unidades_vendidas_impala"], 250)
+        self.assertAlmostEqual(c["share_impala_global_pct"], 250 / 430 * 100, places=1)
 
     def test_montar_painel(self):
+        consolidado = {
+            "termos_impala_lider": 2,
+            "termos_monitorados": 3,
+            "unidades_vendidas_impala": 320,
+            "unidades_vendidas_anita": 180,
+            "share_impala_global_pct": 64.0,
+            "menor_preco_impala": 38.5,
+            "margem_media_pct": 31.2,
+        }
         msg = agente._montar_painel(
             [
                 {
@@ -65,6 +103,12 @@ class AgenteMonitorAnitaTests(unittest.TestCase):
                     "total_anita": 2,
                     "marca_mais_vendida": "Impala",
                     "menor_preco_anita": 44.0,
+                    "total_impala": 3,
+                    "unidades_vendidas_impala": 200,
+                    "unidades_vendidas_anita": 120,
+                    "share_impala_pct": 62.5,
+                    "menor_preco_impala": 38.5,
+                    "preco_medio_impala": 41.0,
                     "margem_minha": {"margem_operacional_pct": 32.5, "lucro_reais": 15.9},
                     "divergencias_kit": 1,
                     "divergencias_cor": 0,
@@ -74,8 +118,10 @@ class AgenteMonitorAnitaTests(unittest.TestCase):
                     ],
                     "analises": [],
                 }
-            ]
+            ],
+            consolidado,
         )
+        self.assertIn("Desempenho Impala", msg)
         self.assertIn("Anita", msg)
         self.assertIn("margem", msg)
         self.assertIn("Impala", msg)

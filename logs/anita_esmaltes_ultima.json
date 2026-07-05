@@ -1,0 +1,120 @@
+{
+  "timestamp": "2026-07-05T22:54:35.607013+00:00",
+  "consolidado_impala": {
+    "termos_monitorados": 1,
+    "termos_com_impala": 1,
+    "termos_impala_lider": 1,
+    "unidades_vendidas_impala": 200,
+    "unidades_vendidas_anita": 120,
+    "share_impala_global_pct": 62.5,
+    "share_impala_medio_pct": 62.5,
+    "menor_preco_impala": 42.0,
+    "margem_media_pct": 32.9
+  },
+  "resultados": [
+    {
+      "id": "p1",
+      "nome": "Kit 5 Anita",
+      "tipo": "kit",
+      "termo_busca": "kit 5 anita",
+      "meu_preco": 48.9,
+      "custo_total": 24.0,
+      "total_anuncios": 2,
+      "total_anita": 1,
+      "total_impala": 1,
+      "unidades_vendidas_impala": 200,
+      "unidades_vendidas_anita": 120,
+      "share_impala_pct": 62.5,
+      "menor_preco_impala": 42.0,
+      "preco_medio_impala": 42.0,
+      "posicao_impala_ranking": 1,
+      "impala_lider_vendas": true,
+      "diff_preco_impala_vs_meu_pct": -14.1,
+      "ranking_marcas": [
+        {
+          "marca": "Impala",
+          "vendidos": 200,
+          "anuncios": 1,
+          "preco_medio": 42.0
+        },
+        {
+          "marca": "Anita",
+          "vendidos": 120,
+          "anuncios": 1,
+          "preco_medio": 45.0
+        }
+      ],
+      "marca_mais_vendida": "Impala",
+      "menor_preco_anita": 45.0,
+      "margem_minha": {
+        "receita_liquida": 40.1,
+        "lucro_reais": 16.1,
+        "margem_operacional_pct": 32.92
+      },
+      "analises": [
+        {
+          "titulo": "Kit 5 Esmaltes Anita Nude",
+          "preco": 45.0,
+          "quantidade_vendida": 120,
+          "marca_detectada": "Anita",
+          "qtd_kit_detectada": 5,
+          "qtd_kit_preferencia": 5,
+          "diff_qtd_kit": 0,
+          "kit_conforme_preferencia": true,
+          "cores_encontradas": [
+            "Nude"
+          ],
+          "cores_faltando": [],
+          "cor_conforme_preferencia": true,
+          "diff_preco_pct": -8.0,
+          "meu_preco": 48.9,
+          "preco_anuncio": 45.0,
+          "margem_meu": {
+            "receita_liquida": 40.1,
+            "lucro_reais": 16.1,
+            "margem_operacional_pct": 32.92
+          },
+          "margem_anuncio": {
+            "receita_liquida": 36.9,
+            "lucro_reais": 12.9,
+            "margem_operacional_pct": 28.67
+          },
+          "conforme_preferencia": true
+        },
+        {
+          "titulo": "Kit 5 Impala Bailarina",
+          "preco": 42.0,
+          "quantidade_vendida": 200,
+          "marca_detectada": "Impala",
+          "qtd_kit_detectada": 5,
+          "qtd_kit_preferencia": 5,
+          "diff_qtd_kit": 0,
+          "kit_conforme_preferencia": true,
+          "cores_encontradas": [],
+          "cores_faltando": [
+            "Nude"
+          ],
+          "cor_conforme_preferencia": true,
+          "diff_preco_pct": -14.1,
+          "meu_preco": 48.9,
+          "preco_anuncio": 42.0,
+          "margem_meu": {
+            "receita_liquida": 40.1,
+            "lucro_reais": 16.1,
+            "margem_operacional_pct": 32.92
+          },
+          "margem_anuncio": {
+            "receita_liquida": 34.44,
+            "lucro_reais": 10.44,
+            "margem_operacional_pct": 24.86
+          },
+          "conforme_preferencia": true
+        }
+      ],
+      "divergencias_kit": 0,
+      "divergencias_cor": 0,
+      "ok": true,
+      "prioridade": 1
+    }
+  ]
+}
