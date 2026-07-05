@@ -1,0 +1,65 @@
+[
+  {
+    "id": "orquestrador",
+    "ativo": true,
+    "nome": "Orquestrador 30min",
+    "path": "logs/orquestrador_ultimo_ciclo.json",
+    "campo": "timestamp",
+    "max_horas": 1,
+    "critico": true
+  },
+  {
+    "id": "operacao_24h",
+    "ativo": true,
+    "nome": "Operação 24h",
+    "path": "logs/operacao_24h_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 2,
+    "critico": true
+  },
+  {
+    "id": "conectividade",
+    "ativo": true,
+    "nome": "Conectividade marketplaces",
+    "path": "logs/conectividade_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 2,
+    "critico": true
+  },
+  {
+    "id": "renovacao_tokens",
+    "ativo": true,
+    "nome": "Renovação de tokens",
+    "path": "logs/renovacao_tokens_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 1,
+    "critico": true
+  },
+  {
+    "id": "vigia_datadog",
+    "ativo": true,
+    "nome": "Vigia Datadog",
+    "path": "logs/datadog_vigia_history.json",
+    "campo": "ultima_varredura",
+    "max_horas": 2,
+    "critico": true
+  },
+  {
+    "id": "relatorio_manha_ml",
+    "ativo": true,
+    "nome": "Relatório manhã ML",
+    "path": "logs/relatorio_manha_ml_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 26,
+    "critico": false
+  },
+  {
+    "id": "esmaltes_mercado",
+    "ativo": true,
+    "nome": "Mercado esmaltes",
+    "path": "logs/esmaltes_mercado_history.json",
+    "campo": "ultima_varredura",
+    "max_horas": 26,
+    "critico": false
+  }
+]

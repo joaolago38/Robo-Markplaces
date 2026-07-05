@@ -116,6 +116,10 @@ _LOGGER_META = {
     "agente_panorama": ("multi", "agente"),
     "relatorio_financeiro": ("multi", "agente"),
     "operacao_24h": ("infra", "agente"),
+    "agente_vigia_datadog": ("infra", "agente"),
+    "buffer_erros_datadog": ("infra", "core"),
+    "consulta_erros_datadog": ("infra", "core"),
+    "vigia_saude_datadog": ("infra", "core"),
 
     # --- Diagnóstico interno deste módulo ---
     "datadog_logger": ("infra", "core"),
@@ -205,6 +209,20 @@ class DatadogLogHandler(logging.Handler):
                     error_attrs["stack"] = logging.Formatter().formatException(record.exc_info)
                 if error_attrs:
                     payload_entry["error"] = error_attrs
+
+            if record.levelno >= logging.ERROR:
+                try:
+                    from integracoes.datadog.buffer_erros import registrar_erro_local
+
+                    registrar_erro_local(
+                        nome_logger=record.name,
+                        mensagem=self.format(record),
+                        status=record.levelname.lower(),
+                        error_kind=getattr(record, "error_kind", None),
+                        error_message=getattr(record, "error_message", None),
+                    )
+                except Exception:
+                    pass
 
             payload = [payload_entry]
             requests.post(
