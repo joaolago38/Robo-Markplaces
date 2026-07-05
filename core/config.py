@@ -56,6 +56,16 @@ MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
     os.getenv("MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT", "5.0")
 )
 
+ML_RELATORIO_MANHA_COOLDOWN_SEG = int(os.getenv("ML_RELATORIO_MANHA_COOLDOWN_SEG", "39600"))
+
+# Monitor esmaltes Anita (cores, kits, margem, ranking marcas)
+ANITA_ESMALTES_CATALOGO = os.getenv(
+    "ANITA_ESMALTES_CATALOGO", "catalogo/anita_esmaltes_monitorados.json"
+)
+ANITA_PAUSA_ENTRE_BUSCAS_SEG = float(os.getenv("ANITA_PAUSA_ENTRE_BUSCAS_SEG", "1.5"))
+ANITA_ALERTA_RESUMO = os.getenv("ANITA_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
+ANITA_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("ANITA_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
+
 LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )
@@ -64,6 +74,16 @@ LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", os.getenv("DDG_RETR
 LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", os.getenv("DDG_RETRY_BASE_SEG", "5")))
 LEILAO_ALERTA_RESUMO = os.getenv("LEILAO_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
 LEILAO_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LEILAO_ALERTA_RESUMO_COOLDOWN_SEG", "3600"))
+
+# Leilão × FIPE (lance + taxas vs tabela)
+LEILAO_COMISSAO_PCT = float(os.getenv("LEILAO_COMISSAO_PCT", "5.0"))
+LEILAO_TAXA_CADASTRO_BRL = float(os.getenv("LEILAO_TAXA_CADASTRO_BRL", "400.0"))
+LEILAO_TAXA_ADMIN_BRL = float(os.getenv("LEILAO_TAXA_ADMIN_BRL", "150.0"))
+LEILAO_REMOCAO_ESTADIA_BRL = float(os.getenv("LEILAO_REMOCAO_ESTADIA_BRL", "350.0"))
+LEILAO_LAUDO_BRL = float(os.getenv("LEILAO_LAUDO_BRL", "200.0"))
+LEILAO_PRECO_MAX_LANCE = float(os.getenv("LEILAO_PRECO_MAX_LANCE", "20000"))
+LEILAO_MARGEM_FIPE_MIN_PCT = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_PCT", "25"))
+LEILAO_MARGEM_FIPE_MIN_REAIS = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_REAIS", "3000"))
 
 # DuckDuckGo Lite (compartilhado leilão + Alibaba)
 DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "2.5"))
@@ -90,6 +110,38 @@ ALIBABA_IMPORTACAO_CATALOGO = os.getenv(
 ALIBABA_PAUSA_ENTRE_BUSCAS_SEG = float(os.getenv("ALIBABA_PAUSA_ENTRE_BUSCAS_SEG", "1.0"))
 ALIBABA_ALERTA_RESUMO = os.getenv("ALIBABA_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
 ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
+
+# Câmbio USD/BRL
+CAMBIO_API_URL = os.getenv(
+    "CAMBIO_API_URL", "https://economia.awesomeapi.com.br/json/last/USD-BRL"
+).strip()
+CAMBIO_HISTORICO_MAX = int(os.getenv("CAMBIO_HISTORICO_MAX", "500"))
+CAMBIO_FALLBACK_USD_BRL = float(os.getenv("CAMBIO_FALLBACK_USD_BRL", os.getenv("DESCOBERTA_CAMBIO_USD_BRL", "5.5")))
+CAMBIO_ALERTA_VARIACAO_PCT = float(os.getenv("CAMBIO_ALERTA_VARIACAO_PCT", "1.5"))
+
+# Custo landed importação (China → Brasil)
+IMPORTACAO_II_PCT_DEFAULT = float(os.getenv("IMPORTACAO_II_PCT_DEFAULT", "16.0"))
+IMPORTACAO_IPI_PCT_DEFAULT = float(os.getenv("IMPORTACAO_IPI_PCT_DEFAULT", "0.0"))
+IMPORTACAO_PIS_PCT = float(os.getenv("IMPORTACAO_PIS_PCT", "2.1"))
+IMPORTACAO_COFINS_PCT = float(os.getenv("IMPORTACAO_COFINS_PCT", "9.65"))
+IMPORTACAO_ICMS_PCT = float(os.getenv("IMPORTACAO_ICMS_PCT", "18.0"))
+IMPORTACAO_SEGURO_PCT = float(os.getenv("IMPORTACAO_SEGURO_PCT", "0.5"))
+IMPORTACAO_SISCOMEX_BRL = float(os.getenv("IMPORTACAO_SISCOMEX_BRL", "214.50"))
+IMPORTACAO_DESEMBARACO_BRL = float(os.getenv("IMPORTACAO_DESEMBARACO_BRL", "800.0"))
+IMPORTACAO_FRETE_MARITIMO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_MARITIMO_USD_KG", "0.85"))
+IMPORTACAO_FRETE_AEREO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_AEREO_USD_KG", "5.5"))
+IMPORTACAO_FRETE_NACIONAL_BRL = float(os.getenv("IMPORTACAO_FRETE_NACIONAL_BRL", "12.0"))
+
+# Alibaba inteligência (câmbio + landed + margem)
+ALIBABA_MARGEM_MIN_PCT = float(os.getenv("ALIBABA_MARGEM_MIN_PCT", "18.0"))
+ALIBABA_MARGEM_MIN_REAIS = float(os.getenv("ALIBABA_MARGEM_MIN_REAIS", "5.0"))
+ALIBABA_MARGEM_ALERTA_COOLDOWN_SEG = int(os.getenv("ALIBABA_MARGEM_ALERTA_COOLDOWN_SEG", "7200"))
+ALIBABA_INTELIGENCIA_ALERTA_RESUMO = os.getenv("ALIBABA_INTELIGENCIA_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ALIBABA_INTELIGENCIA_COOLDOWN_SEG = int(os.getenv("ALIBABA_INTELIGENCIA_COOLDOWN_SEG", "7200"))
 
 DESCOBERTA_NICHOS_CATALOGO = os.getenv(
     "DESCOBERTA_NICHOS_CATALOGO", "catalogo/descoberta_nichos.json"

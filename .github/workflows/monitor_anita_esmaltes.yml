@@ -1,0 +1,44 @@
+name: Monitor Anita Esmaltes
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Anita — cores, kits, margem e ranking marcas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Rodar monitor Anita
+        run: python -m agentes.esmaltes.agente_monitor_anita
+        env:
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar historico
+        uses: actions/upload-artifact@v4
+        with:
+          name: anita-esmaltes-history
+          path: logs/anita_esmaltes_history.json
+          retention-days: 90
+          if-no-files-found: ignore

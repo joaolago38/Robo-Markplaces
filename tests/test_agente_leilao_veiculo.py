@@ -35,41 +35,55 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_veiculo_em_fontes")
     @patch.object(agente, "_carregar_veiculos")
-    def test_alerta_apenas_novos(self, mock_veiculos, mock_busca, mock_alertar):
+    def test_alerta_apenas_vantajosos(self, mock_veiculos, mock_busca, mock_alertar):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015}
         ]
-        mock_busca.return_value = [
-            {
-                "hash": "abc123",
-                "url": "https://copart.com.br/1",
-                "titulo": "Fiat Uno 2012 leilão Campinas/SP",
-                "snippet": "lance R$ 9.800,00",
-                "fonte_nome": "Copart",
-                "fonte_id": "copart",
-                "fonte_tipo": "leiloeiro",
-                "marca": "Fiat",
-                "modelo": "Uno",
-                "ano": 2012,
-                "valor": "R$ 9.800,00",
-                "cidade": "Campinas",
-                "uf": "SP",
-            }
-        ]
-        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
-            agente, "LEILAO_ALERTA_RESUMO", False
-        ):
+        item_base = {
+            "hash": "abc123",
+            "url": "https://copart.com.br/1",
+            "titulo": "Fiat Uno 2012 leilão Campinas/SP",
+            "snippet": "lance R$ 9.800,00",
+            "fonte_nome": "Copart",
+            "fonte_id": "copart",
+            "fonte_tipo": "leiloeiro",
+            "marca": "Fiat",
+            "modelo": "Uno",
+            "ano": 2012,
+            "valor": "R$ 9.800,00",
+            "cidade": "Campinas",
+            "uf": "SP",
+        }
+        mock_busca.return_value = [item_base]
+
+        def _analisar(_veiculo, achados):
+            return [
+                {
+                    **item_base,
+                    "lance_brl": 9800.0,
+                    "custo_total_brl": 11600.0,
+                    "valor_fipe": 25000.0,
+                    "margem_fipe_reais": 13400.0,
+                    "margem_fipe_pct": 53.6,
+                    "vantajoso": True,
+                    "modelo_fipe": "Uno Mille",
+                }
+            ]
+
+        with patch.object(agente, "_analisar_achados", side_effect=_analisar), patch.object(
+            agente, "HISTORY_PATH", self.tmp_path / "hist.json"
+        ), patch.object(agente, "LEILAO_ALERTA_RESUMO", False):
             out1 = agente.executar(enviar_alerta=True)
             out2 = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out1["ok"])
-        self.assertEqual(out1["com_novos"], 1)
+        self.assertEqual(out1["com_vantajosos"], 1)
         mock_alertar.assert_called_once()
         msg = mock_alertar.call_args[0][0]
-        self.assertIn("Campinas/SP", msg)
-        self.assertIn("Fiat Uno 2012", msg)
+        self.assertIn("vantagem FIPE", msg)
+        self.assertIn("FIPE", msg)
         self.assertIn("R$ 9.800,00", msg)
-        self.assertEqual(out2["com_novos"], 0)
+        self.assertEqual(out2["com_vantajosos"], 0)
 
     def test_montar_alerta_detran(self):
         msg = agente._montar_alerta(
@@ -77,7 +91,7 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                 {
                     "veiculo": "Honda Civic",
                     "prioridade": 1,
-                    "novos": [
+                    "novos_vantajosos": [
                         {
                             "fonte_tipo": "detran",
                             "fonte_nome": "DETRAN Paraná",
@@ -87,6 +101,14 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                             "modelo": "Civic",
                             "ano": 2016,
                             "valor": "R$ 25.000,00",
+                            "lance_brl": 25000.0,
+                            "custo_total_brl": 27500.0,
+                            "comissao_leiloeiro_brl": 1250.0,
+                            "valor_fipe": 55000.0,
+                            "modelo_fipe": "Civic LXR",
+                            "margem_fipe_reais": 27500.0,
+                            "margem_fipe_pct": 50.0,
+                            "vantajoso": True,
                             "data_leilao": "20/08/2026",
                             "url_cadastro": "https://www.detran.pr.gov.br/leilao-de-veiculos",
                             "titulo": "Civic leilão",
@@ -97,11 +119,11 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                 }
             ]
         )
+        self.assertIn("vantagem FIPE", msg)
         self.assertIn("Curitiba — DETRAN Paraná", msg)
         self.assertIn("Honda Civic 2016", msg)
-        self.assertIn("R$ 25.000,00", msg)
-        self.assertIn("20/08/2026", msg)
-        self.assertIn("Cadastro: https://www.detran.pr.gov.br/leilao-de-veiculos", msg)
+        self.assertIn("FIPE", msg)
+        self.assertIn("Vantagem", msg)
 
     def test_montar_resumo_varredura(self):
         msg = agente._montar_resumo_varredura(
@@ -110,19 +132,24 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                     "veiculo": "Fiat Fiorino",
                     "prioridade": 1,
                     "achados_total": 2,
+                    "vantajosos_total": 1,
                     "novos": [],
+                    "novos_vantajosos": [],
                 },
                 {
                     "veiculo": "VW Gol",
                     "prioridade": 2,
                     "achados_total": 0,
+                    "vantajosos_total": 0,
                     "novos": [],
+                    "novos_vantajosos": [],
                 },
             ]
         )
         self.assertIn("resumo da varredura", msg)
+        self.assertIn("FIPE", msg)
         self.assertIn("Fiorino", msg)
-        self.assertIn("2 achado(s)", msg)
+        self.assertIn("vantagem FIPE", msg)
 
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_veiculo_em_fontes", return_value=[])
@@ -133,7 +160,7 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         ]
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
             agente, "LEILAO_ALERTA_RESUMO", True
-        ):
+        ), patch.object(agente, "_analisar_achados", return_value=[]):
             out = agente.executar(enviar_alerta=True)
         self.assertTrue(out["ok"])
         self.assertTrue(out["alerta_resumo_enviado"])
@@ -176,7 +203,9 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                 "url_cadastro": "https://www.detran.pr.gov.br/leilao-de-veiculos",
             }
         ]
-        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"):
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "_analisar_achados", side_effect=lambda _v, achados: achados
+        ):
             with self.assertLogs("agente_leilao_veiculo", level="INFO") as logs:
                 agente.executar(enviar_alerta=False)
         joined = "\n".join(logs.output)

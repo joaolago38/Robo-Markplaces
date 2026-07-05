@@ -112,6 +112,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "alibaba_inteligencia",
+        "Alibaba câmbio + margem",
+        "monitor",
+        "agentes.importacao.agente_alibaba_importacao_inteligente:executar",
+        {"enviar_alerta": True},
+        notas="Dólar + custo landed + preços ML + alerta de lucro",
+    ),
+    AgenteRegistrado(
         "monitor_ml",
         "Monitor ML",
         "monitor",
@@ -119,11 +127,27 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "relatorio_manha_ml",
+        "Relatório manhã ML",
+        "monitor",
+        "agentes.ml.agente_relatorio_manha_ml:executar",
+        {"enviar_alerta": True},
+        notas="Visão matinal + propostas de preço com margem viável",
+    ),
+    AgenteRegistrado(
         "monitor_concorrentes",
         "Monitor concorrentes ML",
         "monitor",
         "agentes.ml.agente_monitor_concorrentes:executar",
         {"enviar_alerta": True},
+    ),
+    AgenteRegistrado(
+        "monitor_anita",
+        "Monitor esmaltes Anita",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_anita:executar",
+        {"enviar_alerta": True},
+        notas="Cores/kits vs preferência + ranking marcas + margem",
     ),
     AgenteRegistrado(
         "descoberta_produtos",
