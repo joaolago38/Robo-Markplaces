@@ -100,6 +100,56 @@ class VigiaDatadogTests(unittest.TestCase):
         self.assertEqual(len(alertas), 1)
         self.assertEqual(alertas[0]["gravidade"], "critica")
 
+    def test_filtro_ignora_outros_marketplaces_mantem_ml(self):
+        antigo = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+        recente = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+        erros = [
+            {
+                "fingerprint": "mag1",
+                "primeira_vez": antigo,
+                "ultima_vez": recente,
+                "logger": "magalu_client",
+                "mensagem": "Magalu listar_pedidos HTTP 401",
+                "ocorrencias": 1,
+            },
+            {
+                "fingerprint": "ml1",
+                "primeira_vez": antigo,
+                "ultima_vez": recente,
+                "logger": "ml_client",
+                "mensagem": "ML listar_pedidos HTTP 401",
+                "ocorrencias": 2,
+            },
+            {
+                "fingerprint": "tok1",
+                "primeira_vez": antigo,
+                "ultima_vez": recente,
+                "logger": "token_manager",
+                "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400",
+                "ocorrencias": 5,
+            },
+            {
+                "fingerprint": "tok2",
+                "primeira_vez": antigo,
+                "ultima_vez": recente,
+                "logger": "token_manager",
+                "mensagem": "Erro ao renovar token ML: HTTP 400",
+                "ocorrencias": 3,
+            },
+        ]
+        filtros = vs.carregar_filtros_erro("catalogo/datadog_vigia_filtros.json")
+        with patch("integracoes.datadog.vigia_saude.listar_erros_recentes", return_value=erros):
+            with patch(
+                "integracoes.datadog.vigia_saude.buscar_erros_datadog",
+                return_value={"ok": False, "erros": []},
+            ):
+                alertas = vs.verificar_erros_nao_tratados(limite_horas=2, filtros=filtros)
+        loggers = {a["logger"] for a in alertas}
+        self.assertIn("ml_client", loggers)
+        self.assertIn("token_manager", loggers)
+        self.assertNotIn("magalu_client", loggers)
+        self.assertEqual(len(alertas), 2)
+
     def test_montar_mensagem_critica(self):
         msg = vs.montar_mensagem_critica(
             [{"gravidade": "critica", "texto": "Orquestrador parado"}],
