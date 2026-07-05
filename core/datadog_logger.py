@@ -79,6 +79,8 @@ _LOGGER_META = {
     "agente_alibaba_importacao": ("multi", "agente"),
     "agente_orquestrador": ("multi", "orquestrador"),
     "agente_sync_push_main": ("multi", "orquestrador"),
+    "agente_push_deploy": ("multi", "orquestrador"),
+    "git_deploy": ("infra", "core"),
     "ddg_lite": ("multi", "integracao"),
     "telegram_gate": ("infra", "core"),
     "agente_ml": ("mercadolivre", "agente"),

@@ -130,6 +130,15 @@ ORQUESTRADOR_EXCLUIR = {
 # Sync após push na main (não substitui crons dos workflows)
 PUSH_MAIN_COOLDOWN_RESUMO_SEG = int(os.getenv("PUSH_MAIN_COOLDOWN_RESUMO_SEG", "300"))
 
+PUSH_DEPLOY_MENSAGEM_COMMIT = os.getenv("PUSH_DEPLOY_MENSAGEM_COMMIT", "chore: deploy automático robo-markplaces")
+PUSH_DEPLOY_BRANCH = os.getenv("PUSH_DEPLOY_BRANCH", "").strip()
+PUSH_DEPLOY_REMOTE = os.getenv("PUSH_DEPLOY_REMOTE", "origin").strip()
+PUSH_DEPLOY_RODAR_TESTES = os.getenv("PUSH_DEPLOY_RODAR_TESTES", "1").strip().lower() not in ("0", "false", "no")
+PUSH_DEPLOY_RODAR_RUFF = os.getenv("PUSH_DEPLOY_RODAR_RUFF", "1").strip().lower() not in ("0", "false", "no")
+PUSH_DEPLOY_PATHS_EXCLUIR = tuple(
+    x.strip() for x in os.getenv("PUSH_DEPLOY_PATHS_EXCLUIR", "arquivos-java-21,.env").split(",") if x.strip()
+)
+
 # Shopee
 SHOPEE_PARTNER_ID  = os.getenv("SHOPEE_PARTNER_ID", "").strip()
 SHOPEE_PARTNER_KEY = os.getenv("SHOPEE_PARTNER_KEY", "").strip()
