@@ -46,6 +46,38 @@ class VigiaDatadogTests(unittest.TestCase):
         self.assertEqual(len(alertas), 1)
         self.assertEqual(alertas[0]["motivo"], "arquivo_ausente")
 
+    def test_verificar_inatividade_ignora_ausente(self):
+        fontes = [
+            {
+                "id": "diario",
+                "nome": "Job diario",
+                "path": "logs/inexistente_diario.json",
+                "campo": "timestamp",
+                "max_horas": 26,
+                "critico": False,
+                "ignorar_ausente": True,
+                "ativo": True,
+            }
+        ]
+        with patch("integracoes.datadog.vigia_saude.ROOT", buf.ROOT):
+            alertas = vs.verificar_inatividade(fontes)
+        self.assertEqual(alertas, [])
+
+    def test_verificar_erros_dedup_api_com_buffer(self):
+        with patch(
+            "integracoes.datadog.vigia_saude.listar_erros_recentes",
+            return_value=[{"mensagem": "falha na API externa", "fingerprint": "abc"}],
+        ):
+            with patch(
+                "integracoes.datadog.vigia_saude.buscar_erros_datadog",
+                return_value={
+                    "ok": True,
+                    "erros": [{"mensagem": "falha na API externa"}],
+                },
+            ):
+                alertas = vs.verificar_erros_nao_tratados(limite_horas=2, incluir_api_datadog=True)
+        self.assertEqual(alertas, [])
+
     def test_verificar_erros_nao_tratados(self):
         antigo = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
         recente = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()

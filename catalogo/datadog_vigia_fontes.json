@@ -51,7 +51,8 @@
     "path": "logs/relatorio_manha_ml_ultima.json",
     "campo": "timestamp",
     "max_horas": 26,
-    "critico": false
+    "critico": false,
+    "ignorar_ausente": true
   },
   {
     "id": "esmaltes_mercado",
@@ -60,6 +61,7 @@
     "path": "logs/esmaltes_mercado_history.json",
     "campo": "ultima_varredura",
     "max_horas": 26,
-    "critico": false
+    "critico": false,
+    "ignorar_ausente": true
   }
 ]

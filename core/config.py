@@ -80,6 +80,18 @@ ESMALTES_MERCADO_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_MERCADO_ALERTA_CO
 ESMALTES_MERCADO_VENDAS_MIN = int(os.getenv("ESMALTES_MERCADO_VENDAS_MIN", "5"))
 ESMALTES_MERCADO_ABAIXO_CONCORRENTE_PCT = float(os.getenv("ESMALTES_MERCADO_ABAIXO_CONCORRENTE_PCT", "2.0"))
 
+# Comparativo Anita vs Impala (demanda, consumidor, plano para vencer)
+COMPARATIVO_ESMALTES_CATALOGO = os.getenv(
+    "COMPARATIVO_ESMALTES_CATALOGO", "catalogo/anita_impala_comparativo_segmentos.json"
+)
+COMPARATIVO_ESMALTES_PAUSA_SEG = float(os.getenv("COMPARATIVO_ESMALTES_PAUSA_SEG", "1.5"))
+COMPARATIVO_ESMALTES_ALERTA_RESUMO = os.getenv("COMPARATIVO_ESMALTES_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG", "14400"))
+
 LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )

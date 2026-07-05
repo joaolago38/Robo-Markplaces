@@ -43,6 +43,14 @@ def _fmt_horas(horas: float) -> str:
     return f"{h}h{m:02d}m" if m else f"{h}h"
 
 
+def _chave_mensagem(msg: str) -> str:
+    return str(msg or "").strip().lower()[:80]
+
+
+def _gravidade_relevante(gravidade: str | None) -> bool:
+    return str(gravidade or "").lower() in {"critica", "alta"}
+
+
 def carregar_fontes(catalogo_relativo: str) -> list[dict[str, Any]]:
     caminho = ROOT / catalogo_relativo
     data = ler_json(caminho, default=[])
@@ -67,6 +75,8 @@ def verificar_inatividade(
 
         caminho = ROOT / rel_path
         if not caminho.is_file():
+            if bool(fonte.get("ignorar_ausente", False)):
+                continue
             alertas.append(
                 {
                     "tipo": "inatividade",
@@ -144,8 +154,9 @@ def verificar_erros_nao_tratados(
         if not primeira or not ultima:
             continue
 
-        # Erro ainda "ativo" se visto na última hora
-        if agora - ultima > timedelta(hours=1):
+        # Erro ainda "ativo" se visto dentro da janela de monitoramento
+        janela_ativa = timedelta(hours=max(1.0, limite_horas))
+        if agora - ultima > janela_ativa:
             continue
 
         if agora - primeira < limiar:
@@ -174,14 +185,20 @@ def verificar_erros_nao_tratados(
     if incluir_api_datadog:
         consulta = buscar_erros_datadog(horas=limite_horas, limite=30)
         if consulta.get("ok"):
-            fps_locais = {a.get("fingerprint") for a in alertas}
+            chaves_vistas = {
+                _chave_mensagem(str(e.get("mensagem") or e.get("error_message") or ""))
+                for e in listar_erros_recentes()
+            }
+            for alerta in alertas:
+                chaves_vistas.add(_chave_mensagem(str(alerta.get("texto") or "")))
             for item in consulta.get("erros") or []:
                 msg = str(item.get("mensagem") or "")[:180]
                 if not msg:
                     continue
-                chave = msg[:80]
-                if chave in fps_locais:
+                chave = _chave_mensagem(msg)
+                if chave in chaves_vistas:
                     continue
+                chaves_vistas.add(chave)
                 alertas.append(
                     {
                         "tipo": "erro_datadog_api",
@@ -263,8 +280,10 @@ def analisar_saude(
         a.get("gravidade") == "critica" for a in inatividades
     ) or any(e.get("gravidade") == "critica" for e in erros)
 
+    inatividades_relevantes = [a for a in inatividades if _gravidade_relevante(a.get("gravidade"))]
+
     return {
-        "ok": not inatividades and not erros,
+        "ok": not inatividades_relevantes and not erros,
         "tem_critico": tem_critico,
         "inatividades": inatividades,
         "erros": erros,

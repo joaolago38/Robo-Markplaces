@@ -73,6 +73,8 @@ _LOGGER_META = {
     "agente_monitor_concorrentes": ("mercadolivre", "agente"),
     "agente_monitor_anita": ("mercadolivre", "agente"),
     "agente_monitor_mercado_esmaltes": ("mercadolivre", "agente"),
+    "agente_comparativo_anita_impala": ("mercadolivre", "agente"),
+    "comparativo_anita_impala": ("mercadolivre", "integracao"),
     "analise_anita": ("mercadolivre", "integracao"),
     "agente_descoberta_produtos": ("multi", "agente"),
     "descoberta_coletores": ("multi", "integracao"),
@@ -156,6 +158,36 @@ def _resolver_meta(nome_logger: str) -> tuple[str, str]:
     return _DEFAULT_META
 
 
+def _espelhar_erro_local(record: logging.LogRecord, mensagem: str) -> None:
+    if record.levelno < logging.ERROR:
+        return
+    try:
+        from integracoes.datadog.buffer_erros import registrar_erro_local
+
+        registrar_erro_local(
+            nome_logger=record.name,
+            mensagem=mensagem,
+            status=record.levelname.lower(),
+            error_kind=getattr(record, "error_kind", None),
+            error_message=getattr(record, "error_message", None),
+        )
+    except Exception:
+        pass
+
+
+class LocalErrorBufferHandler(logging.Handler):
+    """Espelha ERROR+ no buffer local — funciona mesmo sem DD_API_KEY."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.ERROR)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            _espelhar_erro_local(record, self.format(record) if self.formatter else record.getMessage())
+        except Exception:
+            pass
+
+
 class DatadogLogHandler(logging.Handler):
     def __init__(self) -> None:
         super().__init__(level=logging.INFO)
@@ -213,20 +245,6 @@ class DatadogLogHandler(logging.Handler):
                 if error_attrs:
                     payload_entry["error"] = error_attrs
 
-            if record.levelno >= logging.ERROR:
-                try:
-                    from integracoes.datadog.buffer_erros import registrar_erro_local
-
-                    registrar_erro_local(
-                        nome_logger=record.name,
-                        mensagem=self.format(record),
-                        status=record.levelname.lower(),
-                        error_kind=getattr(record, "error_kind", None),
-                        error_message=getattr(record, "error_message", None),
-                    )
-                except Exception:
-                    pass
-
             payload = [payload_entry]
             requests.post(
                 self._url,
@@ -239,20 +257,26 @@ class DatadogLogHandler(logging.Handler):
 
 
 def configurar_logging_datadog() -> None:
-    """Anexa DatadogLogHandler ao logger raiz (idempotente)."""
+    """Anexa handlers de log (buffer local + Datadog quando configurado)."""
     root = logging.getLogger()
     if root.level == logging.NOTSET or root.level > logging.INFO:
         root.setLevel(logging.INFO)
+
+    formatter = logging.Formatter("%(message)s")
+
+    if not any(isinstance(h, LocalErrorBufferHandler) for h in root.handlers):
+        buffer_handler = LocalErrorBufferHandler()
+        buffer_handler.setFormatter(formatter)
+        root.addHandler(buffer_handler)
 
     from core.config import DD_API_KEY, DD_LOGS_ENABLED
 
     if not DD_LOGS_ENABLED or not DD_API_KEY:
         return
 
-    for handler in root.handlers:
-        if isinstance(handler, DatadogLogHandler):
-            return
+    if any(isinstance(h, DatadogLogHandler) for h in root.handlers):
+        return
 
-    handler = DatadogLogHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    root.addHandler(handler)
+    dd_handler = DatadogLogHandler()
+    dd_handler.setFormatter(formatter)
+    root.addHandler(dd_handler)

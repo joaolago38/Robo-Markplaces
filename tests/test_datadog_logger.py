@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.datadog_logger import DatadogLogHandler, configurar_logging_datadog
+from core.datadog_logger import DatadogLogHandler, LocalErrorBufferHandler, configurar_logging_datadog
 
 
 def _make_record(name: str = "bling", msg: str = "evento teste") -> logging.LogRecord:
@@ -165,15 +165,34 @@ class TestConfigurarLoggingDatadog(unittest.TestCase):
     def test_idempotente_nao_duplica_handler(self, *_):
         configurar_logging_datadog()
         configurar_logging_datadog()
+        buffers = [h for h in self._root.handlers if isinstance(h, LocalErrorBufferHandler)]
         handlers = [h for h in self._root.handlers if isinstance(h, DatadogLogHandler)]
+        self.assertEqual(len(buffers), 1)
         self.assertEqual(len(handlers), 1)
+
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local")
+    @patch("core.config.DD_API_KEY", "")
+    @patch("core.config.DD_LOGS_ENABLED", False)
+    def test_buffer_local_sem_datadog(self, mock_registrar, *_):
+        self._root.handlers = [
+            h for h in self._root.handlers if not isinstance(h, (LocalErrorBufferHandler, DatadogLogHandler))
+        ]
+        configurar_logging_datadog()
+        logger = logging.getLogger("teste_buffer_local_xyz")
+        logger.error("falha grave")
+        mock_registrar.assert_called_once()
 
     @patch("core.config.DD_API_KEY", "")
     @patch("core.config.DD_LOGS_ENABLED", True)
-    def test_sem_api_key_nao_anexa_handler(self, *_):
-        antes = len(self._root.handlers)
+    def test_sem_api_key_anexa_buffer_local(self, *_):
+        self._root.handlers = [
+            h for h in self._root.handlers if not isinstance(h, (LocalErrorBufferHandler, DatadogLogHandler))
+        ]
         configurar_logging_datadog()
-        self.assertEqual(len(self._root.handlers), antes)
+        buffers = [h for h in self._root.handlers if isinstance(h, LocalErrorBufferHandler)]
+        dd_handlers = [h for h in self._root.handlers if isinstance(h, DatadogLogHandler)]
+        self.assertEqual(len(buffers), 1)
+        self.assertEqual(len(dd_handlers), 0)
 
 
 if __name__ == "__main__":
