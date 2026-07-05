@@ -342,25 +342,34 @@ def buscar_oportunidades(
     if pausa_seg > 0:
         time.sleep(pausa_seg)
 
-    query = f'site:alibaba.com wholesale {termo}'
-    for raw in buscar_duckduckgo(query, max_resultados=12):
-        if not _url_e_produto_alibaba(raw.get("url", "")):
-            continue
-        h = _hash_url(raw["url"])
-        if h in vistos:
-            continue
-        vistos.add(h)
-        blob = f"{raw.get('titulo', '')} {raw.get('snippet', '')}"
-        item = {
-            "url": raw["url"],
-            "titulo": raw.get("titulo") or termo,
-            "snippet": raw.get("snippet") or "",
-            "preco_usd": _extrair_preco_usd(blob),
-            "moq": _extrair_moq(blob),
-            "fonte": "duckduckgo",
-            "hash": h,
-        }
-        candidatos.append(_enriquecer_distribuidor(item))
+    from core.config import DDG_ALIBABA_SKIP_SE_DIRETO
+
+    if DDG_ALIBABA_SKIP_SE_DIRETO and candidatos:
+        logger.debug(
+            "Alibaba: pulando DDG — %s itens da busca direta termo=%r",
+            len(candidatos),
+            termo[:60],
+        )
+    else:
+        query = f"site:alibaba.com wholesale {termo}"
+        for raw in buscar_duckduckgo(query, max_resultados=12):
+            if not _url_e_produto_alibaba(raw.get("url", "")):
+                continue
+            h = _hash_url(raw["url"])
+            if h in vistos:
+                continue
+            vistos.add(h)
+            blob = f"{raw.get('titulo', '')} {raw.get('snippet', '')}"
+            item = {
+                "url": raw["url"],
+                "titulo": raw.get("titulo") or termo,
+                "snippet": raw.get("snippet") or "",
+                "preco_usd": _extrair_preco_usd(blob),
+                "moq": _extrair_moq(blob),
+                "fonte": "duckduckgo",
+                "hash": h,
+            }
+            candidatos.append(_enriquecer_distribuidor(item))
 
     oportunidades: list[dict[str, Any]] = []
     for item in candidatos:

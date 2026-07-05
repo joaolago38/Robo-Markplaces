@@ -506,7 +506,7 @@ Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**
 - Histórico: `logs/leilao_veiculos_history.json` (restaurado via cache entre execuções no GitHub Actions)
 - Preflight: `python scripts/preflight_monitor_telegram.py` (valida token antes de rodar)
 
-A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Cliente compartilhado: `core/ddg_lite.py` (rate limit global, retry, circuit breaker). Se aparecer **DDG HTTP 403** no Datadog, é rate limit temporário; o agente faz retry e pausa automática. Variáveis opcionais: `DDG_MIN_INTERVAL_SEG` (2.5), `DDG_RETRY_MAX` (3), `DDG_CIRCUIT_BREAKER_SEG` (300), `DDG_FALHAS_403_PARA_BREAKER` (5). Ajuste `LEILAO_PAUSA_ENTRE_FONTES_SEG` ou `ORQUESTRADOR_EXCLUIR=leilao` se quiser aliviar carga.
+A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Cliente compartilhado: `core/ddg_lite.py` (GET em `lite.duckduckgo.com` por padrão, rate limit global, retry, circuit breaker). Se aparecer **DDG HTTP 403** ou erros de conexão no Datadog, é rate limit temporário; o agente faz retry e pausa automática. Variáveis opcionais: `DDG_BACKEND` (`lite` padrão, `html`, `auto`), `DDG_DISABLED` (1), `DDG_MIN_INTERVAL_SEG` (2.5), `DDG_RETRY_MAX` (3), `DDG_CIRCUIT_BREAKER_SEG` (300), `DDG_FALHAS_403_PARA_BREAKER` (5), `DDG_ALIBABA_SKIP_SE_DIRETO` (1). Ajuste `LEILAO_PAUSA_ENTRE_FONTES_SEG` ou `ORQUESTRADOR_EXCLUIR=leilao` se quiser aliviar carga.
 
 ## Orquestrador 30 minutos (todos os agentes)
 

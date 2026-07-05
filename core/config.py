@@ -69,6 +69,15 @@ DDG_RETRY_MAX = int(os.getenv("DDG_RETRY_MAX", "3"))
 DDG_RETRY_BASE_SEG = float(os.getenv("DDG_RETRY_BASE_SEG", "5"))
 DDG_CIRCUIT_BREAKER_SEG = float(os.getenv("DDG_CIRCUIT_BREAKER_SEG", "300"))
 DDG_FALHAS_403_PARA_BREAKER = int(os.getenv("DDG_FALHAS_403_PARA_BREAKER", "5"))
+# lite = GET lite.duckduckgo.com | html = POST html.duckduckgo.com | auto = lite depois html
+DDG_BACKEND = os.getenv("DDG_BACKEND", "lite").strip().lower()
+DDG_DISABLED = os.getenv("DDG_DISABLED", "").strip().lower() in ("1", "true", "yes")
+# Alibaba: pula DDG quando busca direta já retornou itens (menos carga no DDG)
+DDG_ALIBABA_SKIP_SE_DIRETO = os.getenv("DDG_ALIBABA_SKIP_SE_DIRETO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Telegram — circuit breaker após token inválido (evita centenas de ERROR no Datadog)
 TELEGRAM_CIRCUIT_BREAKER_SEG = int(os.getenv("TELEGRAM_CIRCUIT_BREAKER_SEG", "3600"))

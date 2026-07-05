@@ -90,8 +90,8 @@ class TestExtrairDdg(unittest.TestCase):
 
 class TestDdgRetry(unittest.TestCase):
     @patch("core.ddg_lite.time.sleep")
-    @patch("core.ddg_lite.extrair_resultados")
-    @patch("core.ddg_lite.request")
+    @patch("core.ddg_lite.extrair_resultados_lite")
+    @patch("core.ddg_lite._ddg_request")
     def test_retry_403_depois_ok(self, mock_request, mock_extrair, _sleep):
         from core.ddg_lite import reset_circuit_breaker
 
@@ -102,6 +102,7 @@ class TestDdgRetry(unittest.TestCase):
         ok.text = "<html></html>"
         bloqueado = MagicMock()
         bloqueado.status_code = 403
+        bloqueado.text = ""
         mock_request.side_effect = [bloqueado, ok]
         out = busca.buscar_duckduckgo("teste")
         self.assertEqual(len(out), 1)

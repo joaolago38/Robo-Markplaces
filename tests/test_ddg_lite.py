@@ -16,7 +16,7 @@ class TestDdgLite(unittest.TestCase):
         ddg.reset_circuit_breaker()
 
     @patch.object(ddg.time, "sleep")
-    @patch.object(ddg, "request")
+    @patch.object(ddg, "_ddg_request")
     def test_circuit_breaker_apos_varias_403(self, mock_request, _sleep):
         from core.config import DDG_FALHAS_403_PARA_BREAKER
 
@@ -28,15 +28,16 @@ class TestDdgLite(unittest.TestCase):
         self.assertEqual(ddg.buscar("outra", contexto="teste"), [])
 
     @patch.object(ddg.time, "sleep")
-    @patch.object(ddg, "request")
+    @patch.object(ddg, "_ddg_request")
     def test_sucesso_reseta_contador_403(self, mock_request, _sleep):
         bloqueado = MagicMock()
         bloqueado.status_code = 403
+        bloqueado.text = ""
         ok = MagicMock()
         ok.status_code = 200
         ok.text = ""
         mock_request.side_effect = [bloqueado, ok]
-        with patch.object(ddg, "extrair_resultados", return_value=[{"titulo": "x", "url": "http://a", "snippet": ""}]):
+        with patch.object(ddg, "extrair_resultados_lite", return_value=[{"titulo": "x", "url": "http://a", "snippet": ""}]):
             out = ddg.buscar("q", contexto="t")
         self.assertEqual(len(out), 1)
 
@@ -49,13 +50,37 @@ class TestDdgLite(unittest.TestCase):
         self.assertIn("circuit breaker", msg or "")
 
     @patch.object(ddg.time, "sleep")
-    @patch.object(ddg, "request")
+    @patch.object(ddg, "_ddg_request")
     def test_buscar_loga_quando_breaker_ativo(self, mock_request, _sleep):
         ddg._circuit_breaker_ate = ddg.time.time() + 60
         with self.assertLogs("ddg_lite", level="INFO") as logs:
             self.assertEqual(ddg.buscar("q", contexto="leilao"), [])
         self.assertTrue(any("circuit breaker" in line for line in logs.output))
         mock_request.assert_not_called()
+
+    def test_extrair_resultados_lite(self):
+        html = """
+        <a href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fcopart.com.br%2Flote" class='result-link'>Fiat Uno leilão</a>
+        <td class='result-snippet'>Veículo em leilão Copart</td>
+        <span class='link-text'>www.copart.com.br/lote</span>
+        """
+        itens = ddg.extrair_resultados_lite(html)
+        self.assertEqual(len(itens), 1)
+        self.assertIn("copart.com.br", itens[0]["url"])
+
+    @patch.object(ddg.time, "sleep")
+    @patch.object(ddg, "_buscar_html")
+    @patch.object(ddg, "_buscar_lite")
+    def test_auto_fallback_para_html(self, mock_lite, mock_html, _sleep):
+        mock_lite.return_value = (200, [])
+        mock_html.return_value = (
+            200,
+            [{"titulo": "x", "url": "https://example.com", "snippet": ""}],
+        )
+        with patch("core.config.DDG_BACKEND", "auto"):
+            out = ddg.buscar("q", contexto="t")
+        self.assertEqual(len(out), 1)
+        mock_html.assert_called_once()
 
 
 if __name__ == "__main__":
