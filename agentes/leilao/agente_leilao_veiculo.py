@@ -16,6 +16,7 @@ from typing import Any
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import LEILAO_PAUSA_ENTRE_FONTES_SEG, LEILAO_VEICULOS_CATALOGO, ROOT
 from core.datadog_metrics import gauge, incrementar
+from core.ddg_lite import mensagem_circuit_breaker
 from core.notificador import alertar_gestor, gestor_telegram_configurado
 from integracoes.leilao.busca import buscar_veiculo_em_fontes
 
@@ -84,6 +85,7 @@ def _monitorar_veiculo(
 
     gauge("leilao.achados_por_veiculo", len(achados), tags=[f"veiculo:{vid}"])
     incrementar("leilao.novos", len(novos), tags=[f"veiculo:{vid}"])
+    _logar_achados(veiculo, achados, novos)
 
     return {
         "id": vid,
@@ -125,6 +127,61 @@ def _formatar_veiculo_item(item: dict[str, Any]) -> str:
     if ano:
         desc = f"{desc} {ano}".strip()
     return desc or str(item.get("titulo") or "Veículo")[:60]
+
+
+def _formatar_valor_item(item: dict[str, Any]) -> str:
+    return str(item.get("valor") or "valor n/d")
+
+
+def _formatar_data_item(item: dict[str, Any]) -> str:
+    return str(item.get("data_leilao") or "data n/d")
+
+
+def _formatar_cadastro_item(item: dict[str, Any]) -> str:
+    return str(item.get("url_cadastro") or "cadastro n/d")
+
+
+def _logar_linha_item(item: dict[str, Any], *, prefix: str) -> None:
+    logger.info(
+        "%s %s | %s | %s | %s | cadastro: %s | %s",
+        prefix,
+        _formatar_local_item(item),
+        _formatar_veiculo_item(item),
+        _formatar_valor_item(item),
+        _formatar_data_item(item),
+        _formatar_cadastro_item(item),
+        item.get("url_anuncio") or item.get("url", ""),
+    )
+
+
+def _logar_achados(
+    veiculo: dict[str, Any],
+    achados: list[dict[str, Any]],
+    novos: list[dict[str, Any]],
+) -> None:
+    nome = f"{veiculo.get('marca', '')} {veiculo.get('modelo', '')}".strip() or str(
+        veiculo.get("id") or "?"
+    )
+
+    if not achados:
+        logger.info("Leilão %s: nenhum achado nesta rodada", nome)
+        ddg = mensagem_circuit_breaker()
+        if ddg:
+            logger.warning("Leilão %s: %s", nome, ddg)
+        return
+
+    logger.info("Leilão %s: %s achado(s) nesta rodada", nome, len(achados))
+    for item in achados[:8]:
+        _logar_linha_item(item, prefix="  •")
+    if len(achados) > 8:
+        logger.info("  … e mais %s achado(s) nesta rodada", len(achados) - 8)
+
+    if novos:
+        logger.info("Leilão %s: %s achado(s) NOVO(S)", nome, len(novos))
+        for item in novos[:5]:
+            _logar_linha_item(item, prefix="  ★ NOVO:")
+        if len(novos) > 5:
+            logger.info("  … e mais %s novo(s)", len(novos) - 5)
 
 
 def _montar_alerta(resultados: list[dict[str, Any]]) -> str:

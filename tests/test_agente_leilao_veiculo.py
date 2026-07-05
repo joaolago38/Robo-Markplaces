@@ -101,6 +101,50 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("20/08/2026", msg)
         self.assertIn("Cadastro: https://www.detran.pr.gov.br/leilao-de-veiculos", msg)
 
+    @patch.object(agente, "buscar_veiculo_em_fontes", return_value=[])
+    @patch.object(agente, "_carregar_veiculos")
+    def test_loga_ddg_quando_sem_achados(self, mock_veiculos, _mock_busca):
+        mock_veiculos.return_value = [
+            {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino"}
+        ]
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "mensagem_circuit_breaker", return_value="DDG circuit breaker ativo — liberação em ~60s"
+        ):
+            with self.assertLogs("agente_leilao_veiculo", level="WARNING") as logs:
+                agente.executar(enviar_alerta=False)
+        self.assertTrue(any("circuit breaker" in line for line in logs.output))
+
+    @patch.object(agente, "buscar_veiculo_em_fontes")
+    @patch.object(agente, "_carregar_veiculos")
+    def test_loga_achados_com_data_e_cadastro(self, mock_veiculos, mock_busca):
+        mock_veiculos.return_value = [
+            {"id": "v1", "ativo": True, "marca": "Honda", "modelo": "Civic"}
+        ]
+        mock_busca.return_value = [
+            {
+                "hash": "h1",
+                "url": "https://detran.pr.gov.br/edital/1",
+                "url_anuncio": "https://detran.pr.gov.br/edital/1",
+                "fonte_tipo": "detran",
+                "fonte_nome": "DETRAN Paraná",
+                "uf": "PR",
+                "cidade": "Curitiba",
+                "marca": "Honda",
+                "modelo": "Civic",
+                "ano": 2016,
+                "valor": "R$ 25.000,00",
+                "data_leilao": "20/08/2026",
+                "url_cadastro": "https://www.detran.pr.gov.br/leilao-de-veiculos",
+            }
+        ]
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"):
+            with self.assertLogs("agente_leilao_veiculo", level="INFO") as logs:
+                agente.executar(enviar_alerta=False)
+        joined = "\n".join(logs.output)
+        self.assertIn("20/08/2026", joined)
+        self.assertIn("leilao-de-veiculos", joined)
+        self.assertIn("Curitiba", joined)
+
     @patch.object(agente, "_carregar_veiculos", side_effect=RuntimeError("boom"))
     def test_nunca_lanca_excecao(self, *_):
         out = agente.executar(enviar_alerta=False)

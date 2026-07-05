@@ -60,6 +60,24 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
         self.assertIn("MOQ 50", joined)
         self.assertIn("Shenzhen ABC Technology Co., Ltd.", joined)
 
+    @patch.object(agente, "buscar_oportunidades", return_value=[])
+    @patch.object(agente, "_carregar_produtos")
+    def test_loga_ddg_quando_sem_oportunidades(self, mock_produtos, _mock_busca):
+        mock_produtos.return_value = [
+            {
+                "id": "p1",
+                "ativo": True,
+                "nome": "Filamento 3D",
+                "termo_busca": "filament",
+            }
+        ]
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "mensagem_circuit_breaker", return_value="DDG circuit breaker ativo — liberação em ~60s"
+        ):
+            with self.assertLogs("agente_alibaba_importacao", level="WARNING") as logs:
+                agente.executar(enviar_alerta=False)
+        self.assertTrue(any("circuit breaker" in line for line in logs.output))
+
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_oportunidades")
     @patch.object(agente, "_carregar_produtos")

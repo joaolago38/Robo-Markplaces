@@ -93,6 +93,9 @@ def _distribuidor_da_url(url: str) -> str | None:
 
 
 def _extrair_distribuidor(texto: str, *, url: str = "") -> str | None:
+    da_url = _distribuidor_da_url(url)
+    if da_url:
+        return da_url
     blob = unescape(texto or "")
     for padrao in (
         r'(?:company|supplier|store|seller|manufacturer)\s*name["\s:=]+([^"<\n|]{3,80})',
@@ -105,7 +108,7 @@ def _extrair_distribuidor(texto: str, *, url: str = "") -> str | None:
             nome = _limpar_nome_distribuidor(m.group(1))
             if len(nome) >= 3:
                 return nome
-    return _distribuidor_da_url(url)
+    return None
 
 
 def _enriquecer_distribuidor(item: dict[str, Any]) -> dict[str, Any]:

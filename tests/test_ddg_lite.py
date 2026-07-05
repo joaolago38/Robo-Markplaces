@@ -40,6 +40,23 @@ class TestDdgLite(unittest.TestCase):
             out = ddg.buscar("q", contexto="t")
         self.assertEqual(len(out), 1)
 
+    def test_mensagem_circuit_breaker(self):
+        ddg._circuit_breaker_ate = ddg.time.time() + 120
+        self.assertTrue(ddg.circuit_breaker_ativo())
+        self.assertGreater(ddg.segundos_restantes_circuit_breaker(), 0)
+        msg = ddg.mensagem_circuit_breaker()
+        self.assertIsNotNone(msg)
+        self.assertIn("circuit breaker", msg or "")
+
+    @patch.object(ddg.time, "sleep")
+    @patch.object(ddg, "request")
+    def test_buscar_loga_quando_breaker_ativo(self, mock_request, _sleep):
+        ddg._circuit_breaker_ate = ddg.time.time() + 60
+        with self.assertLogs("ddg_lite", level="INFO") as logs:
+            self.assertEqual(ddg.buscar("q", contexto="leilao"), [])
+        self.assertTrue(any("circuit breaker" in line for line in logs.output))
+        mock_request.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

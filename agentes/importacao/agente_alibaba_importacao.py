@@ -18,6 +18,7 @@ from core.config import (
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
+from core.ddg_lite import mensagem_circuit_breaker
 from core.notificador import alertar_gestor, gestor_telegram_configurado
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
 
@@ -135,6 +136,9 @@ def _logar_oportunidades(
 
     if not achados:
         logger.info("Alibaba %s: nenhuma oportunidade nesta rodada%s", nome, criterio_txt)
+        ddg = mensagem_circuit_breaker()
+        if ddg:
+            logger.warning("Alibaba %s: %s", nome, ddg)
         return
 
     logger.info(
