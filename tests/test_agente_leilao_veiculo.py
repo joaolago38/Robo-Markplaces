@@ -85,8 +85,11 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                             "modelo": "Civic",
                             "ano": 2016,
                             "valor": "R$ 25.000,00",
+                            "data_leilao": "20/08/2026",
+                            "url_cadastro": "https://www.detran.pr.gov.br/leilao-de-veiculos",
                             "titulo": "Civic leilão",
                             "url": "https://detran.pr.gov.br/x",
+                            "url_anuncio": "https://detran.pr.gov.br/x",
                         }
                     ],
                 }
@@ -95,6 +98,8 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("Curitiba — DETRAN Paraná", msg)
         self.assertIn("Honda Civic 2016", msg)
         self.assertIn("R$ 25.000,00", msg)
+        self.assertIn("20/08/2026", msg)
+        self.assertIn("Cadastro: https://www.detran.pr.gov.br/leilao-de-veiculos", msg)
 
     @patch.object(agente, "_carregar_veiculos", side_effect=RuntimeError("boom"))
     def test_nunca_lanca_excecao(self, *_):

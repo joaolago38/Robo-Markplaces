@@ -56,3 +56,22 @@ TODAS_AS_FONTES: list[dict[str, str]] = [
     *[{**f, "tipo": "leiloeiro"} for f in LEILOEIROS_PRINCIPAIS],
     *[{**f, "tipo": "detran"} for f in DETRAN_POR_ESTADO],
 ]
+
+# URLs de cadastro/inscrição conhecidas por portal (fallback quando não vier no snippet)
+URLS_CADASTRO_POR_DOMINIO: dict[str, str] = {
+    "copart.com.br": "https://www.copart.com.br/br/Account/Register",
+    "superbid.net": "https://www.superbid.net/cadastro",
+    "sodresantoro.com.br": "https://www.sodresantoro.com.br/cadastro-de-cliente",
+    "portalzuk.com.br": "https://www.portalzuk.com.br/cadastro",
+    "freitasleiloeiro.com.br": "https://www.freitasleiloeiro.com.br/cadastro",
+    "megaleiloes.com.br": "https://www.megaleiloes.com.br/cadastro",
+    "leilaovip.com.br": "https://www.leilaovip.com.br/cadastro",
+    "sold.com.br": "https://www.sold.com.br/cadastro",
+    "balbinoleiloes.com.br": "https://www.balbinoleiloes.com.br/cadastro",
+    "pestanaleiloes.com.br": "https://www.pestanaleiloes.com.br/cadastro",
+    "detran.sp.gov.br": "https://www.detran.sp.gov.br/wps/portal/portaldetran/cidadao/leiloes",
+    "detran.pr.gov.br": "https://www.detran.pr.gov.br/leilao-de-veiculos",
+    "detran.rj.gov.br": "https://www.detran.rj.gov.br/leilao",
+    "detran.mg.gov.br": "https://www.detran.mg.gov.br/leilao",
+    "detran.rs.gov.br": "https://www.detran.rs.gov.br/leilao",
+}

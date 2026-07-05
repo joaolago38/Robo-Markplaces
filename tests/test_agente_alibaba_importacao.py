@@ -30,6 +30,39 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_oportunidades")
     @patch.object(agente, "_carregar_produtos")
+    def test_loga_valores_encontrados(self, mock_produtos, mock_busca, _mock_alertar):
+        mock_produtos.return_value = [
+            {
+                "id": "p1",
+                "ativo": True,
+                "nome": "Filamento 3D",
+                "termo_busca": "3D printer filament",
+                "preco_max_usd": 4.5,
+                "moq_max": 200,
+            }
+        ]
+        mock_busca.return_value = [
+            {
+                "hash": "abc",
+                "url": "https://www.alibaba.com/product-detail/1.html",
+                "titulo": "PLA filament 1kg",
+                "preco_usd": 3.2,
+                "moq": 50,
+                "distribuidor": "Shenzhen ABC Technology Co., Ltd.",
+            }
+        ]
+        hist = self.tmp_path / "hist.json"
+        with patch.object(agente, "HISTORY_PATH", hist):
+            with self.assertLogs("agente_alibaba_importacao", level="INFO") as logs:
+                agente.executar(enviar_alerta=False)
+        joined = "\n".join(logs.output)
+        self.assertIn("US$ 3.20", joined)
+        self.assertIn("MOQ 50", joined)
+        self.assertIn("Shenzhen ABC Technology Co., Ltd.", joined)
+
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "buscar_oportunidades")
+    @patch.object(agente, "_carregar_produtos")
     def test_alerta_somente_novos(self, mock_produtos, mock_busca, mock_alertar):
         mock_produtos.return_value = [
             {

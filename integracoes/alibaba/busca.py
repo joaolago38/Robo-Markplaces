@@ -76,6 +76,50 @@ def _extrair_moq(texto: str) -> int | None:
         return None
 
 
+def _limpar_nome_distribuidor(nome: str) -> str:
+    nome = re.sub(r"\s+", " ", unescape(nome or "")).strip(" -|,")
+    return nome[:80]
+
+
+def _distribuidor_da_url(url: str) -> str | None:
+    host = (urlparse(url).netloc or "").lower()
+    m = re.match(r"^([a-z0-9-]+)\.(?:en\.)?alibaba\.com$", host)
+    if not m:
+        return None
+    slug = m.group(1)
+    if slug in {"www", "m", "us", "sale", "www2"}:
+        return None
+    return _limpar_nome_distribuidor(slug.replace("-", " ").title())
+
+
+def _extrair_distribuidor(texto: str, *, url: str = "") -> str | None:
+    blob = unescape(texto or "")
+    for padrao in (
+        r'(?:company|supplier|store|seller|manufacturer)\s*name["\s:=]+([^"<\n|]{3,80})',
+        r"(?:company|supplier|store|seller|manufacturer)[:\s]+([^<\n|]{3,80})",
+        r"\bby\s+([A-Z][A-Za-z0-9 &.'\-]{2,60}(?:Co\.|Ltd\.|Limited|Inc\.|Company|Factory|Trading))",
+        r"\b([A-Z][A-Za-z0-9 &.'\-]{2,60}(?:Co\.|Ltd\.|Limited|Inc\.|Company|Factory|Trading))\b",
+    ):
+        m = re.search(padrao, blob, re.IGNORECASE)
+        if m:
+            nome = _limpar_nome_distribuidor(m.group(1))
+            if len(nome) >= 3:
+                return nome
+    return _distribuidor_da_url(url)
+
+
+def _enriquecer_distribuidor(item: dict[str, Any]) -> dict[str, Any]:
+    existente = str(item.get("distribuidor") or item.get("fornecedor") or "").strip()
+    if existente:
+        item["distribuidor"] = _limpar_nome_distribuidor(existente)
+        return item
+    blob = f"{item.get('titulo', '')} {item.get('snippet', '')}"
+    nome = _extrair_distribuidor(blob, url=str(item.get("url") or ""))
+    if nome:
+        item["distribuidor"] = nome
+    return item
+
+
 def _url_e_produto_alibaba(url: str) -> bool:
     u = (url or "").lower()
     if not any(d in u for d in _DOMINIOS_ALIBABA):
@@ -193,16 +237,15 @@ def buscar_alibaba_direto(termo: str, *, max_resultados: int = 15) -> list[dict[
                 continue
             vistos.add(link)
             blob = f"{raw.get('titulo', '')} {html[max(0, html.find(link) - 200):html.find(link) + 400]}"
-            itens.append(
-                {
-                    "url": link,
-                    "titulo": raw.get("titulo") or termo,
-                    "snippet": raw.get("snippet") or "",
-                    "preco_usd": _extrair_preco_usd(blob),
-                    "moq": _extrair_moq(blob),
-                    "fonte": "alibaba_search",
-                }
-            )
+            item = {
+                "url": link,
+                "titulo": raw.get("titulo") or termo,
+                "snippet": raw.get("snippet") or "",
+                "preco_usd": _extrair_preco_usd(blob),
+                "moq": _extrair_moq(blob),
+                "fonte": "alibaba_search",
+            }
+            itens.append(_enriquecer_distribuidor(item))
 
         # Contexto ao redor do termo no HTML (preços em listagens)
         for m in re.finditer(re.escape(termo[:20]), html, re.IGNORECASE):
@@ -212,16 +255,15 @@ def buscar_alibaba_direto(termo: str, *, max_resultados: int = 15) -> list[dict[
                 if link in vistos or not _url_e_produto_alibaba(link):
                     continue
                 vistos.add(link)
-                itens.append(
-                    {
-                        "url": link,
-                        "titulo": termo,
-                        "snippet": re.sub(r"<[^>]+>", " ", trecho)[:300],
-                        "preco_usd": _extrair_preco_usd(trecho),
-                        "moq": _extrair_moq(trecho),
-                        "fonte": "alibaba_search",
-                    }
-                )
+                item = {
+                    "url": link,
+                    "titulo": termo,
+                    "snippet": re.sub(r"<[^>]+>", " ", trecho)[:300],
+                    "preco_usd": _extrair_preco_usd(trecho),
+                    "moq": _extrair_moq(trecho),
+                    "fonte": "alibaba_search",
+                }
+                itens.append(_enriquecer_distribuidor(item))
 
         return itens[:max_resultados]
     except Exception as exc:
@@ -306,17 +348,16 @@ def buscar_oportunidades(
             continue
         vistos.add(h)
         blob = f"{raw.get('titulo', '')} {raw.get('snippet', '')}"
-        candidatos.append(
-            {
-                "url": raw["url"],
-                "titulo": raw.get("titulo") or termo,
-                "snippet": raw.get("snippet") or "",
-                "preco_usd": _extrair_preco_usd(blob),
-                "moq": _extrair_moq(blob),
-                "fonte": "duckduckgo",
-                "hash": h,
-            }
-        )
+        item = {
+            "url": raw["url"],
+            "titulo": raw.get("titulo") or termo,
+            "snippet": raw.get("snippet") or "",
+            "preco_usd": _extrair_preco_usd(blob),
+            "moq": _extrair_moq(blob),
+            "fonte": "duckduckgo",
+            "hash": h,
+        }
+        candidatos.append(_enriquecer_distribuidor(item))
 
     oportunidades: list[dict[str, Any]] = []
     for item in candidatos:

@@ -138,12 +138,16 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
         for item in novos[:8]:
             linhas.append(f"📍 {_formatar_local_item(item)}")
             linhas.append(f"🚙 {_formatar_veiculo_item(item)}")
+            if item.get("data_leilao"):
+                linhas.append(f"📅 {item['data_leilao']}")
             if item.get("valor"):
                 linhas.append(f"💰 {item['valor']}")
+            if item.get("url_cadastro"):
+                linhas.append(f"📝 Cadastro: {item['url_cadastro']}")
             titulo = str(item.get("titulo") or "").strip()
             if titulo and titulo != _formatar_veiculo_item(item):
                 linhas.append(f"_{titulo[:70]}_")
-            linhas.append(f"🔗 {item.get('url', '')}")
+            linhas.append(f"🔗 {item.get('url_anuncio') or item.get('url', '')}")
             linhas.append("")
         if len(novos) > 8:
             linhas.append(f"… e mais {len(novos) - 8}")
