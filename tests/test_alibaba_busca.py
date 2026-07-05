@@ -22,6 +22,21 @@ class TestAlibabaBuscaHelpers(unittest.TestCase):
     def test_extrair_moq(self):
         self.assertEqual(busca._extrair_moq("MOQ: 500 pieces"), 500)
 
+    def test_normalizar_url_alibaba_corrige_id_colado(self):
+        quebrada = "alibaba.com/product-detail/Wholesale-PLA-Filament-1-75mm-1kg1601242225300.html"
+        corrigida = busca.normalizar_url_alibaba(quebrada)
+        self.assertIn("1kg_1601242225300", corrigida)
+        self.assertTrue(corrigida.startswith("https://www.alibaba.com/"))
+
+    def test_normalizar_url_preserva_url_valida(self):
+        url = "https://shenzhen-abc.en.alibaba.com/product-detail/Item-Name_1234567890.html"
+        self.assertEqual(busca.normalizar_url_alibaba(url), url)
+
+    def test_montar_url_busca_alibaba(self):
+        url = busca.montar_url_busca_alibaba("PLA filament 1.75mm")
+        self.assertIn("SearchText=PLA", url)
+        self.assertIn("alibaba.com/trade/search", url)
+
     def test_extrair_distribuidor_do_snippet(self):
         nome = busca._extrair_distribuidor(
             "PLA filament by Shenzhen ABC Technology Co., Ltd. MOQ 100",

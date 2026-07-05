@@ -17,12 +17,8 @@ logger = logging.getLogger("veiculos_scrapers")
 
 _HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; RoboMarkplaces/1.0)"}
 _RE_PRECO = re.compile(r"R\$\s*([\d\.\,]+)")
-_RE_LUCINEIA_CARD = re.compile(
-    r'href="Veiculo\.aspx\?id=(\d+)"[^>]*>.*?'
-    r'<h5[^>]*card-text[^>]*>([^<]+)</h5>.*?'
-    r"Marca:\s*([^<]+)<br\s*/>\s*"
-    r"Ano:\s*([^<]+)<br.*?>"
-    r'<h5[^>]*text-right[^>]*>(R\$\s*[\d\.\,]+)</h5>',
+_RE_LUCINEIA_CARD_BODY = re.compile(
+    r'<div class="card-body p-2 mr-1">(.*?)</div>',
     re.DOTALL | re.IGNORECASE,
 )
 _RE_LEOPARDO_BLOCO = re.compile(
@@ -93,13 +89,20 @@ def coletar_lucineia(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]
         return []
 
     anuncios: list[dict[str, Any]] = []
-    for match in _RE_LUCINEIA_CARD.finditer(html):
-        vid, titulo, marca, ano, preco_txt = match.groups()
-        preco = parse_preco_brl(preco_txt)
+    for match in _RE_LUCINEIA_CARD_BODY.finditer(html):
+        bloco = match.group(1)
+        m_id = re.search(r"Veiculo\.aspx\?id=(\d+)", bloco, re.I)
+        m_titulo = re.search(r'<h5 class="card-text alert-link">([^<]+)</h5>', bloco, re.I)
+        m_marca = re.search(r"Marca:\s*([^<\n]+)", bloco, re.I)
+        m_ano = re.search(r"Ano:\s*([^<\n]+)", bloco, re.I)
+        m_preco = re.search(r'text-right">(R\$\s*[\d\.\,]+)</h5>', bloco, re.I)
+        if not m_id or not m_titulo or not m_preco:
+            continue
+        vid = m_id.group(1)
+        preco = parse_preco_brl(m_preco.group(1))
         if preco is None:
             continue
         condicao = None
-        bloco = match.group(0)
         m_cond = re.search(r"disabled[^>]*>([^<]+)</p>", bloco, re.I)
         if m_cond:
             condicao = m_cond.group(1).strip()
@@ -108,9 +111,9 @@ def coletar_lucineia(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]
                 loja_id=str(fonte.get("id") or "lucineia"),
                 loja_nome=str(fonte.get("nome") or "Lucinei"),
                 id_externo=vid,
-                titulo=titulo,
-                marca=marca,
-                ano=ano,
+                titulo=m_titulo.group(1),
+                marca=(m_marca.group(1).strip() if m_marca else ""),
+                ano=(m_ano.group(1).strip() if m_ano else ""),
                 preco=preco,
                 url=urljoin(base, f"Veiculo.aspx?id={vid}"),
                 condicao=condicao,
