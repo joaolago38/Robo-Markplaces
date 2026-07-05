@@ -182,6 +182,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Demanda, perfil de consumidor e plano para vencer Impala no ML",
     ),
     AgenteRegistrado(
+        "monitor_acetona_cruzeiro",
+        "Monitor Acetona Cruzeiro ML",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_acetona_cruzeiro:executar",
+        {"enviar_alerta": True},
+        notas="Vendedores, margem, manicures BR e estratégias Claude + Impala",
+    ),
+    AgenteRegistrado(
         "descoberta_produtos",
         "Descoberta produtos marketplace",
         "monitor",

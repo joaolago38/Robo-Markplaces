@@ -92,6 +92,21 @@ COMPARATIVO_ESMALTES_ALERTA_RESUMO = os.getenv("COMPARATIVO_ESMALTES_ALERTA_RESU
 )
 COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG", "14400"))
 
+# Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
+ACETONA_CRUZEIRO_CATALOGO = os.getenv(
+    "ACETONA_CRUZEIRO_CATALOGO", "catalogo/acetona_cruzeiro_monitor.json"
+)
+ACETONA_CRUZEIRO_MANICURES_CATALOGO = os.getenv(
+    "ACETONA_CRUZEIRO_MANICURES_CATALOGO", "catalogo/manicures_brasil_referencia.json"
+)
+ACETONA_CRUZEIRO_PAUSA_SEG = float(os.getenv("ACETONA_CRUZEIRO_PAUSA_SEG", "1.5"))
+ACETONA_CRUZEIRO_ALERTA_RESUMO = os.getenv("ACETONA_CRUZEIRO_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ACETONA_CRUZEIRO_ALERTA_COOLDOWN_SEG = int(os.getenv("ACETONA_CRUZEIRO_ALERTA_COOLDOWN_SEG", "14400"))
+
 LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )
