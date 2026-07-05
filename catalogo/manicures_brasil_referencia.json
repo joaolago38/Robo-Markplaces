@@ -1,0 +1,16 @@
+{
+  "atualizado_em": "2026-07-05",
+  "fonte": "Receita Federal / CNAE 9602-5/01 — cabeleireiros, manicure e pedicure",
+  "notas": [
+    "CNAE agrupa cabeleireiros, barbeiros e manicures — não há censo só de manicure.",
+    "MEI manicure/cabeleireiro: ~735.940 (PEGN/jun/2025, Receita Federal).",
+    "Estabelecimentos ativos CNAE 9602-5/01: ~974.949 (CNPJ Aberto).",
+    "Estética e beleza MEI (CNAE adjacente): +282.288 — público ampliado de salão."
+  ],
+  "mei_manicure_cabeleireiro": 735940,
+  "estabelecimentos_ativos_cnae_9602501": 974949,
+  "mei_estetica_beleza": 282288,
+  "publico_ampliado_salao_mei": 1018228,
+  "penetracao_ml_estimada_pct": 12,
+  "manicures_enderecaveis_ml_estimado": 122187
+}
