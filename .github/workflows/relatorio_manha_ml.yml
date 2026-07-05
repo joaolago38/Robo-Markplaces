@@ -1,7 +1,17 @@
-name: Monitor Anita Esmaltes
+name: Relatorio manha Mercado Livre
+
+# Visão matinal: seus anúncios vs mercado + propostas com lucro viável.
+# Consolida monitor ML, preços, concorrentes e Anita em um único Telegram.
 
 on:
   workflow_dispatch:
+  schedule:
+    # 07:30 BRT (UTC-3) = 10:30 UTC — todo dia de manhã
+    - cron: "30 10 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"
@@ -10,9 +20,10 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
 
 jobs:
-  monitorar:
-    name: Anita — cores, kits, margem e ranking marcas
+  relatorio_manha:
+    name: Relatorio manha ML consolidado
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,17 +39,23 @@ jobs:
           key: telegram-cooldown-${{ github.run_id }}
           restore-keys: |
             telegram-cooldown-
-      - name: Rodar monitor Anita
-        run: python -m agentes.esmaltes.agente_monitor_anita
+      - name: Relatorio manha ML
+        run: python -m agentes.ml.agente_relatorio_manha_ml
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Salvar historico
+      - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: anita-esmaltes-history
-          path: logs/anita_esmaltes_history.json
-          retention-days: 90
+          name: relatorio-manha-ml
+          path: logs/relatorio_manha_ml_ultima.json
+          retention-days: 30
           if-no-files-found: ignore

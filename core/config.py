@@ -56,6 +56,8 @@ MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
     os.getenv("MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT", "5.0")
 )
 
+ML_RELATORIO_MANHA_COOLDOWN_SEG = int(os.getenv("ML_RELATORIO_MANHA_COOLDOWN_SEG", "39600"))
+
 # Monitor esmaltes Anita (cores, kits, margem, ranking marcas)
 ANITA_ESMALTES_CATALOGO = os.getenv(
     "ANITA_ESMALTES_CATALOGO", "catalogo/anita_esmaltes_monitorados.json"

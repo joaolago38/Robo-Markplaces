@@ -30,6 +30,7 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "lojas_veiculos.yml",
     "push_deploy.yml",
     "branch_cleanup.yml",
+    "relatorio_manha_ml.yml",
 )
 
 _GROUP_ESPERADO = "robo-markplaces-token-renewal"

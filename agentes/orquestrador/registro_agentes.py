@@ -127,6 +127,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "relatorio_manha_ml",
+        "Relatório manhã ML",
+        "monitor",
+        "agentes.ml.agente_relatorio_manha_ml:executar",
+        {"enviar_alerta": True},
+        notas="Visão matinal + propostas de preço com margem viável",
+    ),
+    AgenteRegistrado(
         "monitor_concorrentes",
         "Monitor concorrentes ML",
         "monitor",
