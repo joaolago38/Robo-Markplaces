@@ -48,6 +48,16 @@ _ENV_TOKEN_DEFAULTS = {
 from tests.http_fixtures import make_http_response
 
 
+@pytest.fixture(autouse=True)
+def _reset_telegram_gate():
+    """Evita vazamento de circuit breaker entre testes paralelos (xdist)."""
+    from core import telegram_gate as tg
+
+    tg.reset()
+    yield
+    tg.reset()
+
+
 @pytest.fixture
 def mock_http():
     """

@@ -82,8 +82,8 @@ def _enviar(chat_id: str, msg: str) -> bool:
             "Telegram não configurado — alerta NÃO entregue (apenas impresso no stdout)"
         )
         return False
-    if not pode_enviar():
-        if not verificar_token():
+    if not pode_enviar(token):
+        if not verificar_token(token=token, forcar=True):
             logger.info("Telegram: envio suprimido (token inválido ou circuit breaker ativo)")
             return False
     try:

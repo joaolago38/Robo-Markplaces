@@ -25,27 +25,27 @@ def token_formato_valido(token: str | None = None) -> bool:
     return bool(_TOKEN_FORMATO.match((token or TELEGRAM_TOKEN or "").strip()))
 
 
-def verificar_token(*, forcar: bool = False) -> bool:
+def verificar_token(*, token: str | None = None, forcar: bool = False) -> bool:
     """
     Valida token via getMe. Cacheia resultado OK na sessão.
     Em 404 abre circuit breaker (não tenta enviar de novo por N segundos).
     """
     global _token_valido_cache, _bloqueado_ate
 
-    token = (TELEGRAM_TOKEN or "").strip()
-    if not token:
+    tok = (token or TELEGRAM_TOKEN or "").strip()
+    if not tok:
         return False
     if time.time() < _bloqueado_ate:
         return False
     if _token_valido_cache is True and not forcar:
         return True
-    if not token_formato_valido(token):
+    if not token_formato_valido(tok):
         _marcar_invalido("formato de token inválido (esperado 123456:ABC...)")
         return False
     try:
         r = request(
             "GET",
-            f"https://api.telegram.org/bot{token}/getMe",
+            f"https://api.telegram.org/bot{tok}/getMe",
             timeout=15,
         )
         if r.status_code == 404:
@@ -67,13 +67,13 @@ def verificar_token(*, forcar: bool = False) -> bool:
         return False
 
 
-def pode_enviar() -> bool:
+def pode_enviar(token: str | None = None) -> bool:
     """True se não há circuit breaker ativo e token parece válido."""
     if time.time() < _bloqueado_ate:
         return False
     if _token_valido_cache is False:
         return False
-    return bool((TELEGRAM_TOKEN or "").strip())
+    return bool((token or TELEGRAM_TOKEN or "").strip())
 
 
 def registrar_falha_envio(erro: str) -> None:
