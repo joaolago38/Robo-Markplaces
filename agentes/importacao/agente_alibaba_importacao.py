@@ -13,13 +13,15 @@ from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
+    ALIBABA_ALERTA_RESUMO,
+    ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG,
     ALIBABA_IMPORTACAO_CATALOGO,
     ALIBABA_PAUSA_ENTRE_BUSCAS_SEG,
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
 from core.ddg_lite import mensagem_circuit_breaker
-from core.notificador import alertar_gestor, gestor_telegram_configurado
+from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
 
 logger = logging.getLogger("agente_alibaba_importacao")
@@ -198,6 +200,36 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
     return "\n".join(linhas).strip()
 
 
+def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
+    total_oportunidades = sum(int(r.get("oportunidades_total") or 0) for r in resultados)
+    total_novos = sum(len(r.get("novos") or []) for r in resultados)
+    linhas = [
+        "📦 *Alibaba — resumo da varredura*",
+        "",
+        f"Produtos monitorados: {len(resultados)}",
+        f"Oportunidades nesta rodada: {total_oportunidades}",
+        f"Novas: {total_novos}",
+        "",
+    ]
+    for r in resultados:
+        ops = int(r.get("oportunidades_total") or 0)
+        novos = len(r.get("novos") or [])
+        linhas.append(f"• {r.get('produto', r.get('id', '?'))}: {ops} oportunidade(s), {novos} nova(s)")
+    ddg = mensagem_circuit_breaker()
+    if ddg:
+        linhas.extend(["", f"⚠️ {ddg}"])
+    elif total_oportunidades == 0:
+        linhas.extend(["", "_Nenhuma oportunidade nesta rodada (busca direta/DDG)._"])
+    return "\n".join(linhas).strip()
+
+
+def _todos_novos(resultados: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    itens: list[dict[str, Any]] = []
+    for r in resultados:
+        itens.extend(r.get("novos") or [])
+    return itens
+
+
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     """Varre Alibaba para cada produto ativo. Nunca lança exceção."""
     try:
@@ -225,24 +257,45 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         escrever_json_atomico(HISTORY_PATH, historico)
 
         com_novos = [r for r in resultados if r.get("novos")]
-        alerta_enviado = False
+        alerta_novos_enviado = False
+        alerta_resumo_enviado = False
+
         if enviar_alerta and com_novos:
+            novos_itens = _todos_novos(com_novos)
             msg = _montar_alerta(com_novos)
             if msg:
-                alerta_enviado = bool(
-                    alertar_gestor(msg, chave="alibaba:importacao:novos", cooldown_segundos=7200)
-                )
-                if not alerta_enviado:
-                    logger.warning(
-                        "%s oportunidade(s) nova(s) mas alerta não enviado (cooldown ou falha Telegram)",
-                        sum(len(r.get("novos") or []) for r in com_novos),
+                alerta_novos_enviado = bool(
+                    alertar_gestor(
+                        msg,
+                        chave=chave_itens_novos("alibaba:importacao:novos", novos_itens),
+                        cooldown_segundos=86400,
                     )
+                )
+                if not alerta_novos_enviado:
+                    logger.warning(
+                        "%s oportunidade(s) nova(s) mas alerta detalhado não enviado (cooldown ou Telegram)",
+                        len(novos_itens),
+                    )
+
+        if enviar_alerta and ALIBABA_ALERTA_RESUMO:
+            msg_resumo = _montar_resumo_varredura(resultados)
+            alerta_resumo_enviado = bool(
+                alertar_gestor(
+                    msg_resumo,
+                    chave=chave_resumo_periodo("alibaba", horas_por_bucket=2),
+                    cooldown_segundos=ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG,
+                )
+            )
+            if not alerta_resumo_enviado:
+                logger.info("Alibaba: resumo não enviado (cooldown ou Telegram indisponível)")
 
         return {
             "ok": True,
             "total_produtos": len(resultados),
             "com_novos": len(com_novos),
-            "alerta_enviado": alerta_enviado,
+            "alerta_enviado": alerta_novos_enviado or alerta_resumo_enviado,
+            "alerta_novos_enviado": alerta_novos_enviado,
+            "alerta_resumo_enviado": alerta_resumo_enviado,
             "resultados": resultados,
         }
     except Exception as exc:

@@ -502,7 +502,8 @@ Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**
 - Catálogo: `catalogo/leiloes_veiculos_monitorados.json` — campo `perfil: recuperado_furto_media_monta` e `prioridade` (1 = mais importante)
 - Agente: `python -m agentes.leilao.agente_leilao_veiculo`
 - Workflow: `.github/workflows/leilao_veiculo.yml` (cron **a cada hora**, 24×7)
-- Alertas: Telegram gestor quando aparecer **leilão novo** (não repetido)
+- Alertas Telegram gestor: **resumo da varredura** (1×/hora, padrão) + alerta **detalhado** quando houver achado **novo**
+- Variáveis: `LEILAO_ALERTA_RESUMO` (1), `LEILAO_ALERTA_RESUMO_COOLDOWN_SEG` (3600)
 - Histórico: `logs/leilao_veiculos_history.json` (restaurado via cache entre execuções no GitHub Actions)
 - Preflight: `python scripts/preflight_monitor_telegram.py` (valida token antes de rodar)
 
@@ -562,7 +563,8 @@ Agente que varre [Alibaba.com](https://www.alibaba.com/) buscando fornecedores p
 - Catálogo: `catalogo/alibaba_produtos_importacao.json`
 - Agente: `python -m agentes.importacao.agente_alibaba_importacao`
 - Workflow: `.github/workflows/alibaba_importacao.yml` (cron **a cada 2 horas**)
-- Alertas: Telegram gestor quando surgir **anúncio novo** dentro dos critérios
+- Alertas Telegram gestor: **resumo da varredura** (1×/2h, padrão) + alerta **detalhado** quando houver anúncio **novo**
+- Variáveis: `ALIBABA_ALERTA_RESUMO` (1), `ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG` (7200)
 - Histórico: `logs/alibaba_importacao_history.json` (restaurado via cache entre execuções no GitHub Actions)
 - Preflight: `python scripts/preflight_monitor_telegram.py`
 

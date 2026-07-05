@@ -6,11 +6,20 @@ Somente leitura — não aplica preço nem pausa campanhas.
 from __future__ import annotations
 
 import logging
+from datetime import datetime
+from typing import Any
 
 from core.config import ML_ADS_ACOS_DIAS_LIMITE
 from core.notificador import alertar_gestor
 
 logger = logging.getLogger("relatorio_financeiro")
+
+_COOLDOWN_SEMANAL_SEG = 7 * 24 * 3600
+
+
+def _chave_cooldown_semanal() -> str:
+    ano, semana, _ = datetime.now().isocalendar()
+    return f"relatorio_financeiro:{ano}-W{semana:02d}"
 
 
 def _gasto_diario_campanhas_acos_alto(ads: dict) -> float:
@@ -27,7 +36,11 @@ def _montar_mensagem(economia: float, total_ajustes: int, gasto_diario_ads: floa
     )
 
 
-def executar() -> bool:
+def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
+    """
+    Coleta métricas de repricing (dry-run) e ads ML.
+    Retorna ok=True quando a coleta conclui; alerta_enviado indica Telegram.
+    """
     logger.info("=== Relatório financeiro semanal ===")
     try:
         from agentes.repricing.agente_repricing_marketplaces import executar as repricing_executar
@@ -48,14 +61,36 @@ def executar() -> bool:
             total_ajustes,
             gasto_diario_ads,
         )
-        return bool(alertar_gestor(msg))
+
+        alerta_enviado = False
+        if enviar_alerta:
+            alerta_enviado = bool(
+                alertar_gestor(
+                    msg,
+                    chave=_chave_cooldown_semanal(),
+                    cooldown_segundos=_COOLDOWN_SEMANAL_SEG,
+                )
+            )
+            if not alerta_enviado:
+                logger.info(
+                    "Relatório financeiro: alerta não enviado (cooldown semanal ou Telegram indisponível)"
+                )
+
+        return {
+            "ok": True,
+            "economia_estimada_piso_margem": economia,
+            "total_ajustes": total_ajustes,
+            "gasto_ads_dia": gasto_diario_ads,
+            "alerta_enviado": alerta_enviado,
+            "resumo": f"R${economia:.2f}, {total_ajustes} ajustes, ads R${gasto_diario_ads:.2f}/dia",
+        }
     except Exception as exc:
         logger.error("Relatório financeiro erro: %s", exc)
-        return False
+        return {"ok": False, "erro": str(exc)}
 
 
 def main() -> int:
-    return 0 if executar() else 1
+    return 0 if executar().get("ok") else 1
 
 
 if __name__ == "__main__":

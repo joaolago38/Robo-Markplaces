@@ -56,7 +56,9 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                 "uf": "SP",
             }
         ]
-        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"):
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "LEILAO_ALERTA_RESUMO", False
+        ):
             out1 = agente.executar(enviar_alerta=True)
             out2 = agente.executar(enviar_alerta=True)
 
@@ -100,6 +102,43 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("R$ 25.000,00", msg)
         self.assertIn("20/08/2026", msg)
         self.assertIn("Cadastro: https://www.detran.pr.gov.br/leilao-de-veiculos", msg)
+
+    def test_montar_resumo_varredura(self):
+        msg = agente._montar_resumo_varredura(
+            [
+                {
+                    "veiculo": "Fiat Fiorino",
+                    "prioridade": 1,
+                    "achados_total": 2,
+                    "novos": [],
+                },
+                {
+                    "veiculo": "VW Gol",
+                    "prioridade": 2,
+                    "achados_total": 0,
+                    "novos": [],
+                },
+            ]
+        )
+        self.assertIn("resumo da varredura", msg)
+        self.assertIn("Fiorino", msg)
+        self.assertIn("2 achado(s)", msg)
+
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "buscar_veiculo_em_fontes", return_value=[])
+    @patch.object(agente, "_carregar_veiculos")
+    def test_envia_resumo_mesmo_sem_novos(self, mock_veiculos, _mock_busca, mock_alertar):
+        mock_veiculos.return_value = [
+            {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino", "prioridade": 1}
+        ]
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "LEILAO_ALERTA_RESUMO", True
+        ):
+            out = agente.executar(enviar_alerta=True)
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["alerta_resumo_enviado"])
+        mock_alertar.assert_called()
+        self.assertIn("resumo da varredura", mock_alertar.call_args_list[-1][0][0])
 
     @patch.object(agente, "buscar_veiculo_em_fontes", return_value=[])
     @patch.object(agente, "_carregar_veiculos")
