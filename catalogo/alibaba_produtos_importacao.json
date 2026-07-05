@@ -1,13 +1,17 @@
 [
   {
-    "id": "exemplo-frasco-esmalte",
+    "id": "filamento-impressora-3d-pla",
     "ativo": true,
-    "nome": "Frasco esmalte 15ml",
-    "termo_busca": "nail polish bottle 15ml empty",
-    "termo_busca_pt": "frasco vidro esmalte 15ml atacado",
-    "preco_max_usd": 0.35,
-    "moq_max": 5000,
-    "termos_extra": ["ODM", "wholesale"],
-    "notas": "Exemplo — ativo:true e ajuste termos/preço/MOQ para seu produto"
+    "prioridade": 1,
+    "nome": "Filamento impressora 3D",
+    "material": "PLA",
+    "diametro_mm": 1.75,
+    "peso_kg": 1,
+    "termo_busca": "3D printer filament PLA 1.75mm 1kg wholesale",
+    "termo_busca_pt": "filamento impressora 3D PLA 1,75mm 1kg atacado",
+    "preco_max_usd": 4.5,
+    "moq_max": 200,
+    "termos_extra": ["factory", "wholesale", "OEM"],
+    "notas": "Produto inicial — PLA 1,75mm rolo 1kg. Ajuste preco_max_usd e moq_max conforme sua meta de importação."
   }
 ]
