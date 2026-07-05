@@ -566,16 +566,17 @@ Agente que varre [Alibaba.com](https://www.alibaba.com/) buscando fornecedores p
 - Histórico: `logs/alibaba_importacao_history.json` (restaurado via cache entre execuções no GitHub Actions)
 - Preflight: `python scripts/preflight_monitor_telegram.py`
 
-Exemplo de produto no catálogo:
+Exemplo de produto no catálogo (produto inicial configurado: **filamento impressora 3D**):
 
 ```json
 {
-  "id": "frasco-esmalte",
+  "id": "filamento-impressora-3d-pla",
   "ativo": true,
-  "nome": "Frasco esmalte 15ml",
-  "termo_busca": "nail polish bottle 15ml empty",
-  "preco_max_usd": 0.35,
-  "moq_max": 5000
+  "nome": "Filamento impressora 3D",
+  "termo_busca": "3D printer filament PLA 1.75mm 1kg wholesale",
+  "termo_busca_pt": "filamento impressora 3D PLA 1,75mm 1kg atacado",
+  "preco_max_usd": 4.5,
+  "moq_max": 200
 }
 ```
 
