@@ -51,6 +51,46 @@ def _gravidade_relevante(gravidade: str | None) -> bool:
     return str(gravidade or "").lower() in {"critica", "alta"}
 
 
+def carregar_filtros_erro(catalogo_relativo: str) -> dict[str, Any]:
+    caminho = ROOT / catalogo_relativo
+    data = ler_json(caminho, default={})
+    return data if isinstance(data, dict) else {}
+
+
+def _erro_relevante_para_vigia(erro: dict[str, Any], filtros: dict[str, Any]) -> bool:
+    """
+    Mantém alertas focados no Mercado Livre: ignora ruído de outros marketplaces
+    e infraestrutura (Telegram, Claude, Panorama, etc.).
+    """
+    if not filtros:
+        return True
+
+    logger_name = str(erro.get("logger") or "")
+    msg = str(erro.get("mensagem") or erro.get("error_message") or "")
+    msg_lower = msg.lower()
+
+    for ign in filtros.get("mensagens_ignorar") or []:
+        if str(ign).lower() in msg_lower:
+            return False
+
+    if logger_name in set(filtros.get("loggers_ignorar") or []):
+        return False
+
+    loggers_ml = set(filtros.get("loggers_ml") or [])
+    if not loggers_ml:
+        return True
+
+    if logger_name not in loggers_ml:
+        return False
+
+    loggers_multi = set(filtros.get("loggers_multi_ml") or [])
+    if logger_name in loggers_multi:
+        padroes = filtros.get("mensagens_ml_obrigatorias") or []
+        return any(str(p).lower() in msg_lower for p in padroes)
+
+    return True
+
+
 def carregar_fontes(catalogo_relativo: str) -> list[dict[str, Any]]:
     caminho = ROOT / catalogo_relativo
     data = ler_json(caminho, default=[])
@@ -140,6 +180,7 @@ def verificar_erros_nao_tratados(
     *,
     limite_horas: float = 2.0,
     incluir_api_datadog: bool = True,
+    filtros: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Erros ativos há mais de `limite_horas` sem desaparecer do buffer local.
@@ -149,6 +190,8 @@ def verificar_erros_nao_tratados(
     alertas: list[dict[str, Any]] = []
 
     for erro in listar_erros_recentes():
+        if filtros and not _erro_relevante_para_vigia(erro, filtros):
+            continue
         primeira = _parse_iso(erro.get("primeira_vez"))
         ultima = _parse_iso(erro.get("ultima_vez")) or primeira
         if not primeira or not ultima:
@@ -183,7 +226,8 @@ def verificar_erros_nao_tratados(
         )
 
     if incluir_api_datadog:
-        consulta = buscar_erros_datadog(horas=limite_horas, limite=30)
+        query = (filtros or {}).get("query_datadog")
+        consulta = buscar_erros_datadog(horas=limite_horas, limite=30, query=query)
         if consulta.get("ok"):
             chaves_vistas = {
                 _chave_mensagem(str(e.get("mensagem") or e.get("error_message") or ""))
@@ -272,9 +316,13 @@ def analisar_saude(
     *,
     limite_horas_inatividade: float = 2.0,
     limite_horas_erro: float = 2.0,
+    catalogo_filtros: str | None = None,
 ) -> dict[str, Any]:
+    from core.config import DATADOG_VIGIA_CATALOGO_FILTROS
+
+    filtros = carregar_filtros_erro(catalogo_filtros or DATADOG_VIGIA_CATALOGO_FILTROS)
     inatividades = verificar_inatividade(fontes, limite_horas_padrao=limite_horas_inatividade)
-    erros = verificar_erros_nao_tratados(limite_horas=limite_horas_erro)
+    erros = verificar_erros_nao_tratados(limite_horas=limite_horas_erro, filtros=filtros)
 
     tem_critico = any(
         a.get("gravidade") == "critica" for a in inatividades

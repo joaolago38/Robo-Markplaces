@@ -46,6 +46,51 @@ def _request_ml(method: str, url: str, *, timeout: int = 30, **kwargs: Any):
     return r
 
 
+def _status_http_exc(exc: Exception) -> int | None:
+    """Extrai status HTTP de HTTPError ou mensagens tipo '404 Client Error'."""
+    resp = getattr(exc, "response", None)
+    if resp is not None:
+        status = getattr(resp, "status_code", None)
+        if isinstance(status, int):
+            return status
+    texto = str(exc)
+    for code in (404, 403):
+        marcador = f"{code} Client Error"
+        if marcador in texto or f"HTTP {code}" in texto:
+            return code
+    return None
+
+
+def _log_erro_leitura_item(acao: str, item_id: str, exc: Exception) -> None:
+    """Leituras por item: 404/403 são esperados (item inválido/inacessível) → warning."""
+    status = _status_http_exc(exc)
+    if status in (404, 403):
+        logger.warning(
+            "ML %s item_id=%s HTTP %s — item inexistente ou sem permissão: %s",
+            acao,
+            item_id,
+            status,
+            exc,
+        )
+    else:
+        logger.error("ML %s erro item_id=%s: %s", acao, item_id, exc)
+
+
+def _log_erro_leitura_termo(acao: str, termo: str, exc: Exception) -> None:
+    """Busca pública por termo: 403 PolicyAgent é comum → warning."""
+    status = _status_http_exc(exc)
+    if status in (404, 403):
+        logger.warning(
+            "ML %s termo=%s HTTP %s — busca bloqueada ou sem resultados: %s",
+            acao,
+            termo,
+            status,
+            exc,
+        )
+    else:
+        logger.error("ML %s erro termo=%s: %s", acao, termo, exc)
+
+
 def _executar_acao_status(
     item_id: str,
     status: str,
@@ -149,7 +194,7 @@ def obter_status_anuncio(item_id: str) -> dict:
             "titulo": str(body.get("title", "") or ""),
         }
     except Exception as exc:
-        logger.error("ML obter_status_anuncio erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("obter_status_anuncio", item_id, exc)
         return {"ok": False, "item_id": item_id, "erro": str(exc)}
 
 def probe_conexao() -> dict:
@@ -446,7 +491,7 @@ def buscar_metricas_item(item_id: str) -> dict:
             "visitas_30d": v30,
         }
     except Exception as exc:
-        logger.error("ML buscar_metricas_item erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_metricas_item", item_id, exc)
         return {}
 
 
@@ -467,7 +512,7 @@ def buscar_descricao_item(item_id: str) -> str:
         data = r.json() or {}
         return str(data.get("plain_text", "") or "")
     except Exception as exc:
-        logger.error("ML buscar_descricao_item erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_descricao_item", item_id, exc)
         return ""
 
 
@@ -559,7 +604,7 @@ def buscar_detalhes_concorrentes(item_id: str, limite: int = 5) -> list[dict]:
                 detalhes.append(norm)
         return detalhes
     except Exception as exc:
-        logger.error("ML buscar_detalhes_concorrentes erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_detalhes_concorrentes", item_id, exc)
         return []
 
 
@@ -582,7 +627,7 @@ def buscar_menor_preco_concorrente(item_id: str) -> float:
                 precos.append(p)
         return min(precos) if precos else 0.0
     except Exception as exc:
-        logger.error("ML buscar_menor_preco_concorrente erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_menor_preco_concorrente", item_id, exc)
         return 0.0
 
 
@@ -647,7 +692,7 @@ def buscar_concorrentes_por_termo(termo: str, limite: int = 10) -> list[dict]:
                 break
         return encontrados
     except Exception as exc:
-        logger.error("ML buscar_concorrentes_por_termo erro termo=%s: %s", termo, exc)
+        _log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
         return []
 
 
@@ -708,7 +753,7 @@ def buscar_sugestao_preco(item_id: str) -> dict:
             "aplicavel": bool(body.get("applicable_suggestion", False)),
         }
     except Exception as exc:
-        logger.error("ML buscar_sugestao_preco erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_sugestao_preco", item_id, exc)
         return {}
 
 
@@ -751,7 +796,7 @@ def buscar_acos_ads(item_id: str, dias: int = 14) -> float:
             return 0.0
         return round(total_spend / total_revenue, 4)
     except Exception as exc:
-        logger.error("ML buscar_acos_ads erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_acos_ads", item_id, exc)
         return 0.0
 
 

@@ -323,6 +323,15 @@ class TestMlAnuncioStatus(unittest.TestCase):
             timeout=20,
         )
 
+    @patch.object(ml_client, "_request_ml", side_effect=Exception("404 Client Error: Not Found"))
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML29_leitura_item_404_nao_e_error(self, _en, _req):
+        with self.assertLogs("ml_client", level="WARNING") as cm:
+            out = ml_client.buscar_menor_preco_concorrente("MLB404")
+        self.assertEqual(out, 0.0)
+        self.assertTrue(any("HTTP 404" in m for m in cm.output))
+        self.assertFalse(any("ERROR" in m for m in cm.output))
+
 
 if __name__ == "__main__":
     unittest.main()

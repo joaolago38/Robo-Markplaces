@@ -1,0 +1,58 @@
+{
+  "loggers_ignorar": [
+    "agente_panorama",
+    "telegram_gate",
+    "magalu_client",
+    "shopee_client",
+    "amazon_client",
+    "bling",
+    "claude",
+    "notificador",
+    "buffer_erros_datadog",
+    "consulta_erros_datadog",
+    "vigia_saude_datadog"
+  ],
+  "loggers_ml": [
+    "ml_client",
+    "ml_product_ads",
+    "agente_ml",
+    "agente_monitor_ml",
+    "agente_relatorio_manha_ml",
+    "agente_ads_gatilho",
+    "agente_otimizador_listing",
+    "agente_monitor_concorrentes",
+    "agente_monitor_anita",
+    "agente_monitor_mercado_esmaltes",
+    "agente_comparativo_anita_impala",
+    "agente_monitor_acetona_cruzeiro",
+    "vendas_notificador",
+    "conectividade_marketplaces",
+    "agente_repricing_marketplaces",
+    "sincronizar_estoque_marketplaces",
+    "token_manager",
+    "painel_item"
+  ],
+  "loggers_multi_ml": [
+    "vendas_notificador",
+    "conectividade_marketplaces",
+    "agente_repricing_marketplaces",
+    "sincronizar_estoque_marketplaces",
+    "token_manager"
+  ],
+  "mensagens_ml_obrigatorias": [
+    "mercadolivre",
+    "Mercado Livre",
+    "renovar token ML",
+    "token ML",
+    "ML listar",
+    "ML Product Ads",
+    "ML probe",
+    "ML buscar",
+    "ML atualizar",
+    "canal=mercadolivre"
+  ],
+  "mensagens_ignorar": [
+    "Erro inesperado ao testar conectividade mercadolivre: boom"
+  ],
+  "query_datadog": "service:robo-markplaces status:error (marketplace:mercadolivre OR marketplace:mercadolivre_ads OR marketplace:mercadolivre_e_outros OR @logger.name:token_manager)"
+}
