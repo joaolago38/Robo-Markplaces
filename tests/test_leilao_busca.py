@@ -89,17 +89,21 @@ class TestExtrairDdg(unittest.TestCase):
 
 
 class TestDdgRetry(unittest.TestCase):
-    @patch.object(busca.time, "sleep")
-    @patch("integracoes.leilao.busca.request")
-    def test_retry_403_depois_ok(self, mock_request, _sleep):
+    @patch("core.ddg_lite.time.sleep")
+    @patch("core.ddg_lite.extrair_resultados")
+    @patch("core.ddg_lite.request")
+    def test_retry_403_depois_ok(self, mock_request, mock_extrair, _sleep):
+        from core.ddg_lite import reset_circuit_breaker
+
+        reset_circuit_breaker()
+        mock_extrair.return_value = [{"titulo": "x", "url": "http://a", "snippet": ""}]
         ok = MagicMock()
         ok.status_code = 200
-        ok.text = ""
+        ok.text = "<html></html>"
         bloqueado = MagicMock()
         bloqueado.status_code = 403
         mock_request.side_effect = [bloqueado, ok]
-        with patch.object(busca, "_extrair_resultados_ddg", return_value=[{"titulo": "x", "url": "http://a", "snippet": ""}]):
-            out = busca.buscar_duckduckgo("teste")
+        out = busca.buscar_duckduckgo("teste")
         self.assertEqual(len(out), 1)
         self.assertEqual(mock_request.call_count, 2)
 
@@ -118,6 +122,37 @@ class TestRelevancia(unittest.TestCase):
             {"marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015},
         )
         self.assertTrue(ok)
+
+
+class TestEnriquecerAchado(unittest.TestCase):
+    def test_extrai_cidade_detran_ano_valor(self):
+        item = {
+            "titulo": "Fiat Fiorino 2018 leilão Campinas/SP",
+            "snippet": "veículo recuperado lance R$ 18.500,00",
+            "fonte_tipo": "detran",
+            "fonte_id": "SP",
+            "fonte_nome": "DETRAN São Paulo",
+        }
+        veiculo = {"marca": "Fiat", "modelo": "Fiorino", "ano_min": 2015, "ano_max": 2020}
+        out = busca.enriquecer_achado_leilao(item, veiculo)
+        self.assertEqual(out["cidade"], "Campinas")
+        self.assertEqual(out["uf"], "SP")
+        self.assertEqual(out["detran_nome"], "DETRAN São Paulo")
+        self.assertEqual(out["ano"], 2018)
+        self.assertEqual(out["valor"], "R$ 18.500,00")
+        self.assertEqual(out["marca"], "Fiat")
+        self.assertEqual(out["modelo"], "Fiorino")
+
+    def test_leiloeiro_sem_cidade_mostra_fonte(self):
+        item = {
+            "titulo": "Volkswagen Gol 2014 leilão",
+            "snippet": "arremate R$ 12000",
+            "fonte_tipo": "leiloeiro",
+            "fonte_nome": "Copart Brasil",
+        }
+        out = busca.enriquecer_achado_leilao(item, {"marca": "Volkswagen", "modelo": "Gol"})
+        self.assertEqual(out["ano"], 2014)
+        self.assertEqual(out["valor"], "R$ 12.000")
 
 
 class TestFontesCadastro(unittest.TestCase):

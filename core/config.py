@@ -60,8 +60,18 @@ LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )
 LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "2.5"))
-LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", "3"))
-LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", "5"))
+LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", os.getenv("DDG_RETRY_MAX", "3")))
+LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", os.getenv("DDG_RETRY_BASE_SEG", "5")))
+
+# DuckDuckGo Lite (compartilhado leilão + Alibaba)
+DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "2.5"))
+DDG_RETRY_MAX = int(os.getenv("DDG_RETRY_MAX", "3"))
+DDG_RETRY_BASE_SEG = float(os.getenv("DDG_RETRY_BASE_SEG", "5"))
+DDG_CIRCUIT_BREAKER_SEG = float(os.getenv("DDG_CIRCUIT_BREAKER_SEG", "300"))
+DDG_FALHAS_403_PARA_BREAKER = int(os.getenv("DDG_FALHAS_403_PARA_BREAKER", "5"))
+
+# Telegram — circuit breaker após token inválido (evita centenas de ERROR no Datadog)
+TELEGRAM_CIRCUIT_BREAKER_SEG = int(os.getenv("TELEGRAM_CIRCUIT_BREAKER_SEG", "3600"))
 
 ALIBABA_IMPORTACAO_CATALOGO = os.getenv(
     "ALIBABA_IMPORTACAO_CATALOGO", "catalogo/alibaba_produtos_importacao.json"
@@ -128,10 +138,10 @@ META_GASTO_MINIMO_ALERTA = float(os.getenv("META_GASTO_MINIMO_ALERTA", "50.0"))
 META_ROAS_MINIMO_MANICURES = float(os.getenv("META_ROAS_MINIMO_MANICURES", "2.20"))
 META_CTR_MINIMO_MANICURES = float(os.getenv("META_CTR_MINIMO_MANICURES", "1.20"))
 
-# Alertas
-TELEGRAM_TOKEN          = os.getenv("TELEGRAM_TOKEN", "")
-TELEGRAM_CHAT_ID        = os.getenv("TELEGRAM_CHAT_ID", "")
-TELEGRAM_GESTOR_CHAT_ID = os.getenv("TELEGRAM_GESTOR_CHAT_ID", "")
+# Alertas (strip evita 404 por espaço/quebra ao colar secret no GitHub)
+TELEGRAM_TOKEN          = (os.getenv("TELEGRAM_TOKEN") or "").strip()
+TELEGRAM_CHAT_ID        = (os.getenv("TELEGRAM_CHAT_ID") or "").strip()
+TELEGRAM_GESTOR_CHAT_ID = (os.getenv("TELEGRAM_GESTOR_CHAT_ID") or "").strip()
 ALERTA_COOLDOWN_SEG      = int(os.getenv("ALERTA_COOLDOWN_SEG", "7200"))
 
 # Fiscal (NF-e)

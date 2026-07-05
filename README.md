@@ -506,7 +506,7 @@ Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**
 - Histórico: `logs/leilao_veiculos_history.json` (restaurado via cache entre execuções no GitHub Actions)
 - Preflight: `python scripts/preflight_monitor_telegram.py` (valida token antes de rodar)
 
-A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Se aparecer **DDG HTTP 403** no Datadog, é rate limit temporário do DuckDuckGo (muitas buscas seguidas); o agente faz retry automático e tenta de novo no próximo ciclo. Ajuste `LEILAO_PAUSA_ENTRE_FONTES_SEG` (padrão 2.5s) ou `ORQUESTRADOR_EXCLUIR=leilao` se quiser aliviar carga.
+A busca usa DuckDuckGo (`site:dominio` por leiloeiro/DETRAN) — sem API paga. Cliente compartilhado: `core/ddg_lite.py` (rate limit global, retry, circuit breaker). Se aparecer **DDG HTTP 403** no Datadog, é rate limit temporário; o agente faz retry e pausa automática. Variáveis opcionais: `DDG_MIN_INTERVAL_SEG` (2.5), `DDG_RETRY_MAX` (3), `DDG_CIRCUIT_BREAKER_SEG` (300), `DDG_FALHAS_403_PARA_BREAKER` (5). Ajuste `LEILAO_PAUSA_ENTRE_FONTES_SEG` ou `ORQUESTRADOR_EXCLUIR=leilao` se quiser aliviar carga.
 
 ## Orquestrador 30 minutos (todos os agentes)
 
@@ -515,8 +515,10 @@ Agente que **a cada 30 minutos** executa todos os monitores do robô em sequênc
 - Módulo: `python -m agentes.orquestrador.agente_orquestrador`
 - Workflow: `.github/workflows/orquestrador_30min.yml` (cron `*/30 * * * *` UTC)
 - Catálogo de agentes: `agentes/orquestrador/registro_agentes.py` (21 agentes)
-- Excluir agentes lentos: env `ORQUESTRADOR_EXCLUIR=leilao,alibaba` (vírgula)
+- Excluir agentes lentos: env `ORQUESTRADOR_EXCLUIR=leilao,alibaba` (vírgula; já aplicado nos workflows do orquestrador e push main)
+- Preflight: `python scripts/preflight_producao.py` (Telegram + renovação ML)
 - Cooldown do resumo: `ORQUESTRADOR_COOLDOWN_RESUMO_SEG` (padrão 1500s)
+- Telegram: `core/telegram_gate.py` valida token (`getMe`) e abre circuit breaker em 404 — `TELEGRAM_CIRCUIT_BREAKER_SEG` (padrão 3600s) evita spam de ERROR no Datadog com token revogado
 
 **Segurança:** repricing, estoque, NF-e e operação 24h rodam em **dry-run** dentro do orquestrador; escrita real continua nos workflows dedicados (`operacao_24h_seguranca`, etc.).
 

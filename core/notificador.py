@@ -16,6 +16,7 @@ from core.config import (
     TELEGRAM_TOKEN,
 )
 from core.http_client import request
+from core.telegram_gate import pode_enviar, registrar_falha_envio, verificar_token
 from core.http_errors import mascarar_url_telegram
 
 logger = logging.getLogger("notificador")
@@ -73,24 +74,33 @@ def _marcar_enviado(chave: str) -> None:
 
 
 def _enviar(chat_id: str, msg: str) -> bool:
-    if not TELEGRAM_TOKEN or not chat_id:
+    token = (TELEGRAM_TOKEN or "").strip()
+    cid = (chat_id or "").strip()
+    if not token or not cid:
         print(f"[TELEGRAM não configurado]\n{msg}")
         logger.warning(
             "Telegram não configurado — alerta NÃO entregue (apenas impresso no stdout)"
         )
         return False
+    if not pode_enviar():
+        if not verificar_token():
+            logger.info("Telegram: envio suprimido (token inválido ou circuit breaker ativo)")
+            return False
     try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
         r = request(
             "POST",
             url,
-            json={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"},
+            json={"chat_id": cid, "text": msg, "parse_mode": "Markdown"},
             timeout=10,
         )
         r.raise_for_status()
         return True
     except Exception as e:
-        logger.error("Telegram erro: %s", mascarar_url_telegram(str(e)))
+        err = mascarar_url_telegram(str(e))
+        registrar_falha_envio(err)
+        if "404" not in err:
+            logger.error("Telegram erro: %s", err)
         return False
 
 

@@ -27,8 +27,7 @@ except Exception:
 
 def main() -> int:
     from core.config import TELEGRAM_GESTOR_CHAT_ID, TELEGRAM_TOKEN
-    from core.http_client import request
-    from core.http_errors import mascarar_url_telegram
+    from core.telegram_gate import token_formato_valido, verificar_token
 
     faltando = []
     if not (TELEGRAM_TOKEN or "").strip():
@@ -38,24 +37,14 @@ def main() -> int:
     if faltando:
         print(f"FALHA: variáveis ausentes: {', '.join(faltando)}")
         return 1
-
-    try:
-        r = request(
-            "GET",
-            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getMe",
-            timeout=15,
-        )
-        r.raise_for_status()
-        body = r.json()
-        if not body.get("ok"):
-            print("FALHA: getMe retornou ok=false — token inválido ou revogado")
-            return 1
-        username = body.get("result", {}).get("username", "?")
-        print(f"OK: bot @{username} | gestor chat configurado")
-        return 0
-    except Exception as exc:
-        print(f"FALHA: getMe — {mascarar_url_telegram(str(exc))}")
+    if not token_formato_valido():
+        print("FALHA: TELEGRAM_TOKEN com formato inválido (use o token do @BotFather)")
         return 1
+    if not verificar_token(forcar=True):
+        print("FALHA: getMe — token inválido ou revogado (HTTP 404)")
+        return 1
+    print("OK: bot validado | gestor chat configurado")
+    return 0
 
 
 if __name__ == "__main__":

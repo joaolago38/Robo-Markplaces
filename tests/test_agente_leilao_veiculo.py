@@ -43,9 +43,17 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             {
                 "hash": "abc123",
                 "url": "https://copart.com.br/1",
-                "titulo": "Fiat Uno leilão",
+                "titulo": "Fiat Uno 2012 leilão Campinas/SP",
+                "snippet": "lance R$ 9.800,00",
                 "fonte_nome": "Copart",
                 "fonte_id": "copart",
+                "fonte_tipo": "leiloeiro",
+                "marca": "Fiat",
+                "modelo": "Uno",
+                "ano": 2012,
+                "valor": "R$ 9.800,00",
+                "cidade": "Campinas",
+                "uf": "SP",
             }
         ]
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"):
@@ -55,7 +63,38 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertTrue(out1["ok"])
         self.assertEqual(out1["com_novos"], 1)
         mock_alertar.assert_called_once()
+        msg = mock_alertar.call_args[0][0]
+        self.assertIn("Campinas/SP", msg)
+        self.assertIn("Fiat Uno 2012", msg)
+        self.assertIn("R$ 9.800,00", msg)
         self.assertEqual(out2["com_novos"], 0)
+
+    def test_montar_alerta_detran(self):
+        msg = agente._montar_alerta(
+            [
+                {
+                    "veiculo": "Honda Civic",
+                    "prioridade": 1,
+                    "novos": [
+                        {
+                            "fonte_tipo": "detran",
+                            "fonte_nome": "DETRAN Paraná",
+                            "uf": "PR",
+                            "cidade": "Curitiba",
+                            "marca": "Honda",
+                            "modelo": "Civic",
+                            "ano": 2016,
+                            "valor": "R$ 25.000,00",
+                            "titulo": "Civic leilão",
+                            "url": "https://detran.pr.gov.br/x",
+                        }
+                    ],
+                }
+            ]
+        )
+        self.assertIn("Curitiba — DETRAN Paraná", msg)
+        self.assertIn("Honda Civic 2016", msg)
+        self.assertIn("R$ 25.000,00", msg)
 
     @patch.object(agente, "_carregar_veiculos", side_effect=RuntimeError("boom"))
     def test_nunca_lanca_excecao(self, *_):

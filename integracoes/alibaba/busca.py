@@ -126,20 +126,9 @@ def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
 
 
 def buscar_duckduckgo(query: str, *, max_resultados: int = 10) -> list[dict[str, str]]:
-    try:
-        r = request(
-            "POST",
-            _DDG_HTML,
-            data={"q": query, "kl": "br-pt"},
-            headers={"User-Agent": _USER_AGENT, "Content-Type": "application/x-www-form-urlencoded"},
-            timeout=20,
-        )
-        if r.status_code >= 400:
-            return []
-        return _extrair_resultados_ddg(r.text)[:max_resultados]
-    except Exception as exc:
-        logger.error("DDG Alibaba falhou: %s", exc)
-        return []
+    from core.ddg_lite import buscar as ddg_buscar
+
+    return ddg_buscar(query, max_resultados=max_resultados, contexto="alibaba")
 
 
 def _parsear_json_embutido(html: str) -> list[dict[str, Any]]:
