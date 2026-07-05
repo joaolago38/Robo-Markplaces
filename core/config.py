@@ -125,6 +125,11 @@ LEILAO_LAUDO_BRL = float(os.getenv("LEILAO_LAUDO_BRL", "200.0"))
 LEILAO_PRECO_MAX_LANCE = float(os.getenv("LEILAO_PRECO_MAX_LANCE", "20000"))
 LEILAO_MARGEM_FIPE_MIN_PCT = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_PCT", "25"))
 LEILAO_MARGEM_FIPE_MIN_REAIS = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_REAIS", "3000"))
+LEILAO_IA_AVALIAR_PARAMETROS = os.getenv("LEILAO_IA_AVALIAR_PARAMETROS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Sumaré Leilões (PREFEITURA/DETRAN — veículos com documento)
 SUMARE_LEILOES_CATALOGO = os.getenv(
@@ -191,6 +196,11 @@ ALIBABA_INTELIGENCIA_ALERTA_RESUMO = os.getenv("ALIBABA_INTELIGENCIA_ALERTA_RESU
     "no",
 )
 ALIBABA_INTELIGENCIA_COOLDOWN_SEG = int(os.getenv("ALIBABA_INTELIGENCIA_COOLDOWN_SEG", "7200"))
+ALIBABA_IA_AVALIAR_PARAMETROS = os.getenv("ALIBABA_IA_AVALIAR_PARAMETROS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 DESCOBERTA_NICHOS_CATALOGO = os.getenv(
     "DESCOBERTA_NICHOS_CATALOGO", "catalogo/descoberta_nichos.json"
@@ -252,6 +262,13 @@ DATADOG_VIGIA_CATALOGO_FILTROS = os.getenv(
 DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE", "2"))
 DATADOG_VIGIA_LIMITE_HORAS_ERRO = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_ERRO", "2"))
 DATADOG_VIGIA_ALERTA_COOLDOWN_SEG = int(os.getenv("DATADOG_VIGIA_ALERTA_COOLDOWN_SEG", "3600"))
+# Quando 1, o processo termina com exit code 1 se houver inatividade/erros abertos
+# (além do alerta Telegram). Default 0: falha só se o agente crashar.
+DATADOG_VIGIA_FALHAR_PROCESSO = os.getenv("DATADOG_VIGIA_FALHAR_PROCESSO", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 # Sync após push na main (não substitui crons dos workflows)
 PUSH_MAIN_COOLDOWN_RESUMO_SEG = int(os.getenv("PUSH_MAIN_COOLDOWN_RESUMO_SEG", "300"))

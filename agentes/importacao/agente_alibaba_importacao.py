@@ -15,6 +15,7 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     ALIBABA_ALERTA_RESUMO,
     ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG,
+    ALIBABA_IA_AVALIAR_PARAMETROS,
     ALIBABA_IMPORTACAO_CATALOGO,
     ALIBABA_PAUSA_ENTRE_BUSCAS_SEG,
     ROOT,
@@ -23,10 +24,12 @@ from core.datadog_metrics import gauge, incrementar
 from core.ddg_lite import mensagem_circuit_breaker
 from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
+from integracoes.importacao.avaliacao_ia_parametros import avaliar_parametros_alibaba_busca, formatar_secao_ia
 
 logger = logging.getLogger("agente_alibaba_importacao")
 
 HISTORY_PATH = ROOT / "logs" / "alibaba_importacao_history.json"
+SNAPSHOT_PATH = ROOT / "logs" / "alibaba_importacao_ultima.json"
 
 
 def _carregar_produtos() -> list[dict[str, Any]]:
@@ -202,7 +205,7 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
     return "\n".join(linhas).strip()
 
 
-def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
+def _montar_resumo_varredura(resultados: list[dict[str, Any]], ia: dict[str, Any] | None = None) -> str:
     total_oportunidades = sum(int(r.get("oportunidades_total") or 0) for r in resultados)
     total_novos = sum(len(r.get("novos") or []) for r in resultados)
     linhas = [
@@ -222,6 +225,9 @@ def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
         linhas.extend(["", f"⚠️ {ddg}"])
     elif total_oportunidades == 0:
         linhas.extend(["", "_Nenhuma oportunidade nesta rodada (busca direta/DDG)._"])
+    secao_ia = formatar_secao_ia(ia)
+    if secao_ia:
+        linhas.append(secao_ia)
     return "\n".join(linhas).strip()
 
 
@@ -258,6 +264,21 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         escrever_json_atomico(HISTORY_PATH, historico)
 
+        ia_parametros = None
+        if ALIBABA_IA_AVALIAR_PARAMETROS:
+            ia_parametros = avaliar_parametros_alibaba_busca(
+                produtos_catalogo=produtos,
+                resultados=resultados,
+            )
+        escrever_json_atomico(
+            SNAPSHOT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "resultados": resultados,
+                "avaliacao_ia_parametros": ia_parametros,
+            },
+        )
+
         com_novos = [r for r in resultados if r.get("novos")]
         alerta_novos_enviado = False
         alerta_resumo_enviado = False
@@ -280,7 +301,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     )
 
         if enviar_alerta and ALIBABA_ALERTA_RESUMO:
-            msg_resumo = _montar_resumo_varredura(resultados)
+            msg_resumo = _montar_resumo_varredura(resultados, ia_parametros)
             alerta_resumo_enviado = bool(
                 alertar_gestor(
                     msg_resumo,
@@ -298,6 +319,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "alerta_enviado": alerta_novos_enviado or alerta_resumo_enviado,
             "alerta_novos_enviado": alerta_novos_enviado,
             "alerta_resumo_enviado": alerta_resumo_enviado,
+            "avaliacao_ia_parametros": ia_parametros,
             "resultados": resultados,
         }
     except Exception as exc:

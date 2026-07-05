@@ -16,6 +16,7 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     DATADOG_VIGIA_ALERTA_COOLDOWN_SEG,
     DATADOG_VIGIA_CATALOGO_FONTES,
+    DATADOG_VIGIA_FALHAR_PROCESSO,
     DATADOG_VIGIA_LIMITE_HORAS_ERRO,
     DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE,
     ROOT,
@@ -124,7 +125,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if not out.get("saudavel"):
         logger.warning("Vigia: problemas detectados (crítico=%s)", out.get("tem_critico"))
-        return 1
+        if DATADOG_VIGIA_FALHAR_PROCESSO:
+            return 1
     return 0
 
 

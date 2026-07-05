@@ -284,6 +284,44 @@ class VigiaDatadogTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertTrue(out["tem_critico"])
 
+    @patch("integracoes.datadog.vigia_saude.analisar_saude")
+    def test_main_nao_falha_se_problemas_sem_flag(self, mock_analise):
+        from agentes.infra import agente_vigia_datadog as ag
+
+        mock_analise.return_value = {
+            "ok": False,
+            "tem_critico": True,
+            "total_inatividades": 1,
+            "total_erros": 1,
+            "mensagem_critica": "Problema grave",
+            "inatividades": [],
+            "erros": [],
+        }
+        with patch("agentes.infra.agente_vigia_datadog.DATADOG_VIGIA_FALHAR_PROCESSO", False):
+            with patch("agentes.infra.agente_vigia_datadog.escrever_json_atomico"):
+                with patch("agentes.infra.agente_vigia_datadog.ler_json", return_value={}):
+                    with patch("agentes.infra.agente_vigia_datadog.carregar_fontes", return_value=[]):
+                        self.assertEqual(ag.main(["--sem-alerta"]), 0)
+
+    @patch("integracoes.datadog.vigia_saude.analisar_saude")
+    def test_main_falha_se_problemas_com_flag(self, mock_analise):
+        from agentes.infra import agente_vigia_datadog as ag
+
+        mock_analise.return_value = {
+            "ok": False,
+            "tem_critico": True,
+            "total_inatividades": 1,
+            "total_erros": 0,
+            "mensagem_critica": "Problema grave",
+            "inatividades": [],
+            "erros": [],
+        }
+        with patch("agentes.infra.agente_vigia_datadog.DATADOG_VIGIA_FALHAR_PROCESSO", True):
+            with patch("agentes.infra.agente_vigia_datadog.escrever_json_atomico"):
+                with patch("agentes.infra.agente_vigia_datadog.ler_json", return_value={}):
+                    with patch("agentes.infra.agente_vigia_datadog.carregar_fontes", return_value=[]):
+                        self.assertEqual(ag.main(["--sem-alerta"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

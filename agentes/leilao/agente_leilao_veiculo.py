@@ -17,6 +17,7 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     LEILAO_ALERTA_RESUMO,
     LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
+    LEILAO_IA_AVALIAR_PARAMETROS,
     LEILAO_PAUSA_ENTRE_FONTES_SEG,
     LEILAO_VEICULOS_CATALOGO,
     ROOT,
@@ -24,12 +25,17 @@ from core.config import (
 from core.datadog_metrics import gauge, incrementar
 from core.ddg_lite import mensagem_circuit_breaker
 from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
+from integracoes.leilao.avaliacao_ia_parametros import (
+    avaliar_parametros_leilao_veiculos,
+    formatar_secao_ia,
+)
 from integracoes.leilao.busca import buscar_veiculo_em_fontes
 from integracoes.leilao.comparacao_fipe import avaliar_achado_leilao, filtrar_vantajosos
 
 logger = logging.getLogger("agente_leilao_veiculo")
 
 HISTORY_PATH = ROOT / "logs" / "leilao_veiculos_history.json"
+SNAPSHOT_PATH = ROOT / "logs" / "leilao_veiculos_ultima.json"
 
 
 def _carregar_veiculos() -> list[dict[str, Any]]:
@@ -269,7 +275,7 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
     return "\n".join(linhas).strip()
 
 
-def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
+def _montar_resumo_varredura(resultados: list[dict[str, Any]], ia: dict[str, Any] | None = None) -> str:
     total_achados = sum(int(r.get("achados_total") or 0) for r in resultados)
     total_novos = sum(len(r.get("novos") or []) for r in resultados)
     total_vantajosos = sum(int(r.get("vantajosos_total") or 0) for r in resultados)
@@ -302,6 +308,9 @@ def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
             "",
             "_Achados sem vantagem FIPE suficiente (lance + comissão + taxas vs tabela)._",
         ])
+    secao_ia = formatar_secao_ia(ia)
+    if secao_ia:
+        linhas.append(secao_ia)
     return "\n".join(linhas).strip()
 
 
@@ -342,6 +351,23 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         _salvar_historico(historico)
 
+        ia_parametros = None
+        if LEILAO_IA_AVALIAR_PARAMETROS:
+            ia_parametros = avaliar_parametros_leilao_veiculos(
+                veiculos_catalogo=veiculos,
+                resultados=resultados,
+            )
+
+        agora = datetime.now(timezone.utc).isoformat()
+        escrever_json_atomico(
+            SNAPSHOT_PATH,
+            {
+                "timestamp": agora,
+                "resultados": resultados,
+                "avaliacao_ia_parametros": ia_parametros,
+            },
+        )
+
         com_vantajosos = [r for r in resultados if r.get("novos_vantajosos")]
         alerta_novos_enviado = False
         alerta_resumo_enviado = False
@@ -364,7 +390,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     )
 
         if enviar_alerta and LEILAO_ALERTA_RESUMO:
-            msg_resumo = _montar_resumo_varredura(resultados)
+            msg_resumo = _montar_resumo_varredura(resultados, ia_parametros)
             alerta_resumo_enviado = bool(
                 alertar_gestor(
                     msg_resumo,
@@ -382,6 +408,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "alerta_enviado": alerta_novos_enviado or alerta_resumo_enviado,
             "alerta_novos_enviado": alerta_novos_enviado,
             "alerta_resumo_enviado": alerta_resumo_enviado,
+            "avaliacao_ia_parametros": ia_parametros,
             "resultados": resultados,
         }
     except Exception as exc:

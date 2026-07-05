@@ -16,6 +16,7 @@ from typing import Any
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     ALIBABA_IMPORTACAO_CATALOGO,
+    ALIBABA_IA_AVALIAR_PARAMETROS,
     ALIBABA_INTELIGENCIA_ALERTA_RESUMO,
     ALIBABA_INTELIGENCIA_COOLDOWN_SEG,
     ALIBABA_MARGEM_ALERTA_COOLDOWN_SEG,
@@ -28,10 +29,15 @@ from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegr
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
 from integracoes.cambio.cotacao_usd import obter_cotacao_usd, variacao_desde_ultima_rodada
 from integracoes.importacao.analise_margem import analisar_produto_catalogo
+from integracoes.importacao.avaliacao_ia_parametros import (
+    avaliar_parametros_alibaba_inteligencia,
+    formatar_secao_ia,
+)
 
 logger = logging.getLogger("agente_alibaba_importacao_inteligente")
 
 HISTORY_PATH = ROOT / "logs" / "alibaba_inteligencia_history.json"
+SNAPSHOT_PATH = ROOT / "logs" / "alibaba_inteligencia_ultima.json"
 
 
 def _carregar_produtos() -> list[dict[str, Any]]:
@@ -94,7 +100,11 @@ def _resumo_custo(analise: dict[str, Any]) -> str:
     return "\n".join(linhas)
 
 
-def _montar_painel_produtos(resultados: list[dict[str, Any]], cotacao: dict[str, Any]) -> str:
+def _montar_painel_produtos(
+    resultados: list[dict[str, Any]],
+    cotacao: dict[str, Any],
+    ia: dict[str, Any] | None = None,
+) -> str:
     linhas = [
         "📊 *Alibaba — painel de importação (todos os produtos)*",
         "",
@@ -122,6 +132,10 @@ def _montar_painel_produtos(resultados: list[dict[str, Any]], cotacao: dict[str,
         elif not r.get("analises"):
             linhas.append("  _Sem preço Alibaba parseado nesta rodada_")
         linhas.append("")
+
+    secao_ia = formatar_secao_ia(ia)
+    if secao_ia:
+        linhas.append(secao_ia)
 
     return "\n".join(linhas).strip()
 
@@ -202,6 +216,25 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         escrever_json_atomico(HISTORY_PATH, historico)
 
+        ia_parametros = None
+        if ALIBABA_IA_AVALIAR_PARAMETROS:
+            ia_parametros = avaliar_parametros_alibaba_inteligencia(
+                produtos_catalogo=produtos,
+                resultados=resultados,
+                cotacao=cotacao,
+                variacao_cambio=variacao,
+            )
+        escrever_json_atomico(
+            SNAPSHOT_PATH,
+            {
+                "timestamp": agora,
+                "cotacao": cotacao,
+                "variacao_cambio": variacao,
+                "resultados": resultados,
+                "avaliacao_ia_parametros": ia_parametros,
+            },
+        )
+
         alerta_cambio = False
         alerta_painel = False
         alerta_lucro = False
@@ -218,7 +251,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 )
 
             if ALIBABA_INTELIGENCIA_ALERTA_RESUMO:
-                painel = _montar_painel_produtos(resultados, cotacao)
+                painel = _montar_painel_produtos(resultados, cotacao, ia_parametros)
                 alerta_painel = bool(
                     alertar_gestor(
                         painel,
@@ -247,6 +280,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "alerta_cambio": alerta_cambio,
             "alerta_painel": alerta_painel,
             "alerta_lucro": alerta_lucro,
+            "avaliacao_ia_parametros": ia_parametros,
             "resultados": resultados,
         }
     except Exception as exc:

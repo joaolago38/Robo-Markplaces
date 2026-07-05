@@ -19,11 +19,13 @@ from core.config import (
     ROOT,
     SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
     SUMARE_LEILOES_CATALOGO,
+    LEILAO_IA_AVALIAR_PARAMETROS,
     SUMARE_LEILOES_LANCE_MIN_BRL,
     SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG,
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
+from integracoes.leilao.avaliacao_ia_parametros import avaliar_parametros_sumare, formatar_secao_ia
 from integracoes.leilao.sumare_leiloes import varredura_sumare
 
 logger = logging.getLogger("agente_monitor_sumare_leiloes")
@@ -71,7 +73,12 @@ def _montar_linha_lote(item: dict[str, Any]) -> list[str]:
     return linhas
 
 
-def _montar_alerta(novos: list[dict[str, Any]], mudancas: list[dict[str, Any]], resumo: dict[str, Any]) -> str:
+def _montar_alerta(
+    novos: list[dict[str, Any]],
+    mudancas: list[dict[str, Any]],
+    resumo: dict[str, Any],
+    ia: dict[str, Any] | None = None,
+) -> str:
     linhas = [
         "🏛️ *Sumaré Leilões — PREFEITURA/DETRAN*",
         "",
@@ -107,6 +114,10 @@ def _montar_alerta(novos: list[dict[str, Any]], mudancas: list[dict[str, Any]], 
                 linhas.append("")
         else:
             linhas.append("_Nenhum veículo com documento acima do lance mínimo nesta rodada._")
+
+    secao_ia = formatar_secao_ia(ia)
+    if secao_ia:
+        linhas.append(secao_ia)
 
     return "\n".join(linhas).strip()
 
@@ -159,6 +170,17 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         escrever_json_atomico(HISTORY_PATH, historico)
 
         lance_min = float(config.get("lance_minimo_brl") or SUMARE_LEILOES_LANCE_MIN_BRL)
+
+        ia_parametros = None
+        if LEILAO_IA_AVALIAR_PARAMETROS:
+            ia_parametros = avaliar_parametros_sumare(
+                config=config,
+                lotes=lotes,
+                novos=novos,
+                mudancas=mudancas,
+                leiloes_encontrados=int(resultado.get("leiloes_encontrados") or 0),
+            )
+
         snapshot = {
             "timestamp": agora,
             "leiloes_encontrados": resultado.get("leiloes_encontrados"),
@@ -167,6 +189,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "novos": len(novos),
             "mudancas_lance": len(mudancas),
             "lotes": lotes[:50],
+            "avaliacao_ia_parametros": ia_parametros,
         }
         escrever_json_atomico(SNAPSHOT_PATH, snapshot)
 
@@ -183,7 +206,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 "lance_minimo_brl": lance_min,
                 "lotes_destaque": sorted(lotes, key=lambda x: float(x.get("lance_brl") or 0), reverse=True)[:8],
             }
-            msg = _montar_alerta(novos, mudancas, resumo)
+            msg = _montar_alerta(novos, mudancas, resumo, ia_parametros)
             alerta_enviado = bool(
                 alertar_gestor(
                     msg,
@@ -200,6 +223,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     "lance_minimo_brl": lance_min,
                     "lotes_destaque": sorted(lotes, key=lambda x: float(x.get("lance_brl") or 0), reverse=True)[:8],
                 },
+                ia_parametros,
             )
             alerta_enviado = bool(
                 alertar_gestor(
@@ -224,6 +248,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "novos": novos,
             "mudancas_lance": mudancas,
             "alerta_enviado": alerta_enviado,
+            "avaliacao_ia_parametros": ia_parametros,
             "lotes": lotes,
         }
     except Exception as exc:

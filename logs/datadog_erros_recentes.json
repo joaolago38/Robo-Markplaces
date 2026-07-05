@@ -1,6 +1,50 @@
 {
   "erros": [
     {
+      "fingerprint": "c5815e54cd35b0e512eb",
+      "primeira_vez": "2026-07-05T21:32:38.531132+00:00",
+      "ultima_vez": "2026-07-05T21:32:38.531132+00:00",
+      "logger": "claude",
+      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_alibaba_margem): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "status": "error",
+      "error_kind": "HTTPError",
+      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "4eeb2777e2f0df7a6442",
+      "primeira_vez": "2026-07-05T21:32:37.857324+00:00",
+      "ultima_vez": "2026-07-05T21:32:38.183463+00:00",
+      "logger": "claude",
+      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_leilao): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "status": "error",
+      "error_kind": "HTTPError",
+      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "dbc45fbf50f9a4113c56",
+      "primeira_vez": "2026-07-05T21:32:37.892274+00:00",
+      "ultima_vez": "2026-07-05T21:32:38.145361+00:00",
+      "logger": "claude",
+      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_alibaba): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "status": "error",
+      "error_kind": "HTTPError",
+      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "c5b72b54a08a65a56f1b",
+      "primeira_vez": "2026-07-05T21:32:36.784114+00:00",
+      "ultima_vez": "2026-07-05T21:32:36.784114+00:00",
+      "logger": "agente_leilao_veiculo",
+      "mensagem": "Agente leilão veículos erro: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
       "fingerprint": "314ab72b621d308b8ebc",
       "primeira_vez": "2026-07-05T20:44:56.181398+00:00",
       "ultima_vez": "2026-07-05T21:19:39.487455+00:00",
@@ -1398,5 +1442,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-05T21:19:39.487455+00:00"
+  "atualizado_em": "2026-07-05T21:32:38.531132+00:00"
 }
