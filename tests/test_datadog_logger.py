@@ -102,6 +102,72 @@ class TestDatadogLogHandler(unittest.TestCase):
         self.assertIn("marketplace:geral", payload[0]["ddtags"])
         self.assertIn("componente:outros", payload[0]["ddtags"])
 
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    @patch("core.datadog_logger.obter_request_id", return_value="req-abc123")
+    def test_emit_inclui_request_id(self, mock_rid, mock_post, *_):
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.emit(_make_record(msg="com correlation id"))
+
+        payload = json.loads(mock_post.call_args.kwargs["data"])
+        self.assertIn("request_id:req-abc123", payload[0]["ddtags"])
+        self.assertEqual(payload[0]["request_id"], "req-abc123")
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    def test_emit_erro_com_extra_e_exc_info(self, mock_post, *_):
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        try:
+            raise ValueError("falha simulada")
+        except ValueError:
+            record = logging.LogRecord(
+                name="bling",
+                level=logging.ERROR,
+                pathname=__file__,
+                lineno=1,
+                msg="erro grave",
+                args=(),
+                exc_info=sys.exc_info(),
+            )
+        record.error_kind = "ValueError"
+        record.error_message = "falha simulada"
+        handler.emit(record)
+
+        payload = json.loads(mock_post.call_args.kwargs["data"])
+        self.assertEqual(payload[0]["status"], "error")
+        self.assertEqual(payload[0]["error"]["kind"], "ValueError")
+        self.assertEqual(payload[0]["error"]["message"], "falha simulada")
+        self.assertIn("ValueError: falha simulada", payload[0]["error"]["stack"])
+
+
+class TestLocalErrorBufferHandler(unittest.TestCase):
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local")
+    def test_ignora_nivel_abaixo_de_error(self, mock_registrar):
+        handler = LocalErrorBufferHandler()
+        handler.emit(_make_record(msg="info apenas"))
+        mock_registrar.assert_not_called()
+
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local", side_effect=RuntimeError("buffer off"))
+    def test_espelhar_erro_local_nao_propaga_excecao(self, *_):
+        handler = LocalErrorBufferHandler()
+        record = _make_record(msg="falha")
+        record.levelno = logging.ERROR
+        record.levelname = "ERROR"
+        handler.emit(record)
+
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local", side_effect=RuntimeError("buffer off"))
+    def test_emit_excecao_no_handler_nao_propaga(self, *_):
+        handler = LocalErrorBufferHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        record = _make_record(msg="falha")
+        record.levelno = logging.ERROR
+        record.levelname = "ERROR"
+        handler.emit(record)
+
 
 class TestCoberturaDoMapeamento(unittest.TestCase):
     """Teste-guarda: garante que todo `logging.getLogger("nome")` usado no
