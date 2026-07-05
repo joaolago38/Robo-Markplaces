@@ -134,6 +134,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "monitor_anita",
+        "Monitor esmaltes Anita",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_anita:executar",
+        {"enviar_alerta": True},
+        notas="Cores/kits vs preferência + ranking marcas + margem",
+    ),
+    AgenteRegistrado(
         "descoberta_produtos",
         "Descoberta produtos marketplace",
         "monitor",
