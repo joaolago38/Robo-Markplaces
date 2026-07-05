@@ -10,7 +10,6 @@ import re
 import time
 import unicodedata
 from typing import Any
-from urllib.parse import urljoin
 
 import requests
 

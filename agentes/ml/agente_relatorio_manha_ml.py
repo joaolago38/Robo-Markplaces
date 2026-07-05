@@ -248,7 +248,7 @@ def _montar_relatorio(
 
     agora = datetime.now(timezone(timedelta(hours=-3)))
     linhas = [
-        f"☀️ *Relatório manhã — Mercado Livre*",
+        "☀️ *Relatório manhã — Mercado Livre*",
         f"_{agora.strftime('%d/%m/%Y %H:%M')}_",
         "",
         "_Lucro = preço − taxa ML − custo | respeita margem mínima por fase_",

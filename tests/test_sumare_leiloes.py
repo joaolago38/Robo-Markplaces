@@ -90,7 +90,7 @@ class SumareLeiloesTests(unittest.TestCase):
         with patch.object(sl, "listar_leiloes_home", return_value=[leilao]):
             with patch.object(sl, "buscar_leiloes_detran_ddg", return_value=[]):
                 with patch.object(sl, "coletar_lotes_leilao", return_value=[lote]):
-                    with patch.object(sl, "enriquecer_lance_lote", side_effect=lambda l, s: l):
+                    with patch.object(sl, "enriquecer_lance_lote", side_effect=lambda lote, _sess: lote):
                         out = sl.varredura_sumare(
                             {"comitentes": ["prefeitura"], "lance_minimo_brl": 2000},
                             pausa_entre_leiloes_seg=0,
