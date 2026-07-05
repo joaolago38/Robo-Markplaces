@@ -1,0 +1,46 @@
+[
+  {
+    "id": "kits-esmalte-manicure-ml",
+    "ativo": true,
+    "nome": "Kits esmalte manicure",
+    "categoria": "esmaltes e nail art",
+    "marketplaces": ["mercadolivre"],
+    "termo_busca": "kit esmalte impala manicure profissional",
+    "termo_alibaba_en": "nail polish kit wholesale professional",
+    "termos_busca": [
+      "kit 3 esmaltes impala",
+      "esmalte gel manicure atacado",
+      "kit presente esmalte feminino"
+    ],
+    "publico_alvo_hint": "manicures profissionais e consumidoras que compram kits presente",
+    "preco_alvo_min": 35,
+    "preco_alvo_max": 80,
+    "alibaba_preco_max_usd": 8,
+    "alibaba_moq_max": 500,
+    "limite_resultados": 12
+  },
+  {
+    "id": "esmalte-premium-shopee",
+    "ativo": true,
+    "nome": "Esmaltes premium Shopee",
+    "categoria": "esmaltes",
+    "marketplaces": ["shopee"],
+    "termo_busca": "esmalte impala kit 6 cores",
+    "publico_alvo_hint": "compradoras price-sensitive, kits econômicos",
+    "preco_alvo_min": 25,
+    "preco_alvo_max": 55,
+    "limite_resultados": 10
+  },
+  {
+    "id": "nail-art-amazon",
+    "ativo": false,
+    "nome": "Nail art Amazon BR",
+    "categoria": "nail art",
+    "marketplaces": ["amazon"],
+    "termo_busca": "nail polish kit professional",
+    "publico_alvo_hint": "consumidoras que buscam marcas importadas ou kits completos",
+    "preco_alvo_min": 40,
+    "preco_alvo_max": 120,
+    "limite_resultados": 10
+  }
+]

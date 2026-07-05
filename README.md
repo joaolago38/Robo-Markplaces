@@ -554,7 +554,52 @@ Agente que roda **uma vez após cada push na `main` com CI verde**, executando *
 | `ads_gatilho_ml.yml` | `0 11 * * *` | 10:00 diário |
 | `relatorio_financeiro.yml` | `0 9 * * 1` | Segunda 08h |
 | `otimizar_listing.yml` | `0 9 * * 2` | Terça 08h |
+| `descoberta_produtos.yml` | `0 11 * * 3` | Quarta 08h |
 | `push_main_rotinas.yml` | após CI na `main` | Extra por deploy |
+
+## Descoberta de produtos por marketplace
+
+Agente que analisa cada marketplace ativo (`spec/spec.yaml`) e identifica **público-alvo** + **oportunidades de produto** com base em busca real (ML) e inferência via Claude.
+
+- Catálogo: `catalogo/descoberta_nichos.json` — nichos, termos de busca e `marketplaces` alvo
+- Agente: `python -m agentes.descoberta.agente_descoberta_produtos`
+- Workflow: `.github/workflows/descoberta_produtos.yml` (quarta-feira 08h BRT)
+- Orquestrador 30min: incluído como `descoberta_produtos` (somente leitura)
+- Histórico: `logs/descoberta_produtos_history.json`
+- **Snapshot da última rodada:** `logs/descoberta_produtos_ultima_rodada.json` (painel completo para decisão)
+- Alertas Telegram gestor:
+  - **Painel de decisão** (1×/dia) — marketplace + público + margem estimada + Alibaba
+  - **Nova análise** de marketplace
+  - **Novos fornecedores Alibaba** para importação
+
+**Cruzamento Alibaba:** para cada oportunidade identificada no marketplace, o agente busca fornecedores no Alibaba.com (preço USD, MOQ, distribuidor, URL) e estima margem de importação vs preço médio do mercado.
+
+**Por marketplace hoje:**
+
+| Marketplace | Coleta | Análise |
+|-------------|--------|---------|
+| Mercado Livre | Busca pública por termo (preços, vendas, títulos) | Claude + fallback estatístico |
+| Shopee / Magalu / Amazon | Saúde da conta + hints do catálogo | Claude infere público típico da plataforma |
+
+Para ativar Shopee/Magalu/Amazon na descoberta: marque `ativo: true` em `spec/spec.yaml` e inclua o id em `marketplaces` do nicho.
+
+```json
+{
+  "id": "kits-esmalte-manicure-ml",
+  "ativo": true,
+  "nome": "Kits esmalte manicure",
+  "marketplaces": ["mercadolivre"],
+  "termo_busca": "kit esmalte impala manicure profissional",
+  "termo_alibaba_en": "nail polish kit wholesale professional",
+  "publico_alvo_hint": "manicures profissionais",
+  "preco_alvo_min": 35,
+  "preco_alvo_max": 80,
+  "alibaba_preco_max_usd": 8,
+  "alibaba_moq_max": 500
+}
+```
+
+Variáveis: `DESCOBERTA_NICHOS_CATALOGO`, `DESCOBERTA_BUSCAR_ALIBABA` (1), `DESCOBERTA_ALIBABA_PRECO_MAX_USD` (15), `DESCOBERTA_ALIBABA_MOQ_MAX` (1000), `DESCOBERTA_CAMBIO_USD_BRL` (5.5), `DESCOBERTA_ALERTA_PAINEL_COOLDOWN_SEG` (86400), `ANTHROPIC_API_KEY` (recomendado).
 
 ## Monitor Alibaba — oportunidades de importação (2h)
 
