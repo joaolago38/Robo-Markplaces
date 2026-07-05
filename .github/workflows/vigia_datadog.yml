@@ -50,6 +50,8 @@ jobs:
             logs/operacao_24h_ultima.json
             logs/conectividade_ultima.json
             logs/renovacao_tokens_ultima.json
+            logs/relatorio_manha_ml_ultima.json
+            logs/esmaltes_mercado_history.json
           key: vigia-datadog-${{ github.run_id }}
           restore-keys: |
             vigia-datadog-
