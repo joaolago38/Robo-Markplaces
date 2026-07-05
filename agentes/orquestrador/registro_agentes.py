@@ -59,6 +59,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"dry_run": True},
     ),
     AgenteRegistrado(
+        "inteligencia_precos",
+        "Inteligência de preços",
+        "operacao",
+        "agentes.precificacao.agente_inteligencia_precos:executar",
+        {"enviar_alerta": True},
+        notas="Comportamento de compra + sugestão de preço por marketplace",
+    ),
+    AgenteRegistrado(
         "repricing_impala",
         "Repricing Impala",
         "operacao",
