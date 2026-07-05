@@ -6,19 +6,110 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import random
 import re
 import time
 import unicodedata
 from typing import Any
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
+from core.config import (
+    SUMARE_LEILOES_PAUSA_PAGINAS_SEG,
+    SUMARE_LEILOES_RETRY_MAX,
+    SUMARE_LEILOES_TIMEOUT_SEG,
+)
 from core.ddg_lite import buscar as ddg_buscar
 
 logger = logging.getLogger("sumare_leiloes")
 
 BASE_URL = "https://www.sumareleiloes.com.br"
-_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; RoboMarkplaces/1.0)"}
+_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Connection": "keep-alive",
+}
+
+
+def _criar_sessao() -> requests.Session:
+    """Sessão com retry urllib3 — reduz falhas transitórias HTTPSConnectionPool."""
+    retry = Retry(
+        total=SUMARE_LEILOES_RETRY_MAX,
+        connect=SUMARE_LEILOES_RETRY_MAX,
+        read=SUMARE_LEILOES_RETRY_MAX,
+        status=2,
+        backoff_factor=1.0,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset({"GET", "POST"}),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry, pool_maxsize=4)
+    sess = requests.Session()
+    sess.mount("https://", adapter)
+    sess.mount("http://", adapter)
+    sess.headers.update(_HEADERS)
+    return sess
+
+
+def _request_sumare(
+    sess: requests.Session,
+    method: str,
+    url: str,
+    *,
+    contexto: str,
+    timeout: float | None = None,
+    **kwargs: Any,
+) -> requests.Response | None:
+    """
+    Request com backoff manual extra (além do adapter) para timeouts de rede.
+    Falhas transitórias → warning (não ERROR no Datadog).
+    """
+    timeout = timeout if timeout is not None else SUMARE_LEILOES_TIMEOUT_SEG
+    ultimo_erro: Exception | None = None
+    for tentativa in range(1, SUMARE_LEILOES_RETRY_MAX + 1):
+        try:
+            resp = sess.request(method.upper(), url, timeout=timeout, **kwargs)
+            if resp.status_code == 429 and tentativa < SUMARE_LEILOES_RETRY_MAX:
+                espera = min(30.0, 2.0 ** tentativa)
+                logger.warning(
+                    "Sumaré %s HTTP 429 — aguardando %.0fs (tentativa %s/%s)",
+                    contexto,
+                    espera,
+                    tentativa,
+                    SUMARE_LEILOES_RETRY_MAX,
+                )
+                time.sleep(espera)
+                continue
+            return resp
+        except requests.RequestException as exc:
+            ultimo_erro = exc
+            if tentativa < SUMARE_LEILOES_RETRY_MAX:
+                espera = min(20.0, 1.5 * tentativa + random.uniform(0, 0.5))
+                logger.warning(
+                    "Sumaré %s rede (tentativa %s/%s): %s — retry em %.1fs",
+                    contexto,
+                    tentativa,
+                    SUMARE_LEILOES_RETRY_MAX,
+                    exc,
+                    espera,
+                )
+                time.sleep(espera)
+            else:
+                logger.warning(
+                    "Sumaré %s indisponível após %s tentativas: %s",
+                    contexto,
+                    SUMARE_LEILOES_RETRY_MAX,
+                    exc,
+                )
+    if ultimo_erro:
+        logger.debug("Sumaré %s falha final: %s", contexto, ultimo_erro)
+    return None
 
 _RE_AUCTION_BLOCK = re.compile(
     r'<div class="auction-item">(.*?)<a href="https://www\.sumareleiloes\.com\.br/leiloes/(\d+)" class="goToAuction"',
@@ -141,17 +232,14 @@ def _classificar_comitente(nome: str) -> str | None:
 
 def listar_leiloes_home(session: requests.Session | None = None) -> list[dict[str, Any]]:
     """Lista leilões visíveis na home do site."""
-    sess = session or requests.Session()
-    sess.headers.update(_HEADERS)
-    try:
-        r = sess.get(f"{BASE_URL}/", timeout=30)
-        if r.status_code != 200:
-            logger.warning("Sumaré home HTTP %s", r.status_code)
-            return []
-        html = r.text
-    except Exception as exc:
-        logger.error("Sumaré home erro: %s", exc)
+    sess = session or _criar_sessao()
+    r = _request_sumare(sess, "GET", f"{BASE_URL}/", contexto="home")
+    if r is None:
         return []
+    if r.status_code != 200:
+        logger.warning("Sumaré home HTTP %s", r.status_code)
+        return []
+    html = r.text
 
     leiloes: list[dict[str, Any]] = []
     vistos: set[str] = set()
@@ -336,13 +424,15 @@ def _buscar_pagina_lotes_ajax(
         "listaTipo": "cards",
         "pagina": pagina,
     }
-    r = sess.post(
+    r = _request_sumare(
+        sess,
+        "POST",
         f"{BASE_URL}/ajaxListaLotes",
+        contexto=f"ajax leilão {leilao_id} p{pagina}",
         data=data,
-        timeout=30,
-        headers={**_HEADERS, "X-Requested-With": "XMLHttpRequest"},
+        headers={**_HEADERS, "X-Requested-With": "XMLHttpRequest", "Referer": f"{BASE_URL}/leiloes/{leilao_id}"},
     )
-    return r.text if r.status_code == 200 else ""
+    return r.text if r is not None and r.status_code == 200 else ""
 
 
 def coletar_lotes_leilao(
@@ -350,24 +440,27 @@ def coletar_lotes_leilao(
     session: requests.Session | None = None,
     *,
     pausa_paginas_seg: float = 0.5,
-) -> list[dict[str, Any]]:
-    """Coleta todos os lotes de um leilão (HTML + paginação ajax)."""
-    sess = session or requests.Session()
-    sess.headers.update(_HEADERS)
+) -> list[dict[str, Any]] | None:
+    """Coleta todos os lotes de um leilão (HTML + paginação ajax). None = falha de rede/HTTP."""
+    sess = session or _criar_sessao()
     leilao_id = str(leilao.get("leilao_id") or "")
     url = str(leilao.get("url") or f"{BASE_URL}/leiloes/{leilao_id}")
     if not leilao_id:
-        return []
+        return None
 
-    try:
-        r = sess.get(url, timeout=35)
-        if r.status_code != 200:
-            logger.warning("Sumaré leilão %s HTTP %s", leilao_id, r.status_code)
-            return []
-        html = r.text
-    except Exception as exc:
-        logger.error("Sumaré leilão %s erro: %s", leilao_id, exc)
-        return []
+    r = _request_sumare(
+        sess,
+        "GET",
+        url,
+        contexto=f"leilão {leilao_id}",
+        headers={**_HEADERS, "Referer": f"{BASE_URL}/"},
+    )
+    if r is None:
+        return None
+    if r.status_code != 200:
+        logger.warning("Sumaré leilão %s HTTP %s", leilao_id, r.status_code)
+        return None
+    html = r.text
 
     total_m = _RE_VARS.search(html)
     total = int(total_m.group(1)) if total_m else 0
@@ -400,16 +493,11 @@ def enriquecer_lance_lote(lote: dict[str, Any], session: requests.Session | None
     if not url:
         return lote
 
-    sess = session or requests.Session()
-    sess.headers.update(_HEADERS)
-    try:
-        r = sess.get(url, timeout=25)
-        if r.status_code != 200:
-            return lote
-        html = r.text
-    except Exception as exc:
-        logger.debug("Sumaré lote %s erro: %s", url, exc)
+    sess = session or _criar_sessao()
+    r = _request_sumare(sess, "GET", url, contexto=f"lote {lote.get('numero_lote') or url[-8:]}")
+    if r is None or r.status_code != 200:
         return lote
+    html = r.text
 
     lances: dict[str, float] = {}
     for tipo, valor_txt in _RE_LANCE_LINHA.findall(html):
@@ -440,8 +528,7 @@ def varredura_sumare(
     tipos = config.get("comitentes") or ["prefeitura", "detran"]
     lance_min = float(config.get("lance_minimo_brl") or 2000)
 
-    sess = requests.Session()
-    sess.headers.update(_HEADERS)
+    sess = _criar_sessao()
 
     leiloes = listar_leiloes_home(sess)
     leiloes.extend(buscar_leiloes_detran_ddg())
@@ -453,11 +540,29 @@ def varredura_sumare(
         por_id[str(leilao["leilao_id"])] = leilao
     leiloes_filtrados = list(por_id.values())
 
+    pausa_paginas = pausa_paginas_seg if pausa_paginas_seg > 0 else SUMARE_LEILOES_PAUSA_PAGINAS_SEG
+    falhas_consecutivas = 0
+    leiloes_ok = 0
+    leiloes_falha = 0
+
     todos_lotes: list[dict[str, Any]] = []
     for i, leilao in enumerate(leiloes_filtrados):
         if i > 0 and pausa_entre_leiloes_seg > 0:
-            time.sleep(pausa_entre_leiloes_seg)
-        brutos = coletar_lotes_leilao(leilao, sess, pausa_paginas_seg=pausa_paginas_seg)
+            time.sleep(pausa_entre_leiloes_seg + random.uniform(0, 0.4))
+        if falhas_consecutivas >= 5:
+            logger.warning(
+                "Sumaré: %s falhas consecutivas — pausando demais leilões desta rodada (%s restantes)",
+                falhas_consecutivas,
+                len(leiloes_filtrados) - i,
+            )
+            break
+        brutos = coletar_lotes_leilao(leilao, sess, pausa_paginas_seg=pausa_paginas)
+        if brutos is None:
+            leiloes_falha += 1
+            falhas_consecutivas += 1
+            continue
+        leiloes_ok += 1
+        falhas_consecutivas = 0
         for lote in brutos:
             if not eh_veiculo_com_documento(lote):
                 continue
@@ -473,8 +578,23 @@ def varredura_sumare(
             todos_lotes.append(lote)
 
     todos_lotes.sort(key=lambda x: float(x.get("lance_brl") or 0), reverse=True)
+    if leiloes_falha and leiloes_ok == 0:
+        logger.warning(
+            "Sumaré: nenhum leilão coletado (%s falhas em %s)",
+            leiloes_falha,
+            len(leiloes_filtrados),
+        )
+    elif leiloes_falha:
+        logger.info(
+            "Sumaré: coleta parcial — %s/%s leilões OK, %s falhas",
+            leiloes_ok,
+            len(leiloes_filtrados),
+            leiloes_falha,
+        )
     return {
         "leiloes_encontrados": len(leiloes_filtrados),
+        "leiloes_coletados_ok": leiloes_ok,
+        "leiloes_coleta_falha": leiloes_falha,
         "lotes_veiculo_documento": len(todos_lotes),
         "lotes": todos_lotes,
         "leiloes": leiloes_filtrados,

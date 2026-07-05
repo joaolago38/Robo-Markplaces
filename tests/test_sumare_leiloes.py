@@ -10,6 +10,37 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from integracoes.leilao import sumare_leiloes as sl
 
+
+def _fake_sess_com_request(get_fn=None, post_fn=None):
+    """Compatível com _request_sumare (sess.request) nos testes."""
+
+    class FakeSess:
+        headers = {}
+
+        def get(self, url, timeout=30):
+            if get_fn:
+                return get_fn(url, timeout)
+            raise AssertionError("get não mockado")
+
+        def post(self, url, data=None, timeout=30, headers=None):
+            if post_fn:
+                return post_fn(url, data=data, timeout=timeout, headers=headers)
+            raise AssertionError("post não mockado")
+
+        def request(self, method, url, timeout=None, **kwargs):
+            if method.upper() == "GET":
+                return self.get(url, timeout=timeout or 30)
+            if method.upper() == "POST":
+                return self.post(
+                    url,
+                    data=kwargs.get("data"),
+                    timeout=timeout or 30,
+                    headers=kwargs.get("headers"),
+                )
+            raise AssertionError(f"método não mockado: {method}")
+
+    return FakeSess()
+
 _LOTE_DOC = """
 <div class="lot-item">
     <div class="card-title card-title-2lines">FIAT/UNO MILLE ECONOMY, 11/12</div>
@@ -74,13 +105,7 @@ class SumareLeiloesTests(unittest.TestCase):
             status_code = 200
             text = html
 
-        class FakeSess:
-            headers = {}
-
-            def get(self, url, timeout=25):
-                return FakeResp()
-
-        out = sl.enriquecer_lance_lote(lote, FakeSess())
+        out = sl.enriquecer_lance_lote(lote, _fake_sess_com_request(get_fn=lambda url, timeout: FakeResp()))
         self.assertEqual(out["lance_brl"], 6200.0)
         self.assertTrue(out["tem_documento"])
 
@@ -97,7 +122,14 @@ class SumareLeiloesTests(unittest.TestCase):
                             enriquecer_lances=False,
                         )
         self.assertEqual(out["leiloes_encontrados"], 1)
+        self.assertEqual(out["leiloes_coletados_ok"], 1)
         self.assertEqual(out["lotes_veiculo_documento"], 1)
+
+    def test_coletar_lotes_leilao_falha_rede_retorna_none(self):
+        leilao = {"leilao_id": "3723", "url": "https://www.sumareleiloes.com.br/leiloes/3723"}
+        with patch.object(sl, "_request_sumare", return_value=None):
+            out = sl.coletar_lotes_leilao(leilao, sl._criar_sessao(), pausa_paginas_seg=0)
+        self.assertIsNone(out)
 
     def test_listar_leiloes_home_mock(self):
         html = """
@@ -112,13 +144,7 @@ class SumareLeiloesTests(unittest.TestCase):
             status_code = 200
             text = html
 
-        class FakeSess:
-            headers = {}
-
-            def get(self, url, timeout=30):
-                return FakeResp()
-
-        leiloes = sl.listar_leiloes_home(FakeSess())
+        leiloes = sl.listar_leiloes_home(_fake_sess_com_request(get_fn=lambda url, timeout: FakeResp()))
         self.assertEqual(len(leiloes), 1)
         self.assertEqual(leiloes[0]["tipo_comitente"], "prefeitura")
 
@@ -146,16 +172,14 @@ class SumareLeiloesTests(unittest.TestCase):
                 self.text = text
                 self.status_code = status_code
 
-        class FakeSess:
-            headers = {}
-
-            def get(self, url, timeout=35):
-                return FakeResp(html_pag1)
-
-            def post(self, url, data=None, timeout=30, headers=None):
-                return FakeResp(html_pag2)
-
-        lotes = sl.coletar_lotes_leilao(leilao, FakeSess(), pausa_paginas_seg=0)
+        lotes = sl.coletar_lotes_leilao(
+            leilao,
+            _fake_sess_com_request(
+                get_fn=lambda url, timeout: FakeResp(html_pag1),
+                post_fn=lambda url, data=None, timeout=30, headers=None: FakeResp(html_pag2),
+            ),
+            pausa_paginas_seg=0,
+        )
         self.assertEqual(len(lotes), 2)
 
     def test_eh_veiculo_blindado_rejeitado(self):
