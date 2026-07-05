@@ -31,6 +31,7 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "push_deploy.yml",
     "branch_cleanup.yml",
     "relatorio_manha_ml.yml",
+    "vigia_datadog.yml",
 )
 
 _GROUP_ESPERADO = "robo-markplaces-token-renewal"

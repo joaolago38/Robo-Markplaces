@@ -204,8 +204,16 @@ FIPE_PAUSA_ENTRE_CHAMADAS_SEG = float(os.getenv("FIPE_PAUSA_ENTRE_CHAMADAS_SEG",
 ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))
 ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "1.5"))
 ORQUESTRADOR_EXCLUIR = {
-    x.strip() for x in os.getenv("ORQUESTRADOR_EXCLUIR", "").split(",") if x.strip()
+    x.strip() for x in os.getenv("ORQUESTRADOR_EXCLUIR", "vigia_datadog").split(",") if x.strip()
 }
+
+# Vigia Datadog (erros + inatividade 2h)
+DATADOG_VIGIA_CATALOGO_FONTES = os.getenv(
+    "DATADOG_VIGIA_CATALOGO_FONTES", "catalogo/datadog_vigia_fontes.json"
+)
+DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE", "2"))
+DATADOG_VIGIA_LIMITE_HORAS_ERRO = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_ERRO", "2"))
+DATADOG_VIGIA_ALERTA_COOLDOWN_SEG = int(os.getenv("DATADOG_VIGIA_ALERTA_COOLDOWN_SEG", "3600"))
 
 # Sync após push na main (não substitui crons dos workflows)
 PUSH_MAIN_COOLDOWN_RESUMO_SEG = int(os.getenv("PUSH_MAIN_COOLDOWN_RESUMO_SEG", "300"))
@@ -384,6 +392,7 @@ ROBO_API_KEY = os.getenv("ROBO_API_KEY", "").strip()
 
 # Datadog Log Management (opcional — HTTP Intake, sem Agent)
 DD_API_KEY = os.getenv("DD_API_KEY", "").strip()
+DD_APPLICATION_KEY = os.getenv("DD_APPLICATION_KEY", "").strip()
 DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
 DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
 # Ambiente exibido na tag `env:` no Datadog (production/staging/dev). Antes era fixo em "production".

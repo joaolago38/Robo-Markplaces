@@ -179,6 +179,22 @@ def executar_ciclo(
 
     _enviar_metricas_ciclo(ciclo, prefixo=prefixo_metrica)
 
+    try:
+        from core.atomic_io import escrever_json_atomico
+        from core.config import ROOT
+
+        escrever_json_atomico(
+            ROOT / "logs" / "orquestrador_ultimo_ciclo.json",
+            {
+                "timestamp": ciclo["timestamp"],
+                "ok": ok_count == len(resultados),
+                "falhas": falhas,
+                "total": len(resultados),
+            },
+        )
+    except Exception as exc:
+        logger.warning("Orquestrador: falha ao gravar heartbeat: %s", exc)
+
     if enviar_resumo_telegram and resultados:
         msg = _montar_resumo_telegram(ciclo, titulo=titulo_resumo)
         ciclo["resumo_telegram_enviado"] = bool(

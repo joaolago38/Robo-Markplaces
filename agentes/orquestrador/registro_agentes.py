@@ -30,6 +30,14 @@ def _resolver_fn(registro: AgenteRegistrado) -> Callable[..., Any]:
 # - relatorio / relatorio_financeiro / otimizador_listing: rotinas diárias/semanais
 _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
     AgenteRegistrado("conectividade", "Conectividade marketplaces", "infra", "agentes.conectividade_marketplaces:executar"),
+    AgenteRegistrado(
+        "vigia_datadog",
+        "Vigia Datadog",
+        "infra",
+        "agentes.infra.agente_vigia_datadog:executar",
+        {"enviar_alerta": True},
+        notas="Erros DD + inatividade 2h — alerta crítico se não verificado",
+    ),
     AgenteRegistrado("vendas_whatsapp", "Vendas WhatsApp", "vendas", "agentes.vendas_notificador:executar"),
     AgenteRegistrado("chat_ml", "Chat Mercado Livre", "chat", "agentes.ml.agente_ml:executar"),
     AgenteRegistrado("chat_shopee", "Chat Shopee", "chat", "agentes.shopee.agente_shopee:executar"),

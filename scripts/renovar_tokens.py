@@ -344,6 +344,21 @@ def main() -> int:
 
     print("\n" + "=" * 60)
     print(f"Concluido — exit code: {exit_code}")
+    try:
+        from datetime import datetime, timezone
+
+        from core.atomic_io import escrever_json_atomico
+        from core.config import ROOT
+
+        escrever_json_atomico(
+            ROOT / "logs" / "renovacao_tokens_ultima.json",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": exit_code == 0,
+            },
+        )
+    except Exception:
+        pass
     return exit_code
 
 
