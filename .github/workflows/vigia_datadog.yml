@@ -61,6 +61,23 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Alerta via Telegram; não falha o job só por detectar problemas (DD_APPLICATION_KEY opcional).
+          DATADOG_VIGIA_FALHAR_PROCESSO: "0"
+      - name: Salvar cache vigia
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            logs/datadog_erros_recentes.json
+            logs/datadog_vigia_history.json
+            logs/orquestrador_ultimo_ciclo.json
+            logs/operacao_24h_ultima.json
+            logs/conectividade_ultima.json
+            logs/renovacao_tokens_ultima.json
+            logs/relatorio_manha_ml_ultima.json
+            logs/esmaltes_mercado_history.json
+            logs/alertas_cooldown.json
+          key: vigia-datadog-${{ github.run_id }}
       - name: Salvar snapshot vigia
         uses: actions/upload-artifact@v4
         with:

@@ -262,6 +262,13 @@ DATADOG_VIGIA_CATALOGO_FILTROS = os.getenv(
 DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_INATIVIDADE", "2"))
 DATADOG_VIGIA_LIMITE_HORAS_ERRO = float(os.getenv("DATADOG_VIGIA_LIMITE_HORAS_ERRO", "2"))
 DATADOG_VIGIA_ALERTA_COOLDOWN_SEG = int(os.getenv("DATADOG_VIGIA_ALERTA_COOLDOWN_SEG", "3600"))
+# Quando 1, o processo termina com exit code 1 se houver inatividade/erros abertos
+# (além do alerta Telegram). Default 0: falha só se o agente crashar.
+DATADOG_VIGIA_FALHAR_PROCESSO = os.getenv("DATADOG_VIGIA_FALHAR_PROCESSO", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 # Sync após push na main (não substitui crons dos workflows)
 PUSH_MAIN_COOLDOWN_RESUMO_SEG = int(os.getenv("PUSH_MAIN_COOLDOWN_RESUMO_SEG", "300"))
