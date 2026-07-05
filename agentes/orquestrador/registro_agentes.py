@@ -59,6 +59,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"dry_run": True},
     ),
     AgenteRegistrado(
+        "inteligencia_precos",
+        "Inteligência de preços",
+        "operacao",
+        "agentes.precificacao.agente_inteligencia_precos:executar",
+        {"enviar_alerta": True},
+        notas="Comportamento de compra + sugestão de preço por marketplace",
+    ),
+    AgenteRegistrado(
         "repricing_impala",
         "Repricing Impala",
         "operacao",
@@ -100,6 +108,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.ml.agente_monitor_concorrentes:executar",
         {"enviar_alerta": True},
+    ),
+    AgenteRegistrado(
+        "descoberta_produtos",
+        "Descoberta produtos marketplace",
+        "monitor",
+        "agentes.descoberta.agente_descoberta_produtos:executar",
+        {"enviar_alerta": True},
+        notas="Público-alvo e oportunidades por marketplace (Claude + busca ML)",
     ),
     AgenteRegistrado("ads_gatilho", "Gatilho Ads ML", "monitor", "agentes.ml.agente_ads_gatilho:executar"),
     AgenteRegistrado(
