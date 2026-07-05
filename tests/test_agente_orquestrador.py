@@ -70,6 +70,10 @@ class TestOrquestrador(unittest.TestCase):
 
     def test_extrair_resumo(self):
         self.assertIn("2 novos", orq._extrair_resumo({"com_novos": 2}))
+        self.assertIn(
+            "Impala líder",
+            orq._extrair_resumo({"resumo_orquestrador": "7 produtos, Impala líder em 4/7 termos"}),
+        )
 
     @patch.object(orq, "alertar_gestor", return_value=True)
     @patch.object(orq, "executar_registro", return_value={"ok": True})

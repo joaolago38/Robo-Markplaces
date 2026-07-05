@@ -34,6 +34,8 @@ def _interpretar_ok(raw: Any) -> bool:
 
 def _extrair_resumo(raw: Any) -> str:
     if isinstance(raw, dict):
+        if raw.get("resumo_orquestrador"):
+            return str(raw["resumo_orquestrador"])[:120]
         partes: list[str] = []
         for chave, rotulo in (
             ("com_novos", "novos"),

@@ -32,6 +32,7 @@ from integracoes.ml import ml_client
 logger = logging.getLogger("agente_monitor_anita")
 
 HISTORY_PATH = ROOT / "logs" / "anita_esmaltes_history.json"
+SNAPSHOT_PATH = ROOT / "logs" / "anita_esmaltes_ultima.json"
 
 
 def _carregar_produtos() -> list[dict[str, Any]]:
@@ -44,6 +45,70 @@ def _carregar_produtos() -> list[dict[str, Any]]:
     except Exception as exc:
         logger.error("Erro ao carregar catálogo Anita: %s", exc)
         return []
+
+
+def consolidar_impala(resultados: list[dict[str, Any]]) -> dict[str, Any]:
+    """Consolida KPIs Impala entre todos os termos monitorados."""
+    ok = [r for r in resultados if r.get("ok")]
+    if not ok:
+        return {}
+
+    vendas_impala = sum(int(r.get("unidades_vendidas_impala") or 0) for r in ok)
+    vendas_anita = sum(int(r.get("unidades_vendidas_anita") or 0) for r in ok)
+    total_marcas = vendas_impala + vendas_anita
+    lider_impala = sum(1 for r in ok if r.get("impala_lider_vendas"))
+    termos_com_impala = sum(1 for r in ok if int(r.get("total_impala") or 0) > 0)
+
+    menores_impala = [float(r["menor_preco_impala"]) for r in ok if r.get("menor_preco_impala")]
+    shares = [float(r["share_impala_pct"]) for r in ok if r.get("share_impala_pct") is not None]
+
+    return {
+        "termos_monitorados": len(ok),
+        "termos_com_impala": termos_com_impala,
+        "termos_impala_lider": lider_impala,
+        "unidades_vendidas_impala": vendas_impala,
+        "unidades_vendidas_anita": vendas_anita,
+        "share_impala_global_pct": round(100.0 * vendas_impala / total_marcas, 1) if total_marcas else None,
+        "share_impala_medio_pct": round(sum(shares) / len(shares), 1) if shares else None,
+        "menor_preco_impala": min(menores_impala) if menores_impala else None,
+        "margem_media_pct": round(
+            sum(float((r.get("margem_minha") or {}).get("margem_operacional_pct") or 0) for r in ok) / len(ok),
+            1,
+        )
+        if ok
+        else None,
+    }
+
+
+def montar_resumo_orquestrador_impala(
+    total_produtos: int,
+    consolidado: dict[str, Any],
+    *,
+    alerta_enviado: bool,
+) -> str:
+    partes = [f"{total_produtos} produtos"]
+    if not consolidado:
+        partes.append("sem dados Impala")
+    else:
+        lider = int(consolidado.get("termos_impala_lider") or 0)
+        termos = int(consolidado.get("termos_monitorados") or 0)
+        if termos:
+            partes.append(f"Impala líder em {lider}/{termos} termos")
+        vendas = int(consolidado.get("unidades_vendidas_impala") or 0)
+        if vendas:
+            partes.append(f"{vendas} vend. Impala")
+        share = consolidado.get("share_impala_global_pct")
+        if share is not None:
+            partes.append(f"share {share:.0f}%")
+        menor = consolidado.get("menor_preco_impala")
+        if menor is not None:
+            partes.append(f"menor Impala R$ {float(menor):.2f}")
+        margem = consolidado.get("margem_media_pct")
+        if margem is not None:
+            partes.append(f"margem média {margem:.0f}%")
+    if alerta_enviado:
+        partes.append("alerta enviado")
+    return ", ".join(partes)
 
 
 def _fmt_brl(valor: Any) -> str:
@@ -75,8 +140,21 @@ def _montar_resumo_produto(r: dict[str, Any]) -> list[str]:
 
     linhas.append(
         f"  Anúncios: {r.get('total_anuncios', 0)} | Anita: {r.get('total_anita', 0)} | "
-        f"Líder vendas: *{r.get('marca_mais_vendida', '?')}*"
+        f"Impala: {r.get('total_impala', 0)} | Líder: *{r.get('marca_mais_vendida', '?')}*"
     )
+    if int(r.get("unidades_vendidas_impala") or 0) > 0 or int(r.get("unidades_vendidas_anita") or 0) > 0:
+        share = r.get("share_impala_pct")
+        share_txt = f"{share:.0f}%" if share is not None else "n/d"
+        linhas.append(
+            f"  Vendas Impala: {r.get('unidades_vendidas_impala', 0)} | Anita: {r.get('unidades_vendidas_anita', 0)} "
+            f"| share Impala {share_txt}"
+        )
+    if r.get("menor_preco_impala"):
+        linhas.append(
+            f"  Menor Impala: {_fmt_brl(r['menor_preco_impala'])} "
+            f"({_fmt_pct(r.get('diff_preco_impala_vs_meu_pct'))} vs seu preço) | "
+            f"média {_fmt_brl(r.get('preco_medio_impala'))}"
+        )
     if r.get("menor_preco_anita"):
         diff = None
         if meu and r["menor_preco_anita"]:
@@ -119,8 +197,28 @@ def _montar_resumo_produto(r: dict[str, Any]) -> list[str]:
     return linhas
 
 
-def _montar_painel(resultados: list[dict[str, Any]]) -> str:
-    linhas = ["💅 *Anita — painel de anúncios (cores, kits, margem)*", ""]
+def _montar_painel(resultados: list[dict[str, Any]], consolidado_impala: dict[str, Any] | None = None) -> str:
+    linhas = ["💅 *Anita + Impala — painel de desempenho ML*", ""]
+    if consolidado_impala:
+        linhas.extend(
+            [
+                "*Desempenho Impala (consolidado)*",
+                f"  • Líder de vendas em *{consolidado_impala.get('termos_impala_lider', 0)}/"
+                f"{consolidado_impala.get('termos_monitorados', 0)}* termos",
+                f"  • Vendas Impala: *{consolidado_impala.get('unidades_vendidas_impala', 0)}* | "
+                f"Anita: {consolidado_impala.get('unidades_vendidas_anita', 0)}",
+            ]
+        )
+        if consolidado_impala.get("share_impala_global_pct") is not None:
+            linhas.append(
+                f"  • Share Impala (Impala+Anita): *{consolidado_impala['share_impala_global_pct']:.0f}%*"
+            )
+        if consolidado_impala.get("menor_preco_impala") is not None:
+            linhas.append(f"  • Menor preço Impala: {_fmt_brl(consolidado_impala['menor_preco_impala'])}")
+        if consolidado_impala.get("margem_media_pct") is not None:
+            linhas.append(f"  • Sua margem média: *{consolidado_impala['margem_media_pct']:.1f}%*")
+        linhas.append("")
+
     ranking_global: dict[str, int] = {}
     for r in resultados:
         for item in r.get("ranking_marcas") or []:
@@ -156,16 +254,25 @@ def _monitorar_produto(produto: dict[str, Any]) -> dict[str, Any]:
     pid = str(produto.get("id") or "")
     gauge("anita.total_anuncios", float(len(anuncios)), tags=[f"produto:{pid}"])
     gauge("anita.total_anita", float(analise.get("total_anita") or 0), tags=[f"produto:{pid}"])
+    gauge("anita.total_impala", float(analise.get("total_impala") or 0), tags=[f"produto:{pid}"])
+    gauge("anita.vendas_impala", float(analise.get("unidades_vendidas_impala") or 0), tags=[f"produto:{pid}"])
+    if analise.get("share_impala_pct") is not None:
+        gauge("anita.share_impala_pct", float(analise["share_impala_pct"]), tags=[f"produto:{pid}"])
     margem = analise.get("margem_minha") or {}
     if margem.get("margem_operacional_pct") is not None:
         gauge("anita.margem_pct", float(margem["margem_operacional_pct"]), tags=[f"produto:{pid}"])
 
     logger.info(
-        "Anita %s: %s anúncio(s), %s Anita, líder %s, margem %.1f%%",
+        "Anita %s: %s anúncio(s) | Anita %s | Impala %s (%s vend., share %s%%) | líder %s | "
+        "menor Impala %s | margem %.1f%%",
         produto.get("nome"),
         len(anuncios),
         analise.get("total_anita"),
+        analise.get("total_impala"),
+        analise.get("unidades_vendidas_impala"),
+        analise.get("share_impala_pct", "n/d"),
         analise.get("marca_mais_vendida"),
+        analise.get("menor_preco_impala"),
         float(margem.get("margem_operacional_pct") or 0),
     )
     return analise
@@ -188,12 +295,19 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 time.sleep(ANITA_PAUSA_ENTRE_BUSCAS_SEG)
             resultados.append(_monitorar_produto(produto))
 
+        consolidado_impala = consolidar_impala(resultados)
+
         historico = ler_json(HISTORY_PATH, default={})
         historico["ultima_varredura"] = agora
+        historico["impala"] = consolidado_impala
         historico["produtos"] = {
             str(r.get("id")): {
                 "marca_mais_vendida": r.get("marca_mais_vendida"),
                 "menor_preco_anita": r.get("menor_preco_anita"),
+                "menor_preco_impala": r.get("menor_preco_impala"),
+                "unidades_vendidas_impala": r.get("unidades_vendidas_impala"),
+                "share_impala_pct": r.get("share_impala_pct"),
+                "impala_lider_vendas": r.get("impala_lider_vendas"),
                 "margem_pct": (r.get("margem_minha") or {}).get("margem_operacional_pct"),
                 "divergencias_kit": r.get("divergencias_kit"),
                 "divergencias_cor": r.get("divergencias_cor"),
@@ -202,10 +316,18 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             if r.get("ok")
         }
         escrever_json_atomico(HISTORY_PATH, historico)
+        escrever_json_atomico(
+            SNAPSHOT_PATH,
+            {
+                "timestamp": agora,
+                "consolidado_impala": consolidado_impala,
+                "resultados": resultados,
+            },
+        )
 
         alerta_enviado = False
         if enviar_alerta and ANITA_ALERTA_RESUMO and resultados:
-            painel = _montar_painel(resultados)
+            painel = _montar_painel(resultados, consolidado_impala)
             alerta_enviado = bool(
                 alertar_gestor(
                     painel,
@@ -215,10 +337,18 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             )
 
         incrementar("anita.rodadas", tags=[f"produtos:{len(resultados)}"])
+        resumo_orq = montar_resumo_orquestrador_impala(
+            len(resultados),
+            consolidado_impala,
+            alerta_enviado=alerta_enviado,
+        )
+        logger.info("Impala consolidado: %s", resumo_orq)
         return {
             "ok": True,
             "total_produtos": len(resultados),
             "alerta_enviado": alerta_enviado,
+            "consolidado_impala": consolidado_impala,
+            "resumo_orquestrador": resumo_orq,
             "resultados": resultados,
         }
     except Exception as exc:
@@ -236,7 +366,11 @@ def main(argv: list[str] | None = None) -> int:
     if not out.get("ok"):
         logger.error("Falhou: %s", out.get("erro"))
         return 1
-    logger.info("Concluído: %s produto(s), alerta=%s", out.get("total_produtos"), out.get("alerta_enviado"))
+    logger.info(
+        "Concluído: %s | alerta=%s",
+        out.get("resumo_orquestrador") or f"{out.get('total_produtos')} produto(s)",
+        out.get("alerta_enviado"),
+    )
     return 0
 
 

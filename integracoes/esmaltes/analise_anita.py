@@ -181,6 +181,28 @@ def analisar_produto(
         a for a in analises if a.get("cores_faltando") and a.get("marca_detectada") == "Anita"
     ]
 
+    impala_anuncios = [a for a in analises if _normalizar(a.get("marca_detectada", "")) == "impala"]
+    unidades_impala = sum(int(a.get("quantidade_vendida") or 0) for a in impala_anuncios)
+    unidades_anita = sum(int(a.get("quantidade_vendida") or 0) for a in anita)
+    total_unidades_marcas = unidades_impala + unidades_anita
+    share_impala_pct = (
+        round(100.0 * unidades_impala / total_unidades_marcas, 1) if total_unidades_marcas > 0 else None
+    )
+    precos_impala = [float(a.get("preco") or 0) for a in impala_anuncios if float(a.get("preco") or 0) > 0]
+    menor_impala = min(precos_impala) if precos_impala else None
+    preco_medio_impala = round(sum(precos_impala) / len(precos_impala), 2) if precos_impala else None
+
+    posicao_impala = None
+    for i, item in enumerate(ranking, start=1):
+        if _normalizar(str(item.get("marca") or "")) == "impala":
+            posicao_impala = i
+            break
+
+    impala_lider = _normalizar(marca_lider) == "impala"
+    diff_preco_impala_vs_meu = None
+    if meu_preco > 0 and menor_impala:
+        diff_preco_impala_vs_meu = round((float(menor_impala) - meu_preco) / meu_preco * 100, 1)
+
     return {
         "id": produto.get("id"),
         "nome": produto.get("nome"),
@@ -190,6 +212,15 @@ def analisar_produto(
         "custo_total": custo,
         "total_anuncios": len(anuncios),
         "total_anita": len(anita),
+        "total_impala": len(impala_anuncios),
+        "unidades_vendidas_impala": unidades_impala,
+        "unidades_vendidas_anita": unidades_anita,
+        "share_impala_pct": share_impala_pct,
+        "menor_preco_impala": menor_impala,
+        "preco_medio_impala": preco_medio_impala,
+        "posicao_impala_ranking": posicao_impala,
+        "impala_lider_vendas": impala_lider,
+        "diff_preco_impala_vs_meu_pct": diff_preco_impala_vs_meu,
         "ranking_marcas": ranking,
         "marca_mais_vendida": marca_lider,
         "menor_preco_anita": menor_anita,
