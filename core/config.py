@@ -66,6 +66,20 @@ ANITA_PAUSA_ENTRE_BUSCAS_SEG = float(os.getenv("ANITA_PAUSA_ENTRE_BUSCAS_SEG", "
 ANITA_ALERTA_RESUMO = os.getenv("ANITA_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
 ANITA_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("ANITA_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
 
+# Monitor mercado esmaltes ML (cores, kits, margem viável, competição)
+ESMALTES_MERCADO_CATALOGO = os.getenv(
+    "ESMALTES_MERCADO_CATALOGO", "catalogo/esmaltes_mercado_segmentos.json"
+)
+ESMALTES_MERCADO_PAUSA_SEG = float(os.getenv("ESMALTES_MERCADO_PAUSA_SEG", "1.5"))
+ESMALTES_MERCADO_ALERTA_RESUMO = os.getenv("ESMALTES_MERCADO_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ESMALTES_MERCADO_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_MERCADO_ALERTA_COOLDOWN_SEG", "14400"))
+ESMALTES_MERCADO_VENDAS_MIN = int(os.getenv("ESMALTES_MERCADO_VENDAS_MIN", "5"))
+ESMALTES_MERCADO_ABAIXO_CONCORRENTE_PCT = float(os.getenv("ESMALTES_MERCADO_ABAIXO_CONCORRENTE_PCT", "2.0"))
+
 LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )

@@ -150,6 +150,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Cores/kits vs preferência + ranking marcas + margem",
     ),
     AgenteRegistrado(
+        "monitor_mercado_esmaltes",
+        "Monitor mercado esmaltes ML",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_mercado_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="Todos esmaltes ML: cores, kits, margem viável e propostas de competição",
+    ),
+    AgenteRegistrado(
         "descoberta_produtos",
         "Descoberta produtos marketplace",
         "monitor",

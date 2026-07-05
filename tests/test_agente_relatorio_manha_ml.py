@@ -57,15 +57,17 @@ class RelatorioManhaMlTests(unittest.TestCase):
         self.assertIn("45,90", msg)
 
     @patch.object(rel, "alertar_gestor", return_value=True)
+    @patch("agentes.esmaltes.agente_monitor_mercado_esmaltes.executar")
     @patch("agentes.esmaltes.agente_monitor_anita.executar")
     @patch("agentes.ml.agente_monitor_concorrentes.executar")
     @patch("agentes.precificacao.agente_inteligencia_precos.executar")
     @patch("agentes.ml.agente_monitor_ml.analisar")
-    def test_executar_consolidado(self, mock_ml, mock_precos, mock_conc, mock_anita, _mock_alertar):
+    def test_executar_consolidado(self, mock_ml, mock_precos, mock_conc, mock_anita, mock_mercado, _mock_alertar):
         mock_ml.return_value = {"ok": True, "conta": {}, "ads": {}, "concorrencia": [], "recomendacoes": []}
         mock_precos.return_value = {"ok": True, "analises": []}
         mock_conc.return_value = {"ok": True, "resultados": [], "alertas": []}
         mock_anita.return_value = {"ok": True, "resultados": []}
+        mock_mercado.return_value = {"ok": True, "consolidado": {"propostas": []}}
         out = rel.executar(enviar_alerta=True)
         self.assertTrue(out["ok"])
         self.assertTrue(out["alerta_enviado"])
