@@ -31,6 +31,10 @@ jobs:
       - name: Rodar monitor Anita
         run: python -m agentes.esmaltes.agente_monitor_anita
         env:
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}

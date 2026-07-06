@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from tests.http_fixtures import make_http_response
 
-from integracoes.ml import ml_client
+from integracoes.ml import busca_termo_ml, ml_client
 
 
 def _mock_resp(body: dict, status: int = 200) -> MagicMock:
@@ -29,8 +29,10 @@ class TestBuscarConcorrentesPorTermo(unittest.TestCase):
         self.assertEqual(ml_client.buscar_concorrentes_por_termo(""), [])
 
     def test_exclui_proprio_vendedor(self):
-        with patch.object(ml_client, "ML_SELLER_ID", "999"):
-            self.mock_http.return_value = _mock_resp({
+        with patch.object(ml_client, "ML_SELLER_ID", "999"), patch.object(
+            ml_client, "_enabled", return_value=True
+        ), patch.object(ml_client, "_request_ml") as mock_req:
+            mock_req.return_value = _mock_resp({
                 "results": [
                     {
                         "id": "MLB1",
@@ -53,9 +55,40 @@ class TestBuscarConcorrentesPorTermo(unittest.TestCase):
                 ]
             })
             out = ml_client.buscar_concorrentes_por_termo("kit impala", limite=5)
+        mock_req.assert_called_once()
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["item_id"], "MLB2")
         self.assertEqual(out[0]["preco"], 35.0)
+
+    def test_403_com_token_usa_fallback(self):
+        item_body = {
+            "id": "MLB123",
+            "title": "Kit Impala",
+            "price": 29.9,
+            "seller": {"id": "888"},
+            "shipping": {},
+            "condition": "new",
+            "sold_quantity": 8,
+        }
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            ml_client, "_request_ml"
+        ) as mock_req, patch.object(ml_client, "listar_meus_anuncios", return_value=[]), patch.object(
+            ml_client, "buscar_detalhes_concorrentes", return_value=[]
+        ), patch("integracoes.ml.busca_termo_ml.ddg_buscar") as mock_ddg, patch.object(
+            busca_termo_ml,
+            "ML_BUSCA_TERMO_FALLBACK_CATALOGO",
+            False,
+        ):
+            mock_req.side_effect = [
+                _mock_resp({}, status=403),
+                _mock_resp(item_body),
+            ]
+            mock_ddg.return_value = [
+                {"url": "https://produto.mercadolivre.com.br/MLB-123-kit", "title": "Kit"}
+            ]
+            out = ml_client.buscar_concorrentes_por_termo("esmalte impala kit manicure", limite=25)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["fonte_busca"], "ddg")
 
     def test_excecao_retorna_vazio(self):
         self.mock_http.side_effect = RuntimeError("rede")

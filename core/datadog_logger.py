@@ -35,6 +35,7 @@ _LOGGER_META = {
     # --- Integrações (clientes de API por marketplace) ---
     "bling": ("bling", "integracao"),
     "ml_client": ("mercadolivre", "integracao"),
+    "busca_termo_ml": ("mercadolivre", "integracao"),
     "ml_product_ads": ("mercadolivre_ads", "integracao"),
     "magalu_client": ("magalu", "integracao"),
     "shopee_client": ("shopee", "integracao"),

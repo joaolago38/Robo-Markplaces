@@ -47,6 +47,17 @@ ML_ACCESS_TOKEN  = os.getenv("ML_ACCESS_TOKEN", "").strip()
 ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "").strip()
 ML_SELLER_ID     = os.getenv("ML_SELLER_ID", "").strip()
 ML_SITE_ID       = (os.getenv("ML_SITE_ID", "MLB").strip() or "MLB")  # MLB = Brasil
+# Fallback quando /sites/search retorna 403 (comum desde ~2025)
+ML_BUSCA_TERMO_FALLBACK_DDG = os.getenv("ML_BUSCA_TERMO_FALLBACK_DDG", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ML_BUSCA_TERMO_FALLBACK_CATALOGO = os.getenv("ML_BUSCA_TERMO_FALLBACK_CATALOGO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Monitor de concorrentes (busca pública por palavra-chave, sem precisar de item próprio)
 MONITOR_CONCORRENTES_ARQUIVO = os.getenv(
