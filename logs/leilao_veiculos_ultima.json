@@ -1,16 +1,46 @@
 {
-  "timestamp": "2026-07-05T21:32:38.189064+00:00",
+  "timestamp": "2026-07-06T11:39:58.612437+00:00",
   "resultados": [
     {
       "id": "v1",
-      "veiculo": "Fiat Uno",
+      "veiculo": "Honda Civic",
       "prioridade": 99,
       "achados_total": 1,
-      "vantajosos_total": 1,
-      "novos": [],
+      "vantajosos_total": 0,
+      "novos": [
+        {
+          "hash": "h1",
+          "url": "https://detran.pr.gov.br/edital/1",
+          "url_anuncio": "https://detran.pr.gov.br/edital/1",
+          "fonte_tipo": "detran",
+          "fonte_nome": "DETRAN Paraná",
+          "uf": "PR",
+          "cidade": "Curitiba",
+          "marca": "Honda",
+          "modelo": "Civic",
+          "ano": 2016,
+          "valor": "R$ 25.000,00",
+          "data_leilao": "20/08/2026",
+          "url_cadastro": "https://www.detran.pr.gov.br/leilao-de-veiculos",
+          "visto_em": "2026-07-06T11:39:58.237474+00:00"
+        }
+      ],
       "novos_vantajosos": [],
+      "diagnostico": {},
       "ok": true
     }
   ],
-  "avaliacao_ia_parametros": null
+  "avaliacao_ia_parametros": null,
+  "diagnostico_agregado": {
+    "ddg_queries": 0,
+    "ddg_brutos": 0,
+    "ddg_descartados_filtro": 0,
+    "sumare_candidatos": 0,
+    "sumare_achados": 0,
+    "fontes_consultadas": 0,
+    "circuit_breaker_ativo": false,
+    "circuit_breaker_msg": null,
+    "sumare_coleta": {},
+    "meta_fontes": {}
+  }
 }

@@ -9,13 +9,22 @@ import logging
 import re
 import time
 import unicodedata
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
-from core.ddg_lite import buscar as ddg_buscar
+from core.config import (
+    LEILAO_DETRAN_POR_RODADA,
+    LEILAO_INCLUIR_SUMARE_DIRETO,
+    LEILAO_LEILOEIROS_POR_RODADA,
+    LEILAO_SUMARE_MAX_LEILOES,
+)
+from core.ddg_lite import buscar as ddg_buscar, circuit_breaker_ativo, mensagem_circuit_breaker
 from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS, URLS_CADASTRO_POR_DOMINIO
 
 logger = logging.getLogger("leilao_busca")
+
+_SUMARE_LOTES_CACHE: tuple[list[dict[str, Any]], dict[str, Any]] | None = None
 
 _DDG_HTML = "https://html.duckduckgo.com/html/"  # compat testes legados
 _PALAVRAS_LEILAO = ("leilao", "leilão", "lote", "arremate", "edital", "veiculo", "veículo", "automotor")
@@ -101,13 +110,24 @@ def _sufixo_query_leilao(veiculo: dict[str, Any], *, tipo_fonte: str) -> str:
     return base
 
 
-def _bate_perfil_recuperado_furto(texto: str) -> bool:
+def _bate_perfil_recuperado_minimo(texto: str) -> bool:
+    """Exige furto/recuperado/DETRAN; não exige média monta (snippets DDG raramente trazem)."""
     norm = _normalizar(texto)
     if any(x in norm for x in _PALAVRAS_EXCLUIR_MONTA):
         return False
-    if not any(x in norm for x in _PALAVRAS_RECUPERADO):
-        return False
+    return any(x in norm for x in _PALAVRAS_RECUPERADO)
+
+
+def _tem_media_monta(texto: str) -> bool:
+    norm = _normalizar(texto)
     return any(x in norm for x in _PALAVRAS_MEDIA_MONTA)
+
+
+def _bate_perfil_recuperado_furto(texto: str) -> bool:
+    """Perfil estrito — recuperado + média monta."""
+    if not _bate_perfil_recuperado_minimo(texto):
+        return False
+    return _tem_media_monta(texto)
 
 
 def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
@@ -143,13 +163,29 @@ def _parece_leilao(texto: str) -> bool:
     return any(p in norm for p in _PALAVRAS_LEILAO)
 
 
+def _modelo_no_texto(texto: str, veiculo: dict[str, Any]) -> bool:
+    norm = _normalizar(texto)
+    modelo = _normalizar(str(veiculo.get("modelo") or ""))
+    if not modelo:
+        return True
+    if modelo in norm:
+        return True
+    for extra in veiculo.get("termos_extra") or []:
+        if extra and _normalizar(str(extra)) in norm:
+            return True
+    return False
+
+
 def _relevante_para_veiculo(resultado: dict[str, str], veiculo: dict[str, Any]) -> bool:
     blob = f"{resultado.get('titulo', '')} {resultado.get('snippet', '')} {resultado.get('url', '')}"
     norm = _normalizar(blob)
     marca = _normalizar(str(veiculo.get("marca") or ""))
     modelo = _normalizar(str(veiculo.get("modelo") or ""))
+    if resultado.get("fonte_tipo") == "sumare":
+        return _modelo_no_texto(blob, veiculo)
     if modelo and modelo not in norm:
-        return False
+        if not _modelo_no_texto(blob, veiculo):
+            return False
     if marca and marca not in norm:
         if modelo not in _MODELOS_MARCA_OPCIONAL:
             return False
@@ -158,7 +194,7 @@ def _relevante_para_veiculo(resultado: dict[str, str], veiculo: dict[str, Any]) 
     if not (_parece_leilao(blob) or _parece_leilao(resultado.get("url", ""))):
         return False
     if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
-        return _bate_perfil_recuperado_furto(blob)
+        return _bate_perfil_recuperado_minimo(blob)
     return True
 
 
@@ -305,6 +341,10 @@ def enriquecer_achado_leilao(item: dict[str, Any], veiculo: dict[str, Any]) -> d
     if url_cadastro:
         out["url_cadastro"] = url_cadastro
 
+    blob = f"{item.get('titulo', '')} {item.get('snippet', '')}"
+    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
+        out["perfil_media_monta"] = _tem_media_monta(blob)
+
     if item.get("fonte_tipo") == "detran":
         out["detran_nome"] = item.get("fonte_nome") or f"DETRAN {item.get('fonte_id', '')}"
         out["uf"] = item.get("uf") or item.get("fonte_id") or uf_texto
@@ -319,6 +359,162 @@ def enriquecer_achado_leilao(item: dict[str, Any], veiculo: dict[str, Any]) -> d
     return out
 
 
+def _rotacionar_fontes(
+    fontes: list[dict[str, str]],
+    *,
+    limite: int,
+    bucket: int,
+) -> list[dict[str, str]]:
+    """Seleciona subconjunto rotativo por hora — reduz carga DDG no CI."""
+    if limite <= 0 or limite >= len(fontes):
+        return list(fontes)
+    inicio = bucket % len(fontes)
+    selecionadas: list[dict[str, str]] = []
+    for i in range(limite):
+        selecionadas.append(fontes[(inicio + i) % len(fontes)])
+    return selecionadas
+
+
+def _fontes_da_rodada() -> tuple[list[tuple[dict[str, str], str, str]], dict[str, Any]]:
+    hora_utc = datetime.now(timezone.utc).hour
+    leiloeiros = _rotacionar_fontes(
+        LEILOEIROS_PRINCIPAIS,
+        limite=LEILAO_LEILOEIROS_POR_RODADA,
+        bucket=hora_utc,
+    )
+    detrans = _rotacionar_fontes(
+        DETRAN_POR_ESTADO,
+        limite=LEILAO_DETRAN_POR_RODADA,
+        bucket=hora_utc + 7,
+    )
+    fontes: list[tuple[dict[str, str], str, str]] = []
+    for f in leiloeiros:
+        fontes.append((f, "leiloeiro", f.get("id", f["dominio"])))
+    for f in detrans:
+        fontes.append((f, "detran", f.get("uf", f["dominio"])))
+    meta = {
+        "hora_utc": hora_utc,
+        "leiloeiros_na_rodada": len(leiloeiros),
+        "detrans_na_rodada": len(detrans),
+        "leiloeiros_ids": [f.get("id", f.get("dominio", "")) for f in leiloeiros],
+        "detrans_ufs": [f.get("uf", "") for f in detrans],
+    }
+    return fontes, meta
+
+
+def reset_cache_sumare() -> None:
+    """Limpa cache Sumaré (testes)."""
+    global _SUMARE_LOTES_CACHE
+    _SUMARE_LOTES_CACHE = None
+
+
+def obter_lotes_sumare() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """
+    Coleta lotes Sumaré uma vez por processo (DETRAN/prefeitura, com documento).
+    Não lança exceção.
+    """
+    global _SUMARE_LOTES_CACHE
+    if _SUMARE_LOTES_CACHE is not None:
+        return _SUMARE_LOTES_CACHE
+
+    diag: dict[str, Any] = {
+        "ativo": LEILAO_INCLUIR_SUMARE_DIRETO,
+        "leiloes_ok": 0,
+        "leiloes_falha": 0,
+        "lotes_veiculo": 0,
+        "erro": None,
+    }
+    if not LEILAO_INCLUIR_SUMARE_DIRETO:
+        _SUMARE_LOTES_CACHE = ([], diag)
+        return _SUMARE_LOTES_CACHE
+
+    try:
+        from integracoes.leilao.sumare_leiloes import (
+            buscar_leiloes_detran_ddg,
+            coletar_lotes_leilao,
+            eh_veiculo_com_documento,
+            filtrar_leiloes_por_comitente,
+            listar_leiloes_home,
+            _criar_sessao,
+        )
+
+        sess = _criar_sessao()
+        leiloes = listar_leiloes_home(sess)
+        leiloes.extend(buscar_leiloes_detran_ddg())
+        leiloes = filtrar_leiloes_por_comitente(leiloes, ["prefeitura", "detran"])
+        por_id: dict[str, dict[str, Any]] = {}
+        for leilao in leiloes:
+            por_id[str(leilao["leilao_id"])] = leilao
+        leiloes = list(por_id.values())[:LEILAO_SUMARE_MAX_LEILOES]
+
+        lotes: list[dict[str, Any]] = []
+        falhas = 0
+        for leilao in leiloes:
+            brutos = coletar_lotes_leilao(leilao, sess, pausa_paginas_seg=0)
+            if brutos is None:
+                diag["leiloes_falha"] = int(diag["leiloes_falha"]) + 1
+                falhas += 1
+                if falhas >= 5:
+                    logger.warning("Sumaré leilão veículos: abortando após 5 falhas consecutivas")
+                    break
+                continue
+            diag["leiloes_ok"] = int(diag["leiloes_ok"]) + 1
+            falhas = 0
+            for lote in brutos:
+                if eh_veiculo_com_documento(lote):
+                    lotes.append(lote)
+
+        diag["lotes_veiculo"] = len(lotes)
+        logger.info(
+            "Sumaré direto: %s leilões OK, %s falhas, %s lotes veículo/doc",
+            diag["leiloes_ok"],
+            diag["leiloes_falha"],
+            diag["lotes_veiculo"],
+        )
+        _SUMARE_LOTES_CACHE = (lotes, diag)
+        return _SUMARE_LOTES_CACHE
+    except Exception as exc:
+        logger.warning("Sumaré direto indisponível: %s", exc)
+        diag["erro"] = str(exc)
+        _SUMARE_LOTES_CACHE = ([], diag)
+        return _SUMARE_LOTES_CACHE
+
+
+def _lote_sumare_para_item(lote: dict[str, Any], veiculo: dict[str, Any]) -> dict[str, Any] | None:
+    titulo = str(lote.get("titulo") or "")
+    if not _modelo_no_texto(titulo, veiculo):
+        return None
+    lance = float(lote.get("lance_brl") or lote.get("lance_lista_brl") or 0)
+    valor_txt = f"R$ {lance:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if lance else None
+    url = str(lote.get("url") or "")
+    snippet = " ".join(
+        p
+        for p in (
+            str(lote.get("comitente") or ""),
+            str(lote.get("local_data") or ""),
+            "DOCUMENTO",
+            "DETRAN" if "detran" in _normalizar(str(lote.get("comitente") or "")) else "",
+        )
+        if p
+    )
+    return {
+        "url": url,
+        "titulo": titulo,
+        "snippet": snippet,
+        "fonte_tipo": "sumare",
+        "fonte_id": "sumare",
+        "fonte_nome": "Sumaré Leilões",
+        "dominio": "sumareleiloes.com.br",
+        "hash": str(lote.get("hash") or _hash_url(url)),
+        "cidade": lote.get("cidade"),
+        "uf": lote.get("uf"),
+        "valor": valor_txt,
+        "lance_brl": lance or None,
+        "data_leilao": lote.get("data_fechamento"),
+        "url_cadastro": "https://www.sumareleiloes.com.br/",
+    }
+
+
 def _buscar_em_dominio(
     dominio: str,
     termo: str,
@@ -327,10 +523,15 @@ def _buscar_em_dominio(
     fonte_id: str,
     fonte_nome: str,
     sufixo_query: str = "leilão veículo",
+    diagnostico: dict[str, int] | None = None,
 ) -> list[dict[str, Any]]:
     query = f'site:{dominio} {sufixo_query} {termo}'
     achados: list[dict[str, Any]] = []
-    for item in buscar_duckduckgo(query, max_resultados=6):
+    brutos = buscar_duckduckgo(query, max_resultados=6)
+    if diagnostico is not None:
+        diagnostico["ddg_queries"] = diagnostico.get("ddg_queries", 0) + 1
+        diagnostico["ddg_brutos"] = diagnostico.get("ddg_brutos", 0) + len(brutos)
+    for item in brutos:
         if dominio not in item.get("url", ""):
             continue
         achados.append(
@@ -355,26 +556,50 @@ def buscar_veiculo_em_fontes(
     incluir_leiloeiros: bool = True,
     incluir_detran: bool = True,
     pausa_entre_fontes_seg: float = 0.8,
-) -> list[dict[str, Any]]:
+    lotes_sumare: list[dict[str, Any]] | None = None,
+    diag_sumare: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
-    Varre leiloeiros principais e DETRAN de todos os estados.
-    Retorna lista deduplicada por URL. Nunca lança exceção.
+    Varre leiloeiros/DETRAN (rotacionados) + Sumaré direto + fallback DDG.
+    Retorna {"achados": [...], "diagnostico": {...}}. Nunca lança exceção.
     """
     termo = montar_termo_busca(veiculo)
     termo_site = _termo_query_site(veiculo)
     if not termo.strip():
-        return []
+        return {"achados": [], "diagnostico": {"motivo": "termo vazio"}}
 
     vistos: set[str] = set()
     todos: list[dict[str, Any]] = []
+    contadores: dict[str, int] = {
+        "ddg_queries": 0,
+        "ddg_brutos": 0,
+        "ddg_descartados_filtro": 0,
+        "sumare_candidatos": 0,
+        "sumare_achados": 0,
+    }
 
-    fontes: list[tuple[dict[str, str], str, str]] = []
-    if incluir_leiloeiros:
-        for f in LEILOEIROS_PRINCIPAIS:
-            fontes.append((f, "leiloeiro", f.get("id", f["dominio"])))
-    if incluir_detran:
-        for f in DETRAN_POR_ESTADO:
-            fontes.append((f, "detran", f.get("uf", f["dominio"])))
+    fontes, meta_fontes = _fontes_da_rodada()
+    if not incluir_leiloeiros:
+        fontes = [f for f in fontes if f[1] != "leiloeiro"]
+    if not incluir_detran:
+        fontes = [f for f in fontes if f[1] != "detran"]
+
+    if lotes_sumare is None and LEILAO_INCLUIR_SUMARE_DIRETO:
+        lotes_sumare, diag_sumare = obter_lotes_sumare()
+
+    for lote in lotes_sumare or []:
+        contadores["sumare_candidatos"] += 1
+        item = _lote_sumare_para_item(lote, veiculo)
+        if not item:
+            continue
+        if not _relevante_para_veiculo(item, veiculo):
+            continue
+        h = item["hash"]
+        if h in vistos:
+            continue
+        vistos.add(h)
+        contadores["sumare_achados"] += 1
+        todos.append(enriquecer_achado_leilao(item, veiculo))
 
     for fonte, tipo, fid in fontes:
         dominio = fonte.get("dominio", "")
@@ -390,9 +615,11 @@ def buscar_veiculo_em_fontes(
                 fonte_id=fid,
                 fonte_nome=nome,
                 sufixo_query=sufixo,
+                diagnostico=contadores,
             )
             for item in lote:
                 if not _relevante_para_veiculo(item, veiculo):
+                    contadores["ddg_descartados_filtro"] += 1
                     continue
                 h = item["hash"]
                 if h in vistos:
@@ -404,10 +631,11 @@ def buscar_veiculo_em_fontes(
         if pausa_entre_fontes_seg > 0:
             time.sleep(pausa_entre_fontes_seg)
 
-    # Busca ampla (fallback)
     try:
         query_geral = f'{_sufixo_query_leilao(veiculo, tipo_fonte="web")} {termo} Brasil'
+        contadores["ddg_queries"] += 1
         for item in buscar_duckduckgo(query_geral, max_resultados=10):
+            contadores["ddg_brutos"] += 1
             enriquecido = {
                 "url": item["url"],
                 "titulo": item.get("titulo") or item["url"],
@@ -419,6 +647,7 @@ def buscar_veiculo_em_fontes(
                 "hash": _hash_url(item["url"]),
             }
             if not _relevante_para_veiculo(enriquecido, veiculo):
+                contadores["ddg_descartados_filtro"] += 1
                 continue
             if enriquecido["hash"] in vistos:
                 continue
@@ -427,4 +656,13 @@ def buscar_veiculo_em_fontes(
     except Exception as exc:
         logger.warning("Busca geral falhou: %s", exc)
 
-    return todos
+    diagnostico: dict[str, Any] = {
+        **contadores,
+        **meta_fontes,
+        "fontes_consultadas": len(fontes),
+        "achados_total": len(todos),
+        "circuit_breaker_ativo": circuit_breaker_ativo(),
+        "circuit_breaker_msg": mensagem_circuit_breaker(),
+        "sumare_coleta": diag_sumare or {},
+    }
+    return {"achados": todos, "diagnostico": diagnostico}

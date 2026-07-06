@@ -110,7 +110,15 @@ ACETONA_CRUZEIRO_ALERTA_COOLDOWN_SEG = int(os.getenv("ACETONA_CRUZEIRO_ALERTA_CO
 LEILAO_VEICULOS_CATALOGO = os.getenv(
     "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"
 )
-LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "2.5"))
+LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "3.0"))
+LEILAO_DETRAN_POR_RODADA = int(os.getenv("LEILAO_DETRAN_POR_RODADA", "5"))
+LEILAO_LEILOEIROS_POR_RODADA = int(os.getenv("LEILAO_LEILOEIROS_POR_RODADA", "5"))
+LEILAO_INCLUIR_SUMARE_DIRETO = os.getenv("LEILAO_INCLUIR_SUMARE_DIRETO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+LEILAO_SUMARE_MAX_LEILOES = int(os.getenv("LEILAO_SUMARE_MAX_LEILOES", "10"))
 LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", os.getenv("DDG_RETRY_MAX", "3")))
 LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", os.getenv("DDG_RETRY_BASE_SEG", "5")))
 LEILAO_ALERTA_RESUMO = os.getenv("LEILAO_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
@@ -143,7 +151,7 @@ SUMARE_LEILOES_RETRY_MAX = int(os.getenv("SUMARE_LEILOES_RETRY_MAX", "3"))
 SUMARE_LEILOES_ALERTA_COOLDOWN_SEG = int(os.getenv("SUMARE_LEILOES_ALERTA_COOLDOWN_SEG", "7200"))
 
 # DuckDuckGo Lite (compartilhado leilão + Alibaba)
-DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "2.5"))
+DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "3.0"))
 DDG_RETRY_MAX = int(os.getenv("DDG_RETRY_MAX", "3"))
 DDG_RETRY_BASE_SEG = float(os.getenv("DDG_RETRY_BASE_SEG", "5"))
 DDG_CIRCUIT_BREAKER_SEG = float(os.getenv("DDG_CIRCUIT_BREAKER_SEG", "300"))
