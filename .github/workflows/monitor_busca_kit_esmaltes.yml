@@ -1,0 +1,61 @@
+name: Monitor Busca Kit Esmaltes
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 6x ao dia (UTC) — contabiliza frequência de buscas Anita/Impala
+    - cron: "0 */4 * * *"
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  monitorar:
+    name: Busca kit esmaltes Anita/Impala + cores
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Restaurar historico frequencia diaria
+        uses: actions/cache@v4
+        with:
+          path: logs/esmaltes_busca_kit_frequencia_diario.json
+          key: esmaltes-busca-kit-${{ github.run_id }}
+          restore-keys: |
+            esmaltes-busca-kit-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor busca kit esmaltes
+        run: python -m agentes.esmaltes.agente_monitor_busca_kit_esmaltes
+        env:
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar historico
+        uses: actions/upload-artifact@v4
+        with:
+          name: esmaltes-busca-kit-frequencia
+          path: |
+            logs/esmaltes_busca_kit_frequencia_diario.json
+            logs/esmaltes_busca_kit_ultima.json
+          retention-days: 90
+          if-no-files-found: ignore

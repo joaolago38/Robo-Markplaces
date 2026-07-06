@@ -92,6 +92,18 @@ COMPARATIVO_ESMALTES_ALERTA_RESUMO = os.getenv("COMPARATIVO_ESMALTES_ALERTA_RESU
 )
 COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG", "14400"))
 
+# Busca kit esmaltes Anita/Impala — frequência diária + cores
+ESMALTES_BUSCA_KIT_CATALOGO = os.getenv(
+    "ESMALTES_BUSCA_KIT_CATALOGO", "catalogo/esmaltes_busca_kit_frequencia.json"
+)
+ESMALTES_BUSCA_KIT_PAUSA_SEG = float(os.getenv("ESMALTES_BUSCA_KIT_PAUSA_SEG", "1.5"))
+ESMALTES_BUSCA_KIT_ALERTA_RESUMO = os.getenv("ESMALTES_BUSCA_KIT_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG", "3600"))
+
 # Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
 ACETONA_CRUZEIRO_CATALOGO = os.getenv(
     "ACETONA_CRUZEIRO_CATALOGO", "catalogo/acetona_cruzeiro_monitor.json"

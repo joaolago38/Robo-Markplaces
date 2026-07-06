@@ -1,0 +1,98 @@
+[
+  {
+    "id": "kit3-anita-classicos",
+    "ativo": true,
+    "marca": "anita",
+    "prioridade": 1,
+    "nome": "Kit 3 Anita Clássicos",
+    "cor_foco": "Vermelho / Rosa",
+    "cores_busca": ["vermelho", "rosa", "nude", "classico"],
+    "termo_busca": "kit 3 esmalte anita",
+    "qtd_esmaltes": 3,
+    "limite_resultados": 20
+  },
+  {
+    "id": "kit5-anita-nude",
+    "ativo": true,
+    "marca": "anita",
+    "prioridade": 2,
+    "nome": "Kit 5 Anita Nude",
+    "cor_foco": "Nude",
+    "cores_busca": ["nude", "bege", "marfim", "caramelo", "rosa nude"],
+    "termo_busca": "kit 5 esmalte anita nude",
+    "qtd_esmaltes": 5,
+    "limite_resultados": 20
+  },
+  {
+    "id": "kit6-anita-tendencia",
+    "ativo": true,
+    "marca": "anita",
+    "prioridade": 3,
+    "nome": "Kit 6 Anita Tendência",
+    "cor_foco": "Cores variadas",
+    "cores_busca": ["avoante", "hippie chic", "lavanda", "coral", "marsala", "azul"],
+    "termo_busca": "kit 6 esmalte anita",
+    "qtd_esmaltes": 6,
+    "limite_resultados": 20
+  },
+  {
+    "id": "kit10-anita-atacado",
+    "ativo": true,
+    "marca": "anita",
+    "prioridade": 4,
+    "nome": "Kit 10 Anita Atacado",
+    "cor_foco": "Sortidos",
+    "cores_busca": ["sortido", "classico", "nude", "vermelho", "rosa"],
+    "termo_busca": "kit 10 esmalte anita atacado",
+    "qtd_esmaltes": 10,
+    "limite_resultados": 25
+  },
+  {
+    "id": "kit3-impala-mimo",
+    "ativo": true,
+    "marca": "impala",
+    "prioridade": 1,
+    "nome": "Kit 3 Impala Mimo",
+    "cor_foco": "Mimo / Carmed",
+    "cores_busca": ["mimo", "carmed", "rosa", "vermelho"],
+    "termo_busca": "kit 3 esmalte impala",
+    "qtd_esmaltes": 3,
+    "limite_resultados": 20
+  },
+  {
+    "id": "kit5-impala-bailarina",
+    "ativo": true,
+    "marca": "impala",
+    "prioridade": 2,
+    "nome": "Kit 5 Impala Bailarina",
+    "cor_foco": "Bailarina / Rosa",
+    "cores_busca": ["bailarina", "rosa", "nude", "vermelho"],
+    "termo_busca": "kit 5 esmalte impala bailarina",
+    "qtd_esmaltes": 5,
+    "limite_resultados": 20
+  },
+  {
+    "id": "kit6-impala-sortido",
+    "ativo": true,
+    "marca": "impala",
+    "prioridade": 3,
+    "nome": "Kit 6 Impala Sortido",
+    "cor_foco": "Sortidos",
+    "cores_busca": ["sortido", "cores da moda", "vermelho", "rosa", "nude"],
+    "termo_busca": "kit 6 esmalte impala sortido",
+    "qtd_esmaltes": 6,
+    "limite_resultados": 20
+  },
+  {
+    "id": "kit10-impala-atacado",
+    "ativo": true,
+    "marca": "impala",
+    "prioridade": 4,
+    "nome": "Kit 10 Impala Atacado",
+    "cor_foco": "Atacado / Clássicos",
+    "cores_busca": ["atacado", "classico", "nude", "vermelho", "sortido"],
+    "termo_busca": "kit 10 esmalte impala atacado",
+    "qtd_esmaltes": 10,
+    "limite_resultados": 25
+  }
+]
