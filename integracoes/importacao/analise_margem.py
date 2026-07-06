@@ -11,6 +11,7 @@ from typing import Any
 from core.config import (
     ALIBABA_MARGEM_MIN_PCT,
     ALIBABA_MARGEM_MIN_REAIS,
+    IMPORTACAO_AEREO_FORMAL,
     IMPORTACAO_COFINS_PCT,
     IMPORTACAO_DESEMBARACO_BRL,
     IMPORTACAO_FRETE_AEREO_USD_KG,
@@ -24,6 +25,7 @@ from core.config import (
     IMPORTACAO_SISCOMEX_BRL,
     REGRAS,
 )
+from integracoes.importacao.calculo_importacao_aerea import calcular_para_produto_alibaba
 from integracoes.importacao.custo_landed import calcular_cenarios_frete, calcular_margem_revenda
 
 logger = logging.getLogger("analise_margem_importacao")
@@ -122,9 +124,19 @@ def analisar_oportunidade(
     margem_min_pct = float(produto.get("margem_minima_pct") or ALIBABA_MARGEM_MIN_PCT)
     margem_min_reais = float(produto.get("margem_minima_reais") or ALIBABA_MARGEM_MIN_REAIS)
 
+    calculo_aereo_formal: dict[str, Any] | None = None
+    if IMPORTACAO_AEREO_FORMAL:
+        calculo_aereo_formal = calcular_para_produto_alibaba(
+            produto,
+            oportunidade,
+            cambio_usd_brl=cambio_usd_brl,
+        )
+
     margens: dict[str, Any] = {}
     for modo in ("maritimo", "aereo"):
         custo = (cenarios.get(modo) or {}).get("custo_unitario_brl")
+        if modo == "aereo" and calculo_aereo_formal and calculo_aereo_formal.get("ok"):
+            custo = calculo_aereo_formal.get("custo_unitario_brl")
         if custo is None or preco_ref is None:
             margens[modo] = {"ok": False}
             continue
@@ -136,7 +148,7 @@ def analisar_oportunidade(
             margem_minima_reais=margem_min_reais,
         )
 
-    melhor_frete = cenarios.get("melhor_frete")
+    melhor_frete = "aereo" if IMPORTACAO_AEREO_FORMAL else cenarios.get("melhor_frete")
     margem_melhor = margens.get(melhor_frete or "") if melhor_frete else None
     lucro_razoavel = bool(
         margem_melhor and margem_melhor.get("ok") and margem_melhor.get("lucro_razoavel")
@@ -150,6 +162,7 @@ def analisar_oportunidade(
         "moq": moq,
         "peso_kg": peso,
         "cenarios_frete": cenarios,
+        "calculo_aereo_formal": calculo_aereo_formal,
         "precos_marketplace": mk,
         "margens": margens,
         "melhor_frete": melhor_frete,
