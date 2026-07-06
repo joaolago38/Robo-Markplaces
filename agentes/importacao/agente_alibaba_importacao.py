@@ -141,7 +141,7 @@ def _logar_oportunidades(
 
     if not achados:
         logger.info("Alibaba %s: nenhuma oportunidade nesta rodada%s", nome, criterio_txt)
-        ddg = mensagem_circuit_breaker()
+        ddg = mensagem_circuit_breaker("alibaba")
         if ddg:
             logger.warning("Alibaba %s: %s", nome, ddg)
         return
@@ -220,7 +220,7 @@ def _montar_resumo_varredura(resultados: list[dict[str, Any]], ia: dict[str, Any
         ops = int(r.get("oportunidades_total") or 0)
         novos = len(r.get("novos") or [])
         linhas.append(f"• {r.get('produto', r.get('id', '?'))}: {ops} oportunidade(s), {novos} nova(s)")
-    ddg = mensagem_circuit_breaker()
+    ddg = mensagem_circuit_breaker("alibaba")
     if ddg:
         linhas.extend(["", f"⚠️ {ddg}"])
     elif total_oportunidades == 0:

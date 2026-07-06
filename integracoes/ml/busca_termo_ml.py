@@ -2,21 +2,35 @@
 integracoes/ml/busca_termo_ml.py
 Busca por termo no ML com fallbacks quando /sites/search retorna 403.
 
-Ordem: API autenticada → catálogo (/products/.../items) → DuckDuckGo + enriquecimento /items/{id}.
+Ordem: API autenticada → catálogo multi-ref → Brave Search (opcional) → DuckDuckGo
+(enriquecimento /items/{id}) → cache recente.
 """
 from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Any, Callable
 
-from core.config import ML_BUSCA_TERMO_FALLBACK_CATALOGO, ML_BUSCA_TERMO_FALLBACK_DDG, ML_SITE_ID
+from core.atomic_io import escrever_json_atomico, ler_json
+from core.config import (
+    ML_BUSCA_TERMO_FALLBACK_BRAVE,
+    ML_BUSCA_TERMO_FALLBACK_CACHE,
+    ML_BUSCA_TERMO_FALLBACK_CATALOGO,
+    ML_BUSCA_TERMO_FALLBACK_DDG,
+    ML_BUSCA_TERMO_CACHE_TTL_SEG,
+    ML_BUSCA_TERMO_MAX_REFS_CATALOGO,
+    ML_SITE_ID,
+    ROOT,
+)
 from core.ddg_lite import buscar as ddg_buscar
+from integracoes.ml.busca_externa_brave import buscar_mercadolivre as brave_buscar_ml
 
 logger = logging.getLogger("busca_termo_ml")
 
 _MLB_ID_RE = re.compile(r"MLB-?\d+", re.I)
 _PLACEHOLDER_IDS = frozenset({"", "MLB_PREENCHER"})
+_CACHE_PATH = ROOT / "logs" / "ml_busca_termo_cache.json"
 
 
 def extrair_item_id_ml(texto: str) -> str | None:
@@ -38,6 +52,18 @@ def _seller_self() -> str:
     from integracoes.ml import ml_client
 
     return str(ml_client.ML_SELLER_ID or "").strip()
+
+
+def _palavras_termo(termo: str) -> list[str]:
+    return [p for p in termo.lower().split() if len(p) >= 3]
+
+
+def _titulo_relevante(termo: str, titulo: str) -> bool:
+    palavras = _palavras_termo(termo)
+    if not palavras:
+        return True
+    texto = (titulo or "").lower()
+    return any(p in texto for p in palavras)
 
 
 def _normalizar_catalogo_para_busca(row: dict[str, Any]) -> dict[str, Any]:
@@ -66,31 +92,62 @@ def _dedupe_por_item(lista: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
-def _resolver_item_referencia(
+def _resolver_refs_catalogo(
     termo: str,
     item_id_referencia: str | None,
     *,
     listar_meus_fn: Callable[[], list[dict[str, Any]]],
-) -> str | None:
-    if _item_id_valido(item_id_referencia):
-        return str(item_id_referencia).strip().upper().replace("-", "")
+) -> list[str]:
+    refs: list[str] = []
+    vistos: set[str] = set()
 
-    palavras = [p for p in termo.lower().split() if len(p) >= 4]
-    if not palavras:
-        return None
+    def _add(iid: str | None) -> None:
+        if not _item_id_valido(iid):
+            return
+        norm = str(iid).strip().upper().replace("-", "")
+        if norm in vistos:
+            return
+        vistos.add(norm)
+        refs.append(norm)
 
-    melhor_id: str | None = None
-    melhor_score = 0
+    _add(item_id_referencia)
+
+    try:
+        from core.catalogo_produtos import carregar_produtos_catalogo
+
+        palavras_cat = _palavras_termo(termo)
+        for prod in carregar_produtos_catalogo():
+            ml = (prod.get("canais") or {}).get("mercadolivre") or {}
+            if not ml.get("ativo", True):
+                continue
+            iid = str(ml.get("item_id") or "").strip()
+            titulo = str(ml.get("titulo_anuncio") or prod.get("nome") or "")
+            if palavras_cat and not any(p in titulo.lower() for p in palavras_cat):
+                continue
+            _add(iid)
+            if len(refs) >= max(1, ML_BUSCA_TERMO_MAX_REFS_CATALOGO):
+                return refs
+    except Exception:
+        pass
+
+    palavras = _palavras_termo(termo)
+    candidatos: list[tuple[int, str]] = []
     for an in listar_meus_fn() or []:
         iid = str(an.get("item_id") or an.get("id") or "").strip().upper().replace("-", "")
         if not _item_id_valido(iid):
             continue
         titulo = str(an.get("titulo") or an.get("title") or "").lower()
-        score = sum(1 for p in palavras if p in titulo)
-        if score > melhor_score:
-            melhor_score = score
-            melhor_id = iid
-    return melhor_id if melhor_score >= 2 else None
+        score = sum(1 for p in palavras if p in titulo) if palavras else 1
+        if score > 0:
+            candidatos.append((score, iid))
+
+    candidatos.sort(key=lambda x: x[0], reverse=True)
+    for _, iid in candidatos:
+        _add(iid)
+        if len(refs) >= max(1, ML_BUSCA_TERMO_MAX_REFS_CATALOGO):
+            break
+
+    return refs[: max(1, ML_BUSCA_TERMO_MAX_REFS_CATALOGO)]
 
 
 def _buscar_via_api(termo: str, limite: int) -> list[dict[str, Any]]:
@@ -155,6 +212,33 @@ def _enriquecer_item(item_id: str) -> dict[str, Any] | None:
         return None
 
 
+def _buscar_via_brave(termo: str, limite: int) -> list[dict[str, Any]]:
+    if not ML_BUSCA_TERMO_FALLBACK_BRAVE:
+        return []
+    brutos = brave_buscar_ml(termo, limite=max(limite * 3, 15))
+    if not brutos:
+        return []
+
+    encontrados: list[dict[str, Any]] = []
+    for hit in brutos:
+        url = hit.get("url") or ""
+        titulo_ext = hit.get("titulo") or ""
+        iid = extrair_item_id_ml(url) or extrair_item_id_ml(titulo_ext)
+        if not iid:
+            continue
+        norm = _enriquecer_item(iid)
+        if not norm:
+            continue
+        if not _titulo_relevante(termo, str(norm.get("titulo") or titulo_ext)):
+            continue
+        norm = dict(norm)
+        norm["fonte_busca"] = "brave"
+        encontrados.append(norm)
+        if len(encontrados) >= limite:
+            break
+    return encontrados
+
+
 def _buscar_via_ddg(termo: str, limite: int) -> list[dict[str, Any]]:
     query = f"site:mercadolivre.com.br {termo}"
     brutos = ddg_buscar(query, max_resultados=max(limite * 3, 15), contexto="ml_busca_termo")
@@ -171,6 +255,8 @@ def _buscar_via_ddg(termo: str, limite: int) -> list[dict[str, Any]]:
         norm = _enriquecer_item(iid)
         if not norm:
             continue
+        if not _titulo_relevante(termo, str(norm.get("titulo") or titulo_ddg)):
+            continue
         norm = dict(norm)
         norm["fonte_busca"] = "ddg"
         encontrados.append(norm)
@@ -185,20 +271,78 @@ def _buscar_via_catalogo(termo: str, limite: int, item_id_referencia: str | None
     if not ML_BUSCA_TERMO_FALLBACK_CATALOGO or not ml_client._enabled():
         return []
 
-    ref = _resolver_item_referencia(
+    refs = _resolver_refs_catalogo(
         termo,
         item_id_referencia,
         listar_meus_fn=ml_client.listar_meus_anuncios,
     )
-    if not ref:
+    if not refs:
         return []
 
-    linhas = ml_client.buscar_detalhes_concorrentes(ref, limite=limite)
-    if not linhas:
-        return []
+    combinado: list[dict[str, Any]] = []
+    for ref in refs:
+        linhas = ml_client.buscar_detalhes_concorrentes(ref, limite=limite)
+        for row in linhas:
+            norm = _normalizar_catalogo_para_busca(row)
+            if _titulo_relevante(termo, norm.get("titulo", "")):
+                combinado.append(norm)
 
-    logger.info("ML busca termo=%r fallback catálogo item_ref=%s linhas=%d", termo, ref, len(linhas))
-    return [_normalizar_catalogo_para_busca(row) for row in linhas]
+    if combinado:
+        logger.info(
+            "ML busca termo=%r fallback catálogo refs=%s linhas=%d",
+            termo,
+            refs,
+            len(combinado),
+        )
+    return combinado
+
+
+def _chave_cache(termo: str) -> str:
+    return termo.strip().lower()
+
+
+def _ler_cache(termo: str, limite: int) -> list[dict[str, Any]]:
+    if not ML_BUSCA_TERMO_FALLBACK_CACHE:
+        return []
+    data = ler_json(_CACHE_PATH, default={})
+    if not isinstance(data, dict):
+        return []
+    entry = data.get(_chave_cache(termo))
+    if not isinstance(entry, dict):
+        return []
+    ts = entry.get("timestamp")
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        idade = (datetime.now(timezone.utc) - dt.astimezone(timezone.utc)).total_seconds()
+        if idade > max(60, ML_BUSCA_TERMO_CACHE_TTL_SEG):
+            return []
+    except (TypeError, ValueError):
+        return []
+    rows = entry.get("resultados") or []
+    if not isinstance(rows, list):
+        return []
+    out = [dict(r, fonte_busca="cache") for r in rows if isinstance(r, dict)][:limite]
+    if out:
+        logger.info("ML busca termo=%r fonte=cache resultados=%d", termo, len(out))
+    return out
+
+
+def _gravar_cache(termo: str, resultados: list[dict[str, Any]]) -> None:
+    if not ML_BUSCA_TERMO_FALLBACK_CACHE or not resultados:
+        return
+    try:
+        data = ler_json(_CACHE_PATH, default={})
+        if not isinstance(data, dict):
+            data = {}
+        data[_chave_cache(termo)] = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "resultados": resultados,
+        }
+        escrever_json_atomico(_CACHE_PATH, data)
+    except Exception as exc:
+        logger.debug("ML busca cache não gravado termo=%r: %s", termo[:60], exc)
 
 
 def executar_busca_termo(
@@ -223,12 +367,14 @@ def executar_busca_termo(
         api = _buscar_via_api(termo, limite)
         if api:
             logger.info("ML busca termo=%r fonte=api resultados=%d", termo, len(api))
+            _gravar_cache(termo, api)
             return api
     except Exception as exc:
         ml_client._log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
 
     combinado: list[dict[str, Any]] = []
     combinado.extend(_buscar_via_catalogo(termo, limite, item_id_referencia))
+    combinado.extend(_buscar_via_brave(termo, limite))
 
     if ML_BUSCA_TERMO_FALLBACK_DDG:
         combinado.extend(_buscar_via_ddg(termo, limite))
@@ -242,10 +388,15 @@ def executar_busca_termo(
             "+".join(fontes),
             len(combinado),
         )
+        _gravar_cache(termo, combinado)
         return combinado
 
+    cache = _ler_cache(termo, limite)
+    if cache:
+        return cache
+
     logger.warning(
-        "ML busca termo=%r sem resultados — API 403/bloqueada e fallbacks vazios (catálogo/ddg)",
+        "ML busca termo=%r sem resultados — API 403/bloqueada e fallbacks vazios (catálogo/brave/ddg/cache)",
         termo,
     )
     return []

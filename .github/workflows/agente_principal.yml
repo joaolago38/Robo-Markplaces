@@ -121,6 +121,7 @@ jobs:
           BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
@@ -173,6 +174,7 @@ jobs:
           WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
@@ -242,6 +244,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}

@@ -243,7 +243,7 @@ def _logar_achados(
 
     if not achados:
         logger.info("Leilão %s: nenhum achado nesta rodada", nome)
-        ddg = mensagem_circuit_breaker()
+        ddg = mensagem_circuit_breaker("leilao")
         if ddg:
             logger.warning("Leilão %s: %s", nome, ddg)
         return
@@ -397,7 +397,7 @@ def _montar_resumo_varredura(
             f"{diag.get('sumare_candidatos', 0)} candidatos"
         )
 
-    ddg = diag.get("circuit_breaker_msg") or mensagem_circuit_breaker()
+    ddg = diag.get("circuit_breaker_msg") or mensagem_circuit_breaker("leilao")
     if ddg:
         linhas.extend(["", f"⚠️ {ddg}"])
     elif total_achados == 0:

@@ -684,8 +684,8 @@ def buscar_veiculo_em_fontes(
         **meta_fontes,
         "fontes_consultadas": len(fontes),
         "achados_total": len(todos),
-        "circuit_breaker_ativo": circuit_breaker_ativo(),
-        "circuit_breaker_msg": mensagem_circuit_breaker(),
+        "circuit_breaker_ativo": circuit_breaker_ativo("leilao"),
+        "circuit_breaker_msg": mensagem_circuit_breaker("leilao"),
         "sumare_coleta": diag_sumare or {},
     }
     return {"achados": todos, "diagnostico": diagnostico}

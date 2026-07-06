@@ -76,6 +76,7 @@ jobs:
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}

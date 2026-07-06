@@ -82,7 +82,7 @@ def _formatar_requisitos(item: dict[str, Any], *, max_itens: int = 4) -> str:
 def _logar_achados(nome: str, achados: list[dict[str, Any]], novos: list[dict[str, Any]]) -> None:
     if not achados:
         logger.info("Licitação %s: nenhum achado nesta rodada", nome)
-        ddg = mensagem_circuit_breaker()
+        ddg = mensagem_circuit_breaker("licitacao")
         if ddg:
             logger.warning("Licitação %s: %s", nome, ddg)
         return
@@ -188,7 +188,7 @@ def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
             f"• {r.get('nome', r.get('id', '?'))}: "
             f"{int(r.get('achados_total') or 0)} achado(s), {len(r.get('novos') or [])} novo(s)"
         )
-    ddg = mensagem_circuit_breaker()
+    ddg = mensagem_circuit_breaker("licitacao")
     if ddg:
         linhas.extend(["", f"⚠️ {ddg}"])
     elif total_achados == 0:
