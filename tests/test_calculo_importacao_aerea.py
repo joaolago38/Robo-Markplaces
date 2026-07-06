@@ -135,6 +135,62 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["razao_social"], "EMPRESA TESTE LTDA")
 
+    def test_perfil_cnpj_invalido(self):
+        from integracoes.importacao.perfil_empresa_importacao import buscar_empresa_por_cnpj
+
+        out = buscar_empresa_por_cnpj("123")
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "CNPJ inválido")
+
+    @patch("integracoes.importacao.perfil_empresa_importacao.request")
+    def test_perfil_receitaws_fallback(self, mock_req):
+        from integracoes.importacao.perfil_empresa_importacao import buscar_empresa_por_cnpj
+
+        class RespBrasil:
+            status_code = 500
+
+            def json(self):
+                return {}
+
+        class RespReceita:
+            status_code = 200
+
+            def json(self):
+                return {
+                    "cnpj": "52668583000127",
+                    "nome": "EMPRESA RECEITA LTDA",
+                    "logradouro": "Rua B",
+                    "numero": "200",
+                    "municipio": "Americana",
+                    "uf": "SP",
+                    "simples": "nao",
+                }
+
+        mock_req.side_effect = [RespBrasil(), RespReceita()]
+        out = buscar_empresa_por_cnpj("52668583000127")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["fonte"], "receitaws")
+
+    @patch("integracoes.importacao.perfil_empresa_importacao.buscar_empresa_por_cnpj")
+    def test_obter_perfil_importador(self, mock_busca):
+        from integracoes.importacao.perfil_empresa_importacao import obter_perfil_importador
+
+        mock_busca.return_value = {
+            "ok": True,
+            "razao_social": "API LTDA",
+            "endereco": "Rua X",
+            "regime_tributario": "lucro_presumido",
+            "fonte": "brasilapi",
+        }
+        out = obter_perfil_importador()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["razao_social"], "API LTDA")
+        self.assertEqual(out["fonte_empresa"], "brasilapi")
+
+    def test_fob_invalido(self):
+        out = calcular_custo_importacao_aerea_formal({"fob_usd": 0, "cambio_usd_brl": 5})
+        self.assertFalse(out["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
