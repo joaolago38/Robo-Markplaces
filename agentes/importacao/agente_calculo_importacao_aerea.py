@@ -14,7 +14,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from core.atomic_io import escrever_json_atomico, ler_json
+from core.atomic_io import escrever_json_atomico
 from core.config import ALIBABA_IMPORTACAO_CATALOGO, ROOT
 from integracoes.alibaba.busca import buscar_oportunidades
 from integracoes.cambio.cotacao_usd import obter_cotacao_usd
