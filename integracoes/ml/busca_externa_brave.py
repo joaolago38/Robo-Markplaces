@@ -8,7 +8,6 @@ https://brave.com/search/api/
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from core.config import BRAVE_SEARCH_API_KEY
 from core.http_client import request
