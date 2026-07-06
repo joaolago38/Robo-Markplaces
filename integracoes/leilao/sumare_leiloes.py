@@ -111,6 +111,29 @@ def _request_sumare(
         logger.debug("Sumaré %s falha final: %s", contexto, ultimo_erro)
     return None
 
+
+def _html_e_pagina_login(html: str) -> bool:
+    """Detecta redirecionamento para login (comum no ajaxListaLotes sem sessão)."""
+    if not html:
+        return False
+    norm = html.lower()
+    if 'id="login-form-pass"' in norm or "sumareleiloes.com.br/login" in norm:
+        return True
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.DOTALL)
+    if m and "login" in _normalizar(m.group(1)):
+        return True
+    return False
+
+
+def _html_tem_lotes(html: str) -> bool:
+    return bool(html and "lot-item" in html)
+
+
+def _aquecer_sessao_sumare(sess: requests.Session) -> None:
+    """GET na home para obter cookies antes de leilões/ajax."""
+    _request_sumare(sess, "GET", f"{BASE_URL}/", contexto="warmup home")
+
+
 _RE_AUCTION_BLOCK = re.compile(
     r'<div class="auction-item">(.*?)<a href="https://www\.sumareleiloes\.com\.br/leiloes/(\d+)" class="goToAuction"',
     re.DOTALL | re.IGNORECASE,
@@ -432,7 +455,19 @@ def _buscar_pagina_lotes_ajax(
         data=data,
         headers={**_HEADERS, "X-Requested-With": "XMLHttpRequest", "Referer": f"{BASE_URL}/leiloes/{leilao_id}"},
     )
-    return r.text if r is not None and r.status_code == 200 else ""
+    if r is None or r.status_code != 200:
+        return ""
+    texto = r.text or ""
+    if _html_e_pagina_login(texto):
+        logger.warning(
+            "Sumaré ajax leilão %s p%s retornou login — paginação indisponível",
+            leilao_id,
+            pagina,
+        )
+        return ""
+    if not _html_tem_lotes(texto):
+        return ""
+    return texto
 
 
 def coletar_lotes_leilao(
@@ -461,20 +496,39 @@ def coletar_lotes_leilao(
         logger.warning("Sumaré leilão %s HTTP %s", leilao_id, r.status_code)
         return None
     html = r.text
+    if _html_e_pagina_login(html):
+        logger.warning("Sumaré leilão %s redirecionou para login", leilao_id)
+        return None
 
     total_m = _RE_VARS.search(html)
     total = int(total_m.group(1)) if total_m else 0
 
     lotes = _extrair_lotes_html(html, leilao)
     por_pagina = max(1, len(lotes))
+    paginacao_ok = True
     if total > len(lotes) and por_pagina > 0:
         paginas = (total + por_pagina - 1) // por_pagina
         for pagina in range(2, paginas + 1):
             if pausa_paginas_seg > 0:
                 time.sleep(pausa_paginas_seg)
             frag = _buscar_pagina_lotes_ajax(sess, leilao_id=leilao_id, total=total, pagina=pagina)
-            if frag and "lot-item" in frag:
-                lotes.extend(_extrair_lotes_html(frag, leilao))
+            if not frag:
+                paginacao_ok = False
+                logger.info(
+                    "Sumaré leilão %s: parando paginação na p%s — mantendo %s lote(s) da 1ª página",
+                    leilao_id,
+                    pagina,
+                    len(lotes),
+                )
+                break
+            lotes.extend(_extrair_lotes_html(frag, leilao))
+    if lotes and not paginacao_ok and total > len(lotes):
+        logger.info(
+            "Sumaré leilão %s: coleta parcial %s/%s lotes (ajax exige login)",
+            leilao_id,
+            len(lotes),
+            total,
+        )
 
     # dedupe
     unicos: dict[str, dict[str, Any]] = {}

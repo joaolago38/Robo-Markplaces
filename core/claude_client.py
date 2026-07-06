@@ -15,6 +15,35 @@ API_URL = "https://api.anthropic.com/v1/messages"
 MODELO = "claude-sonnet-4-5"
 MODELO_RAPIDO = "claude-haiku-4-5"
 
+
+def _status_http_erro(exc: Exception) -> int | None:
+    resp = getattr(exc, "response", None)
+    if resp is not None and getattr(resp, "status_code", None):
+        return int(resp.status_code)
+    texto = str(exc).lower()
+    if "401" in texto and "unauthorized" in texto:
+        return 401
+    if "403" in texto and "forbidden" in texto:
+        return 403
+    return None
+
+
+def _log_erro_claude(exc: Exception, *, contexto: str) -> None:
+    status = _status_http_erro(exc)
+    if status in (401, 403):
+        logger.warning(
+            "Claude indisponível — %s (HTTP %s — configure ANTHROPIC_API_KEY)",
+            contexto,
+            status,
+        )
+        return
+    logger.error(
+        "Claude erro — %s: %s",
+        contexto,
+        exc,
+        extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
+    )
+
 SYSTEM = """
 Você é o agente de vendas de uma distribuidora de esmaltes para manicures.
 Tom: profissional, próximo, linguagem de salão de beleza.
@@ -91,10 +120,7 @@ def perguntar(
         return "⚠️ Erro na IA: resposta inválida."
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:comunicacao"])
-        logger.error(
-            "Claude erro: %s", e,
-            extra={"error_kind": type(e).__name__, "error_message": str(e)},
-        )
+        _log_erro_claude(e, contexto="texto livre")
         return "⚠️ Erro na IA: falha de comunicação com o provedor."
 
 def perguntar_estruturado(
@@ -163,10 +189,7 @@ def perguntar_estruturado(
         return None
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:estruturado"])
-        logger.error(
-            "Claude erro (estruturado, tool=%s): %s", tool_name, e,
-            extra={"error_kind": type(e).__name__, "error_message": str(e)},
-        )
+        _log_erro_claude(e, contexto=f"estruturado tool={tool_name}")
         return None
 
 def responder_chat(pergunta: str, produto: dict, canal: str) -> str:

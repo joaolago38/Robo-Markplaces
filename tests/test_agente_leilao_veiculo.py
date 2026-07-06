@@ -73,7 +73,9 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
 
         with patch.object(agente, "_analisar_achados", side_effect=_analisar), patch.object(
             agente, "HISTORY_PATH", self.tmp_path / "hist.json"
-        ), patch.object(agente, "LEILAO_ALERTA_RESUMO", False):
+        ), patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
+            agente, "LEILAO_ALERTA_RESUMO", False
+        ), patch.object(agente, "LEILAO_IA_AVALIAR_PARAMETROS", False):
             out1 = agente.executar(enviar_alerta=True)
             out2 = agente.executar(enviar_alerta=True)
 
@@ -173,8 +175,12 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino", "prioridade": 1}
         ]
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
+        ), patch.object(
             agente, "LEILAO_ALERTA_RESUMO", True
-        ), patch.object(agente, "_analisar_achados", return_value=[]):
+        ), patch.object(agente, "LEILAO_IA_AVALIAR_PARAMETROS", False), patch.object(
+            agente, "_analisar_achados", return_value=[]
+        ):
             out = agente.executar(enviar_alerta=True)
         self.assertTrue(out["ok"])
         self.assertTrue(out["alerta_resumo_enviado"])
@@ -189,8 +195,10 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino"}
         ]
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
+        ), patch.object(
             agente, "mensagem_circuit_breaker", return_value="DDG circuit breaker ativo — liberação em ~60s"
-        ):
+        ), patch.object(agente, "LEILAO_IA_AVALIAR_PARAMETROS", False):
             with self.assertLogs("agente_leilao_veiculo", level="WARNING") as logs:
                 agente.executar(enviar_alerta=False)
         self.assertTrue(any("circuit breaker" in line for line in logs.output))
@@ -223,8 +231,10 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             "diagnostico": {},
         }
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
+        ), patch.object(
             agente, "_analisar_achados", side_effect=lambda _v, achados: achados
-        ):
+        ), patch.object(agente, "LEILAO_IA_AVALIAR_PARAMETROS", False):
             with self.assertLogs("agente_leilao_veiculo", level="INFO") as logs:
                 agente.executar(enviar_alerta=False)
         joined = "\n".join(logs.output)

@@ -17,6 +17,9 @@ env:
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE }}
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG: "2.5"
+  SUMARE_LEILOES_RETRY_MAX: "3"
+  SUMARE_LEILOES_TIMEOUT_SEG: "45"
 
 jobs:
   monitorar:
@@ -45,11 +48,17 @@ jobs:
           key: sumare-leiloes-${{ github.run_id }}
           restore-keys: |
             sumare-leiloes-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Rodar monitor Sumare Leiloes
         run: python -m agentes.leilao.agente_monitor_sumare_leiloes
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:

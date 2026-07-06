@@ -16,18 +16,33 @@ from integracoes.datadog import vigia_saude as vs
 
 class VigiaDatadogTests(unittest.TestCase):
     def test_registrar_erro_local(self):
-        with patch.object(buf, "BUFFER_PATH") as mock_path:
-            mock_path.exists.return_value = False
-            with patch("integracoes.datadog.buffer_erros.ler_json", return_value={"erros": []}):
-                with patch("integracoes.datadog.buffer_erros.escrever_json_atomico") as mock_write:
-                    buf.registrar_erro_local(
-                        nome_logger="ml_client",
-                        mensagem="token expirado",
-                        error_kind="http_401",
-                    )
-                    mock_write.assert_called_once()
-                    payload = mock_write.call_args[0][1]
-                    self.assertEqual(len(payload["erros"]), 1)
+        with patch.object(buf, "_deve_ignorar_buffer", return_value=False):
+            with patch.object(buf, "BUFFER_PATH") as mock_path:
+                mock_path.exists.return_value = False
+                with patch("integracoes.datadog.buffer_erros.ler_json", return_value={"erros": []}):
+                    with patch("integracoes.datadog.buffer_erros.escrever_json_atomico") as mock_write:
+                        buf.registrar_erro_local(
+                            nome_logger="ml_client",
+                            mensagem="token expirado",
+                            error_kind="http_401",
+                        )
+                        mock_write.assert_called_once()
+                        payload = mock_write.call_args[0][1]
+                        self.assertEqual(len(payload["erros"]), 1)
+
+    def test_registrar_erro_local_ignora_pytest(self):
+        with patch.dict(os.environ, {"PYTEST_CURRENT_TEST": "test_x (setup)"}):
+            with patch("integracoes.datadog.buffer_erros.escrever_json_atomico") as mock_write:
+                buf.registrar_erro_local(nome_logger="x", mensagem="erro: boom")
+                mock_write.assert_not_called()
+
+    def test_registrar_erro_local_ignora_ruido_boom(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("PYTEST_CURRENT_TEST", None)
+        with patch("integracoes.datadog.buffer_erros.ler_json", return_value={"erros": []}):
+            with patch("integracoes.datadog.buffer_erros.escrever_json_atomico") as mock_write:
+                buf.registrar_erro_local(nome_logger="agente_x", mensagem="Agente erro: boom")
+                mock_write.assert_not_called()
 
     def test_verificar_inatividade_sem_arquivo(self):
         fontes = [
