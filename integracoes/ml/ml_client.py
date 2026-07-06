@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID, ML_SITE_ID
+from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
@@ -61,6 +61,17 @@ def _status_http_exc(exc: Exception) -> int | None:
     return None
 
 
+def _http_error_from_response(response: Any) -> Exception:
+    """Monta exceção compatível com _log_erro_leitura_* a partir do Response."""
+    from requests import HTTPError
+
+    try:
+        response.raise_for_status()
+    except HTTPError as exc:
+        return exc
+    return RuntimeError(f"HTTP {getattr(response, 'status_code', '?')}")
+
+
 def _log_erro_leitura_item(acao: str, item_id: str, exc: Exception) -> None:
     """Leituras por item: 404/403 são esperados (item inválido/inacessível) → warning."""
     status = _status_http_exc(exc)
@@ -77,14 +88,21 @@ def _log_erro_leitura_item(acao: str, item_id: str, exc: Exception) -> None:
 
 
 def _log_erro_leitura_termo(acao: str, termo: str, exc: Exception) -> None:
-    """Busca pública por termo: 403 PolicyAgent é comum → warning."""
+    """Busca por termo: 403 = bloqueio ML (sem token ou PolicyAgent) → warning."""
     status = _status_http_exc(exc)
     if status in (404, 403):
+        dica = ""
+        if status == 403:
+            dica = (
+                " — verifique ML_ACCESS_TOKEN/refresh, app no DevCenter e se a busca "
+                "/sites/search está habilitada para a conta"
+            )
         logger.warning(
-            "ML %s termo=%s HTTP %s — busca bloqueada ou sem resultados: %s",
+            "ML %s termo=%s HTTP %s — busca bloqueada ou sem resultados%s: %s",
             acao,
             termo,
             status,
+            dica,
             exc,
         )
     else:
@@ -654,12 +672,18 @@ def _normalizar_resultado_busca(row: dict) -> dict:
     }
 
 
-def buscar_concorrentes_por_termo(termo: str, limite: int = 10) -> list[dict]:
+def buscar_concorrentes_por_termo(
+    termo: str,
+    limite: int = 10,
+    *,
+    item_id_referencia: str | None = None,
+) -> list[dict]:
     """
-    Pesquisa o Mercado Livre por palavra-chave (busca pública do site, sem precisar
-    que o produto já esteja no seu catálogo/anúncio). Útil para monitorar concorrência
-    de produtos que você define livremente (por nome/termo), e não só dos seus próprios
-    anúncios.
+    Pesquisa o Mercado Livre por palavra-chave.
+
+    Desde ~2025 o endpoint /sites/{site}/search costuma retornar HTTP 403 mesmo
+    autenticado. Neste caso usa fallbacks: catálogo (/products/.../items) e
+    DuckDuckGo + enriquecimento via /items/{id}.
 
     Exclui resultados do próprio vendedor (ML_SELLER_ID) quando configurado.
     Retorna lista vazia em caso de termo vazio ou erro. Nunca lança exceção.
@@ -667,30 +691,20 @@ def buscar_concorrentes_por_termo(termo: str, limite: int = 10) -> list[dict]:
     termo = (termo or "").strip()
     if not termo:
         return []
-    try:
-        r = request(
-            "GET",
-            f"{BASE}/sites/{ML_SITE_ID}/search",
-            params={"q": termo, "limit": max(1, min(50, limite))},
-            timeout=20,
+    if not _enabled():
+        logger.warning(
+            "ML buscar_concorrentes_por_termo termo=%r sem credenciais — "
+            "API /sites/search retorna 403 sem token; tentando fallbacks DDG.",
+            termo,
         )
-        r.raise_for_status()
-        body = r.json() or {}
-        results = body.get("results") or []
+    try:
+        from integracoes.ml.busca_termo_ml import executar_busca_termo
 
-        seller_self = str(ML_SELLER_ID or "").strip()
-        encontrados: list[dict] = []
-        for row in results:
-            if not isinstance(row, dict):
-                continue
-            norm = _normalizar_resultado_busca(row)
-            if seller_self and norm["seller_id"] == seller_self:
-                continue
-            if norm["preco"] > 0:
-                encontrados.append(norm)
-            if len(encontrados) >= limite:
-                break
-        return encontrados
+        return executar_busca_termo(
+            termo,
+            max(1, min(50, limite)),
+            item_id_referencia=item_id_referencia,
+        )
     except Exception as exc:
         _log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
         return []

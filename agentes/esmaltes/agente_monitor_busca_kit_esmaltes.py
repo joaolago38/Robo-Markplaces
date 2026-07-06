@@ -133,7 +133,12 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             termo = str(item.get("termo_busca") or "").strip()
             limite = int(item.get("limite_resultados") or 20)
             logger.info("Busca kit esmaltes [%s]: %s", item.get("marca"), termo)
-            anuncios = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+            item_ref = str(item.get("item_id_ml") or item.get("item_id_referencia") or "").strip() or None
+            anuncios = ml_client.buscar_concorrentes_por_termo(
+                termo,
+                limite=limite,
+                item_id_referencia=item_ref,
+            )
             resultado = executar_busca_item(item, anuncios, timestamp=agora)
             resultados_rodada.append(resultado)
             registrar_execucao_diaria(historico, resultado, dia=dia)

@@ -177,9 +177,16 @@ def _analisar_segmento(segmento: dict[str, Any]) -> dict[str, Any]:
     if not termo:
         return {"id": segmento.get("id"), "ok": False, "motivo": "termo vazio"}
 
-    anuncios = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+    item_ref = str(segmento.get("item_id_referencia") or segmento.get("item_id_ml") or "").strip() or None
+    anuncios = ml_client.buscar_concorrentes_por_termo(
+        termo,
+        limite=limite,
+        item_id_referencia=item_ref,
+    )
     out = comparar_segmento(segmento, anuncios)
     out["prioridade"] = int(segmento.get("prioridade") or 99)
+    fontes = sorted({str(a.get("fonte_busca") or "") for a in anuncios if a.get("fonte_busca")})
+    out["fonte_busca"] = fontes[0] if len(fontes) == 1 else ("misto" if fontes else "nenhuma")
 
     sid = str(segmento.get("id") or "")
     gauge(
@@ -193,11 +200,12 @@ def _analisar_segmento(segmento: dict[str, Any]) -> dict[str, Any]:
         tags=[f"segmento:{sid}"],
     )
     logger.info(
-        "Comparativo %s: Anita %s vs Impala %s — líder %s",
+        "Comparativo %s: Anita %s vs Impala %s — líder %s (fonte %s)",
         segmento.get("nome"),
         (out.get("anita") or {}).get("unidades_vendidas"),
         (out.get("impala") or {}).get("unidades_vendidas"),
         out.get("vencedor_vendas"),
+        out.get("fonte_busca"),
     )
     return out
 
