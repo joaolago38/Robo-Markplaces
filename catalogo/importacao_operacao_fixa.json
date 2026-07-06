@@ -1,0 +1,32 @@
+{
+  "cnpj": "52668583000127",
+  "razao_social": "",
+  "endereco": "",
+  "regime_tributario": "lucro_presumido",
+  "modal_transporte": "aereo",
+  "aeroporto_desembaraco": {
+    "codigo": "VCP",
+    "nome": "Viracopos",
+    "cidade": "Campinas",
+    "uf": "SP"
+  },
+  "destino_entrega": {
+    "cep": "13467-694",
+    "cidade": "Americana",
+    "uf": "SP",
+    "distancia_km_viracopos": 120
+  },
+  "icms_uf_padrao_pct": 18.0,
+  "pis_cofins_importacao_pct": 11.75,
+  "seguro_internacional_pct": 0.5,
+  "frete_aereo_usd_kg_estimativa": 5.5,
+  "custos_viracopos_brl": {
+    "armazenagem_aeroportuaria": 450.0,
+    "desembaraco_despachante": 1200.0,
+    "thc_manuseio_aereo": 380.0,
+    "siscomex": 214.5,
+    "frete_rodoviario_viracopos_destino": 650.0,
+    "frete_rodoviario_por_km": 5.5
+  },
+  "aviso_legal": "Valores estimados para planejamento. II/IPI dependem da classificação NCM confirmada por despachante aduaneiro."
+}

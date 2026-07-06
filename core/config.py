@@ -197,6 +197,15 @@ IMPORTACAO_DESEMBARACO_BRL = float(os.getenv("IMPORTACAO_DESEMBARACO_BRL", "800.
 IMPORTACAO_FRETE_MARITIMO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_MARITIMO_USD_KG", "0.85"))
 IMPORTACAO_FRETE_AEREO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_AEREO_USD_KG", "5.5"))
 IMPORTACAO_FRETE_NACIONAL_BRL = float(os.getenv("IMPORTACAO_FRETE_NACIONAL_BRL", "12.0"))
+IMPORTACAO_OPERACAO_FIXA_CATALOGO = os.getenv(
+    "IMPORTACAO_OPERACAO_FIXA_CATALOGO", "catalogo/importacao_operacao_fixa.json"
+)
+# Importação formal aérea CNPJ (Viracopos) — substitui landed simplificado no modo aéreo
+IMPORTACAO_AEREO_FORMAL = os.getenv("IMPORTACAO_AEREO_FORMAL", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Alibaba inteligência (câmbio + landed + margem)
 ALIBABA_MARGEM_MIN_PCT = float(os.getenv("ALIBABA_MARGEM_MIN_PCT", "18.0"))

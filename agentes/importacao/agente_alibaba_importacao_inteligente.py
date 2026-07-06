@@ -33,6 +33,7 @@ from integracoes.importacao.avaliacao_ia_parametros import (
     avaliar_parametros_alibaba_inteligencia,
     formatar_secao_ia,
 )
+from integracoes.importacao.calculo_importacao_aerea import exportar_csv_resultado
 
 logger = logging.getLogger("agente_alibaba_importacao_inteligente")
 
@@ -79,22 +80,34 @@ def _montar_alerta_cambio(cotacao: dict[str, Any], variacao: dict[str, Any]) -> 
 
 
 def _resumo_custo(analise: dict[str, Any]) -> str:
-    cenarios = (analise.get("cenarios_frete") or {})
+    cenarios = analise.get("cenarios_frete") or {}
     mar = cenarios.get("maritimo") or {}
-    aer = cenarios.get("aereo") or {}
+    formal = analise.get("calculo_aereo_formal") or {}
     mk = analise.get("precos_marketplace") or {}
     margens = analise.get("margens") or {}
-    mm = margens.get(analise.get("melhor_frete") or "maritimo") or {}
+    mm = margens.get(analise.get("melhor_frete") or "aereo") or {}
 
     linhas = [
         f"  FOB: {_fmt_usd(analise.get('preco_usd'))} | MOQ {analise.get('moq', '?')}",
-        f"  Custo landed 🚢 {_fmt_brl(mar.get('custo_unitario_brl'))} | ✈️ {_fmt_brl(aer.get('custo_unitario_brl'))}",
-        f"  ML mediana: {_fmt_brl(mk.get('preco_mediana_brl'))} (min {_fmt_brl(mk.get('preco_min_brl'))})",
     ]
+    if formal.get("ok"):
+        linhas.append(
+            f"  ✈️ Formal VCP: {_fmt_brl(formal.get('custo_unitario_brl'))} "
+            f"(CIF {_fmt_brl(formal.get('valor_aduaneiro_cif_brl'))})"
+        )
+    else:
+        aer = cenarios.get("aereo") or {}
+        linhas.append(
+            f"  Custo landed 🚢 {_fmt_brl(mar.get('custo_unitario_brl'))} | "
+            f"✈️ {_fmt_brl(aer.get('custo_unitario_brl'))}"
+        )
+    linhas.append(
+        f"  ML mediana: {_fmt_brl(mk.get('preco_mediana_brl'))} (min {_fmt_brl(mk.get('preco_min_brl'))})"
+    )
     if mm.get("ok"):
         emoji = "✅" if mm.get("lucro_razoavel") else "⚠️"
         linhas.append(
-            f"  {emoji} Margem ({analise.get('melhor_frete', '?')}): "
+            f"  {emoji} Margem ({analise.get('melhor_frete', 'aereo')}): "
             f"{_fmt_brl(mm.get('margem_brl'))} ({mm.get('margem_pct', 0)}%)"
         )
     return "\n".join(linhas)
@@ -147,10 +160,14 @@ def _montar_alerta_lucrativos(resultados: list[dict[str, Any]], cotacao: dict[st
             if not a.get("lucro_razoavel"):
                 continue
             mm = a.get("margem_melhor") or {}
+            formal = a.get("calculo_aereo_formal") or {}
+            custo_unit = formal.get("custo_unitario_brl") if formal.get("ok") else (
+                (a.get("cenarios_frete") or {}).get(a.get("melhor_frete") or "aereo", {}).get("custo_unitario_brl")
+            )
             titulo = str(a.get("titulo") or "Fornecedor")[:65]
             itens.append(
                 f"• *{r.get('produto', '?')}* — {titulo}\n"
-                f"  FOB {_fmt_usd(a.get('preco_usd'))} | landed {_fmt_brl((a.get('cenarios_frete') or {}).get(a.get('melhor_frete') or 'maritimo', {}).get('custo_unitario_brl'))}\n"
+                f"  FOB {_fmt_usd(a.get('preco_usd'))} | formal VCP {_fmt_brl(custo_unit)}\n"
                 f"  Margem {_fmt_brl(mm.get('margem_brl'))} ({mm.get('margem_pct')}%) via {a.get('melhor_frete')}\n"
                 f"  🔗 {a.get('url', '')}"
             )
@@ -200,6 +217,12 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 cambio_usd_brl=cambio,
             )
             resultados.append(analise)
+            melhor = analise.get("melhor_analise") or {}
+            formal = melhor.get("calculo_aereo_formal") or {}
+            if formal.get("ok") and pid:
+                csv_path = ROOT / "logs" / f"importacao_aerea_{pid}.csv"
+                csv_path.parent.mkdir(parents=True, exist_ok=True)
+                csv_path.write_text(exportar_csv_resultado(formal), encoding="utf-8")
             historico[pid] = {
                 "produto": produto.get("nome"),
                 "ultima_varredura": agora,
