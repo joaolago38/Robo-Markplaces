@@ -1,6 +1,6 @@
 """
 agentes/leilao/agente_leilao_veiculo.py
-Monitor 24h de leilões de veículos **recuperados de furto / média monta** em leiloeiros
+Monitor 24h de leilões de veículos **recuperados de furto ou pequena/média monta** em leiloeiros
 e portais DETRAN (todos os estados). Modelos prioritários no catálogo padrão:
 Fiorino Furgão → Gol → Civic → City → Fit.
 
@@ -74,8 +74,25 @@ def _fmt_brl(valor: Any) -> str:
         return "n/d"
 
 
+def _params_fipe_veiculo(veiculo: dict[str, Any]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for chave_src, chave_dst in (
+        ("margem_fipe_min_pct", "margem_min_pct"),
+        ("margem_fipe_min_reais", "margem_min_reais"),
+        ("preco_max_lance", "preco_max_lance"),
+    ):
+        val = veiculo.get(chave_src)
+        if val is not None:
+            try:
+                out[chave_dst] = float(val)
+            except (TypeError, ValueError):
+                pass
+    return out
+
+
 def _analisar_achados(veiculo: dict[str, Any], achados: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [avaliar_achado_leilao(item, veiculo) for item in achados]
+    params = _params_fipe_veiculo(veiculo)
+    return [avaliar_achado_leilao(item, veiculo, **params) for item in achados]
 
 
 def _monitorar_veiculo(

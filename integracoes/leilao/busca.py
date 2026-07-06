@@ -28,10 +28,24 @@ _SUMARE_LOTES_CACHE: tuple[list[dict[str, Any]], dict[str, Any]] | None = None
 
 _DDG_HTML = "https://html.duckduckgo.com/html/"  # compat testes legados
 _PALAVRAS_LEILAO = ("leilao", "leilão", "lote", "arremate", "edital", "veiculo", "veículo", "automotor")
-_PERFIL_RECUPERADO_FURTO = "recuperado_furto_media_monta"
-_TERMOS_PERFIL_BUSCA = ("recuperado", "furto", "média monta", "media monta")
+_PERFIL_RECUPERADO_FURTO = "recuperado_furto_pequena_monta"
+_PERFIS_RECUPERADO_MONTA = frozenset({
+    "recuperado_furto_pequena_monta",
+    "recuperado_furto_media_monta",  # legado — mesmo comportamento
+})
+_TERMOS_PERFIL_BUSCA = ("recuperado", "furto", "pequena monta", "média monta", "media monta")
 _PALAVRAS_RECUPERADO = ("recuperado", "furto", "furtado", "roubado", "judicial", "detran")
-_PALAVRAS_MEDIA_MONTA = ("media monta", "média monta", "medio", "médio", "avaria media", "avaria média")
+_PALAVRAS_MONTA_LEVE = (
+    "pequena monta",
+    "media monta",
+    "média monta",
+    "avaria media",
+    "avaria média",
+    "avaria leve",
+    "leve",
+    "pequeno reparo",
+)
+_PALAVRAS_MEDIA_MONTA = _PALAVRAS_MONTA_LEVE
 _PALAVRAS_EXCLUIR_MONTA = ("grande monta", "perda total", "irrecuperavel", "irrecuperável", "sucata")
 _MODELOS_MARCA_OPCIONAL = frozenset({"gol", "civic", "city", "fit", "fiorino", "furgao", "furgão"})
 _MESES_PT = {
@@ -65,7 +79,7 @@ def montar_termo_busca(veiculo: dict[str, Any]) -> str:
     for extra in veiculo.get("termos_extra") or []:
         if extra:
             partes.append(str(extra).strip())
-    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
+    if veiculo.get("perfil") in _PERFIS_RECUPERADO_MONTA:
         partes.extend(_TERMOS_PERFIL_BUSCA)
     return " ".join(p for p in partes if p)
 
@@ -101,8 +115,8 @@ def _normalizar(texto: str) -> str:
 
 
 def _sufixo_query_leilao(veiculo: dict[str, Any], *, tipo_fonte: str) -> str:
-    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
-        base = "leilão veículo recuperado furto média monta"
+    if veiculo.get("perfil") in _PERFIS_RECUPERADO_MONTA:
+        base = "leilão veículo recuperado furto pequena monta"
     else:
         base = "leilão veículo"
     if tipo_fonte == "detran":
@@ -111,11 +125,16 @@ def _sufixo_query_leilao(veiculo: dict[str, Any], *, tipo_fonte: str) -> str:
 
 
 def _bate_perfil_recuperado_minimo(texto: str) -> bool:
-    """Exige furto/recuperado/DETRAN; não exige média monta (snippets DDG raramente trazem)."""
+    """
+    Aceita furto/recuperado/DETRAN **ou** pequena/média monta.
+    Exclui grande monta, perda total e sucata.
+    """
     norm = _normalizar(texto)
     if any(x in norm for x in _PALAVRAS_EXCLUIR_MONTA):
         return False
-    return any(x in norm for x in _PALAVRAS_RECUPERADO)
+    tem_recuperado = any(x in norm for x in _PALAVRAS_RECUPERADO)
+    tem_monta_leve = any(x in norm for x in _PALAVRAS_MONTA_LEVE)
+    return tem_recuperado or tem_monta_leve
 
 
 def _tem_media_monta(texto: str) -> bool:
@@ -124,10 +143,11 @@ def _tem_media_monta(texto: str) -> bool:
 
 
 def _bate_perfil_recuperado_furto(texto: str) -> bool:
-    """Perfil estrito — recuperado + média monta."""
+    """Perfil estrito — recuperado + monta leve (pequena ou média)."""
     if not _bate_perfil_recuperado_minimo(texto):
         return False
-    return _tem_media_monta(texto)
+    norm = _normalizar(texto)
+    return any(x in norm for x in _PALAVRAS_RECUPERADO) and any(x in norm for x in _PALAVRAS_MONTA_LEVE)
 
 
 def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
@@ -193,7 +213,7 @@ def _relevante_para_veiculo(resultado: dict[str, str], veiculo: dict[str, Any]) 
         return False
     if not (_parece_leilao(blob) or _parece_leilao(resultado.get("url", ""))):
         return False
-    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
+    if veiculo.get("perfil") in _PERFIS_RECUPERADO_MONTA:
         return _bate_perfil_recuperado_minimo(blob)
     return True
 
@@ -342,8 +362,11 @@ def enriquecer_achado_leilao(item: dict[str, Any], veiculo: dict[str, Any]) -> d
         out["url_cadastro"] = url_cadastro
 
     blob = f"{item.get('titulo', '')} {item.get('snippet', '')}"
-    if veiculo.get("perfil") == _PERFIL_RECUPERADO_FURTO:
-        out["perfil_media_monta"] = _tem_media_monta(blob)
+    if veiculo.get("perfil") in _PERFIS_RECUPERADO_MONTA:
+        out["perfil_monta_leve"] = _tem_media_monta(blob)
+        out["perfil_recuperado"] = any(
+            x in _normalizar(blob) for x in _PALAVRAS_RECUPERADO
+        )
 
     if item.get("fonte_tipo") == "detran":
         out["detran_nome"] = item.get("fonte_nome") or f"DETRAN {item.get('fonte_id', '')}"
