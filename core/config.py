@@ -58,6 +58,20 @@ ML_BUSCA_TERMO_FALLBACK_CATALOGO = os.getenv("ML_BUSCA_TERMO_FALLBACK_CATALOGO",
     "false",
     "no",
 )
+ML_BUSCA_TERMO_FALLBACK_CACHE = os.getenv("ML_BUSCA_TERMO_FALLBACK_CACHE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ML_BUSCA_TERMO_CACHE_TTL_SEG = int(os.getenv("ML_BUSCA_TERMO_CACHE_TTL_SEG", "21600"))
+ML_BUSCA_TERMO_MAX_REFS_CATALOGO = int(os.getenv("ML_BUSCA_TERMO_MAX_REFS_CATALOGO", "5"))
+# Brave Search API — fallback JSON quando DDG bloqueia (opcional, requer chave)
+BRAVE_SEARCH_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "").strip()
+ML_BUSCA_TERMO_FALLBACK_BRAVE = os.getenv("ML_BUSCA_TERMO_FALLBACK_BRAVE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Monitor de concorrentes (busca pública por palavra-chave, sem precisar de item próprio)
 MONITOR_CONCORRENTES_ARQUIVO = os.getenv(

@@ -96,21 +96,25 @@ class TestExecutarBuscaTermo(unittest.TestCase):
         with patch.object(ml_client, "_enabled", return_value=True), patch.object(
             ml_client, "_request_ml"
         ) as mock_req, patch.object(
-            ml_client, "listar_meus_anuncios", return_value=[]
+            ml_client,
+            "listar_meus_anuncios",
+            return_value=[{"item_id": "MLB_REF", "titulo": "kit anita esmalte"}],
         ), patch.object(
             ml_client,
             "buscar_detalhes_concorrentes",
             return_value=[
                 {
                     "id": "MLB9",
-                    "titulo": "Kit Anita",
+                    "titulo": "Kit Anita esmalte",
                     "preco": 40.0,
                     "frete_gratis": True,
                     "condicao": "new",
                     "quantidade_vendida": 3,
                 }
             ],
-        ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False):
+        ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ):
             mock_req.return_value = _mock_resp({}, status=403)
             out = busca_termo_ml.executar_busca_termo(
                 "kit anita",
@@ -119,6 +123,78 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             )
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["fonte_busca"], "catalogo")
+
+    def test_fallback_cache_quando_tudo_vazio(self):
+        from datetime import datetime, timezone
+
+        cache = {
+            "kit impala": {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "resultados": [
+                    {
+                        "item_id": "MLB77",
+                        "titulo": "Kit Impala",
+                        "preco": 29.9,
+                        "frete_gratis": False,
+                        "condicao": "new",
+                        "quantidade_vendida": 2,
+                        "seller_id": "1",
+                        "permalink": "",
+                    }
+                ],
+            }
+        }
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            ml_client, "_request_ml"
+        ) as mock_req, patch.object(ml_client, "listar_meus_anuncios", return_value=[]), patch.object(
+            ml_client, "buscar_detalhes_concorrentes", return_value=[]
+        ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False), patch.object(
+            busca_termo_ml, "ler_json", return_value=cache
+        ):
+            mock_req.return_value = _mock_resp({}, status=403)
+            out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["fonte_busca"], "cache")
+
+    def test_fallback_brave(self):
+        item_body = {
+            "id": "MLB555",
+            "title": "Kit Impala esmalte manicure",
+            "price": 31.9,
+            "seller": {"id": "888"},
+            "shipping": {},
+            "condition": "new",
+            "sold_quantity": 4,
+        }
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            ml_client, "_request_ml"
+        ) as mock_req, patch.object(ml_client, "listar_meus_anuncios", return_value=[]), patch.object(
+            ml_client, "buscar_detalhes_concorrentes", return_value=[]
+        ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False), patch(
+            "integracoes.ml.busca_externa_brave.request"
+        ) as mock_http:
+            mock_req.side_effect = [
+                _mock_resp({}, status=403),
+                _mock_resp(item_body),
+            ]
+            mock_http.return_value = _mock_resp(
+                {
+                    "web": {
+                        "results": [
+                            {
+                                "url": "https://produto.mercadolivre.com.br/MLB-555-kit",
+                                "title": "Kit Impala",
+                                "description": "esmalte",
+                            }
+                        ]
+                    }
+                }
+            )
+            with patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", True):
+                with patch("integracoes.ml.busca_externa_brave.BRAVE_SEARCH_API_KEY", "test-key"):
+                    out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["fonte_busca"], "brave")
 
 
 if __name__ == "__main__":

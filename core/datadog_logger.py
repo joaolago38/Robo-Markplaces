@@ -36,6 +36,7 @@ _LOGGER_META = {
     "bling": ("bling", "integracao"),
     "ml_client": ("mercadolivre", "integracao"),
     "busca_termo_ml": ("mercadolivre", "integracao"),
+    "busca_externa_brave": ("mercadolivre", "integracao"),
     "ml_product_ads": ("mercadolivre_ads", "integracao"),
     "magalu_client": ("magalu", "integracao"),
     "shopee_client": ("shopee", "integracao"),

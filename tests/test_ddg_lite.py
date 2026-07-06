@@ -42,21 +42,35 @@ class TestDdgLite(unittest.TestCase):
         self.assertEqual(len(out), 1)
 
     def test_mensagem_circuit_breaker(self):
-        ddg._circuit_breaker_ate = ddg.time.time() + 120
-        self.assertTrue(ddg.circuit_breaker_ativo())
-        self.assertGreater(ddg.segundos_restantes_circuit_breaker(), 0)
-        msg = ddg.mensagem_circuit_breaker()
+        ddg._breaker_ate_por_contexto["geral"] = ddg.time.time() + 120
+        self.assertTrue(ddg.circuit_breaker_ativo("geral"))
+        self.assertGreater(ddg.segundos_restantes_circuit_breaker("geral"), 0)
+        msg = ddg.mensagem_circuit_breaker("geral")
         self.assertIsNotNone(msg)
         self.assertIn("circuit breaker", msg or "")
 
     @patch.object(ddg.time, "sleep")
     @patch.object(ddg, "_ddg_request")
     def test_buscar_loga_quando_breaker_ativo(self, mock_request, _sleep):
-        ddg._circuit_breaker_ate = ddg.time.time() + 60
+        ddg._breaker_ate_por_contexto["leilao"] = ddg.time.time() + 60
         with self.assertLogs("ddg_lite", level="INFO") as logs:
             self.assertEqual(ddg.buscar("q", contexto="leilao"), [])
         self.assertTrue(any("circuit breaker" in line for line in logs.output))
         mock_request.assert_not_called()
+
+    @patch.object(ddg.time, "sleep")
+    @patch.object(ddg, "_ddg_request")
+    def test_breaker_isolado_por_contexto(self, mock_request, _sleep):
+        from core.config import DDG_FALHAS_403_PARA_BREAKER
+
+        bloqueado = MagicMock()
+        bloqueado.status_code = 403
+        bloqueado.text = ""
+        mock_request.return_value = bloqueado
+        for _ in range(DDG_FALHAS_403_PARA_BREAKER):
+            ddg.buscar("leilao", contexto="leilao")
+        self.assertTrue(ddg.circuit_breaker_ativo("leilao"))
+        self.assertFalse(ddg.circuit_breaker_ativo("ml_busca_termo"))
 
     def test_extrair_resultados_lite(self):
         html = """

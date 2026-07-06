@@ -438,7 +438,7 @@ def _montar_painel_decisao(resultados: list[dict[str, Any]]) -> str:
             linhas.append("_Sem fornecedor Alibaba nesta rodada._")
         linhas.append("")
 
-    ddg = mensagem_circuit_breaker()
+    ddg = mensagem_circuit_breaker("descoberta")
     if ddg:
         linhas.append(f"⚠️ {ddg}")
     return "\n".join(linhas).strip()[:3900]

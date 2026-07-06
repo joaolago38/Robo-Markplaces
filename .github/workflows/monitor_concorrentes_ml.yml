@@ -28,6 +28,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID:                ${{ secrets.ML_SITE_ID }}
+          BRAVE_SEARCH_API_KEY:      ${{ secrets.BRAVE_SEARCH_API_KEY }}
           TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID:   ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Salvar historico atualizado

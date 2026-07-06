@@ -28,8 +28,12 @@ _USER_AGENT = (
 _DDG_SESSION = _requests.Session()
 
 _ultima_requisicao = 0.0
-_circuit_breaker_ate = 0.0
-_falhas_consecutivas = 0
+_breaker_ate_por_contexto: dict[str, float] = {}
+_falhas_por_contexto: dict[str, int] = {}
+
+
+def _ctx(contexto: str) -> str:
+    return (contexto or "geral").strip() or "geral"
 
 
 def _headers(*, referer: str = "https://lite.duckduckgo.com/") -> dict[str, str]:
@@ -52,23 +56,23 @@ def _decodificar_url_ddg(href: str) -> str:
     return href
 
 
-def circuit_breaker_ativo() -> bool:
-    """True se o circuit breaker DDG está bloqueando buscas."""
-    return time.time() < _circuit_breaker_ate
+def circuit_breaker_ativo(contexto: str = "geral") -> bool:
+    """True se o circuit breaker DDG está bloqueando buscas no contexto."""
+    return time.time() < _breaker_ate_por_contexto.get(_ctx(contexto), 0.0)
 
 
-def segundos_restantes_circuit_breaker() -> int:
+def segundos_restantes_circuit_breaker(contexto: str = "geral") -> int:
     """Segundos até o circuit breaker expirar (0 se inativo)."""
-    if not circuit_breaker_ativo():
+    if not circuit_breaker_ativo(contexto):
         return 0
-    return max(0, int(_circuit_breaker_ate - time.time()))
+    return max(0, int(_breaker_ate_por_contexto.get(_ctx(contexto), 0.0) - time.time()))
 
 
-def mensagem_circuit_breaker() -> str | None:
+def mensagem_circuit_breaker(contexto: str = "geral") -> str | None:
     """Texto para logs de agentes quando não há resultados por bloqueio DDG."""
-    if not circuit_breaker_ativo():
+    if not circuit_breaker_ativo(contexto):
         return None
-    return f"DDG circuit breaker ativo — liberação em ~{segundos_restantes_circuit_breaker()}s"
+    return f"DDG circuit breaker ativo — liberação em ~{segundos_restantes_circuit_breaker(contexto)}s"
 
 
 def extrair_resultados(html: str) -> list[dict[str, str]]:
@@ -161,13 +165,14 @@ def _aguardar_intervalo() -> None:
     _ultima_requisicao = time.monotonic()
 
 
-def _abrir_circuit_breaker(segundos: float, motivo: str) -> None:
-    global _circuit_breaker_ate, _falhas_consecutivas
-    _circuit_breaker_ate = time.time() + segundos
-    _falhas_consecutivas = 0
+def _abrir_circuit_breaker(segundos: float, motivo: str, contexto: str) -> None:
+    c = _ctx(contexto)
+    _breaker_ate_por_contexto[c] = time.time() + segundos
+    _falhas_por_contexto[c] = 0
     logger.warning(
-        "DDG circuit breaker %ss — %s (próximas buscas retornam vazio até expirar)",
+        "DDG circuit breaker %ss [%s] — %s (próximas buscas neste contexto retornam vazio até expirar)",
         int(segundos),
+        c,
         motivo,
     )
 
@@ -211,20 +216,24 @@ def _buscar_html(query: str) -> tuple[int, list[dict[str, str]]]:
 
 
 def _registrar_falha(status: int | None, contexto: str, query: str) -> bool:
-    """Incrementa falhas; retorna True se abriu circuit breaker."""
+    """Incrementa falhas do contexto; retorna True se abriu circuit breaker."""
     from core.config import DDG_CIRCUIT_BREAKER_SEG, DDG_FALHAS_403_PARA_BREAKER
 
-    global _falhas_consecutivas
-
+    c = _ctx(contexto)
     if status in (403, 429) or status is None:
-        _falhas_consecutivas += 1
-        if _falhas_consecutivas >= DDG_FALHAS_403_PARA_BREAKER:
+        _falhas_por_contexto[c] = _falhas_por_contexto.get(c, 0) + 1
+        if _falhas_por_contexto[c] >= DDG_FALHAS_403_PARA_BREAKER:
             _abrir_circuit_breaker(
                 DDG_CIRCUIT_BREAKER_SEG,
-                f"{_falhas_consecutivas} falhas seguidas ({contexto})",
+                f"{_falhas_por_contexto[c]} falhas seguidas",
+                contexto,
             )
             return True
     return False
+
+
+def _reset_falhas_contexto(contexto: str) -> None:
+    _falhas_por_contexto[_ctx(contexto)] = 0
 
 
 def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> list[dict[str, str]]:
@@ -234,17 +243,15 @@ def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> l
     """
     from core.config import DDG_BACKEND, DDG_DISABLED, DDG_RETRY_BASE_SEG, DDG_RETRY_MAX
 
-    global _falhas_consecutivas
-
     if DDG_DISABLED:
         logger.info("DDG desabilitado [%s] — query=%r", contexto, query[:80])
         return []
 
-    if circuit_breaker_ativo():
+    if circuit_breaker_ativo(contexto):
         logger.info(
             "DDG bloqueado [%s] — circuit breaker, faltam %ss — query=%r",
             contexto,
-            segundos_restantes_circuit_breaker(),
+            segundos_restantes_circuit_breaker(contexto),
             query[:80],
         )
         return []
@@ -262,7 +269,7 @@ def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> l
                 status, resultados = _buscar_lite(query)
                 status_final = status
                 if resultados:
-                    _falhas_consecutivas = 0
+                    _reset_falhas_contexto(contexto)
                     logger.debug(
                         "DDG lite OK [%s] — %s resultados — query=%r",
                         contexto,
@@ -282,7 +289,7 @@ def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> l
                 status, resultados = _buscar_html(query)
                 status_final = status
                 if resultados:
-                    _falhas_consecutivas = 0
+                    _reset_falhas_contexto(contexto)
                     logger.debug(
                         "DDG html OK [%s] — %s resultados — query=%r",
                         contexto,
@@ -324,7 +331,7 @@ def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> l
                 )
                 return []
 
-            _falhas_consecutivas = 0
+            _reset_falhas_contexto(contexto)
             return []
 
         except Exception as exc:
@@ -350,7 +357,7 @@ def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> l
 
 def reset_circuit_breaker() -> None:
     """Somente para testes."""
-    global _circuit_breaker_ate, _falhas_consecutivas, _ultima_requisicao
-    _circuit_breaker_ate = 0.0
-    _falhas_consecutivas = 0
+    global _ultima_requisicao
+    _breaker_ate_por_contexto.clear()
+    _falhas_por_contexto.clear()
     _ultima_requisicao = 0.0
