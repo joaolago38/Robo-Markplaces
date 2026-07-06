@@ -48,6 +48,10 @@ class TestMontarTermo(unittest.TestCase):
 
 
 class TestPerfilRecuperado(unittest.TestCase):
+    def test_aceita_apenas_pequena_monta(self):
+        blob = "Volkswagen Gol leilão pequena monta"
+        self.assertTrue(busca._bate_perfil_recuperado_minimo(blob))
+
     def test_aceita_recuperado_media_monta(self):
         blob = "Fiat Fiorino leilão recuperado furto média monta DETRAN"
         self.assertTrue(busca._bate_perfil_recuperado_furto(blob))
@@ -78,6 +82,10 @@ class TestPerfilRecuperado(unittest.TestCase):
         blob = "Gol leilão recuperado furto DETRAN"
         self.assertTrue(busca._bate_perfil_recuperado_minimo(blob))
         self.assertFalse(busca._bate_perfil_recuperado_furto(blob))
+
+    def test_rejeita_sem_furto_nem_monta(self):
+        blob = "Gol leilão seminovo revisado"
+        self.assertFalse(busca._bate_perfil_recuperado_minimo(blob))
 
     def test_rotacionar_fontes(self):
         fontes = [{"id": str(i)} for i in range(10)]
