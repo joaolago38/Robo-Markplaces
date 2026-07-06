@@ -1,8 +1,49 @@
 [
   {
-    "id": "esmaltes-manicure-nacional",
+    "id": "cafe-nacional",
     "ativo": true,
     "prioridade": 1,
+    "nome": "Café",
+    "termos_busca": [
+      "cafe",
+      "café",
+      "cafe em po",
+      "café torrado",
+      "cafe soluvel",
+      "capsulas cafe",
+      "insumo cafe"
+    ],
+    "ufs": [],
+    "modalidades": [6, 8, 4],
+    "valor_min": 2000,
+    "valor_max": null,
+    "excluir_termos": ["obra civil", "engenharia", "maquina de cafe", "locacao"],
+    "notas": "Validação inicial — todos os 27 estados via PNCP"
+  },
+  {
+    "id": "copos-plasticos-nacional",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Copos plásticos",
+    "termos_busca": [
+      "copo plastico",
+      "copos plasticos",
+      "copo descartavel",
+      "copos descartaveis",
+      "recipiente plastico",
+      "embalagem descartavel"
+    ],
+    "ufs": [],
+    "modalidades": [6, 8, 4],
+    "valor_min": 2000,
+    "valor_max": null,
+    "excluir_termos": ["obra civil", "engenharia", "sucata", "reciclagem industrial"],
+    "notas": "Validação inicial — copos e descartáveis via PNCP"
+  },
+  {
+    "id": "esmaltes-manicure-nacional",
+    "ativo": false,
+    "prioridade": 10,
     "nome": "Esmaltes e materiais de manicure",
     "termos_busca": [
       "esmalte",
@@ -17,12 +58,12 @@
     "valor_min": 3000,
     "valor_max": null,
     "excluir_termos": ["obra civil", "engenharia", "pavimentacao", "asfalto"],
-    "notas": "ufs vazio = todos os 27 estados via PNCP"
+    "notas": "Desativado — retomar após validação café/copos"
   },
   {
     "id": "higiene-perfumaria",
-    "ativo": true,
-    "prioridade": 2,
+    "ativo": false,
+    "prioridade": 11,
     "nome": "Higiene pessoal e perfumaria",
     "termos_busca": [
       "sabonete",
@@ -36,12 +77,12 @@
     "valor_min": 5000,
     "valor_max": null,
     "excluir_termos": ["medicamento", "hospitalar"],
-    "notas": "Pregão eletrônico e dispensa"
+    "notas": "Desativado — retomar após validação café/copos"
   },
   {
     "id": "kits-presente-sp-sul",
     "ativo": false,
-    "prioridade": 3,
+    "prioridade": 12,
     "nome": "Kits presente — SP e Sul",
     "termos_busca": ["kit presente", "brinde", "cesta"],
     "ufs": ["SP", "PR", "SC", "RS"],
