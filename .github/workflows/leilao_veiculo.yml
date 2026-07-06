@@ -15,11 +15,17 @@ env:
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE }}
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  LEILAO_INCLUIR_SUMARE_DIRETO: "1"
+  LEILAO_DETRAN_POR_RODADA: "5"
+  LEILAO_LEILOEIROS_POR_RODADA: "5"
+  LEILAO_PAUSA_ENTRE_FONTES_SEG: "3"
+  DDG_MIN_INTERVAL_SEG: "3"
 
 jobs:
   monitorar:
-    name: Varredura leiloeiros + DETRAN (todos os estados)
+    name: Varredura leiloeiros + DETRAN (rotacionado) + Sumaré
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -52,10 +58,13 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Salvar historico de achados (backup)
         uses: actions/upload-artifact@v4
         with:
           name: leilao-veiculos-history
-          path: logs/leilao_veiculos_history.json
+          path: |
+            logs/leilao_veiculos_history.json
+            logs/leilao_veiculos_ultima.json
           retention-days: 90
           if-no-files-found: ignore

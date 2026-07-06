@@ -131,6 +131,32 @@ class SumareLeiloesTests(unittest.TestCase):
             out = sl.coletar_lotes_leilao(leilao, sl._criar_sessao(), pausa_paginas_seg=0)
         self.assertIsNone(out)
 
+    def test_html_e_pagina_login(self):
+        html_login = '<html><title>Sumaré Leilões | Login</title><form id="login-form-pass"></form></html>'
+        self.assertTrue(sl._html_e_pagina_login(html_login))
+        self.assertFalse(sl._html_e_pagina_login(_LOTE_DOC))
+
+    def test_ajax_login_para_paginacao(self):
+        leilao = {"leilao_id": "5075", "url": "https://www.sumareleiloes.com.br/leiloes/5075", "comitente": "PREFEITURA"}
+        html_pag1 = f"var listaLotsTotal = 2; {_LOTE_DOC}"
+        html_login = '<title>Login</title><form id="login-form-pass"></form>'
+
+        class FakeResp:
+            def __init__(self, text, status_code=200):
+                self.text = text
+                self.status_code = status_code
+
+        with patch.object(
+            sl,
+            "_request_sumare",
+            side_effect=[
+                FakeResp(html_pag1),
+                FakeResp(html_login),
+            ],
+        ):
+            lotes = sl.coletar_lotes_leilao(leilao, sl._criar_sessao(), pausa_paginas_seg=0)
+        self.assertEqual(len(lotes), 1)
+
     def test_listar_leiloes_home_mock(self):
         html = """
         <div class="auction-item">

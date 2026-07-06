@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
+import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,6 +18,29 @@ logger = logging.getLogger("buffer_erros_datadog")
 
 BUFFER_PATH = ROOT / "logs" / "datadog_erros_recentes.json"
 _MAX_ERROS = 150
+
+# Ruído típico de pytest — não espelhar no buffer local
+_PADROES_RUIDO_TESTE = (
+    re.compile(r"\berro:\s*boom\b", re.I),
+    re.compile(r"\bfalha simulada\b", re.I),
+    re.compile(r"\bitem_id=MLB[0-9-]+\b"),
+    re.compile(r"\bsku=SKU\d+\b", re.I),
+    re.compile(r"\bcanal=mercadolivre ref=MLB\d+\b"),
+    re.compile(r"\bpregunta_id=q1\b"),
+    re.compile(r"\bquestion_id=q1\b"),
+    re.compile(r"\bthread_id=thread1\b"),
+    re.compile(r":\s*rede\b"),
+    re.compile(r"\bpanorama .+: (boom|ml down|gestor|prod|est|ml ped)\b", re.I),
+)
+
+
+def _deve_ignorar_buffer(*, nome_logger: str, mensagem: str) -> bool:
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        return True
+    for padrao in _PADROES_RUIDO_TESTE:
+        if padrao.search(mensagem):
+            return True
+    return False
 
 
 def _fingerprint(*, nome_logger: str, mensagem: str, error_kind: str | None) -> str:
@@ -33,6 +58,8 @@ def registrar_erro_local(
 ) -> None:
     """Registra erro espelhado do Datadog. Nunca lança exceção."""
     try:
+        if _deve_ignorar_buffer(nome_logger=nome_logger, mensagem=mensagem):
+            return
         agora = datetime.now(timezone.utc).isoformat()
         fp = _fingerprint(nome_logger=nome_logger, mensagem=mensagem, error_kind=error_kind)
         data = ler_json(BUFFER_PATH, default={"erros": []})

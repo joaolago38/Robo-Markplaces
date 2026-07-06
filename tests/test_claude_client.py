@@ -116,6 +116,23 @@ class TestClaudePerguntar(unittest.TestCase):
         payload = mock_request.call_args.kwargs["json"]
         self.assertEqual(payload["model"], "claude-haiku-4-5")
 
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_claude_401_loga_warning(self, mock_request, *_patches):
+        import requests
+        from unittest.mock import MagicMock
+
+        resp = MagicMock()
+        resp.status_code = 401
+        err = requests.HTTPError("401 Client Error: Unauthorized")
+        err.response = resp
+        mock_request.return_value = resp
+        resp.raise_for_status.side_effect = err
+        with self.assertLogs("claude", level="WARNING") as logs:
+            out = claude_client.perguntar_estruturado("p", {"type": "object"}, "meu_tool")
+        self.assertIsNone(out)
+        self.assertTrue(any("indisponível" in line for line in logs.output))
+
 
 class TestClaudeResponderGerar(unittest.TestCase):
     @patch.object(claude_client, "perguntar", return_value="ok")
