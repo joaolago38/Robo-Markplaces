@@ -18,6 +18,7 @@ from core.config import (
     LEILAO_ALERTA_RESUMO,
     LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
     LEILAO_IA_AVALIAR_PARAMETROS,
+    LEILAO_INCLUIR_SUMARE_DIRETO,
     LEILAO_PAUSA_ENTRE_FONTES_SEG,
     LEILAO_VEICULOS_CATALOGO,
     ROOT,
@@ -29,7 +30,7 @@ from integracoes.leilao.avaliacao_ia_parametros import (
     avaliar_parametros_leilao_veiculos,
     formatar_secao_ia,
 )
-from integracoes.leilao.busca import buscar_veiculo_em_fontes
+from integracoes.leilao.busca import buscar_veiculo_em_fontes, obter_lotes_sumare
 from integracoes.leilao.comparacao_fipe import avaliar_achado_leilao, filtrar_vantajosos
 
 logger = logging.getLogger("agente_leilao_veiculo")
@@ -80,16 +81,23 @@ def _analisar_achados(veiculo: dict[str, Any], achados: list[dict[str, Any]]) ->
 def _monitorar_veiculo(
     veiculo: dict[str, Any],
     historico: dict[str, Any],
+    *,
+    lotes_sumare: list[dict[str, Any]] | None = None,
+    diag_sumare: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     vid = str(veiculo.get("id") or "").strip()
     nome = f"{veiculo.get('marca', '')} {veiculo.get('modelo', '')}".strip()
     entrada_hist = historico.get(vid) if isinstance(historico.get(vid), dict) else {}
     vistos: dict[str, Any] = dict(entrada_hist.get("vistos") or {})
 
-    brutos = buscar_veiculo_em_fontes(
+    busca = buscar_veiculo_em_fontes(
         veiculo,
         pausa_entre_fontes_seg=LEILAO_PAUSA_ENTRE_FONTES_SEG,
+        lotes_sumare=lotes_sumare,
+        diag_sumare=diag_sumare,
     )
+    brutos = busca.get("achados") or []
+    diagnostico = busca.get("diagnostico") or {}
     achados = _analisar_achados(veiculo, brutos)
     vantajosos = filtrar_vantajosos(achados)
     novos: list[dict[str, Any]] = []
@@ -129,6 +137,7 @@ def _monitorar_veiculo(
         "vantajosos_total": len(vantajosos),
         "novos": novos,
         "novos_vantajosos": novos_vantajosos,
+        "diagnostico": diagnostico,
         "ok": True,
     }
 
@@ -275,7 +284,53 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
     return "\n".join(linhas).strip()
 
 
-def _montar_resumo_varredura(resultados: list[dict[str, Any]], ia: dict[str, Any] | None = None) -> str:
+def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
+    totais = {
+        "ddg_queries": 0,
+        "ddg_brutos": 0,
+        "ddg_descartados_filtro": 0,
+        "sumare_candidatos": 0,
+        "sumare_achados": 0,
+        "fontes_consultadas": 0,
+    }
+    circuit_breaker = False
+    circuit_msg = None
+    sumare_coleta: dict[str, Any] = {}
+    meta_fontes: dict[str, Any] = {}
+
+    for r in resultados:
+        d = r.get("diagnostico") or {}
+        for chave in totais:
+            totais[chave] += int(d.get(chave) or 0)
+        if d.get("circuit_breaker_ativo"):
+            circuit_breaker = True
+        if d.get("circuit_breaker_msg"):
+            circuit_msg = d["circuit_breaker_msg"]
+        if d.get("sumare_coleta"):
+            sumare_coleta = d["sumare_coleta"]
+        if d.get("leiloeiros_na_rodada") and not meta_fontes:
+            meta_fontes = {
+                "hora_utc": d.get("hora_utc"),
+                "leiloeiros_na_rodada": d.get("leiloeiros_na_rodada"),
+                "detrans_na_rodada": d.get("detrans_na_rodada"),
+                "leiloeiros_ids": d.get("leiloeiros_ids"),
+                "detrans_ufs": d.get("detrans_ufs"),
+            }
+
+    return {
+        **totais,
+        "circuit_breaker_ativo": circuit_breaker,
+        "circuit_breaker_msg": circuit_msg,
+        "sumare_coleta": sumare_coleta,
+        "meta_fontes": meta_fontes,
+    }
+
+
+def _montar_resumo_varredura(
+    resultados: list[dict[str, Any]],
+    ia: dict[str, Any] | None = None,
+    diagnostico_agregado: dict[str, Any] | None = None,
+) -> str:
     total_achados = sum(int(r.get("achados_total") or 0) for r in resultados)
     total_novos = sum(len(r.get("novos") or []) for r in resultados)
     total_vantajosos = sum(int(r.get("vantajosos_total") or 0) for r in resultados)
@@ -298,7 +353,34 @@ def _montar_resumo_varredura(resultados: list[dict[str, Any]], ia: dict[str, Any
             f"• {r.get('veiculo', r.get('id', '?'))}: "
             f"{achados} achado(s), {vant} vantagem FIPE, {novos} novo(s), {novos_v} novo(s) vantajoso(s)"
         )
-    ddg = mensagem_circuit_breaker()
+
+    diag = diagnostico_agregado or _agregar_diagnostico(resultados)
+    if diag:
+        linhas.extend(["", "*Diagnóstico da coleta*"])
+        meta = diag.get("meta_fontes") or {}
+        if meta:
+            ufs = ", ".join(meta.get("detrans_ufs") or []) or "n/d"
+            leil = ", ".join(meta.get("leiloeiros_ids") or []) or "n/d"
+            linhas.append(
+                f"Fontes DDG: {meta.get('leiloeiros_na_rodada', 0)} leiloeiros ({leil}) + "
+                f"{meta.get('detrans_na_rodada', 0)} DETRAN ({ufs})"
+            )
+        sumare = diag.get("sumare_coleta") or {}
+        if LEILAO_INCLUIR_SUMARE_DIRETO:
+            linhas.append(
+                f"Sumaré direto: {sumare.get('lotes_veiculo', 0)} lotes catálogo "
+                f"({sumare.get('leiloes_ok', 0)} leilões OK, {sumare.get('leiloes_falha', 0)} falhas)"
+            )
+        linhas.append(
+            f"DDG: {diag.get('ddg_queries', 0)} queries, {diag.get('ddg_brutos', 0)} brutos, "
+            f"{diag.get('ddg_descartados_filtro', 0)} descartados no filtro"
+        )
+        linhas.append(
+            f"Sumaré no veículo: {diag.get('sumare_achados', 0)} achados de "
+            f"{diag.get('sumare_candidatos', 0)} candidatos"
+        )
+
+    ddg = diag.get("circuit_breaker_msg") or mensagem_circuit_breaker()
     if ddg:
         linhas.extend(["", f"⚠️ {ddg}"])
     elif total_achados == 0:
@@ -342,12 +424,26 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         historico = _carregar_historico()
         resultados: list[dict[str, Any]] = []
 
+        lotes_sumare: list[dict[str, Any]] = []
+        diag_sumare: dict[str, Any] = {}
+        if LEILAO_INCLUIR_SUMARE_DIRETO:
+            lotes_sumare, diag_sumare = obter_lotes_sumare()
+
         for veiculo in veiculos:
             vid = str(veiculo.get("id") or "").strip()
             if not vid:
                 continue
             logger.info("Varrendo leilões: %s %s", veiculo.get("marca"), veiculo.get("modelo"))
-            resultados.append(_monitorar_veiculo(veiculo, historico))
+            resultados.append(
+                _monitorar_veiculo(
+                    veiculo,
+                    historico,
+                    lotes_sumare=lotes_sumare,
+                    diag_sumare=diag_sumare,
+                )
+            )
+
+        diagnostico_agregado = _agregar_diagnostico(resultados)
 
         _salvar_historico(historico)
 
@@ -365,6 +461,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 "timestamp": agora,
                 "resultados": resultados,
                 "avaliacao_ia_parametros": ia_parametros,
+                "diagnostico_agregado": diagnostico_agregado,
             },
         )
 
@@ -390,7 +487,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     )
 
         if enviar_alerta and LEILAO_ALERTA_RESUMO:
-            msg_resumo = _montar_resumo_varredura(resultados, ia_parametros)
+            msg_resumo = _montar_resumo_varredura(resultados, ia_parametros, diagnostico_agregado)
             alerta_resumo_enviado = bool(
                 alertar_gestor(
                     msg_resumo,
@@ -409,6 +506,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "alerta_novos_enviado": alerta_novos_enviado,
             "alerta_resumo_enviado": alerta_resumo_enviado,
             "avaliacao_ia_parametros": ia_parametros,
+            "diagnostico_agregado": diagnostico_agregado,
             "resultados": resultados,
         }
     except Exception as exc:

@@ -56,12 +56,50 @@ class TestPerfilRecuperado(unittest.TestCase):
         blob = "Gol leilão recuperado furto grande monta"
         self.assertFalse(busca._bate_perfil_recuperado_furto(blob))
 
-    def test_relevante_exige_perfil(self):
+    def test_relevante_exige_recuperado_nao_media_monta(self):
+        ok = busca._relevante_para_veiculo(
+            {
+                "titulo": "Honda Civic leilão recuperado furto DETRAN",
+                "snippet": "lote veículo",
+                "url": "http://x/leilao",
+            },
+            {"marca": "Honda", "modelo": "Civic", "perfil": "recuperado_furto_media_monta"},
+        )
+        self.assertTrue(ok)
+
+    def test_relevante_rejeita_sem_recuperado(self):
         ok = busca._relevante_para_veiculo(
             {"titulo": "Honda Civic leilão", "snippet": "lote normal", "url": "http://x"},
             {"marca": "Honda", "modelo": "Civic", "perfil": "recuperado_furto_media_monta"},
         )
         self.assertFalse(ok)
+
+    def test_bate_perfil_minimo_sem_media_monta(self):
+        blob = "Gol leilão recuperado furto DETRAN"
+        self.assertTrue(busca._bate_perfil_recuperado_minimo(blob))
+        self.assertFalse(busca._bate_perfil_recuperado_furto(blob))
+
+    def test_rotacionar_fontes(self):
+        fontes = [{"id": str(i)} for i in range(10)]
+        sel = busca._rotacionar_fontes(fontes, limite=3, bucket=2)
+        self.assertEqual(len(sel), 3)
+        self.assertEqual(sel[0]["id"], "2")
+
+    def test_lote_sumare_para_item(self):
+        lote = {
+            "titulo": "VOLKSWAGEN/GOL 1.0, 14/15",
+            "url": "https://www.sumareleiloes.com.br/lotes/abc",
+            "hash": "h1",
+            "lance_brl": 8500.0,
+            "comitente": "DETRAN SP",
+            "local_data": "Campinas / SP",
+        }
+        veiculo = {"marca": "Volkswagen", "modelo": "Gol", "perfil": "recuperado_furto_media_monta"}
+        item = busca._lote_sumare_para_item(lote, veiculo)
+        self.assertIsNotNone(item)
+        assert item is not None
+        self.assertEqual(item["fonte_tipo"], "sumare")
+        self.assertEqual(item["lance_brl"], 8500.0)
 
     def test_relevante_civic_recuperado(self):
         ok = busca._relevante_para_veiculo(
@@ -183,15 +221,21 @@ class TestFontesCadastro(unittest.TestCase):
 
 
 class TestBuscarVeiculo(unittest.TestCase):
+    @patch.object(busca, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
+    @patch.object(busca, "_fontes_da_rodada")
     @patch.object(busca, "buscar_duckduckgo", return_value=[
         {
-            "titulo": "Fiat Uno 2012 leilão recuperado furto média monta",
+            "titulo": "Fiat Uno 2012 leilão recuperado furto DETRAN",
             "url": "https://www.copart.com.br/lote/123",
-            "snippet": "veículo recuperado furto média monta",
+            "snippet": "veículo recuperado furto",
         }
     ])
     @patch.object(busca.time, "sleep")
-    def test_deduplica_e_filtra(self, _sleep, _ddg):
+    def test_deduplica_e_filtra(self, _sleep, _ddg, mock_fontes, _sumare):
+        mock_fontes.return_value = (
+            [({"dominio": "copart.com.br", "nome": "Copart", "id": "copart"}, "leiloeiro", "copart")],
+            {"leiloeiros_na_rodada": 1, "detrans_na_rodada": 0},
+        )
         veiculo = {
             "marca": "Fiat",
             "modelo": "Uno",
@@ -199,12 +243,16 @@ class TestBuscarVeiculo(unittest.TestCase):
             "ano_max": 2015,
             "perfil": "recuperado_furto_media_monta",
         }
-        achados = busca.buscar_veiculo_em_fontes(
+        out = busca.buscar_veiculo_em_fontes(
             veiculo,
             incluir_detran=False,
             pausa_entre_fontes_seg=0,
+            lotes_sumare=[],
         )
+        achados = out["achados"]
         self.assertTrue(any("copart.com.br" in a.get("url", "") for a in achados))
+        self.assertIn("diagnostico", out)
+        self.assertGreaterEqual(out["diagnostico"].get("ddg_brutos", 0), 1)
 
 
 if __name__ == "__main__":

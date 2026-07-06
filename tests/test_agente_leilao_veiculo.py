@@ -32,10 +32,11 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_veiculos"], 0)
 
+    @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_veiculo_em_fontes")
     @patch.object(agente, "_carregar_veiculos")
-    def test_alerta_apenas_vantajosos(self, mock_veiculos, mock_busca, mock_alertar):
+    def test_alerta_apenas_vantajosos(self, mock_veiculos, mock_busca, mock_alertar, _sumare):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015}
         ]
@@ -54,7 +55,7 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             "cidade": "Campinas",
             "uf": "SP",
         }
-        mock_busca.return_value = [item_base]
+        mock_busca.return_value = {"achados": [item_base], "diagnostico": {"ddg_brutos": 1}}
 
         def _analisar(_veiculo, achados):
             return [
@@ -126,6 +127,15 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("Vantagem", msg)
 
     def test_montar_resumo_varredura(self):
+        diag = {
+            "ddg_queries": 10,
+            "ddg_brutos": 4,
+            "ddg_descartados_filtro": 2,
+            "sumare_achados": 1,
+            "sumare_candidatos": 5,
+            "meta_fontes": {"leiloeiros_na_rodada": 5, "detrans_na_rodada": 5, "leiloeiros_ids": ["copart"], "detrans_ufs": ["SP"]},
+            "sumare_coleta": {"lotes_veiculo": 3, "leiloes_ok": 2, "leiloes_falha": 0},
+        }
         msg = agente._montar_resumo_varredura(
             [
                 {
@@ -144,17 +154,21 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                     "novos": [],
                     "novos_vantajosos": [],
                 },
-            ]
+            ],
+            diagnostico_agregado=diag,
         )
         self.assertIn("resumo da varredura", msg)
         self.assertIn("FIPE", msg)
         self.assertIn("Fiorino", msg)
         self.assertIn("vantagem FIPE", msg)
+        self.assertIn("Diagnóstico da coleta", msg)
+        self.assertIn("Sumaré direto", msg)
 
+    @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "alertar_gestor", return_value=True)
-    @patch.object(agente, "buscar_veiculo_em_fontes", return_value=[])
+    @patch.object(agente, "buscar_veiculo_em_fontes", return_value={"achados": [], "diagnostico": {}})
     @patch.object(agente, "_carregar_veiculos")
-    def test_envia_resumo_mesmo_sem_novos(self, mock_veiculos, _mock_busca, mock_alertar):
+    def test_envia_resumo_mesmo_sem_novos(self, mock_veiculos, _mock_busca, mock_alertar, _sumare):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino", "prioridade": 1}
         ]
@@ -167,9 +181,10 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         mock_alertar.assert_called()
         self.assertIn("resumo da varredura", mock_alertar.call_args_list[-1][0][0])
 
-    @patch.object(agente, "buscar_veiculo_em_fontes", return_value=[])
+    @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
+    @patch.object(agente, "buscar_veiculo_em_fontes", return_value={"achados": [], "diagnostico": {}})
     @patch.object(agente, "_carregar_veiculos")
-    def test_loga_ddg_quando_sem_achados(self, mock_veiculos, _mock_busca):
+    def test_loga_ddg_quando_sem_achados(self, mock_veiculos, _mock_busca, _sumare):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino"}
         ]
@@ -180,13 +195,15 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                 agente.executar(enviar_alerta=False)
         self.assertTrue(any("circuit breaker" in line for line in logs.output))
 
+    @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "buscar_veiculo_em_fontes")
     @patch.object(agente, "_carregar_veiculos")
-    def test_loga_achados_com_data_e_cadastro(self, mock_veiculos, mock_busca):
+    def test_loga_achados_com_data_e_cadastro(self, mock_veiculos, mock_busca, _sumare):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Honda", "modelo": "Civic"}
         ]
-        mock_busca.return_value = [
+        mock_busca.return_value = {
+            "achados": [
             {
                 "hash": "h1",
                 "url": "https://detran.pr.gov.br/edital/1",
@@ -202,7 +219,9 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                 "data_leilao": "20/08/2026",
                 "url_cadastro": "https://www.detran.pr.gov.br/leilao-de-veiculos",
             }
-        ]
+            ],
+            "diagnostico": {},
+        }
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
             agente, "_analisar_achados", side_effect=lambda _v, achados: achados
         ):

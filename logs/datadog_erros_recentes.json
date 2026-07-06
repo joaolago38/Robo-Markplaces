@@ -1,6 +1,28 @@
 {
   "erros": [
     {
+      "fingerprint": "4eeb2777e2f0df7a6442",
+      "primeira_vez": "2026-07-05T21:32:37.857324+00:00",
+      "ultima_vez": "2026-07-06T11:39:58.607483+00:00",
+      "logger": "claude",
+      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_leilao): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "status": "error",
+      "error_kind": "HTTPError",
+      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
+      "ocorrencias": 9
+    },
+    {
+      "fingerprint": "c5b72b54a08a65a56f1b",
+      "primeira_vez": "2026-07-05T21:32:36.784114+00:00",
+      "ultima_vez": "2026-07-06T11:39:57.169824+00:00",
+      "logger": "agente_leilao_veiculo",
+      "mensagem": "Agente leilão veículos erro: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
       "fingerprint": "33e3e52faccc20bdedf0",
       "primeira_vez": "2026-07-05T23:00:32.683215+00:00",
       "ultima_vez": "2026-07-05T23:00:32.683215+00:00",
@@ -23,17 +45,6 @@
       "ocorrencias": 1
     },
     {
-      "fingerprint": "4eeb2777e2f0df7a6442",
-      "primeira_vez": "2026-07-05T21:32:37.857324+00:00",
-      "ultima_vez": "2026-07-05T21:32:38.183463+00:00",
-      "logger": "claude",
-      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_leilao): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "status": "error",
-      "error_kind": "HTTPError",
-      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "ocorrencias": 4
-    },
-    {
       "fingerprint": "dbc45fbf50f9a4113c56",
       "primeira_vez": "2026-07-05T21:32:37.892274+00:00",
       "ultima_vez": "2026-07-05T21:32:38.145361+00:00",
@@ -43,17 +54,6 @@
       "error_kind": "HTTPError",
       "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "c5b72b54a08a65a56f1b",
-      "primeira_vez": "2026-07-05T21:32:36.784114+00:00",
-      "ultima_vez": "2026-07-05T21:32:36.784114+00:00",
-      "logger": "agente_leilao_veiculo",
-      "mensagem": "Agente leilão veículos erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
     },
     {
       "fingerprint": "314ab72b621d308b8ebc",
@@ -1453,5 +1453,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-05T23:00:32.683215+00:00"
+  "atualizado_em": "2026-07-06T11:39:58.607483+00:00"
 }
