@@ -8,7 +8,7 @@
     "perfil": "recuperado_furto_pequena_monta",
     "margem_fipe_min_pct": 15,
     "margem_fipe_min_reais": 1500,
-    "preco_max_lance": 40000,
+    "preco_max_lance": 25000,
     "termos_extra": ["furgão", "furgao", "furgão trabalho"],
     "notas": "Furto recuperado ou pequena/média monta — utilitário prioritário"
   },
@@ -21,7 +21,7 @@
     "perfil": "recuperado_furto_pequena_monta",
     "margem_fipe_min_pct": 15,
     "margem_fipe_min_reais": 1500,
-    "preco_max_lance": 40000,
+    "preco_max_lance": 25000,
     "termos_extra": [],
     "notas": "Hatch popular em leilões DETRAN"
   },
@@ -34,7 +34,7 @@
     "perfil": "recuperado_furto_pequena_monta",
     "margem_fipe_min_pct": 15,
     "margem_fipe_min_reais": 1500,
-    "preco_max_lance": 40000,
+    "preco_max_lance": 25000,
     "termos_extra": [],
     "notas": ""
   },
@@ -47,7 +47,7 @@
     "perfil": "recuperado_furto_pequena_monta",
     "margem_fipe_min_pct": 15,
     "margem_fipe_min_reais": 1500,
-    "preco_max_lance": 40000,
+    "preco_max_lance": 25000,
     "termos_extra": [],
     "notas": ""
   },
@@ -60,7 +60,7 @@
     "perfil": "recuperado_furto_pequena_monta",
     "margem_fipe_min_pct": 15,
     "margem_fipe_min_reais": 1500,
-    "preco_max_lance": 40000,
+    "preco_max_lance": 25000,
     "termos_extra": [],
     "notas": ""
   }
