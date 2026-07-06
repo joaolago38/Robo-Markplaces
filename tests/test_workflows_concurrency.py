@@ -31,10 +31,10 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "push_deploy.yml",
     "branch_cleanup.yml",
     "relatorio_manha_ml.yml",
-    "vigia_datadog.yml",
 )
 
 _GROUP_ESPERADO = "robo-markplaces-token-renewal"
+_GROUP_VIGIA = "robo-markplaces-vigia-datadog"
 
 
 class TestWorkflowsConcurrency(unittest.TestCase):
@@ -46,6 +46,13 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             self.assertIn("concurrency:", texto, nome)
             self.assertIn(f"group: {_GROUP_ESPERADO}", texto, nome)
             self.assertIn("cancel-in-progress: false", texto, nome)
+
+    def test_vigia_datadog_tem_fila_propria(self):
+        path = WORKFLOWS_DIR / "vigia_datadog.yml"
+        texto = path.read_text(encoding="utf-8")
+        self.assertIn(f"group: {_GROUP_VIGIA}", texto)
+        self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto)
+        self.assertIn("cancel-in-progress: false", texto)
 
 
 if __name__ == "__main__":

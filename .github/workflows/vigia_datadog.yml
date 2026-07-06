@@ -10,7 +10,9 @@ on:
     - cron: "*/30 * * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
+  # Fila própria: o vigia não renova tokens e não pode ficar atrás do orquestrador
+  # (grupo robo-markplaces-token-renewal), senão o heartbeat deixa de atualizar.
+  group: robo-markplaces-vigia-datadog
   cancel-in-progress: false
 
 env:
