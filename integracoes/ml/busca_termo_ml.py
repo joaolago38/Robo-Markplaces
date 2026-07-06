@@ -10,7 +10,7 @@ import logging
 import re
 from typing import Any, Callable
 
-from core.config import ML_BUSCA_TERMO_FALLBACK_CATALOGO, ML_BUSCA_TERMO_FALLBACK_DDG
+from core.config import ML_BUSCA_TERMO_FALLBACK_CATALOGO, ML_BUSCA_TERMO_FALLBACK_DDG, ML_SITE_ID
 from core.ddg_lite import buscar as ddg_buscar
 
 logger = logging.getLogger("busca_termo_ml")
@@ -97,7 +97,7 @@ def _buscar_via_api(termo: str, limite: int) -> list[dict[str, Any]]:
     from integracoes.ml import ml_client
 
     seller_self = _seller_self()
-    url = f"{ml_client.BASE}/sites/{ml_client.ML_SITE_ID}/search"
+    url = f"{ml_client.BASE}/sites/{ML_SITE_ID}/search"
     params = {"q": termo, "limit": limite}
 
     if ml_client._enabled():

@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID, ML_SITE_ID
+from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
