@@ -55,7 +55,7 @@ class TestMontarTermo(unittest.TestCase):
 
     def test_rejeita_ano_fora_do_intervalo_padrao(self):
         ok = busca._relevante_para_veiculo(
-            {"titulo": "Volkswagen Gol 1998 leilão recuperado furto", "snippet": "lote veículo", "url": "http://x"},
+            {"titulo": "Volkswagen Gol 1990 leilão recuperado furto", "snippet": "lote veículo", "url": "http://x"},
             {"marca": "Volkswagen", "modelo": "Gol", "perfil": "recuperado_furto_pequena_monta"},
         )
         self.assertFalse(ok)
