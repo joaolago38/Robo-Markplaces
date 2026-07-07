@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-07-07T17:42:09.507786+00:00",
+  "lojas": 1,
+  "novos": 0,
+  "resultados": [
+    {
+      "loja_id": "busca_web",
+      "loja_nome": "Busca web nacional",
+      "total": 0,
+      "novos": [],
+      "ok": true
+    }
+  ]
+}

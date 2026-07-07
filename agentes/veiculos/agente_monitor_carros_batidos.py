@@ -19,6 +19,10 @@ from core.config import (
     CARROS_BATIDOS_ALERTA_COOLDOWN_SEG,
     CARROS_BATIDOS_ALERTA_RESUMO,
     CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG,
+    CARROS_BATIDOS_BUSCA_WEB,
+    CARROS_BATIDOS_BUSCA_WEB_MAX_UFS,
+    CARROS_BATIDOS_BUSCA_WEB_PAUSA_SEG,
+    CARROS_BATIDOS_BUSCA_WEB_RESULTADOS,
     CARROS_BATIDOS_INCLUIR_FIPE,
     CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG,
     CARROS_BATIDOS_PRECO_MAX,
@@ -29,7 +33,7 @@ from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_per
 from integracoes.veiculos.carros_batidos_fontes import carregar_fontes
 from integracoes.veiculos.comparacao import calcular_margem_fipe
 from integracoes.veiculos.fipe_client import consultar_preco_fipe
-from integracoes.veiculos.scrapers import coletar_fonte
+from integracoes.veiculos.scrapers import coletar_busca_web_brasil, coletar_fonte
 
 logger = logging.getLogger("agente_monitor_carros_batidos")
 
@@ -122,10 +126,14 @@ def _montar_resumo(por_loja: list[dict[str, Any]], novos: list[dict[str, Any]]) 
     return "\n".join(linhas).strip()
 
 
-def _monitorar_loja(fonte: dict[str, Any], historico: dict[str, Any]) -> dict[str, Any]:
-    loja_id = str(fonte.get("id") or "")
-    anuncios = _filtrar_preco(coletar_fonte(fonte))
-
+def _processar_anuncios(
+    loja_id: str,
+    loja_nome: str,
+    anuncios: list[dict[str, Any]],
+    historico: dict[str, Any],
+    *,
+    enriquecer_fipe: bool = True,
+) -> dict[str, Any]:
     entrada = historico.get(loja_id) if isinstance(historico.get(loja_id), dict) else {}
     vistos: dict[str, Any] = dict(entrada.get("vistos") or {})
     novos: list[dict[str, Any]] = []
@@ -136,12 +144,14 @@ def _monitorar_loja(fonte: dict[str, Any], historico: dict[str, Any]) -> dict[st
         if not h:
             continue
         if h not in vistos:
-            registro = _enriquecer_fipe({**item, "visto_em": agora})
+            registro = {**item, "visto_em": agora}
+            if enriquecer_fipe:
+                registro = _enriquecer_fipe(registro)
             vistos[h] = registro
             novos.append(registro)
 
     historico[loja_id] = {
-        "loja_nome": fonte.get("nome"),
+        "loja_nome": loja_nome,
         "vistos": vistos,
         "ultima_varredura": agora,
         "total_anuncios": len(anuncios),
@@ -152,11 +162,32 @@ def _monitorar_loja(fonte: dict[str, Any], historico: dict[str, Any]) -> dict[st
 
     return {
         "loja_id": loja_id,
-        "loja_nome": fonte.get("nome"),
+        "loja_nome": loja_nome,
         "total": len(anuncios),
         "novos": novos,
         "ok": True,
     }
+
+
+def _monitorar_loja(fonte: dict[str, Any], historico: dict[str, Any]) -> dict[str, Any]:
+    loja_id = str(fonte.get("id") or "")
+    anuncios = _filtrar_preco(coletar_fonte(fonte))
+    return _processar_anuncios(loja_id, str(fonte.get("nome") or loja_id), anuncios, historico)
+
+
+def _monitorar_busca_web(historico: dict[str, Any]) -> dict[str, Any]:
+    anuncios = coletar_busca_web_brasil(
+        max_ufs=CARROS_BATIDOS_BUSCA_WEB_MAX_UFS,
+        max_resultados=CARROS_BATIDOS_BUSCA_WEB_RESULTADOS,
+        pausa_seg=CARROS_BATIDOS_BUSCA_WEB_PAUSA_SEG,
+    )
+    return _processar_anuncios(
+        "busca_web",
+        "Busca web nacional",
+        anuncios,
+        historico,
+        enriquecer_fipe=False,
+    )
 
 
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
@@ -166,7 +197,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             logger.warning("Telegram gestor não configurado — alertas de carros batidos não serão entregues")
 
         fontes = carregar_fontes()
-        if not fontes:
+        if not fontes and not CARROS_BATIDOS_BUSCA_WEB:
             logger.info("Nenhuma loja ativa no catálogo de carros batidos")
             return {"ok": True, "lojas": 0, "novos": 0, "alerta_enviado": False, "resultados": []}
 
@@ -178,6 +209,10 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             por_loja.append(_monitorar_loja(fonte, historico))
             if i < len(fontes) - 1 and CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG > 0:
                 time.sleep(CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG)
+
+        if CARROS_BATIDOS_BUSCA_WEB:
+            logger.info("Busca web nacional de carros batidos (todo o Brasil)")
+            por_loja.append(_monitorar_busca_web(historico))
 
         escrever_json_atomico(HISTORY_PATH, historico)
 
@@ -209,7 +244,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             alerta_resumo = bool(
                 alertar_gestor(
                     msg_resumo,
-                    chave=chave_resumo_periodo("carros_batidos", horas_por_bucket=2),
+                    chave=chave_resumo_periodo("carros_batidos", horas_por_bucket=4),
                     cooldown_segundos=CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG,
                 )
             )

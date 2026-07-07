@@ -27,7 +27,7 @@ class TestAgenteMonitorCarrosBatidos(unittest.TestCase):
     def test_alerta_novos_anuncios(self, mock_coleta, mock_alerta, mock_fontes):
         with patch.object(agente, "CARROS_BATIDOS_ALERTA_RESUMO", False), patch.object(
             agente, "CARROS_BATIDOS_INCLUIR_FIPE", False
-        ):
+        ), patch.object(agente, "CARROS_BATIDOS_BUSCA_WEB", False):
             mock_fontes.return_value = [{"id": "teste", "nome": "Loja Teste", "tipo": "html"}]
             mock_coleta.return_value = [
                 {

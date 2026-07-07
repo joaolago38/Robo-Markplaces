@@ -7,8 +7,9 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+import time
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from core.http_client import request
 from integracoes.veiculos.fontes import FONTES_PADRAO
@@ -363,6 +364,104 @@ def coletar_velozes(fonte: dict[str, Any] | None = None, *, max_produtos: int = 
         )
 
     logger.info("Velozes: %s anúncio(s) coletado(s)", len(anuncios))
+    return anuncios
+
+
+# Estados/regiões para a busca web nacional (mais populosos primeiro)
+_UFS_BUSCA_WEB: tuple[str, ...] = (
+    "São Paulo",
+    "Rio de Janeiro",
+    "Minas Gerais",
+    "Paraná",
+    "Rio Grande do Sul",
+    "Bahia",
+    "Santa Catarina",
+    "Goiás",
+    "Pernambuco",
+    "Ceará",
+    "Espírito Santo",
+    "Distrito Federal",
+    "Pará",
+    "Mato Grosso",
+    "Maranhão",
+)
+_TERMOS_BUSCA_WEB = "carros batidos sinistrados salvados seguradora à venda"
+_DOMINIOS_IGNORAR_BUSCA_WEB = (
+    "olx.com.br",
+    "mercadolivre",
+    "webmotors",
+    "icarros",
+    "youtube.com",
+    "facebook.com",
+    "instagram.com",
+    "wikipedia.org",
+    "reclameaqui",
+)
+
+
+def coletar_busca_web_brasil(
+    *,
+    max_ufs: int = 9,
+    max_resultados: int = 8,
+    pausa_seg: float = 3.0,
+) -> list[dict[str, Any]]:
+    """
+    Busca web nacional (DuckDuckGo) por lojas/anúncios de carros batidos em todo o Brasil.
+    Rotaciona as UFs por hora para cobrir o país ao longo do dia. Nunca lança exceção.
+    """
+    from datetime import datetime, timezone
+
+    from core.ddg_lite import buscar as ddg_buscar
+
+    hora = datetime.now(timezone.utc).hour
+    total = len(_UFS_BUSCA_WEB)
+    inicio = (hora * max(1, max_ufs)) % total
+    ufs = [_UFS_BUSCA_WEB[(inicio + i) % total] for i in range(min(max_ufs, total))]
+
+    anuncios: list[dict[str, Any]] = []
+    vistos: set[str] = set()
+    for uf in ufs:
+        query = f"{_TERMOS_BUSCA_WEB} {uf}"
+        try:
+            resultados = ddg_buscar(query, max_resultados=max_resultados, contexto="carros_batidos")
+        except Exception as exc:
+            logger.warning("Busca web batidos [%s] falhou: %s", uf, exc)
+            resultados = []
+        for res in resultados:
+            url = str(res.get("url") or "").strip()
+            if not url:
+                continue
+            low = url.lower()
+            if any(d in low for d in _DOMINIOS_IGNORAR_BUSCA_WEB):
+                continue
+            dominio = urlparse(url).netloc.replace("www.", "")
+            if not dominio or dominio in vistos:
+                continue
+            vistos.add(dominio)
+            titulo = re.sub(r"\s+", " ", str(res.get("titulo") or dominio)).strip()
+            snippet = str(res.get("snippet") or "")
+            preco = parse_preco_brl(f"{titulo} {snippet}")
+            ano = _extrair_ano_titulo(f"{titulo} {snippet}")
+            anuncios.append(
+                {
+                    "hash": _hash_anuncio("busca_web", dominio),
+                    "loja_id": "busca_web",
+                    "loja_nome": f"Busca web — {dominio}",
+                    "id_externo": dominio,
+                    "titulo": titulo[:120],
+                    "marca": "",
+                    "ano": ano,
+                    "preco": preco or 0.0,
+                    "url": url,
+                    "condicao": "batido/sinistrado",
+                    "uf_busca": uf,
+                    "snippet": snippet[:200],
+                }
+            )
+        if pausa_seg > 0:
+            time.sleep(pausa_seg)
+
+    logger.info("Busca web batidos: %s domínio(s) em %s UF(s)", len(anuncios), len(ufs))
     return anuncios
 
 
