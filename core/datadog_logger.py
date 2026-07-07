@@ -79,6 +79,7 @@ _LOGGER_META = {
     "agente_monitor_busca_kit_esmaltes": ("mercadolivre", "agente"),
     "agente_monitor_kits_esmaltes": ("mercadolivre", "agente"),
     "agente_monitor_removedores_unha": ("mercadolivre", "agente"),
+    "agente_monitor_tendencias_esmaltes": ("multi", "agente"),
     "agente_monitor_mercado_esmaltes": ("mercadolivre", "agente"),
     "agente_comparativo_anita_impala": ("mercadolivre", "agente"),
     "agente_monitor_acetona_cruzeiro": ("mercadolivre", "agente"),
@@ -86,6 +87,12 @@ _LOGGER_META = {
     "busca_kit_frequencia": ("mercadolivre", "integracao"),
     "analise_kits_esmaltes": ("mercadolivre", "integracao"),
     "analise_removedores": ("mercadolivre", "integracao"),
+    "busca_removedores": ("mercadolivre", "integracao"),
+    "busca_termo_externa": ("multi", "integracao"),
+    "busca_multi_marketplace": ("multi", "integracao"),
+    "tendencias_internet": ("multi", "integracao"),
+    "cruzamento_tendencias_mercado": ("multi", "integracao"),
+    "avaliacao_ia_removedores": ("mercadolivre", "integracao"),
     "analise_acetona_cruzeiro": ("mercadolivre", "integracao"),
     "analise_anita": ("mercadolivre", "integracao"),
     "agente_descoberta_produtos": ("multi", "agente"),
@@ -144,6 +151,9 @@ _LOGGER_META = {
 
     # --- Diagnóstico interno deste módulo ---
     "datadog_logger": ("infra", "core"),
+    "series_historica": ("infra", "core"),
+    "graficos": ("infra", "core"),
+    "prontidao": ("infra", "core"),
 
     # --- Scripts / API ---
     "renovar_tokens": ("multi", "script"),

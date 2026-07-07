@@ -11,7 +11,7 @@ from core.precificacao_comportamento import calcular_lucro_operacao
 from integracoes.esmaltes.analise_anita import _normalizar
 
 _MARCAS_REMOVEDOR = ("cruzeiro", "impala", "risque", "colorama", "nati", "cadiveu", "alfaparf")
-_PALAVRAS_ACETONA = ("acetona", "removedor", "remove esmalte", "diluidor")
+_PALAVRAS_ACETONA = ("acetona", "removedor", "remove esmalte", "diluidor", "limpa esmalte", "sem acetona")
 
 
 def detectar_marca_removedor(titulo: str) -> str:

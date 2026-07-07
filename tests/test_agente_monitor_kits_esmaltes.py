@@ -22,9 +22,9 @@ class AgenteMonitorKitsEsmaltesTests(unittest.TestCase):
         self.tmp.cleanup()
 
     @patch.object(agente, "alertar_gestor", return_value=True)
-    @patch.object(agente, "ml_client")
+    @patch.object(agente, "resolver_fn_busca_esmaltes")
     @patch.object(agente, "_carregar_termos")
-    def test_executar_envia_telegram_com_ranking(self, mock_termos, mock_ml, mock_alertar):
+    def test_executar_envia_telegram_com_ranking(self, mock_termos, mock_resolver, mock_alertar):
         mock_termos.return_value = [
             {
                 "id": "impala",
@@ -43,7 +43,7 @@ class AgenteMonitorKitsEsmaltesTests(unittest.TestCase):
                 "prioridade": 1,
             },
         ]
-        mock_ml.buscar_concorrentes_por_termo.side_effect = [
+        mock_resolver.return_value.side_effect = [
             [
                 {
                     "item_id": "MLB1",
@@ -64,6 +64,10 @@ class AgenteMonitorKitsEsmaltesTests(unittest.TestCase):
 
         with patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
             agente, "HISTORY_PATH", self.tmp_path / "hist.json"
+        ), patch.object(agente, "SERIES_PATH", self.tmp_path / "series.json"), patch.object(
+            agente, "GRAFICO_PATH", self.tmp_path / "g.png"
+        ), patch.object(agente, "enviar_foto_gestor", return_value=True), patch.object(
+            agente, "pode_alertar_esmaltes", return_value=(True, "ok")
         ), patch.object(agente, "ESMALTES_KITS_MONITOR_PAUSA_SEG", 0):
             out = agente.executar(enviar_alerta=True)
 
