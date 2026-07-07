@@ -7,18 +7,19 @@
     "material": "PLA",
     "diametro_mm": 1.75,
     "peso_kg": 1,
-    "termo_busca": "3D printer filament PLA 1.75mm 1kg wholesale",
+    "termo_busca": "3D printer filament PLA wholesale",
     "termo_busca_pt": "filamento impressora 3D PLA 1,75mm 1kg atacado",
-    "termo_marketplace": "filamento pla 1.75mm 1kg",
+    "termo_marketplace": "filamento pla 1kg impressora 3d",
     "ncm": "39169090",
     "ii_pct": 12.6,
     "ipi_pct": 0,
     "icms_pct": 18,
-    "margem_minima_pct": 18,
+    "margem_minima_pct": 16,
     "margem_minima_reais": 8,
-    "preco_max_usd": 4.5,
-    "moq_max": 200,
+    "preco_max_usd": 6.5,
+    "moq_max": 150,
+    "frete_preferido": "maritimo",
     "termos_extra": ["factory", "wholesale", "OEM"],
-    "notas": "Produto inicial — PLA 1,75mm rolo 1kg. Ajuste preco_max_usd e moq_max conforme sua meta de importação."
+    "notas": "PLA 1,75mm rolo 1kg. preco_max_usd/moq_max ajustados (Claude): teto FOB 4,5 bloqueava fornecedores; termo de busca ampliado para capturar volume."
   }
 ]
