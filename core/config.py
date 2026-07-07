@@ -318,6 +318,24 @@ LOJAS_VEICULOS_ALERTA_RESUMO = os.getenv("LOJAS_VEICULOS_ALERTA_RESUMO", "1").st
     "no",
 )
 LOJAS_VEICULOS_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LOJAS_VEICULOS_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
+
+# Monitor carros batidos — todas as lojas, alerta Telegram
+CARROS_BATIDOS_CATALOGO = os.getenv("CARROS_BATIDOS_CATALOGO", "catalogo/carros_batidos_fontes.json")
+CARROS_BATIDOS_PRECO_MAX = float(os.getenv("CARROS_BATIDOS_PRECO_MAX", "150000"))
+CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG = float(os.getenv("CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG", "2"))
+CARROS_BATIDOS_INCLUIR_FIPE = os.getenv("CARROS_BATIDOS_INCLUIR_FIPE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CARROS_BATIDOS_ALERTA_RESUMO = os.getenv("CARROS_BATIDOS_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
+CARROS_BATIDOS_ALERTA_COOLDOWN_SEG = int(os.getenv("CARROS_BATIDOS_ALERTA_COOLDOWN_SEG", "86400"))
+
 FIPE_API_BASE = os.getenv("FIPE_API_BASE", "https://parallelum.com.br/fipe/api/v1").strip()
 FIPE_PAUSA_ENTRE_CHAMADAS_SEG = float(os.getenv("FIPE_PAUSA_ENTRE_CHAMADAS_SEG", "0.3"))
 

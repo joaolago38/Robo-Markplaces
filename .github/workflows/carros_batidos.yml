@@ -1,0 +1,67 @@
+name: Monitor Carros Batidos
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 2 horas
+    - cron: "15 */2 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  CARROS_BATIDOS_INCLUIR_FIPE: "1"
+  CARROS_BATIDOS_PRECO_MAX: "150000"
+  CARROS_BATIDOS_ALERTA_RESUMO: "1"
+
+jobs:
+  monitorar:
+    name: Lojas de carros batidos → Telegram
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar historico de achados
+        uses: actions/cache@v4
+        with:
+          path: logs/carros_batidos_history.json
+          key: carros-batidos-history-${{ github.run_id }}
+          restore-keys: |
+            carros-batidos-history-
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor carros batidos
+        run: python -m agentes.veiculos.agente_monitor_carros_batidos
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar historico (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: carros-batidos-history
+          path: |
+            logs/carros_batidos_history.json
+            logs/carros_batidos_ultima.json
+          retention-days: 90
+          if-no-files-found: ignore
