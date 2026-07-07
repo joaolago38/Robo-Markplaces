@@ -27,7 +27,7 @@ class TestAgenteMonitorCarrosBatidos(unittest.TestCase):
     def test_alerta_novos_anuncios(self, mock_coleta, mock_alerta, mock_fontes):
         with patch.object(agente, "CARROS_BATIDOS_ALERTA_RESUMO", False), patch.object(
             agente, "CARROS_BATIDOS_INCLUIR_FIPE", False
-        ):
+        ), patch.object(agente, "CARROS_BATIDOS_BUSCA_WEB", False):
             mock_fontes.return_value = [{"id": "teste", "nome": "Loja Teste", "tipo": "html"}]
             mock_coleta.return_value = [
                 {
@@ -52,15 +52,42 @@ class TestAgenteMonitorCarrosBatidos(unittest.TestCase):
 
     @patch.object(agente, "carregar_fontes", return_value=[])
     def test_sem_fontes_ativas(self, _mock_fontes):
-        out = agente.executar(enviar_alerta=False)
+        with patch.object(agente, "CARROS_BATIDOS_BUSCA_WEB", False):
+            out = agente.executar(enviar_alerta=False)
         self.assertTrue(out["ok"])
         self.assertEqual(out["lojas"], 0)
+
+    @patch.object(agente, "carregar_fontes", return_value=[])
+    @patch.object(agente, "coletar_busca_web_brasil")
+    def test_busca_web_gera_lojas(self, mock_busca_web, _mock_fontes):
+        mock_busca_web.return_value = [
+            {
+                "hash": "w1",
+                "titulo": "Loja de batidos SP",
+                "loja_nome": "Busca web — exemplo.com.br",
+                "loja_id": "busca_web",
+                "preco": 0.0,
+                "url": "https://exemplo.com.br",
+                "ano": "",
+            }
+        ]
+        with patch.object(agente, "CARROS_BATIDOS_BUSCA_WEB", True), patch.object(
+            agente, "CARROS_BATIDOS_ALERTA_RESUMO", False
+        ), patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
+        ):
+            out = agente.executar(enviar_alerta=False)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["lojas"], 1)
+        self.assertEqual(out["novos"], 1)
+        mock_busca_web.assert_called_once()
 
     @patch.object(agente, "carregar_fontes")
     @patch.object(agente, "coletar_fonte", side_effect=RuntimeError("boom"))
     def test_nunca_lanca_excecao(self, _mock_coleta, mock_fontes):
         mock_fontes.return_value = [{"id": "x", "nome": "X", "tipo": "html"}]
-        out = agente.executar(enviar_alerta=False)
+        with patch.object(agente, "CARROS_BATIDOS_BUSCA_WEB", False):
+            out = agente.executar(enviar_alerta=False)
         self.assertFalse(out["ok"])
         self.assertIn("boom", out["erro"])
 
