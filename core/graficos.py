@@ -69,6 +69,7 @@ def grafico_evolucao(
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
+        nan = float("nan")
         rotulos = _rotulos_x(pontos)
         x = list(range(len(pontos)))
         n = len(campos)
@@ -80,7 +81,7 @@ def grafico_evolucao(
         for i, (campo, rotulo) in enumerate(campos):
             ax = axes[i]
             valores = [
-                float(p.get(campo)) if isinstance(p.get(campo), (int, float)) and not isinstance(p.get(campo), bool) else None
+                float(p.get(campo)) if isinstance(p.get(campo), (int, float)) and not isinstance(p.get(campo), bool) else nan
                 for p in pontos
             ]
             cor = cores[i % len(cores)]
@@ -89,7 +90,7 @@ def grafico_evolucao(
             ax.set_ylabel(rotulo, fontsize=9)
             ax.grid(True, alpha=0.25, linestyle="--")
 
-            vlim = [v for v in valores if v is not None]
+            vlim = [v for v in valores if v == v]  # remove nan
             if vlim:
                 ultimo = vlim[-1]
                 ax.annotate(

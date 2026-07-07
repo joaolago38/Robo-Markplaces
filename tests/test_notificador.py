@@ -96,6 +96,55 @@ class TestNotificadorAlertar(unittest.TestCase):
         self.assertNotIn("SECRET123", joined)
 
 
+class TestNotificadorFoto(unittest.TestCase):
+    def setUp(self):
+        tg.reset()
+        self._tmp = tempfile.TemporaryDirectory()
+        self._orig_cooldown = notificador._COOLDOWN_PATH
+        notificador._COOLDOWN_PATH = Path(self._tmp.name) / "cooldown.json"
+        self.foto = Path(self._tmp.name) / "g.png"
+        self.foto.write_bytes(b"\x89PNG\r\n\x1a\n fake png bytes")
+
+    def tearDown(self):
+        notificador._COOLDOWN_PATH = self._orig_cooldown
+        self._tmp.cleanup()
+
+    @patch.object(notificador, "TELEGRAM_TOKEN", "")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "")
+    def test_foto_sem_config_retorna_false(self):
+        self.assertFalse(notificador._enviar_foto("", str(self.foto), "cap"))
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_enviar_foto_gestor_usa_sendphoto(self, mock_request):
+        mock_request.return_value = _mock_resp()
+        ok = notificador.enviar_foto_gestor(str(self.foto), "legenda", _ignorar_cooldown=True)
+        self.assertTrue(ok)
+        url = mock_request.call_args[0][1]
+        self.assertIn("sendPhoto", url)
+        self.assertIn("files", mock_request.call_args[1])
+        self.assertEqual(mock_request.call_args[1]["data"]["chat_id"], "g1")
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_foto_arquivo_inexistente_retorna_false(self, mock_request):
+        ok = notificador._enviar_foto("g1", str(self.foto) + ".naoexiste", "x")
+        self.assertFalse(ok)
+        mock_request.assert_not_called()
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_foto_respeita_cooldown(self, mock_request):
+        mock_request.return_value = _mock_resp()
+        primeira = notificador.enviar_foto_gestor(str(self.foto), "x", chave="k-foto", cooldown_segundos=999)
+        segunda = notificador.enviar_foto_gestor(str(self.foto), "x", chave="k-foto", cooldown_segundos=999)
+        self.assertTrue(primeira)
+        self.assertFalse(segunda)
+
+
 class TestNotificadorPerguntarGestor(unittest.TestCase):
     @patch.object(notificador, "TELEGRAM_TOKEN", "")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "")
