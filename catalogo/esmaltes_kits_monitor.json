@@ -1,0 +1,98 @@
+[
+  {
+    "id": "kit3",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 3 esmaltes",
+    "termo_busca": "kit 3 esmaltes manicure",
+    "limite_resultados": 25
+  },
+  {
+    "id": "kit5",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 5 esmaltes",
+    "termo_busca": "kit 5 esmaltes manicure",
+    "limite_resultados": 25
+  },
+  {
+    "id": "kit6",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kit 6 sortidos",
+    "termo_busca": "kit 6 esmaltes sortidos manicure",
+    "limite_resultados": 25
+  },
+  {
+    "id": "kit10",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 10 atacado",
+    "termo_busca": "kit 10 esmaltes atacado manicure",
+    "limite_resultados": 30
+  },
+  {
+    "id": "kit12",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kit 12 esmaltes",
+    "termo_busca": "kit 12 esmaltes manicure",
+    "limite_resultados": 25
+  },
+  {
+    "id": "kit15",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kit 15 atacado",
+    "termo_busca": "kit 15 esmaltes manicure atacado",
+    "limite_resultados": 25
+  },
+  {
+    "id": "kit30",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Kit 30 atacado",
+    "termo_busca": "kit 30 esmaltes atacado manicure",
+    "limite_resultados": 20
+  },
+  {
+    "id": "anita",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kits Anita",
+    "termo_busca": "esmalte anita kit manicure",
+    "limite_resultados": 25
+  },
+  {
+    "id": "impala",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kits Impala",
+    "termo_busca": "esmalte impala kit manicure",
+    "limite_resultados": 30
+  },
+  {
+    "id": "risque",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kits Risqué",
+    "termo_busca": "esmalte risque kit manicure",
+    "limite_resultados": 20
+  },
+  {
+    "id": "colorama",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kits Colorama",
+    "termo_busca": "esmalte colorama kit manicure",
+    "limite_resultados": 20
+  },
+  {
+    "id": "nude-rosa",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kits nude/rosa",
+    "termo_busca": "kit esmalte nude rosa manicure",
+    "limite_resultados": 25
+  }
+]

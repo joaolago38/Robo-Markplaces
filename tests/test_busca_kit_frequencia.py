@@ -11,6 +11,57 @@ from integracoes.esmaltes import busca_kit_frequencia as bkf
 
 
 class BuscaKitFrequenciaTests(unittest.TestCase):
+    def test_termos_busca_item_inclui_alternativos(self):
+        item = {
+            "termo_busca": "kit 3 esmaltes anita classico",
+            "termos_alternativos": ["kit 3 esmaltes anita"],
+            "marca": "anita",
+            "qtd_esmaltes": 3,
+        }
+        termos = bkf._termos_busca_item(item)
+        self.assertIn("kit 3 esmaltes anita classico", termos)
+        self.assertIn("kit 3 esmaltes anita", termos)
+        self.assertTrue(any("manicure" in t for t in termos))
+
+    def test_filtrar_anuncios_tolerancia_imprecisos(self):
+        item = {
+            "marca": "anita",
+            "qtd_esmaltes": 3,
+            "cores_busca": ["nude", "rosa"],
+        }
+        anuncios = [
+            {"titulo": "Kit 3 esmaltes Anita nude", "item_id": "1"},
+            {"titulo": "Kit 3 esmaltes Risque sortido manicure", "item_id": "2"},
+            {"titulo": "Caneta esferográfica azul", "item_id": "3"},
+        ]
+        out = bkf._filtrar_anuncios(item, anuncios, limite=10, tolerancia_erro=0.10)
+        titulos = [a["titulo"] for a in out]
+        self.assertIn("Kit 3 esmaltes Anita nude", titulos)
+        self.assertNotIn("Caneta esferográfica azul", titulos)
+
+    def test_buscar_anuncios_item_cascata(self):
+        item = {
+            "id": "kit3-anita",
+            "termo_busca": "termo restrito xyz",
+            "termos_alternativos": ["kit 3 esmaltes anita"],
+            "marca": "anita",
+            "qtd_esmaltes": 3,
+            "cores_busca": ["nude"],
+            "limite_resultados": 10,
+        }
+        chamadas: list[str] = []
+
+        def _buscar(termo: str, **kwargs: object) -> list[dict]:
+            chamadas.append(termo)
+            if "anita" in termo:
+                return [{"titulo": "Kit 3 esmaltes Anita nude", "item_id": "MLB1"}]
+            return []
+
+        anuncios, termo_usado = bkf.buscar_anuncios_item(item, _buscar)
+        self.assertEqual(len(anuncios), 1)
+        self.assertIn("anita", termo_usado)
+        self.assertGreater(len(chamadas), 1)
+
     def test_executar_busca_item_conta_cores(self):
         item = {
             "id": "kit3-anita",

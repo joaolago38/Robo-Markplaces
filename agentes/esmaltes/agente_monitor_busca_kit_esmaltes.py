@@ -28,6 +28,7 @@ from core.config import (
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.esmaltes.busca_kit_frequencia import (
+    buscar_anuncios_item,
     consolidar_dia,
     executar_busca_item,
     registrar_execucao_diaria,
@@ -88,7 +89,7 @@ def montar_mensagem_telegram(
             f"• [{marca}] {r.get('nome', '?')} — cor foco: {r.get('cor_foco', '?')}"
         )
         linhas.append(
-            f"  `{r.get('termo_busca', '')}` → {r.get('total_anuncios', 0)} anúncios "
+            f"  `{r.get('termo_usado') or r.get('termo_busca', '')}` → {r.get('total_anuncios', 0)} anúncios "
             f"({r.get('anuncios_da_marca', 0)} da marca)"
         )
         linhas.append(f"  Cores: {_formatar_cores(r.get('cores_encontradas') or {})}")
@@ -130,16 +131,9 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         resultados_rodada: list[dict[str, Any]] = []
 
         for item in itens:
-            termo = str(item.get("termo_busca") or "").strip()
-            limite = int(item.get("limite_resultados") or 20)
-            logger.info("Busca kit esmaltes [%s]: %s", item.get("marca"), termo)
-            item_ref = str(item.get("item_id_ml") or item.get("item_id_referencia") or "").strip() or None
-            anuncios = ml_client.buscar_concorrentes_por_termo(
-                termo,
-                limite=limite,
-                item_id_referencia=item_ref,
-            )
-            resultado = executar_busca_item(item, anuncios, timestamp=agora)
+            logger.info("Busca kit esmaltes [%s]: %s", item.get("marca"), item.get("termo_busca"))
+            anuncios, termo_usado = buscar_anuncios_item(item, ml_client.buscar_concorrentes_por_termo)
+            resultado = executar_busca_item({**item, "termo_usado": termo_usado}, anuncios, timestamp=agora)
             resultados_rodada.append(resultado)
             registrar_execucao_diaria(historico, resultado, dia=dia)
             incrementar(
