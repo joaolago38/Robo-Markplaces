@@ -54,7 +54,9 @@ class AgenteMonitorBuscaKitEsmaltesTests(unittest.TestCase):
 
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
             agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
-        ), patch.object(agente, "ESMALTES_BUSCA_KIT_PAUSA_SEG", 0):
+        ), patch.object(agente, "pode_alertar_esmaltes", return_value=(True, "ok")), patch.object(
+            agente, "ESMALTES_BUSCA_KIT_PAUSA_SEG", 0
+        ):
             out = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out["ok"])

@@ -50,8 +50,8 @@ class AgenteMonitorTendenciasEsmaltesTests(unittest.TestCase):
         ), patch.object(agente, "SERIES_PATH", self.tmp_path / "series.json"), patch.object(
             agente, "GRAFICO_PATH", self.tmp_path / "g.png"
         ), patch.object(agente, "enviar_foto_gestor", return_value=True), patch.object(
-            agente, "ESMALTES_TENDENCIAS_PAUSA_SEG", 0
-        ):
+            agente, "pode_alertar_esmaltes", return_value=(True, "ok")
+        ), patch.object(agente, "ESMALTES_TENDENCIAS_PAUSA_SEG", 0):
             out = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out["ok"])

@@ -26,7 +26,8 @@ from core.config import (
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
-from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
+from core.notificador import alertar_gestor, chave_resumo_periodo
+from core.prontidao import pode_alertar_esmaltes
 from integracoes.esmaltes.busca_kit_frequencia import (
     buscar_anuncios_item,
     consolidar_dia,
@@ -115,8 +116,11 @@ def montar_mensagem_telegram(
 
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     try:
-        if enviar_alerta and not gestor_telegram_configurado():
-            logger.warning("Telegram gestor não configurado — alertas não serão entregues")
+        pode_alertar, motivo_alerta = (True, "ok")
+        if enviar_alerta:
+            pode_alertar, motivo_alerta = pode_alertar_esmaltes()
+            if not pode_alertar:
+                logger.warning("Agente não configurado (%s) — Telegram não será enviado", motivo_alerta)
 
         itens = _carregar_itens()
         if not itens:
@@ -163,7 +167,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         )
 
         alerta_enviado = False
-        if enviar_alerta and ESMALTES_BUSCA_KIT_ALERTA_RESUMO:
+        if enviar_alerta and ESMALTES_BUSCA_KIT_ALERTA_RESUMO and pode_alertar:
             msg = montar_mensagem_telegram(dia, dia_obj, consolidado, resultados_rodada)
             alerta_enviado = bool(
                 alertar_gestor(

@@ -153,6 +153,7 @@ _LOGGER_META = {
     "datadog_logger": ("infra", "core"),
     "series_historica": ("infra", "core"),
     "graficos": ("infra", "core"),
+    "prontidao": ("infra", "core"),
 
     # --- Scripts / API ---
     "renovar_tokens": ("multi", "script"),

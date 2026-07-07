@@ -26,12 +26,8 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.graficos import grafico_evolucao
-from core.notificador import (
-    alertar_gestor,
-    chave_resumo_periodo,
-    enviar_foto_gestor,
-    gestor_telegram_configurado,
-)
+from core.notificador import alertar_gestor, chave_resumo_periodo, enviar_foto_gestor
+from core.prontidao import pode_alertar_esmaltes
 from core.series_historica import formatar_comparativo, registrar_ponto
 from integracoes.esmaltes.analise_kits_esmaltes import consolidar_varredura, processar_termo
 from integracoes.marketplaces.busca_multi_marketplace import (
@@ -140,8 +136,11 @@ def montar_mensagem_telegram(
 
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     try:
-        if enviar_alerta and not gestor_telegram_configurado():
-            logger.warning("Telegram gestor não configurado — alertas kits esmaltes não serão entregues")
+        pode_alertar, motivo_alerta = (True, "ok")
+        if enviar_alerta:
+            pode_alertar, motivo_alerta = pode_alertar_esmaltes()
+            if not pode_alertar:
+                logger.warning("Agente não configurado (%s) — Telegram não será enviado", motivo_alerta)
 
         termos = _carregar_termos()
         if not termos:
@@ -198,7 +197,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         escrever_json_atomico(HISTORY_PATH, historico)
 
         alerta_enviado = False
-        if enviar_alerta and ESMALTES_KITS_MONITOR_ALERTA_RESUMO and consolidado.get("total_kits_unicos", 0) >= 0:
+        if enviar_alerta and ESMALTES_KITS_MONITOR_ALERTA_RESUMO and pode_alertar:
             msg = montar_mensagem_telegram(consolidado, resultados, serie=serie)
             chave = chave_resumo_periodo("esmaltes:kits_monitor", horas_por_bucket=6)
             alerta_enviado = bool(
