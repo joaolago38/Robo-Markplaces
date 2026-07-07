@@ -20,6 +20,7 @@ from core.config import (
     LEILAO_INCLUIR_SUMARE_DIRETO,
     LEILAO_LEILOEIROS_POR_RODADA,
     LEILAO_SUMARE_MAX_LEILOES,
+    LEILAO_VARREDURA_TODAS_FONTES,
 )
 from core.ddg_lite import buscar as ddg_buscar, circuit_breaker_ativo, mensagem_circuit_breaker
 from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS, URLS_CADASTRO_POR_DOMINIO
@@ -77,6 +78,17 @@ def _limites_ano(veiculo: dict[str, Any]) -> tuple[int, int]:
 
 
 def montar_termo_busca(veiculo: dict[str, Any]) -> str:
+    if veiculo.get("busca_todos"):
+        partes = ["veículo", "automotor"]
+        ano_min, ano_max = _limites_ano(veiculo)
+        if ano_min == ano_max:
+            partes.append(str(ano_min))
+        else:
+            partes.append(f"{ano_min}-{ano_max}")
+        if veiculo.get("perfil") in _PERFIS_RECUPERADO_MONTA:
+            partes.extend(_TERMOS_PERFIL_BUSCA)
+        return " ".join(partes)
+
     partes = [
         str(veiculo.get("marca") or "").strip(),
         str(veiculo.get("modelo") or "").strip(),
@@ -99,6 +111,9 @@ def _termo_query_site(veiculo: dict[str, Any]) -> str:
     Termo enxuto para `site:dominio` — evita query gigante (perfil já vai no sufixo).
     Reduz 403 por rate limit no DuckDuckGo.
     """
+    if veiculo.get("busca_todos"):
+        return "veículo automotor"
+
     partes = [
         str(veiculo.get("marca") or "").strip(),
         str(veiculo.get("modelo") or "").strip(),
@@ -204,6 +219,19 @@ def _modelo_no_texto(texto: str, veiculo: dict[str, Any]) -> bool:
 
 def _relevante_para_veiculo(resultado: dict[str, str], veiculo: dict[str, Any]) -> bool:
     blob = f"{resultado.get('titulo', '')} {resultado.get('snippet', '')} {resultado.get('url', '')}"
+    if veiculo.get("busca_todos"):
+        if resultado.get("fonte_tipo") == "sumare":
+            if not _ano_no_intervalo(blob, veiculo):
+                return False
+            return True
+        if not _ano_no_intervalo(blob, veiculo):
+            return False
+        if not (_parece_leilao(blob) or _parece_leilao(resultado.get("url", ""))):
+            return False
+        if veiculo.get("perfil") in _PERFIS_RECUPERADO_MONTA:
+            return _bate_perfil_recuperado_minimo(blob)
+        return True
+
     norm = _normalizar(blob)
     marca = _normalizar(str(veiculo.get("marca") or ""))
     modelo = _normalizar(str(veiculo.get("modelo") or ""))
@@ -357,6 +385,8 @@ def enriquecer_achado_leilao(item: dict[str, Any], veiculo: dict[str, Any]) -> d
         "modelo": str(veiculo.get("modelo") or "").strip(),
         "url_anuncio": str(item.get("url") or "").strip(),
     }
+    if veiculo.get("busca_todos") and not out["marca"] and not out["modelo"]:
+        out["descricao_veiculo"] = str(item.get("titulo") or "").strip()[:100]
     if ano:
         out["ano"] = ano
     if valor:
@@ -405,16 +435,20 @@ def _rotacionar_fontes(
 
 def _fontes_da_rodada() -> tuple[list[tuple[dict[str, str], str, str]], dict[str, Any]]:
     hora_utc = datetime.now(timezone.utc).hour
-    leiloeiros = _rotacionar_fontes(
-        LEILOEIROS_PRINCIPAIS,
-        limite=LEILAO_LEILOEIROS_POR_RODADA,
-        bucket=hora_utc,
-    )
-    detrans = _rotacionar_fontes(
-        DETRAN_POR_ESTADO,
-        limite=LEILAO_DETRAN_POR_RODADA,
-        bucket=hora_utc + 7,
-    )
+    if LEILAO_VARREDURA_TODAS_FONTES:
+        leiloeiros = list(LEILOEIROS_PRINCIPAIS)
+        detrans = list(DETRAN_POR_ESTADO)
+    else:
+        leiloeiros = _rotacionar_fontes(
+            LEILOEIROS_PRINCIPAIS,
+            limite=LEILAO_LEILOEIROS_POR_RODADA,
+            bucket=hora_utc,
+        )
+        detrans = _rotacionar_fontes(
+            DETRAN_POR_ESTADO,
+            limite=LEILAO_DETRAN_POR_RODADA,
+            bucket=hora_utc + 7,
+        )
     fontes: list[tuple[dict[str, str], str, str]] = []
     for f in leiloeiros:
         fontes.append((f, "leiloeiro", f.get("id", f["dominio"])))
@@ -510,7 +544,7 @@ def obter_lotes_sumare() -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
 def _lote_sumare_para_item(lote: dict[str, Any], veiculo: dict[str, Any]) -> dict[str, Any] | None:
     titulo = str(lote.get("titulo") or "")
-    if not _modelo_no_texto(titulo, veiculo):
+    if not veiculo.get("busca_todos") and not _modelo_no_texto(titulo, veiculo):
         return None
     lance = float(lote.get("lance_brl") or lote.get("lance_lista_brl") or 0)
     valor_txt = f"R$ {lance:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if lance else None

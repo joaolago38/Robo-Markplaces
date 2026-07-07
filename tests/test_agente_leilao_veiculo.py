@@ -27,7 +27,9 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         catalogo = self.tmp_path / "catalogo" / "leiloes_veiculos_monitorados.json"
         catalogo.parent.mkdir(parents=True)
         catalogo.write_text("[]", encoding="utf-8")
-        with patch.object(agente, "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"):
+        with patch.object(agente, "LEILAO_VEICULOS_CATALOGO", "catalogo/leiloes_veiculos_monitorados.json"), patch.object(
+            agente, "LEILAO_BUSCA_TODOS_VEICULOS", False
+        ):
             out = agente.executar(enviar_alerta=False)
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_veiculos"], 0)
@@ -36,7 +38,7 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_veiculo_em_fontes")
     @patch.object(agente, "_carregar_veiculos")
-    def test_alerta_apenas_vantajosos(self, mock_veiculos, mock_busca, mock_alertar, _sumare):
+    def test_alerta_todos_achados_novos(self, mock_veiculos, mock_busca, mock_alertar, _sumare):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015}
         ]
@@ -58,20 +60,11 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         mock_busca.return_value = {"achados": [item_base], "diagnostico": {"ddg_brutos": 1}}
 
         def _analisar(_veiculo, achados):
-            return [
-                {
-                    **item_base,
-                    "lance_brl": 9800.0,
-                    "custo_total_brl": 11600.0,
-                    "valor_fipe": 25000.0,
-                    "margem_fipe_reais": 13400.0,
-                    "margem_fipe_pct": 53.6,
-                    "vantajoso": True,
-                    "modelo_fipe": "Uno Mille",
-                }
-            ]
+            return [{**item_base, "lance_brl": 9800.0, "vantajoso": False, "analise_fipe": {"motivo": "FIPE n/d"}}]
 
-        with patch.object(agente, "_analisar_achados", side_effect=_analisar), patch.object(
+        with patch.object(agente, "LEILAO_BUSCA_TODOS_VEICULOS", False), patch.object(
+            agente, "LEILAO_ALERTAR_TODOS_ACHADOS", True
+        ), patch.object(agente, "_analisar_achados", side_effect=_analisar), patch.object(
             agente, "HISTORY_PATH", self.tmp_path / "hist.json"
         ), patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
             agente, "LEILAO_ALERTA_RESUMO", False
@@ -80,13 +73,30 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             out2 = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out1["ok"])
-        self.assertEqual(out1["com_vantajosos"], 1)
+        self.assertEqual(out1["com_novos"], 1)
         mock_alertar.assert_called_once()
         msg = mock_alertar.call_args[0][0]
-        self.assertIn("vantagem FIPE", msg)
-        self.assertIn("FIPE", msg)
+        self.assertIn("veículos encontrados", msg)
         self.assertIn("R$ 9.800,00", msg)
-        self.assertEqual(out2["com_vantajosos"], 0)
+        self.assertEqual(out2["com_novos"], 0)
+
+    @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "buscar_veiculo_em_fontes")
+    def test_modo_busca_todos_veiculos(self, mock_busca, mock_alertar, _sumare):
+        mock_busca.return_value = {"achados": [], "diagnostico": {}}
+        with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
+        ), patch.object(agente, "LEILAO_BUSCA_TODOS_VEICULOS", True), patch.object(
+            agente, "LEILAO_ALERTA_RESUMO", False
+        ), patch.object(agente, "LEILAO_IA_AVALIAR_PARAMETROS", False), patch.object(
+            agente, "_analisar_achados", return_value=[]
+        ):
+            out = agente.executar(enviar_alerta=False)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total_veiculos"], 1)
+        veiculo_passado = mock_busca.call_args[0][0]
+        self.assertTrue(veiculo_passado.get("busca_todos"))
 
     def test_montar_alerta_detran(self):
         msg = agente._montar_alerta(
@@ -244,7 +254,8 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
 
     @patch.object(agente, "_carregar_veiculos", side_effect=RuntimeError("boom"))
     def test_nunca_lanca_excecao(self, *_):
-        out = agente.executar(enviar_alerta=False)
+        with patch.object(agente, "LEILAO_BUSCA_TODOS_VEICULOS", False):
+            out = agente.executar(enviar_alerta=False)
         self.assertFalse(out["ok"])
         self.assertIn("boom", out["erro"])
 

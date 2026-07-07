@@ -162,6 +162,21 @@ LEILAO_ALERTA_RESUMO = os.getenv("LEILAO_ALERTA_RESUMO", "1").strip().lower() no
 LEILAO_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LEILAO_ALERTA_RESUMO_COOLDOWN_SEG", "3600"))
 LEILAO_ANO_MIN = int(os.getenv("LEILAO_ANO_MIN", "2000"))
 LEILAO_ANO_MAX = int(os.getenv("LEILAO_ANO_MAX", "2020"))
+LEILAO_BUSCA_TODOS_VEICULOS = os.getenv("LEILAO_BUSCA_TODOS_VEICULOS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+LEILAO_VARREDURA_TODAS_FONTES = os.getenv("LEILAO_VARREDURA_TODAS_FONTES", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+LEILAO_ALERTAR_TODOS_ACHADOS = os.getenv("LEILAO_ALERTAR_TODOS_ACHADOS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Leilão × FIPE (lance + taxas vs tabela)
 LEILAO_COMISSAO_PCT = float(os.getenv("LEILAO_COMISSAO_PCT", "5.0"))

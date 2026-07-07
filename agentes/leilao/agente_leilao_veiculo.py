@@ -1,10 +1,10 @@
 """
 agentes/leilao/agente_leilao_veiculo.py
 Monitor 24h de leilões de veículos **recuperados de furto ou pequena/média monta** em leiloeiros
-e portais DETRAN (todos os estados). Modelos prioritários no catálogo padrão:
-Fiorino Furgão → Gol → Civic → City → Fit.
+e portais DETRAN (todos os estados). Por padrão varre **todos os veículos** (ano 2000–2020)
+em todas as fontes e notifica no Telegram cada achado novo.
 
-Configuração: catalogo/leiloes_veiculos_monitorados.json
+Configuração: catalogo/leiloes_veiculos_monitorados.json (modo legado por modelo)
 Somente leitura + alertas — não participa de leilões.
 """
 from __future__ import annotations
@@ -17,9 +17,16 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     LEILAO_ALERTA_RESUMO,
     LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
+    LEILAO_ALERTAR_TODOS_ACHADOS,
+    LEILAO_ANO_MAX,
+    LEILAO_ANO_MIN,
+    LEILAO_BUSCA_TODOS_VEICULOS,
     LEILAO_IA_AVALIAR_PARAMETROS,
     LEILAO_INCLUIR_SUMARE_DIRETO,
+    LEILAO_MARGEM_FIPE_MIN_PCT,
+    LEILAO_MARGEM_FIPE_MIN_REAIS,
     LEILAO_PAUSA_ENTRE_FONTES_SEG,
+    LEILAO_PRECO_MAX_LANCE,
     LEILAO_VEICULOS_CATALOGO,
     ROOT,
 )
@@ -37,6 +44,22 @@ logger = logging.getLogger("agente_leilao_veiculo")
 
 HISTORY_PATH = ROOT / "logs" / "leilao_veiculos_history.json"
 SNAPSHOT_PATH = ROOT / "logs" / "leilao_veiculos_ultima.json"
+
+
+def _veiculo_busca_todos() -> dict[str, Any]:
+    return {
+        "id": "todos_veiculos",
+        "ativo": True,
+        "prioridade": 1,
+        "busca_todos": True,
+        "perfil": "recuperado_furto_pequena_monta",
+        "ano_min": LEILAO_ANO_MIN,
+        "ano_max": LEILAO_ANO_MAX,
+        "margem_fipe_min_pct": LEILAO_MARGEM_FIPE_MIN_PCT,
+        "margem_fipe_min_reais": LEILAO_MARGEM_FIPE_MIN_REAIS,
+        "preco_max_lance": LEILAO_PRECO_MAX_LANCE,
+        "notas": "Varredura ampla — todos os veículos no intervalo de ano",
+    }
 
 
 def _carregar_veiculos() -> list[dict[str, Any]]:
@@ -103,7 +126,11 @@ def _monitorar_veiculo(
     diag_sumare: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     vid = str(veiculo.get("id") or "").strip()
-    nome = f"{veiculo.get('marca', '')} {veiculo.get('modelo', '')}".strip()
+    nome = (
+        str(veiculo.get("veiculo") or "").strip()
+        or f"{veiculo.get('marca', '')} {veiculo.get('modelo', '')}".strip()
+        or vid
+    )
     entrada_hist = historico.get(vid) if isinstance(historico.get(vid), dict) else {}
     vistos: dict[str, Any] = dict(entrada_hist.get("vistos") or {})
 
@@ -181,11 +208,14 @@ def _formatar_local_item(item: dict[str, Any]) -> str:
 
 
 def _formatar_veiculo_item(item: dict[str, Any]) -> str:
-    marca = str(item.get("marca") or "").strip()
-    modelo = str(item.get("modelo") or "").strip()
+    if item.get("descricao_veiculo"):
+        desc = str(item["descricao_veiculo"])
+    else:
+        marca = str(item.get("marca") or "").strip()
+        modelo = str(item.get("modelo") or "").strip()
+        partes = [p for p in (marca, modelo) if p]
+        desc = " ".join(partes)
     ano = item.get("ano")
-    partes = [p for p in (marca, modelo) if p]
-    desc = " ".join(partes)
     if ano:
         desc = f"{desc} {ano}".strip()
     return desc or str(item.get("titulo") or "Veículo")[:60]
@@ -262,17 +292,26 @@ def _logar_achados(
             logger.info("  … e mais %s novo(s)", len(novos) - 5)
 
 
-def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
-    linhas = ["🚗 *Leilões — vantagem FIPE (lance + taxas)*", ""]
+def _montar_alerta(resultados: list[dict[str, Any]], *, todos_achados: bool = False) -> str:
+    titulo = (
+        "🚗 *Leilões — veículos encontrados*"
+        if todos_achados
+        else "🚗 *Leilões — vantagem FIPE (lance + taxas)*"
+    )
+    linhas = [titulo, ""]
     ordenados = sorted(resultados, key=lambda r: int(r.get("prioridade") or 99))
     tem_item = False
     for r in ordenados:
-        novos = r.get("novos_vantajosos") or []
+        novos = r.get("novos") if todos_achados else (r.get("novos_vantajosos") or [])
         if not novos:
             continue
         tem_item = True
-        linhas.append(f"*{r.get('veiculo', r.get('id', ''))}* ({len(novos)} com vantagem FIPE):")
-        for item in novos[:8]:
+        rotulo = r.get("veiculo", r.get("id", ""))
+        if todos_achados:
+            linhas.append(f"*{rotulo}* ({len(novos)} novo(s)):")
+        else:
+            linhas.append(f"*{rotulo}* ({len(novos)} com vantagem FIPE):")
+        for item in novos[:12]:
             linhas.append(f"📍 {_formatar_local_item(item)}")
             linhas.append(f"🚙 {_formatar_veiculo_item(item)}")
             if item.get("valor") or item.get("lance_brl"):
@@ -283,18 +322,28 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
                     f"💸 Custo total leilão {_fmt_brl(item.get('custo_total_brl'))} "
                     f"(+{_fmt_brl(item.get('comissao_leiloeiro_brl'))} comissão + taxas)"
                 )
-                linhas.append(
-                    f"✅ Vantagem {_fmt_brl(item.get('margem_fipe_reais'))} "
-                    f"({item.get('margem_fipe_pct')}% abaixo FIPE)"
-                )
+                if item.get("vantajoso"):
+                    linhas.append(
+                        f"✅ Vantagem {_fmt_brl(item.get('margem_fipe_reais'))} "
+                        f"({item.get('margem_fipe_pct')}% abaixo FIPE)"
+                    )
+                elif item.get("margem_fipe_reais") is not None:
+                    linhas.append(
+                        f"⚠️ Margem FIPE {_fmt_brl(item.get('margem_fipe_reais'))} "
+                        f"({item.get('margem_fipe_pct')}%)"
+                    )
+            elif item.get("analise_fipe"):
+                motivo = (item.get("analise_fipe") or {}).get("motivo")
+                if motivo:
+                    linhas.append(f"📊 {motivo}")
             if item.get("data_leilao"):
                 linhas.append(f"📅 {item['data_leilao']}")
             if item.get("url_cadastro"):
                 linhas.append(f"📝 Cadastro: {item['url_cadastro']}")
             linhas.append(f"🔗 {item.get('url_anuncio') or item.get('url', '')}")
             linhas.append("")
-        if len(novos) > 8:
-            linhas.append(f"… e mais {len(novos) - 8}")
+        if len(novos) > 12:
+            linhas.append(f"… e mais {len(novos) - 12}")
         linhas.append("")
     if not tem_item:
         return ""
@@ -413,6 +462,13 @@ def _montar_resumo_varredura(
     return "\n".join(linhas).strip()
 
 
+def _todos_novos(resultados: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    itens: list[dict[str, Any]] = []
+    for r in resultados:
+        itens.extend(r.get("novos") or [])
+    return itens
+
+
 def _todos_novos_vantajosos(resultados: list[dict[str, Any]]) -> list[dict[str, Any]]:
     itens: list[dict[str, Any]] = []
     for r in resultados:
@@ -422,8 +478,8 @@ def _todos_novos_vantajosos(resultados: list[dict[str, Any]]) -> list[dict[str, 
 
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     """
-    Varre leiloeiros + DETRAN (27 UFs) para cada veículo ativo no catálogo.
-    Alerta apenas achados novos (não repetidos). Nunca lança exceção.
+    Varre leiloeiros + DETRAN (todas as fontes por padrão) e notifica Telegram.
+    Modo padrão: todos os veículos (ano 2000–2020), alerta de cada achado novo.
     """
     try:
         if enviar_alerta and not gestor_telegram_configurado():
@@ -432,7 +488,13 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 "alertas de leilão não serão entregues"
             )
 
-        veiculos = _carregar_veiculos()
+        if LEILAO_BUSCA_TODOS_VEICULOS:
+            veiculos = [_veiculo_busca_todos()]
+            veiculos[0]["veiculo"] = (
+                f"Todos os veículos ({LEILAO_ANO_MIN}–{LEILAO_ANO_MAX})"
+            )
+        else:
+            veiculos = _carregar_veiculos()
         if not veiculos:
             logger.info("Nenhum veículo ativo em %s", LEILAO_VEICULOS_CATALOGO)
             return {"ok": True, "total_veiculos": 0, "resultados": [], "alerta_enviado": False}
@@ -450,22 +512,24 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             vid = str(veiculo.get("id") or "").strip()
             if not vid:
                 continue
-            logger.info("Varrendo leilões: %s %s", veiculo.get("marca"), veiculo.get("modelo"))
-            resultados.append(
-                _monitorar_veiculo(
-                    veiculo,
-                    historico,
-                    lotes_sumare=lotes_sumare,
-                    diag_sumare=diag_sumare,
-                )
+            nome = veiculo.get("veiculo") or f"{veiculo.get('marca', '')} {veiculo.get('modelo', '')}".strip()
+            logger.info("Varrendo leilões: %s", nome or vid)
+            resultado = _monitorar_veiculo(
+                veiculo,
+                historico,
+                lotes_sumare=lotes_sumare,
+                diag_sumare=diag_sumare,
             )
+            if nome:
+                resultado["veiculo"] = nome
+            resultados.append(resultado)
 
         diagnostico_agregado = _agregar_diagnostico(resultados)
 
         _salvar_historico(historico)
 
         ia_parametros = None
-        if LEILAO_IA_AVALIAR_PARAMETROS:
+        if LEILAO_IA_AVALIAR_PARAMETROS and not LEILAO_BUSCA_TODOS_VEICULOS:
             ia_parametros = avaliar_parametros_leilao_veiculos(
                 veiculos_catalogo=veiculos,
                 resultados=resultados,
@@ -482,24 +546,35 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             },
         )
 
+        com_novos = [r for r in resultados if r.get("novos")]
         com_vantajosos = [r for r in resultados if r.get("novos_vantajosos")]
         alerta_novos_enviado = False
         alerta_resumo_enviado = False
 
-        if enviar_alerta and com_vantajosos:
-            novos_itens = _todos_novos_vantajosos(com_vantajosos)
-            msg = _montar_alerta(com_vantajosos)
+        if enviar_alerta:
+            if LEILAO_ALERTAR_TODOS_ACHADOS and com_novos:
+                novos_itens = _todos_novos(com_novos)
+                msg = _montar_alerta(com_novos, todos_achados=True)
+                chave = chave_itens_novos("leilao:veiculos:todos", novos_itens)
+            elif com_vantajosos:
+                novos_itens = _todos_novos_vantajosos(com_vantajosos)
+                msg = _montar_alerta(com_vantajosos, todos_achados=False)
+                chave = chave_itens_novos("leilao:veiculos:vantagem_fipe", novos_itens)
+            else:
+                msg = ""
+                novos_itens = []
+
             if msg:
                 alerta_novos_enviado = bool(
                     alertar_gestor(
                         msg,
-                        chave=chave_itens_novos("leilao:veiculos:vantagem_fipe", novos_itens),
+                        chave=chave,
                         cooldown_segundos=86400,
                     )
                 )
                 if not alerta_novos_enviado:
                     logger.warning(
-                        "%s achado(s) com vantagem FIPE mas alerta não enviado (cooldown ou Telegram)",
+                        "%s achado(s) novo(s) mas alerta não enviado (cooldown ou Telegram)",
                         len(novos_itens),
                     )
 
@@ -518,6 +593,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         return {
             "ok": True,
             "total_veiculos": len(resultados),
+            "com_novos": len(com_novos),
             "com_vantajosos": len(com_vantajosos),
             "alerta_enviado": alerta_novos_enviado or alerta_resumo_enviado,
             "alerta_novos_enviado": alerta_novos_enviado,
@@ -538,8 +614,9 @@ def main() -> int:
         logger.error("Monitor leilões falhou: %s", resultado.get("erro"))
         return 1
     logger.info(
-        "Monitor leilões: %s veículo(s), %s com vantagem FIPE nova, alerta=%s",
+        "Monitor leilões: %s veículo(s), %s com novos, %s com vantagem FIPE nova, alerta=%s",
         resultado.get("total_veiculos"),
+        resultado.get("com_novos"),
         resultado.get("com_vantajosos"),
         resultado.get("alerta_enviado"),
     )
