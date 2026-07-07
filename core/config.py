@@ -128,6 +128,8 @@ ESMALTES_BUSCA_KIT_ALERTA_RESUMO = os.getenv("ESMALTES_BUSCA_KIT_ALERTA_RESUMO",
     "no",
 )
 ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG", "3600"))
+# Tolerância de imprecisão nos anúncios retornados (0.10 = até ~10% fora da marca/kit)
+ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO = float(os.getenv("ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO", "0.10"))
 
 # Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
 ACETONA_CRUZEIRO_CATALOGO = os.getenv(

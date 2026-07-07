@@ -4,10 +4,137 @@ Busca kits de esmaltes Anita/Impala no ML e contabiliza frequência diária por 
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
+from core.config import ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO
 from integracoes.esmaltes.analise_anita import cores_no_titulo, detectar_marca, extrair_qtd_kit
+
+logger = logging.getLogger("busca_kit_frequencia")
+
+
+def _termos_busca_item(item: dict[str, Any]) -> list[str]:
+    """Termo principal + alternativos do catálogo + fallbacks automáticos."""
+    vistos: set[str] = set()
+    termos: list[str] = []
+    for bruto in [item.get("termo_busca"), *(item.get("termos_alternativos") or [])]:
+        t = str(bruto or "").strip()
+        chave = t.lower()
+        if t and chave not in vistos:
+            vistos.add(chave)
+            termos.append(t)
+
+    marca = str(item.get("marca") or "").strip().lower()
+    qtd = item.get("qtd_esmaltes")
+    if marca and qtd:
+        for auto in (
+            f"kit {qtd} esmaltes {marca} manicure",
+            f"esmalte {marca} kit manicure",
+        ):
+            if auto.lower() not in vistos:
+                vistos.add(auto.lower())
+                termos.append(auto)
+    return termos
+
+
+def _score_anuncio(item: dict[str, Any], anuncio: dict[str, Any]) -> int:
+    titulo = str(anuncio.get("titulo") or "")
+    norm = titulo.lower()
+    marca = str(item.get("marca") or "").lower()
+    score = 0
+    if "esmalte" in norm or "kit" in norm:
+        score += 1
+    if marca and marca in norm:
+        score += 3
+    qtd = item.get("qtd_esmaltes")
+    if qtd:
+        qtd_titulo = extrair_qtd_kit(titulo)
+        if qtd_titulo == int(qtd):
+            score += 2
+        elif str(qtd) in norm:
+            score += 1
+    if cores_no_titulo(titulo, [str(c) for c in (item.get("cores_busca") or [])]):
+        score += 1
+    return score
+
+
+def _filtrar_anuncios(
+    item: dict[str, Any],
+    anuncios: list[dict[str, Any]],
+    limite: int,
+    *,
+    tolerancia_erro: float = ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO,
+) -> list[dict[str, Any]]:
+    """
+    Mantém anúncios relevantes com tolerância de ~10% de imprecisão
+    (ex.: kit esmalte sem a marca exata, mas ainda do nicho).
+    """
+    if not anuncios:
+        return []
+
+    limite = max(1, limite)
+    tolerancia = max(0.0, min(0.5, tolerancia_erro))
+    max_imprecisos = max(1, int(limite * tolerancia))
+
+    pontuados = sorted(
+        ((a, _score_anuncio(item, a)) for a in anuncios),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    relevantes = [(a, s) for a, s in pontuados if s > 0]
+    if not relevantes:
+        return anuncios[:limite]
+
+    precisos = [a for a, s in relevantes if s >= 3]
+    imprecisos = [a for a, s in relevantes if s < 3]
+
+    out: list[dict[str, Any]] = []
+    vistos: set[str] = set()
+    for lista in (precisos, imprecisos[:max_imprecisos]):
+        for an in lista:
+            iid = str(an.get("item_id") or an.get("titulo") or "")
+            if iid in vistos:
+                continue
+            vistos.add(iid)
+            out.append(an)
+            if len(out) >= limite:
+                return out
+    return out
+
+
+def buscar_anuncios_item(
+    item: dict[str, Any],
+    buscar_fn: Callable[..., list[dict[str, Any]]],
+    *,
+    tolerancia_erro: float = ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO,
+) -> tuple[list[dict[str, Any]], str]:
+    """
+    Tenta termos em cascata até obter resultados. Retorna (anúncios, termo_usado).
+    """
+    limite = int(item.get("limite_resultados") or 20)
+    item_ref = str(item.get("item_id_ml") or item.get("item_id_referencia") or "").strip() or None
+    termos = _termos_busca_item(item)
+    melhor: list[dict[str, Any]] = []
+    termo_usado = str(item.get("termo_busca") or "")
+
+    for termo in termos:
+        brutos = buscar_fn(termo, limite=limite, item_id_referencia=item_ref)
+        filtrados = _filtrar_anuncios(item, brutos, limite, tolerancia_erro=tolerancia_erro)
+        if len(filtrados) > len(melhor):
+            melhor = filtrados
+            termo_usado = termo
+        if filtrados:
+            logger.info(
+                "Busca kit [%s] termo=%r → %d anúncio(s) (%d bruto)",
+                item.get("id"),
+                termo,
+                len(filtrados),
+                len(brutos),
+            )
+            return filtrados, termo_usado
+
+    return melhor, termo_usado
 
 
 def _chave_dia(agora: datetime | None = None) -> str:
@@ -71,6 +198,7 @@ def executar_busca_item(
         "marca": marca,
         "cor_foco": item.get("cor_foco"),
         "termo_busca": item.get("termo_busca"),
+        "termo_usado": item.get("termo_usado") or item.get("termo_busca"),
         "timestamp": ts,
         "total_anuncios": resumo["total"],
         "anuncios_da_marca": resumo["da_marca"],
