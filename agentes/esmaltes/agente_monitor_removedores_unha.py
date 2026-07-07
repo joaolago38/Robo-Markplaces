@@ -26,18 +26,36 @@ from core.config import (
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
-from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
+from core.graficos import grafico_evolucao
+from core.notificador import (
+    alertar_gestor,
+    chave_resumo_periodo,
+    enviar_foto_gestor,
+    gestor_telegram_configurado,
+)
+from core.series_historica import formatar_comparativo, registrar_ponto
 from integracoes.esmaltes.analise_removedores import consolidar_varredura, processar_termo
 from integracoes.esmaltes.avaliacao_ia_removedores import avaliar_busca_removedores, formatar_secao_ia
 from integracoes.esmaltes.busca_removedores import buscar_removedores_segmento
-from integracoes.ml import ml_client
+from integracoes.marketplaces.busca_multi_marketplace import (
+    formatar_secao_por_marketplace,
+    resolver_fn_busca_esmaltes,
+)
 
 logger = logging.getLogger("agente_monitor_removedores_unha")
 
 SNAPSHOT_PATH = ROOT / "logs" / "removedores_unha_ultima.json"
 HISTORY_PATH = ROOT / "logs" / "removedores_unha_history.json"
+SERIES_PATH = ROOT / "logs" / "removedores_unha_series.json"
+GRAFICO_PATH = ROOT / "logs" / "removedores_unha_grafico.png"
 
 _MEDALHAS = ("🥇", "🥈", "🥉")
+
+_SERIES_CAMPOS = [
+    ("total_produtos", "Produtos únicos"),
+    ("total_vendas", "Vendas (proxy)"),
+    ("preco_medio", "Preço médio"),
+]
 
 
 def _carregar_termos() -> list[dict[str, Any]]:
@@ -73,17 +91,22 @@ def montar_mensagem_telegram(
     resultados: list[dict[str, Any]],
     *,
     avaliacao_ia: dict[str, Any] | None = None,
+    serie: list[dict[str, Any]] | None = None,
 ) -> str:
     linhas = [
-        "💅 *Removedores de unha ML — ranking*",
+        "💅 *Removedores de unha — ranking (ML + Magalu + Shopee + Amazon)*",
         "",
         f"Produtos únicos: *{consolidado.get('total_produtos_unicos', 0)}* | "
         f"Vendas (proxy ML): *{consolidado.get('total_vendas', 0):,}*".replace(",", "."),
         f"Preços: {_fmt_brl(consolidado.get('preco_min'))} – "
         f"{_fmt_brl(consolidado.get('preco_max'))} | média {_fmt_brl(consolidado.get('preco_medio'))}",
-        "",
-        "*Ranking por fabricante (vendas)*",
     ]
+    if serie:
+        comp = formatar_comparativo(serie, [("total_produtos", "Produtos"), ("total_vendas", "Vendas"), ("preco_medio", "Preço médio", 2)])
+        if comp:
+            linhas.extend(["", comp])
+    linhas.append(formatar_secao_por_marketplace(consolidado, fmt_brl=_fmt_brl))
+    linhas.extend(["", "*Ranking por fabricante (vendas)*"])
 
     ranking = consolidado.get("ranking_fabricantes") or []
     if ranking:
@@ -144,7 +167,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             logger.info("Varredura removedores: %s", segmento.get("termo_busca"))
             produtos, termo_usado, total_bruto = buscar_removedores_segmento(
                 segmento,
-                ml_client.buscar_concorrentes_por_termo,
+                resolver_fn_busca_esmaltes(),
             )
             resultado = processar_termo(
                 segmento,
@@ -185,6 +208,16 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             },
         )
 
+        serie = registrar_ponto(
+            SERIES_PATH,
+            {
+                "ts": agora,
+                "total_produtos": consolidado.get("total_produtos_unicos") or 0,
+                "total_vendas": consolidado.get("total_vendas") or 0,
+                "preco_medio": consolidado.get("preco_medio") or 0,
+            },
+        )
+
         historico = ler_json(HISTORY_PATH, default={})
         if not isinstance(historico, dict):
             historico = {}
@@ -197,14 +230,21 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         alerta_enviado = False
         if enviar_alerta and REMOVEDORES_UNHA_ALERTA_RESUMO:
-            msg = montar_mensagem_telegram(consolidado, resultados, avaliacao_ia=avaliacao_ia)
+            msg = montar_mensagem_telegram(consolidado, resultados, avaliacao_ia=avaliacao_ia, serie=serie)
+            chave = chave_resumo_periodo("esmaltes:removedores", horas_por_bucket=6)
             alerta_enviado = bool(
-                alertar_gestor(
-                    msg,
-                    chave=chave_resumo_periodo("esmaltes:removedores", horas_por_bucket=6),
+                alertar_gestor(msg, chave=chave, cooldown_segundos=REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG)
+            )
+            grafico = grafico_evolucao(
+                serie, _SERIES_CAMPOS, GRAFICO_PATH, titulo="Removedores de unha — evolução"
+            )
+            if grafico:
+                enviar_foto_gestor(
+                    str(grafico),
+                    "📊 Removedores — evolução vs rodadas anteriores",
+                    chave=f"{chave}:grafico",
                     cooldown_segundos=REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG,
                 )
-            )
 
         gauge("esmaltes.removedores.total", float(consolidado.get("total_produtos_unicos") or 0))
         gauge("esmaltes.removedores.vendas", float(consolidado.get("total_vendas") or 0))

@@ -206,6 +206,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Removedores de unha no ML: nomes, fabricantes e ranking por vendas",
     ),
     AgenteRegistrado(
+        "monitor_tendencias_esmaltes",
+        "Tendências esmaltes — web × marketplaces",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_tendencias_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="Varre internet (Brave/DDG) e cruza com ML/Magalu/Shopee/Amazon para tendências",
+    ),
+    AgenteRegistrado(
         "comparativo_anita_impala",
         "Comparativo Anita vs Impala",
         "monitor",

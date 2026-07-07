@@ -134,17 +134,41 @@ def _cliente_habilitado(marketplace: str) -> bool:
 
 
 def coletar_marketplace_generico(marketplace: str, nicho: dict[str, Any]) -> dict[str, Any]:
-    """
-    Shopee/Magalu/Amazon: sem busca pública por termo no client atual.
-    Entrega saúde da conta + termos do nicho para inferência de público pela IA.
-    """
+    """Shopee/Magalu/Amazon: busca web (Brave/DDG) + saúde da conta."""
+    from integracoes.marketplaces.busca_termo_externa import buscar_por_termo
+
     termos = _termos_do_nicho(nicho)
+    limite = int(nicho.get("limite_resultados") or 10)
+    mp = (marketplace or "").strip().lower()
+
+    brutos: list[dict[str, Any]] = []
+    for termo in termos:
+        brutos.extend(buscar_por_termo(mp, termo, limite=limite))
+
+    resultados = _deduplicar_por_item(brutos)
+    top = sorted(
+        resultados,
+        key=lambda r: (float(r.get("preco") or 0), int(r.get("quantidade_vendida") or 0)),
+        reverse=True,
+    )[:8]
+
     return {
-        "marketplace": marketplace,
-        "configurado": _cliente_habilitado(marketplace),
+        "marketplace": mp,
+        "configurado": _cliente_habilitado(mp),
         "termos": termos,
-        "busca_por_termo": False,
-        "saude_conta": _coletar_saude(marketplace),
+        "busca_por_termo": True,
+        "saude_conta": _coletar_saude(mp),
+        "estatisticas": _estatisticas_busca(resultados),
+        "top_anuncios": [
+            {
+                "titulo": r.get("titulo"),
+                "preco": r.get("preco"),
+                "quantidade_vendida": r.get("quantidade_vendida"),
+                "frete_gratis": r.get("frete_gratis"),
+                "url": r.get("permalink"),
+            }
+            for r in top
+        ],
         "publico_alvo_hint": str(nicho.get("publico_alvo_hint") or "").strip(),
         "categoria_hint": str(nicho.get("categoria") or "").strip(),
     }

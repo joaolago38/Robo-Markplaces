@@ -1,0 +1,86 @@
+"""
+tests/test_agente_monitor_tendencias_esmaltes.py
+"""
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from agentes.esmaltes import agente_monitor_tendencias_esmaltes as agente
+
+
+class AgenteMonitorTendenciasEsmaltesTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "processar_segmento")
+    @patch.object(agente, "_carregar_segmentos")
+    def test_executar_envia_telegram(self, mock_seg, mock_proc, mock_alertar):
+        mock_seg.return_value = [
+            {
+                "id": "nude-chrome",
+                "ativo": True,
+                "nome": "Nude chrome",
+                "prioridade": 1,
+            }
+        ]
+        mock_proc.return_value = {
+            "ok": True,
+            "id": "nude-chrome",
+            "nome": "Nude chrome",
+            "total_web_hits": 8,
+            "total_anuncios_mp": 5,
+            "top_oportunidades": [{"cor": "Nude", "score_web": 70, "score_mp": 10}],
+            "top_confirmadas": [],
+            "tendencias": [{"cor": "Nude", "status": "oportunidade", "score_web": 70, "score_mp": 10}],
+            "web_sinais": {"termos": [{"termo": "viral", "mencoes": 3}]},
+        }
+
+        with patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
+            agente, "HISTORY_PATH", self.tmp_path / "hist.json"
+        ), patch.object(agente, "SERIES_PATH", self.tmp_path / "series.json"), patch.object(
+            agente, "GRAFICO_PATH", self.tmp_path / "g.png"
+        ), patch.object(agente, "enviar_foto_gestor", return_value=True), patch.object(
+            agente, "ESMALTES_TENDENCIAS_PAUSA_SEG", 0
+        ):
+            out = agente.executar(enviar_alerta=True)
+
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total_segmentos"], 1)
+        mock_alertar.assert_called_once()
+        msg = mock_alertar.call_args[0][0]
+        self.assertIn("Oportunidades", msg)
+        self.assertIn("Nude", msg)
+
+    def test_montar_mensagem(self):
+        msg = agente.montar_mensagem_telegram(
+            {
+                "segmentos_varridos": 2,
+                "total_web_hits": 20,
+                "total_anuncios_mp": 15,
+                "top_oportunidades": [
+                    {"cor": "Perolado", "segmento": "Chrome", "score_web": 80, "score_mp": 15}
+                ],
+                "top_confirmadas": [
+                    {"cor": "Marsala", "segmento": "Vinho", "mencoes_web": 5, "peso_vendas_mp": 120}
+                ],
+                "top_termos_web": [{"termo": "viral", "mencoes": 6}],
+            },
+            [{"ok": True, "nome": "Chrome", "total_web_hits": 10, "total_anuncios_mp": 8, "top_oportunidades": [{"cor": "Perolado"}]}],
+        )
+        self.assertIn("web × marketplaces", msg)
+        self.assertIn("Perolado", msg)
+        self.assertIn("viral", msg)
+
+
+if __name__ == "__main__":
+    unittest.main()

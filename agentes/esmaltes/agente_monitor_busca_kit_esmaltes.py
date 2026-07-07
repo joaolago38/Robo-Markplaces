@@ -33,7 +33,7 @@ from integracoes.esmaltes.busca_kit_frequencia import (
     executar_busca_item,
     registrar_execucao_diaria,
 )
-from integracoes.ml import ml_client
+from integracoes.marketplaces.busca_multi_marketplace import resolver_fn_busca_esmaltes
 
 logger = logging.getLogger("agente_monitor_busca_kit_esmaltes")
 
@@ -132,7 +132,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         for item in itens:
             logger.info("Busca kit esmaltes [%s]: %s", item.get("marca"), item.get("termo_busca"))
-            anuncios, termo_usado = buscar_anuncios_item(item, ml_client.buscar_concorrentes_por_termo)
+            anuncios, termo_usado = buscar_anuncios_item(item, resolver_fn_busca_esmaltes())
             resultado = executar_busca_item({**item, "termo_usado": termo_usado}, anuncios, timestamp=agora)
             resultados_rodada.append(resultado)
             registrar_execucao_diaria(historico, resultado, dia=dia)

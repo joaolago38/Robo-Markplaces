@@ -25,14 +25,32 @@ from core.config import (
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
-from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
+from core.graficos import grafico_evolucao
+from core.notificador import (
+    alertar_gestor,
+    chave_resumo_periodo,
+    enviar_foto_gestor,
+    gestor_telegram_configurado,
+)
+from core.series_historica import formatar_comparativo, registrar_ponto
 from integracoes.esmaltes.analise_kits_esmaltes import consolidar_varredura, processar_termo
-from integracoes.ml import ml_client
+from integracoes.marketplaces.busca_multi_marketplace import (
+    formatar_secao_por_marketplace,
+    resolver_fn_busca_esmaltes,
+)
 
 logger = logging.getLogger("agente_monitor_kits_esmaltes")
 
 SNAPSHOT_PATH = ROOT / "logs" / "esmaltes_kits_monitor_ultima.json"
 HISTORY_PATH = ROOT / "logs" / "esmaltes_kits_monitor_history.json"
+SERIES_PATH = ROOT / "logs" / "esmaltes_kits_monitor_series.json"
+GRAFICO_PATH = ROOT / "logs" / "esmaltes_kits_monitor_grafico.png"
+
+_SERIES_CAMPOS = [
+    ("total_kits", "Kits únicos"),
+    ("total_vendas", "Vendas (proxy)"),
+    ("preco_medio", "Preço médio"),
+]
 
 
 def _carregar_termos() -> list[dict[str, Any]]:
@@ -60,18 +78,24 @@ def _fmt_brl(valor: Any) -> str:
 def montar_mensagem_telegram(
     consolidado: dict[str, Any],
     resultados: list[dict[str, Any]],
+    *,
+    serie: list[dict[str, Any]] | None = None,
 ) -> str:
     linhas = [
-        "🎨 *Kits esmaltes ML — vendas e marcas*",
+        "🎨 *Kits esmaltes — vendas e marcas (ML + Magalu + Shopee + Amazon)*",
         "",
         f"Kits únicos: *{consolidado.get('total_kits_unicos', 0)}* | "
         f"Vendas (proxy ML): *{consolidado.get('total_vendas', 0):,}*".replace(",", "."),
         f"Preços: {_fmt_brl(consolidado.get('preco_min'))} – "
         f"{_fmt_brl(consolidado.get('preco_max'))} | média {_fmt_brl(consolidado.get('preco_medio'))}",
         f"Termos varridos: {consolidado.get('termos_varridos', 0)}",
-        "",
-        "*Marcas que mais vendem*",
     ]
+    if serie:
+        comp = formatar_comparativo(serie, [("total_kits", "Kits"), ("total_vendas", "Vendas"), ("preco_medio", "Preço médio", 2)])
+        if comp:
+            linhas.extend(["", comp])
+    linhas.append(formatar_secao_por_marketplace(consolidado, fmt_brl=_fmt_brl))
+    linhas.extend(["", "*Marcas que mais vendem*"])
 
     ranking = consolidado.get("ranking_marcas") or []
     if ranking:
@@ -132,7 +156,8 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             if not termo:
                 continue
             logger.info("Varredura kits esmaltes: %s", termo)
-            anuncios = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+            buscar_fn = resolver_fn_busca_esmaltes()
+            anuncios = buscar_fn(termo, limite=limite)
             resultado = processar_termo(segmento, anuncios)
             resultados.append(resultado)
 
@@ -153,6 +178,16 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             {"timestamp": agora, "consolidado": consolidado, "resultados": resultados},
         )
 
+        serie = registrar_ponto(
+            SERIES_PATH,
+            {
+                "ts": agora,
+                "total_kits": consolidado.get("total_kits_unicos") or 0,
+                "total_vendas": consolidado.get("total_vendas") or 0,
+                "preco_medio": consolidado.get("preco_medio") or 0,
+            },
+        )
+
         historico = ler_json(HISTORY_PATH, default={})
         if not isinstance(historico, dict):
             historico = {}
@@ -164,14 +199,21 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         alerta_enviado = False
         if enviar_alerta and ESMALTES_KITS_MONITOR_ALERTA_RESUMO and consolidado.get("total_kits_unicos", 0) >= 0:
-            msg = montar_mensagem_telegram(consolidado, resultados)
+            msg = montar_mensagem_telegram(consolidado, resultados, serie=serie)
+            chave = chave_resumo_periodo("esmaltes:kits_monitor", horas_por_bucket=6)
             alerta_enviado = bool(
-                alertar_gestor(
-                    msg,
-                    chave=chave_resumo_periodo("esmaltes:kits_monitor", horas_por_bucket=6),
+                alertar_gestor(msg, chave=chave, cooldown_segundos=ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG)
+            )
+            grafico = grafico_evolucao(
+                serie, _SERIES_CAMPOS, GRAFICO_PATH, titulo="Kits esmaltes — evolução"
+            )
+            if grafico:
+                enviar_foto_gestor(
+                    str(grafico),
+                    "📊 Kits esmaltes — evolução vs rodadas anteriores",
+                    chave=f"{chave}:grafico",
                     cooldown_segundos=ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG,
                 )
-            )
 
         gauge("esmaltes.kits.total_unicos", float(consolidado.get("total_kits_unicos") or 0))
         gauge("esmaltes.kits.total_vendas", float(consolidado.get("total_vendas") or 0))

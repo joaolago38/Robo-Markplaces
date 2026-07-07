@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "f8bfa5248a18bae1685a",
+      "primeira_vez": "2026-07-07T20:59:56.540276+00:00",
+      "ultima_vez": "2026-07-07T21:00:54.255854+00:00",
+      "logger": "agente_monitor_tendencias_esmaltes",
+      "mensagem": "Agente tendências esmaltes erro: 'mencoes_web'",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "4eeb2777e2f0df7a6442",
       "primeira_vez": "2026-07-05T21:32:37.857324+00:00",
       "ultima_vez": "2026-07-06T11:39:58.607483+00:00",
@@ -1453,5 +1464,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-06T11:39:58.607483+00:00"
+  "atualizado_em": "2026-07-07T21:00:54.255854+00:00"
 }

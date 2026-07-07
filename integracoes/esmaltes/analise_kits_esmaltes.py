@@ -11,6 +11,7 @@ from integracoes.esmaltes.analise_mercado import (
     padroes_kits,
     ranking_marcas_mercado,
 )
+from integracoes.marketplaces.busca_multi_marketplace import resumo_por_marketplace
 
 
 def _eh_kit(anuncio: dict[str, Any]) -> bool:
@@ -75,4 +76,5 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "ranking_marcas": ranking[:12],
         "top_vendas": top_vendas,
         "padroes_tamanho": padroes_kits(kits_unicos)[:8],
+        "por_marketplace": resumo_por_marketplace(kits_unicos),
     }

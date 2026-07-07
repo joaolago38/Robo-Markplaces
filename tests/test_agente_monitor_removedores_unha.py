@@ -79,9 +79,11 @@ class AgenteMonitorRemovedoresUnhaTests(unittest.TestCase):
 
         with patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
             agente, "HISTORY_PATH", self.tmp_path / "hist.json"
-        ), patch.object(agente, "REMOVEDORES_UNHA_PAUSA_SEG", 0), patch.object(
-            agente, "REMOVEDORES_UNHA_IA_AVALIAR", False
-        ):
+        ), patch.object(agente, "SERIES_PATH", self.tmp_path / "series.json"), patch.object(
+            agente, "GRAFICO_PATH", self.tmp_path / "g.png"
+        ), patch.object(agente, "enviar_foto_gestor", return_value=True), patch.object(
+            agente, "REMOVEDORES_UNHA_PAUSA_SEG", 0
+        ), patch.object(agente, "REMOVEDORES_UNHA_IA_AVALIAR", False):
             out = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out["ok"])

@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-07-06T21:40:37.659868+00:00",
+    "timestamp": "2026-07-07T21:28:50.178889+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-07-06T21:41:01.836292+00:00",
+    "timestamp": "2026-07-07T21:28:48.491644+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,18 +32,34 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-07-06T21:41:01.862426+00:00",
+    "timestamp": "2026-07-07T21:28:52.250809+00:00",
     "resultados": [
       {
-        "item_id": "MLB555",
-        "titulo": "Kit Impala esmalte manicure",
-        "preco": 31.9,
-        "frete_gratis": false,
+        "item_id": "MLB2",
+        "titulo": "Concorrente",
+        "preco": 35.0,
+        "frete_gratis": true,
         "condicao": "new",
-        "quantidade_vendida": 4,
+        "quantidade_vendida": 5,
         "seller_id": "888",
         "permalink": "",
-        "fonte_busca": "brave"
+        "fonte_busca": "api"
+      }
+    ]
+  },
+  "esmalte impala kit": {
+    "timestamp": "2026-07-07T21:28:48.263809+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB123",
+        "titulo": "Kit Impala 5 esmaltes",
+        "preco": 29.9,
+        "frete_gratis": false,
+        "condicao": "new",
+        "quantidade_vendida": 12,
+        "seller_id": "888",
+        "permalink": "",
+        "fonte_busca": "ddg"
       }
     ]
   }

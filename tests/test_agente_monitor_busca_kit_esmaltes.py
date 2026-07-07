@@ -22,9 +22,9 @@ class AgenteMonitorBuscaKitEsmaltesTests(unittest.TestCase):
         self.tmp.cleanup()
 
     @patch.object(agente, "alertar_gestor", return_value=True)
-    @patch.object(agente, "ml_client")
+    @patch.object(agente, "resolver_fn_busca_esmaltes")
     @patch.object(agente, "_carregar_itens")
-    def test_executar_conta_buscas_e_telegram(self, mock_itens, mock_ml, mock_alertar):
+    def test_executar_conta_buscas_e_telegram(self, mock_itens, mock_resolver, mock_alertar):
         mock_itens.return_value = [
             {
                 "id": "kit3-anita",
@@ -47,7 +47,7 @@ class AgenteMonitorBuscaKitEsmaltesTests(unittest.TestCase):
                 "limite_resultados": 10,
             },
         ]
-        mock_ml.buscar_concorrentes_por_termo.return_value = [
+        mock_resolver.return_value = lambda termo, **kwargs: [
             {"titulo": "Kit 3 esmalte anita nude"},
             {"titulo": "Kit 3 esmalte impala rosa"},
         ]

@@ -1,10 +1,10 @@
-name: Monitor Busca Kit Esmaltes
+name: Monitor Tendências Esmaltes
 
 on:
   workflow_dispatch:
   schedule:
-    # 6x ao dia (UTC) — contabiliza frequência de buscas Anita/Impala
-    - cron: "0 */4 * * *"
+    # 2x ao dia (UTC) — tendências web × marketplaces
+    - cron: "15 8,20 * * *"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -14,8 +14,9 @@ env:
 
 jobs:
   monitorar:
-    name: Busca kit esmaltes Anita/Impala + cores
+    name: Tendências esmaltes — web × marketplaces
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,20 +32,20 @@ jobs:
           key: telegram-cooldown-${{ github.run_id }}
           restore-keys: |
             telegram-cooldown-
-      - name: Restaurar historico frequencia diaria
+      - name: Restaurar série histórica
         uses: actions/cache@v4
         with:
-          path: logs/esmaltes_busca_kit_frequencia_diario.json
-          key: esmaltes-busca-kit-${{ github.run_id }}
+          path: logs/esmaltes_tendencias_series.json
+          key: esmaltes-tendencias-series-${{ github.run_id }}
           restore-keys: |
-            esmaltes-busca-kit-
+            esmaltes-tendencias-series-
       - name: Preflight Telegram (gestor)
         run: python scripts/preflight_monitor_telegram.py
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Rodar monitor busca kit esmaltes
-        run: python -m agentes.esmaltes.agente_monitor_busca_kit_esmaltes
+      - name: Rodar monitor tendências esmaltes
+        run: python -m agentes.esmaltes.agente_monitor_tendencias_esmaltes
         env:
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
@@ -55,6 +56,7 @@ jobs:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           MARKETPLACES_BUSCA_ATIVOS: mercadolivre,magalu,shopee,amazon
           ESMALTES_BUSCA_MULTI_MARKETPLACE: "1"
+          ESMALTES_TENDENCIAS_PAUSA_SEG: "2.0"
           SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
           SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
           SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
@@ -74,12 +76,14 @@ jobs:
           AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Salvar historico
+      - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: esmaltes-busca-kit-frequencia
+          name: esmaltes-tendencias-monitor
           path: |
-            logs/esmaltes_busca_kit_frequencia_diario.json
-            logs/esmaltes_busca_kit_ultima.json
+            logs/esmaltes_tendencias_ultima.json
+            logs/esmaltes_tendencias_history.json
+            logs/esmaltes_tendencias_series.json
+            logs/esmaltes_tendencias_grafico.png
           retention-days: 90
           if-no-files-found: ignore

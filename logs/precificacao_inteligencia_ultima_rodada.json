@@ -1,38 +1,38 @@
 {
-  "timestamp": "2026-07-06T21:19:47.449476+00:00",
+  "timestamp": "2026-07-07T21:28:51.805961+00:00",
   "total_produtos_catalogo": 1,
   "total_analises": 1,
   "analises": [
     {
-      "sku": "KIT-URG",
-      "nome": "Kit Urgente",
+      "sku": "KIT-TEST",
+      "nome": "Kit Teste",
       "canal": "mercadolivre",
       "custo": 20.0,
       "taxa_canal_pct": 18.0,
       "preco_atual": 49.9,
-      "preco_sugerido": 41.18,
+      "preco_sugerido": 43.5,
       "preco_piso": 27.78,
-      "delta": -8.72,
+      "delta": -6.4,
       "acao": "reduzir para atrair vendas",
       "comportamento": "muito interesse, zero vendas — testar preço mais atrativo",
       "motivos": [
         "muito interesse, zero vendas — testar preço mais atrativo"
       ],
-      "margem_pct": 51.43,
+      "margem_pct": 54.02,
       "margem_minima_pct": 10.0,
       "lucro_operacao": {
         "atual_reais": 20.92,
-        "sugerido_reais": 13.77,
+        "sugerido_reais": 15.67,
         "margem_atual_pct": 41.92,
-        "margem_sugerida_pct": 33.43,
-        "delta_lucro_reais": -7.15,
+        "margem_sugerida_pct": 36.02,
+        "delta_lucro_reais": -5.25,
         "lucro_ok": true
       },
       "preco_concorrente": 44.0,
       "prioridade": "alta",
       "sinais": {
         "visitas_7d": 25,
-        "visitas_30d": 30,
+        "visitas_30d": 60,
         "unidades_vendidas_7d": 0,
         "vendas_por_dia": 0.0,
         "preco_sugerido_ml": null,
@@ -41,7 +41,7 @@
       },
       "sinais_brutos": {
         "visitas_7d": 25,
-        "visitas_30d": 30,
+        "visitas_30d": 60,
         "unidades_vendidas_7d": 0,
         "menor_preco": 44.0
       }

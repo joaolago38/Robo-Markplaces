@@ -10,6 +10,7 @@ from integracoes.esmaltes.analise_acetona_cruzeiro import (
     classificar_listing,
     eh_listing_acetona,
 )
+from integracoes.marketplaces.busca_multi_marketplace import resumo_por_marketplace
 
 _MARCAS_REMOVEDOR: tuple[str, ...] = (
     "cruzeiro",
@@ -157,4 +158,5 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "preco_max": round(max(precos), 2) if precos else 0.0,
         "ranking_fabricantes": ranking,
         "top_vendas": top_vendas[:15],
+        "por_marketplace": resumo_por_marketplace(produtos_unicos),
     }

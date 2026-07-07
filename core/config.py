@@ -161,6 +161,28 @@ REMOVEDORES_UNHA_IA_AVALIAR = os.getenv("REMOVEDORES_UNHA_IA_AVALIAR", "1").stri
     "no",
 )
 
+# Busca multi-marketplace (ML + Magalu + Shopee + Amazon) para esmaltes/removedores
+MARKETPLACES_BUSCA_ATIVOS = os.getenv(
+    "MARKETPLACES_BUSCA_ATIVOS", "mercadolivre,magalu,shopee,amazon"
+).strip()
+ESMALTES_BUSCA_MULTI_MARKETPLACE = os.getenv("ESMALTES_BUSCA_MULTI_MARKETPLACE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+
+# Monitor tendências esmaltes — web aberta × marketplaces
+ESMALTES_TENDENCIAS_CATALOGO = os.getenv(
+    "ESMALTES_TENDENCIAS_CATALOGO", "catalogo/esmaltes_tendencias_internet.json"
+)
+ESMALTES_TENDENCIAS_PAUSA_SEG = float(os.getenv("ESMALTES_TENDENCIAS_PAUSA_SEG", "2.0"))
+ESMALTES_TENDENCIAS_ALERTA_RESUMO = os.getenv("ESMALTES_TENDENCIAS_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG", "43200"))
+
 # Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
 ACETONA_CRUZEIRO_CATALOGO = os.getenv(
     "ACETONA_CRUZEIRO_CATALOGO", "catalogo/acetona_cruzeiro_monitor.json"

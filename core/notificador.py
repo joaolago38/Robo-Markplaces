@@ -120,6 +120,66 @@ def _enviar(chat_id: str, msg: str) -> bool:
         return False
 
 
+def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
+    """Envia uma imagem (PNG/JPG) via sendPhoto. Nunca lança exceção."""
+    token = (TELEGRAM_TOKEN or "").strip()
+    cid = (chat_id or "").strip()
+    if not token or not cid:
+        logger.warning("Telegram não configurado — foto NÃO entregue")
+        return False
+    if not pode_enviar(token):
+        if not verificar_token(token=token, forcar=True):
+            logger.info("Telegram: envio de foto suprimido (token inválido/circuit breaker)")
+            return False
+    try:
+        import os
+
+        if not foto_path or not os.path.exists(str(foto_path)):
+            logger.warning("Telegram sendPhoto: arquivo inexistente %s", foto_path)
+            return False
+        url = f"https://api.telegram.org/bot{token}/sendPhoto"
+        data = {"chat_id": cid}
+        if legenda:
+            data["caption"] = legenda[:1024]
+            data["parse_mode"] = "Markdown"
+        with open(str(foto_path), "rb") as fh:
+            r = request(
+                "POST",
+                url,
+                data=data,
+                files={"photo": ("grafico.png", fh, "image/png")},
+                timeout=30,
+            )
+        r.raise_for_status()
+        return True
+    except Exception as e:
+        err = mascarar_url_telegram(str(e))
+        registrar_falha_envio(err)
+        if "404" not in err:
+            logger.error("Telegram sendPhoto erro: %s", err)
+        return False
+
+
+def enviar_foto_gestor(
+    foto_path: str,
+    legenda: str = "",
+    *,
+    chave: str | None = None,
+    cooldown_segundos: int | None = None,
+    _ignorar_cooldown: bool = False,
+) -> bool:
+    """Envia gráfico/imagem ao gestor com o mesmo esquema de cooldown do texto."""
+    cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
+    chave_final = chave or f"foto:{_chave_msg(str(foto_path) + legenda)}"
+    if not _ignorar_cooldown and _deve_suprimir(chave_final, cooldown):
+        logger.info("Foto gestor suprimida (cooldown %ss): %s", cooldown, chave_final)
+        return False
+    ok = _enviar_foto(TELEGRAM_GESTOR_CHAT_ID, foto_path, legenda)
+    if ok and not _ignorar_cooldown:
+        _marcar_enviado(chave_final)
+    return ok
+
+
 def alertar(msg: str, *, _ignorar_cooldown: bool = False) -> bool:
     del _ignorar_cooldown
     return _enviar(TELEGRAM_CHAT_ID, f"🔔 *Alerta* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}")
