@@ -22,6 +22,9 @@ env:
   LEILAO_PRECO_MAX_LANCE: "25000"
   LEILAO_ANO_MIN: "2000"
   LEILAO_ANO_MAX: "2020"
+  LEILAO_BUSCA_TODOS_VEICULOS: "1"
+  LEILAO_VARREDURA_TODAS_FONTES: "1"
+  LEILAO_ALERTAR_TODOS_ACHADOS: "1"
   LEILAO_MARGEM_FIPE_MIN_PCT: "15"
   LEILAO_MARGEM_FIPE_MIN_REAIS: "1500"
   DDG_MIN_INTERVAL_SEG: "3"
@@ -30,7 +33,7 @@ jobs:
   monitorar:
     name: Varredura leiloeiros + DETRAN (rotacionado) + Sumaré
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
