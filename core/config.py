@@ -131,6 +131,18 @@ ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_BUSCA_KIT_ALERT
 # Tolerância de imprecisão nos anúncios retornados (0.10 = até ~10% fora da marca/kit)
 ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO = float(os.getenv("ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO", "0.10"))
 
+# Monitor kits esmaltes — vendas, preços e ranking de marcas no ML
+ESMALTES_KITS_MONITOR_CATALOGO = os.getenv(
+    "ESMALTES_KITS_MONITOR_CATALOGO", "catalogo/esmaltes_kits_monitor.json"
+)
+ESMALTES_KITS_MONITOR_PAUSA_SEG = float(os.getenv("ESMALTES_KITS_MONITOR_PAUSA_SEG", "1.5"))
+ESMALTES_KITS_MONITOR_ALERTA_RESUMO = os.getenv("ESMALTES_KITS_MONITOR_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG", "21600"))
+
 # Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
 ACETONA_CRUZEIRO_CATALOGO = os.getenv(
     "ACETONA_CRUZEIRO_CATALOGO", "catalogo/acetona_cruzeiro_monitor.json"

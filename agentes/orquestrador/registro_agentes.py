@@ -190,6 +190,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Conta buscas diárias por kit/cor Anita e Impala no ML + Telegram",
     ),
     AgenteRegistrado(
+        "monitor_kits_esmaltes",
+        "Monitor kits esmaltes — vendas e marcas",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_kits_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="Varre todos os kits de esmaltes no ML: vendas, preços e ranking de marcas",
+    ),
+    AgenteRegistrado(
         "comparativo_anita_impala",
         "Comparativo Anita vs Impala",
         "monitor",
