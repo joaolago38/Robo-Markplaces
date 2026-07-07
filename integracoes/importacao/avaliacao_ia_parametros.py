@@ -107,7 +107,7 @@ def _resumir_produto_catalogo(produto: dict[str, Any]) -> dict[str, Any]:
         "termo_busca": produto.get("termo_busca"),
         "ncm": produto.get("ncm"),
         "ii_pct": produto.get("ii_pct"),
-        "peso_kg_unitario": produto.get("peso_kg_unitario"),
+        "peso_kg_unitario": produto.get("peso_kg_unitario") or produto.get("peso_kg"),
     }
 
 
