@@ -143,6 +143,18 @@ ESMALTES_KITS_MONITOR_ALERTA_RESUMO = os.getenv("ESMALTES_KITS_MONITOR_ALERTA_RE
 )
 ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG", "21600"))
 
+# Monitor removedores de unha — nomes, fabricantes e ranking por vendas
+REMOVEDORES_UNHA_CATALOGO = os.getenv(
+    "REMOVEDORES_UNHA_CATALOGO", "catalogo/removedores_unha_monitor.json"
+)
+REMOVEDORES_UNHA_PAUSA_SEG = float(os.getenv("REMOVEDORES_UNHA_PAUSA_SEG", "1.5"))
+REMOVEDORES_UNHA_ALERTA_RESUMO = os.getenv("REMOVEDORES_UNHA_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG = int(os.getenv("REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG", "21600"))
+
 # Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
 ACETONA_CRUZEIRO_CATALOGO = os.getenv(
     "ACETONA_CRUZEIRO_CATALOGO", "catalogo/acetona_cruzeiro_monitor.json"

@@ -1,0 +1,88 @@
+[
+  {
+    "id": "removedor-geral",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Removedor esmalte geral",
+    "termo_busca": "removedor esmalte manicure",
+    "termos_alternativos": ["removedor de unha profissional", "remove esmalte manicure"],
+    "limite_resultados": 30
+  },
+  {
+    "id": "acetona-geral",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Acetona profissional",
+    "termo_busca": "acetona removedor esmalte manicure profissional",
+    "termos_alternativos": ["acetona profissional manicure", "acetona esmalte 100ml"],
+    "limite_resultados": 30
+  },
+  {
+    "id": "cruzeiro",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Cruzeiro",
+    "termo_busca": "removedor esmalte cruzeiro acetona",
+    "termos_alternativos": ["acetona cruzeiro manicure", "removedor cruzeiro profissional"],
+    "limite_resultados": 30
+  },
+  {
+    "id": "impala",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Impala",
+    "termo_busca": "removedor esmalte impala",
+    "termos_alternativos": ["acetona impala manicure"],
+    "limite_resultados": 25
+  },
+  {
+    "id": "risque",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Risqué",
+    "termo_busca": "removedor esmalte risque",
+    "termos_alternativos": ["acetona risque manicure"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "colorama",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Colorama",
+    "termo_busca": "removedor esmalte colorama",
+    "limite_resultados": 20
+  },
+  {
+    "id": "nati",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Nati",
+    "termo_busca": "removedor esmalte nati",
+    "limite_resultados": 20
+  },
+  {
+    "id": "acetona-100",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Acetona 100ml",
+    "termo_busca": "acetona removedor esmalte 100ml",
+    "limite_resultados": 25
+  },
+  {
+    "id": "acetona-500",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Acetona 500ml atacado",
+    "termo_busca": "acetona removedor esmalte 500ml atacado",
+    "limite_resultados": 25
+  },
+  {
+    "id": "sem-acetona",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Sem acetona",
+    "termo_busca": "removedor esmalte sem acetona",
+    "termos_alternativos": ["diluidor esmalte manicure"],
+    "limite_resultados": 20
+  }
+]
