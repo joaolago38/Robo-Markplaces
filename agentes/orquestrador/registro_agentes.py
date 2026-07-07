@@ -113,6 +113,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Lucinei + Leopardo — carros até R$20k com margem FIPE",
     ),
     AgenteRegistrado(
+        "carros_batidos",
+        "Carros batidos — todas as lojas",
+        "monitor",
+        "agentes.veiculos.agente_monitor_carros_batidos:executar",
+        {"enviar_alerta": True},
+        notas="Lucinei, Leopardo, Motorjan, Velozes — alerta Telegram de novos anúncios",
+    ),
+    AgenteRegistrado(
         "licitacoes",
         "Licitações públicas",
         "monitor",

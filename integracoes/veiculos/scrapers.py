@@ -25,6 +25,19 @@ _RE_LEOPARDO_BLOCO = re.compile(
     r"<div class=\"col-list-3 divlinkclicable[^\"]*\" id='divveiculo(\d+)'.*?</div>\s*</div>\s*</div>",
     re.DOTALL | re.IGNORECASE,
 )
+_RE_MOTORJAN_ITEM = re.compile(
+    r'<div class=offer_item[^>]*>.*?'
+    r'<a href="?([^">\s]+)"?[^>]*title="([^"]*)"[^>]*>.*?'
+    r'<h2><a href=[^>]+>([^<]+)</a></h2>.*?<p>Modelo\s+([^<]+)</p>.*?'
+    r'C[ÓO]DIGO:\s*(\d+).*?'
+    r'class=offer_price>R\$\s*([\d\.\,]+)',
+    re.DOTALL | re.IGNORECASE,
+)
+_RE_VELOZES_PRODUTO = re.compile(
+    r'href="(https://velozesbatidos\.com\.br/product/[^"]+)"',
+    re.IGNORECASE,
+)
+_RE_ANO_TITULO = re.compile(r"\b(?:19|20)\d{2}\b")
 
 
 def parse_preco_brl(texto: str) -> float | None:
@@ -242,11 +255,128 @@ def coletar_leopardo(
     return anuncios
 
 
+def _extrair_ano_titulo(titulo: str) -> str:
+    anos = _RE_ANO_TITULO.findall(titulo or "")
+    return anos[-1] if anos else ""
+
+
+def coletar_motorjan(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    fonte = fonte or {"id": "motorjan", "nome": "Motorjan Veículos"}
+    url = str(fonte.get("url_listagem") or "https://www.motorjanveiculos.com.br/veiculos")
+    base = "https://www.motorjanveiculos.com.br"
+    try:
+        r = request("GET", url, timeout=25, headers=_HEADERS)
+        if r.status_code != 200:
+            logger.warning("Motorjan: HTTP %s em %s", r.status_code, url)
+            return []
+        html = r.text
+    except Exception as exc:
+        logger.error("Motorjan: erro ao buscar listagem: %s", exc)
+        return []
+
+    anuncios: list[dict[str, Any]] = []
+    for match in _RE_MOTORJAN_ITEM.finditer(html):
+        href, _title_attr, titulo, ano, codigo, preco_txt = match.groups()
+        preco = parse_preco_brl(f"R$ {preco_txt}")
+        if preco is None:
+            continue
+        url_anuncio = href if href.startswith("http") else urljoin(base, href)
+        titulo = re.sub(r"\s+", " ", titulo).strip()
+        marca = titulo.split()[0] if titulo else ""
+        anuncios.append(
+            _anuncio_base(
+                loja_id=str(fonte.get("id") or "motorjan"),
+                loja_nome=str(fonte.get("nome") or "Motorjan"),
+                id_externo=str(codigo),
+                titulo=titulo,
+                marca=marca,
+                ano=str(ano).strip(),
+                preco=preco,
+                url=url_anuncio,
+                condicao="sinistrado/batido",
+            )
+        )
+    logger.info("Motorjan: %s anúncio(s) coletado(s)", len(anuncios))
+    return anuncios
+
+
+def coletar_velozes(fonte: dict[str, Any] | None = None, *, max_produtos: int = 24) -> list[dict[str, Any]]:
+    fonte = fonte or {"id": "velozes", "nome": "Velozes Batidos"}
+    url = str(fonte.get("url_listagem") or "https://velozesbatidos.com.br/")
+    try:
+        r = request("GET", url, timeout=25, headers=_HEADERS)
+        if r.status_code != 200:
+            logger.warning("Velozes: HTTP %s em %s", r.status_code, url)
+            return []
+        html = r.text
+    except Exception as exc:
+        logger.error("Velozes: erro ao buscar listagem: %s", exc)
+        return []
+
+    urls: list[str] = []
+    vistos_url: set[str] = set()
+    for m in _RE_VELOZES_PRODUTO.finditer(html):
+        link = m.group(1).strip()
+        if link in vistos_url:
+            continue
+        vistos_url.add(link)
+        urls.append(link)
+        if len(urls) >= max_produtos:
+            break
+
+    anuncios: list[dict[str, Any]] = []
+    for link in urls:
+        try:
+            rp = request("GET", link, timeout=20, headers=_HEADERS)
+            if rp.status_code != 200:
+                continue
+            pagina = rp.text
+        except Exception as exc:
+            logger.debug("Velozes produto %s: %s", link, exc)
+            continue
+
+        tm = re.search(r'<h1[^>]*class="[^"]*product_title[^"]*"[^>]*>([^<]+)</h1>', pagina, re.I)
+        if not tm:
+            tm = re.search(r"<title>([^<|]+)", pagina, re.I)
+        titulo = re.sub(r"\s+", " ", (tm.group(1) if tm else "")).strip()
+        if not titulo:
+            continue
+        pm = re.search(r'class="woocommerce-Price-amount[^"]*"[^>]*>.*?R\$\s*([\d\.\,]+)', pagina, re.S | re.I)
+        preco = parse_preco_brl(f"R$ {pm.group(1)}") if pm else None
+        if preco is None:
+            continue
+        slug = link.rstrip("/").split("/")[-1]
+        ano = _extrair_ano_titulo(titulo)
+        marca = titulo.split()[0] if titulo else ""
+        anuncios.append(
+            _anuncio_base(
+                loja_id=str(fonte.get("id") or "velozes"),
+                loja_nome=str(fonte.get("nome") or "Velozes Batidos"),
+                id_externo=slug,
+                titulo=titulo,
+                marca=marca,
+                ano=ano,
+                preco=preco,
+                url=link,
+                condicao="batido/sinistrado",
+            )
+        )
+
+    logger.info("Velozes: %s anúncio(s) coletado(s)", len(anuncios))
+    return anuncios
+
+
 def coletar_fonte(fonte: dict[str, Any]) -> list[dict[str, Any]]:
-    tipo = str(fonte.get("tipo") or "html").lower()
-    if fonte.get("id") == "lucineia" or tipo == "html":
+    tipo = str(fonte.get("tipo") or fonte.get("id") or "html").lower()
+    if fonte.get("id") == "lucineia" or tipo == "lucineia":
         return coletar_lucineia(fonte)
-    if fonte.get("id") == "leopardo" or tipo == "ajax":
+    if fonte.get("id") == "leopardo" or tipo == "leopardo" or tipo == "ajax":
         return coletar_leopardo(fonte)
+    if fonte.get("id") == "motorjan" or tipo == "motorjan":
+        return coletar_motorjan(fonte)
+    if fonte.get("id") == "velozes" or tipo == "velozes":
+        return coletar_velozes(fonte)
+    if tipo == "html":
+        return coletar_lucineia(fonte)
     logger.warning("Fonte desconhecida: %s", fonte.get("id"))
     return []

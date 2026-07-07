@@ -91,6 +91,7 @@ _LOGGER_META = {
     "agente_monitor_sumare_leiloes": ("multi", "agente"),
     "sumare_leiloes": ("multi", "integracao"),
     "agente_monitor_lojas_veiculos": ("multi", "agente"),
+    "agente_monitor_carros_batidos": ("multi", "agente"),
     "agente_licitacoes": ("multi", "agente"),
     "licitacao_busca": ("multi", "integracao"),
     "licitacao_pncp": ("multi", "integracao"),

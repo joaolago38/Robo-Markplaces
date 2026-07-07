@@ -160,7 +160,7 @@ LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", os.getenv("DDG_RETR
 LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", os.getenv("DDG_RETRY_BASE_SEG", "5")))
 LEILAO_ALERTA_RESUMO = os.getenv("LEILAO_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
 LEILAO_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LEILAO_ALERTA_RESUMO_COOLDOWN_SEG", "3600"))
-LEILAO_ANO_MIN = int(os.getenv("LEILAO_ANO_MIN", "2000"))
+LEILAO_ANO_MIN = int(os.getenv("LEILAO_ANO_MIN", "1995"))
 LEILAO_ANO_MAX = int(os.getenv("LEILAO_ANO_MAX", "2020"))
 LEILAO_BUSCA_TODOS_VEICULOS = os.getenv("LEILAO_BUSCA_TODOS_VEICULOS", "1").strip().lower() not in (
     "0",
@@ -184,9 +184,9 @@ LEILAO_TAXA_CADASTRO_BRL = float(os.getenv("LEILAO_TAXA_CADASTRO_BRL", "400.0"))
 LEILAO_TAXA_ADMIN_BRL = float(os.getenv("LEILAO_TAXA_ADMIN_BRL", "150.0"))
 LEILAO_REMOCAO_ESTADIA_BRL = float(os.getenv("LEILAO_REMOCAO_ESTADIA_BRL", "350.0"))
 LEILAO_LAUDO_BRL = float(os.getenv("LEILAO_LAUDO_BRL", "200.0"))
-LEILAO_PRECO_MAX_LANCE = float(os.getenv("LEILAO_PRECO_MAX_LANCE", "25000"))
-LEILAO_MARGEM_FIPE_MIN_PCT = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_PCT", "15"))
-LEILAO_MARGEM_FIPE_MIN_REAIS = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_REAIS", "1500"))
+LEILAO_PRECO_MAX_LANCE = float(os.getenv("LEILAO_PRECO_MAX_LANCE", "35000"))
+LEILAO_MARGEM_FIPE_MIN_PCT = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_PCT", "10"))
+LEILAO_MARGEM_FIPE_MIN_REAIS = float(os.getenv("LEILAO_MARGEM_FIPE_MIN_REAIS", "800"))
 _LEILAO_IA_AVALIAR_ENV = os.getenv("LEILAO_IA_AVALIAR_PARAMETROS", "1").strip().lower() not in (
     "0",
     "false",
@@ -318,6 +318,24 @@ LOJAS_VEICULOS_ALERTA_RESUMO = os.getenv("LOJAS_VEICULOS_ALERTA_RESUMO", "1").st
     "no",
 )
 LOJAS_VEICULOS_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LOJAS_VEICULOS_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
+
+# Monitor carros batidos — todas as lojas, alerta Telegram
+CARROS_BATIDOS_CATALOGO = os.getenv("CARROS_BATIDOS_CATALOGO", "catalogo/carros_batidos_fontes.json")
+CARROS_BATIDOS_PRECO_MAX = float(os.getenv("CARROS_BATIDOS_PRECO_MAX", "150000"))
+CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG = float(os.getenv("CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG", "2"))
+CARROS_BATIDOS_INCLUIR_FIPE = os.getenv("CARROS_BATIDOS_INCLUIR_FIPE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CARROS_BATIDOS_ALERTA_RESUMO = os.getenv("CARROS_BATIDOS_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
+CARROS_BATIDOS_ALERTA_COOLDOWN_SEG = int(os.getenv("CARROS_BATIDOS_ALERTA_COOLDOWN_SEG", "86400"))
+
 FIPE_API_BASE = os.getenv("FIPE_API_BASE", "https://parallelum.com.br/fipe/api/v1").strip()
 FIPE_PAUSA_ENTRE_CHAMADAS_SEG = float(os.getenv("FIPE_PAUSA_ENTRE_CHAMADAS_SEG", "0.3"))
 

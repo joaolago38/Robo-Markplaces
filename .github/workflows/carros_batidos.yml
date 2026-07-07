@@ -1,10 +1,10 @@
-name: Monitor Leilões Veículos
+name: Monitor Carros Batidos
 
 on:
   workflow_dispatch:
   schedule:
-    # A cada hora (UTC) — cobertura contínua 24h via GitHub Actions
-    - cron: "0 * * * *"
+    # A cada 2 horas
+    - cron: "15 */2 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -15,25 +15,15 @@ env:
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE }}
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
-  LEILAO_INCLUIR_SUMARE_DIRETO: "1"
-  LEILAO_DETRAN_POR_RODADA: "5"
-  LEILAO_LEILOEIROS_POR_RODADA: "5"
-  LEILAO_PAUSA_ENTRE_FONTES_SEG: "3"
-  LEILAO_PRECO_MAX_LANCE: "35000"
-  LEILAO_ANO_MIN: "1995"
-  LEILAO_ANO_MAX: "2020"
-  LEILAO_BUSCA_TODOS_VEICULOS: "1"
-  LEILAO_VARREDURA_TODAS_FONTES: "1"
-  LEILAO_ALERTAR_TODOS_ACHADOS: "1"
-  LEILAO_MARGEM_FIPE_MIN_PCT: "10"
-  LEILAO_MARGEM_FIPE_MIN_REAIS: "800"
-  DDG_MIN_INTERVAL_SEG: "3"
+  CARROS_BATIDOS_INCLUIR_FIPE: "1"
+  CARROS_BATIDOS_PRECO_MAX: "150000"
+  CARROS_BATIDOS_ALERTA_RESUMO: "1"
 
 jobs:
   monitorar:
-    name: Varredura leiloeiros + DETRAN (rotacionado) + Sumaré
+    name: Lojas de carros batidos → Telegram
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,14 +32,14 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
-      - name: Restaurar histórico de achados
+      - name: Restaurar historico de achados
         uses: actions/cache@v4
         with:
-          path: logs/leilao_veiculos_history.json
-          key: leilao-veiculos-history-${{ github.run_id }}
+          path: logs/carros_batidos_history.json
+          key: carros-batidos-history-${{ github.run_id }}
           restore-keys: |
-            leilao-veiculos-history-
-      - name: Restaurar cooldown de alertas Telegram
+            carros-batidos-history-
+      - name: Restaurar cooldown Telegram
         uses: actions/cache@v4
         with:
           path: logs/alertas_cooldown.json
@@ -61,18 +51,17 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Rodar monitor de leilões de veículos
-        run: python -m agentes.leilao.agente_leilao_veiculo
+      - name: Rodar monitor carros batidos
+        run: python -m agentes.veiculos.agente_monitor_carros_batidos
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      - name: Salvar historico de achados (backup)
+      - name: Salvar historico (backup)
         uses: actions/upload-artifact@v4
         with:
-          name: leilao-veiculos-history
+          name: carros-batidos-history
           path: |
-            logs/leilao_veiculos_history.json
-            logs/leilao_veiculos_ultima.json
+            logs/carros_batidos_history.json
+            logs/carros_batidos_ultima.json
           retention-days: 90
           if-no-files-found: ignore
