@@ -65,15 +65,27 @@ def _eh_removedor(anuncio: dict[str, Any]) -> bool:
     return eh_listing_acetona(str(anuncio.get("titulo") or ""))
 
 
-def processar_termo(segmento: dict[str, Any], anuncios: list[dict[str, Any]]) -> dict[str, Any]:
-    classificados = [classificar_removedor(a) for a in anuncios if _eh_removedor(a)]
+def processar_termo(
+    segmento: dict[str, Any],
+    anuncios: list[dict[str, Any]],
+    *,
+    produtos: list[dict[str, Any]] | None = None,
+    termo_usado: str | None = None,
+    total_bruto: int | None = None,
+) -> dict[str, Any]:
+    if produtos is not None:
+        classificados = produtos
+    else:
+        classificados = [classificar_removedor(a) for a in anuncios if _eh_removedor(a)]
+    bruto = total_bruto if total_bruto is not None else len(anuncios)
     return {
         "ok": True,
         "id": segmento.get("id"),
         "nome": segmento.get("nome"),
         "termo_busca": segmento.get("termo_busca"),
+        "termo_usado": termo_usado or segmento.get("termo_busca"),
         "prioridade": int(segmento.get("prioridade") or 99),
-        "total_bruto": len(anuncios),
+        "total_bruto": bruto,
         "total_removedores": len(classificados),
         "produtos": classificados,
     }

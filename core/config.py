@@ -154,6 +154,12 @@ REMOVEDORES_UNHA_ALERTA_RESUMO = os.getenv("REMOVEDORES_UNHA_ALERTA_RESUMO", "1"
     "no",
 )
 REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG = int(os.getenv("REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG", "21600"))
+REMOVEDORES_UNHA_TOLERANCIA_ERRO = float(os.getenv("REMOVEDORES_UNHA_TOLERANCIA_ERRO", "0.10"))
+REMOVEDORES_UNHA_IA_AVALIAR = os.getenv("REMOVEDORES_UNHA_IA_AVALIAR", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
 ACETONA_CRUZEIRO_CATALOGO = os.getenv(

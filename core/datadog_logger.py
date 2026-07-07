@@ -86,6 +86,8 @@ _LOGGER_META = {
     "busca_kit_frequencia": ("mercadolivre", "integracao"),
     "analise_kits_esmaltes": ("mercadolivre", "integracao"),
     "analise_removedores": ("mercadolivre", "integracao"),
+    "busca_removedores": ("mercadolivre", "integracao"),
+    "avaliacao_ia_removedores": ("mercadolivre", "integracao"),
     "analise_acetona_cruzeiro": ("mercadolivre", "integracao"),
     "analise_anita": ("mercadolivre", "integracao"),
     "agente_descoberta_produtos": ("multi", "agente"),

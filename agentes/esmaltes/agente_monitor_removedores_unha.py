@@ -21,12 +21,15 @@ from core.config import (
     REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG,
     REMOVEDORES_UNHA_ALERTA_RESUMO,
     REMOVEDORES_UNHA_CATALOGO,
+    REMOVEDORES_UNHA_IA_AVALIAR,
     REMOVEDORES_UNHA_PAUSA_SEG,
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.esmaltes.analise_removedores import consolidar_varredura, processar_termo
+from integracoes.esmaltes.avaliacao_ia_removedores import avaliar_busca_removedores, formatar_secao_ia
+from integracoes.esmaltes.busca_removedores import buscar_removedores_segmento
 from integracoes.ml import ml_client
 
 logger = logging.getLogger("agente_monitor_removedores_unha")
@@ -65,28 +68,11 @@ def _medalha(posicao: int) -> str:
     return f"{posicao}."
 
 
-def _buscar_anuncios(item: dict[str, Any]) -> list[dict[str, Any]]:
-    limite = int(item.get("limite_resultados") or 25)
-    vistos: set[str] = set()
-    saida: list[dict[str, Any]] = []
-    termos = [str(item.get("termo_busca") or "").strip()]
-    termos.extend(str(t) for t in (item.get("termos_alternativos") or []) if str(t).strip())
-    for termo in termos:
-        if not termo:
-            continue
-        for an in ml_client.buscar_concorrentes_por_termo(termo, limite=limite):
-            iid = str(an.get("item_id") or "")
-            if iid and iid in vistos:
-                continue
-            if iid:
-                vistos.add(iid)
-            saida.append(an)
-    return saida
-
-
 def montar_mensagem_telegram(
     consolidado: dict[str, Any],
     resultados: list[dict[str, Any]],
+    *,
+    avaliacao_ia: dict[str, Any] | None = None,
 ) -> str:
     linhas = [
         "💅 *Removedores de unha ML — ranking*",
@@ -130,11 +116,15 @@ def montar_mensagem_telegram(
     for r in resultados:
         if not r.get("ok"):
             continue
+        termo_exib = r.get("termo_usado") or r.get("termo_busca", "")
+        bruto = int(r.get("total_bruto") or 0)
         linhas.append(
-            f"• {r.get('nome', '?')}: `{r.get('termo_busca', '')}` → "
+            f"• {r.get('nome', '?')}: `{termo_exib}` → "
             f"{r.get('total_removedores', 0)} removedor(es)"
+            + (f" ({bruto} bruto)" if bruto else " (0 bruto — ML/fallback vazio)")
         )
 
+    linhas.append(formatar_secao_ia(avaliacao_ia))
     return "\n".join(linhas).strip()
 
 
@@ -152,8 +142,17 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         for i, segmento in enumerate(termos):
             logger.info("Varredura removedores: %s", segmento.get("termo_busca"))
-            anuncios = _buscar_anuncios(segmento)
-            resultado = processar_termo(segmento, anuncios)
+            produtos, termo_usado, total_bruto = buscar_removedores_segmento(
+                segmento,
+                ml_client.buscar_concorrentes_por_termo,
+            )
+            resultado = processar_termo(
+                segmento,
+                [],
+                produtos=produtos,
+                termo_usado=termo_usado,
+                total_bruto=total_bruto,
+            )
             resultados.append(resultado)
 
             gauge(
@@ -168,9 +167,22 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         consolidado = consolidar_varredura(resultados)
 
+        avaliacao_ia = None
+        if REMOVEDORES_UNHA_IA_AVALIAR:
+            avaliacao_ia = avaliar_busca_removedores(
+                catalogo=termos,
+                consolidado=consolidado,
+                resultados=resultados,
+            )
+
         escrever_json_atomico(
             SNAPSHOT_PATH,
-            {"timestamp": agora, "consolidado": consolidado, "resultados": resultados},
+            {
+                "timestamp": agora,
+                "consolidado": consolidado,
+                "resultados": resultados,
+                "avaliacao_ia": avaliacao_ia,
+            },
         )
 
         historico = ler_json(HISTORY_PATH, default={})
@@ -185,7 +197,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         alerta_enviado = False
         if enviar_alerta and REMOVEDORES_UNHA_ALERTA_RESUMO:
-            msg = montar_mensagem_telegram(consolidado, resultados)
+            msg = montar_mensagem_telegram(consolidado, resultados, avaliacao_ia=avaliacao_ia)
             alerta_enviado = bool(
                 alertar_gestor(
                     msg,
@@ -202,6 +214,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "ok": True,
             "total_termos": len(resultados),
             "consolidado": consolidado,
+            "avaliacao_ia": avaliacao_ia,
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
         }
