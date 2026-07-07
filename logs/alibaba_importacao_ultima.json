@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-07T21:30:45.191926+00:00",
+  "timestamp": "2026-07-07T21:41:50.323930+00:00",
   "resultados": [
     {
       "id": "p1",
@@ -13,7 +13,7 @@
           "preco_usd": 3.2,
           "moq": 50,
           "distribuidor": "Shenzhen ABC Technology Co., Ltd.",
-          "visto_em": "2026-07-07T21:30:44.924583+00:00"
+          "visto_em": "2026-07-07T21:41:50.077598+00:00"
         }
       ],
       "ok": true

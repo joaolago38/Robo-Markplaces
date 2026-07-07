@@ -61,6 +61,29 @@ class AgenteMonitorTendenciasEsmaltesTests(unittest.TestCase):
         self.assertIn("Oportunidades", msg)
         self.assertIn("Nude", msg)
 
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "enviar_foto_gestor", return_value=True)
+    @patch.object(agente, "processar_segmento")
+    @patch.object(agente, "_carregar_segmentos")
+    def test_nao_alerta_quando_nao_configurado(self, mock_seg, mock_proc, mock_foto, mock_alertar):
+        mock_seg.return_value = [{"id": "a", "ativo": True, "nome": "A", "prioridade": 1}]
+        mock_proc.return_value = {
+            "ok": True, "id": "a", "nome": "A", "total_web_hits": 1, "total_anuncios_mp": 1,
+            "top_oportunidades": [], "top_confirmadas": [], "tendencias": [],
+            "web_sinais": {"termos": []},
+        }
+        with patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
+            agente, "HISTORY_PATH", self.tmp_path / "hist.json"
+        ), patch.object(agente, "SERIES_PATH", self.tmp_path / "series.json"), patch.object(
+            agente, "pode_alertar_esmaltes", return_value=(False, "telegram_nao_configurado")
+        ), patch.object(agente, "ESMALTES_TENDENCIAS_PAUSA_SEG", 0):
+            out = agente.executar(enviar_alerta=True)
+
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["alerta_enviado"])
+        mock_alertar.assert_not_called()
+        mock_foto.assert_not_called()
+
     def test_montar_mensagem(self):
         msg = agente.montar_mensagem_telegram(
             {
