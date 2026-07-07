@@ -21,6 +21,17 @@ class TestMontarTermo(unittest.TestCase):
         self.assertIn("Uno", termo)
         self.assertIn("2012", termo)
 
+    def test_monta_termo_ano_padrao_2000_2020(self):
+        termo = busca.montar_termo_busca({"marca": "Volkswagen", "modelo": "Gol"})
+        self.assertIn("2000-2020", termo)
+
+    def test_rejeita_ano_fora_do_intervalo_padrao(self):
+        ok = busca._relevante_para_veiculo(
+            {"titulo": "Volkswagen Gol 1998 leilão recuperado furto", "snippet": "lote veículo", "url": "http://x"},
+            {"marca": "Volkswagen", "modelo": "Gol", "perfil": "recuperado_furto_pequena_monta"},
+        )
+        self.assertFalse(ok)
+
     def test_termo_site_enxuto_sem_perfil_duplicado(self):
         veiculo = {
             "marca": "Volkswagen",

@@ -14,6 +14,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 from core.config import (
+    LEILAO_ANO_MAX,
+    LEILAO_ANO_MIN,
     LEILAO_DETRAN_POR_RODADA,
     LEILAO_INCLUIR_SUMARE_DIRETO,
     LEILAO_LEILOEIROS_POR_RODADA,
@@ -65,17 +67,25 @@ _MESES_PT = {
 }
 
 
+def _limites_ano(veiculo: dict[str, Any]) -> tuple[int, int]:
+    """Ano mín/máx do veículo no catálogo, com fallback em LEILAO_ANO_MIN/MAX."""
+    raw_min = veiculo.get("ano_min")
+    raw_max = veiculo.get("ano_max")
+    ano_min = int(raw_min) if raw_min not in (None, "") else LEILAO_ANO_MIN
+    ano_max = int(raw_max) if raw_max not in (None, "") else LEILAO_ANO_MAX
+    return ano_min, ano_max
+
+
 def montar_termo_busca(veiculo: dict[str, Any]) -> str:
     partes = [
         str(veiculo.get("marca") or "").strip(),
         str(veiculo.get("modelo") or "").strip(),
     ]
-    ano_min = veiculo.get("ano_min")
-    ano_max = veiculo.get("ano_max")
-    if ano_min and ano_max and ano_min == ano_max:
+    ano_min, ano_max = _limites_ano(veiculo)
+    if ano_min == ano_max:
         partes.append(str(ano_min))
-    elif ano_min or ano_max:
-        partes.append(f"{ano_min or ''}-{ano_max or ''}".strip("-"))
+    else:
+        partes.append(f"{ano_min}-{ano_max}")
     for extra in veiculo.get("termos_extra") or []:
         if extra:
             partes.append(str(extra).strip())
@@ -93,9 +103,8 @@ def _termo_query_site(veiculo: dict[str, Any]) -> str:
         str(veiculo.get("marca") or "").strip(),
         str(veiculo.get("modelo") or "").strip(),
     ]
-    ano_min = veiculo.get("ano_min")
-    ano_max = veiculo.get("ano_max")
-    if ano_min and ano_max and ano_min == ano_max:
+    ano_min, ano_max = _limites_ano(veiculo)
+    if ano_min == ano_max:
         partes.append(str(ano_min))
     for extra in veiculo.get("termos_extra") or []:
         if extra:
@@ -162,17 +171,14 @@ def buscar_duckduckgo(query: str, *, max_resultados: int = 8) -> list[dict[str, 
 
 
 def _ano_no_intervalo(texto: str, veiculo: dict[str, Any]) -> bool:
-    ano_min = int(veiculo.get("ano_min") or 0) or None
-    ano_max = int(veiculo.get("ano_max") or 0) or None
-    if not ano_min and not ano_max:
-        return True
+    ano_min, ano_max = _limites_ano(veiculo)
     anos = [int(a) for a in re.findall(r"\b(?:19|20)\d{2}\b", texto)]
     if not anos:
         return True
     for ano in anos:
-        if ano_min and ano < ano_min:
+        if ano < ano_min:
             continue
-        if ano_max and ano > ano_max:
+        if ano > ano_max:
             continue
         return True
     return False
@@ -227,12 +233,11 @@ def _extrair_ano(texto: str, veiculo: dict[str, Any] | None = None) -> int | Non
     if not anos:
         return None
     if veiculo:
-        ano_min = int(veiculo.get("ano_min") or 0) or None
-        ano_max = int(veiculo.get("ano_max") or 0) or None
+        ano_min, ano_max = _limites_ano(veiculo)
         for ano in sorted(anos, reverse=True):
-            if ano_min and ano < ano_min:
+            if ano < ano_min:
                 continue
-            if ano_max and ano > ano_max:
+            if ano > ano_max:
                 continue
             return ano
     return max(anos)

@@ -160,6 +160,8 @@ LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", os.getenv("DDG_RETR
 LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", os.getenv("DDG_RETRY_BASE_SEG", "5")))
 LEILAO_ALERTA_RESUMO = os.getenv("LEILAO_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
 LEILAO_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LEILAO_ALERTA_RESUMO_COOLDOWN_SEG", "3600"))
+LEILAO_ANO_MIN = int(os.getenv("LEILAO_ANO_MIN", "2000"))
+LEILAO_ANO_MAX = int(os.getenv("LEILAO_ANO_MAX", "2020"))
 
 # Leilão × FIPE (lance + taxas vs tabela)
 LEILAO_COMISSAO_PCT = float(os.getenv("LEILAO_COMISSAO_PCT", "5.0"))
