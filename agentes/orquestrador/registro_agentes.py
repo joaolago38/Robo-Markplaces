@@ -198,6 +198,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Varre todos os kits de esmaltes no ML: vendas, preços e ranking de marcas",
     ),
     AgenteRegistrado(
+        "monitor_removedores_unha",
+        "Monitor removedores de unha — ranking",
+        "monitor",
+        "agentes.esmaltes.agente_monitor_removedores_unha:executar",
+        {"enviar_alerta": True},
+        notas="Removedores de unha no ML: nomes, fabricantes e ranking por vendas",
+    ),
+    AgenteRegistrado(
         "comparativo_anita_impala",
         "Comparativo Anita vs Impala",
         "monitor",
