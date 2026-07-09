@@ -413,7 +413,9 @@ FIPE_PAUSA_ENTRE_CHAMADAS_SEG = float(os.getenv("FIPE_PAUSA_ENTRE_CHAMADAS_SEG",
 ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))
 ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "1.5"))
 ORQUESTRADOR_EXCLUIR = {
-    x.strip() for x in os.getenv("ORQUESTRADOR_EXCLUIR", "vigia_datadog").split(",") if x.strip()
+    x.strip()
+    for x in os.getenv("ORQUESTRADOR_EXCLUIR", "vigia_datadog,promocoes_manicures").split(",")
+    if x.strip()
 }
 
 # Vigia Datadog (erros + inatividade 2h)
@@ -534,6 +536,7 @@ META_CTR_MINIMO_MANICURES = float(os.getenv("META_CTR_MINIMO_MANICURES", "1.20")
 TELEGRAM_TOKEN          = (os.getenv("TELEGRAM_TOKEN") or "").strip()
 TELEGRAM_CHAT_ID        = (os.getenv("TELEGRAM_CHAT_ID") or "").strip()
 TELEGRAM_GESTOR_CHAT_ID = (os.getenv("TELEGRAM_GESTOR_CHAT_ID") or "").strip()
+TELEGRAM_MANICURES_CHAT_ID = (os.getenv("TELEGRAM_MANICURES_CHAT_ID") or TELEGRAM_CHAT_ID or "").strip()
 ALERTA_COOLDOWN_SEG      = int(os.getenv("ALERTA_COOLDOWN_SEG", "7200"))
 
 # Fiscal (NF-e)
@@ -550,8 +553,30 @@ WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "")
 WHATSAPP_API_KEY = os.getenv("WHATSAPP_API_KEY", "")
 WHATSAPP_INSTANCE = os.getenv("WHATSAPP_INSTANCE", "")
 WHATSAPP_NUMERO_DESTINO = os.getenv("WHATSAPP_NUMERO_DESTINO") or "5519999889059"
+WHATSAPP_GRUPO_MANICURES_ID = os.getenv("WHATSAPP_GRUPO_MANICURES_ID", "").strip()
 WHATSAPP_BUSINESS_TOKEN = os.getenv("WHATSAPP_BUSINESS_TOKEN", "")
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID", "")
+
+# Promoções manicures (ML → WhatsApp grupo + Telegram)
+ML_LOJA_URL = os.getenv("ML_LOJA_URL", "").strip()
+PROMOCOES_MANICURES_CATALOGO = os.getenv(
+    "PROMOCOES_MANICURES_CATALOGO", "catalogo/promocoes_manicures_ml.json"
+)
+PROMOCOES_MANICURES_RODAPE = os.getenv(
+    "PROMOCOES_MANICURES_RODAPE",
+    "Promoção por tempo limitado. Sujeita a estoque no Mercado Livre.",
+)
+# Intervalo mínimo entre envios (qualquer campanha) — padrão 12h = 2 posts/dia
+PROMOCOES_MANICURES_INTERVALO_SEG = int(os.getenv("PROMOCOES_MANICURES_INTERVALO_SEG", "43200"))
+# Cooldown por campanha no Telegram (evita repetir o mesmo kit em sequência)
+PROMOCOES_MANICURES_COOLDOWN_SEG = int(
+    os.getenv("PROMOCOES_MANICURES_COOLDOWN_SEG", str(PROMOCOES_MANICURES_INTERVALO_SEG))
+)
+PROMOCOES_MANICURES_ATIVO = os.getenv("PROMOCOES_MANICURES_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Regras de negócio
 MARGEM_MINIMA  = float(os.getenv("MARGEM_MINIMA",  str(REGRAS.get("margem_minima_pct", 15.0))))

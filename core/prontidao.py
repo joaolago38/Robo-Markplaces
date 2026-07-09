@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import logging
 
-from core.config import BRAVE_SEARCH_API_KEY
-from core.notificador import gestor_telegram_configurado
+from core.config import BRAVE_SEARCH_API_KEY, PROMOCOES_MANICURES_ATIVO, WHATSAPP_GRUPO_MANICURES_ID
+from core.notificador import gestor_telegram_configurado, manicures_telegram_configurado
 
 logger = logging.getLogger("prontidao")
 
@@ -51,4 +51,31 @@ def pode_alertar_esmaltes() -> tuple[bool, str]:
         return False, "telegram_nao_configurado"
     if not fonte_esmaltes_configurada():
         return False, "fonte_dados_nao_configurada (defina ML_ACCESS_TOKEN/ML_SELLER_ID ou BRAVE_SEARCH_API_KEY)"
+    return True, "ok"
+
+
+def whatsapp_grupo_manicures_pronto() -> bool:
+    """True se Evolution API e JID do grupo manicures estão configurados."""
+    try:
+        from core.whatsapp import whatsapp_grupo_manicures_configurado
+
+        return bool(whatsapp_grupo_manicures_configurado())
+    except Exception:
+        return False
+
+
+def pode_divulgar_promocoes_manicures() -> tuple[bool, str]:
+    """
+    Libera divulgação quando há ao menos um canal (grupo WA ou Telegram manicures)
+    e o recurso está ativo em PROMOCOES_MANICURES_ATIVO.
+    """
+    if not PROMOCOES_MANICURES_ATIVO:
+        return False, "promocoes_desativadas"
+    wa = whatsapp_grupo_manicures_pronto()
+    tg = manicures_telegram_configurado()
+    if not wa and not tg:
+        return (
+            False,
+            "nenhum_canal (defina WHATSAPP_GRUPO_MANICURES_ID + Evolution ou TELEGRAM_MANICURES_CHAT_ID)",
+        )
     return True, "ok"

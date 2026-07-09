@@ -261,6 +261,13 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"alertar_todo_relatorio": False},
     ),
     AgenteRegistrado(
+        "promocoes_manicures",
+        "Promoções manicures ML",
+        "social",
+        "agentes.social.agente_promocoes_manicures:executar",
+        notas="WhatsApp grupo + Telegram — kits esmaltes Impala no ML; roda no workflow promocoes_manicures",
+    ),
+    AgenteRegistrado(
         "panorama",
         "Panorama ML/Magalu/Bling",
         "monitor",

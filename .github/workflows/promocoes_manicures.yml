@@ -1,0 +1,65 @@
+name: Promoções manicures ML
+
+on:
+  schedule:
+    # 10:00 e 18:00 horário de Brasília (UTC-3) — 2 envios/dia
+    - cron: "0 13 * * *"
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  divulgar:
+    name: WhatsApp grupo + Telegram — promoções esmaltes ML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Restaurar historico de campanhas
+        uses: actions/cache@v4
+        with:
+          path: logs/promocoes_manicures_historico.json
+          key: promocoes-manicures-${{ github.run_id }}
+          restore-keys: |
+            promocoes-manicures-
+      - name: Rodar agente promoções manicures
+        run: python -m agentes.social.agente_promocoes_manicures
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WHATSAPP_API_TYPE: evolution
+          WHATSAPP_API_URL: ${{ secrets.WHATSAPP_API_URL }}
+          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
+          WHATSAPP_INSTANCE: ${{ secrets.WHATSAPP_INSTANCE }}
+          WHATSAPP_GRUPO_MANICURES_ID: ${{ secrets.WHATSAPP_GRUPO_MANICURES_ID }}
+          ML_LOJA_URL: ${{ secrets.ML_LOJA_URL }}
+          PROMOCOES_MANICURES_ATIVO: "1"
+          PROMOCOES_MANICURES_INTERVALO_SEG: "43200"
+          PROMOCOES_MANICURES_COOLDOWN_SEG: "43200"
+      - name: Salvar historico
+        uses: actions/upload-artifact@v4
+        with:
+          name: promocoes-manicures-history
+          path: |
+            logs/promocoes_manicures_historico.json
+            logs/promocoes_manicures_ultima.json
+          retention-days: 90
+          if-no-files-found: ignore

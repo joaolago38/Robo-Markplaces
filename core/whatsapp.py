@@ -11,6 +11,7 @@ from core.config import (
     WHATSAPP_API_TYPE,
     WHATSAPP_API_URL,
     WHATSAPP_API_KEY,
+    WHATSAPP_GRUPO_MANICURES_ID,
     WHATSAPP_INSTANCE,
     WHATSAPP_NUMERO_DESTINO,
     WHATSAPP_BUSINESS_TOKEN,
@@ -59,6 +60,37 @@ def enviar_mensagem(numero: str, mensagem: str) -> bool:
     except Exception as exc:
         logger.error("WhatsApp enviar_mensagem erro: %s", exc)
         return False
+
+
+def enviar_mensagem_grupo(grupo_id: str, mensagem: str) -> bool:
+    """
+    Envia texto para grupo WhatsApp (Evolution API).
+    grupo_id: JID do grupo, ex. 120363xxxxxxxx@g.us
+    """
+    grupo_id = (grupo_id or "").strip()
+    if not grupo_id or not mensagem:
+        return False
+    if not _enabled():
+        logger.warning("WhatsApp não configurado — grupo não receberá mensagem")
+        return False
+    if _api_type() != "evolution":
+        logger.warning("Envio para grupo WhatsApp requer WHATSAPP_API_TYPE=evolution")
+        return False
+    return _enviar_evolution(grupo_id, mensagem)
+
+
+def enviar_grupo_manicures(mensagem: str) -> bool:
+    """Atalho: envia para WHATSAPP_GRUPO_MANICURES_ID."""
+    gid = (WHATSAPP_GRUPO_MANICURES_ID or "").strip()
+    if not gid:
+        logger.warning("WHATSAPP_GRUPO_MANICURES_ID não configurado")
+        return False
+    return enviar_mensagem_grupo(gid, mensagem)
+
+
+def whatsapp_grupo_manicures_configurado() -> bool:
+    """True se API Evolution está pronta e há JID do grupo manicures."""
+    return bool((WHATSAPP_GRUPO_MANICURES_ID or "").strip() and _enabled() and _api_type() == "evolution")
 
 
 def _enviar_evolution(numero: str, mensagem: str) -> bool:
