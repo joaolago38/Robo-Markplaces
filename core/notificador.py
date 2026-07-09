@@ -12,6 +12,7 @@ from core.config import (
     ROOT,
     TELEGRAM_CHAT_ID,
     TELEGRAM_GESTOR_CHAT_ID,
+    TELEGRAM_MANICURES_CHAT_ID,
     TELEGRAM_TOKEN,
 )
 from core.http_client import request
@@ -27,6 +28,11 @@ _COOLDOWN_PATH = ROOT / "logs" / "alertas_cooldown.json"
 def gestor_telegram_configurado() -> bool:
     """True se token e chat do gestor estão definidos."""
     return bool((TELEGRAM_TOKEN or "").strip() and (TELEGRAM_GESTOR_CHAT_ID or "").strip())
+
+
+def manicures_telegram_configurado() -> bool:
+    """True se há canal/grupo Telegram para divulgação às manicures."""
+    return bool((TELEGRAM_TOKEN or "").strip() and (TELEGRAM_MANICURES_CHAT_ID or "").strip())
 
 
 def _chave_msg(msg: str) -> str:
@@ -202,6 +208,30 @@ def alertar_gestor(
         f"📊 *Gestor* {formatar_data_hora_br()}\n\n{msg}",
     )
     if ok and not _ignorar_cooldown:
+        _marcar_enviado(chave_final)
+    return ok
+
+
+def enviar_telegram_manicures(
+    msg: str,
+    *,
+    chave: str | None = None,
+    cooldown_segundos: int | None = None,
+) -> bool:
+    """Envia promoção ao canal/grupo Telegram das manicures (não é o gestor)."""
+    if not manicures_telegram_configurado():
+        logger.warning("Telegram manicures não configurado — mensagem não enviada")
+        return False
+    cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
+    chave_final = chave or _chave_msg(msg)
+    if _deve_suprimir(chave_final, cooldown):
+        logger.info("Telegram manicures suprimido (cooldown %ss): %s", cooldown, chave_final)
+        return False
+    ok = _enviar(
+        TELEGRAM_MANICURES_CHAT_ID,
+        f"💅 *Promo manicures* {formatar_data_hora_br()}\n\n{msg}",
+    )
+    if ok:
         _marcar_enviado(chave_final)
     return ok
 

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "kit-3-mimo-manicure",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 3 Mimo + Carmed",
+    "sku": "IMP-MIMO-003",
+    "preco_de": 52.9,
+    "template": "💅 *Oferta manicure — Mercado Livre*\n\n*{produto}*\n💰 De ~R$ {preco_de}~ por *R$ {preco}*\n🛒 {link}\n\n✨ Kit compacto para o dia a dia do salão — esmaltes Impala + Carmed.\n\n_{rodape}_"
+  },
+  {
+    "id": "kit-5-bailarina-manicure",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kit 5 Bailarina",
+    "sku": "IMP-BAIL-005",
+    "preco_de": 58.9,
+    "template": "💅 *Promoção kits esmaltes — manicures*\n\n*{produto}*\n💰 *R$ {preco}* no Mercado Livre\n🛒 {link}\n\n🎨 5 cores Bailarina — ótimo giro para clientes de salão.\n\n_{rodape}_"
+  },
+  {
+    "id": "kit-6-sortido-manicure",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Kit 6 Sortido Cores da Moda",
+    "sku": "IMP-SORT-006",
+    "preco_de": 59.9,
+    "template": "✨ *Tendência para manicures*\n\n*{produto}*\n💰 *R$ {preco}* | ML com frete grátis*\n🛒 {link}\n\n💡 Mix de cores da moda para montar combinações no salão.\n\n_{rodape}_"
+  },
+  {
+    "id": "kit-10-atacado-manicure",
+    "ativo": true,
+    "prioridade": 4,
+    "nome": "Kit 10 Atacado Manicure",
+    "sku": "IMP-ATAC-010",
+    "preco_de": 84.9,
+    "template": "📦 *Atacado manicure — Mercado Livre*\n\n*{produto}*\n💰 *R$ {preco}* (economia vs compra avulsa)\n🛒 {link}\n\n🏪 Ideal para estoque do salão ou revenda entre manicures.\n\n_{rodape}_"
+  },
+  {
+    "id": "destaque-semanal-generico",
+    "ativo": true,
+    "prioridade": 5,
+    "nome": "Destaque semanal esmaltes",
+    "sku": "IMP-BAIL-005",
+    "preco_de": null,
+    "template": "💅 *Olá, manicure!*\n\nSeparamos uma oferta no *Mercado Livre*:\n\n*{produto}* — *R$ {preco}*\n🛒 {link}\n\n🛍️ Mais kits Impala na loja: {loja_url}\n\n_{rodape}_"
+  }
+]

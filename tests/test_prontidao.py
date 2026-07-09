@@ -46,6 +46,27 @@ class ProntidaoTests(unittest.TestCase):
         # Não deve lançar mesmo se ml_client falhar ao importar/checar.
         self.assertIn(prontidao.ml_configurado(), (True, False))
 
+    @patch("core.prontidao.PROMOCOES_MANICURES_ATIVO", False)
+    def test_promocoes_desativadas(self):
+        pode, motivo = prontidao.pode_divulgar_promocoes_manicures()
+        self.assertFalse(pode)
+        self.assertEqual(motivo, "promocoes_desativadas")
+
+    @patch("core.prontidao.PROMOCOES_MANICURES_ATIVO", True)
+    @patch.object(prontidao, "whatsapp_grupo_manicures_pronto", return_value=False)
+    @patch("core.prontidao.manicures_telegram_configurado", return_value=False)
+    def test_promocoes_sem_canal(self, *_):
+        pode, motivo = prontidao.pode_divulgar_promocoes_manicures()
+        self.assertFalse(pode)
+        self.assertIn("nenhum_canal", motivo)
+
+    @patch("core.prontidao.PROMOCOES_MANICURES_ATIVO", True)
+    @patch.object(prontidao, "whatsapp_grupo_manicures_pronto", return_value=False)
+    @patch("core.prontidao.manicures_telegram_configurado", return_value=True)
+    def test_promocoes_so_telegram(self, *_):
+        pode, motivo = prontidao.pode_divulgar_promocoes_manicures()
+        self.assertTrue(pode)
+
 
 if __name__ == "__main__":
     unittest.main()

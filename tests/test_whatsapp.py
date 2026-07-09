@@ -49,6 +49,35 @@ class TestWhatsApp(unittest.TestCase):
         self.assertTrue(wpp.notificar_venda("mercadolivre", "P1", "Kit", 49.9))
         mock_enviar.assert_called_once()
 
+    @patch.object(wpp, "_enviar_evolution", return_value=True)
+    @patch.multiple(
+        wpp,
+        WHATSAPP_API_TYPE="evolution",
+        WHATSAPP_API_URL="http://evo",
+        WHATSAPP_API_KEY="key",
+        WHATSAPP_INSTANCE="inst",
+        WHATSAPP_GRUPO_MANICURES_ID="120363@g.us",
+    )
+    def test_enviar_grupo_manicures(self, mock_evo):
+        self.assertTrue(wpp.enviar_grupo_manicures("promo"))
+        mock_evo.assert_called_once_with("120363@g.us", "promo")
+
+    @patch.multiple(
+        wpp,
+        WHATSAPP_API_TYPE="evolution",
+        WHATSAPP_API_URL="http://evo",
+        WHATSAPP_API_KEY="key",
+        WHATSAPP_INSTANCE="inst",
+        WHATSAPP_GRUPO_MANICURES_ID="120363@g.us",
+    )
+    def test_whatsapp_grupo_manicures_configurado(self):
+        self.assertTrue(wpp.whatsapp_grupo_manicures_configurado())
+
+    @patch.multiple(wpp, WHATSAPP_API_TYPE="meta", WHATSAPP_GRUPO_MANICURES_ID="120363@g.us")
+    def test_grupo_requer_evolution(self):
+        with self.assertLogs("whatsapp", level="WARNING"):
+            self.assertFalse(wpp.enviar_mensagem_grupo("120363@g.us", "oi"))
+
     @patch.object(wpp, "WHATSAPP_NUMERO_DESTINO", "")
     def test_notificar_venda_sem_destino(self):
         with self.assertLogs("whatsapp", level="WARNING"):

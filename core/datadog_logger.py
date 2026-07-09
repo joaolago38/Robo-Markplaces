@@ -133,6 +133,8 @@ _LOGGER_META = {
     "agente_amazon": ("amazon", "agente"),
     "agente_metricas_meta": ("meta", "agente"),
     "agente_trafego_manicures": ("meta", "agente"),
+    "agente_promocoes_manicures": ("social", "agente"),
+    "promocoes_manicures": ("social", "integracao"),
     "publicador": ("social", "agente"),
     "relatorio": ("bling", "agente"),
 

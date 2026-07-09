@@ -255,5 +255,32 @@ class TestGestorTelegramConfigurado(unittest.TestCase):
         self.assertFalse(notificador.gestor_telegram_configurado())
 
 
+class TestManiucresTelegram(unittest.TestCase):
+    def setUp(self):
+        tg.reset()
+        self._tmp = tempfile.TemporaryDirectory()
+        self._orig_cooldown = notificador._COOLDOWN_PATH
+        notificador._COOLDOWN_PATH = Path(self._tmp.name) / "alertas_cooldown.json"
+
+    def tearDown(self):
+        notificador._COOLDOWN_PATH = self._orig_cooldown
+        self._tmp.cleanup()
+
+    @patch.object(notificador, "TELEGRAM_MANICURES_CHAT_ID", "")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_manicures_nao_configurado(self):
+        self.assertFalse(notificador.manicures_telegram_configurado())
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_MANICURES_CHAT_ID", "manicures-1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_enviar_telegram_manicures(self, mock_request):
+        mock_request.return_value = _mock_resp()
+        self.assertTrue(notificador.enviar_telegram_manicures("Kit promo"))
+        payload = mock_request.call_args[1]["json"]
+        self.assertEqual(payload["chat_id"], "manicures-1")
+        self.assertIn("Promo manicures", payload["text"])
+
+
 if __name__ == "__main__":
     unittest.main()
