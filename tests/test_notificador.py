@@ -50,6 +50,17 @@ class TestNotificadorAlertar(unittest.TestCase):
         url = mock_request.call_args[0][1]
         self.assertIn("sendMessage", url)
 
+    @patch.object(notificador, "formatar_data_hora_br", return_value="09/07 16:07")
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "token")
+    def test_cabecalho_usa_horario_brasil(self, mock_request, mock_hora, *_patches):
+        mock_request.return_value = _mock_resp()
+        notificador.alertar("teste")
+        texto = mock_request.call_args[1]["json"]["text"]
+        self.assertIn("09/07 16:07", texto)
+        mock_hora.assert_called_once()
+
     @patch.object(notificador, "request", side_effect=Exception("timeout"))
     @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
     @patch.object(notificador, "TELEGRAM_TOKEN", "token")
