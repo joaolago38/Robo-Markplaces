@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 
-from core.config import BRAVE_SEARCH_API_KEY, PROMOCOES_MANICURES_ATIVO, WHATSAPP_GRUPO_MANICURES_ID
+from core.config import BRAVE_SEARCH_API_KEY, PROMOCOES_MANICURES_ATIVO
 from core.notificador import gestor_telegram_configurado, manicures_telegram_configurado
 
 logger = logging.getLogger("prontidao")
