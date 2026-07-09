@@ -108,6 +108,8 @@ _LOGGER_META = {
     "licitacao_pncp": ("multi", "integracao"),
     "agente_alibaba_importacao": ("multi", "agente"),
     "agente_alibaba_importacao_inteligente": ("multi", "agente"),
+    "agente_ml_tendencias_importacao": ("multi", "agente"),
+    "tendencias_ml_importacao": ("multi", "integracao"),
     "agente_calculo_importacao_aerea": ("multi", "agente"),
     "cotacao_usd": ("infra", "integracao"),
     "custo_landed": ("infra", "integracao"),

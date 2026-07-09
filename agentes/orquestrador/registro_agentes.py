@@ -144,6 +144,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Dólar + custo landed + preços ML + alerta de lucro",
     ),
     AgenteRegistrado(
+        "ml_tendencias_importacao",
+        "ML tendências × Alibaba",
+        "monitor",
+        "agentes.importacao.agente_ml_tendencias_importacao:executar",
+        {"enviar_alerta": True},
+        notas="Demanda ML + cotação Alibaba + veredito se vale importar",
+    ),
+    AgenteRegistrado(
         "monitor_ml",
         "Monitor ML",
         "monitor",
