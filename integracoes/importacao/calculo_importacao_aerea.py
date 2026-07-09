@@ -88,6 +88,9 @@ def montar_entradas_de_produto(
     preco_usd = oportunidade.get("preco_usd")
     if preco_usd is None:
         preco_usd = produto.get("preco_fob_usd")
+    unidade_preco = max(1, _i(produto.get("unidade_por_preco"), 1))
+    fob_usd_bruto = _f(preco_usd)
+    fob_usd = fob_usd_bruto / unidade_preco if fob_usd_bruto > 0 else 0.0
     qty = _i(oportunidade.get("moq") or produto.get("moq_referencia") or 1)
     peso_unit = _f(produto.get("peso_kg"), 1.0)
     peso_cubado = produto.get("peso_cubado_kg")
@@ -104,7 +107,9 @@ def montar_entradas_de_produto(
     uf = str(dest.get("uf") or "SP").upper()
 
     return {
-        "fob_usd": _f(preco_usd),
+        "fob_usd": fob_usd,
+        "fob_usd_listing": fob_usd_bruto,
+        "unidade_por_preco": unidade_preco,
         "peso_bruto_kg": peso_unit,
         "peso_cubado_kg": _f(peso_cubado) if peso_cubado else None,
         "frete_aereo_usd": _f(oportunidade.get("frete_aereo_usd"), frete_estimado_usd),
@@ -243,6 +248,44 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
         "aviso_legal": fixa.get("aviso_legal")
         or "Estimativa para planejamento — confirme NCM e alíquotas com despachante.",
     }
+
+
+def formatar_breakdown_viracopos_telegram(
+    resultado: dict[str, Any],
+    *,
+    cambio_usd_brl: float | None = None,
+    preco_norm: dict[str, Any] | None = None,
+) -> str:
+    """Resumo textual dos impostos e despesas até Viracopos para Telegram."""
+    if not resultado.get("ok"):
+        return ""
+
+    def _brl(v: Any) -> str:
+        try:
+            return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        except (TypeError, ValueError):
+            return "n/d"
+
+    entradas = resultado.get("entradas") or {}
+    cambio = cambio_usd_brl or entradas.get("cambio_usd_brl")
+    linhas = [
+        "  ✈️ *Formal VCP (Campinas)*",
+        f"  CIF aduaneiro: {_brl(resultado.get('valor_aduaneiro_cif_brl'))}",
+        f"  II: {_brl(resultado.get('ii_brl'))} | IPI: {_brl(resultado.get('ipi_brl'))}",
+        f"  PIS/COFINS: {_brl(resultado.get('pis_cofins_brl'))} | ICMS: {_brl(resultado.get('icms_brl'))}",
+        f"  Despesas locais VCP: {_brl(resultado.get('despesas_locais_brl'))}",
+        f"  Custo total: {_brl(resultado.get('custo_total_brl'))} | "
+        f"unit. {_brl(resultado.get('custo_unitario_brl'))} (qty {resultado.get('quantidade', '?')})",
+    ]
+    if cambio:
+        linhas.append(f"  Câmbio: R$ {float(cambio):.4f}/USD")
+    if preco_norm and preco_norm.get("unidade_por_preco", 1) > 1:
+        linhas.append(
+            f"  Cotação listing: US$ {preco_norm.get('preco_usd_listing')} / "
+            f"{preco_norm.get('unidade_rotulo')} "
+            f"(US$ {preco_norm.get('preco_usd_unit'):.4f}/un)"
+        )
+    return "\n".join(linhas)
 
 
 def exportar_csv_resultado(resultado: dict[str, Any]) -> str:
