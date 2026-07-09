@@ -53,6 +53,36 @@ class AnaliseMargemTests(unittest.TestCase):
         self.assertEqual(out["total_oportunidades"], 1)
         self.assertIsNotNone(out["melhor_analise"])
 
+    def test_analisar_abracadeira_pacote_100(self):
+        produto = {
+            "id": "abracadeira-nylon-200mm",
+            "nome": "Abraçadeira nylon 200mm",
+            "peso_kg": 0.002,
+            "unidade_por_preco": 100,
+            "unidade_marketplace_qtd": 100,
+            "unidade_rotulo": "100 peças",
+            "termo_marketplace": "abraçadeira nylon 200mm 100 unidades",
+            "ii_pct": 16.0,
+            "margem_minima_pct": 15,
+            "margem_minima_reais": 2,
+        }
+        oportunidade = {"titulo": "Cable tie 200mm", "preco_usd": 0.90, "moq": 5000, "url": "http://x"}
+        mk = {"ok": True, "preco_mediana_brl": 28.0, "preco_min_brl": 22.0, "total_anuncios": 12}
+        out = am.analisar_oportunidade(
+            produto,
+            oportunidade,
+            cambio_usd_brl=5.5,
+            precos_marketplace=mk,
+        )
+        self.assertTrue(out["ok"])
+        self.assertAlmostEqual(out["preco_usd_unit"], 0.009, places=4)
+        self.assertEqual(out["unidade_marketplace_qtd"], 100)
+        formal = out.get("calculo_aereo_formal") or {}
+        self.assertTrue(formal.get("ok"))
+        margem = out.get("margem_melhor") or {}
+        self.assertTrue(margem.get("ok"))
+        self.assertGreater(margem.get("custo_unitario_brl", 0), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -95,6 +95,47 @@ class AgenteAlibabaInteligenteTests(unittest.TestCase):
         self.assertIn("painel de importação", msg)
         self.assertIn("R$ 5.5", msg)
 
+    def test_resumo_custo_formal_vcp(self):
+        texto = agente._resumo_custo(
+            {
+                "preco_usd": 0.90,
+                "moq": 5000,
+                "melhor_frete": "aereo",
+                "preco_normalizado": {
+                    "preco_usd_listing": 0.90,
+                    "preco_usd_unit": 0.009,
+                    "unidade_por_preco": 100,
+                    "unidade_rotulo": "100 peças",
+                },
+                "unidade_marketplace_qtd": 100,
+                "calculo_aereo_formal": {
+                    "ok": True,
+                    "valor_aduaneiro_cif_brl": 500.0,
+                    "ii_brl": 80.0,
+                    "ipi_brl": 0.0,
+                    "pis_cofins_brl": 50.0,
+                    "icms_brl": 120.0,
+                    "despesas_locais_brl": 200.0,
+                    "custo_total_brl": 950.0,
+                    "custo_unitario_brl": 0.19,
+                    "quantidade": 5000,
+                },
+                "precos_marketplace": {
+                    "ok": True,
+                    "preco_mediana_brl": 28.0,
+                    "preco_min_brl": 22.0,
+                    "total_anuncios": 8,
+                },
+                "margens": {
+                    "aereo": {"ok": True, "margem_brl": 5.0, "margem_pct": 18.0, "lucro_razoavel": True},
+                },
+            },
+            cambio_usd_brl=5.5,
+        )
+        self.assertIn("Formal VCP", texto)
+        self.assertIn("Mercado BR", texto)
+        self.assertIn("pacote 100", texto)
+
 
 if __name__ == "__main__":
     unittest.main()

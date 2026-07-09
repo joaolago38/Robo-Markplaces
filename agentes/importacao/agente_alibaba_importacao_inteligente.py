@@ -33,7 +33,7 @@ from integracoes.importacao.avaliacao_ia_parametros import (
     avaliar_parametros_alibaba_inteligencia,
     formatar_secao_ia,
 )
-from integracoes.importacao.calculo_importacao_aerea import exportar_csv_resultado
+from integracoes.importacao.calculo_importacao_aerea import exportar_csv_resultado, formatar_breakdown_viracopos_telegram
 
 logger = logging.getLogger("agente_alibaba_importacao_inteligente")
 
@@ -79,21 +79,31 @@ def _montar_alerta_cambio(cotacao: dict[str, Any], variacao: dict[str, Any]) -> 
     )
 
 
-def _resumo_custo(analise: dict[str, Any]) -> str:
+def _resumo_custo(analise: dict[str, Any], *, cambio_usd_brl: float | None = None) -> str:
     cenarios = analise.get("cenarios_frete") or {}
     mar = cenarios.get("maritimo") or {}
     formal = analise.get("calculo_aereo_formal") or {}
     mk = analise.get("precos_marketplace") or {}
     margens = analise.get("margens") or {}
     mm = margens.get(analise.get("melhor_frete") or "aereo") or {}
+    preco_norm = analise.get("preco_normalizado") or {}
+    unidade_mk = int(analise.get("unidade_marketplace_qtd") or 1)
 
     linhas = [
-        f"  FOB: {_fmt_usd(analise.get('preco_usd'))} | MOQ {analise.get('moq', '?')}",
+        f"  Cotação Alibaba: {_fmt_usd(analise.get('preco_usd'))} | MOQ {analise.get('moq', '?')}",
     ]
+    if preco_norm.get("unidade_por_preco", 1) > 1:
+        linhas.append(
+            f"  → US$ {preco_norm.get('preco_usd_unit', 0):.4f}/un "
+            f"(listing / {preco_norm.get('unidade_rotulo', '?')})"
+        )
     if formal.get("ok"):
         linhas.append(
-            f"  ✈️ Formal VCP: {_fmt_brl(formal.get('custo_unitario_brl'))} "
-            f"(CIF {_fmt_brl(formal.get('valor_aduaneiro_cif_brl'))})"
+            formatar_breakdown_viracopos_telegram(
+                formal,
+                cambio_usd_brl=cambio_usd_brl,
+                preco_norm=preco_norm,
+            )
         )
     else:
         aer = cenarios.get("aereo") or {}
@@ -101,9 +111,12 @@ def _resumo_custo(analise: dict[str, Any]) -> str:
             f"  Custo landed 🚢 {_fmt_brl(mar.get('custo_unitario_brl'))} | "
             f"✈️ {_fmt_brl(aer.get('custo_unitario_brl'))}"
         )
-    linhas.append(
-        f"  ML mediana: {_fmt_brl(mk.get('preco_mediana_brl'))} (min {_fmt_brl(mk.get('preco_min_brl'))})"
-    )
+    if mk.get("ok"):
+        pack = f" (pacote {unidade_mk} un.)" if unidade_mk > 1 else ""
+        linhas.append(
+            f"  Mercado BR (ML): mediana {_fmt_brl(mk.get('preco_mediana_brl'))}{pack} | "
+            f"min {_fmt_brl(mk.get('preco_min_brl'))} ({mk.get('total_anuncios', 0)} anúncios)"
+        )
     if mm.get("ok"):
         emoji = "✅" if mm.get("lucro_razoavel") else "⚠️"
         linhas.append(
@@ -139,7 +152,7 @@ def _montar_painel_produtos(
                 f"({mk.get('total_anuncios', 0)} anúncios)"
             )
         if melhor and melhor.get("ok"):
-            linhas.append(_resumo_custo(melhor))
+            linhas.append(_resumo_custo(melhor, cambio_usd_brl=float(cotacao.get("usd_brl") or 0)))
             if melhor.get("url"):
                 linhas.append(f"  🔗 {melhor['url']}")
         elif not r.get("analises"):

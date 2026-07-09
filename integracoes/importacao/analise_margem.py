@@ -27,6 +27,11 @@ from core.config import (
 )
 from integracoes.importacao.calculo_importacao_aerea import calcular_para_produto_alibaba
 from integracoes.importacao.custo_landed import calcular_cenarios_frete, calcular_margem_revenda
+from integracoes.importacao.normalizar_unidades import (
+    custo_para_comparacao_marketplace,
+    normalizar_preco_usd,
+    unidade_marketplace_qtd,
+)
 
 logger = logging.getLogger("analise_margem_importacao")
 
@@ -109,9 +114,13 @@ def analisar_oportunidade(
     except (TypeError, ValueError):
         return {"ok": False, "motivo": "preço/MOQ/peso inválido"}
 
+    preco_norm = normalizar_preco_usd(produto, preco_usd_f)
+    preco_usd_unit = float(preco_norm["preco_usd_unit"])
+    unidade_mk = unidade_marketplace_qtd(produto)
+
     impostos = _params_imposto(produto)
     cenarios = calcular_cenarios_frete(
-        preco_usd_f,
+        preco_usd_unit,
         cambio_usd_brl=cambio_usd_brl,
         peso_kg_unit=peso,
         quantidade=max(1, moq),
@@ -140,9 +149,10 @@ def analisar_oportunidade(
         if custo is None or preco_ref is None:
             margens[modo] = {"ok": False}
             continue
+        custo_pack = custo_para_comparacao_marketplace(float(custo), produto)
         margens[modo] = calcular_margem_revenda(
             float(preco_ref),
-            float(custo),
+            custo_pack,
             taxa_marketplace_pct=taxa_mk,
             margem_minima_pct=margem_min_pct,
             margem_minima_reais=margem_min_reais,
@@ -159,6 +169,9 @@ def analisar_oportunidade(
         "titulo": oportunidade.get("titulo"),
         "url": oportunidade.get("url"),
         "preco_usd": preco_usd_f,
+        "preco_usd_unit": preco_usd_unit,
+        "preco_normalizado": preco_norm,
+        "unidade_marketplace_qtd": unidade_mk,
         "moq": moq,
         "peso_kg": peso,
         "cenarios_frete": cenarios,

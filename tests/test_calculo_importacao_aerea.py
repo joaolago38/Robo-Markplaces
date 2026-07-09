@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from integracoes.importacao.calculo_importacao_aerea import (
     calcular_custo_importacao_aerea_formal,
     exportar_csv_resultado,
+    formatar_breakdown_viracopos_telegram,
     icms_pct_por_uf,
     montar_entradas_de_produto,
 )
@@ -86,6 +87,58 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
         self.assertEqual(ent["quantidade"], 50)
         self.assertEqual(ent["fob_usd"], 4.5)
         self.assertEqual(ent["ii_pct"], 12.0)
+
+    def test_montar_entradas_abracadeira_por_100(self):
+        produto = {
+            "id": "abracadeira-nylon-200mm",
+            "peso_kg": 0.002,
+            "ncm": "39269090",
+            "ii_pct": 16.0,
+            "unidade_por_preco": 100,
+            "moq_referencia": 5000,
+        }
+        op = {"preco_usd": 0.90, "moq": 5000}
+        ent = montar_entradas_de_produto(produto, op, cambio_usd_brl=5.5)
+        self.assertEqual(ent["quantidade"], 5000)
+        self.assertAlmostEqual(ent["fob_usd"], 0.009, places=4)
+        self.assertEqual(ent["fob_usd_listing"], 0.90)
+        self.assertEqual(ent["unidade_por_preco"], 100)
+
+    def test_formatar_breakdown_viracopos(self):
+        out = calcular_custo_importacao_aerea_formal(
+            {
+                "fob_usd": 0.009,
+                "peso_bruto_kg": 0.002,
+                "frete_aereo_usd": 55.0,
+                "seguro_pct": 0.5,
+                "cambio_usd_brl": 5.5,
+                "ii_pct": 16.0,
+                "ipi_pct": 0.0,
+                "pis_cofins_pct": 11.75,
+                "icms_pct": 18.0,
+                "uf_destino": "SP",
+                "quantidade": 5000,
+                "armazenagem_brl": 450.0,
+                "desembaraco_brl": 1200.0,
+                "thc_brl": 380.0,
+                "siscomex_brl": 214.5,
+                "frete_rodoviario_brl": 650.0,
+            }
+        )
+        texto = formatar_breakdown_viracopos_telegram(
+            out,
+            cambio_usd_brl=5.5,
+            preco_norm={
+                "preco_usd_listing": 0.90,
+                "preco_usd_unit": 0.009,
+                "unidade_por_preco": 100,
+                "unidade_rotulo": "100 peças",
+            },
+        )
+        self.assertIn("Formal VCP", texto)
+        self.assertIn("II:", texto)
+        self.assertIn("ICMS:", texto)
+        self.assertIn("100 peças", texto)
 
     def test_exportar_csv(self):
         out = calcular_custo_importacao_aerea_formal(
