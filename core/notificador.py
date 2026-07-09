@@ -6,7 +6,6 @@ import hashlib
 import json
 import logging
 import time
-from datetime import datetime
 
 from core.config import (
     ALERTA_COOLDOWN_SEG,
@@ -16,6 +15,7 @@ from core.config import (
     TELEGRAM_TOKEN,
 )
 from core.http_client import request
+from core.horario import agora_brasil, formatar_data_hora_br
 from core.telegram_gate import pode_enviar, registrar_falha_envio, verificar_token
 from core.http_errors import mascarar_url_telegram
 
@@ -44,7 +44,7 @@ def chave_itens_novos(prefix: str, itens: list[dict]) -> str:
 
 def chave_resumo_periodo(prefix: str, *, horas_por_bucket: int = 1) -> str:
     """Chave de cooldown para resumo periódico (ex.: 1x por hora no leilão)."""
-    agora = datetime.now()
+    agora = agora_brasil()
     bucket_h = (agora.hour // max(1, horas_por_bucket)) * max(1, horas_por_bucket)
     return f"{prefix}:resumo:{agora:%Y-%m-%d}-H{bucket_h:02d}"
 
@@ -182,7 +182,7 @@ def enviar_foto_gestor(
 
 def alertar(msg: str, *, _ignorar_cooldown: bool = False) -> bool:
     del _ignorar_cooldown
-    return _enviar(TELEGRAM_CHAT_ID, f"🔔 *Alerta* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}")
+    return _enviar(TELEGRAM_CHAT_ID, f"🔔 *Alerta* {formatar_data_hora_br()}\n\n{msg}")
 
 
 def alertar_gestor(
@@ -199,7 +199,7 @@ def alertar_gestor(
         return False
     ok = _enviar(
         TELEGRAM_GESTOR_CHAT_ID,
-        f"📊 *Gestor* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}",
+        f"📊 *Gestor* {formatar_data_hora_br()}\n\n{msg}",
     )
     if ok and not _ignorar_cooldown:
         _marcar_enviado(chave_final)

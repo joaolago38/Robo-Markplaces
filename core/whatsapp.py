@@ -6,7 +6,6 @@ Nunca lança exceção.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 
 from core.config import (
     WHATSAPP_API_TYPE,
@@ -17,6 +16,7 @@ from core.config import (
     WHATSAPP_BUSINESS_TOKEN,
     WHATSAPP_PHONE_ID,
 )
+from core.horario import formatar_data_hora_br
 from core.http_client import request
 
 logger = logging.getLogger("whatsapp")
@@ -128,7 +128,7 @@ def notificar_venda(
     Envia notificação de nova venda para o número fixo configurado em
     WHATSAPP_NUMERO_DESTINO (padrão: 5519999889059).
     """
-    hora = datetime.now().strftime("%d/%m %H:%M")
+    hora = formatar_data_hora_br()
 
     emoji_marketplace = {
         "mercadolivre": "🛒",
