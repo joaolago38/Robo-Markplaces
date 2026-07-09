@@ -55,6 +55,62 @@ _STATUS_LABEL = {
 }
 
 
+def diagnosticar_fontes_vazias(resultados: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """
+    Detecta varredura sem nenhum hit web nem anúncio MP em todos os segmentos.
+    Isso indica falha de coleta, não ausência de tendências no mercado.
+    """
+    ok = [r for r in resultados if r.get("ok")]
+    if not ok:
+        return None
+
+    total_web = sum(int(r.get("total_web_hits") or 0) for r in ok)
+    total_mp = sum(int(r.get("total_anuncios_mp") or 0) for r in ok)
+    if total_web > 0 or total_mp > 0:
+        return None
+
+    from core.ddg_lite import mensagem_circuit_breaker
+    from core.prontidao import brave_configurado, ml_configurado
+
+    dicas: list[str] = []
+    if brave_configurado():
+        dicas.append(
+            "Brave Search autenticou mas retornou 0 resultados — verifique cota/plano da "
+            "`BRAVE_SEARCH_API_KEY`"
+        )
+    else:
+        dicas.append("Configure `BRAVE_SEARCH_API_KEY` (busca web e fallbacks nos marketplaces)")
+
+    if ml_configurado():
+        dicas.append(
+            "API do Mercado Livre (`/sites/search`) costuma retornar 403 — a busca depende de Brave/DDG"
+        )
+
+    ddg_msg = mensagem_circuit_breaker("esmaltes_tendencias") or mensagem_circuit_breaker("ml_busca_termo")
+    if ddg_msg:
+        dicas.append(ddg_msg)
+    else:
+        dicas.append("DDG sem resultados (comum em IP de datacenter/CI do GitHub Actions)")
+
+    return {
+        "coleta_vazia": True,
+        "segmentos": len(ok),
+        "dicas": dicas,
+    }
+
+
+def _formatar_aviso_coleta_vazia(diag: dict[str, Any]) -> str:
+    linhas = [
+        "⚠️ *Fontes sem dados* — esta varredura *não* indica ausência de tendências.",
+        f"Foram varridos *{diag.get('segmentos', 0)}* segmento(s), mas web e marketplaces retornaram 0.",
+        "",
+        "*O que verificar:*",
+    ]
+    for dica in diag.get("dicas") or []:
+        linhas.append(f"• {dica}")
+    return "\n".join(linhas)
+
+
 def _carregar_segmentos() -> list[dict[str, Any]]:
     caminho = ROOT / ESMALTES_TENDENCIAS_CATALOGO
     try:
@@ -82,6 +138,7 @@ def montar_mensagem_telegram(
     resultados: list[dict[str, Any]],
     *,
     serie: list[dict[str, Any]] | None = None,
+    diag_coleta: dict[str, Any] | None = None,
 ) -> str:
     linhas = [
         "🌐 *Tendências esmaltes — web × marketplaces*",
@@ -91,6 +148,9 @@ def montar_mensagem_telegram(
         f"Anúncios MP: *{consolidado.get('total_anuncios_mp', 0)}*",
         "",
     ]
+
+    if diag_coleta and diag_coleta.get("coleta_vazia"):
+        linhas.extend([_formatar_aviso_coleta_vazia(diag_coleta), ""])
 
     if serie:
         comp = formatar_comparativo(serie, _SERIES_CAMPOS)
@@ -184,6 +244,14 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 time.sleep(ESMALTES_TENDENCIAS_PAUSA_SEG)
 
         consolidado = consolidar_varredura(resultados)
+        diag_coleta = diagnosticar_fontes_vazias(resultados)
+        if diag_coleta:
+            logger.warning(
+                "Tendências esmaltes: coleta vazia em %s segmento(s) — fontes sem dados",
+                diag_coleta.get("segmentos"),
+            )
+            consolidado["coleta_vazia"] = True
+            consolidado["diag_coleta"] = diag_coleta
 
         escrever_json_atomico(
             SNAPSHOT_PATH,
@@ -212,7 +280,9 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         alerta_enviado = False
         if enviar_alerta and ESMALTES_TENDENCIAS_ALERTA_RESUMO and pode_alertar:
-            msg = montar_mensagem_telegram(consolidado, resultados, serie=serie)
+            msg = montar_mensagem_telegram(
+                consolidado, resultados, serie=serie, diag_coleta=diag_coleta
+            )
             chave = chave_resumo_periodo("esmaltes:tendencias", horas_por_bucket=12)
             alerta_enviado = bool(
                 alertar_gestor(msg, chave=chave, cooldown_segundos=ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG)
@@ -236,6 +306,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "ok": True,
             "total_segmentos": len(resultados),
             "consolidado": consolidado,
+            "coleta_vazia": bool(diag_coleta),
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
         }

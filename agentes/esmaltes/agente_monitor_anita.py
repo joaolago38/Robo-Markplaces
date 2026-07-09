@@ -197,8 +197,62 @@ def _montar_resumo_produto(r: dict[str, Any]) -> list[str]:
     return linhas
 
 
-def _montar_painel(resultados: list[dict[str, Any]], consolidado_impala: dict[str, Any] | None = None) -> str:
-    linhas = ["💅 *Anita + Impala — painel de desempenho ML*", ""]
+def diagnosticar_coleta_vazia(resultados: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Todos os termos sem anúncios = falha de busca ML/Brave, não mercado vazio."""
+    ok = [r for r in resultados if r.get("ok")]
+    if not ok:
+        return None
+    total_anuncios = sum(int(r.get("total_anuncios") or 0) for r in ok)
+    if total_anuncios > 0:
+        return None
+
+    from core.ddg_lite import mensagem_circuit_breaker
+    from core.prontidao import brave_configurado, ml_configurado
+
+    dicas: list[str] = []
+    if brave_configurado():
+        dicas.append(
+            "Brave Search retornou 0 — verifique cota/plano da `BRAVE_SEARCH_API_KEY` "
+            "(fallback da busca ML)"
+        )
+    else:
+        dicas.append("Configure `BRAVE_SEARCH_API_KEY` para fallback quando a API ML bloqueia")
+    if ml_configurado():
+        dicas.append("API ML `/sites/search` costuma retornar 403 — depende de Brave/DDG")
+    ddg_msg = mensagem_circuit_breaker("ml_busca_termo")
+    if ddg_msg:
+        dicas.append(ddg_msg)
+    else:
+        dicas.append("DDG sem resultados (comum em IP de datacenter/CI)")
+
+    return {"coleta_vazia": True, "produtos": len(ok), "dicas": dicas}
+
+
+def _formatar_aviso_coleta_vazia(diag: dict[str, Any]) -> str:
+    linhas = [
+        "⚠️ *Busca ML sem resultados* — os zeros abaixo *não* significam mercado vazio.",
+        f"Monitorados *{diag.get('produtos', 0)}* produto(s), mas nenhum anúncio foi encontrado.",
+        "",
+        "*O que verificar:*",
+    ]
+    for dica in diag.get("dicas") or []:
+        linhas.append(f"• {dica}")
+    return "\n".join(linhas)
+
+
+def _montar_painel(
+    resultados: list[dict[str, Any]],
+    consolidado_impala: dict[str, Any] | None = None,
+    *,
+    diag_coleta: dict[str, Any] | None = None,
+) -> str:
+    linhas = [
+        "💅 *Seus kits Impala vs mercado ML*",
+        "_Compara seu preço/margem com Anita e outras marcas no mesmo termo de busca._",
+        "",
+    ]
+    if diag_coleta and diag_coleta.get("coleta_vazia"):
+        linhas.extend([_formatar_aviso_coleta_vazia(diag_coleta), ""])
     if consolidado_impala:
         linhas.extend(
             [
@@ -296,10 +350,19 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             resultados.append(_monitorar_produto(produto))
 
         consolidado_impala = consolidar_impala(resultados)
+        diag_coleta = diagnosticar_coleta_vazia(resultados)
+        if diag_coleta:
+            logger.warning(
+                "Monitor Impala: coleta vazia em %s produto(s) — busca ML/Brave sem resultados",
+                diag_coleta.get("produtos"),
+            )
 
         historico = ler_json(HISTORY_PATH, default={})
         historico["ultima_varredura"] = agora
         historico["impala"] = consolidado_impala
+        if diag_coleta:
+            historico["coleta_vazia"] = True
+            historico["diag_coleta"] = diag_coleta
         historico["produtos"] = {
             str(r.get("id")): {
                 "marca_mais_vendida": r.get("marca_mais_vendida"),
@@ -321,13 +384,15 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             {
                 "timestamp": agora,
                 "consolidado_impala": consolidado_impala,
+                "coleta_vazia": bool(diag_coleta),
+                "diag_coleta": diag_coleta,
                 "resultados": resultados,
             },
         )
 
         alerta_enviado = False
         if enviar_alerta and ANITA_ALERTA_RESUMO and resultados:
-            painel = _montar_painel(resultados, consolidado_impala)
+            painel = _montar_painel(resultados, consolidado_impala, diag_coleta=diag_coleta)
             alerta_enviado = bool(
                 alertar_gestor(
                     painel,
@@ -347,6 +412,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "ok": True,
             "total_produtos": len(resultados),
             "alerta_enviado": alerta_enviado,
+            "coleta_vazia": bool(diag_coleta),
             "consolidado_impala": consolidado_impala,
             "resumo_orquestrador": resumo_orq,
             "resultados": resultados,

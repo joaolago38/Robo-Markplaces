@@ -104,6 +104,71 @@ class AgenteMonitorTendenciasEsmaltesTests(unittest.TestCase):
         self.assertIn("Perolado", msg)
         self.assertIn("viral", msg)
 
+    def test_montar_mensagem_aviso_coleta_vazia(self):
+        diag = {
+            "coleta_vazia": True,
+            "segmentos": 8,
+            "dicas": [
+                "Brave Search autenticou mas retornou 0 resultados — verifique cota/plano da `BRAVE_SEARCH_API_KEY`",
+                "DDG sem resultados (comum em IP de datacenter/CI do GitHub Actions)",
+            ],
+        }
+        msg = agente.montar_mensagem_telegram(
+            {"segmentos_varridos": 8, "total_web_hits": 0, "total_anuncios_mp": 0},
+            [
+                {"ok": True, "nome": "Nude chrome", "total_web_hits": 0, "total_anuncios_mp": 0},
+                {"ok": True, "nome": "Jelly", "total_web_hits": 0, "total_anuncios_mp": 0},
+            ],
+            diag_coleta=diag,
+        )
+        self.assertIn("Fontes sem dados", msg)
+        self.assertIn("não* indica ausência", msg)
+        self.assertIn("BRAVE_SEARCH_API_KEY", msg)
+
+    def test_diagnosticar_fontes_vazias(self):
+        vazio = [
+            {"ok": True, "total_web_hits": 0, "total_anuncios_mp": 0},
+            {"ok": True, "total_web_hits": 0, "total_anuncios_mp": 0},
+        ]
+        diag = agente.diagnosticar_fontes_vazias(vazio)
+        self.assertIsNotNone(diag)
+        self.assertTrue(diag["coleta_vazia"])
+        self.assertEqual(diag["segmentos"], 2)
+
+        com_dados = [{"ok": True, "total_web_hits": 3, "total_anuncios_mp": 0}]
+        self.assertIsNone(agente.diagnosticar_fontes_vazias(com_dados))
+
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "enviar_foto_gestor", return_value=True)
+    @patch.object(agente, "processar_segmento")
+    @patch.object(agente, "_carregar_segmentos")
+    def test_executar_marca_coleta_vazia(self, mock_seg, mock_proc, _mock_foto, mock_alertar):
+        mock_seg.return_value = [{"id": "a", "ativo": True, "nome": "A", "prioridade": 1}]
+        mock_proc.return_value = {
+            "ok": True,
+            "id": "a",
+            "nome": "A",
+            "total_web_hits": 0,
+            "total_anuncios_mp": 0,
+            "top_oportunidades": [],
+            "top_confirmadas": [],
+            "tendencias": [],
+            "web_sinais": {"termos": []},
+        }
+        with patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
+            agente, "HISTORY_PATH", self.tmp_path / "hist.json"
+        ), patch.object(agente, "SERIES_PATH", self.tmp_path / "series.json"), patch.object(
+            agente, "GRAFICO_PATH", self.tmp_path / "g.png"
+        ), patch.object(agente, "pode_alertar_esmaltes", return_value=(True, "ok")), patch.object(
+            agente, "ESMALTES_TENDENCIAS_PAUSA_SEG", 0
+        ):
+            out = agente.executar(enviar_alerta=True)
+
+        self.assertTrue(out["coleta_vazia"])
+        self.assertTrue(out["consolidado"]["coleta_vazia"])
+        msg = mock_alertar.call_args[0][0]
+        self.assertIn("Fontes sem dados", msg)
+
 
 if __name__ == "__main__":
     unittest.main()

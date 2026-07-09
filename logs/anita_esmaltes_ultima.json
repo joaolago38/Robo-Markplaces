@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-09T14:58:42.472550+00:00",
+  "timestamp": "2026-07-09T15:20:27.163439+00:00",
   "consolidado_impala": {
     "termos_monitorados": 1,
     "termos_com_impala": 1,
@@ -11,6 +11,8 @@
     "menor_preco_impala": 42.0,
     "margem_media_pct": 32.9
   },
+  "coleta_vazia": false,
+  "diag_coleta": null,
   "resultados": [
     {
       "id": "p1",
