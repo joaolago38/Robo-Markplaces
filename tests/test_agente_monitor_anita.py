@@ -122,9 +122,42 @@ class AgenteMonitorAnitaTests(unittest.TestCase):
             consolidado,
         )
         self.assertIn("Desempenho Impala", msg)
+        self.assertIn("Seus kits Impala", msg)
         self.assertIn("Anita", msg)
         self.assertIn("margem", msg)
         self.assertIn("Impala", msg)
+
+    def test_montar_painel_aviso_coleta_vazia(self):
+        diag = {
+            "coleta_vazia": True,
+            "produtos": 4,
+            "dicas": ["Brave Search retornou 0"],
+        }
+        msg = agente._montar_painel(
+            [
+                {
+                    "nome": "Kit 5 Impala",
+                    "prioridade": 1,
+                    "meu_preco": 48.90,
+                    "total_anuncios": 0,
+                    "total_anita": 0,
+                    "total_impala": 0,
+                    "marca_mais_vendida": "n/d",
+                    "margem_minha": {"margem_operacional_pct": 32.0, "lucro_reais": 10.0},
+                    "analises": [],
+                }
+            ],
+            {"termos_monitorados": 1, "termos_impala_lider": 0},
+            diag_coleta=diag,
+        )
+        self.assertIn("Busca ML sem resultados", msg)
+        self.assertIn("Kit 5 Impala", msg)
+
+    def test_diagnosticar_coleta_vazia(self):
+        vazio = [{"ok": True, "total_anuncios": 0}]
+        self.assertIsNotNone(agente.diagnosticar_coleta_vazia(vazio))
+        com_dados = [{"ok": True, "total_anuncios": 3}]
+        self.assertIsNone(agente.diagnosticar_coleta_vazia(com_dados))
 
 
 if __name__ == "__main__":
