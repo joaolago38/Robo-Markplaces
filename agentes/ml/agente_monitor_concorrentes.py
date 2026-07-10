@@ -126,7 +126,102 @@ def _classificar_variacao_preco(
     return (texto or "").strip() or None
 
 
+def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
+    """Monitora uma loja concorrente (seller_id) via análise por termos."""
+    from integracoes.ml.analise_loja_concorrente import analisar_loja
+
+    eid = str(entrada.get("id") or "").strip()
+    nome = str(entrada.get("nome") or eid)
+    seller_id = str(entrada.get("seller_id") or "").strip()
+    nickname = str(entrada.get("nickname") or "").strip() or None
+    termos = entrada.get("termos_busca")
+    if not isinstance(termos, list):
+        termos = None
+    meu_preco = float(entrada.get("meu_preco") or 0)
+    limite = int(entrada.get("limite_resultados") or 20)
+
+    if not seller_id:
+        return {"id": eid, "ok": False, "erro": "seller_id vazio", "alertas": [], "tipo": "loja"}
+
+    analise = analisar_loja(
+        seller_id,
+        nickname=nickname,
+        termos=termos,
+        limite_por_termo=limite,
+    )
+    anuncios = analise.get("anuncios") or []
+    menor = float(analise.get("preco_min") or 0)
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    menor_ant = float(anterior.get("menor_preco") or 0)
+
+    alertas: list[str] = []
+    for ameaca in analise.get("ameacas_preco") or []:
+        alertas.append(
+            f"{nome}: {ameaca.get('sku')} seu R$ {ameaca.get('meu_preco'):.2f} está "
+            f"{ameaca.get('gap_pct')}% acima do anúncio da loja "
+            f"(R$ {ameaca.get('menor_preco_loja'):.2f})."
+        )
+
+    if menor_ant > 0 and menor > 0:
+        var = _pct_variacao(menor_ant, menor)
+        if var >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            direcao = "caiu" if menor < menor_ant else "subiu"
+            alertas.append(
+                f"{nome}: menor preço amostrado {direcao} de R$ {menor_ant:.2f} "
+                f"para R$ {menor:.2f} ({var:.1f}%)."
+            )
+
+    if meu_preco > 0 and menor > 0 and meu_preco > menor:
+        diff = (meu_preco - menor) / menor * 100.0
+        if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            alertas.append(
+                f"{nome}: referência R$ {meu_preco:.2f} está {diff:.1f}% acima "
+                f"do menor anúncio amostrado da loja (R$ {menor:.2f})."
+            )
+
+    leituras_ant = _leituras_recentes(anterior, limite=4)
+    leituras_ant.append(
+        {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
+    )
+    historico[eid] = {
+        "menor_preco": menor,
+        "meu_preco": meu_preco,
+        "total_concorrentes": len(anuncios),
+        "seller_id": seller_id,
+        "nickname": analise.get("nickname") or nickname,
+        "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        "leituras": leituras_ant[-5:],
+        "perfil": analise.get("perfil"),
+    }
+
+    _tags = [f"produto:{eid}", f"seller:{seller_id}", "tipo:loja"]
+    if menor > 0:
+        gauge("mercado.menor_preco_concorrente", menor, tags=_tags)
+    gauge("mercado.total_concorrentes", float(len(anuncios)), tags=_tags)
+    if alertas:
+        incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
+
+    return {
+        "id": eid,
+        "ok": True,
+        "tipo": "loja",
+        "nome": nome,
+        "seller_id": seller_id,
+        "nickname": analise.get("nickname") or nickname,
+        "meu_preco": meu_preco,
+        "menor_preco": menor,
+        "total_concorrentes": len(anuncios),
+        "concorrentes_amostra": anuncios[:5],
+        "ameacas_preco": analise.get("ameacas_preco") or [],
+        "perfil": analise.get("perfil"),
+        "alertas": alertas,
+    }
+
+
 def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
+    if str(entrada.get("tipo") or "").lower() == "loja":
+        return _monitorar_loja(entrada, historico)
+
     eid = str(entrada.get("id") or "").strip()
     nome = str(entrada.get("nome") or eid)
     termo = str(entrada.get("termo_busca") or "").strip()
@@ -137,6 +232,12 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         return {"id": eid, "ok": False, "erro": "termo_busca vazio", "alertas": []}
 
     concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+    # Filtro opcional: só anúncios de um seller específico no termo
+    seller_filtro = str(entrada.get("seller_id") or "").strip()
+    if seller_filtro:
+        concorrentes = [
+            c for c in concorrentes if str(c.get("seller_id") or "") == seller_filtro
+        ]
     menor = _menor_preco(concorrentes)
     anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
     menor_ant = float(anterior.get("menor_preco") or 0)
@@ -194,6 +295,7 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
     return {
         "id": eid,
         "ok": True,
+        "tipo": "termo",
         "nome": nome,
         "termo_busca": termo,
         "meu_preco": meu_preco,

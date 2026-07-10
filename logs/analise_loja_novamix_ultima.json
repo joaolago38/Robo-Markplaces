@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-07-10T14:03:17.640729+00:00",
+  "ok": true,
+  "perfil": {
+    "ok": true,
+    "seller_id": "1666381510",
+    "nickname": "NOVAMIX_COMERCIAL",
+    "permalink": "http://perfil.mercadolivre.com.br/NOVAMIX_COMERCIAL",
+    "cidade": "São Paulo",
+    "estado": "BR-SP",
+    "site_status": "active",
+    "level_id": "5_green",
+    "power_seller_status": "platinum",
+    "transactions_total": 71423,
+    "url_loja": "https://lista.mercadolivre.com.br/pagina/novamix_comercial"
+  },
+  "nickname": "NOVAMIX_COMERCIAL",
+  "seller_id": "1666381510",
+  "total_anuncios_coletados": 0,
+  "anuncios": [],
+  "preco_min": 0.0,
+  "preco_med": 0.0,
+  "preco_max": 0.0,
+  "marcas": {},
+  "overlap_catalogo": [],
+  "ameacas_preco": [],
+  "estrategia": {
+    "porte": "gigante",
+    "ameaca_geral": "alta",
+    "pontos_fortes_loja": [
+      "Mercado Líder platinum com reputação 5_green",
+      "71.423 transações históricas",
+      "Base em São Paulo (logística e alcance nacional no ML)",
+      "Mix tipicamente focado em kits de esmalte (Dailus, Risqué, Colorama, Impala, gel)",
+      "Página da loja com paginação (_Desde_49) indica estoque amplo (49+ anúncios)"
+    ],
+    "implicacoes_para_voce": [
+      "Não compete só em Impala — cobre várias marcas de manicure/atacado",
+      "Volume alto sugere preço agressivo e ads constantes; evite guerra só de preço",
+      "Diferencie kits Impala (Bailarina, Mimo+Carmed, sortidos) com título/fotos e frete",
+      "Monitore gap nos SKUs IMP-* quando a busca ML voltar a liberar seller_id",
+      "Use promoções manicures (WhatsApp/Telegram) para canal próprio fora do ML"
+    ],
+    "anuncios_amostra": 0,
+    "skus_sob_pressao": []
+  },
+  "termos_usados": [
+    "novamix_comercial esmalte"
+  ],
+  "limitacao": "Busca ML por seller_id retorna 403; anúncios vêm de termos filtrados. Amostra pode ser parcial enquanto a API estiver bloqueada."
+}
