@@ -76,6 +76,10 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             "integracoes.ml.busca_termo_ml.ddg_buscar"
         ) as mock_ddg, patch.object(
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
         ):
             mock_req.side_effect = [
                 _mock_resp({}, status=403),
@@ -91,6 +95,44 @@ class TestExecutarBuscaTermo(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["item_id"], "MLB123")
         self.assertEqual(out[0]["fonte_busca"], "ddg")
+
+    def test_403_usa_fallback_products_api(self):
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            ml_client, "_request_ml"
+        ) as mock_req, patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False
+        ):
+            mock_req.side_effect = [
+                _mock_resp({}, status=403),  # sites/search
+                _mock_resp(
+                    {
+                        "results": [
+                            {"id": "MLB41490081", "name": "Kit 5 Esmaltes Impala Bailarina"}
+                        ]
+                    }
+                ),
+                _mock_resp(
+                    {
+                        "results": [
+                            {
+                                "item_id": "MLB3948390421",
+                                "seller_id": 1666381510,
+                                "price": 30.99,
+                                "sold_quantity": 50,
+                            }
+                        ]
+                    }
+                ),
+            ]
+            out = busca_termo_ml.executar_busca_termo("kit 5 esmaltes impala bailarina", limite=5)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["fonte_busca"], "products_api")
+        self.assertEqual(out[0]["preco"], 30.99)
+        self.assertEqual(out[0]["seller_id"], "1666381510")
 
     def test_fallback_catalogo(self):
         with patch.object(ml_client, "_enabled", return_value=True), patch.object(
@@ -114,6 +156,8 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             ],
         ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False), patch.object(
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
         ):
             mock_req.return_value = _mock_resp({}, status=403)
             out = busca_termo_ml.executar_busca_termo(
@@ -150,6 +194,12 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             ml_client, "buscar_detalhes_concorrentes", return_value=[]
         ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False), patch.object(
             busca_termo_ml, "ler_json", return_value=cache
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
         ):
             mock_req.return_value = _mock_resp({}, status=403)
             out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
@@ -170,7 +220,13 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             ml_client, "_request_ml"
         ) as mock_req, patch.object(ml_client, "listar_meus_anuncios", return_value=[]), patch.object(
             ml_client, "buscar_detalhes_concorrentes", return_value=[]
-        ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False), patch(
+        ), patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CACHE", False
+        ), patch(
             "integracoes.ml.busca_externa_brave.request"
         ) as mock_http:
             mock_req.side_effect = [

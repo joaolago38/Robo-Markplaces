@@ -2,8 +2,8 @@
 integracoes/ml/busca_termo_ml.py
 Busca por termo no ML com fallbacks quando /sites/search retorna 403.
 
-Ordem: API autenticada → catálogo multi-ref → Brave Search (opcional) → DuckDuckGo
-(enriquecimento /items/{id}) → cache recente.
+Ordem: API autenticada → products/search (catálogo oficial) → catálogo multi-ref
+→ Brave Search (opcional) → DuckDuckGo → cache recente.
 """
 from __future__ import annotations
 
@@ -18,7 +18,9 @@ from core.config import (
     ML_BUSCA_TERMO_FALLBACK_CACHE,
     ML_BUSCA_TERMO_FALLBACK_CATALOGO,
     ML_BUSCA_TERMO_FALLBACK_DDG,
+    ML_BUSCA_TERMO_FALLBACK_PRODUCTS,
     ML_BUSCA_TERMO_CACHE_TTL_SEG,
+    ML_BUSCA_TERMO_MAX_PRODUCTS,
     ML_BUSCA_TERMO_MAX_REFS_CATALOGO,
     ML_SITE_ID,
     ROOT,
@@ -212,6 +214,108 @@ def _enriquecer_item(item_id: str) -> dict[str, Any] | None:
         return None
 
 
+def _buscar_via_products_api(termo: str, limite: int) -> list[dict[str, Any]]:
+    """
+    Alternativa ao /sites/search (403): usa catálogo oficial
+    GET /products/search + GET /products/{id}/items — retorna preço e seller_id.
+    """
+    from integracoes.ml import ml_client
+
+    if not ML_BUSCA_TERMO_FALLBACK_PRODUCTS or not ml_client._enabled():
+        return []
+
+    termo = (termo or "").strip()
+    if not termo:
+        return []
+
+    seller_self = _seller_self()
+    max_products = max(1, min(20, ML_BUSCA_TERMO_MAX_PRODUCTS))
+    encontrados: list[dict[str, Any]] = []
+    vistos: set[str] = set()
+
+    try:
+        r = ml_client._request_ml(
+            "GET",
+            f"{ml_client.BASE}/products/search",
+            params={"status": "active", "site_id": ML_SITE_ID or "MLB", "q": termo},
+            timeout=25,
+        )
+        if r.status_code != 200:
+            logger.warning("ML products/search HTTP %s termo=%r", r.status_code, termo[:60])
+            return []
+        produtos = (r.json() or {}).get("results") or []
+    except Exception as exc:
+        logger.warning("ML products/search erro termo=%r: %s", termo[:60], exc)
+        return []
+
+    for prod in produtos[:max_products]:
+        if not isinstance(prod, dict):
+            continue
+        pid = str(prod.get("id") or prod.get("catalog_product_id") or "").strip()
+        nome_prod = str(prod.get("name") or "")
+        if not pid:
+            continue
+        if nome_prod and not _titulo_relevante(termo, nome_prod):
+            # ainda tenta — catálogo às vezes usa nome genérico
+            pass
+        try:
+            ri = ml_client._request_ml(
+                "GET",
+                f"{ml_client.BASE}/products/{pid}/items",
+                timeout=20,
+            )
+            if ri.status_code != 200:
+                continue
+            itens = (ri.json() or {}).get("results") or []
+        except Exception:
+            continue
+
+        for it in itens:
+            if not isinstance(it, dict):
+                continue
+            item_id = str(it.get("item_id") or it.get("id") or "").strip().upper()
+            if not item_id or item_id in vistos:
+                continue
+            seller_id = str(it.get("seller_id") or "")
+            if seller_self and seller_id == seller_self:
+                continue
+            try:
+                preco = float(it.get("price") or 0)
+            except (TypeError, ValueError):
+                preco = 0.0
+            if preco <= 0:
+                continue
+            vistos.add(item_id)
+            titulo = nome_prod or item_id
+            encontrados.append(
+                {
+                    "item_id": item_id,
+                    "titulo": titulo,
+                    "preco": preco,
+                    "quantidade_vendida": int(it.get("sold_quantity") or 0),
+                    "seller_id": seller_id,
+                    "permalink": str(it.get("permalink") or f"https://produto.mercadolivre.com.br/{item_id}"),
+                    "fonte_busca": "products_api",
+                    "catalog_product_id": pid,
+                }
+            )
+            if len(encontrados) >= limite:
+                logger.info(
+                    "ML busca termo=%r fonte=products_api resultados=%d",
+                    termo[:60],
+                    len(encontrados),
+                )
+                return encontrados
+
+    if encontrados:
+        logger.info(
+            "ML busca termo=%r fonte=products_api resultados=%d",
+            termo[:60],
+            len(encontrados),
+        )
+    return encontrados
+
+
 def _buscar_via_brave(termo: str, limite: int) -> list[dict[str, Any]]:
     if not ML_BUSCA_TERMO_FALLBACK_BRAVE:
         return []
@@ -372,6 +476,15 @@ def executar_busca_termo(
     except Exception as exc:
         ml_client._log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
 
+    # Preferir products API: funciona com token mesmo quando /sites/search e /items dão 403
+    try:
+        via_products = _buscar_via_products_api(termo, limite)
+        if via_products:
+            _gravar_cache(termo, via_products)
+            return via_products
+    except Exception as exc:
+        logger.warning("ML products fallback erro termo=%r: %s", termo[:60], exc)
+
     combinado: list[dict[str, Any]] = []
     combinado.extend(_buscar_via_catalogo(termo, limite, item_id_referencia))
     combinado.extend(_buscar_via_brave(termo, limite))
@@ -396,7 +509,8 @@ def executar_busca_termo(
         return cache
 
     logger.warning(
-        "ML busca termo=%r sem resultados — API 403/bloqueada e fallbacks vazios (catálogo/brave/ddg/cache)",
+        "ML busca termo=%r sem resultados — API 403/bloqueada e fallbacks vazios "
+        "(products/catálogo/brave/ddg/cache)",
         termo,
     )
     return []
