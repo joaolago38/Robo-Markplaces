@@ -15,7 +15,33 @@
     "url_listagem": "https://www.leopardoveiculos.com.br/veiculos",
     "ajax_url": "https://www.leopardoveiculos.com.br/loadveiculos",
     "categoria_carros": "49874",
-    "notas": "Rede veículos batidos — múltiplas unidades"
+    "notas": "Rede veículos batidos — múltiplas unidades (SP)"
+  },
+  {
+    "id": "veiculosbatidos",
+    "ativo": true,
+    "nome": "Veículos Batidos",
+    "tipo": "leopardo",
+    "url_listagem": "https://www.veiculosbatidos.com.br/veiculos",
+    "ajax_url": "https://www.veiculosbatidos.com.br/loadveiculos",
+    "categoria_carros": "49874",
+    "notas": "Mesma plataforma Leopardo — estoque SP (busca Google carros batidos SP)"
+  },
+  {
+    "id": "esperanca_batidos",
+    "ativo": true,
+    "nome": "Esperança Batidos",
+    "tipo": "esperanca",
+    "url_listagem": "http://esperancabatidos.com.br/estoque.php",
+    "notas": "São Mateus/SP — Av. Adélia Chohfi"
+  },
+  {
+    "id": "007_batidos",
+    "ativo": true,
+    "nome": "007 Batidos",
+    "tipo": "007_batidos",
+    "url_listagem": "https://www.007batidos.com.br/estoque.php",
+    "notas": "São Mateus/SP — Av. Adélia Chohfi, 551"
   },
   {
     "id": "motorjan",
@@ -31,15 +57,23 @@
     "nome": "Velozes Batidos",
     "tipo": "velozes",
     "url_listagem": "https://velozesbatidos.com.br/",
-    "notas": "Seguradoras — São Mateus/ES"
+    "notas": "Seguradoras — São Mateus (SP/ES conforme unidade)"
   },
   {
-    "id": "veiculosbatidos",
+    "id": "373_batidos",
     "ativo": false,
-    "nome": "Veículos Batidos",
-    "tipo": "veiculosbatidos",
-    "url_listagem": "https://www.veiculosbatidos.com.br/veiculos",
-    "notas": "Listagem carregada via JS — scraper pendente"
+    "nome": "373 Batidos",
+    "tipo": "373_batidos",
+    "url_listagem": "https://373batidos.com.br/",
+    "notas": "SP — site instável/bloqueia scrape; monitorado via busca web"
+  },
+  {
+    "id": "bom_negocio_batidos",
+    "ativo": false,
+    "nome": "Bom Negócio Batidos",
+    "tipo": "bom_negocio",
+    "url_listagem": "https://bomnegociobatidos.com.br/",
+    "notas": "Santo André/SP — compra de batidos (sem estoque público); busca web"
   },
   {
     "id": "clube_batidos",
@@ -56,13 +90,5 @@
     "tipo": "vs_veiculos",
     "url_listagem": "https://www.vsveiculosbrasil.com.br/",
     "notas": "Estoque sem URL pública estável — scraper pendente"
-  },
-  {
-    "id": "373_batidos",
-    "ativo": false,
-    "nome": "373 Batidos",
-    "tipo": "373_batidos",
-    "url_listagem": "https://373batidos.com.br/estoque.aspx",
-    "notas": "Site bloqueia acesso automatizado — scraper pendente"
   }
 ]

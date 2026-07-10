@@ -113,6 +113,79 @@ class VeiculosScrapersTests(unittest.TestCase):
         self.assertEqual(itens[0]["preco"], 15000.0)
         self.assertIn("GOL", itens[0]["titulo"])
 
+    def test_parse_esperanca(self):
+        html = """
+        <li class="imvl-vertical pr radius4 ajsestoquie">
+            <div class="fl hover-destaque border-car">
+                <a href="http://www.esperancabatidos.com.br/Fiat-/-TITANO/2184" class="fl opacity" title="Fiat - TITANO">
+                    <span class="box-cod-des radius4">COD. 2184</span>
+                    <img src="./fotos/2184/x.jpg" alt="Fiat"/>
+                </a>
+            </div>
+            <div class="fl pr itens-dest-secundario">
+                <h1 class="fl w100">Fiat - TITANO RANCH 4X4</h1>
+                <h2 class="fl w100">Cor: PRETA / Ano: 2025 0KM</h2>
+                <h2 class="fl w100">R$ 219.900,00</h2>
+            </div>
+        </li>
+        """
+        with patch("integracoes.veiculos.scrapers.request") as mock_req:
+            mock_req.return_value = MagicMock(status_code=200, text=html)
+            itens = sc.coletar_esperanca()
+        self.assertEqual(len(itens), 1)
+        self.assertEqual(itens[0]["preco"], 219900.0)
+        self.assertEqual(itens[0]["id_externo"], "2184")
+
+    def test_parse_007_batidos(self):
+        html = """
+        Comparar Veiculo Cod. 1707
+        <h1>HYUNDAI</h1>
+        <h2>Creta 2.0 prestige auto</h2>
+        <h3>Ano do Veiculo: 2018</h3>
+        <li>Valor: R$ 78.900,00</li>
+        """
+        with patch("integracoes.veiculos.scrapers.request") as mock_req:
+            mock_req.return_value = MagicMock(status_code=200, text=html)
+            itens = sc.coletar_007_batidos()
+        self.assertEqual(len(itens), 1)
+        self.assertEqual(itens[0]["preco"], 78900.0)
+
+    def test_coletar_fonte_veiculosbatidos_usa_leopardo(self):
+        with patch.object(sc, "coletar_leopardo", return_value=[{"hash": "1"}]) as mock_leo:
+            out = sc.coletar_fonte(
+                {
+                    "id": "veiculosbatidos",
+                    "tipo": "leopardo",
+                    "url_listagem": "https://www.veiculosbatidos.com.br/veiculos",
+                    "ajax_url": "https://www.veiculosbatidos.com.br/loadveiculos",
+                }
+            )
+        self.assertEqual(out, [{"hash": "1"}])
+        mock_leo.assert_called_once()
+
+    def test_parse_leopardo_url_protocol_relative(self):
+        html = """
+        <div class="col-list-3 divlinkclicable " id='divveiculo9673' data-identity='9673'>
+        <h6 class='titulo-veiculo-card'><a href="//www.veiculosbatidos.com.br/veiculo/uno/9673">FIAT UNO</a></h6>
+        <span class='pull-left text-bold'>2012/2013</span>
+        <span class="price">R$ 15.000,00</span>
+        </div></div></div></div>
+        """
+        itens = sc._parse_leopardo_html(
+            html,
+            {
+                "id": "veiculosbatidos",
+                "nome": "Veículos Batidos",
+                "url_listagem": "https://www.veiculosbatidos.com.br/veiculos",
+            },
+        )
+        self.assertEqual(len(itens), 1)
+        self.assertTrue(itens[0]["url"].startswith("https://www.veiculosbatidos.com.br/"))
+
+    def test_extrair_csrf_sem_aspas_no_name(self):
+        html = '<meta name=csrf-token content="abc123">'
+        self.assertEqual(sc._extrair_csrf(html), "abc123")
+
 
 if __name__ == "__main__":
     unittest.main()

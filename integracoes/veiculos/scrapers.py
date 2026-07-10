@@ -39,6 +39,23 @@ _RE_VELOZES_PRODUTO = re.compile(
     re.IGNORECASE,
 )
 _RE_ANO_TITULO = re.compile(r"\b(?:19|20)\d{2}\b")
+_RE_ESPERANCA_ITEM = re.compile(
+    r'<li class="imvl-vertical[^"]*"[^>]*>'
+    r'.*?<a href="([^"]+)"[^>]*title="([^"]*)"[^>]*>'
+    r'.*?COD\.\s*(\d+)'
+    r'.*?<h1[^>]*>([^<]+)</h1>'
+    r'.*?<h2[^>]*>Cor:\s*([^<]*)</h2>'
+    r'.*?<h2[^>]*>R\$\s*([\d\.\,]+)</h2>',
+    re.DOTALL | re.IGNORECASE,
+)
+_RE_007_ITEM = re.compile(
+    r"Comparar\s+Veiculo\s+Cod\.\s*(\d+)"
+    r".*?<h[12][^>]*>\s*([A-Za-z0-9 /\-]+)\s*</h[12]>"
+    r".*?<h[23][^>]*>\s*([^<]+?)\s*</h[23]>"
+    r".*?Ano do Veiculo:\s*(\d{4})"
+    r".*?Valor:\s*R\$\s*([\d\.\,]+)",
+    re.DOTALL | re.IGNORECASE,
+)
 
 
 def parse_preco_brl(texto: str) -> float | None:
@@ -138,12 +155,26 @@ def coletar_lucineia(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]
 
 
 def _extrair_csrf(html: str) -> str:
-    m = re.search(r'csrf-token"\s+content="([^"]+)"', html)
+    m = re.search(r'csrf-token["\s]+content="([^"]+)"', html, re.I)
+    if m:
+        return m.group(1)
+    m = re.search(r'name=["\']?csrf-token["\']?\s+content=["\']([^"\']+)["\']', html, re.I)
     return m.group(1) if m else ""
 
 
+def _base_url_fonte(fonte: dict[str, Any], fallback: str) -> str:
+    url = str(fonte.get("url_listagem") or fonte.get("ajax_url") or fallback).strip()
+    if not url:
+        return fallback
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    if not parsed.netloc:
+        return fallback
+    scheme = parsed.scheme or "https"
+    return f"{scheme}://{parsed.netloc}"
+
+
 def _parse_leopardo_html(html_fragment: str, fonte: dict[str, Any]) -> list[dict[str, Any]]:
-    base_url = "https://www.leopardoveiculos.com.br"
+    base_url = _base_url_fonte(fonte, "https://www.leopardoveiculos.com.br")
     anuncios: list[dict[str, Any]] = []
     for bloco in _RE_LEOPARDO_BLOCO.finditer(html_fragment):
         vid = bloco.group(1)
@@ -151,7 +182,7 @@ def _parse_leopardo_html(html_fragment: str, fonte: dict[str, Any]) -> list[dict
         m_titulo = re.search(r"titulo-veiculo-card[^>]*>.*?<a[^>]*>([^<]+)</a>", trecho, re.I | re.S)
         m_ano = re.search(r"pull-left text-bold[^>]*>\s*([^<]+)\s*</span>", trecho, re.I | re.S)
         m_preco = re.search(r'class="price"[^>]*>(.*?)</span>', trecho, re.I | re.S)
-        m_url = re.search(r'href="(https://www\.leopardoveiculos\.com\.br/veiculo/[^"]+)"', trecho, re.I)
+        m_url = re.search(r'href="((?:https?:)?//[^"]+/veiculo/[^"]+|https?://[^"]+/veiculo/[^"]+)"', trecho, re.I)
         if not m_titulo or not m_preco:
             continue
         titulo = re.sub(r"\s+", " ", m_titulo.group(1)).strip()
@@ -159,7 +190,12 @@ def _parse_leopardo_html(html_fragment: str, fonte: dict[str, Any]) -> list[dict
         if preco is None:
             continue
         ano = (m_ano.group(1).strip() if m_ano else "")
-        url_anuncio = m_url.group(1) if m_url else f"{base_url}/veiculo/{vid}"
+        if m_url:
+            url_anuncio = m_url.group(1)
+            if url_anuncio.startswith("//"):
+                url_anuncio = "https:" + url_anuncio
+        else:
+            url_anuncio = f"{base_url}/veiculo/{vid}"
         marca = titulo.split()[0] if titulo else ""
         if marca.upper() in {"VW", "GM"} and len(titulo.split()) > 1:
             marca = f"{marca} {titulo.split()[1]}"
@@ -367,6 +403,95 @@ def coletar_velozes(fonte: dict[str, Any] | None = None, *, max_produtos: int = 
     return anuncios
 
 
+def coletar_esperanca(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Estoque HTML da Esperança Batidos (São Mateus/SP) e sites no mesmo layout."""
+    fonte = fonte or {
+        "id": "esperanca_batidos",
+        "nome": "Esperança Batidos",
+        "url_listagem": "http://esperancabatidos.com.br/estoque.php",
+    }
+    url = str(fonte.get("url_listagem") or "http://esperancabatidos.com.br/estoque.php")
+    try:
+        r = request("GET", url, timeout=25, headers=_HEADERS)
+        if r.status_code != 200:
+            logger.warning("Esperança Batidos: HTTP %s em %s", r.status_code, url)
+            return []
+        html = r.text
+    except Exception as exc:
+        logger.error("Esperança Batidos: erro ao buscar listagem: %s", exc)
+        return []
+
+    anuncios: list[dict[str, Any]] = []
+    for match in _RE_ESPERANCA_ITEM.finditer(html):
+        href, _title, codigo, titulo, cor_ano, preco_txt = match.groups()
+        preco = parse_preco_brl(f"R$ {preco_txt}")
+        if preco is None:
+            continue
+        titulo = re.sub(r"\s+", " ", titulo).strip()
+        marca = titulo.split("-")[0].strip() if "-" in titulo else (titulo.split()[0] if titulo else "")
+        ano = _extrair_ano_titulo(cor_ano) or _extrair_ano_titulo(titulo)
+        url_anuncio = href if href.startswith("http") else urljoin(url, href)
+        anuncios.append(
+            _anuncio_base(
+                loja_id=str(fonte.get("id") or "esperanca_batidos"),
+                loja_nome=str(fonte.get("nome") or "Esperança Batidos"),
+                id_externo=str(codigo),
+                titulo=titulo,
+                marca=marca,
+                ano=ano,
+                preco=preco,
+                url=url_anuncio,
+                condicao="batido/sinistrado",
+            )
+        )
+    logger.info("Esperança Batidos: %s anúncio(s) coletado(s)", len(anuncios))
+    return anuncios
+
+
+def coletar_007_batidos(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Estoque da 007 Batidos (São Mateus/SP)."""
+    fonte = fonte or {
+        "id": "007_batidos",
+        "nome": "007 Batidos",
+        "url_listagem": "https://www.007batidos.com.br/estoque.php",
+    }
+    url = str(fonte.get("url_listagem") or "https://www.007batidos.com.br/estoque.php")
+    try:
+        r = request("GET", url, timeout=25, headers=_HEADERS)
+        if r.status_code != 200:
+            logger.warning("007 Batidos: HTTP %s em %s", r.status_code, url)
+            return []
+        html = r.text
+    except Exception as exc:
+        logger.error("007 Batidos: erro ao buscar listagem: %s", exc)
+        return []
+
+    anuncios: list[dict[str, Any]] = []
+    for match in _RE_007_ITEM.finditer(html):
+        codigo, marca, modelo, ano, preco_txt = match.groups()
+        preco = parse_preco_brl(f"R$ {preco_txt}")
+        if preco is None:
+            continue
+        marca = re.sub(r"\s+", " ", marca).strip()
+        modelo = re.sub(r"\s+", " ", modelo).strip()
+        titulo = f"{marca} {modelo}".strip()
+        anuncios.append(
+            _anuncio_base(
+                loja_id=str(fonte.get("id") or "007_batidos"),
+                loja_nome=str(fonte.get("nome") or "007 Batidos"),
+                id_externo=str(codigo),
+                titulo=titulo,
+                marca=marca,
+                ano=str(ano).strip(),
+                preco=preco,
+                url=f"{url.rstrip('/')}?veiculoCodigo={codigo}",
+                condicao="batido/sinistrado",
+            )
+        )
+    logger.info("007 Batidos: %s anúncio(s) coletado(s)", len(anuncios))
+    return anuncios
+
+
 # Estados/regiões para a busca web nacional (mais populosos primeiro)
 _UFS_BUSCA_WEB: tuple[str, ...] = (
     "São Paulo",
@@ -386,6 +511,14 @@ _UFS_BUSCA_WEB: tuple[str, ...] = (
     "Maranhão",
 )
 _TERMOS_BUSCA_WEB = "carros batidos sinistrados salvados seguradora à venda"
+# Consultas extras focadas em SP (inspiradas na busca Google "carros batidos sao paulo")
+_QUERIES_BUSCA_WEB_SP: tuple[str, ...] = (
+    "carros batidos sao paulo",
+    "carros batidos São Mateus SP",
+    "veículos sinistrados São Paulo loja",
+    "carros salvados seguradora São Paulo",
+    "373 batidos OR esperança batidos OR 007 batidos São Paulo",
+)
 _DOMINIOS_IGNORAR_BUSCA_WEB = (
     "olx.com.br",
     "mercadolivre",
@@ -404,10 +537,13 @@ def coletar_busca_web_brasil(
     max_ufs: int = 9,
     max_resultados: int = 8,
     pausa_seg: float = 3.0,
+    incluir_sp: bool = True,
 ) -> list[dict[str, Any]]:
     """
     Busca web nacional (DuckDuckGo) por lojas/anúncios de carros batidos em todo o Brasil.
-    Rotaciona as UFs por hora para cobrir o país ao longo do dia. Nunca lança exceção.
+    Rotaciona as UFs por hora para cobrir o país ao longo do dia.
+    Quando incluir_sp=True, reforça consultas específicas de São Paulo.
+    Nunca lança exceção.
     """
     from datetime import datetime, timezone
 
@@ -418,10 +554,16 @@ def coletar_busca_web_brasil(
     inicio = (hora * max(1, max_ufs)) % total
     ufs = [_UFS_BUSCA_WEB[(inicio + i) % total] for i in range(min(max_ufs, total))]
 
+    queries: list[tuple[str, str]] = [(f"{_TERMOS_BUSCA_WEB} {uf}", uf) for uf in ufs]
+    if incluir_sp:
+        # SP primeiro — prioridade da busca Google de carros batidos em São Paulo
+        queries = [(q, "São Paulo") for q in _QUERIES_BUSCA_WEB_SP] + [
+            (q, uf) for q, uf in queries if uf != "São Paulo"
+        ]
+
     anuncios: list[dict[str, Any]] = []
     vistos: set[str] = set()
-    for uf in ufs:
-        query = f"{_TERMOS_BUSCA_WEB} {uf}"
+    for query, uf in queries:
         try:
             resultados = ddg_buscar(query, max_resultados=max_resultados, contexto="carros_batidos")
         except Exception as exc:
@@ -455,13 +597,14 @@ def coletar_busca_web_brasil(
                     "url": url,
                     "condicao": "batido/sinistrado",
                     "uf_busca": uf,
+                    "query": query,
                     "snippet": snippet[:200],
                 }
             )
         if pausa_seg > 0:
             time.sleep(pausa_seg)
 
-    logger.info("Busca web batidos: %s domínio(s) em %s UF(s)", len(anuncios), len(ufs))
+    logger.info("Busca web batidos: %s domínio(s) em %s consulta(s)", len(anuncios), len(queries))
     return anuncios
 
 
@@ -469,12 +612,19 @@ def coletar_fonte(fonte: dict[str, Any]) -> list[dict[str, Any]]:
     tipo = str(fonte.get("tipo") or fonte.get("id") or "html").lower()
     if fonte.get("id") == "lucineia" or tipo == "lucineia":
         return coletar_lucineia(fonte)
-    if fonte.get("id") == "leopardo" or tipo == "leopardo" or tipo == "ajax":
+    if (
+        fonte.get("id") in {"leopardo", "veiculosbatidos"}
+        or tipo in {"leopardo", "veiculosbatidos", "ajax"}
+    ):
         return coletar_leopardo(fonte)
     if fonte.get("id") == "motorjan" or tipo == "motorjan":
         return coletar_motorjan(fonte)
     if fonte.get("id") == "velozes" or tipo == "velozes":
         return coletar_velozes(fonte)
+    if fonte.get("id") == "esperanca_batidos" or tipo == "esperanca":
+        return coletar_esperanca(fonte)
+    if fonte.get("id") == "007_batidos" or tipo == "007_batidos":
+        return coletar_007_batidos(fonte)
     if tipo == "html":
         return coletar_lucineia(fonte)
     logger.warning("Fonte desconhecida: %s", fonte.get("id"))
