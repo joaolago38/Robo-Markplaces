@@ -374,7 +374,7 @@ def montar_mensagem_analise(analise: dict[str, Any]) -> str:
     return "\n".join(linhas)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     import argparse
     from datetime import datetime, timezone
 

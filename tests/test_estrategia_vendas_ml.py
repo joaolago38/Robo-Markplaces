@@ -100,6 +100,54 @@ class EstrategiaVendasTests(unittest.TestCase):
         )
         self.assertEqual(out["acoes"][0]["tipo"], "investir_ads")
 
+    def test_ameacas_loja_e_manter(self):
+        out = est.gerar_acoes_estrategia(
+            monitor={
+                "ok": True,
+                "resultados": [
+                    {
+                        "ok": True,
+                        "tipo": "loja",
+                        "id": "loja-x",
+                        "nickname": "NOVAMIX",
+                        "ameacas_preco": [
+                            {
+                                "sku": "IMP-SORT-006",
+                                "nome": "Sortido",
+                                "meu_preco": 49.9,
+                                "menor_preco_loja": 25.0,
+                            }
+                        ],
+                    }
+                ],
+                "alertas": [],
+            },
+            analise_loja={
+                "nickname": "NOVAMIX",
+                "ameacas_preco": [
+                    {
+                        "sku": "IMP-BAIL-005",
+                        "nome": "Bailarina",
+                        "meu_preco": 48.9,
+                        "menor_preco_loja": 30.0,
+                    }
+                ],
+                "estrategia": {"porte": "gigante"},
+                "perfil": {"nickname": "NOVAMIX"},
+            },
+            produtos=[
+                {"sku": "IMP-BAIL-005", "custo": 35.0, "margem_minima_pct": 15},
+                {"sku": "IMP-SORT-006", "custo": 30.0, "margem_minima_pct": 15},
+            ],
+            gap_guerra_pct=25,
+            max_acoes=3,
+            taxa_pct=18,
+        )
+        self.assertTrue(any(a["tipo"] == "diferenciar_ou_sair" for a in out["acoes"]))
+
+        vazio = est.gerar_acoes_estrategia(monitor={"ok": True, "resultados": []}, produtos=[])
+        self.assertEqual(vazio["acoes"][0]["tipo"], "manter")
+
     def test_mensagem(self):
         payload = {
             "acoes": [

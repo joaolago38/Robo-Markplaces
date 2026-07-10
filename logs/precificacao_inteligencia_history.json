@@ -1,89 +1,5 @@
 [
   {
-    "timestamp": "2026-07-05T15:53:30.262556+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:53:30.275591+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:54:33.547745+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:54:33.559590+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:55:51.599264+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:55:51.611131+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:56:59.534126+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:56:59.545399+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:58:31.666400+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:58:31.680241+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:59:41.321958+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T15:59:41.333932+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T16:00:24.631329+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-07-05T16:00:24.644796+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
     "timestamp": "2026-07-05T16:01:37.907288+00:00",
     "total_analises": 1,
     "reduzir": 1,
@@ -535,6 +451,90 @@
   },
   {
     "timestamp": "2026-07-10T17:41:32.737081+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:42:30.803709+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:42:30.810076+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:43:57.483408+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:43:57.494070+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:45:33.786746+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:45:33.798279+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:46:50.171158+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:46:50.181094+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:48:21.910946+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:48:21.921028+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:49:46.029861+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:49:46.039877+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:50:54.764710+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-07-10T17:50:54.775584+00:00",
     "total_analises": 1,
     "reduzir": 1,
     "monitorar": 0

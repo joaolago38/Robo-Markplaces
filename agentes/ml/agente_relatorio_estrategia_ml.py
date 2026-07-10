@@ -180,7 +180,7 @@ def executar(
         return {"ok": False, "erro": str(exc), "acoes": []}
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     parser = argparse.ArgumentParser(description="Relatório estratégia de vendas ML")
     parser.add_argument("--sem-envio", action="store_true")
     parser.add_argument(
