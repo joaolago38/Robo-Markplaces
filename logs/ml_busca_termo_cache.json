@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-07-09T15:47:51.243684+00:00",
+    "timestamp": "2026-07-10T15:25:31.273847+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,11 +32,11 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-07-09T15:47:55.137111+00:00",
+    "timestamp": "2026-07-10T15:25:31.265871+00:00",
     "resultados": [
       {
         "item_id": "MLB2",
-        "titulo": "Concorrente",
+        "titulo": "Kit Impala",
         "preco": 35.0,
         "frete_gratis": true,
         "condicao": "new",
@@ -48,7 +48,7 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-07-09T15:47:51.013685+00:00",
+    "timestamp": "2026-07-10T15:25:31.259195+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -60,6 +60,736 @@
         "seller_id": "888",
         "permalink": "",
         "fonte_busca": "ddg"
+      }
+    ]
+  },
+  "kit 5 esmaltes impala bailarina": {
+    "timestamp": "2026-07-10T15:25:31.263143+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB3948390421",
+        "titulo": "Kit 5 Esmaltes Impala Bailarina",
+        "preco": 30.99,
+        "quantidade_vendida": 50,
+        "seller_id": "1666381510",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3948390421",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41490081"
+      }
+    ]
+  },
+  "kit esmalte impala": {
+    "timestamp": "2026-07-10T15:27:06.932717+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4475139308",
+        "titulo": "Kit Esmalte Impala Base + Extra Brilho 7,5ml",
+        "preco": 25.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4475139308",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB27730220"
+      },
+      {
+        "item_id": "MLB3511809037",
+        "titulo": "Kit Esmalte Impala Base + Extra Brilho 7,5ml",
+        "preco": 27.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3511809037",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB27730220"
+      },
+      {
+        "item_id": "MLB5095943734",
+        "titulo": "Kit Esmalte Impala Beterraba + Vinho + Donata",
+        "preco": 21.9,
+        "quantidade_vendida": 0,
+        "seller_id": "30126941",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5095943734",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41204486"
+      },
+      {
+        "item_id": "MLB4089087819",
+        "titulo": "Kit Esmalte Impala Beterraba + Vinho + Donata",
+        "preco": 23.83,
+        "quantidade_vendida": 0,
+        "seller_id": "696467867",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4089087819",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41204486"
+      },
+      {
+        "item_id": "MLB6896693264",
+        "titulo": "Kit Esmalte Impala Beterraba + Vinho + Donata",
+        "preco": 23.83,
+        "quantidade_vendida": 0,
+        "seller_id": "1213484158",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6896693264",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41204486"
+      }
+    ]
+  },
+  "kit esmalte risque atacado": {
+    "timestamp": "2026-07-10T15:27:25.057946+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB7083939018",
+        "titulo": "Kit Esmalte Risqué Atacado 10 Tons Cremoso Metalico Glitter Sortido",
+        "preco": 50.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1495866222",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7083939018",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB69006492"
+      },
+      {
+        "item_id": "MLB4422266595",
+        "titulo": "Kit Esmalte Renda 3 Unidades - Risque",
+        "preco": 29.97,
+        "quantidade_vendida": 0,
+        "seller_id": "456794404",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4422266595",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB36588627"
+      },
+      {
+        "item_id": "MLB3533151975",
+        "titulo": "Kit Esmalte Risque Bianco Puríssimo + Renda 8ml",
+        "preco": 23.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3533151975",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB27795365"
+      },
+      {
+        "item_id": "MLB6171727818",
+        "titulo": "Kit Esmalte Risque Bianco Puríssimo + Renda 8ml",
+        "preco": 24.99,
+        "quantidade_vendida": 0,
+        "seller_id": "456794404",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6171727818",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB27795365"
+      },
+      {
+        "item_id": "MLB3533151983",
+        "titulo": "Kit Esmalte Risque Bianco Puríssimo + Renda 8ml",
+        "preco": 25.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3533151983",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB27795365"
+      },
+      {
+        "item_id": "MLB4543289285",
+        "titulo": "Kit Esmalte Risque Bianco Puríssimo + Renda 8ml",
+        "preco": 29.66,
+        "quantidade_vendida": 0,
+        "seller_id": "433859610",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4543289285",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB27795365"
+      },
+      {
+        "item_id": "MLB6482713180",
+        "titulo": "Kit Esmalte Risque Bianco Puríssimo + Renda 8ml",
+        "preco": 34.89,
+        "quantidade_vendida": 0,
+        "seller_id": "1158664453",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6482713180",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB27795365"
+      }
+    ]
+  },
+  "kit esmalte dailus": {
+    "timestamp": "2026-07-10T15:27:57.112916+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4218608665",
+        "titulo": "Kit Esmalte Dailus Coleção Snowland 3 Cores Cremosas",
+        "preco": 37.9,
+        "quantidade_vendida": 0,
+        "seller_id": "216099039",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4218608665",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB46630377"
+      },
+      {
+        "item_id": "MLB5459539630",
+        "titulo": "Kit Esmalte Dailus Coleção Snowland 3 Cores Cremosas",
+        "preco": 69.21,
+        "quantidade_vendida": 0,
+        "seller_id": "42605758",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5459539630",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB46630377"
+      },
+      {
+        "item_id": "MLB5739058806",
+        "titulo": "Kit Esmalte Dailus Coleção Snowland 3 Cores Cremosas",
+        "preco": 74.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1808407362",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5739058806",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB46630377"
+      },
+      {
+        "item_id": "MLB4693566571",
+        "titulo": "Kit Esmalte Dailus Coleção Snowland 3 Cores Cremosas",
+        "preco": 34.9,
+        "quantidade_vendida": 0,
+        "seller_id": "2972137381",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4693566571",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB46630377"
+      },
+      {
+        "item_id": "MLB4752969193",
+        "titulo": "Dailus Choco Cherry Kit Esmalte 6 Un Cremoso 8ml",
+        "preco": 62.49,
+        "quantidade_vendida": 0,
+        "seller_id": "1714985577",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4752969193",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51237958"
+      },
+      {
+        "item_id": "MLB5735328424",
+        "titulo": "Dailus Choco Cherry Kit Esmalte 6 Un Cremoso 8ml",
+        "preco": 66.4,
+        "quantidade_vendida": 0,
+        "seller_id": "216099039",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5735328424",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51237958"
+      },
+      {
+        "item_id": "MLB5439776670",
+        "titulo": "Dailus Choco Cherry Kit Esmalte 6 Un Cremoso 8ml",
+        "preco": 66.53,
+        "quantidade_vendida": 0,
+        "seller_id": "1326080521",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5439776670",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51237958"
+      }
+    ]
+  },
+  "kit esmalte manicure atacado": {
+    "timestamp": "2026-07-10T15:28:15.895777+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB5737105648",
+        "titulo": "Kit Esmalte Brilho Ativo 30 Cores Sortidas Atacado Manicure Sortidos",
+        "preco": 98.15,
+        "quantidade_vendida": 0,
+        "seller_id": "1399950954",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5737105648",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB57561445"
+      },
+      {
+        "item_id": "MLB5303073382",
+        "titulo": "Kit Esmalte Colorama 10 Cores Escuras Atacado Manicure",
+        "preco": 70.89,
+        "quantidade_vendida": 0,
+        "seller_id": "717606621",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5303073382",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB46491760"
+      },
+      {
+        "item_id": "MLB4831591898",
+        "titulo": "Kit Esmalte Anita Cremoso 3 Cores Atacado",
+        "preco": 30.89,
+        "quantidade_vendida": 0,
+        "seller_id": "717606621",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4831591898",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37705147"
+      }
+    ]
+  },
+  "kit esmalte helen color gel": {
+    "timestamp": "2026-07-10T15:28:34.836027+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4810520579",
+        "titulo": "Kit Esmalte Em Gel Para Francesinha Helen Color Renda Branco Kit De Francesinha",
+        "preco": 53.0,
+        "quantidade_vendida": 0,
+        "seller_id": "541714871",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4810520579",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB66923437"
+      },
+      {
+        "item_id": "MLB6070294054",
+        "titulo": "Kit Esmalte Francesinha Gel Helen Color Uv Led Manicure Branco/renda/preto",
+        "preco": 29.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1064195467",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6070294054",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB63248918"
+      },
+      {
+        "item_id": "MLB4978161486",
+        "titulo": "Kit Esmalte Em Gel Coleção Tons de Vermelhos 12 Un Cor Vermelho Natal Helen Color",
+        "preco": 219.99,
+        "quantidade_vendida": 0,
+        "seller_id": "143456506",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4978161486",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB24298894"
+      }
+    ]
+  },
+  "kit 10 esmaltes impala": {
+    "timestamp": "2026-07-10T15:28:54.783435+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB5071571232",
+        "titulo": "Kit 10 Esmalte Impala Vermelhos Terracota",
+        "preco": 56.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5071571232",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26580843"
+      },
+      {
+        "item_id": "MLB4087395307",
+        "titulo": "Kit 10 Esmaltes Impala Tratamento Base Vitaminada Manicure",
+        "preco": 69.5,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4087395307",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51023174"
+      },
+      {
+        "item_id": "MLB4128881349",
+        "titulo": "Kit 10 Esmaltes Impala Base Verniz Vermelho Intensificador",
+        "preco": 75.18,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4128881349",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB52710124"
+      }
+    ]
+  },
+  "kit 30 esmaltes atacado": {
+    "timestamp": "2026-07-10T15:29:11.806079+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4718914653",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 145.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1495866222",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4718914653",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778"
+      },
+      {
+        "item_id": "MLB3859194855",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 152.09,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3859194855",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778"
+      },
+      {
+        "item_id": "MLB3859195425",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 165.53,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3859195425",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778"
+      },
+      {
+        "item_id": "MLB5205365362",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 157.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1983344351",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5205365362",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778"
+      },
+      {
+        "item_id": "MLB3994220705",
+        "titulo": "Kit 30 Esmaltes Risqué Hipoalegenicos Atacado Cores Sortidas",
+        "preco": 136.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1217651848",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3994220705",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB25155637"
+      },
+      {
+        "item_id": "MLB5890901594",
+        "titulo": "Kit 30 Esmaltes Risqué Hipoalegenicos Atacado Cores Sortidas",
+        "preco": 161.97,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5890901594",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB25155637"
+      },
+      {
+        "item_id": "MLB4389854726",
+        "titulo": "Kit 30 Esmaltes Risqué Hipoalegenicos Atacado Cores Sortidas",
+        "preco": 249.0,
+        "quantidade_vendida": 0,
+        "seller_id": "173076816",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4389854726",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB25155637"
+      },
+      {
+        "item_id": "MLB4543849678",
+        "titulo": "Kit 30 Esmaltes Dailus Nova Coleção - Atacado Cor Sortidas",
+        "preco": 224.9,
+        "quantidade_vendida": 0,
+        "seller_id": "296685441",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4543849678",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB34722901"
+      },
+      {
+        "item_id": "MLB4961201670",
+        "titulo": "Kit 30 Esmaltes Dailus Nova Coleção - Atacado Cor Sortidas",
+        "preco": 599.99,
+        "quantidade_vendida": 0,
+        "seller_id": "116755388",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4961201670",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB34722901"
+      },
+      {
+        "item_id": "MLB7042752260",
+        "titulo": "Kit 30 Esmaltes Colorama Atacado Cores A Cor Brilhante",
+        "preco": 222.12,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7042752260",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB52060996"
+      },
+      {
+        "item_id": "MLB5094591988",
+        "titulo": "Kit 30 Esmaltes Risque Cores Sortidas Na Descrição Atacado",
+        "preco": 136.86,
+        "quantidade_vendida": 0,
+        "seller_id": "623291723",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5094591988",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41201970"
+      },
+      {
+        "item_id": "MLB4362627403",
+        "titulo": "Kit 30 Esmaltes Risque Cores Sortidas Na Descrição Atacado",
+        "preco": 144.9,
+        "quantidade_vendida": 0,
+        "seller_id": "2513977886",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4362627403",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41201970"
+      },
+      {
+        "item_id": "MLB3898720739",
+        "titulo": "Kit 30 Esmaltes Risque Cores Sortidas Na Descrição Atacado",
+        "preco": 145.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1983344351",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3898720739",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41201970"
+      }
+    ]
+  },
+  "esmalte impala bailarina kit": {
+    "timestamp": "2026-07-10T15:29:28.624540+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4762589295",
+        "titulo": "Esmalte Impala Bailarina Cremoso Tutu",
+        "preco": 9.5,
+        "quantidade_vendida": 0,
+        "seller_id": "161208694",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4762589295",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28743723"
+      },
+      {
+        "item_id": "MLB3891527851",
+        "titulo": "Esmalte Impala Bailarina Cremoso Tutu",
+        "preco": 14.76,
+        "quantidade_vendida": 0,
+        "seller_id": "30126941",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3891527851",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28743723"
+      },
+      {
+        "item_id": "MLB4062710739",
+        "titulo": "Esmalte Impala Bailarina Cremoso Tutu",
+        "preco": 15.22,
+        "quantidade_vendida": 0,
+        "seller_id": "1309924457",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4062710739",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28743723"
+      },
+      {
+        "item_id": "MLB4571480201",
+        "titulo": "Esmalte Impala Bailarina Cremoso Tutu",
+        "preco": 16.09,
+        "quantidade_vendida": 0,
+        "seller_id": "1137659336",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4571480201",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28743723"
+      },
+      {
+        "item_id": "MLB3875775537",
+        "titulo": "Esmaltes Impala Coleção Bailarina Com 08 Cores.",
+        "preco": 46.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3875775537",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB39974060"
+      },
+      {
+        "item_id": "MLB5135822080",
+        "titulo": "Kit Esmalte Impala Coleção Bailarina 3 Cores Nude Cremoso",
+        "preco": 23.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5135822080",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB36243231"
+      },
+      {
+        "item_id": "MLB6816725668",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 13.88,
+        "quantidade_vendida": 0,
+        "seller_id": "30126941",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6816725668",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB5546130186",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 13.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1783561872",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5546130186",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB4607646285",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 16.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4607646285",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB6670972778",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 17.5,
+        "quantidade_vendida": 0,
+        "seller_id": "2980700902",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6670972778",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB4607623401",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 17.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4607623401",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB6539315616",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 18.49,
+        "quantidade_vendida": 0,
+        "seller_id": "1137659336",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6539315616",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB5351992398",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 19.0,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5351992398",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB6694142790",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 26.95,
+        "quantidade_vendida": 0,
+        "seller_id": "799344550",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6694142790",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB4939476776",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Collant",
+        "preco": 16.49,
+        "quantidade_vendida": 0,
+        "seller_id": "1827974129",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4939476776",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28250674"
+      },
+      {
+        "item_id": "MLB4725075303",
+        "titulo": "Impala Tiresmalt Removedor De Esmalte 100ml",
+        "preco": 16.4,
+        "quantidade_vendida": 0,
+        "seller_id": "2167058434",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4725075303",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB53781572"
+      },
+      {
+        "item_id": "MLB5693427320",
+        "titulo": "Impala Tiresmalt Removedor De Esmalte 100ml",
+        "preco": 16.99,
+        "quantidade_vendida": 0,
+        "seller_id": "762651169",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5693427320",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB53781572"
+      },
+      {
+        "item_id": "MLB5693427386",
+        "titulo": "Impala Tiresmalt Removedor De Esmalte 100ml",
+        "preco": 16.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1315978923",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5693427386",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB53781572"
+      },
+      {
+        "item_id": "MLB5693968344",
+        "titulo": "Impala Tiresmalt Removedor De Esmalte 100ml",
+        "preco": 16.99,
+        "quantidade_vendida": 0,
+        "seller_id": "18573219",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5693968344",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB53781572"
+      },
+      {
+        "item_id": "MLB3932535043",
+        "titulo": "Esmalte Impala Cremoso Coleção Bailarina 7.5 Ml Cor Plie",
+        "preco": 13.0,
+        "quantidade_vendida": 0,
+        "seller_id": "270850640",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3932535043",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28983808"
+      }
+    ]
+  },
+  "novamix comercial esmalte": {
+    "timestamp": "2026-07-10T15:29:48.216835+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB5061150806",
+        "titulo": "Impala A Cor Da Moda Cremoso Equilibrio Esmalte Comercial",
+        "preco": 9.94,
+        "quantidade_vendida": 0,
+        "seller_id": "127636018",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5061150806",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28582641"
+      },
+      {
+        "item_id": "MLB4814376369",
+        "titulo": "Impala A Cor Da Moda Cremoso Equilibrio Esmalte Comercial",
+        "preco": 13.27,
+        "quantidade_vendida": 0,
+        "seller_id": "3143409372",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4814376369",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28582641"
+      },
+      {
+        "item_id": "MLB6816725898",
+        "titulo": "Impala A Cor Da Moda Cremoso Equilibrio Esmalte Comercial",
+        "preco": 14.98,
+        "quantidade_vendida": 0,
+        "seller_id": "30126941",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6816725898",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28582641"
+      },
+      {
+        "item_id": "MLB6999691556",
+        "titulo": "Impala A Cor Da Moda Cremoso Equilibrio Esmalte Comercial",
+        "preco": 16.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6999691556",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28582641"
+      },
+      {
+        "item_id": "MLB4796837143",
+        "titulo": "Impala A Cor Da Moda Cremoso Equilibrio Esmalte Comercial",
+        "preco": 17.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4796837143",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28582641"
+      },
+      {
+        "item_id": "MLB4106800447",
+        "titulo": "Impala A Cor Da Moda Cremoso Equilibrio Esmalte Comercial",
+        "preco": 19.0,
+        "quantidade_vendida": 0,
+        "seller_id": "723998537",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4106800447",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28582641"
       }
     ]
   }

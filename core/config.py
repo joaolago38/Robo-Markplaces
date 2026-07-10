@@ -72,6 +72,13 @@ ML_BUSCA_TERMO_FALLBACK_BRAVE = os.getenv("ML_BUSCA_TERMO_FALLBACK_BRAVE", "1").
     "false",
     "no",
 )
+# Catálogo oficial /products/search + /products/{id}/items (funciona quando /sites/search dá 403)
+ML_BUSCA_TERMO_FALLBACK_PRODUCTS = os.getenv("ML_BUSCA_TERMO_FALLBACK_PRODUCTS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ML_BUSCA_TERMO_MAX_PRODUCTS = int(os.getenv("ML_BUSCA_TERMO_MAX_PRODUCTS", "8"))
 
 # Monitor de concorrentes (busca pública por palavra-chave, sem precisar de item próprio)
 MONITOR_CONCORRENTES_ARQUIVO = os.getenv(
