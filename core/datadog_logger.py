@@ -75,6 +75,7 @@ _LOGGER_META = {
     "agente_ads_gatilho": ("mercadolivre_ads", "agente"),
     "agente_otimizador_listing": ("mercadolivre", "agente"),
     "agente_monitor_concorrentes": ("mercadolivre", "agente"),
+    "analise_loja_concorrente": ("mercadolivre", "integracao"),
     "agente_monitor_anita": ("mercadolivre", "agente"),
     "agente_monitor_busca_kit_esmaltes": ("mercadolivre", "agente"),
     "agente_monitor_kits_esmaltes": ("mercadolivre", "agente"),

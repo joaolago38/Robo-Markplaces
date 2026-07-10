@@ -82,6 +82,48 @@ class TestMonitorConcorrentes(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_monitorados"], 0)
 
+    @patch.object(mon, "alertar_gestor", return_value=False)
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(
+        mon,
+        "_carregar_lista",
+        return_value=[
+            {
+                "id": "loja-novamix-comercial",
+                "ativo": True,
+                "tipo": "loja",
+                "nome": "NOVAMIX_COMERCIAL",
+                "seller_id": "1666381510",
+                "nickname": "NOVAMIX_COMERCIAL",
+                "meu_preco": 44.9,
+                "limite_resultados": 5,
+            }
+        ],
+    )
+    @patch("integracoes.ml.analise_loja_concorrente.analisar_loja")
+    def test_monitora_loja_novamix(self, mock_analisar, *_):
+        mock_analisar.return_value = {
+            "ok": True,
+            "nickname": "NOVAMIX_COMERCIAL",
+            "anuncios": [{"item_id": "MLB1", "titulo": "Kit Impala", "preco": 40.0}],
+            "preco_min": 40.0,
+            "ameacas_preco": [
+                {
+                    "sku": "IMP-MIMO-003",
+                    "meu_preco": 44.9,
+                    "menor_preco_loja": 40.0,
+                    "gap_pct": 12.3,
+                }
+            ],
+            "perfil": {"level_id": "5_green", "power_seller_status": "platinum"},
+        }
+        out = mon.executar(enviar_alerta=False)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total_monitorados"], 1)
+        self.assertGreaterEqual(out["total_alertas"], 1)
+        self.assertEqual(out["resultados"][0]["tipo"], "loja")
+
 
 class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
     """Garante que as métricas são enviadas ao Datadog a cada ciclo do agente."""

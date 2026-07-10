@@ -106,5 +106,28 @@
     "sku": "BUNDLE-777-5ESM",
     "meu_preco": 79.90,
     "limite_resultados": 10
+  },
+  {
+    "id": "loja-novamix-comercial",
+    "ativo": true,
+    "tipo": "loja",
+    "nome": "NOVAMIX_COMERCIAL",
+    "seller_id": "1666381510",
+    "nickname": "NOVAMIX_COMERCIAL",
+    "url_loja": "https://lista.mercadolivre.com.br/pagina/novamix_comercial",
+    "termos_busca": [
+      "kit esmalte impala",
+      "kit esmalte risque atacado",
+      "kit esmalte colorama",
+      "kit esmalte dailus",
+      "kit esmalte manicure atacado",
+      "kit 10 esmaltes impala",
+      "kit 30 esmaltes atacado",
+      "kit esmalte helen color",
+      "novamix_comercial esmalte"
+    ],
+    "limite_resultados": 20,
+    "meu_preco": 44.90,
+    "notas": "SP — Mercado Líder Platinum (~71k vendas). Concorrente de kits esmalte/manicure."
   }
 ]
