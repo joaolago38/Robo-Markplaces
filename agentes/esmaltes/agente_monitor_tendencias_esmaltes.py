@@ -181,7 +181,13 @@ def montar_mensagem_telegram(
     termos = consolidado.get("top_termos_web") or []
     if termos:
         linhas.append("*Termos em alta na web*")
-        linhas.append(", ".join(f"{t['termo']} ({t['mencoes']})" for t in termos[:8]))
+        linhas.append(
+            ", ".join(
+                f"{t.get('termo') or '?'} ({t.get('mencoes') or t.get('mencoes_web') or 0})"
+                for t in termos[:8]
+                if isinstance(t, dict)
+            )
+        )
         linhas.append("")
 
     linhas.append("*Varredura por segmento*")

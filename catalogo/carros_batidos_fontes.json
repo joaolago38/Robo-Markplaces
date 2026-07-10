@@ -37,11 +37,11 @@
   },
   {
     "id": "007_batidos",
-    "ativo": true,
+    "ativo": false,
     "nome": "007 Batidos",
     "tipo": "007_batidos",
     "url_listagem": "https://www.007batidos.com.br/estoque.php",
-    "notas": "São Mateus/SP — Av. Adélia Chohfi, 551"
+    "notas": "São Mateus/SP — domínio não resolve (DNS); desativado até o site voltar"
   },
   {
     "id": "motorjan",

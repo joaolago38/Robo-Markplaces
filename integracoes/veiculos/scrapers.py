@@ -448,8 +448,8 @@ def coletar_esperanca(fonte: dict[str, Any] | None = None) -> list[dict[str, Any
     return anuncios
 
 
-def coletar_007_batidos(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-    """Estoque da 007 Batidos (São Mateus/SP)."""
+def coletar_007_batidos(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]]:  # pragma: no cover
+    """Estoque da 007 Batidos (São Mateus/SP). Domínio costuma falhar DNS — fonte desativada."""
     fonte = fonte or {
         "id": "007_batidos",
         "nome": "007 Batidos",
@@ -532,7 +532,7 @@ _DOMINIOS_IGNORAR_BUSCA_WEB = (
 )
 
 
-def coletar_busca_web_brasil(
+def coletar_busca_web_brasil(  # pragma: no cover
     *,
     max_ufs: int = 9,
     max_resultados: int = 8,

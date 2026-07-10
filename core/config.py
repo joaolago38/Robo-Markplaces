@@ -95,6 +95,11 @@ MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
     os.getenv("MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT", "5.0")
 )
 
+# Relatório de estratégia de vendas ML (ações a partir de gaps/margem)
+ESTRATEGIA_ML_MAX_ACOES = int(os.getenv("ESTRATEGIA_ML_MAX_ACOES", "3"))
+ESTRATEGIA_ML_GAP_GUERRA_PCT = float(os.getenv("ESTRATEGIA_ML_GAP_GUERRA_PCT", "25.0"))
+ESTRATEGIA_ML_COOLDOWN_SEG = int(os.getenv("ESTRATEGIA_ML_COOLDOWN_SEG", "86400"))
+
 ML_RELATORIO_MANHA_COOLDOWN_SEG = int(os.getenv("ML_RELATORIO_MANHA_COOLDOWN_SEG", "39600"))
 
 # Monitor esmaltes Anita (cores, kits, margem, ranking marcas)
@@ -428,7 +433,10 @@ ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_S
 ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "1.5"))
 ORQUESTRADOR_EXCLUIR = {
     x.strip()
-    for x in os.getenv("ORQUESTRADOR_EXCLUIR", "vigia_datadog,promocoes_manicures").split(",")
+    for x in os.getenv(
+        "ORQUESTRADOR_EXCLUIR",
+        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml",
+    ).split(",")
     if x.strip()
 }
 

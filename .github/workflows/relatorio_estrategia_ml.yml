@@ -1,0 +1,66 @@
+name: Relatorio estrategia vendas ML
+
+# Top ações (preço / ads / diferenciar / canal próprio) a partir do monitor + loja.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Segunda 08:00 BRT (UTC-3) = 11:00 UTC
+    - cron: "0 11 * * 1"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  estrategia:
+    name: Relatorio estrategia ML
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Relatorio estrategia ML
+        run: python -m agentes.ml.agente_relatorio_estrategia_ml
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          WHATSAPP_GRUPO_MANICURES_ID: ${{ secrets.WHATSAPP_GRUPO_MANICURES_ID }}
+          TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}
+      - name: Salvar snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-estrategia-ml
+          path: |
+            logs/relatorio_estrategia_ml_ultima.json
+            logs/analise_loja_novamix_ultima.json
+            logs/concorrentes_ml_history.json
+          retention-days: 30
+          if-no-files-found: ignore

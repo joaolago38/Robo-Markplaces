@@ -55,6 +55,16 @@
     "ignorar_ausente": true
   },
   {
+    "id": "relatorio_estrategia_ml",
+    "ativo": true,
+    "nome": "Relatório estratégia vendas ML",
+    "path": "logs/relatorio_estrategia_ml_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 200,
+    "critico": false,
+    "ignorar_ausente": true
+  },
+  {
     "id": "esmaltes_mercado",
     "ativo": true,
     "nome": "Mercado esmaltes",

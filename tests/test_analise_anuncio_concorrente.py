@@ -24,6 +24,13 @@ class MetricasPurasTests(unittest.TestCase):
         self.assertIsNone(aa.estimar_vendas_por_dia(0, 22))
         self.assertIsNone(aa.estimar_vendas_por_dia(10, None))
 
+    def test_dias_desde(self):
+        self.assertIsNone(aa.dias_desde(""))
+        self.assertIsNone(aa.dias_desde("lixo"))
+        d = aa.dias_desde("2024-01-01T00:00:00Z")
+        self.assertIsNotNone(d)
+        self.assertGreaterEqual(d, 0)
+
     def test_montar_metricas_com_catalogo(self):
         m = aa.montar_metricas(
             preco=30.99,
@@ -40,6 +47,32 @@ class MetricasPurasTests(unittest.TestCase):
         self.assertEqual(m["nota"], 4.9)
         self.assertIsNone(m["visitas_7d"])
         self.assertAlmostEqual(m["receita_liquida_un"], 26.96)
+
+    def test_montar_mensagem_metricas(self):
+        msg = aa.montar_mensagem_metricas(
+            {
+                "termo": "kit impala",
+                "total": 1,
+                "taxa_estimada_pct": 13,
+                "anuncios": [
+                    {
+                        "titulo": "Kit Bailarina",
+                        "item_id": "MLB1",
+                        "metricas": {
+                            "preco": 30.99,
+                            "vendas": 10,
+                            "vendas_por_dia": 0.5,
+                            "avaliacoes": 5,
+                            "nota": 4.8,
+                            "receita_liquida_un": 26.96,
+                            "visitas_disponivel": False,
+                        },
+                    }
+                ],
+            }
+        )
+        self.assertIn("kit impala", msg)
+        self.assertIn("Bailarina", msg)
 
 
 class EnriquecerTests(unittest.TestCase):
@@ -74,6 +107,19 @@ class EnriquecerTests(unittest.TestCase):
         self.assertEqual(out["metricas"]["avaliacoes"], 10)
         self.assertEqual(out["metricas"]["vendas"], 22)
 
+    @patch.object(
+        aa,
+        "enriquecer_anuncio",
+        side_effect=lambda a, **kw: {**a, "metricas": {"preco": a.get("preco")}},
+    )
+    def test_enriquecer_lista_limite(self, mock_enr):
+        rows = [{"item_id": f"MLB{i}", "preco": float(i)} for i in range(5)]
+        out = aa.enriquecer_lista(rows, limite=2)
+        self.assertEqual(len(out), 5)
+        self.assertEqual(mock_enr.call_count, 5)
+        self.assertTrue(mock_enr.call_args_list[0].kwargs.get("buscar_reviews"))
+        self.assertFalse(mock_enr.call_args_list[2].kwargs.get("buscar_reviews"))
+
     @patch.object(aa.ml_client, "buscar_concorrentes_por_termo")
     @patch.object(aa, "enriquecer_lista")
     def test_analisar_por_termo(self, mock_enr, mock_busca):
@@ -84,6 +130,10 @@ class EnriquecerTests(unittest.TestCase):
         self.assertEqual(out["total"], 1)
         mock_busca.assert_called_once()
 
+    def test_analisar_por_termo_vazio(self):
+        out = aa.analisar_por_termo("  ")
+        self.assertFalse(out["ok"])
+
 
 class VisitasPropriasTests(unittest.TestCase):
     @patch.object(aa, "ML_SELLER_ID", "111")
@@ -92,6 +142,36 @@ class VisitasPropriasTests(unittest.TestCase):
         self.assertTrue(out.get("ok"))
         self.assertFalse(out.get("disponivel"))
         self.assertIsNone(out.get("visitas_7d"))
+
+    @patch.object(aa, "request")
+    def test_buscar_reviews_ok(self, mock_req):
+        mock_req.return_value.status_code = 200
+        mock_req.return_value.json.return_value = {
+            "paging": {"total": 12},
+            "rating_average": 4.5,
+            "stars": 5,
+            "rating_levels": {},
+        }
+        with patch.object(aa.ml_client, "_enabled", return_value=False):
+            out = aa.buscar_reviews_item("MLB1")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["avaliacoes"], 12)
+        self.assertEqual(out["nota"], 4.5)
+
+    @patch.object(aa.ml_client, "_enabled", return_value=True)
+    @patch.object(aa.ml_client, "_request_ml")
+    def test_buscar_meta_catalogo(self, mock_req, _en):
+        mock_req.return_value.status_code = 200
+        mock_req.return_value.json.return_value = {
+            "name": "Kit X",
+            "date_created": "2024-01-01T00:00:00Z",
+            "status": "active",
+            "domain_id": "MLB-X",
+            "permalink": "",
+        }
+        out = aa.buscar_meta_catalogo("MLB41490081")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["nome"], "Kit X")
 
 
 if __name__ == "__main__":

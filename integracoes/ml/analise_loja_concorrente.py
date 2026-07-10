@@ -259,6 +259,7 @@ def analisar_loja(
     nickname: str | None = None,
     termos: list[str] | None = None,
     limite_por_termo: int = 20,
+    enriquecer_metricas: bool = True,
 ) -> dict[str, Any]:
     """Análise consolidada da loja concorrente."""
     perfil = buscar_perfil_loja(seller_id)
@@ -268,12 +269,13 @@ def analisar_loja(
         termos_final = [f"{nick} esmalte", f"{nick} kit"] + termos_final
 
     anuncios = coletar_anuncios_loja(seller_id, termos=termos_final, limite_por_termo=limite_por_termo)
-    try:
-        from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
+    if enriquecer_metricas:
+        try:
+            from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
 
-        anuncios = enriquecer_lista(anuncios)
-    except Exception as exc:
-        logger.warning("enriquecer métricas loja: %s", exc)
+            anuncios = enriquecer_lista(anuncios)
+        except Exception as exc:
+            logger.warning("enriquecer métricas loja: %s", exc)
 
     precos = [float(a.get("preco") or 0) for a in anuncios if float(a.get("preco") or 0) > 0]
     marcas = Counter()
@@ -372,7 +374,7 @@ def montar_mensagem_analise(analise: dict[str, Any]) -> str:
     return "\n".join(linhas)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     import argparse
     from datetime import datetime, timezone
 

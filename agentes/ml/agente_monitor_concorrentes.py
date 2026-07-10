@@ -227,7 +227,12 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
+def _monitorar_entrada(
+    entrada: dict,
+    historico: dict[str, Any],
+    *,
+    enriquecer_metricas: bool = True,
+) -> dict[str, Any]:
     if str(entrada.get("tipo") or "").lower() == "loja":
         return _monitorar_loja(entrada, historico)
 
@@ -247,12 +252,13 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         concorrentes = [
             c for c in concorrentes if str(c.get("seller_id") or "") == seller_filtro
         ]
-    try:
-        from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
+    if enriquecer_metricas:
+        try:
+            from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
 
-        concorrentes = enriquecer_lista(concorrentes, limite=min(5, max(1, limite)))
-    except Exception as exc:
-        logger.warning("enriquecer métricas termo %r: %s", termo[:40], exc)
+            concorrentes = enriquecer_lista(concorrentes, limite=min(5, max(1, limite)))
+        except Exception as exc:
+            logger.warning("enriquecer métricas termo %r: %s", termo[:40], exc)
     menor = _menor_preco(concorrentes)
     anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
     menor_ant = float(anterior.get("menor_preco") or 0)
@@ -312,6 +318,7 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         "ok": True,
         "tipo": "termo",
         "nome": nome,
+        "sku": str(entrada.get("sku") or "").strip(),
         "termo_busca": termo,
         "meu_preco": meu_preco,
         "menor_preco": menor,
@@ -321,7 +328,11 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
     }
 
 
-def executar(enviar_alerta: bool = True) -> dict[str, Any]:
+def executar(
+    enviar_alerta: bool = True,
+    *,
+    enriquecer_metricas: bool = True,
+) -> dict[str, Any]:
     """Monitora todos os itens ativos da lista. Nunca lança exceção."""
     try:
         lista = _carregar_lista()
@@ -332,7 +343,9 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         for entrada in lista:
             if not isinstance(entrada, dict) or not entrada.get("ativo"):
                 continue
-            resultado = _monitorar_entrada(entrada, historico)
+            resultado = _monitorar_entrada(
+                entrada, historico, enriquecer_metricas=enriquecer_metricas
+            )
             resultados.append(resultado)
             alertas_todos.extend(resultado.get("alertas") or [])
 

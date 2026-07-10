@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-10T15:29:48.220482+00:00",
+  "timestamp": "2026-07-10T17:03:44.127818+00:00",
   "ok": true,
   "perfil": {
     "ok": true,
@@ -16,14 +16,719 @@
   },
   "nickname": "NOVAMIX_COMERCIAL",
   "seller_id": "1666381510",
-  "total_anuncios_coletados": 0,
-  "anuncios": [],
-  "preco_min": 0.0,
-  "preco_med": 0.0,
-  "preco_max": 0.0,
-  "marcas": {},
-  "overlap_catalogo": [],
-  "ameacas_preco": [],
+  "total_anuncios_coletados": 2,
+  "anuncios": [
+    {
+      "item_id": "MLB3948390421",
+      "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+      "preco": 30.99,
+      "quantidade_vendida": 0,
+      "seller_id": "1666381510",
+      "permalink": "https://produto.mercadolivre.com.br/MLB3948390421",
+      "termo_origem": "kit 5 esmaltes impala bailarina",
+      "marcas": [
+        "impala"
+      ],
+      "fonte_busca": "products_api",
+      "catalog_product_id": "MLB41490081",
+      "catalog_date_created": "2024-10-04T03:32:02Z",
+      "listing_type_id": "gold_special",
+      "metricas": {
+        "preco": 30.99,
+        "vendas": null,
+        "vendas_por_dia": null,
+        "dias_anuncio": null,
+        "dias_catalogo": 644,
+        "anuncio_criado": null,
+        "catalogo_criado": "2024-10-04T03:32:02Z",
+        "avaliacoes": 933,
+        "nota": 4.9,
+        "visitas_7d": null,
+        "visitas_30d": null,
+        "visitas_disponivel": false,
+        "taxa_estimada_pct": 18.0,
+        "receita_liquida_un": 25.41,
+        "receita_bruta_total": null,
+        "receita_liquida_total": null,
+        "fonte_metricas": "estimativa_oficial",
+        "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+      },
+      "avaliacoes": 933,
+      "nota": 4.9
+    },
+    {
+      "item_id": "MLB5192919860",
+      "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+      "preco": 48.99,
+      "quantidade_vendida": 0,
+      "seller_id": "1666381510",
+      "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+      "termo_origem": "kit 10 esmaltes impala atacado",
+      "marcas": [
+        "impala"
+      ],
+      "fonte_busca": "products_api",
+      "catalog_product_id": "MLB26704740",
+      "catalog_date_created": "2023-09-01T03:17:20Z",
+      "listing_type_id": "gold_special",
+      "metricas": {
+        "preco": 48.99,
+        "vendas": null,
+        "vendas_por_dia": null,
+        "dias_anuncio": null,
+        "dias_catalogo": 1043,
+        "anuncio_criado": null,
+        "catalogo_criado": "2023-09-01T03:17:20Z",
+        "avaliacoes": 2742,
+        "nota": 4.9,
+        "visitas_7d": null,
+        "visitas_30d": null,
+        "visitas_disponivel": false,
+        "taxa_estimada_pct": 18.0,
+        "receita_liquida_un": 40.17,
+        "receita_bruta_total": null,
+        "receita_liquida_total": null,
+        "fonte_metricas": "estimativa_oficial",
+        "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+      },
+      "avaliacoes": 2742,
+      "nota": 4.9
+    }
+  ],
+  "preco_min": 30.99,
+  "preco_med": 39.99,
+  "preco_max": 48.99,
+  "marcas": {
+    "impala": 2
+  },
+  "overlap_catalogo": [
+    {
+      "sku": "IMP-GRAN-030",
+      "nome": "Kit 30 Atacado Clássico Impala",
+      "meu_preco": 145.0,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 196.0,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "KIT-30-ATACADO",
+      "nome": "Kit 30 Esmaltes Impala Atacado",
+      "meu_preco": 119.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 144.7,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "BUNDLE-777-5ESM",
+      "nome": "Kit Manicure Alicate Mundial 777 + 5 Esmaltes Impala",
+      "meu_preco": 79.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 63.1,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "IMP-BAIL-005",
+      "nome": "Kit 5 Bailarina Impala",
+      "meu_preco": 48.9,
+      "menor_preco_loja": 30.99,
+      "gap_pct": 57.8,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB3948390421",
+          "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+          "preco": 30.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB3948390421",
+          "termo_origem": "kit 5 esmaltes impala bailarina",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB41490081",
+          "catalog_date_created": "2024-10-04T03:32:02Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 30.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 644,
+            "anuncio_criado": null,
+            "catalogo_criado": "2024-10-04T03:32:02Z",
+            "avaliacoes": 933,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 25.41,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 933,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "IMP-ATAC-010",
+      "nome": "Kit 10 Atacado Manicure Impala",
+      "meu_preco": 69.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 42.7,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "KIT-15-SORTIDOS",
+      "nome": "Kit 15 Esmaltes Impala Cores Sortidas",
+      "meu_preco": 69.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 42.7,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "IMP-SORT-006",
+      "nome": "Kit 6 Sortido Cores da Moda Impala",
+      "meu_preco": 49.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 1.9,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    }
+  ],
+  "ameacas_preco": [
+    {
+      "sku": "IMP-GRAN-030",
+      "nome": "Kit 30 Atacado Clássico Impala",
+      "meu_preco": 145.0,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 196.0,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "KIT-30-ATACADO",
+      "nome": "Kit 30 Esmaltes Impala Atacado",
+      "meu_preco": 119.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 144.7,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "BUNDLE-777-5ESM",
+      "nome": "Kit Manicure Alicate Mundial 777 + 5 Esmaltes Impala",
+      "meu_preco": 79.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 63.1,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "IMP-BAIL-005",
+      "nome": "Kit 5 Bailarina Impala",
+      "meu_preco": 48.9,
+      "menor_preco_loja": 30.99,
+      "gap_pct": 57.8,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB3948390421",
+          "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+          "preco": 30.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB3948390421",
+          "termo_origem": "kit 5 esmaltes impala bailarina",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB41490081",
+          "catalog_date_created": "2024-10-04T03:32:02Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 30.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 644,
+            "anuncio_criado": null,
+            "catalogo_criado": "2024-10-04T03:32:02Z",
+            "avaliacoes": 933,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 25.41,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 933,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "IMP-ATAC-010",
+      "nome": "Kit 10 Atacado Manicure Impala",
+      "meu_preco": 69.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 42.7,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    },
+    {
+      "sku": "KIT-15-SORTIDOS",
+      "nome": "Kit 15 Esmaltes Impala Cores Sortidas",
+      "meu_preco": 69.9,
+      "menor_preco_loja": 48.99,
+      "gap_pct": 42.7,
+      "anuncios_loja": 1,
+      "amostra": [
+        {
+          "item_id": "MLB5192919860",
+          "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+          "preco": 48.99,
+          "quantidade_vendida": 0,
+          "seller_id": "1666381510",
+          "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+          "termo_origem": "kit 10 esmaltes impala atacado",
+          "marcas": [
+            "impala"
+          ],
+          "fonte_busca": "products_api",
+          "catalog_product_id": "MLB26704740",
+          "catalog_date_created": "2023-09-01T03:17:20Z",
+          "listing_type_id": "gold_special",
+          "metricas": {
+            "preco": 48.99,
+            "vendas": null,
+            "vendas_por_dia": null,
+            "dias_anuncio": null,
+            "dias_catalogo": 1043,
+            "anuncio_criado": null,
+            "catalogo_criado": "2023-09-01T03:17:20Z",
+            "avaliacoes": 2742,
+            "nota": 4.9,
+            "visitas_7d": null,
+            "visitas_30d": null,
+            "visitas_disponivel": false,
+            "taxa_estimada_pct": 18.0,
+            "receita_liquida_un": 40.17,
+            "receita_bruta_total": null,
+            "receita_liquida_total": null,
+            "fonte_metricas": "estimativa_oficial",
+            "limitacao": "Vendas/visitas de terceiros dependem da API; receita líquida usa taxa estimada; visitas só dos seus anúncios."
+          },
+          "avaliacoes": 2742,
+          "nota": 4.9
+        }
+      ]
+    }
+  ],
   "estrategia": {
     "porte": "gigante",
     "ameaca_geral": "alta",
@@ -41,22 +746,30 @@
       "Monitore gap nos SKUs IMP-* quando a busca ML voltar a liberar seller_id",
       "Use promoções manicures (WhatsApp/Telegram) para canal próprio fora do ML"
     ],
-    "anuncios_amostra": 0,
-    "skus_sob_pressao": []
+    "anuncios_amostra": 2,
+    "skus_sob_pressao": [
+      "IMP-GRAN-030",
+      "KIT-30-ATACADO",
+      "BUNDLE-777-5ESM",
+      "IMP-BAIL-005",
+      "IMP-ATAC-010",
+      "KIT-15-SORTIDOS"
+    ]
   },
   "termos_usados": [
     "NOVAMIX_COMERCIAL esmalte",
     "NOVAMIX_COMERCIAL kit",
+    "kit 5 esmaltes impala bailarina",
+    "kit 3 esmaltes impala mimo",
+    "kit 6 esmaltes impala sortidos",
+    "kit 10 esmaltes impala atacado",
     "kit esmalte impala",
     "kit esmalte risque atacado",
     "kit esmalte colorama",
     "kit esmalte dailus",
     "kit esmalte manicure atacado",
     "kit esmalte helen color gel",
-    "kit 10 esmaltes impala",
-    "kit 30 esmaltes atacado",
-    "esmalte impala bailarina kit",
-    "novamix comercial esmalte"
+    "kit 30 esmaltes atacado"
   ],
-  "limitacao": "Busca ML por seller_id retorna 403; anúncios vêm de termos filtrados. Amostra pode ser parcial enquanto a API estiver bloqueada."
+  "limitacao": "Busca ML por seller_id retorna 403; anúncios vêm de termos filtrados. Métricas (nota/receita) estimadas; visitas só dos seus anúncios."
 }

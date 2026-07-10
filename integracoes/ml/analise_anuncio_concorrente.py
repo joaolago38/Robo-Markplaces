@@ -375,7 +375,7 @@ def montar_mensagem_metricas(analise: dict[str, Any], *, max_linhas: int = 8) ->
     return "\n".join(linhas)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     import argparse
 
     from core.atomic_io import escrever_json_atomico

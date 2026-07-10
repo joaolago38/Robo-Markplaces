@@ -1,6 +1,732 @@
 {
   "erros": [
     {
+      "fingerprint": "7835a6676fa701a6460f",
+      "primeira_vez": "2026-07-05T20:44:32.184596+00:00",
+      "ultima_vez": "2026-07-10T17:43:01.244910+00:00",
+      "logger": "token_manager",
+      "mensagem": "Credenciais Meta ausentes para renovação (app_id/secret/token).",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "6b2db6a634628583f14e",
+      "primeira_vez": "2026-07-05T20:44:32.175776+00:00",
+      "ultima_vez": "2026-07-10T17:43:01.238904+00:00",
+      "logger": "token_manager",
+      "mensagem": "Meta refresh sem access_token na resposta.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "12e476f7e2e45d5792fa",
+      "primeira_vez": "2026-07-05T20:44:32.163576+00:00",
+      "ultima_vez": "2026-07-10T17:43:01.232407+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro de parse da resposta do token Meta: bad json",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "9d3b3882b5bfd1f895cb",
+      "primeira_vez": "2026-07-05T20:44:32.150710+00:00",
+      "ultima_vez": "2026-07-10T17:43:01.224725+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token Meta: HTTP 400",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "245dbf33d816993f1121",
+      "primeira_vez": "2026-07-05T20:44:32.137760+00:00",
+      "ultima_vez": "2026-07-10T17:43:01.217369+00:00",
+      "logger": "token_manager",
+      "mensagem": "Credenciais Magalu ausentes para renovação (client_id/secret ou refresh_token).",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "6e0533918d6ee1449c97",
+      "primeira_vez": "2026-07-05T20:44:34.444041+00:00",
+      "ultima_vez": "2026-07-10T17:42:59.861394+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided is invalid\"}}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "2d1961af61b5b2acb4c9",
+      "primeira_vez": "2026-07-05T20:44:33.675038+00:00",
+      "ultima_vez": "2026-07-10T17:42:59.592983+00:00",
+      "logger": "token_manager",
+      "mensagem": "Credenciais Bling ausentes para renovação (client_id/secret ou refresh_token).",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 7
+    },
+    {
+      "fingerprint": "cec3beba4ba3e20480ec",
+      "primeira_vez": "2026-07-05T20:44:28.510732+00:00",
+      "ultima_vez": "2026-07-10T17:42:57.668656+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided has expired\"}}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 18
+    },
+    {
+      "fingerprint": "42818d969230dc2976c0",
+      "primeira_vez": "2026-07-05T20:44:28.934548+00:00",
+      "ultima_vez": "2026-07-10T17:42:57.405938+00:00",
+      "logger": "token_manager",
+      "mensagem": "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 24
+    },
+    {
+      "fingerprint": "e0c5f1dacac137fb8f11",
+      "primeira_vez": "2026-07-05T20:44:28.930992+00:00",
+      "ultima_vez": "2026-07-10T17:42:57.400623+00:00",
+      "logger": "token_manager",
+      "mensagem": "Bling refresh falhou (HTTP 400): Invalid refresh token",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 23
+    },
+    {
+      "fingerprint": "a47a8fe70dfb8ddf0c69",
+      "primeira_vez": "2026-07-05T20:46:26.124578+00:00",
+      "ultima_vez": "2026-07-10T17:42:56.045927+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — HTTP 404 no getMe — token revogado ou incorreto. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "a3e32f6c2770291346fe",
+      "primeira_vez": "2026-07-05T20:44:30.705836+00:00",
+      "ultima_vez": "2026-07-10T17:42:50.837224+00:00",
+      "logger": "shopee_client",
+      "mensagem": "Shopee responder_pergunta erro item=10 comment=20: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "1618c60559eb1d6586e1",
+      "primeira_vez": "2026-07-05T20:44:30.666514+00:00",
+      "ultima_vez": "2026-07-10T17:42:50.827843+00:00",
+      "logger": "shopee_client",
+      "mensagem": "Shopee manter_conta_ativa erro de API: bad_request",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "566c89f57065bd35ca83",
+      "primeira_vez": "2026-07-05T20:44:30.654353+00:00",
+      "ultima_vez": "2026-07-10T17:42:50.821239+00:00",
+      "logger": "shopee_client",
+      "mensagem": "Shopee listar_perguntas_nao_respondidas erro de API: bad_request",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "1b2e4258e5cb8046b96c",
+      "primeira_vez": "2026-07-05T20:44:30.636711+00:00",
+      "ultima_vez": "2026-07-10T17:42:50.813239+00:00",
+      "logger": "shopee_client",
+      "mensagem": "Shopee atualizar_preco_item erro item_id=11: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "a55eb15851948ebbd773",
+      "primeira_vez": "2026-07-05T20:44:30.618476+00:00",
+      "ultima_vez": "2026-07-10T17:42:50.805915+00:00",
+      "logger": "shopee_client",
+      "mensagem": "Shopee atualizar_estoque_item erro item_id=22: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "25aae72aa3da0ed7d3d5",
+      "primeira_vez": "2026-07-05T20:44:29.858666+00:00",
+      "ultima_vez": "2026-07-10T17:42:42.006863+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 23
+    },
+    {
+      "fingerprint": "94db86c08bd0ee571d59",
+      "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
+      "ultima_vez": "2026-07-10T17:42:36.630810+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram answerCallbackQuery erro: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "ee9e1449eb1e2b213968",
+      "primeira_vez": "2026-07-05T20:44:29.109362+00:00",
+      "ultima_vez": "2026-07-10T17:42:36.601786+00:00",
+      "logger": "notificador",
+      "mensagem": "notificar_venda_whatsapp: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "c0666657a88010b25c8c",
+      "primeira_vez": "2026-07-05T20:44:29.080934+00:00",
+      "ultima_vez": "2026-07-10T17:42:36.586580+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "ceb0597e581d107c2a9f",
+      "primeira_vez": "2026-07-05T20:44:28.386684+00:00",
+      "ultima_vez": "2026-07-10T17:42:36.308619+00:00",
+      "logger": "meta_ads_client",
+      "mensagem": "Meta Ads validar_conexao erro: 401",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "f5df20084dc3a1613198",
+      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
+      "ultima_vez": "2026-07-10T17:42:36.248689+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 99
+    },
+    {
+      "fingerprint": "590bab643bd8068fbe6f",
+      "primeira_vez": "2026-07-05T20:44:29.280472+00:00",
+      "ultima_vez": "2026-07-10T17:42:34.490861+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu manter_conta_ativa erro: keepalive",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "71ef3dfb57593f2f1d9f",
+      "primeira_vez": "2026-07-05T20:44:28.533227+00:00",
+      "ultima_vez": "2026-07-10T17:42:34.276815+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 403 — provável falta de ESCOPO/permissão (não apenas token expirado): forbidden",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "df432bc18f0b8200b0a8",
+      "primeira_vez": "2026-07-05T20:44:29.457328+00:00",
+      "ultima_vez": "2026-07-10T17:42:33.433366+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: unauthorized",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "030d99f650404eaf4f17",
+      "primeira_vez": "2026-07-05T20:46:21.505854+00:00",
+      "ultima_vez": "2026-07-10T17:42:30.796128+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.magalu.com falhou: timeout",
+      "status": "error",
+      "error_kind": "RuntimeError",
+      "error_message": "timeout",
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "f8f8a4d6839d615ab87b",
+      "primeira_vez": "2026-07-05T20:44:37.197647+00:00",
+      "ultima_vez": "2026-07-10T17:42:25.400290+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Erro inesperado ao testar conectividade amazon: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "630e40591b18aca6969f",
+      "primeira_vez": "2026-07-05T20:44:37.192592+00:00",
+      "ultima_vez": "2026-07-10T17:42:24.637495+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Erro inesperado ao testar conectividade shopee: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "584e931949b515566c14",
+      "primeira_vez": "2026-07-05T20:44:37.186746+00:00",
+      "ultima_vez": "2026-07-10T17:42:23.895443+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Erro inesperado ao testar conectividade mercadolivre: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "e9474800da85f0ed62ff",
+      "primeira_vez": "2026-07-05T20:44:37.172361+00:00",
+      "ultima_vez": "2026-07-10T17:42:21.937671+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Conectividade mercadolivre FALHOU (status=401): token expirado ou inválido",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "1eb800981d76f7181fbe",
+      "primeira_vez": "2026-07-05T20:46:21.287193+00:00",
+      "ultima_vez": "2026-07-10T17:42:18.527895+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Conectividade lojahub FALHOU (status=0): marketplace desconhecido",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "f5603abc6d3a1645dcdd",
+      "primeira_vez": "2026-07-05T20:46:21.270300+00:00",
+      "ultima_vez": "2026-07-10T17:42:15.867179+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Conectividade amazon FALHOU (status=403): sem permissão",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "4ff070dcfb581720bea0",
+      "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
+      "ultima_vez": "2026-07-10T17:41:52.032583+00:00",
+      "logger": "claude",
+      "mensagem": "Claude não retornou tool_use esperado (meu_tool): {'content': [{'type': 'text', 'text': 'x'}]}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "8d6751d8c3aa91f0b816",
+      "primeira_vez": "2026-07-10T17:41:45.044577+00:00",
+      "ultima_vez": "2026-07-10T17:41:45.044577+00:00",
+      "logger": "claude",
+      "mensagem": "Claude erro — texto livre: timeout",
+      "status": "error",
+      "error_kind": "Exception",
+      "error_message": "timeout",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "1cd26d1f0e86c3a49368",
+      "primeira_vez": "2026-07-05T20:46:23.541554+00:00",
+      "ultima_vez": "2026-07-10T17:41:42.768163+00:00",
+      "logger": "catalogo_produtos",
+      "mensagem": "Erro ao carregar produtos.json: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "e6c36be93cf34b25be17",
+      "primeira_vez": "2026-07-05T20:44:28.293658+00:00",
+      "ultima_vez": "2026-07-10T17:41:11.134596+00:00",
+      "logger": "bling",
+      "mensagem": "Bling definir_ncm_por_sku busca erro sku=SKU-X: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "bae475120c914c8b9f71",
+      "primeira_vez": "2026-07-05T20:44:28.261619+00:00",
+      "ultima_vez": "2026-07-10T17:41:08.906284+00:00",
+      "logger": "bling",
+      "mensagem": "Bling atualizar_ncm_produto erro id=1: api",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "d3b8b7ad4c41e949b031",
+      "primeira_vez": "2026-07-05T20:44:28.950136+00:00",
+      "ultima_vez": "2026-07-10T17:41:07.972784+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos JSON inválido: json",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "655419b873c769013bd2",
+      "primeira_vez": "2026-07-05T20:44:28.937904+00:00",
+      "ultima_vez": "2026-07-10T17:41:06.200971+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos HTTP 403: {}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "3e16bf90c5919464b93f",
+      "primeira_vez": "2026-07-05T20:44:28.963465+00:00",
+      "ultima_vez": "2026-07-10T17:41:00.548744+00:00",
+      "logger": "bling",
+      "mensagem": "Bling criar_nfe erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "4e2bae483b0bdbf7e61b",
+      "primeira_vez": "2026-07-05T20:44:56.843854+00:00",
+      "ultima_vez": "2026-07-10T17:40:57.939751+00:00",
+      "logger": "shopee_client",
+      "mensagem": "Shopee listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "a466a94d35946529c01f",
+      "primeira_vez": "2026-07-05T20:44:57.826318+00:00",
+      "ultima_vez": "2026-07-10T17:40:55.569230+00:00",
+      "logger": "amazon_client",
+      "mensagem": "Amazon listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "4f1c4ae7f111d54d246c",
+      "primeira_vez": "2026-07-05T20:44:28.247268+00:00",
+      "ultima_vez": "2026-07-10T17:40:53.456471+00:00",
+      "logger": "token_manager",
+      "mensagem": "Amazon refresh falhou (HTTP 401): {\"error_description\":\"Client authentication failed\",\"error\":\"invalid_client\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 25
+    },
+    {
+      "fingerprint": "1a7ee3f65e63e3b5784f",
+      "primeira_vez": "2026-07-05T20:46:51.494632+00:00",
+      "ultima_vez": "2026-07-10T17:40:46.684813+00:00",
+      "logger": "vendas_notificador",
+      "mensagem": "Mercado Livre: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "a47e7722d566158208a7",
+      "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
+      "ultima_vez": "2026-07-10T17:40:45.922739+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 6
+    },
+    {
+      "fingerprint": "4cf9ce5d1a6aea58859b",
+      "primeira_vez": "2026-07-05T20:46:51.035012+00:00",
+      "ultima_vez": "2026-07-10T17:40:42.157905+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML listar_pedidos erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "b49947724f637cafec2f",
+      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
+      "ultima_vez": "2026-07-10T17:40:40.612486+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "023520d1a08fd72b1cef",
+      "primeira_vez": "2026-07-05T20:46:22.344302+00:00",
+      "ultima_vez": "2026-07-10T17:39:43.215586+00:00",
+      "logger": "relatorio_financeiro",
+      "mensagem": "Relatório financeiro erro: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "497218055d8a41e7b5b6",
+      "primeira_vez": "2026-07-05T20:46:22.332993+00:00",
+      "ultima_vez": "2026-07-10T17:39:41.750720+00:00",
+      "logger": "relatorio",
+      "mensagem": "Relatório erro: DB error",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "4a23989fe4fe3fda96c3",
+      "primeira_vez": "2026-07-05T20:44:29.558386+00:00",
+      "ultima_vez": "2026-07-10T17:39:12.974332+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {  \"developerMessage\": \"Unauthorized\",  \"userMessage\": \"You are not authorized to perform this operation. Invalid or expired token.\",  \"moreInfo\": \"http://developer.apiluiza.com.br/errors/reference/30",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "7836f9448410f33d3688",
+      "primeira_vez": "2026-07-10T17:39:01.653261+00:00",
+      "ultima_vez": "2026-07-10T17:39:06.900992+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 401 — token inválido ou expirado: {\"message\":\"Unauthorized\",\"slug\":\"unauthorized\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "8f2d1694cbe3bdef6baa",
+      "primeira_vez": "2026-07-05T20:46:21.071979+00:00",
+      "ultima_vez": "2026-07-10T17:38:53.613256+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama nfe emitir ML-1: sefaz",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "49fbaa58e569ad632f2a",
+      "primeira_vez": "2026-07-05T20:46:21.120661+00:00",
+      "ultima_vez": "2026-07-10T17:38:52.869241+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama alerta sem integracao: zap",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "3d84db5ab61fb35fce90",
+      "primeira_vez": "2026-07-05T20:46:21.055430+00:00",
+      "ultima_vez": "2026-07-10T17:38:51.434313+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama claude: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "7cd3b8d896a0fa241b6a",
+      "primeira_vez": "2026-07-05T20:46:21.215532+00:00",
+      "ultima_vez": "2026-07-10T17:38:49.253755+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama magalu pedidos: pedidos",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "b224dc96eb25635ccd19",
+      "primeira_vez": "2026-07-05T20:46:21.208335+00:00",
+      "ultima_vez": "2026-07-10T17:38:48.544809+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama magalu perguntas: perg",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "ebcf89172543073b0b48",
+      "primeira_vez": "2026-07-05T20:46:21.198081+00:00",
+      "ultima_vez": "2026-07-10T17:38:47.836293+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama magalu saude: saude",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "b523bd42170a8c77dfb4",
+      "primeira_vez": "2026-07-05T20:46:22.357751+00:00",
+      "ultima_vez": "2026-07-10T17:38:44.264497+00:00",
+      "logger": "agente_otimizador_listing",
+      "mensagem": "Otimizador listing falhou: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "0b5774d1682ea12cf125",
+      "primeira_vez": "2026-07-05T20:46:22.376503+00:00",
+      "ultima_vez": "2026-07-10T17:38:42.847207+00:00",
+      "logger": "agente_otimizador_listing",
+      "mensagem": "Erro ao carregar catalogo: io",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "1a8d3b371933e3493647",
+      "primeira_vez": "2026-07-05T20:46:22.394036+00:00",
+      "ultima_vez": "2026-07-10T17:38:37.507117+00:00",
+      "logger": "agente_otimizador_listing",
+      "mensagem": "analisar_catalogo erro: catalogo boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "a746665b47d2ce109b9a",
+      "primeira_vez": "2026-07-10T17:38:30.119826+00:00",
+      "ultima_vez": "2026-07-10T17:38:30.119826+00:00",
+      "logger": "agente_orquestrador",
+      "mensagem": "Orquestrador: falha em x\nTraceback (most recent call last):\n  File \"C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\tests\\..\\agentes\\orquestrador\\agente_orquestrador.py\", line 75, in _executar_agente\n    raw = executar_registro(registro)\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1179, in _mock_c",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "15e08941c8c567a2eecd",
+      "primeira_vez": "2026-07-05T20:46:21.044117+00:00",
+      "ultima_vez": "2026-07-10T17:38:08.993909+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "d94cda7e7d717982cca9",
+      "primeira_vez": "2026-07-10T17:35:12.274015+00:00",
+      "ultima_vez": "2026-07-10T17:35:12.274015+00:00",
+      "logger": "agente_calculo_importacao_aerea",
+      "mensagem": "Falhou: vazio",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "314ab72b621d308b8ebc",
+      "primeira_vez": "2026-07-05T20:44:56.181398+00:00",
+      "ultima_vez": "2026-07-10T17:34:23.708603+00:00",
+      "logger": "ml_product_ads",
+      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183132: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183132",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "4c60298425eeab4a0eec",
+      "primeira_vez": "2026-07-05T20:44:55.397260+00:00",
+      "ultima_vez": "2026-07-10T17:34:16.925046+00:00",
+      "logger": "ml_product_ads",
+      "mensagem": "ML Product Ads ativar_campanha erro campanha=348787694: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/348787694",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "7adb0fc215ca5ec4c55c",
+      "primeira_vez": "2026-07-05T20:44:54.407111+00:00",
+      "ultima_vez": "2026-07-10T17:34:10.131181+00:00",
+      "logger": "ml_product_ads",
+      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183135: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183135",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
       "fingerprint": "6fb096682afe567829cc",
       "primeira_vez": "2026-07-10T12:23:55.189947+00:00",
       "ultima_vez": "2026-07-10T12:23:55.189947+00:00",
@@ -111,61 +837,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "314ab72b621d308b8ebc",
-      "primeira_vez": "2026-07-05T20:44:56.181398+00:00",
-      "ultima_vez": "2026-07-05T21:19:39.487455+00:00",
-      "logger": "ml_product_ads",
-      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183132: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183132",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "4c60298425eeab4a0eec",
-      "primeira_vez": "2026-07-05T20:44:55.397260+00:00",
-      "ultima_vez": "2026-07-05T21:19:38.731516+00:00",
-      "logger": "ml_product_ads",
-      "mensagem": "ML Product Ads ativar_campanha erro campanha=348787694: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/348787694",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "7adb0fc215ca5ec4c55c",
-      "primeira_vez": "2026-07-05T20:44:54.407111+00:00",
-      "ultima_vez": "2026-07-05T21:19:37.973575+00:00",
-      "logger": "ml_product_ads",
-      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183135: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183135",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "023520d1a08fd72b1cef",
-      "primeira_vez": "2026-07-05T20:46:22.344302+00:00",
-      "ultima_vez": "2026-07-05T21:19:36.417009+00:00",
-      "logger": "relatorio_financeiro",
-      "mensagem": "Relatório financeiro erro: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "497218055d8a41e7b5b6",
-      "primeira_vez": "2026-07-05T20:46:22.332993+00:00",
-      "ultima_vez": "2026-07-05T21:19:36.408564+00:00",
-      "logger": "relatorio",
-      "mensagem": "Relatório erro: DB error",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "591c7275d47a22ce5ad0",
       "primeira_vez": "2026-07-05T21:19:35.542740+00:00",
       "ultima_vez": "2026-07-05T21:19:35.542740+00:00",
@@ -188,72 +859,6 @@
       "ocorrencias": 15
     },
     {
-      "fingerprint": "25aae72aa3da0ed7d3d5",
-      "primeira_vez": "2026-07-05T20:44:29.858666+00:00",
-      "ultima_vez": "2026-07-05T21:19:19.538591+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 22
-    },
-    {
-      "fingerprint": "cec3beba4ba3e20480ec",
-      "primeira_vez": "2026-07-05T20:44:28.510732+00:00",
-      "ultima_vez": "2026-07-05T21:19:15.168294+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided has expired\"}}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 13
-    },
-    {
-      "fingerprint": "42818d969230dc2976c0",
-      "primeira_vez": "2026-07-05T20:44:28.934548+00:00",
-      "ultima_vez": "2026-07-05T21:19:14.911770+00:00",
-      "logger": "token_manager",
-      "mensagem": "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 17
-    },
-    {
-      "fingerprint": "e0c5f1dacac137fb8f11",
-      "primeira_vez": "2026-07-05T20:44:28.930992+00:00",
-      "ultima_vez": "2026-07-05T21:19:14.906834+00:00",
-      "logger": "token_manager",
-      "mensagem": "Bling refresh falhou (HTTP 400): Invalid refresh token",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 16
-    },
-    {
-      "fingerprint": "6e0533918d6ee1449c97",
-      "primeira_vez": "2026-07-05T20:44:34.444041+00:00",
-      "ultima_vez": "2026-07-05T21:19:12.564363+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided is invalid\"}}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "2d1961af61b5b2acb4c9",
-      "primeira_vez": "2026-07-05T20:44:33.675038+00:00",
-      "ultima_vez": "2026-07-05T21:19:12.321085+00:00",
-      "logger": "token_manager",
-      "mensagem": "Credenciais Bling ausentes para renovação (client_id/secret ou refresh_token).",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
-    },
-    {
       "fingerprint": "b96a474f5835a7b0f532",
       "primeira_vez": "2026-07-05T20:44:34.121867+00:00",
       "ultima_vez": "2026-07-05T21:19:11.774700+00:00",
@@ -263,94 +868,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "a3e32f6c2770291346fe",
-      "primeira_vez": "2026-07-05T20:44:30.705836+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.600811+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee responder_pergunta erro item=10 comment=20: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "e9474800da85f0ed62ff",
-      "primeira_vez": "2026-07-05T20:44:37.172361+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.580337+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Conectividade mercadolivre FALHOU (status=401): token expirado ou inválido",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "7835a6676fa701a6460f",
-      "primeira_vez": "2026-07-05T20:44:32.184596+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.431870+00:00",
-      "logger": "token_manager",
-      "mensagem": "Credenciais Meta ausentes para renovação (app_id/secret/token).",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "6b2db6a634628583f14e",
-      "primeira_vez": "2026-07-05T20:44:32.175776+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.420731+00:00",
-      "logger": "token_manager",
-      "mensagem": "Meta refresh sem access_token na resposta.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "12e476f7e2e45d5792fa",
-      "primeira_vez": "2026-07-05T20:44:32.163576+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.405505+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro de parse da resposta do token Meta: bad json",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "9d3b3882b5bfd1f895cb",
-      "primeira_vez": "2026-07-05T20:44:32.150710+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.390731+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token Meta: HTTP 400",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "245dbf33d816993f1121",
-      "primeira_vez": "2026-07-05T20:44:32.137760+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.376839+00:00",
-      "logger": "token_manager",
-      "mensagem": "Credenciais Magalu ausentes para renovação (client_id/secret ou refresh_token).",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "a47a8fe70dfb8ddf0c69",
-      "primeira_vez": "2026-07-05T20:46:26.124578+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.164945+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — HTTP 404 no getMe — token revogado ou incorreto. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     },
     {
       "fingerprint": "d324e51dba858acad17a",
@@ -386,17 +903,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "1eb800981d76f7181fbe",
-      "primeira_vez": "2026-07-05T20:46:21.287193+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.435087+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Conectividade lojahub FALHOU (status=0): marketplace desconhecido",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "251801083f8bf5d4d917",
       "primeira_vez": "2026-07-05T20:44:30.674142+00:00",
       "ultima_vez": "2026-07-05T21:19:09.428262+00:00",
@@ -406,72 +912,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "1618c60559eb1d6586e1",
-      "primeira_vez": "2026-07-05T20:44:30.666514+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.418117+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee manter_conta_ativa erro de API: bad_request",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "566c89f57065bd35ca83",
-      "primeira_vez": "2026-07-05T20:44:30.654353+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.404438+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee listar_perguntas_nao_respondidas erro de API: bad_request",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "1b2e4258e5cb8046b96c",
-      "primeira_vez": "2026-07-05T20:44:30.636711+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.384540+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee atualizar_preco_item erro item_id=11: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "a55eb15851948ebbd773",
-      "primeira_vez": "2026-07-05T20:44:30.618476+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.361807+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee atualizar_estoque_item erro item_id=22: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "df432bc18f0b8200b0a8",
-      "primeira_vez": "2026-07-05T20:44:29.457328+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.351766+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: unauthorized",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "f5df20084dc3a1613198",
-      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.345185+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 71
     },
     {
       "fingerprint": "d088e66772c59b59c29c",
@@ -512,17 +952,6 @@
       "ultima_vez": "2026-07-05T21:19:08.467786+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu responder_pergunta erro question_id=q1: HTTP 500",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "71ef3dfb57593f2f1d9f",
-      "primeira_vez": "2026-07-05T20:44:28.533227+00:00",
-      "ultima_vez": "2026-07-05T21:19:08.244966+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 403 — provável falta de ESCOPO/permissão (não apenas token expirado): forbidden",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -595,39 +1024,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "ee9e1449eb1e2b213968",
-      "primeira_vez": "2026-07-05T20:44:29.109362+00:00",
-      "ultima_vez": "2026-07-05T21:19:07.090152+00:00",
-      "logger": "notificador",
-      "mensagem": "notificar_venda_whatsapp: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "4f1c4ae7f111d54d246c",
-      "primeira_vez": "2026-07-05T20:44:28.247268+00:00",
-      "ultima_vez": "2026-07-05T21:19:07.083007+00:00",
-      "logger": "token_manager",
-      "mensagem": "Amazon refresh falhou (HTTP 401): {\"error_description\":\"Client authentication failed\",\"error\":\"invalid_client\"}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 18
-    },
-    {
-      "fingerprint": "94db86c08bd0ee571d59",
-      "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
-      "ultima_vez": "2026-07-05T21:19:07.062669+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram answerCallbackQuery erro: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
       "fingerprint": "d411e36cbe856bd39435",
       "primeira_vez": "2026-07-05T20:44:28.553808+00:00",
       "ultima_vez": "2026-07-05T21:19:07.003990+00:00",
@@ -672,17 +1068,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "ceb0597e581d107c2a9f",
-      "primeira_vez": "2026-07-05T20:44:28.386684+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.892290+00:00",
-      "logger": "meta_ads_client",
-      "mensagem": "Meta Ads validar_conexao erro: 401",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
       "fingerprint": "d66a5836663e93097b0a",
       "primeira_vez": "2026-07-05T20:44:28.361048+00:00",
       "ultima_vez": "2026-07-05T21:19:06.881823+00:00",
@@ -692,39 +1077,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "a466a94d35946529c01f",
-      "primeira_vez": "2026-07-05T20:44:57.826318+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.828857+00:00",
-      "logger": "amazon_client",
-      "mensagem": "Amazon listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "1a7ee3f65e63e3b5784f",
-      "primeira_vez": "2026-07-05T20:46:51.494632+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.753160+00:00",
-      "logger": "vendas_notificador",
-      "mensagem": "Mercado Livre: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "b49947724f637cafec2f",
-      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.743200+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     },
     {
       "fingerprint": "39b172e43c640cc98f5c",
@@ -743,17 +1095,6 @@
       "ultima_vez": "2026-07-05T21:19:06.528287+00:00",
       "logger": "bling",
       "mensagem": "Bling listar_produtos erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "655419b873c769013bd2",
-      "primeira_vez": "2026-07-05T20:44:28.937904+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.517172+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos HTTP 403: {}",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -804,50 +1145,6 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "030d99f650404eaf4f17",
-      "primeira_vez": "2026-07-05T20:46:21.505854+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.719657+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.magalu.com falhou: timeout",
-      "status": "error",
-      "error_kind": "RuntimeError",
-      "error_message": "timeout",
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "a47e7722d566158208a7",
-      "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.169991+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
-      "fingerprint": "4ff070dcfb581720bea0",
-      "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.137961+00:00",
-      "logger": "claude",
-      "mensagem": "Claude não retornou tool_use esperado (meu_tool): {'content': [{'type': 'text', 'text': 'x'}]}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "e6c36be93cf34b25be17",
-      "primeira_vez": "2026-07-05T20:44:28.293658+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.108367+00:00",
-      "logger": "bling",
-      "mensagem": "Bling definir_ncm_por_sku busca erro sku=SKU-X: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
       "fingerprint": "1953bb4d9a3e87b5b1b1",
       "primeira_vez": "2026-07-05T20:46:21.246915+00:00",
       "ultima_vez": "2026-07-05T21:19:05.093432+00:00",
@@ -859,110 +1156,11 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "630e40591b18aca6969f",
-      "primeira_vez": "2026-07-05T20:44:37.192592+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.079111+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Erro inesperado ao testar conectividade shopee: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "584e931949b515566c14",
-      "primeira_vez": "2026-07-05T20:44:37.186746+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.063917+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Erro inesperado ao testar conectividade mercadolivre: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "1cd26d1f0e86c3a49368",
-      "primeira_vez": "2026-07-05T20:46:23.541554+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.053241+00:00",
-      "logger": "catalogo_produtos",
-      "mensagem": "Erro ao carregar produtos.json: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "49fbaa58e569ad632f2a",
-      "primeira_vez": "2026-07-05T20:46:21.120661+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.039675+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama alerta sem integracao: zap",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "0fcf93425004fd9a2241",
       "primeira_vez": "2026-07-05T20:46:21.185600+00:00",
       "ultima_vez": "2026-07-05T21:19:05.021825+00:00",
       "logger": "agente_licitacoes",
       "mensagem": "Agente licitações erro: falha simulada",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "15e08941c8c567a2eecd",
-      "primeira_vez": "2026-07-05T20:46:21.044117+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.001574+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "3d84db5ab61fb35fce90",
-      "primeira_vez": "2026-07-05T20:46:21.055430+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.984093+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama claude: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "7cd3b8d896a0fa241b6a",
-      "primeira_vez": "2026-07-05T20:46:21.215532+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.957452+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama magalu pedidos: pedidos",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "b224dc96eb25635ccd19",
-      "primeira_vez": "2026-07-05T20:46:21.208335+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.947760+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama magalu perguntas: perg",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "ebcf89172543073b0b48",
-      "primeira_vez": "2026-07-05T20:46:21.198081+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.936246+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama magalu saude: saude",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1011,17 +1209,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "4cf9ce5d1a6aea58859b",
-      "primeira_vez": "2026-07-05T20:46:51.035012+00:00",
-      "ultima_vez": "2026-07-05T20:46:51.035012+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML listar_pedidos erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
     },
     {
       "fingerprint": "db3463589f091bb28a69",
@@ -1244,44 +1431,11 @@
       "ocorrencias": 1
     },
     {
-      "fingerprint": "590bab643bd8068fbe6f",
-      "primeira_vez": "2026-07-05T20:44:29.280472+00:00",
-      "ultima_vez": "2026-07-05T20:46:24.876817+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu manter_conta_ativa erro: keepalive",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "4a23989fe4fe3fda96c3",
-      "primeira_vez": "2026-07-05T20:44:29.558386+00:00",
-      "ultima_vez": "2026-07-05T20:46:24.582467+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {  \"developerMessage\": \"Unauthorized\",  \"userMessage\": \"You are not authorized to perform this operation. Invalid or expired token.\",  \"moreInfo\": \"http://developer.apiluiza.com.br/errors/reference/30",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "0bc6302b798d291b178a",
       "primeira_vez": "2026-07-05T20:44:28.630156+00:00",
       "ultima_vez": "2026-07-05T20:46:23.898743+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu atualizar_preco_item erro sku=SKU: rede",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "bae475120c914c8b9f71",
-      "primeira_vez": "2026-07-05T20:44:28.261619+00:00",
-      "ultima_vez": "2026-07-05T20:46:23.764573+00:00",
-      "logger": "bling",
-      "mensagem": "Bling atualizar_ncm_produto erro id=1: api",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1310,50 +1464,6 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "4e2bae483b0bdbf7e61b",
-      "primeira_vez": "2026-07-05T20:44:56.843854+00:00",
-      "ultima_vez": "2026-07-05T20:46:23.457184+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "f8f8a4d6839d615ab87b",
-      "primeira_vez": "2026-07-05T20:44:37.197647+00:00",
-      "ultima_vez": "2026-07-05T20:46:23.197936+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Erro inesperado ao testar conectividade amazon: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "3e16bf90c5919464b93f",
-      "primeira_vez": "2026-07-05T20:44:28.963465+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.936126+00:00",
-      "logger": "bling",
-      "mensagem": "Bling criar_nfe erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "d3b8b7ad4c41e949b031",
-      "primeira_vez": "2026-07-05T20:44:28.950136+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.920297+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos JSON inválido: json",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "f1fab640a5679bf9f40b",
       "primeira_vez": "2026-07-05T20:44:28.446245+00:00",
       "ultima_vez": "2026-07-05T20:46:22.865921+00:00",
@@ -1374,50 +1484,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "1a8d3b371933e3493647",
-      "primeira_vez": "2026-07-05T20:46:22.394036+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.394036+00:00",
-      "logger": "agente_otimizador_listing",
-      "mensagem": "analisar_catalogo erro: catalogo boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "0b5774d1682ea12cf125",
-      "primeira_vez": "2026-07-05T20:46:22.376503+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.376503+00:00",
-      "logger": "agente_otimizador_listing",
-      "mensagem": "Erro ao carregar catalogo: io",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "b523bd42170a8c77dfb4",
-      "primeira_vez": "2026-07-05T20:46:22.357751+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.357751+00:00",
-      "logger": "agente_otimizador_listing",
-      "mensagem": "Otimizador listing falhou: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "f5603abc6d3a1645dcdd",
-      "primeira_vez": "2026-07-05T20:46:21.270300+00:00",
-      "ultima_vez": "2026-07-05T20:46:21.270300+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Conectividade amazon FALHOU (status=403): sem permissão",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
     },
     {
       "fingerprint": "1eccb6baa310fed07173",
@@ -1447,17 +1513,6 @@
       "ultima_vez": "2026-07-05T20:46:21.103759+00:00",
       "logger": "agente_panorama",
       "mensagem": "panorama ml pedidos: ml ped",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "8f2d1694cbe3bdef6baa",
-      "primeira_vez": "2026-07-05T20:46:21.071979+00:00",
-      "ultima_vez": "2026-07-05T20:46:21.071979+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama nfe emitir ML-1: sefaz",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1495,18 +1550,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 1
-    },
-    {
-      "fingerprint": "c0666657a88010b25c8c",
-      "primeira_vez": "2026-07-05T20:44:29.080934+00:00",
-      "ultima_vez": "2026-07-05T20:44:29.080934+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-10T12:23:55.189947+00:00"
+  "atualizado_em": "2026-07-10T17:43:01.244910+00:00"
 }

@@ -167,6 +167,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Visão matinal + propostas de preço com margem viável",
     ),
     AgenteRegistrado(
+        "relatorio_estrategia_ml",
+        "Relatório estratégia vendas ML",
+        "monitor",
+        "agentes.ml.agente_relatorio_estrategia_ml:executar",
+        {"enviar_alerta": True, "coletar_fresco": True},
+        notas="Top ações da semana: preço, ads, diferenciar, canal próprio",
+    ),
+    AgenteRegistrado(
         "monitor_concorrentes",
         "Monitor concorrentes ML",
         "monitor",

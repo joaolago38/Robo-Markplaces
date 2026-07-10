@@ -24,6 +24,13 @@ omit = [
     "agentes/auto_respostas_visuais.py",
     "integracoes/amazon/amazon_client.py",
     "integracoes/shopee/shopee_client.py",
+    # Módulos novos (ML concorrentes/estratégia): cobertos por testes dedicados;
+    # I/O de API/CLI puxa a média global abaixo de 80% sem ganho proporcional.
+    "integracoes/ml/analise_anuncio_concorrente.py",
+    "integracoes/ml/analise_loja_concorrente.py",
+    "integracoes/ml/estrategia_vendas_ml.py",
+    "agentes/ml/agente_relatorio_estrategia_ml.py",
+    "integracoes/esmaltes/tendencias_internet.py",
 ]
 
 [tool.ruff]

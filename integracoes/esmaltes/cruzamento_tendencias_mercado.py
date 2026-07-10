@@ -44,7 +44,18 @@ def cruzar_sinais(
     classificados = [classificar_anuncio(a) for a in anuncios]
     mp_cores = tendencia_cores(classificados, top_n=12)
 
-    web_map = {c["cor"].lower(): int(c["mencoes"]) for c in web_sinais.get("cores") or []}
+    web_map: dict[str, int] = {}
+    for c in web_sinais.get("cores") or []:
+        if not isinstance(c, dict):
+            continue
+        cor = str(c.get("cor") or "").strip().lower()
+        if not cor:
+            continue
+        try:
+            mencoes = int(c.get("mencoes") if c.get("mencoes") is not None else c.get("mencoes_web") or 0)
+        except (TypeError, ValueError):
+            mencoes = 0
+        web_map[cor] = web_map.get(cor, 0) + mencoes
     mp_map = {c["cor"].lower(): int(c["peso_vendas"]) for c in mp_cores}
 
     alvos = {str(c).lower() for c in (cores_alvo or [])}
@@ -77,9 +88,9 @@ def cruzar_sinais(
     ordem = {"oportunidade": 0, "confirmada": 1, "emergente": 2, "saturada_mp": 3, "fraca": 4}
     tendencias.sort(
         key=lambda t: (
-            ordem.get(t["status"], 9),
-            -(t["score_web"] + t["score_mp"]),
-            -t["mencoes_web"],
+            ordem.get(t.get("status"), 9),
+            -(float(t.get("score_web") or 0) + float(t.get("score_mp") or 0)),
+            -int(t.get("mencoes_web") or 0),
         )
     )
     return tendencias

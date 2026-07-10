@@ -81,6 +81,102 @@ class AnaliseLojaTests(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["item_id"], "A")
 
+    def test_montar_mensagem_com_metricas(self):
+        msg = al.montar_mensagem_analise(
+            {
+                "nickname": "NOVAMIX",
+                "seller_id": "1",
+                "total_anuncios_coletados": 1,
+                "preco_min": 30.0,
+                "preco_med": 30.0,
+                "preco_max": 30.0,
+                "marcas": {"impala": 1},
+                "ameacas_preco": [],
+                "perfil": {
+                    "level_id": "5_green",
+                    "power_seller_status": "platinum",
+                    "transactions_total": 10,
+                    "cidade": "SP",
+                    "estado": "BR-SP",
+                },
+                "estrategia": {
+                    "porte": "grande",
+                    "ameaca_geral": "alta",
+                    "pontos_fortes_loja": ["Líder"],
+                    "implicacoes_para_voce": ["Diferencie"],
+                },
+                "anuncios": [
+                    {
+                        "titulo": "Kit Bailarina",
+                        "metricas": {
+                            "preco": 30.99,
+                            "nota": 4.9,
+                            "avaliacoes": 10,
+                            "receita_liquida_un": 25.0,
+                        },
+                    }
+                ],
+            }
+        )
+        self.assertIn("NOVAMIX", msg)
+        self.assertIn("Amostra métricas", msg)
+        self.assertIn("Bailarina", msg)
+
+    def test_comparar_com_catalogo(self):
+        with patch(
+            "core.catalogo_produtos.carregar_produtos_catalogo",
+            return_value=[
+                {
+                    "sku": "IMP-BAIL-005",
+                    "nome": "Kit 5 Bailarina Impala",
+                    "canais": {"mercadolivre": {"preco": 48.9}},
+                }
+            ],
+        ):
+            overlaps = al._comparar_com_catalogo(
+                [
+                    {
+                        "titulo": "Kit 5 Esmaltes Impala Bailarina",
+                        "preco": 30.0,
+                        "item_id": "MLB1",
+                    }
+                ]
+            )
+        self.assertEqual(len(overlaps), 1)
+        self.assertEqual(overlaps[0]["sku"], "IMP-BAIL-005")
+        self.assertGreater(overlaps[0]["gap_pct"], 0)
+
+    @patch.object(al.ml_client, "_enabled", return_value=True)
+    @patch.object(al.ml_client, "_h", return_value={})
+    @patch.object(al, "request")
+    def test_buscar_perfil_loja(self, mock_req, *_):
+        mock_req.return_value.status_code = 200
+        mock_req.return_value.json.return_value = {
+            "nickname": "NOVAMIX_COMERCIAL",
+            "permalink": "http://x",
+            "address": {"city": "São Paulo", "state": "BR-SP"},
+            "status": {"site_status": "active"},
+            "seller_reputation": {
+                "level_id": "5_green",
+                "power_seller_status": "platinum",
+                "transactions": {"total": 100},
+            },
+        }
+        out = al.buscar_perfil_loja("1666381510")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["nickname"], "NOVAMIX_COMERCIAL")
+        self.assertEqual(out["power_seller_status"], "platinum")
+
+    def test_analise_estrategica(self):
+        e = al._analise_estrategica(
+            {"transactions_total": 70000, "power_seller_status": "platinum", "level_id": "5_green"},
+            [{"preco": 30}],
+            [{"sku": "X", "gap_pct": 10}],
+        )
+        self.assertEqual(e["porte"], "gigante")
+        self.assertEqual(e["ameaca_geral"], "alta")
+        self.assertIn("X", e["skus_sob_pressao"])
+
 
 if __name__ == "__main__":
     unittest.main()
