@@ -1,15 +1,158 @@
 {
   "erros": [
     {
+      "fingerprint": "4ff070dcfb581720bea0",
+      "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
+      "ultima_vez": "2026-07-10T17:41:52.032583+00:00",
+      "logger": "claude",
+      "mensagem": "Claude não retornou tool_use esperado (meu_tool): {'content': [{'type': 'text', 'text': 'x'}]}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "8d6751d8c3aa91f0b816",
+      "primeira_vez": "2026-07-10T17:41:45.044577+00:00",
+      "ultima_vez": "2026-07-10T17:41:45.044577+00:00",
+      "logger": "claude",
+      "mensagem": "Claude erro — texto livre: timeout",
+      "status": "error",
+      "error_kind": "Exception",
+      "error_message": "timeout",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "1cd26d1f0e86c3a49368",
+      "primeira_vez": "2026-07-05T20:46:23.541554+00:00",
+      "ultima_vez": "2026-07-10T17:41:42.768163+00:00",
+      "logger": "catalogo_produtos",
+      "mensagem": "Erro ao carregar produtos.json: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "cec3beba4ba3e20480ec",
+      "primeira_vez": "2026-07-05T20:44:28.510732+00:00",
+      "ultima_vez": "2026-07-10T17:41:42.050218+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided has expired\"}}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 16
+    },
+    {
+      "fingerprint": "42818d969230dc2976c0",
+      "primeira_vez": "2026-07-05T20:44:28.934548+00:00",
+      "ultima_vez": "2026-07-10T17:41:39.668981+00:00",
+      "logger": "token_manager",
+      "mensagem": "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 21
+    },
+    {
+      "fingerprint": "e0c5f1dacac137fb8f11",
+      "primeira_vez": "2026-07-05T20:44:28.930992+00:00",
+      "ultima_vez": "2026-07-10T17:41:38.820309+00:00",
+      "logger": "token_manager",
+      "mensagem": "Bling refresh falhou (HTTP 400): Invalid refresh token",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 20
+    },
+    {
+      "fingerprint": "e6c36be93cf34b25be17",
+      "primeira_vez": "2026-07-05T20:44:28.293658+00:00",
+      "ultima_vez": "2026-07-10T17:41:11.134596+00:00",
+      "logger": "bling",
+      "mensagem": "Bling definir_ncm_por_sku busca erro sku=SKU-X: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "bae475120c914c8b9f71",
+      "primeira_vez": "2026-07-05T20:44:28.261619+00:00",
+      "ultima_vez": "2026-07-10T17:41:08.906284+00:00",
+      "logger": "bling",
+      "mensagem": "Bling atualizar_ncm_produto erro id=1: api",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "d3b8b7ad4c41e949b031",
+      "primeira_vez": "2026-07-05T20:44:28.950136+00:00",
+      "ultima_vez": "2026-07-10T17:41:07.972784+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos JSON inválido: json",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "655419b873c769013bd2",
+      "primeira_vez": "2026-07-05T20:44:28.937904+00:00",
+      "ultima_vez": "2026-07-10T17:41:06.200971+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos HTTP 403: {}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "3e16bf90c5919464b93f",
+      "primeira_vez": "2026-07-05T20:44:28.963465+00:00",
+      "ultima_vez": "2026-07-10T17:41:00.548744+00:00",
+      "logger": "bling",
+      "mensagem": "Bling criar_nfe erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "4e2bae483b0bdbf7e61b",
+      "primeira_vez": "2026-07-05T20:44:56.843854+00:00",
+      "ultima_vez": "2026-07-10T17:40:57.939751+00:00",
+      "logger": "shopee_client",
+      "mensagem": "Shopee listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "a466a94d35946529c01f",
+      "primeira_vez": "2026-07-05T20:44:57.826318+00:00",
+      "ultima_vez": "2026-07-10T17:40:55.569230+00:00",
+      "logger": "amazon_client",
+      "mensagem": "Amazon listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
       "fingerprint": "4f1c4ae7f111d54d246c",
       "primeira_vez": "2026-07-05T20:44:28.247268+00:00",
-      "ultima_vez": "2026-07-10T17:40:49.068881+00:00",
+      "ultima_vez": "2026-07-10T17:40:53.456471+00:00",
       "logger": "token_manager",
       "mensagem": "Amazon refresh falhou (HTTP 401): {\"error_description\":\"Client authentication failed\",\"error\":\"invalid_client\"}",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 24
+      "ocorrencias": 25
     },
     {
       "fingerprint": "1a7ee3f65e63e3b5784f",
@@ -98,39 +241,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "cec3beba4ba3e20480ec",
-      "primeira_vez": "2026-07-05T20:44:28.510732+00:00",
-      "ultima_vez": "2026-07-10T17:39:11.365482+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided has expired\"}}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 15
-    },
-    {
-      "fingerprint": "42818d969230dc2976c0",
-      "primeira_vez": "2026-07-05T20:44:28.934548+00:00",
-      "ultima_vez": "2026-07-10T17:39:08.780447+00:00",
-      "logger": "token_manager",
-      "mensagem": "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 19
-    },
-    {
-      "fingerprint": "e0c5f1dacac137fb8f11",
-      "primeira_vez": "2026-07-05T20:44:28.930992+00:00",
-      "ultima_vez": "2026-07-10T17:39:08.017741+00:00",
-      "logger": "token_manager",
-      "mensagem": "Bling refresh falhou (HTTP 400): Invalid refresh token",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 18
     },
     {
       "fingerprint": "7836f9448410f33d3688",
@@ -892,17 +1002,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "a466a94d35946529c01f",
-      "primeira_vez": "2026-07-05T20:44:57.826318+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.828857+00:00",
-      "logger": "amazon_client",
-      "mensagem": "Amazon listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
       "fingerprint": "39b172e43c640cc98f5c",
       "primeira_vez": "2026-07-05T21:19:06.558416+00:00",
       "ultima_vez": "2026-07-05T21:19:06.558416+00:00",
@@ -919,17 +1018,6 @@
       "ultima_vez": "2026-07-05T21:19:06.528287+00:00",
       "logger": "bling",
       "mensagem": "Bling listar_produtos erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "655419b873c769013bd2",
-      "primeira_vez": "2026-07-05T20:44:28.937904+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.517172+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos HTTP 403: {}",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -991,28 +1079,6 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "4ff070dcfb581720bea0",
-      "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.137961+00:00",
-      "logger": "claude",
-      "mensagem": "Claude não retornou tool_use esperado (meu_tool): {'content': [{'type': 'text', 'text': 'x'}]}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "e6c36be93cf34b25be17",
-      "primeira_vez": "2026-07-05T20:44:28.293658+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.108367+00:00",
-      "logger": "bling",
-      "mensagem": "Bling definir_ncm_por_sku busca erro sku=SKU-X: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
       "fingerprint": "1953bb4d9a3e87b5b1b1",
       "primeira_vez": "2026-07-05T20:46:21.246915+00:00",
       "ultima_vez": "2026-07-05T21:19:05.093432+00:00",
@@ -1044,17 +1110,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "1cd26d1f0e86c3a49368",
-      "primeira_vez": "2026-07-05T20:46:23.541554+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.053241+00:00",
-      "logger": "catalogo_produtos",
-      "mensagem": "Erro ao carregar produtos.json: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     },
     {
       "fingerprint": "0fcf93425004fd9a2241",
@@ -1354,17 +1409,6 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "bae475120c914c8b9f71",
-      "primeira_vez": "2026-07-05T20:44:28.261619+00:00",
-      "ultima_vez": "2026-07-05T20:46:23.764573+00:00",
-      "logger": "bling",
-      "mensagem": "Bling atualizar_ncm_produto erro id=1: api",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "08d0588249a7bec96a4c",
       "primeira_vez": "2026-07-05T20:46:23.579492+00:00",
       "ultima_vez": "2026-07-05T20:46:23.579492+00:00",
@@ -1387,44 +1431,11 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "4e2bae483b0bdbf7e61b",
-      "primeira_vez": "2026-07-05T20:44:56.843854+00:00",
-      "ultima_vez": "2026-07-05T20:46:23.457184+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "f8f8a4d6839d615ab87b",
       "primeira_vez": "2026-07-05T20:44:37.197647+00:00",
       "ultima_vez": "2026-07-05T20:46:23.197936+00:00",
       "logger": "conectividade_marketplaces",
       "mensagem": "Erro inesperado ao testar conectividade amazon: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "3e16bf90c5919464b93f",
-      "primeira_vez": "2026-07-05T20:44:28.963465+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.936126+00:00",
-      "logger": "bling",
-      "mensagem": "Bling criar_nfe erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "d3b8b7ad4c41e949b031",
-      "primeira_vez": "2026-07-05T20:44:28.950136+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.920297+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos JSON inválido: json",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1541,5 +1552,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-10T17:40:49.068881+00:00"
+  "atualizado_em": "2026-07-10T17:41:52.032583+00:00"
 }
