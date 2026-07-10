@@ -1,6 +1,314 @@
 {
   "erros": [
     {
+      "fingerprint": "4f1c4ae7f111d54d246c",
+      "primeira_vez": "2026-07-05T20:44:28.247268+00:00",
+      "ultima_vez": "2026-07-10T17:40:49.068881+00:00",
+      "logger": "token_manager",
+      "mensagem": "Amazon refresh falhou (HTTP 401): {\"error_description\":\"Client authentication failed\",\"error\":\"invalid_client\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 24
+    },
+    {
+      "fingerprint": "1a7ee3f65e63e3b5784f",
+      "primeira_vez": "2026-07-05T20:46:51.494632+00:00",
+      "ultima_vez": "2026-07-10T17:40:46.684813+00:00",
+      "logger": "vendas_notificador",
+      "mensagem": "Mercado Livre: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "a47e7722d566158208a7",
+      "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
+      "ultima_vez": "2026-07-10T17:40:45.922739+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 6
+    },
+    {
+      "fingerprint": "4cf9ce5d1a6aea58859b",
+      "primeira_vez": "2026-07-05T20:46:51.035012+00:00",
+      "ultima_vez": "2026-07-10T17:40:42.157905+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML listar_pedidos erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "b49947724f637cafec2f",
+      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
+      "ultima_vez": "2026-07-10T17:40:40.612486+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "f5df20084dc3a1613198",
+      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
+      "ultima_vez": "2026-07-10T17:40:38.740557+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 76
+    },
+    {
+      "fingerprint": "023520d1a08fd72b1cef",
+      "primeira_vez": "2026-07-05T20:46:22.344302+00:00",
+      "ultima_vez": "2026-07-10T17:39:43.215586+00:00",
+      "logger": "relatorio_financeiro",
+      "mensagem": "Relatório financeiro erro: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "497218055d8a41e7b5b6",
+      "primeira_vez": "2026-07-05T20:46:22.332993+00:00",
+      "ultima_vez": "2026-07-10T17:39:41.750720+00:00",
+      "logger": "relatorio",
+      "mensagem": "Relatório erro: DB error",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "4a23989fe4fe3fda96c3",
+      "primeira_vez": "2026-07-05T20:44:29.558386+00:00",
+      "ultima_vez": "2026-07-10T17:39:12.974332+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {  \"developerMessage\": \"Unauthorized\",  \"userMessage\": \"You are not authorized to perform this operation. Invalid or expired token.\",  \"moreInfo\": \"http://developer.apiluiza.com.br/errors/reference/30",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "cec3beba4ba3e20480ec",
+      "primeira_vez": "2026-07-05T20:44:28.510732+00:00",
+      "ultima_vez": "2026-07-10T17:39:11.365482+00:00",
+      "logger": "bling",
+      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided has expired\"}}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 15
+    },
+    {
+      "fingerprint": "42818d969230dc2976c0",
+      "primeira_vez": "2026-07-05T20:44:28.934548+00:00",
+      "ultima_vez": "2026-07-10T17:39:08.780447+00:00",
+      "logger": "token_manager",
+      "mensagem": "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 19
+    },
+    {
+      "fingerprint": "e0c5f1dacac137fb8f11",
+      "primeira_vez": "2026-07-05T20:44:28.930992+00:00",
+      "ultima_vez": "2026-07-10T17:39:08.017741+00:00",
+      "logger": "token_manager",
+      "mensagem": "Bling refresh falhou (HTTP 400): Invalid refresh token",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 18
+    },
+    {
+      "fingerprint": "7836f9448410f33d3688",
+      "primeira_vez": "2026-07-10T17:39:01.653261+00:00",
+      "ultima_vez": "2026-07-10T17:39:06.900992+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 401 — token inválido ou expirado: {\"message\":\"Unauthorized\",\"slug\":\"unauthorized\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "8f2d1694cbe3bdef6baa",
+      "primeira_vez": "2026-07-05T20:46:21.071979+00:00",
+      "ultima_vez": "2026-07-10T17:38:53.613256+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama nfe emitir ML-1: sefaz",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "49fbaa58e569ad632f2a",
+      "primeira_vez": "2026-07-05T20:46:21.120661+00:00",
+      "ultima_vez": "2026-07-10T17:38:52.869241+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama alerta sem integracao: zap",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "3d84db5ab61fb35fce90",
+      "primeira_vez": "2026-07-05T20:46:21.055430+00:00",
+      "ultima_vez": "2026-07-10T17:38:51.434313+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama claude: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "7cd3b8d896a0fa241b6a",
+      "primeira_vez": "2026-07-05T20:46:21.215532+00:00",
+      "ultima_vez": "2026-07-10T17:38:49.253755+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama magalu pedidos: pedidos",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "b224dc96eb25635ccd19",
+      "primeira_vez": "2026-07-05T20:46:21.208335+00:00",
+      "ultima_vez": "2026-07-10T17:38:48.544809+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama magalu perguntas: perg",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "ebcf89172543073b0b48",
+      "primeira_vez": "2026-07-05T20:46:21.198081+00:00",
+      "ultima_vez": "2026-07-10T17:38:47.836293+00:00",
+      "logger": "agente_panorama",
+      "mensagem": "panorama magalu saude: saude",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "b523bd42170a8c77dfb4",
+      "primeira_vez": "2026-07-05T20:46:22.357751+00:00",
+      "ultima_vez": "2026-07-10T17:38:44.264497+00:00",
+      "logger": "agente_otimizador_listing",
+      "mensagem": "Otimizador listing falhou: falha",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "0b5774d1682ea12cf125",
+      "primeira_vez": "2026-07-05T20:46:22.376503+00:00",
+      "ultima_vez": "2026-07-10T17:38:42.847207+00:00",
+      "logger": "agente_otimizador_listing",
+      "mensagem": "Erro ao carregar catalogo: io",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "1a8d3b371933e3493647",
+      "primeira_vez": "2026-07-05T20:46:22.394036+00:00",
+      "ultima_vez": "2026-07-10T17:38:37.507117+00:00",
+      "logger": "agente_otimizador_listing",
+      "mensagem": "analisar_catalogo erro: catalogo boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "a746665b47d2ce109b9a",
+      "primeira_vez": "2026-07-10T17:38:30.119826+00:00",
+      "ultima_vez": "2026-07-10T17:38:30.119826+00:00",
+      "logger": "agente_orquestrador",
+      "mensagem": "Orquestrador: falha em x\nTraceback (most recent call last):\n  File \"C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\tests\\..\\agentes\\orquestrador\\agente_orquestrador.py\", line 75, in _executar_agente\n    raw = executar_registro(registro)\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1179, in _mock_c",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "15e08941c8c567a2eecd",
+      "primeira_vez": "2026-07-05T20:46:21.044117+00:00",
+      "ultima_vez": "2026-07-10T17:38:08.993909+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "d94cda7e7d717982cca9",
+      "primeira_vez": "2026-07-10T17:35:12.274015+00:00",
+      "ultima_vez": "2026-07-10T17:35:12.274015+00:00",
+      "logger": "agente_calculo_importacao_aerea",
+      "mensagem": "Falhou: vazio",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "314ab72b621d308b8ebc",
+      "primeira_vez": "2026-07-05T20:44:56.181398+00:00",
+      "ultima_vez": "2026-07-10T17:34:23.708603+00:00",
+      "logger": "ml_product_ads",
+      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183132: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183132",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "4c60298425eeab4a0eec",
+      "primeira_vez": "2026-07-05T20:44:55.397260+00:00",
+      "ultima_vez": "2026-07-10T17:34:16.925046+00:00",
+      "logger": "ml_product_ads",
+      "mensagem": "ML Product Ads ativar_campanha erro campanha=348787694: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/348787694",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "7adb0fc215ca5ec4c55c",
+      "primeira_vez": "2026-07-05T20:44:54.407111+00:00",
+      "ultima_vez": "2026-07-10T17:34:10.131181+00:00",
+      "logger": "ml_product_ads",
+      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183135: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183135",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
       "fingerprint": "6fb096682afe567829cc",
       "primeira_vez": "2026-07-10T12:23:55.189947+00:00",
       "ultima_vez": "2026-07-10T12:23:55.189947+00:00",
@@ -111,61 +419,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "314ab72b621d308b8ebc",
-      "primeira_vez": "2026-07-05T20:44:56.181398+00:00",
-      "ultima_vez": "2026-07-05T21:19:39.487455+00:00",
-      "logger": "ml_product_ads",
-      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183132: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183132",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "4c60298425eeab4a0eec",
-      "primeira_vez": "2026-07-05T20:44:55.397260+00:00",
-      "ultima_vez": "2026-07-05T21:19:38.731516+00:00",
-      "logger": "ml_product_ads",
-      "mensagem": "ML Product Ads ativar_campanha erro campanha=348787694: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/348787694",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "7adb0fc215ca5ec4c55c",
-      "primeira_vez": "2026-07-05T20:44:54.407111+00:00",
-      "ultima_vez": "2026-07-05T21:19:37.973575+00:00",
-      "logger": "ml_product_ads",
-      "mensagem": "ML Product Ads ativar_campanha erro campanha=352183135: 401 Client Error: Unauthorized for url: https://api.mercadolibre.com/marketplace/advertising/MLB/product_ads/campaigns/352183135",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "023520d1a08fd72b1cef",
-      "primeira_vez": "2026-07-05T20:46:22.344302+00:00",
-      "ultima_vez": "2026-07-05T21:19:36.417009+00:00",
-      "logger": "relatorio_financeiro",
-      "mensagem": "Relatório financeiro erro: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "497218055d8a41e7b5b6",
-      "primeira_vez": "2026-07-05T20:46:22.332993+00:00",
-      "ultima_vez": "2026-07-05T21:19:36.408564+00:00",
-      "logger": "relatorio",
-      "mensagem": "Relatório erro: DB error",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "591c7275d47a22ce5ad0",
       "primeira_vez": "2026-07-05T21:19:35.542740+00:00",
       "ultima_vez": "2026-07-05T21:19:35.542740+00:00",
@@ -197,39 +450,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 22
-    },
-    {
-      "fingerprint": "cec3beba4ba3e20480ec",
-      "primeira_vez": "2026-07-05T20:44:28.510732+00:00",
-      "ultima_vez": "2026-07-05T21:19:15.168294+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos HTTP 401: {\"error\":{\"type\":\"invalid_token\",\"message\":\"invalid_token\",\"description\":\"The access token provided has expired\"}}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 13
-    },
-    {
-      "fingerprint": "42818d969230dc2976c0",
-      "primeira_vez": "2026-07-05T20:44:28.934548+00:00",
-      "ultima_vez": "2026-07-05T21:19:14.911770+00:00",
-      "logger": "token_manager",
-      "mensagem": "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 17
-    },
-    {
-      "fingerprint": "e0c5f1dacac137fb8f11",
-      "primeira_vez": "2026-07-05T20:44:28.930992+00:00",
-      "ultima_vez": "2026-07-05T21:19:14.906834+00:00",
-      "logger": "token_manager",
-      "mensagem": "Bling refresh falhou (HTTP 400): Invalid refresh token",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 16
     },
     {
       "fingerprint": "6e0533918d6ee1449c97",
@@ -463,17 +683,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "f5df20084dc3a1613198",
-      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.345185+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 71
-    },
-    {
       "fingerprint": "d088e66772c59b59c29c",
       "primeira_vez": "2026-07-05T21:19:09.249025+00:00",
       "ultima_vez": "2026-07-05T21:19:09.249025+00:00",
@@ -606,17 +815,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "4f1c4ae7f111d54d246c",
-      "primeira_vez": "2026-07-05T20:44:28.247268+00:00",
-      "ultima_vez": "2026-07-05T21:19:07.083007+00:00",
-      "logger": "token_manager",
-      "mensagem": "Amazon refresh falhou (HTTP 401): {\"error_description\":\"Client authentication failed\",\"error\":\"invalid_client\"}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 18
-    },
-    {
       "fingerprint": "94db86c08bd0ee571d59",
       "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
       "ultima_vez": "2026-07-05T21:19:07.062669+00:00",
@@ -703,28 +901,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "1a7ee3f65e63e3b5784f",
-      "primeira_vez": "2026-07-05T20:46:51.494632+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.753160+00:00",
-      "logger": "vendas_notificador",
-      "mensagem": "Mercado Livre: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "b49947724f637cafec2f",
-      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.743200+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     },
     {
       "fingerprint": "39b172e43c640cc98f5c",
@@ -815,17 +991,6 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "a47e7722d566158208a7",
-      "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.169991+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
       "fingerprint": "4ff070dcfb581720bea0",
       "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
       "ultima_vez": "2026-07-05T21:19:05.137961+00:00",
@@ -892,77 +1057,11 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "49fbaa58e569ad632f2a",
-      "primeira_vez": "2026-07-05T20:46:21.120661+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.039675+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama alerta sem integracao: zap",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "0fcf93425004fd9a2241",
       "primeira_vez": "2026-07-05T20:46:21.185600+00:00",
       "ultima_vez": "2026-07-05T21:19:05.021825+00:00",
       "logger": "agente_licitacoes",
       "mensagem": "Agente licitações erro: falha simulada",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "15e08941c8c567a2eecd",
-      "primeira_vez": "2026-07-05T20:46:21.044117+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.001574+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "3d84db5ab61fb35fce90",
-      "primeira_vez": "2026-07-05T20:46:21.055430+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.984093+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama claude: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "7cd3b8d896a0fa241b6a",
-      "primeira_vez": "2026-07-05T20:46:21.215532+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.957452+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama magalu pedidos: pedidos",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "b224dc96eb25635ccd19",
-      "primeira_vez": "2026-07-05T20:46:21.208335+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.947760+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama magalu perguntas: perg",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "ebcf89172543073b0b48",
-      "primeira_vez": "2026-07-05T20:46:21.198081+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.936246+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama magalu saude: saude",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1011,17 +1110,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "4cf9ce5d1a6aea58859b",
-      "primeira_vez": "2026-07-05T20:46:51.035012+00:00",
-      "ultima_vez": "2026-07-05T20:46:51.035012+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML listar_pedidos erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
     },
     {
       "fingerprint": "db3463589f091bb28a69",
@@ -1255,17 +1343,6 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "4a23989fe4fe3fda96c3",
-      "primeira_vez": "2026-07-05T20:44:29.558386+00:00",
-      "ultima_vez": "2026-07-05T20:46:24.582467+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {  \"developerMessage\": \"Unauthorized\",  \"userMessage\": \"You are not authorized to perform this operation. Invalid or expired token.\",  \"moreInfo\": \"http://developer.apiluiza.com.br/errors/reference/30",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "0bc6302b798d291b178a",
       "primeira_vez": "2026-07-05T20:44:28.630156+00:00",
       "ultima_vez": "2026-07-05T20:46:23.898743+00:00",
@@ -1376,39 +1453,6 @@
       "ocorrencias": 2
     },
     {
-      "fingerprint": "1a8d3b371933e3493647",
-      "primeira_vez": "2026-07-05T20:46:22.394036+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.394036+00:00",
-      "logger": "agente_otimizador_listing",
-      "mensagem": "analisar_catalogo erro: catalogo boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "0b5774d1682ea12cf125",
-      "primeira_vez": "2026-07-05T20:46:22.376503+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.376503+00:00",
-      "logger": "agente_otimizador_listing",
-      "mensagem": "Erro ao carregar catalogo: io",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "b523bd42170a8c77dfb4",
-      "primeira_vez": "2026-07-05T20:46:22.357751+00:00",
-      "ultima_vez": "2026-07-05T20:46:22.357751+00:00",
-      "logger": "agente_otimizador_listing",
-      "mensagem": "Otimizador listing falhou: falha",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
       "fingerprint": "f5603abc6d3a1645dcdd",
       "primeira_vez": "2026-07-05T20:46:21.270300+00:00",
       "ultima_vez": "2026-07-05T20:46:21.270300+00:00",
@@ -1447,17 +1491,6 @@
       "ultima_vez": "2026-07-05T20:46:21.103759+00:00",
       "logger": "agente_panorama",
       "mensagem": "panorama ml pedidos: ml ped",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "8f2d1694cbe3bdef6baa",
-      "primeira_vez": "2026-07-05T20:46:21.071979+00:00",
-      "ultima_vez": "2026-07-05T20:46:21.071979+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama nfe emitir ML-1: sefaz",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1508,5 +1541,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-10T12:23:55.189947+00:00"
+  "atualizado_em": "2026-07-10T17:40:49.068881+00:00"
 }

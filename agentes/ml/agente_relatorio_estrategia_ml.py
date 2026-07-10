@@ -160,7 +160,7 @@ def executar(
 
         incrementar(
             "ml.relatorio_estrategia.rodadas",
-            tags=[f"ok:true", f"acoes:{len(snapshot['acoes'])}"],
+            tags=["ok:true", f"acoes:{len(snapshot['acoes'])}"],
         )
         logger.info(
             "Estratégia ML: %s ações, enviado=%s",
