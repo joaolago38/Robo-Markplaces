@@ -1,16 +1,55 @@
 {
-  "timestamp": "2026-07-10T17:00:01.995435+00:00",
+  "timestamp": "2026-07-10T17:03:44.135123+00:00",
   "ok": true,
-  "coletar_fresco": false,
+  "coletar_fresco": true,
   "acoes": [
     {
-      "tipo": "manter",
-      "titulo": "Manter estratégia atual",
-      "detalhe": "Sem gaps críticos nos SKUs monitorados nesta rodada. Continue monitorando preços e visitas dos seus anúncios.",
-      "sku": "",
-      "prioridade": "baixa",
-      "score": 1,
-      "dados": {}
+      "tipo": "diferenciar_ou_sair",
+      "titulo": "Não competir só em preço: IMP-MIMO-003",
+      "detalhe": "Gap 101.3% (seu R$ 44,90 vs mercado R$ 22,30). Líquida est. no preço do líder: R$ 18,29 vs custo R$ 27,15. Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio.",
+      "sku": "IMP-MIMO-003",
+      "prioridade": "alta",
+      "score": 151.35,
+      "dados": {
+        "gap_pct": 101.3,
+        "meu_preco": 44.9,
+        "menor_mercado": 22.3,
+        "receita_liquida_mercado": 18.29,
+        "custo": 27.15,
+        "origem": "monitor_termo"
+      }
+    },
+    {
+      "tipo": "diferenciar_ou_sair",
+      "titulo": "Não competir só em preço: IMP-BAIL-005",
+      "detalhe": "Gap 69.2% (seu R$ 48,90 vs mercado R$ 28,90). Líquida est. no preço do líder: R$ 23,70 vs custo R$ 35,23. Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio.",
+      "sku": "IMP-BAIL-005",
+      "prioridade": "alta",
+      "score": 119.2,
+      "dados": {
+        "gap_pct": 69.2,
+        "meu_preco": 48.9,
+        "menor_mercado": 28.9,
+        "receita_liquida_mercado": 23.7,
+        "custo": 35.23,
+        "origem": "monitor_termo"
+      }
+    },
+    {
+      "tipo": "diferenciar_ou_sair",
+      "titulo": "Não competir só em preço: IMP-SORT-006",
+      "detalhe": "Gap 51.0% (seu R$ 49,90 vs mercado R$ 33,05). Líquida est. no preço do líder: R$ 27,10 vs custo R$ 39,10. Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio.",
+      "sku": "IMP-SORT-006",
+      "prioridade": "alta",
+      "score": 100.98,
+      "dados": {
+        "gap_pct": 51.0,
+        "meu_preco": 49.9,
+        "menor_mercado": 33.05,
+        "receita_liquida_mercado": 27.1,
+        "custo": 39.1,
+        "origem": "monitor_termo"
+      }
     }
   ],
   "contexto": {
@@ -20,9 +59,9 @@
     "loja_ameaca": "NOVAMIX_COMERCIAL",
     "loja_porte": "gigante",
     "monitor_itens": 13,
-    "monitor_alertas": 0
+    "monitor_alertas": 8
   },
-  "relatorio": "🎯 *Estratégia de vendas ML — ações da semana*\n_10/07/2026 14:00_\n\n_Com base em preços de catálogo, gaps vs seus SKUs e margem estimada._\nConcorrente foco: *NOVAMIX_COMERCIAL* (gigante)\nMonitor: 13 itens | 0 alertas | taxa est. 18.0%\n\n*Top ações*\n1. *Manter estratégia atual*\n   Sem gaps críticos nos SKUs monitorados nesta rodada. Continue monitorando preços e visitas dos seus anúncios.\n   _tipo: manter | prioridade: baixa_\n\n_Receita líquida = preço − taxa estimada. Visitas de concorrente não entram (API)._",
+  "relatorio": "🎯 *Estratégia de vendas ML — ações da semana*\n_10/07/2026 14:03_\n\n_Com base em preços de catálogo, gaps vs seus SKUs e margem estimada._\nConcorrente foco: *NOVAMIX_COMERCIAL* (gigante)\nMonitor: 13 itens | 8 alertas | taxa est. 18.0%\n\n*Top ações*\n1. *Não competir só em preço: IMP-MIMO-003*\n   Gap 101.3% (seu R$ 44,90 vs mercado R$ 22,30). Líquida est. no preço do líder: R$ 18,29 vs custo R$ 27,15. Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio.\n   _tipo: diferenciar_ou_sair | prioridade: alta_\n2. *Não competir só em preço: IMP-BAIL-005*\n   Gap 69.2% (seu R$ 48,90 vs mercado R$ 28,90). Líquida est. no preço do líder: R$ 23,70 vs custo R$ 35,23. Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio.\n   _tipo: diferenciar_ou_sair | prioridade: alta_\n3. *Não competir só em preço: IMP-SORT-006*\n   Gap 51.0% (seu R$ 49,90 vs mercado R$ 33,05). Líquida est. no preço do líder: R$ 27,10 vs custo R$ 39,10. Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio.\n   _tipo: diferenciar_ou_sair | prioridade: alta_\n\n_Receita líquida = preço − taxa estimada. Visitas de concorrente não entram (API)._",
   "monitor_ok": true,
-  "loja_anuncios": 0
+  "loja_anuncios": 2
 }
