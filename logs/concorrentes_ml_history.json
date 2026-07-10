@@ -1,1 +1,173 @@
-{}
+{
+  "kit3-mimo-carmed": {
+    "menor_preco": 22.3,
+    "meu_preco": 44.9,
+    "total_concorrentes": 9,
+    "atualizado_em": "2026-07-10T16:53:40.234361+00:00",
+    "leituras": [
+      {
+        "menor_preco": 22.3,
+        "ts": "2026-07-10T16:53:40.234354+00:00"
+      }
+    ]
+  },
+  "kit5-bailarina": {
+    "menor_preco": 28.9,
+    "meu_preco": 48.9,
+    "total_concorrentes": 6,
+    "atualizado_em": "2026-07-10T16:54:02.315859+00:00",
+    "leituras": [
+      {
+        "menor_preco": 28.9,
+        "ts": "2026-07-10T16:54:02.315852+00:00"
+      }
+    ]
+  },
+  "kit6-sortido": {
+    "menor_preco": 33.05,
+    "meu_preco": 49.9,
+    "total_concorrentes": 6,
+    "atualizado_em": "2026-07-10T16:54:29.114631+00:00",
+    "leituras": [
+      {
+        "menor_preco": 33.05,
+        "ts": "2026-07-10T16:54:29.114623+00:00"
+      }
+    ]
+  },
+  "kit10-atacado-imp": {
+    "menor_preco": 48.99,
+    "meu_preco": 69.9,
+    "total_concorrentes": 6,
+    "atualizado_em": "2026-07-10T16:54:57.373655+00:00",
+    "leituras": [
+      {
+        "menor_preco": 48.99,
+        "ts": "2026-07-10T16:54:57.373646+00:00"
+      }
+    ]
+  },
+  "kit15-cores-moda": {
+    "menor_preco": 63.04,
+    "meu_preco": 79.9,
+    "total_concorrentes": 7,
+    "atualizado_em": "2026-07-10T16:55:24.243873+00:00",
+    "leituras": [
+      {
+        "menor_preco": 63.04,
+        "ts": "2026-07-10T16:55:24.243860+00:00"
+      }
+    ]
+  },
+  "kit30-gran": {
+    "menor_preco": 119.0,
+    "meu_preco": 145.0,
+    "total_concorrentes": 10,
+    "atualizado_em": "2026-07-10T16:55:44.782978+00:00",
+    "leituras": [
+      {
+        "menor_preco": 119.0,
+        "ts": "2026-07-10T16:55:44.782971+00:00"
+      }
+    ]
+  },
+  "kit10-verm-rosa": {
+    "menor_preco": 56.99,
+    "meu_preco": 49.9,
+    "total_concorrentes": 2,
+    "atualizado_em": "2026-07-10T16:56:09.226813+00:00",
+    "leituras": [
+      {
+        "menor_preco": 56.99,
+        "ts": "2026-07-10T16:56:09.226804+00:00"
+      }
+    ]
+  },
+  "kit12-classicos": {
+    "menor_preco": 0.0,
+    "meu_preco": 59.9,
+    "total_concorrentes": 0,
+    "atualizado_em": "2026-07-10T16:56:35.778036+00:00",
+    "leituras": [
+      {
+        "menor_preco": 0.0,
+        "ts": "2026-07-10T16:56:35.778023+00:00"
+      }
+    ]
+  },
+  "kit10-nude": {
+    "menor_preco": 47.47,
+    "meu_preco": 46.9,
+    "total_concorrentes": 8,
+    "atualizado_em": "2026-07-10T16:57:00.196633+00:00",
+    "leituras": [
+      {
+        "menor_preco": 47.47,
+        "ts": "2026-07-10T16:57:00.196626+00:00"
+      }
+    ]
+  },
+  "kit15-sortidos": {
+    "menor_preco": 142.9,
+    "meu_preco": 69.9,
+    "total_concorrentes": 1,
+    "atualizado_em": "2026-07-10T16:57:23.608089+00:00",
+    "leituras": [
+      {
+        "menor_preco": 142.9,
+        "ts": "2026-07-10T16:57:23.608082+00:00"
+      }
+    ]
+  },
+  "kit30-atacado": {
+    "menor_preco": 119.0,
+    "meu_preco": 119.9,
+    "total_concorrentes": 10,
+    "atualizado_em": "2026-07-10T16:57:45.049430+00:00",
+    "leituras": [
+      {
+        "menor_preco": 119.0,
+        "ts": "2026-07-10T16:57:45.049419+00:00"
+      }
+    ]
+  },
+  "bundle-777-5esm": {
+    "menor_preco": 125.0,
+    "meu_preco": 79.9,
+    "total_concorrentes": 10,
+    "atualizado_em": "2026-07-10T16:58:03.408183+00:00",
+    "leituras": [
+      {
+        "menor_preco": 125.0,
+        "ts": "2026-07-10T16:58:03.408174+00:00"
+      }
+    ]
+  },
+  "loja-novamix-comercial": {
+    "menor_preco": 30.99,
+    "meu_preco": 44.9,
+    "total_concorrentes": 1,
+    "seller_id": "1666381510",
+    "nickname": "NOVAMIX_COMERCIAL",
+    "atualizado_em": "2026-07-10T17:01:13.668985+00:00",
+    "leituras": [
+      {
+        "menor_preco": 30.99,
+        "ts": "2026-07-10T17:01:13.668974+00:00"
+      }
+    ],
+    "perfil": {
+      "ok": true,
+      "seller_id": "1666381510",
+      "nickname": "NOVAMIX_COMERCIAL",
+      "permalink": "http://perfil.mercadolivre.com.br/NOVAMIX_COMERCIAL",
+      "cidade": "São Paulo",
+      "estado": "BR-SP",
+      "site_status": "active",
+      "level_id": "5_green",
+      "power_seller_status": "platinum",
+      "transactions_total": 71494,
+      "url_loja": "https://lista.mercadolivre.com.br/pagina/novamix_comercial"
+    }
+  }
+}

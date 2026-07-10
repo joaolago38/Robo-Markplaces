@@ -64,7 +64,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-07-10T16:41:55.564184+00:00",
+    "timestamp": "2026-07-10T16:53:58.114243+00:00",
     "resultados": [
       {
         "item_id": "MLB6725163428",
@@ -124,6 +124,18 @@
         "fonte_busca": "products_api",
         "catalog_product_id": "MLB41490081",
         "catalog_date_created": "2024-10-04T03:32:02Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4089259907",
+        "titulo": "Kit 5 Esmaltes Impala Base Verniz Vermelho Intensificador",
+        "preco": 44.66,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4089259907",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51066573",
+        "catalog_date_created": "2025-06-07T20:11:08Z",
         "listing_type_id": "gold_special"
       }
     ]
@@ -840,6 +852,884 @@
         "permalink": "https://produto.mercadolivre.com.br/MLB4106800447",
         "fonte_busca": "products_api",
         "catalog_product_id": "MLB28582641"
+      }
+    ]
+  },
+  "kit 3 esmaltes impala mimo carmed": {
+    "timestamp": "2026-07-10T16:53:36.043955+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB3715746005",
+        "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+        "preco": 22.54,
+        "quantidade_vendida": 0,
+        "seller_id": "296685441",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3715746005",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB34852824",
+        "catalog_date_created": "2024-03-23T13:33:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5106097646",
+        "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+        "preco": 23.19,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5106097646",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB34852824",
+        "catalog_date_created": "2024-03-23T13:33:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4056949611",
+        "titulo": "Kit 3 Esmaltes Impala Base Verniz Vermelho Intensificador",
+        "preco": 36.06,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4056949611",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB49120997",
+        "catalog_date_created": "2025-05-09T05:22:46Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5975566072",
+        "titulo": "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
+        "preco": 22.3,
+        "quantidade_vendida": 0,
+        "seller_id": "173473498",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5975566072",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB24803372",
+        "catalog_date_created": "2023-07-23T00:32:51Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4087433501",
+        "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+        "preco": 30.71,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4087433501",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51023483",
+        "catalog_date_created": "2025-06-06T07:49:37Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6688504570",
+        "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+        "preco": 33.75,
+        "quantidade_vendida": 0,
+        "seller_id": "799344550",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6688504570",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51023483",
+        "catalog_date_created": "2025-06-06T07:49:37Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7071399990",
+        "titulo": "Kit 3 Esmalte Risque Tons Nude Glitter Impala Atacado 3 Esmaltes",
+        "preco": 22.49,
+        "quantidade_vendida": 0,
+        "seller_id": "1029102477",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7071399990",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB74734356",
+        "catalog_date_created": "2026-07-01T00:32:46Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7069274460",
+        "titulo": "Kit 3 Esmalte Impala Tratamento Incolor 7,5ml",
+        "preco": 26.99,
+        "quantidade_vendida": 0,
+        "seller_id": "628846388",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7069274460",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB45892278",
+        "catalog_date_created": "2025-02-04T19:22:02Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB6599892614",
+        "titulo": "Kit 3 Esmalte Impala Tratamento Incolor 7,5ml",
+        "preco": 45.99,
+        "quantidade_vendida": 0,
+        "seller_id": "3131498750",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6599892614",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB45892278",
+        "catalog_date_created": "2025-02-04T19:22:02Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit 6 esmaltes impala sortidos": {
+    "timestamp": "2026-07-10T16:54:25.030532+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4823282217",
+        "titulo": "Impala Nude - Kit 6 Esmaltes Tons Nudes",
+        "preco": 38.09,
+        "quantidade_vendida": 0,
+        "seller_id": "352914302",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4823282217",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB65902460",
+        "catalog_date_created": "2026-02-23T04:01:50Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5317556912",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 33.05,
+        "quantidade_vendida": 0,
+        "seller_id": "296685441",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5317556912",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB31013935",
+        "catalog_date_created": "2024-01-30T21:34:37Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4127676627",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 36.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1133024329",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4127676627",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB31013935",
+        "catalog_date_created": "2024-01-30T21:34:37Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB5134223528",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 37.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5134223528",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB31013935",
+        "catalog_date_created": "2024-01-30T21:34:37Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5681635654",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 43.75,
+        "quantidade_vendida": 0,
+        "seller_id": "1944386901",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5681635654",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB31013935",
+        "catalog_date_created": "2024-01-30T21:34:37Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7047776690",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 35.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1064195467",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7047776690",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB31013935",
+        "catalog_date_created": "2024-01-30T21:34:37Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit 10 esmaltes impala atacado": {
+    "timestamp": "2026-07-10T16:54:53.236030+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB5192919860",
+        "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+        "preco": 48.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1666381510",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5192919860",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26704740",
+        "catalog_date_created": "2023-09-01T03:17:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7004729170",
+        "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+        "preco": 49.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1434176345",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7004729170",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26704740",
+        "catalog_date_created": "2023-09-01T03:17:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5084629426",
+        "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+        "preco": 56.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5084629426",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26704740",
+        "catalog_date_created": "2023-09-01T03:17:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3800708367",
+        "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+        "preco": 59.9,
+        "quantidade_vendida": 0,
+        "seller_id": "464448442",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3800708367",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26704740",
+        "catalog_date_created": "2023-09-01T03:17:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7047776650",
+        "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+        "preco": 48.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1064195467",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7047776650",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26704740",
+        "catalog_date_created": "2023-09-01T03:17:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4093496201",
+        "titulo": "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor Sortidos",
+        "preco": 59.95,
+        "quantidade_vendida": 0,
+        "seller_id": "1746630362",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4093496201",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26704740",
+        "catalog_date_created": "2023-09-01T03:17:20Z",
+        "listing_type_id": "gold_pro"
+      }
+    ]
+  },
+  "kit 15 esmaltes impala cores da moda": {
+    "timestamp": "2026-07-10T16:55:19.974794+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB5162302300",
+        "titulo": "Kit 15 Esmaltes Sortidos Impala Coleção Cores Da Sua Moda Cor Colorido",
+        "preco": 63.04,
+        "quantidade_vendida": 0,
+        "seller_id": "1666381510",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5162302300",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380473",
+        "catalog_date_created": "2023-08-23T07:54:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5262460322",
+        "titulo": "Kit 15 Esmaltes Sortidos Impala Coleção Cores Da Sua Moda Cor Colorido",
+        "preco": 64.33,
+        "quantidade_vendida": 0,
+        "seller_id": "22172335",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5262460322",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380473",
+        "catalog_date_created": "2023-08-23T07:54:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3887971263",
+        "titulo": "Kit 15 Esmaltes Sortidos Impala Coleção Cores Da Sua Moda Cor Colorido",
+        "preco": 66.12,
+        "quantidade_vendida": 0,
+        "seller_id": "296685441",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3887971263",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380473",
+        "catalog_date_created": "2023-08-23T07:54:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6175886316",
+        "titulo": "Kit 15 Esmaltes Sortidos Impala Coleção Cores Da Sua Moda Cor Colorido",
+        "preco": 66.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1064195467",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6175886316",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380473",
+        "catalog_date_created": "2023-08-23T07:54:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5146371814",
+        "titulo": "Kit 15 Esmaltes Sortidos Impala Coleção Cores Da Sua Moda Cor Colorido",
+        "preco": 78.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5146371814",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380473",
+        "catalog_date_created": "2023-08-23T07:54:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3961142061",
+        "titulo": "Kit 15 Esmaltes Sortidos Impala Coleção Cores Da Sua Moda Cor Colorido",
+        "preco": 99.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1944386901",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3961142061",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380473",
+        "catalog_date_created": "2023-08-23T07:54:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4664203048",
+        "titulo": "Kit 15 Esmalte Impala Cores Da Sua Moda Clarinho Lilas Nude Cor Sortidas",
+        "preco": 78.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4664203048",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26097527",
+        "catalog_date_created": "2023-08-17T03:34:43Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit 30 esmaltes impala atacado": {
+    "timestamp": "2026-07-10T16:55:40.442687+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB3607560029",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 130.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1666381510",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3607560029",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6176150760",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 141.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1064195467",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6176150760",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3861246515",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 176.21,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3861246515",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB5159129706",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 119.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1983344351",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5159129706",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB4189425391",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 145.0,
+        "quantidade_vendida": 0,
+        "seller_id": "175153099",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4189425391",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4718914653",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 145.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1495866222",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4718914653",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3859194855",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 152.09,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3859194855",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3859195425",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 165.53,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3859195425",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB5205365362",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 157.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1983344351",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5205365362",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB3994220705",
+        "titulo": "Kit 30 Esmaltes Risqué Hipoalegenicos Atacado Cores Sortidas",
+        "preco": 136.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1217651848",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3994220705",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB25155637",
+        "catalog_date_created": "2023-07-25T22:07:51Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit 10 esmaltes impala vermelho rosa": {
+    "timestamp": "2026-07-10T16:56:07.523244+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4128881349",
+        "titulo": "Kit 10 Esmaltes Impala Base Verniz Vermelho Intensificador",
+        "preco": 75.18,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4128881349",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB52710124",
+        "catalog_date_created": "2025-07-17T20:37:54Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5071571232",
+        "titulo": "Kit 10 Esmalte Impala Vermelhos Terracota",
+        "preco": 56.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5071571232",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26580843",
+        "catalog_date_created": "2023-08-24T20:22:36Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit 10 esmaltes impala nude": {
+    "timestamp": "2026-07-10T16:56:56.007316+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4317032770",
+        "titulo": "Kit 10 Esmaltes Impala Nude Cruelty-Free Secado Rápido",
+        "preco": 47.47,
+        "quantidade_vendida": 0,
+        "seller_id": "296685441",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4317032770",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB29262717",
+        "catalog_date_created": "2023-12-23T14:26:42Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7004729166",
+        "titulo": "Kit 10 Esmaltes Impala Nude Cruelty-Free Secado Rápido",
+        "preco": 49.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1434176345",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7004729166",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB29262717",
+        "catalog_date_created": "2023-12-23T14:26:42Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3910578193",
+        "titulo": "Kit 10 Esmaltes Impala Nude Cruelty-Free Secado Rápido",
+        "preco": 56.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3910578193",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB29262717",
+        "catalog_date_created": "2023-12-23T14:26:42Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6486814592",
+        "titulo": "Kit 10 Esmaltes Impala Nude Cruelty-Free Secado Rápido",
+        "preco": 59.89,
+        "quantidade_vendida": 0,
+        "seller_id": "144167726",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6486814592",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB29262717",
+        "catalog_date_created": "2023-12-23T14:26:42Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3835308965",
+        "titulo": "Kit 10 Esmaltes Impala Nude Cruelty-Free Secado Rápido",
+        "preco": 119.9,
+        "quantidade_vendida": 0,
+        "seller_id": "143360342",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3835308965",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB29262717",
+        "catalog_date_created": "2023-12-23T14:26:42Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB7050529668",
+        "titulo": "Kit 10 Esmaltes Impala Nude Cruelty-Free Secado Rápido",
+        "preco": 51.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1064195467",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7050529668",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB29262717",
+        "catalog_date_created": "2023-12-23T14:26:42Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5071571232",
+        "titulo": "Kit 10 Esmalte Impala Vermelhos Terracota",
+        "preco": 56.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5071571232",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26580843",
+        "catalog_date_created": "2023-08-24T20:22:36Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4087395307",
+        "titulo": "Kit 10 Esmaltes Impala Tratamento Base Vitaminada Manicure",
+        "preco": 69.5,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4087395307",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51023174",
+        "catalog_date_created": "2025-06-06T07:44:44Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit 15 esmaltes impala sortidos atacado": {
+    "timestamp": "2026-07-10T16:57:22.795734+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB5035256724",
+        "titulo": "Impala Kit 15 Esmaltes Atacado Tons Claros Completo Cor Colorido",
+        "preco": 142.9,
+        "quantidade_vendida": 0,
+        "seller_id": "143360342",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5035256724",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26590572",
+        "catalog_date_created": "2023-08-25T03:30:03Z",
+        "listing_type_id": "gold_pro"
+      }
+    ]
+  },
+  "kit 30 esmaltes impala atacado manicure": {
+    "timestamp": "2026-07-10T16:57:40.912719+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB3607560029",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 130.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1666381510",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3607560029",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6176150760",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 141.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1064195467",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6176150760",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3861246515",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 176.21,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3861246515",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB5159129706",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 119.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1983344351",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5159129706",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB4189425391",
+        "titulo": "Kit 30 Esmaltes Impala Atacado Coleção Cores Coloridos Tons Cor Classico",
+        "preco": 145.0,
+        "quantidade_vendida": 0,
+        "seller_id": "175153099",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4189425391",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB26380665",
+        "catalog_date_created": "2023-08-23T07:54:57Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4718914653",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 145.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1495866222",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4718914653",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3859194855",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 152.09,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3859194855",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3859195425",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 165.53,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3859195425",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB5205365362",
+        "titulo": "Kit 30 Esmaltes Risque Hipoalergenicos Atacado Sortidas",
+        "preco": 157.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1983344351",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5205365362",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB28479778",
+        "catalog_date_created": "2023-11-27T23:41:20Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB3994220705",
+        "titulo": "Kit 30 Esmaltes Risqué Hipoalegenicos Atacado Cores Sortidas",
+        "preco": 136.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1217651848",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3994220705",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB25155637",
+        "catalog_date_created": "2023-07-25T22:07:51Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit alicate manicure mundial 777 esmaltes impala": {
+    "timestamp": "2026-07-10T16:57:59.262224+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB4449624797",
+        "titulo": "Kit Alicate Mundial 777 Atacado 6 Unidades",
+        "preco": 229.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1093396608",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4449624797",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB46458876",
+        "catalog_date_created": "2025-02-25T22:40:48Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6552980422",
+        "titulo": "Kit Alicate Cutícula 777 Mundial Profissional Com 3unid",
+        "preco": 125.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1641096364",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6552980422",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB65204405",
+        "catalog_date_created": "2026-02-02T18:58:19Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6228937144",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 164.91,
+        "quantidade_vendida": 0,
+        "seller_id": "3182806809",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6228937144",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6191412540",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 183.89,
+        "quantidade_vendida": 0,
+        "seller_id": "453583830",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6191412540",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3910781589",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 189.0,
+        "quantidade_vendida": 0,
+        "seller_id": "178597951",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3910781589",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4912470892",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 189.91,
+        "quantidade_vendida": 0,
+        "seller_id": "1225349893",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4912470892",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3954449545",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 189.99,
+        "quantidade_vendida": 0,
+        "seller_id": "1225349893",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3954449545",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB5221119690",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 196.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1988019921",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5221119690",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB3910755913",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 197.01,
+        "quantidade_vendida": 0,
+        "seller_id": "178597951",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3910755913",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB4479986071",
+        "titulo": "Kit 5 Alicate Cuticula 777 Professional Mundial Manicure",
+        "preco": 164.89,
+        "quantidade_vendida": 0,
+        "seller_id": "3215435801",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4479986071",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB37631907",
+        "catalog_date_created": "2024-06-08T20:10:56Z",
+        "listing_type_id": "gold_special"
       }
     ]
   }

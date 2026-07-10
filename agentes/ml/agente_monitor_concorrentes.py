@@ -312,6 +312,7 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         "ok": True,
         "tipo": "termo",
         "nome": nome,
+        "sku": str(entrada.get("sku") or "").strip(),
         "termo_busca": termo,
         "meu_preco": meu_preco,
         "menor_preco": menor,
