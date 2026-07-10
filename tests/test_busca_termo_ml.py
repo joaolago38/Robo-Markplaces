@@ -114,7 +114,14 @@ class TestExecutarBuscaTermo(unittest.TestCase):
                             {"id": "MLB41490081", "name": "Kit 5 Esmaltes Impala Bailarina"}
                         ]
                     }
-                ),
+                ),  # products/search
+                _mock_resp(
+                    {
+                        "id": "MLB41490081",
+                        "name": "Kit 5 Esmaltes Impala Bailarina",
+                        "date_created": "2024-10-04T03:32:02Z",
+                    }
+                ),  # products/{id}
                 _mock_resp(
                     {
                         "results": [
@@ -126,7 +133,7 @@ class TestExecutarBuscaTermo(unittest.TestCase):
                             }
                         ]
                     }
-                ),
+                ),  # products/{id}/items
             ]
             out = busca_termo_ml.executar_busca_termo("kit 5 esmaltes impala bailarina", limite=5)
         self.assertEqual(len(out), 1)

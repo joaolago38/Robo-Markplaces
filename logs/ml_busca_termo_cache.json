@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-07-10T15:25:31.273847+00:00",
+    "timestamp": "2026-07-10T16:41:29.130516+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,7 +32,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-07-10T15:25:31.265871+00:00",
+    "timestamp": "2026-07-10T16:41:29.120181+00:00",
     "resultados": [
       {
         "item_id": "MLB2",
@@ -48,7 +48,7 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-07-10T15:25:31.259195+00:00",
+    "timestamp": "2026-07-10T16:41:29.106381+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -64,17 +64,67 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-07-10T15:25:31.263143+00:00",
+    "timestamp": "2026-07-10T16:41:55.564184+00:00",
     "resultados": [
       {
+        "item_id": "MLB6725163428",
+        "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+        "preco": 28.9,
+        "quantidade_vendida": 0,
+        "seller_id": "3365946217",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6725163428",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41490081",
+        "catalog_date_created": "2024-10-04T03:32:02Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4510931069",
+        "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+        "preco": 29.9,
+        "quantidade_vendida": 0,
+        "seller_id": "159830952",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4510931069",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41490081",
+        "catalog_date_created": "2024-10-04T03:32:02Z",
+        "listing_type_id": "gold_special"
+      },
+      {
         "item_id": "MLB3948390421",
-        "titulo": "Kit 5 Esmaltes Impala Bailarina",
+        "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
         "preco": 30.99,
-        "quantidade_vendida": 50,
+        "quantidade_vendida": 0,
         "seller_id": "1666381510",
         "permalink": "https://produto.mercadolivre.com.br/MLB3948390421",
         "fonte_busca": "products_api",
-        "catalog_product_id": "MLB41490081"
+        "catalog_product_id": "MLB41490081",
+        "catalog_date_created": "2024-10-04T03:32:02Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4172317831",
+        "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+        "preco": 32.99,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4172317831",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41490081",
+        "catalog_date_created": "2024-10-04T03:32:02Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5233233848",
+        "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+        "preco": 34.9,
+        "quantidade_vendida": 0,
+        "seller_id": "208624698",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5233233848",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41490081",
+        "catalog_date_created": "2024-10-04T03:32:02Z",
+        "listing_type_id": "gold_special"
       }
     ]
   },

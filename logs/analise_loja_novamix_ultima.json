@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-10T14:03:17.640729+00:00",
+  "timestamp": "2026-07-10T15:29:48.220482+00:00",
   "ok": true,
   "perfil": {
     "ok": true,
@@ -11,7 +11,7 @@
     "site_status": "active",
     "level_id": "5_green",
     "power_seller_status": "platinum",
-    "transactions_total": 71423,
+    "transactions_total": 71494,
     "url_loja": "https://lista.mercadolivre.com.br/pagina/novamix_comercial"
   },
   "nickname": "NOVAMIX_COMERCIAL",
@@ -29,7 +29,7 @@
     "ameaca_geral": "alta",
     "pontos_fortes_loja": [
       "Mercado Líder platinum com reputação 5_green",
-      "71.423 transações históricas",
+      "71.494 transações históricas",
       "Base em São Paulo (logística e alcance nacional no ML)",
       "Mix tipicamente focado em kits de esmalte (Dailus, Risqué, Colorama, Impala, gel)",
       "Página da loja com paginação (_Desde_49) indica estoque amplo (49+ anúncios)"
@@ -45,7 +45,18 @@
     "skus_sob_pressao": []
   },
   "termos_usados": [
-    "novamix_comercial esmalte"
+    "NOVAMIX_COMERCIAL esmalte",
+    "NOVAMIX_COMERCIAL kit",
+    "kit esmalte impala",
+    "kit esmalte risque atacado",
+    "kit esmalte colorama",
+    "kit esmalte dailus",
+    "kit esmalte manicure atacado",
+    "kit esmalte helen color gel",
+    "kit 10 esmaltes impala",
+    "kit 30 esmaltes atacado",
+    "esmalte impala bailarina kit",
+    "novamix comercial esmalte"
   ],
   "limitacao": "Busca ML por seller_id retorna 403; anúncios vêm de termos filtrados. Amostra pode ser parcial enquanto a API estiver bloqueada."
 }

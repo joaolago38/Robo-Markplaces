@@ -253,11 +253,23 @@ def _buscar_via_products_api(termo: str, limite: int) -> list[dict[str, Any]]:
             continue
         pid = str(prod.get("id") or prod.get("catalog_product_id") or "").strip()
         nome_prod = str(prod.get("name") or "")
+        catalog_created = str(prod.get("date_created") or "").strip() or None
         if not pid:
             continue
         if nome_prod and not _titulo_relevante(termo, nome_prod):
             # ainda tenta — catálogo às vezes usa nome genérico
             pass
+        # products/search às vezes omite date_created — completa via /products/{id}
+        if not catalog_created:
+            try:
+                rp = ml_client._request_ml("GET", f"{ml_client.BASE}/products/{pid}", timeout=15)
+                if rp.status_code == 200:
+                    body_p = rp.json() or {}
+                    catalog_created = str(body_p.get("date_created") or "").strip() or None
+                    if not nome_prod:
+                        nome_prod = str(body_p.get("name") or "")
+            except Exception:
+                pass
         try:
             ri = ml_client._request_ml(
                 "GET",
@@ -287,16 +299,22 @@ def _buscar_via_products_api(termo: str, limite: int) -> list[dict[str, Any]]:
                 continue
             vistos.add(item_id)
             titulo = nome_prod or item_id
+            try:
+                vendidos = int(it.get("sold_quantity") or 0)
+            except (TypeError, ValueError):
+                vendidos = 0
             encontrados.append(
                 {
                     "item_id": item_id,
                     "titulo": titulo,
                     "preco": preco,
-                    "quantidade_vendida": int(it.get("sold_quantity") or 0),
+                    "quantidade_vendida": vendidos,
                     "seller_id": seller_id,
                     "permalink": str(it.get("permalink") or f"https://produto.mercadolivre.com.br/{item_id}"),
                     "fonte_busca": "products_api",
                     "catalog_product_id": pid,
+                    "catalog_date_created": catalog_created,
+                    "listing_type_id": str(it.get("listing_type_id") or ""),
                 }
             )
             if len(encontrados) >= limite:
