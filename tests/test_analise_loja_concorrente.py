@@ -43,6 +43,10 @@ class AnaliseLojaTests(unittest.TestCase):
             "amostra": [],
         }
     ])
+    @patch(
+        "integracoes.ml.analise_anuncio_concorrente.enriquecer_lista",
+        side_effect=lambda xs, **kw: xs,
+    )
     def test_analisar_loja(self, *_):
         out = al.analisar_loja("1666381510", nickname="NOVAMIX_COMERCIAL")
         self.assertTrue(out["ok"])
@@ -55,10 +59,24 @@ class AnaliseLojaTests(unittest.TestCase):
 
     def test_filtrar_seller_em_coleta(self):
         rows = [
-            {"item_id": "A", "titulo": "Kit Impala", "preco": 40, "seller_id": "1666381510"},
-            {"item_id": "B", "titulo": "Kit Impala", "preco": 39, "seller_id": "999"},
+            {
+                "item_id": "A",
+                "titulo": "Kit Impala",
+                "preco": 40,
+                "seller_id": "1666381510",
+                "fonte_busca": "products_api",
+            },
+            {
+                "item_id": "B",
+                "titulo": "Kit Impala",
+                "preco": 39,
+                "seller_id": "999",
+                "fonte_busca": "products_api",
+            },
         ]
-        with patch.object(al.ml_client, "buscar_concorrentes_por_termo", return_value=rows):
+        with patch.object(al.ml_client, "_enabled", return_value=True), patch(
+            "integracoes.ml.busca_termo_ml._buscar_via_products_api", return_value=rows
+        ):
             out = al.coletar_anuncios_loja("1666381510", termos=["kit impala"], limite_por_termo=5)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["item_id"], "A")

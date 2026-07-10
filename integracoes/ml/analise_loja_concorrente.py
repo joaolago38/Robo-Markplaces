@@ -20,16 +20,17 @@ logger = logging.getLogger("analise_loja_concorrente")
 BASE = "https://api.mercadolibre.com"
 
 _TERMOS_PADRAO_ESMALTES: tuple[str, ...] = (
+    "kit 5 esmaltes impala bailarina",
+    "kit 3 esmaltes impala mimo",
+    "kit 6 esmaltes impala sortidos",
+    "kit 10 esmaltes impala atacado",
     "kit esmalte impala",
     "kit esmalte risque atacado",
     "kit esmalte colorama",
     "kit esmalte dailus",
     "kit esmalte manicure atacado",
     "kit esmalte helen color gel",
-    "kit 10 esmaltes impala",
     "kit 30 esmaltes atacado",
-    "esmalte impala bailarina kit",
-    "novamix comercial esmalte",
 )
 
 _MARCAS = (
@@ -89,49 +90,92 @@ def coletar_anuncios_loja(
     limite_por_termo: int = 20,
 ) -> list[dict[str, Any]]:
     """
-    Coleta anúncios provavelmente da loja via busca por termo + filtro seller_id.
-    Se a API não devolver seller_id (fallback DDG), mantém hits cujo título/url
-    mencionam o nickname quando informado via termos.
+    Coleta anúncios da loja via catálogo oficial (/products/search + /items),
+    filtrando pelo seller_id. Não depende de /sites/search (403).
     """
+    from integracoes.ml import ml_client
+    from integracoes.ml.busca_termo_ml import _buscar_via_products_api
+
     sid = str(seller_id or "").strip()
     lista_termos = [t.strip() for t in (termos or list(_TERMOS_PADRAO_ESMALTES)) if t and t.strip()]
     vistos: set[str] = set()
     anuncios: list[dict[str, Any]] = []
 
-    for termo in lista_termos:
-        try:
-            rows = ml_client.buscar_concorrentes_por_termo(termo, limite=limite_por_termo)
-        except Exception as exc:
-            logger.warning("busca termo %r falhou: %s", termo, exc)
-            rows = []
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            item_id = str(row.get("item_id") or row.get("id") or "").strip().upper()
-            row_sid = str(row.get("seller_id") or "").strip()
-            if sid and row_sid and row_sid != sid:
-                continue
-            # Sem seller_id no resultado: só aceita se o termo for específico da loja
-            if sid and not row_sid and "novamix" not in termo.lower():
-                continue
-            chave = item_id or str(row.get("permalink") or row.get("titulo") or "")
-            if not chave or chave in vistos:
-                continue
-            vistos.add(chave)
-            titulo = str(row.get("titulo") or row.get("title") or "")
-            anuncios.append(
-                {
-                    "item_id": item_id,
-                    "titulo": titulo,
-                    "preco": float(row.get("preco") or row.get("price") or 0),
-                    "quantidade_vendida": int(row.get("quantidade_vendida") or row.get("sold_quantity") or 0),
-                    "seller_id": row_sid or sid,
-                    "permalink": str(row.get("permalink") or row.get("url") or ""),
-                    "termo_origem": termo,
-                    "marcas": _marcar_titulo(titulo),
-                    "fonte_busca": row.get("fonte_busca") or "ml",
-                }
-            )
+    # 1) Preferir products API (tem seller_id + preço)
+    if ml_client._enabled():
+        for termo in lista_termos:
+            try:
+                # pede mais resultados para achar o seller entre vários vendedores do catálogo
+                rows = _buscar_via_products_api(termo, max(limite_por_termo, 40))
+            except Exception as exc:
+                logger.warning("products termo %r falhou: %s", termo, exc)
+                rows = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                row_sid = str(row.get("seller_id") or "").strip()
+                if sid and row_sid != sid:
+                    continue
+                item_id = str(row.get("item_id") or "").strip().upper()
+                chave = item_id or str(row.get("permalink") or row.get("titulo") or "")
+                if not chave or chave in vistos:
+                    continue
+                vistos.add(chave)
+                titulo = str(row.get("titulo") or "")
+                anuncios.append(
+                    {
+                        "item_id": item_id,
+                        "titulo": titulo,
+                        "preco": float(row.get("preco") or 0),
+                        "quantidade_vendida": int(row.get("quantidade_vendida") or 0),
+                        "seller_id": row_sid or sid,
+                        "permalink": str(row.get("permalink") or ""),
+                        "termo_origem": termo,
+                        "marcas": _marcar_titulo(titulo),
+                        "fonte_busca": row.get("fonte_busca") or "products_api",
+                        "catalog_product_id": row.get("catalog_product_id"),
+                        "catalog_date_created": row.get("catalog_date_created"),
+                        "listing_type_id": row.get("listing_type_id"),
+                    }
+                )
+
+    # 2) Fallback genérico (Brave/DDG) se products não trouxe nada
+    if not anuncios:
+        for termo in lista_termos:
+            try:
+                rows = ml_client.buscar_concorrentes_por_termo(termo, limite=limite_por_termo)
+            except Exception as exc:
+                logger.warning("busca termo %r falhou: %s", termo, exc)
+                rows = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                item_id = str(row.get("item_id") or row.get("id") or "").strip().upper()
+                row_sid = str(row.get("seller_id") or "").strip()
+                if sid and row_sid and row_sid != sid:
+                    continue
+                if sid and not row_sid and "novamix" not in termo.lower():
+                    continue
+                chave = item_id or str(row.get("permalink") or row.get("titulo") or "")
+                if not chave or chave in vistos:
+                    continue
+                vistos.add(chave)
+                titulo = str(row.get("titulo") or row.get("title") or "")
+                anuncios.append(
+                    {
+                        "item_id": item_id,
+                        "titulo": titulo,
+                        "preco": float(row.get("preco") or row.get("price") or 0),
+                        "quantidade_vendida": int(
+                            row.get("quantidade_vendida") or row.get("sold_quantity") or 0
+                        ),
+                        "seller_id": row_sid or sid,
+                        "permalink": str(row.get("permalink") or row.get("url") or ""),
+                        "termo_origem": termo,
+                        "marcas": _marcar_titulo(titulo),
+                        "fonte_busca": row.get("fonte_busca") or "ml",
+                    }
+                )
     return anuncios
 
 
@@ -224,6 +268,13 @@ def analisar_loja(
         termos_final = [f"{nick} esmalte", f"{nick} kit"] + termos_final
 
     anuncios = coletar_anuncios_loja(seller_id, termos=termos_final, limite_por_termo=limite_por_termo)
+    try:
+        from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
+
+        anuncios = enriquecer_lista(anuncios)
+    except Exception as exc:
+        logger.warning("enriquecer métricas loja: %s", exc)
+
     precos = [float(a.get("preco") or 0) for a in anuncios if float(a.get("preco") or 0) > 0]
     marcas = Counter()
     for a in anuncios:
@@ -251,7 +302,7 @@ def analisar_loja(
         "termos_usados": termos_final,
         "limitacao": (
             "Busca ML por seller_id retorna 403; anúncios vêm de termos filtrados. "
-            "Amostra pode ser parcial enquanto a API estiver bloqueada."
+            "Métricas (nota/receita) estimadas; visitas só dos seus anúncios."
         ),
     }
 
@@ -296,6 +347,20 @@ def montar_mensagem_analise(analise: dict[str, Any]) -> str:
                 f"• {a.get('sku')}: seu R$ {a.get('meu_preco'):.2f} vs loja R$ "
                 f"{a.get('menor_preco_loja'):.2f} (+{a.get('gap_pct')}%)"
             )
+    amostra_m = [a for a in (analise.get("anuncios") or []) if a.get("metricas")]
+    if amostra_m:
+        linhas.extend(["", "*Amostra métricas (estimadas)*"])
+        for a in amostra_m[:5]:
+            m = a.get("metricas") or {}
+            tit = (a.get("titulo") or a.get("item_id") or "?")[:40]
+            ped = [f"R$ {float(m.get('preco') or 0):.2f}"]
+            if m.get("nota") is not None:
+                ped.append(f"★{m.get('nota')} ({m.get('avaliacoes') or 0})")
+            if m.get("receita_liquida_un") is not None:
+                ped.append(f"líq R$ {m['receita_liquida_un']:.2f}")
+            if m.get("vendas_por_dia") is not None:
+                ped.append(f"{m['vendas_por_dia']}/dia")
+            linhas.append(f"• {tit}: " + " | ".join(ped))
     elif analise.get("total_anuncios_coletados", 0) == 0:
         linhas.extend(
             [

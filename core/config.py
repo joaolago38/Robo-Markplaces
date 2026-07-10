@@ -80,6 +80,13 @@ ML_BUSCA_TERMO_FALLBACK_PRODUCTS = os.getenv("ML_BUSCA_TERMO_FALLBACK_PRODUCTS",
 )
 ML_BUSCA_TERMO_MAX_PRODUCTS = int(os.getenv("ML_BUSCA_TERMO_MAX_PRODUCTS", "8"))
 
+# Métricas estilo LojaHub (estimadas) para anúncios concorrentes
+# Taxa usada na receita líquida estimada; visitas só dos próprios anúncios.
+ML_ANALISE_ANUNCIO_TAXA_PCT = float(
+    os.getenv("ML_ANALISE_ANUNCIO_TAXA_PCT", os.getenv("TAXA_CANAL_PADRAO_PCT", "13.0"))
+)
+ML_ANALISE_ANUNCIO_MAX_ENRIQUECER = int(os.getenv("ML_ANALISE_ANUNCIO_MAX_ENRIQUECER", "8"))
+
 # Monitor de concorrentes (busca pública por palavra-chave, sem precisar de item próprio)
 MONITOR_CONCORRENTES_ARQUIVO = os.getenv(
     "MONITOR_CONCORRENTES_ARQUIVO", "catalogo/concorrentes_monitorados.json"

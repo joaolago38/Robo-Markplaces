@@ -150,6 +150,15 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         limite_por_termo=limite,
     )
     anuncios = analise.get("anuncios") or []
+    # analisar_loja já enriquece métricas; garante amostra se veio sem
+    if anuncios and not any(a.get("metricas") for a in anuncios[:3]):
+        try:
+            from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
+
+            anuncios = enriquecer_lista(anuncios)
+            analise["anuncios"] = anuncios
+        except Exception as exc:
+            logger.warning("enriquecer métricas loja %s: %s", eid, exc)
     menor = float(analise.get("preco_min") or 0)
     anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
     menor_ant = float(anterior.get("menor_preco") or 0)
@@ -238,6 +247,12 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         concorrentes = [
             c for c in concorrentes if str(c.get("seller_id") or "") == seller_filtro
         ]
+    try:
+        from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
+
+        concorrentes = enriquecer_lista(concorrentes, limite=min(5, max(1, limite)))
+    except Exception as exc:
+        logger.warning("enriquecer métricas termo %r: %s", termo[:40], exc)
     menor = _menor_preco(concorrentes)
     anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
     menor_ant = float(anterior.get("menor_preco") or 0)
