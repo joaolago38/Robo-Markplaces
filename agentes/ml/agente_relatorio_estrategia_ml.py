@@ -46,14 +46,19 @@ def _carregar_json(path) -> dict[str, Any]:
 def _coletar_monitor() -> dict[str, Any]:
     from agentes.ml.agente_monitor_concorrentes import executar as executar_concorrentes
 
-    return executar_concorrentes(enviar_alerta=False)
+    # Sem reviews por anúncio — só preço/gap (bem mais rápido para o relatório)
+    return executar_concorrentes(enviar_alerta=False, enriquecer_metricas=False)
 
 
 def _coletar_loja() -> dict[str, Any]:
     from integracoes.ml.analise_loja_concorrente import analisar_loja
 
     # Novamix padrão; se houver outras lojas no JSON, o monitor já cobre ameacas
-    out = analisar_loja("1666381510", nickname="NOVAMIX_COMERCIAL")
+    out = analisar_loja(
+        "1666381510",
+        nickname="NOVAMIX_COMERCIAL",
+        enriquecer_metricas=False,
+    )
     try:
         escrever_json_atomico(
             LOJA_SNAPSHOT,
