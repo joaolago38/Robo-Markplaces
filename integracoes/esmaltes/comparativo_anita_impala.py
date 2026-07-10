@@ -84,6 +84,34 @@ def inferir_perfil_consumidor(anuncio: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _i(val: Any, default: int = 0) -> int:
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        try:
+            return int(float(val))
+        except (TypeError, ValueError):
+            return default
+
+
+def _volume_proxy_anuncio(anuncio: dict[str, Any]) -> tuple[int, str]:
+    """
+    Volume para ranking/share quando sold_quantity vem vazio da API.
+    1) quantidade_vendida  2) avaliacoes  3) 1 por anúncio
+    """
+    vendas = _i(anuncio.get("quantidade_vendida") or anuncio.get("sold_quantity"))
+    if vendas > 0:
+        return vendas, "vendas"
+    aval = _i(
+        anuncio.get("avaliacoes")
+        or anuncio.get("reviews")
+        or (anuncio.get("metricas") or {}).get("avaliacoes")
+    )
+    if aval > 0:
+        return aval, "avaliacoes"
+    return 1, "anuncios"
+
+
 def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any]:
     alvo = _marca_norm(marca)
     subset = [a for a in anuncios if _marca_norm(a.get("marca") or "") == alvo]
@@ -92,6 +120,8 @@ def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any
             "marca": marca,
             "anuncios": 0,
             "unidades_vendidas": 0,
+            "volume_proxy": 0,
+            "fonte_volume": "sem_dados",
             "compradores_estimados": 0,
             "share_vendas_pct": 0.0,
             "preco_medio": None,
@@ -102,7 +132,14 @@ def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any
             "kits_top": [],
         }
 
-    vendidos = sum(int(a.get("quantidade_vendida") or 0) for a in subset)
+    vendidos = sum(_i(a.get("quantidade_vendida") or a.get("sold_quantity")) for a in subset)
+    volumes = [_volume_proxy_anuncio(a) for a in subset]
+    volume_proxy = sum(v for v, _ in volumes)
+    fontes = Counter(f for _, f in volumes)
+    fonte_volume = fontes.most_common(1)[0][0] if fontes else "anuncios"
+    if vendidos > 0:
+        fonte_volume = "vendas"
+
     precos = [float(a.get("preco") or 0) for a in subset if float(a.get("preco") or 0) > 0]
     ppus = [float(a.get("preco_por_unidade") or 0) for a in subset if a.get("preco_por_unidade")]
     frete_pct = round(
@@ -113,7 +150,7 @@ def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any
     peso_perfis: Counter[str] = Counter()
     peso_kits: Counter[int] = Counter()
     for an in subset:
-        peso = max(1, int(an.get("quantidade_vendida") or 0))
+        peso, _ = _volume_proxy_anuncio(an)
         perfil = inferir_perfil_consumidor(an)
         peso_perfis[perfil["perfil_principal"]] += peso
         if an.get("qtd_kit"):
@@ -125,7 +162,9 @@ def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any
         "marca": marca,
         "anuncios": len(subset),
         "unidades_vendidas": vendidos,
-        "compradores_estimados": vendidos,
+        "volume_proxy": volume_proxy,
+        "fonte_volume": fonte_volume,
+        "compradores_estimados": vendidos if vendidos > 0 else volume_proxy,
         "share_vendas_pct": 0.0,
         "preco_medio": round(sum(precos) / len(precos), 2) if precos else None,
         "preco_por_unidade_medio": round(sum(ppus) / len(ppus), 2) if ppus else None,
@@ -137,18 +176,33 @@ def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any
         "kits_top": [{"qtd": q, "peso_vendas": w} for q, w in peso_kits.most_common(4)],
         "destaques": sorted(
             subset,
-            key=lambda x: int(x.get("quantidade_vendida") or 0),
+            key=lambda x: _volume_proxy_anuncio(x)[0],
             reverse=True,
         )[:3],
     }
 
 
 def _calcular_shares(anita: dict[str, Any], impala: dict[str, Any]) -> None:
-    total = int(anita.get("unidades_vendidas") or 0) + int(impala.get("unidades_vendidas") or 0)
-    if total <= 0:
+    """Share por vendas; se API zerar sold_quantity, usa volume_proxy."""
+    va = _i(anita.get("unidades_vendidas"))
+    vi = _i(impala.get("unidades_vendidas"))
+    total = va + vi
+    if total > 0:
+        anita["share_vendas_pct"] = round(100.0 * va / total, 1)
+        impala["share_vendas_pct"] = round(100.0 * vi / total, 1)
+        anita["share_base"] = "vendas"
+        impala["share_base"] = "vendas"
         return
-    anita["share_vendas_pct"] = round(100.0 * int(anita["unidades_vendidas"]) / total, 1)
-    impala["share_vendas_pct"] = round(100.0 * int(impala["unidades_vendidas"]) / total, 1)
+    pa = _i(anita.get("volume_proxy"))
+    pi = _i(impala.get("volume_proxy"))
+    total_p = pa + pi
+    if total_p <= 0:
+        return
+    anita["share_vendas_pct"] = round(100.0 * pa / total_p, 1)
+    impala["share_vendas_pct"] = round(100.0 * pi / total_p, 1)
+    base = anita.get("fonte_volume") or impala.get("fonte_volume") or "anuncios"
+    anita["share_base"] = base
+    impala["share_base"] = base
 
 
 def comparar_segmento(
@@ -160,7 +214,9 @@ def comparar_segmento(
     impala = _metricas_marca(filtrados, "Impala")
     _calcular_shares(anita, impala)
 
-    diff_vendas = int(anita["unidades_vendidas"]) - int(impala["unidades_vendidas"])
+    vol_a = _i(anita.get("unidades_vendidas")) or _i(anita.get("volume_proxy"))
+    vol_i = _i(impala.get("unidades_vendidas")) or _i(impala.get("volume_proxy"))
+    diff_vendas = vol_a - vol_i
     vencedor = "empate"
     if diff_vendas > 0:
         vencedor = "Anita"
@@ -175,6 +231,10 @@ def comparar_segmento(
     if preco_anita and preco_impala and preco_impala > 0:
         diff_preco_pct = round((float(preco_anita) - float(preco_impala)) / float(preco_impala) * 100, 1)
 
+    fonte = "vendas"
+    if _i(anita.get("unidades_vendidas")) + _i(impala.get("unidades_vendidas")) <= 0:
+        fonte = anita.get("share_base") or impala.get("share_base") or "anuncios"
+
     return {
         "id": segmento.get("id"),
         "nome": segmento.get("nome"),
@@ -187,14 +247,30 @@ def comparar_segmento(
         "diferenca_unidades": diff_vendas,
         "diferenca_share_pct": diff_share,
         "diferenca_preco_pct": diff_preco_pct,
+        "fonte_volume": fonte,
         "ok": len(filtrados) > 0,
     }
 
 
 def consolidar_comparativo(resultados: list[dict[str, Any]]) -> dict[str, Any]:
     ok = [r for r in resultados if r.get("ok")]
-    anita_total = sum(int(r["anita"]["unidades_vendidas"]) for r in ok)
-    impala_total = sum(int(r["impala"]["unidades_vendidas"]) for r in ok)
+    anita_vendas = sum(_i(r["anita"].get("unidades_vendidas")) for r in ok)
+    impala_vendas = sum(_i(r["impala"].get("unidades_vendidas")) for r in ok)
+    usar_proxy = (anita_vendas + impala_vendas) <= 0
+
+    if usar_proxy:
+        anita_total = sum(_i(r["anita"].get("volume_proxy")) for r in ok)
+        impala_total = sum(_i(r["impala"].get("volume_proxy")) for r in ok)
+        fonte_global = "anuncios"
+        for r in ok:
+            if (r.get("fonte_volume") or "") == "avaliacoes":
+                fonte_global = "avaliacoes"
+                break
+    else:
+        anita_total = anita_vendas
+        impala_total = impala_vendas
+        fonte_global = "vendas"
+
     total_vendas = anita_total + impala_total
 
     peso_perfis_anita: Counter[str] = Counter()
@@ -222,10 +298,14 @@ def consolidar_comparativo(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "segmentos_com_dados": len(ok),
         "anita_unidades_vendidas": anita_total,
         "impala_unidades_vendidas": impala_total,
+        "anita_vendas_api": anita_vendas,
+        "impala_vendas_api": impala_vendas,
         "anita_share_pct": share_anita,
         "impala_share_pct": share_impala,
         "vencedor_global": vencedor_global,
         "diferenca_unidades": anita_total - impala_total,
+        "fonte_volume": fonte_global,
+        "volume_eh_proxy": usar_proxy,
         "segmentos_anita_lider": len(segmentos_anita),
         "segmentos_impala_lider": len(segmentos_impala),
         "perfis_anita_global": [
