@@ -73,6 +73,71 @@ def _menor_preco(concorrentes: list[dict]) -> float:
     return min(precos) if precos else 0.0
 
 
+def _item_id_ml_valido(valor: Any) -> bool:
+    texto = str(valor or "").strip()
+    if not texto or "PREENCHER" in texto.upper():
+        return False
+    return texto.upper().startswith("MLB")
+
+
+def _rotulo_preco_referencia(origem: str) -> str:
+    """Evita 'seu preço' quando não há anúncio vivo — usa 'preço alvo' do catálogo/JSON."""
+    if origem == "anuncio_vivo":
+        return "seu anúncio"
+    return "preço alvo"
+
+
+def _resolver_preco_referencia(entrada: dict) -> tuple[float, str]:
+    """
+    Resolve preço de comparação nesta ordem:
+    1) preço vivo do anúncio ML (item_id válido)
+    2) preço do canal ML em produtos.json (por SKU)
+    3) meu_preco do JSON de concorrentes (alvo cadastrado)
+    """
+    fallback = 0.0
+    try:
+        fallback = float(entrada.get("meu_preco") or 0)
+    except (TypeError, ValueError):
+        fallback = 0.0
+
+    item_id = str(entrada.get("item_id") or "").strip()
+    sku = str(entrada.get("sku") or "").strip()
+    catalogo_preco = 0.0
+
+    if sku:
+        try:
+            from core.catalogo_produtos import carregar_produtos_catalogo
+
+            for produto in carregar_produtos_catalogo():
+                if str(produto.get("sku") or "").strip() != sku:
+                    continue
+                ml = (produto.get("canais") or {}).get("mercadolivre") or {}
+                if not item_id:
+                    item_id = str(ml.get("item_id") or "").strip()
+                try:
+                    catalogo_preco = float(ml.get("preco") or produto.get("preco") or 0)
+                except (TypeError, ValueError):
+                    catalogo_preco = 0.0
+                break
+        except Exception as exc:
+            logger.debug("catálogo indisponível para preço alvo sku=%s: %s", sku, exc)
+
+    if _item_id_ml_valido(item_id):
+        try:
+            metricas = ml_client.buscar_metricas_item(item_id)
+            vivo = float((metricas or {}).get("preco") or 0)
+            if vivo > 0:
+                return vivo, "anuncio_vivo"
+        except Exception as exc:
+            logger.debug("preço vivo indisponível item_id=%s: %s", item_id, exc)
+
+    if catalogo_preco > 0:
+        return catalogo_preco, "catalogo"
+    if fallback > 0:
+        return fallback, "alvo_json"
+    return 0.0, "indefinido"
+
+
 def _leituras_recentes(entrada_hist: dict, limite: int = 5) -> list[dict]:
     leituras = entrada_hist.get("leituras")
     if isinstance(leituras, list) and leituras:
@@ -137,7 +202,8 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     termos = entrada.get("termos_busca")
     if not isinstance(termos, list):
         termos = None
-    meu_preco = float(entrada.get("meu_preco") or 0)
+    meu_preco, origem_preco = _resolver_preco_referencia(entrada)
+    rotulo = _rotulo_preco_referencia(origem_preco)
     limite = int(entrada.get("limite_resultados") or 20)
 
     if not seller_id:
@@ -166,7 +232,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     alertas: list[str] = []
     for ameaca in analise.get("ameacas_preco") or []:
         alertas.append(
-            f"{nome}: {ameaca.get('sku')} seu R$ {ameaca.get('meu_preco'):.2f} está "
+            f"{nome}: {ameaca.get('sku')} {rotulo} R$ {ameaca.get('meu_preco'):.2f} está "
             f"{ameaca.get('gap_pct')}% acima do anúncio da loja "
             f"(R$ {ameaca.get('menor_preco_loja'):.2f})."
         )
@@ -184,7 +250,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         diff = (meu_preco - menor) / menor * 100.0
         if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
             alertas.append(
-                f"{nome}: referência R$ {meu_preco:.2f} está {diff:.1f}% acima "
+                f"{nome}: {rotulo} R$ {meu_preco:.2f} está {diff:.1f}% acima "
                 f"do menor anúncio amostrado da loja (R$ {menor:.2f})."
             )
 
@@ -195,6 +261,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     historico[eid] = {
         "menor_preco": menor,
         "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
         "total_concorrentes": len(anuncios),
         "seller_id": seller_id,
         "nickname": analise.get("nickname") or nickname,
@@ -203,7 +270,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         "perfil": analise.get("perfil"),
     }
 
-    _tags = [f"produto:{eid}", f"seller:{seller_id}", "tipo:loja"]
+    _tags = [f"produto:{eid}", f"seller:{seller_id}", "tipo:loja", f"origem_preco:{origem_preco}"]
     if menor > 0:
         gauge("mercado.menor_preco_concorrente", menor, tags=_tags)
     gauge("mercado.total_concorrentes", float(len(anuncios)), tags=_tags)
@@ -218,6 +285,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         "seller_id": seller_id,
         "nickname": analise.get("nickname") or nickname,
         "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
         "menor_preco": menor,
         "total_concorrentes": len(anuncios),
         "concorrentes_amostra": anuncios[:5],
@@ -239,7 +307,8 @@ def _monitorar_entrada(
     eid = str(entrada.get("id") or "").strip()
     nome = str(entrada.get("nome") or eid)
     termo = str(entrada.get("termo_busca") or "").strip()
-    meu_preco = float(entrada.get("meu_preco") or 0)
+    meu_preco, origem_preco = _resolver_preco_referencia(entrada)
+    rotulo = _rotulo_preco_referencia(origem_preco)
     limite = int(entrada.get("limite_resultados") or 10)
 
     if not termo:
@@ -268,7 +337,7 @@ def _monitorar_entrada(
         diff = (meu_preco - menor) / menor * 100.0
         if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
             alertas.append(
-                f"{nome}: seu preço R$ {meu_preco:.2f} está {diff:.1f}% acima do menor "
+                f"{nome}: {rotulo} R$ {meu_preco:.2f} está {diff:.1f}% acima do menor "
                 f"concorrente (R$ {menor:.2f}) no termo '{termo}'."
             )
 
@@ -292,6 +361,7 @@ def _monitorar_entrada(
     historico[eid] = {
         "menor_preco": menor,
         "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
         "total_concorrentes": len(concorrentes),
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
         "leituras": leituras_ant[-5:],
@@ -300,7 +370,7 @@ def _monitorar_entrada(
     # ── Datadog ──────────────────────────────────────────────────────────
     # tag `produto` usa o `id` do JSON (ex.: "kit3-mimo-carmed") para
     # aparecer como facet no Metrics Explorer e facilitar filtrar por SKU.
-    _tags = [f"produto:{eid}", f"termo:{termo[:40]}"]
+    _tags = [f"produto:{eid}", f"termo:{termo[:40]}", f"origem_preco:{origem_preco}"]
     if meu_preco > 0:
         gauge("mercado.meu_preco", meu_preco, tags=_tags)
     if menor > 0:
@@ -321,6 +391,7 @@ def _monitorar_entrada(
         "sku": str(entrada.get("sku") or "").strip(),
         "termo_busca": termo,
         "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
         "menor_preco": menor,
         "total_concorrentes": len(concorrentes),
         "concorrentes_amostra": concorrentes[:5],

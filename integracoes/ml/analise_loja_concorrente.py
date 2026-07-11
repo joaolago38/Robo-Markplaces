@@ -343,10 +343,10 @@ def montar_mensagem_analise(analise: dict[str, Any]) -> str:
             linhas.append(f"• {i}")
     ameacas = analise.get("ameacas_preco") or []
     if ameacas:
-        linhas.extend(["", "*Ameaças vs seus kits Impala (≥5% mais caro)*"])
+        linhas.extend(["", "*Ameaças vs preço alvo dos kits Impala (≥5% mais caro)*"])
         for a in ameacas[:6]:
             linhas.append(
-                f"• {a.get('sku')}: seu R$ {a.get('meu_preco'):.2f} vs loja R$ "
+                f"• {a.get('sku')}: preço alvo R$ {a.get('meu_preco'):.2f} vs loja R$ "
                 f"{a.get('menor_preco_loja'):.2f} (+{a.get('gap_pct')}%)"
             )
     amostra_m = [a for a in (analise.get("anuncios") or []) if a.get("metricas")]
