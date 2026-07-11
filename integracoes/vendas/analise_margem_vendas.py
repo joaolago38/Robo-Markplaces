@@ -168,36 +168,41 @@ def analisar_pedidos(
                     )
                 )
 
-    com_margem = [l for l in linhas if l["status"] not in {"sem_custo", "sem_sku", "sem_preco"}]
-    alertas = [l for l in linhas if l.get("abaixo_minimo")]
-    incompletos = [l for l in linhas if l["status"] in {"sem_custo", "sem_sku", "sem_preco"}]
+    sem_dados = {"sem_custo", "sem_sku", "sem_preco"}
+    com_margem = [linha for linha in linhas if linha["status"] not in sem_dados]
+    alertas = [linha for linha in linhas if linha.get("abaixo_minimo")]
+    incompletos = [linha for linha in linhas if linha["status"] in sem_dados]
 
-    receita_bruta = round(sum(l["receita_bruta"] for l in linhas), 2)
-    lucro_total = round(sum(l["lucro_reais"] for l in com_margem), 2)
+    receita_bruta = round(sum(linha["receita_bruta"] for linha in linhas), 2)
+    lucro_total = round(sum(linha["lucro_reais"] for linha in com_margem), 2)
     if com_margem and receita_bruta > 0:
         # margem média ponderada pela receita das linhas com custo
-        rec_com = sum(l["receita_bruta"] for l in com_margem) or 1.0
+        rec_com = sum(linha["receita_bruta"] for linha in com_margem) or 1.0
         margem_media = round(
-            sum(l["margem_operacional_pct"] * l["receita_bruta"] for l in com_margem) / rec_com,
+            sum(
+                linha["margem_operacional_pct"] * linha["receita_bruta"]
+                for linha in com_margem
+            )
+            / rec_com,
             2,
         )
     else:
         margem_media = 0.0
 
     por_mp: dict[str, dict[str, Any]] = {}
-    for l in linhas:
-        mp = l["marketplace"]
+    for linha in linhas:
+        mp = linha["marketplace"]
         bucket = por_mp.setdefault(
             mp,
             {"vendas": 0, "receita_bruta": 0.0, "lucro_reais": 0.0, "alertas": 0, "incompletos": 0},
         )
         bucket["vendas"] += 1
-        bucket["receita_bruta"] = round(bucket["receita_bruta"] + l["receita_bruta"], 2)
-        if l["status"] not in {"sem_custo", "sem_sku", "sem_preco"}:
-            bucket["lucro_reais"] = round(bucket["lucro_reais"] + l["lucro_reais"], 2)
-        if l.get("abaixo_minimo"):
+        bucket["receita_bruta"] = round(bucket["receita_bruta"] + linha["receita_bruta"], 2)
+        if linha["status"] not in sem_dados:
+            bucket["lucro_reais"] = round(bucket["lucro_reais"] + linha["lucro_reais"], 2)
+        if linha.get("abaixo_minimo"):
             bucket["alertas"] += 1
-        if l["status"] in {"sem_custo", "sem_sku", "sem_preco"}:
+        if linha["status"] in sem_dados:
             bucket["incompletos"] += 1
 
     return {
