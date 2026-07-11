@@ -89,7 +89,7 @@ def _avaliar_sku_vs_mercado(
                 tipo="investir_ads",
                 titulo=f"Investir ads em {sku or nome}",
                 detalhe=(
-                    f"Preço alinhado ao mercado (seu {_fmt(meu_preco)} vs "
+                    f"Preço alinhado ao mercado (preço alvo {_fmt(meu_preco)} vs "
                     f"{_fmt(menor_mercado)}, gap {gap:.1f}%). "
                     f"Priorize Product Ads / exposição neste SKU."
                 ),
@@ -111,7 +111,7 @@ def _avaliar_sku_vs_mercado(
             tipo="diferenciar_ou_sair",
             titulo=f"Não competir só em preço: {sku or nome}",
             detalhe=(
-                f"Gap {gap:.1f}% (seu {_fmt(meu_preco)} vs mercado {_fmt(menor_mercado)}). "
+                f"Gap {gap:.1f}% (preço alvo {_fmt(meu_preco)} vs mercado {_fmt(menor_mercado)}). "
                 f"Líquida est. no preço do líder: {_fmt(liquida_mercado)}"
                 + (f" vs custo {_fmt(custo)}" if custo > 0 else "")
                 + ". Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio."
@@ -151,7 +151,7 @@ def _avaliar_sku_vs_mercado(
         tipo="reposicionar_preco",
         titulo=f"Ajustar preço de {sku or nome}",
         detalhe=(
-            f"Gap {gap:.1f}% (seu {_fmt(meu_preco)} → sugerido {_fmt(alvo)}). "
+            f"Gap {gap:.1f}% (preço alvo {_fmt(meu_preco)} → sugerido {_fmt(alvo)}). "
             f"Mercado em {_fmt(menor_mercado)}; teste redução controlada sem furar o piso."
         ),
         sku=sku,

@@ -54,6 +54,14 @@ class TestMonitorConcorrentes(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertGreaterEqual(out["total_alertas"], 1)
         self.assertTrue(out["enviado"])
+        texto = " ".join(out.get("alertas") or [])
+        if not texto:
+            # alertas podem estar só nos resultados
+            for r in out.get("resultados") or []:
+                texto += " ".join(r.get("alertas") or [])
+        self.assertIn("preço alvo", texto)
+        self.assertNotIn("seu preço", texto)
+        self.assertEqual(out["resultados"][0].get("origem_preco"), "alvo_json")
 
     @patch.object(mon, "alertar_gestor")
     @patch.object(mon, "_salvar_historico")
@@ -123,6 +131,32 @@ class TestMonitorConcorrentes(unittest.TestCase):
         self.assertEqual(out["total_monitorados"], 1)
         self.assertGreaterEqual(out["total_alertas"], 1)
         self.assertEqual(out["resultados"][0]["tipo"], "loja")
+        texto = " ".join(
+            " ".join(r.get("alertas") or []) for r in (out.get("resultados") or [])
+        )
+        self.assertIn("preço alvo", texto)
+        self.assertNotIn("seu R$", texto)
+
+
+class TestResolverPrecoReferencia(unittest.TestCase):
+    def test_fallback_alvo_json(self):
+        preco, origem = mon._resolver_preco_referencia({"meu_preco": 48.9})
+        self.assertEqual(preco, 48.9)
+        self.assertEqual(origem, "alvo_json")
+        self.assertEqual(mon._rotulo_preco_referencia(origem), "preço alvo")
+
+    def test_ignora_mlb_preencher(self):
+        self.assertFalse(mon._item_id_ml_valido("MLB_PREENCHER"))
+        self.assertTrue(mon._item_id_ml_valido("MLB123456789"))
+
+    @patch.object(mon.ml_client, "buscar_metricas_item", return_value={"preco": 47.5})
+    def test_preco_vivo_quando_item_valido(self, *_):
+        preco, origem = mon._resolver_preco_referencia(
+            {"meu_preco": 48.9, "item_id": "MLB123456789"}
+        )
+        self.assertEqual(preco, 47.5)
+        self.assertEqual(origem, "anuncio_vivo")
+        self.assertEqual(mon._rotulo_preco_referencia(origem), "seu anúncio")
 
 
 class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
