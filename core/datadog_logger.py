@@ -149,6 +149,8 @@ _LOGGER_META = {
     "algoritmo_marketplaces": ("multi", "agente"),
     "auto_respostas_visuais": ("multi", "agente"),
     "vendas_notificador": ("multi", "agente"),
+    "agente_monitor_margem_vendas": ("multi", "agente"),
+    "analise_margem_vendas": ("multi", "integracao"),
     "agente_panorama": ("multi", "agente"),
     "relatorio_financeiro": ("multi", "agente"),
     "operacao_24h": ("infra", "agente"),
