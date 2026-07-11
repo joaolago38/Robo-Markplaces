@@ -103,22 +103,31 @@ def _coletar_sinais_referencia() -> tuple[list[dict[str, Any]], list[dict[str, A
 
 
 def _montar_painel(consolidado: dict[str, Any], estrategias: list[dict[str, Any]]) -> str:
+    proxy = bool(consolidado.get("volume_eh_proxy"))
+    fonte = consolidado.get("fonte_volume") or "anuncios"
+    unidade = {"vendas": "un.", "avaliacoes": "aval.", "anuncios": "anúncios"}.get(fonte, "un.")
+    if not proxy:
+        unidade = "un."
     linhas = [
         "⚖️ *Anita vs Impala — desempenho e consumidor (ML)*",
         "",
-        "_Unidades vendidas nos anúncios = proxy de volume de compradores no segmento._",
+        "_Volume = vendas da API; se vier zerado, usa avaliações ou nº de anúncios._",
         "",
         "*Resumo global*",
-        f"  • Anita: *{consolidado.get('anita_unidades_vendidas', 0)}* un. "
+        f"  • Anita: *{consolidado.get('anita_unidades_vendidas', 0)}* {unidade} "
         f"({consolidado.get('anita_share_pct', 0):.0f}% share)",
-        f"  • Impala: *{consolidado.get('impala_unidades_vendidas', 0)}* un. "
+        f"  • Impala: *{consolidado.get('impala_unidades_vendidas', 0)}* {unidade} "
         f"({consolidado.get('impala_share_pct', 0):.0f}% share)",
         f"  • Líder: *{consolidado.get('vencedor_global', '?')}* "
-        f"(dif. {consolidado.get('diferenca_unidades', 0):+d} un.)",
+        f"(dif. {consolidado.get('diferenca_unidades', 0):+d})",
         f"  • Segmentos: Anita {consolidado.get('segmentos_anita_lider', 0)} | "
         f"Impala {consolidado.get('segmentos_impala_lider', 0)}",
-        "",
     ]
+    if proxy:
+        linhas.append(
+            f"  _Volume via proxy (*{fonte}*) — API não retornou sold_quantity._"
+        )
+    linhas.append("")
 
     perfis_a = consolidado.get("perfis_anita_global") or []
     perfis_i = consolidado.get("perfis_impala_global") or []

@@ -20,6 +20,45 @@ class ComparativoAnitaImpalaTests(unittest.TestCase):
             {"titulo": "Kit 5 Risque Sortido", "preco": 42.0, "quantidade_vendida": 30},
         ]
 
+    def test_proxy_quando_sold_quantity_zero(self):
+        anuncios = [
+            {"titulo": "Kit 5 Esmaltes Impala Bailarina", "preco": 30.0, "quantidade_vendida": 0},
+            {"titulo": "Kit 5 Esmaltes Impala Nude", "preco": 31.0, "quantidade_vendida": 0},
+            {"titulo": "Kit 5 Esmaltes Anita Nude", "preco": 45.0, "quantidade_vendida": 0},
+        ]
+        seg = {"id": "cmp-kit5", "nome": "Kit 5", "termo_busca": "kit 5"}
+        out = cmp.comparar_segmento(seg, anuncios)
+        self.assertEqual(out["fonte_volume"], "anuncios")
+        self.assertEqual(out["impala"]["volume_proxy"], 2)
+        self.assertEqual(out["anita"]["volume_proxy"], 1)
+        self.assertEqual(out["vencedor_vendas"], "Impala")
+        self.assertAlmostEqual(out["impala"]["share_vendas_pct"], 66.7, places=0)
+
+        consolidado = cmp.consolidar_comparativo([out])
+        self.assertTrue(consolidado["volume_eh_proxy"])
+        self.assertEqual(consolidado["vencedor_global"], "Impala")
+        self.assertEqual(consolidado["impala_unidades_vendidas"], 2)
+        self.assertEqual(consolidado["anita_unidades_vendidas"], 1)
+
+    def test_proxy_avaliacoes(self):
+        anuncios = [
+            {
+                "titulo": "Kit Impala",
+                "preco": 30.0,
+                "quantidade_vendida": 0,
+                "avaliacoes": 100,
+            },
+            {
+                "titulo": "Kit Anita",
+                "preco": 40.0,
+                "quantidade_vendida": 0,
+                "avaliacoes": 20,
+            },
+        ]
+        out = cmp.comparar_segmento({"id": "x", "nome": "X", "termo_busca": "kit"}, anuncios)
+        self.assertEqual(out["fonte_volume"], "avaliacoes")
+        self.assertEqual(out["vencedor_vendas"], "Impala")
+
     def test_inferir_perfil_salao(self):
         an = classificar_anuncio({"titulo": "Kit 10 Impala Atacado Salão", "preco": 69.9, "quantidade_vendida": 50})
         perfil = cmp.inferir_perfil_consumidor(an)

@@ -56,6 +56,7 @@ class TestPausaSeletiva(unittest.TestCase):
         gatilho._executar_api_se_aprovado(resultado)
         kwargs = gatilho.aplicar_decisao_campanhas.call_args.kwargs
         self.assertNotIn("campaign_ids", kwargs)
+        self.assertEqual(kwargs.get("budget"), 10.0)
 
 
     @patch.object(gatilho, "campanhas_acos_acima_limite", return_value=[

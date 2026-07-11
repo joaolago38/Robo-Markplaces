@@ -133,6 +133,26 @@ class TestAplicarDecisao(unittest.TestCase):
         self.assertEqual(len(out), 1)
         mock_pausar.assert_called_once_with("C2", "MLB", dry_run=True, confirmar=False)
 
+    @patch.object(ads, "listar_campanhas", return_value=[{"id": "C1"}])
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "A1", "site_id": "MLB"})
+    @patch.object(ads, "definir_orcamento", return_value={"ok": True, "dry_run": True})
+    @patch.object(ads, "ativar_campanha", return_value={"ok": True, "dry_run": True})
+    def test_aplicar_ligar_ativa_e_define_orcamento(self, mock_ativar, mock_orcamento, *_):
+        out = ads.aplicar_decisao_campanhas("ligar", budget=10.0, dry_run=True)
+        self.assertEqual(len(out), 2)
+        mock_ativar.assert_called_once_with("C1", "MLB", dry_run=True, confirmar=False)
+        mock_orcamento.assert_called_once_with("C1", 10.0, "MLB", dry_run=True, confirmar=False)
+
+    @patch.object(ads, "listar_campanhas", return_value=[{"id": "C1"}])
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "A1", "site_id": "MLB"})
+    @patch.object(ads, "definir_orcamento", return_value={"ok": True, "dry_run": True})
+    @patch.object(ads, "ativar_campanha", return_value={"ok": True, "dry_run": True})
+    def test_aplicar_ligar_sem_budget_so_ativa(self, mock_ativar, mock_orcamento, *_):
+        out = ads.aplicar_decisao_campanhas("ativar", budget=0.0, dry_run=True)
+        self.assertEqual(len(out), 1)
+        mock_ativar.assert_called_once()
+        mock_orcamento.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

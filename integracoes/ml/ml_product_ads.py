@@ -336,7 +336,8 @@ def aplicar_decisao_campanhas(
     campaign_ids: list[str] | None = None,
 ) -> list[dict]:
     """
-    Aplica pausar/ativar/orçamento em todas as campanhas (ou nas IDs informadas).
+    Aplica pausar/ativar(+orçamento)/escalar em todas as campanhas (ou nas IDs informadas).
+    Em ligar/ativar com budget > 0, ativa e define o orçamento diário.
     Usado pelo agente após confirmação do gestor.
     """
     adv = obter_advertiser()
@@ -357,7 +358,12 @@ def aplicar_decisao_campanhas(
         if decisao == "pausar":
             resultados.append(pausar_campanha(cid, site_id, dry_run=dry_run, confirmar=confirmar))
         elif decisao in ("ligar", "ativar"):
+            # Ligar = ativar status + orçamento inicial (BUDGET_FASE_INICIO via agente).
             resultados.append(ativar_campanha(cid, site_id, dry_run=dry_run, confirmar=confirmar))
+            if budget > 0:
+                resultados.append(
+                    definir_orcamento(cid, budget, site_id, dry_run=dry_run, confirmar=confirmar)
+                )
         elif decisao == "escalar" and budget > 0:
             resultados.append(
                 definir_orcamento(cid, budget, site_id, dry_run=dry_run, confirmar=confirmar)

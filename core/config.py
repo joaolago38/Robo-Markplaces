@@ -435,7 +435,7 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml",
+        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho",
     ).split(",")
     if x.strip()
 }
