@@ -295,6 +295,24 @@ LEILAO_VEICULOS_CATALOGO = os.getenv(
 LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "3.0"))
 LEILAO_DETRAN_POR_RODADA = int(os.getenv("LEILAO_DETRAN_POR_RODADA", "5"))
 LEILAO_LEILOEIROS_POR_RODADA = int(os.getenv("LEILAO_LEILOEIROS_POR_RODADA", "5"))
+# DETRAN via DDG (site:detran.xx.gov.br). Se 0, só Sumaré/diretos cobrem DETRAN.
+LEILAO_DETRAN_VIA_DDG = os.getenv("LEILAO_DETRAN_VIA_DDG", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# 2ª query DETRAN mais ampla se a busca com o veículo específico vier vazia
+LEILAO_DETRAN_DDG_AMPLA = os.getenv("LEILAO_DETRAN_DDG_AMPLA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Não martela DDG quando o circuit breaker já está ativo
+LEILAO_PULAR_DDG_SE_BREAKER = os.getenv("LEILAO_PULAR_DDG_SE_BREAKER", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 LEILAO_INCLUIR_SUMARE_DIRETO = os.getenv("LEILAO_INCLUIR_SUMARE_DIRETO", "1").strip().lower() not in (
     "0",
     "false",

@@ -369,8 +369,13 @@ def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "ddg_queries": 0,
         "ddg_brutos": 0,
         "ddg_descartados_filtro": 0,
+        "ddg_detran_queries": 0,
+        "ddg_detran_brutos": 0,
+        "ddg_fontes_puladas": 0,
         "sumare_candidatos": 0,
         "sumare_achados": 0,
+        "sumare_detran_candidatos": 0,
+        "sumare_detran_achados": 0,
         "copart_candidatos": 0,
         "copart_achados": 0,
         "superbid_candidatos": 0,
@@ -383,10 +388,13 @@ def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
     }
     circuit_breaker = False
     circuit_msg = None
+    ddg_status = "ok"
+    ddg_nota = None
     sumare_coleta: dict[str, Any] = {}
     coletores_diretos: dict[str, Any] = {}
     achados_ddg_por_dominio: dict[str, int] = {}
     meta_fontes: dict[str, Any] = {}
+    _status_prio = {"ok": 0, "vazio": 1, "pulado": 2, "breaker": 3, "desabilitado": 4}
 
     for r in resultados:
         d = r.get("diagnostico") or {}
@@ -396,6 +404,13 @@ def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
             circuit_breaker = True
         if d.get("circuit_breaker_msg"):
             circuit_msg = d["circuit_breaker_msg"]
+        st = d.get("ddg_status")
+        if st and _status_prio.get(str(st), 0) >= _status_prio.get(ddg_status, 0):
+            ddg_status = str(st)
+            if d.get("ddg_nota"):
+                ddg_nota = d["ddg_nota"]
+        elif d.get("ddg_nota") and ddg_nota is None:
+            ddg_nota = d["ddg_nota"]
         if d.get("sumare_coleta"):
             sumare_coleta = d["sumare_coleta"]
         if d.get("coletores_diretos"):
@@ -415,6 +430,8 @@ def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         **totais,
         "circuit_breaker_ativo": circuit_breaker,
         "circuit_breaker_msg": circuit_msg,
+        "ddg_status": ddg_status,
+        "ddg_nota": ddg_nota,
         "sumare_coleta": sumare_coleta,
         "coletores_diretos": coletores_diretos,
         "achados_ddg_por_dominio": achados_ddg_por_dominio,
@@ -482,10 +499,24 @@ def _montar_resumo_varredura(
                 f"(modo={c.get('modo_coleta') or '?'}, "
                 f"{c.get('leiloes_ok', 0)} OK / {c.get('leiloes_falha', 0)} falha)"
             )
+        status = diag.get("ddg_status") or "ok"
         linhas.append(
-            f"DDG: {diag.get('ddg_queries', 0)} queries, {diag.get('ddg_brutos', 0)} brutos, "
+            f"DDG ({status}): {diag.get('ddg_queries', 0)} queries, "
+            f"{diag.get('ddg_brutos', 0)} brutos, "
             f"{diag.get('ddg_descartados_filtro', 0)} descartados no filtro"
+            + (
+                f", {diag.get('ddg_fontes_puladas', 0)} fonte(s) pulada(s)"
+                if int(diag.get("ddg_fontes_puladas") or 0)
+                else ""
+            )
         )
+        if int(diag.get("ddg_detran_queries") or 0) or int(diag.get("sumare_detran_candidatos") or 0):
+            linhas.append(
+                f"DETRAN: DDG {diag.get('ddg_detran_brutos', 0)} brutos "
+                f"({diag.get('ddg_detran_queries', 0)} queries) | "
+                f"Sumaré {diag.get('sumare_detran_achados', 0)} achado(s) de "
+                f"{diag.get('sumare_detran_candidatos', 0)} lote(s) comitente DETRAN"
+            )
         por_dom = diag.get("achados_ddg_por_dominio") or {}
         if por_dom:
             top_dom = sorted(por_dom.items(), key=lambda x: -x[1])[:5]
@@ -501,12 +532,27 @@ def _montar_resumo_varredura(
             f"Superbid {diag.get('superbid_achados', 0)}, "
             f"Sodré {diag.get('sodre_achados', 0)})"
         )
+        if diag.get("ddg_nota"):
+            linhas.append(f"Nota DDG: {diag['ddg_nota']}")
 
     ddg = diag.get("circuit_breaker_msg") or mensagem_circuit_breaker("leilao")
     if ddg:
         linhas.extend(["", f"⚠️ {ddg}"])
     elif total_achados == 0:
-        linhas.extend(["", "_Nenhum anúncio encontrado nesta rodada (DDG/leiloeiros)._"])
+        status = diag.get("ddg_status") or ""
+        if status in ("breaker", "pulado", "desabilitado"):
+            nota = (
+                "_Nenhum anúncio: DDG indisponível nesta rodada; "
+                "DETRAN depende de Sumaré/comitente DETRAN ou próxima rodada com DDG OK._"
+            )
+        elif status == "vazio":
+            nota = (
+                "_Nenhum anúncio: DDG sem resultados (rate limit/indexação); "
+                "coletores diretos também sem match do veículo._"
+            )
+        else:
+            nota = "_Nenhum anúncio encontrado nesta rodada (DDG/leiloeiros/coletores)._"
+        linhas.extend(["", nota])
     elif total_vantajosos == 0:
         linhas.extend([
             "",
