@@ -51,7 +51,6 @@ def _precos_ml_do_consolidado(
     produto: dict[str, Any],
 ) -> dict[str, Any]:
     """Usa a varredura ML já feita (não refaz busca) alinhada ao material do catálogo."""
-    mat = str(produto.get("material") or "").upper()
     por_termo = [
         t
         for t in (consolidado.get("por_termo") or [])
