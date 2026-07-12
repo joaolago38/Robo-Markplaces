@@ -20,7 +20,12 @@ from core.config import (
     BUDGET_FASE_ESCALA,
 )
 from integracoes.ml.ml_client import buscar_reputacao_vendedor, buscar_acos_ads
-from integracoes.ml.ml_product_ads import aplicar_decisao_campanhas, campanhas_acos_acima_limite, listar_campanhas
+from integracoes.ml.ml_product_ads import (
+    aplicar_decisao_campanhas,
+    campanhas_acos_acima_limite,
+    listar_campanhas,
+    probe_escrita_product_ads,
+)
 
 logger = logging.getLogger("agente_ads_gatilho")
 
@@ -118,6 +123,28 @@ def avaliar_momento_ads(
 
     if decisao == "pausar":
         resultado["gasto_diario_estimado_evitado"] = gasto_diario_estimado_evitado
+
+    # Antes de pedir aprovação para ações de escrita, valida scopes Product Ads
+    if decisao in ("ligar", "pausar", "escalar"):
+        probe = probe_escrita_product_ads()
+        resultado["probe_escrita"] = probe
+        if not probe.get("ok"):
+            msg_probe = (
+                "⚠️ *ADS ML — escrita Product Ads indisponível*\n\n"
+                f"Decisão sugerida: *{decisao}*, mas a API recusou escrita.\n"
+                f"Código: `{probe.get('codigo')}`\n"
+                f"Erro: `{probe.get('erro')}`\n\n"
+                "Libere Product Ads no DevCenter / regenerar token com scopes de advertising "
+                "antes de aprovar ligar/pausar/escalar."
+            )
+            alertar_gestor(msg_probe, chave="ads_ml:probe_escrita_falhou", cooldown_segundos=86400)
+            resultado["confirmado_gestor"] = False
+            resultado["decisao"] = "aguardar" if decisao == "ligar" else "manter"
+            resultado["motivos"] = list(motivos) + [
+                f"Probe escrita falhou: {probe.get('codigo')} — {probe.get('erro')}"
+            ]
+            logger.warning("Ads gatilho: probe escrita falhou — %s", probe)
+            return resultado
 
     if decisao == "ligar":
         pergunta = (

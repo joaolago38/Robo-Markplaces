@@ -24,6 +24,7 @@ from core.datadog_metrics import gauge, incrementar
 from core.ddg_lite import mensagem_circuit_breaker
 from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
+from integracoes.cambio.cotacao_usd import cotacao_confiavel_para_margem, obter_cotacao_usd
 from integracoes.importacao.avaliacao_ia_parametros import avaliar_parametros_alibaba_busca, formatar_secao_ia
 
 logger = logging.getLogger("agente_alibaba_importacao")
@@ -182,8 +183,28 @@ def _logar_oportunidades(
             logger.info("  … e mais %s novo(s)", len(novos) - 5)
 
 
-def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
+def _formatar_preco_brl(preco_usd: Any, cambio: float) -> str:
+    try:
+        if preco_usd is None or cambio <= 0:
+            return "R$ n/d"
+        return f"R$ {float(preco_usd) * float(cambio):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except (TypeError, ValueError):
+        return "R$ n/d"
+
+
+def _montar_alerta(
+    resultados: list[dict[str, Any]],
+    *,
+    cotacao: dict[str, Any] | None = None,
+) -> str:
+    cambio = float((cotacao or {}).get("usd_brl") or 0)
+    fonte = str((cotacao or {}).get("fonte") or "?")
     linhas = ["📦 *Alibaba — oportunidades de importação*", ""]
+    if cotacao:
+        linhas.append(f"💵 Dólar: R$ {cotacao.get('usd_brl')} ({fonte})")
+        if not cotacao_confiavel_para_margem(cotacao):
+            linhas.append("_⚠️ Câmbio fallback/desatualizado — valores em R$ são estimativa._")
+        linhas.append("")
     for r in resultados:
         novos = r.get("novos") or []
         if not novos:
@@ -194,7 +215,8 @@ def _montar_alerta(resultados: list[dict[str, Any]]) -> str:
             preco = _formatar_preco(item.get("preco_usd"))
             moq_txt = _formatar_moq(item.get("moq"))
             dist = _formatar_distribuidor(item)
-            linhas.append(f"• {titulo} — {preco}, {moq_txt}")
+            brl = _formatar_preco_brl(item.get("preco_usd"), cambio) if cambio > 0 else "R$ n/d"
+            linhas.append(f"• {titulo} — {preco} ≈ {brl}, {moq_txt}")
             linhas.append(f"  🏭 {dist}")
             linhas.append(f"  🔗 {item.get('url', '')}")
             if item.get("url_busca"):
@@ -252,6 +274,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             logger.info("Nenhum produto ativo em %s", ALIBABA_IMPORTACAO_CATALOGO)
             return {"ok": True, "total_produtos": 0, "resultados": [], "alerta_enviado": False}
 
+        cotacao = obter_cotacao_usd()
         historico = ler_json(HISTORY_PATH, default={})
         resultados: list[dict[str, Any]] = []
 
@@ -274,6 +297,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             SNAPSHOT_PATH,
             {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                "cotacao": cotacao,
                 "resultados": resultados,
                 "avaliacao_ia_parametros": ia_parametros,
             },
@@ -285,7 +309,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         if enviar_alerta and com_novos:
             novos_itens = _todos_novos(com_novos)
-            msg = _montar_alerta(com_novos)
+            msg = _montar_alerta(com_novos, cotacao=cotacao)
             if msg:
                 alerta_novos_enviado = bool(
                     alertar_gestor(

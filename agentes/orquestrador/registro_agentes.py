@@ -190,6 +190,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "monitor_sem_venda_ml",
+        "Anúncios ML sem venda 30d",
+        "monitor",
+        "agentes.ml.agente_monitor_sem_venda_ml:executar",
+        {"enviar_alerta": True},
+        notas="Sugere preço/ads/republicar para ativos sem pedido no período",
+    ),
+    AgenteRegistrado(
         "monitor_anita",
         "Monitor esmaltes Anita",
         "monitor",
@@ -244,6 +252,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "agentes.esmaltes.agente_comparativo_anita_impala:executar",
         {"enviar_alerta": True},
         notas="Demanda, perfil de consumidor e plano para vencer Impala no ML",
+    ),
+    AgenteRegistrado(
+        "comparativo_ml_shopee",
+        "Comparativo ML × Shopee",
+        "monitor",
+        "agentes.comparativo.agente_comparativo_ml_shopee:executar",
+        {"enviar_alerta": True},
+        notas="Esmaltes e filamentos 3D: score e veredito de canal (ML vs Shopee)",
     ),
     AgenteRegistrado(
         "monitor_acetona_cruzeiro",

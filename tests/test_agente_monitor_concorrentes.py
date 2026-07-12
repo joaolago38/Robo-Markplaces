@@ -40,15 +40,16 @@ _LISTA_ESTAVEL = [
     }
 ]
 
+_CONC = {"item_id": "MLB2", "titulo": "Kit Impala Teste", "preco": 40.0, "quantidade_vendida": 1}
+
 
 class TestMonitorConcorrentes(unittest.TestCase):
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
     @patch.object(mon, "alertar_gestor", return_value=True)
     @patch.object(mon, "_salvar_historico")
     @patch.object(mon, "_carregar_historico", return_value={})
     @patch.object(mon, "_carregar_lista", return_value=_LISTA_ALERTA)
-    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
-        {"item_id": "MLB2", "titulo": "Conc", "preco": 40.0, "quantidade_vendida": 1},
-    ])
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[_CONC])
     def test_alerta_preco_acima(self, *_):
         out = mon.executar(enviar_alerta=True)
         self.assertTrue(out["ok"])
@@ -56,11 +57,22 @@ class TestMonitorConcorrentes(unittest.TestCase):
         self.assertTrue(out["enviado"])
         texto = " ".join(out.get("alertas") or [])
         if not texto:
-            # alertas podem estar só nos resultados
             for r in out.get("resultados") or []:
                 texto += " ".join(r.get("alertas") or [])
         self.assertIn("preço alvo", texto)
         self.assertNotIn("seu preço", texto)
+        self.assertEqual(out["resultados"][0].get("origem_preco"), "alvo_json")
+
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", True)
+    @patch.object(mon, "alertar_gestor", return_value=True)
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(mon, "_carregar_lista", return_value=_LISTA_ALERTA)
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[_CONC])
+    def test_sem_alerta_gap_sem_anuncio_vivo(self, *_):
+        out = mon.executar(enviar_alerta=True)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total_alertas"], 0)
         self.assertEqual(out["resultados"][0].get("origem_preco"), "alvo_json")
 
     @patch.object(mon, "alertar_gestor")
@@ -68,7 +80,7 @@ class TestMonitorConcorrentes(unittest.TestCase):
     @patch.object(mon, "_carregar_historico", return_value={"kit1": {"menor_preco": 40.0}})
     @patch.object(mon, "_carregar_lista", return_value=_LISTA_ESTAVEL)
     @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
-        {"item_id": "MLB2", "titulo": "Conc", "preco": 40.0},
+        {"item_id": "MLB2", "titulo": "Kit Impala Teste", "preco": 40.0},
     ])
     def test_sem_alerta_quando_estavel(
         self,
@@ -90,6 +102,7 @@ class TestMonitorConcorrentes(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_monitorados"], 0)
 
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
     @patch.object(mon, "alertar_gestor", return_value=False)
     @patch.object(mon, "_salvar_historico")
     @patch.object(mon, "_carregar_historico", return_value={})
@@ -163,8 +176,8 @@ class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
     """Garante que as métricas são enviadas ao Datadog a cada ciclo do agente."""
 
     @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
-        {"item_id": "MLB1", "titulo": "X", "preco": 38.0, "quantidade_vendida": 5},
-        {"item_id": "MLB2", "titulo": "Y", "preco": 42.0, "quantidade_vendida": 2},
+        {"item_id": "MLB1", "titulo": "Kit Impala X", "preco": 38.0, "quantidade_vendida": 5},
+        {"item_id": "MLB2", "titulo": "Kit Impala Y", "preco": 42.0, "quantidade_vendida": 2},
     ])
     @patch.object(mon, "_carregar_lista", return_value=[_LISTA_ESTAVEL[0]])
     @patch.object(mon, "_carregar_historico", return_value={})
@@ -181,8 +194,9 @@ class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
         self.assertIn("mercado.gap_preco_pct", nomes_gauge)
         self.assertIn("mercado.total_concorrentes", nomes_gauge)
 
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
     @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
-        {"item_id": "MLB1", "titulo": "X", "preco": 30.0, "quantidade_vendida": 10},
+        {"item_id": "MLB1", "titulo": "Kit Impala X", "preco": 30.0, "quantidade_vendida": 10},
     ])
     @patch.object(mon, "_carregar_lista", return_value=[_LISTA_ALERTA[0]])
     @patch.object(mon, "_carregar_historico", return_value={})
@@ -197,7 +211,7 @@ class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
         self.assertIn("mercado.alertas_preco", nomes_incr)
 
     @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
-        {"item_id": "MLB1", "titulo": "X", "preco": 38.0, "quantidade_vendida": 5},
+        {"item_id": "MLB1", "titulo": "Kit Impala X", "preco": 38.0, "quantidade_vendida": 5},
     ])
     @patch.object(mon, "_carregar_lista", return_value=[_LISTA_ESTAVEL[0]])
     @patch.object(mon, "_carregar_historico", return_value={})

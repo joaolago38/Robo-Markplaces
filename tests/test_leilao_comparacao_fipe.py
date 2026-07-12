@@ -77,6 +77,41 @@ class LeilaoComparacaoFipeTests(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["margem_fipe_pct"], 40)
 
+    def test_aplicar_haircut_fipe_sinistro(self):
+        out = cmp.aplicar_haircut_fipe(20000.0, texto_contexto="Fiat Uno recuperado furto", haircut_pct=40)
+        self.assertTrue(out["fipe_sinistro"])
+        self.assertEqual(out["fipe_haircut_pct"], 40.0)
+        self.assertEqual(out["valor_fipe_ajustado"], 12000.0)
+
+    def test_aplicar_haircut_sem_sinistro(self):
+        out = cmp.aplicar_haircut_fipe(20000.0, texto_contexto="Fiat Uno leilão", haircut_pct=40)
+        self.assertFalse(out["fipe_sinistro"])
+        self.assertEqual(out["valor_fipe_ajustado"], 20000.0)
+
+    @patch("integracoes.leilao.comparacao_fipe.consultar_preco_fipe")
+    def test_avaliar_aplica_haircut_sinistro(self, mock_fipe):
+        mock_fipe.return_value = {
+            "valor_fipe": 20000.0,
+            "modelo_fipe": "Uno",
+            "ano_fipe": 2012,
+        }
+        with patch.object(cmp, "LEILAO_FIPE_HAIRCUT_SINISTRO_PCT", 40.0):
+            out = cmp.avaliar_achado_leilao(
+                {
+                    "valor": "R$ 5.000,00",
+                    "titulo": "Fiat Uno 2012 sinistrado pequena monta",
+                    "marca": "Fiat",
+                    "ano": 2012,
+                },
+                {"marca": "Fiat", "modelo": "Uno"},
+                margem_min_pct=10,
+                margem_min_reais=100,
+                preco_max_lance=35000,
+            )
+        self.assertTrue(out["fipe_sinistro"])
+        self.assertEqual(out["valor_fipe"], 12000.0)
+        self.assertEqual(out["valor_fipe_tabela"], 20000.0)
+
 
 if __name__ == "__main__":
     unittest.main()

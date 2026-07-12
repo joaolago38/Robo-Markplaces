@@ -44,6 +44,21 @@ class CotacaoUsdTests(unittest.TestCase):
             out = cambio.obter_cotacao_usd()
         self.assertTrue(out["ok"])
         self.assertEqual(out["fonte"], "fallback")
+        self.assertFalse(out["confiavel"])
+        self.assertFalse(cambio.cotacao_confiavel_para_margem(out))
+
+    def test_cotacao_confiavel_bloqueia_fallback(self):
+        with patch.object(cambio, "CAMBIO_BLOQUEAR_FALLBACK_MARGEM", True):
+            self.assertFalse(
+                cambio.cotacao_confiavel_para_margem(
+                    {"ok": True, "usd_brl": 5.5, "fonte": "fallback", "confiavel": False}
+                )
+            )
+            self.assertTrue(
+                cambio.cotacao_confiavel_para_margem(
+                    {"ok": True, "usd_brl": 5.5, "fonte": "awesomeapi", "confiavel": True, "idade_seg": 10}
+                )
+            )
 
 
 if __name__ == "__main__":

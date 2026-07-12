@@ -1,0 +1,56 @@
+[
+  {
+    "id": "cmp-esmalte-kit5",
+    "ativo": true,
+    "categoria": "esmalte",
+    "prioridade": 1,
+    "nome": "Kit 5 esmaltes manicure",
+    "termo_busca": "kit 5 esmaltes manicure",
+    "limite_resultados": 24
+  },
+  {
+    "id": "cmp-esmalte-anita",
+    "ativo": true,
+    "categoria": "esmalte",
+    "prioridade": 1,
+    "nome": "Esmalte Anita kit",
+    "termo_busca": "esmalte anita kit",
+    "limite_resultados": 24
+  },
+  {
+    "id": "cmp-esmalte-impala",
+    "ativo": true,
+    "categoria": "esmalte",
+    "prioridade": 2,
+    "nome": "Esmalte Impala kit",
+    "termo_busca": "esmalte impala kit",
+    "limite_resultados": 24
+  },
+  {
+    "id": "cmp-filamento-pla",
+    "ativo": true,
+    "categoria": "filamento",
+    "prioridade": 1,
+    "nome": "Filamento PLA 1kg",
+    "termo_busca": "filamento pla 1kg impressora 3d",
+    "limite_resultados": 24
+  },
+  {
+    "id": "cmp-filamento-petg",
+    "ativo": true,
+    "categoria": "filamento",
+    "prioridade": 2,
+    "nome": "Filamento PETG 1kg",
+    "termo_busca": "filamento petg 1kg",
+    "limite_resultados": 24
+  },
+  {
+    "id": "cmp-filamento-abs",
+    "ativo": true,
+    "categoria": "filamento",
+    "prioridade": 2,
+    "nome": "Filamento ABS 1kg",
+    "termo_busca": "filamento abs 1kg impressora 3d",
+    "limite_resultados": 24
+  }
+]

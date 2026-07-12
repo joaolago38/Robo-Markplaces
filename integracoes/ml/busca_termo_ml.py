@@ -61,11 +61,43 @@ def _palavras_termo(termo: str) -> list[str]:
 
 
 def _titulo_relevante(termo: str, titulo: str) -> bool:
+    """
+    Exige relevância mínima no título.
+    - Termos curtos (1–2 palavras): qualquer match
+    - Termos longos: pelo menos metade das palavras (≥2), preferindo marca/kit
+    """
     palavras = _palavras_termo(termo)
     if not palavras:
         return True
     texto = (titulo or "").lower()
-    return any(p in texto for p in palavras)
+    if len(palavras) <= 2:
+        return any(p in texto for p in palavras)
+
+    hits = sum(1 for p in palavras if p in texto)
+    minimo = max(2, (len(palavras) + 1) // 2)
+    if hits < minimo:
+        return False
+    # Marcas/quantidades comuns: se presentes no termo, devem estar no título
+    obrigatorias = {
+        p
+        for p in palavras
+        if p in {"impala", "anita", "risque", "colorama", "dailus", "carmed", "mimo", "bailarina"}
+        or (p.isdigit() and int(p) >= 3)
+    }
+    if obrigatorias and not all(p in texto for p in obrigatorias):
+        return False
+    return True
+
+
+def filtrar_por_relevancia_titulo(termo: str, resultados: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Filtra resultados cujo título não casa com o termo de busca."""
+    out: list[dict[str, Any]] = []
+    for row in resultados or []:
+        if not isinstance(row, dict):
+            continue
+        if _titulo_relevante(termo, str(row.get("titulo") or "")):
+            out.append(row)
+    return out
 
 
 def _normalizar_catalogo_para_busca(row: dict[str, Any]) -> dict[str, Any]:
@@ -184,6 +216,8 @@ def _buscar_via_api(termo: str, limite: int) -> list[dict[str, Any]]:
         norm = ml_client._normalizar_resultado_busca(row)
         norm["fonte_busca"] = "api"
         if seller_self and norm["seller_id"] == seller_self:
+            continue
+        if not _titulo_relevante(termo, str(norm.get("titulo") or "")):
             continue
         if norm["preco"] > 0:
             encontrados.append(norm)

@@ -1,10 +1,12 @@
-name: Monitor Alibaba Importação
+name: Comparativo ML × Shopee
+
+# Esmaltes e filamentos 3D: qual marketplace é melhor para vendas.
 
 on:
   workflow_dispatch:
   schedule:
-    # A cada 2 horas (UTC)
-    - cron: "0 */2 * * *"
+    # Segunda e quinta 09:00 BRT = 12:00 UTC
+    - cron: "0 12 * * 1,4"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -15,15 +17,14 @@ env:
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE }}
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
-  CAMBIO_BLOQUEAR_FALLBACK_MARGEM: "1"
-  CAMBIO_MAX_IDADE_SEG: "21600"
-  ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE: "0"
-  DDG_MIN_INTERVAL_SEG: "8"
+  MARKETPLACES_BUSCA_ATIVOS: "mercadolivre,shopee"
+  COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO: "1"
 
 jobs:
-  monitorar:
-    name: Oportunidades de importação no Alibaba.com
+  comparativo:
+    name: ML × Shopee — esmaltes e filamentos
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,44 +33,50 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
-      - name: Restaurar histórico de oportunidades
-        uses: actions/cache@v4
-        with:
-          path: logs/alibaba_importacao_history.json
-          key: alibaba-importacao-history-${{ github.run_id }}
-          restore-keys: |
-            alibaba-importacao-history-
-      - name: Restaurar cooldown de alertas Telegram
+      - name: Restaurar cooldown Telegram
         uses: actions/cache@v4
         with:
           path: logs/alertas_cooldown.json
           key: telegram-cooldown-${{ github.run_id }}
           restore-keys: |
             telegram-cooldown-
+      - name: Restaurar cache busca ML
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/ml_busca_termo_cache.json
+            logs/comparativo_ml_shopee_history.json
+          key: comparativo-ml-shopee-${{ github.run_id }}
+          restore-keys: |
+            comparativo-ml-shopee-
       - name: Preflight Telegram (gestor)
         run: python scripts/preflight_monitor_telegram.py
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Rodar monitor Alibaba
-        run: |
-          python -m agentes.importacao.agente_alibaba_importacao
-          python -m agentes.importacao.agente_alibaba_importacao_inteligente
-          python -m agentes.importacao.agente_ml_tendencias_importacao
+      - name: Rodar comparativo ML × Shopee
+        run: python -m agentes.comparativo.agente_comparativo_ml_shopee
         env:
-          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Salvar historico (backup)
+      - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
-          name: alibaba-importacao-history
-          path: logs/alibaba_importacao_history.json
+          name: comparativo-ml-shopee
+          path: |
+            logs/comparativo_ml_shopee_ultima.json
+            logs/comparativo_ml_shopee_history.json
           retention-days: 90
           if-no-files-found: ignore

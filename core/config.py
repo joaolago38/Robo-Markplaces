@@ -94,6 +94,19 @@ MONITOR_CONCORRENTES_ARQUIVO = os.getenv(
 MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
     os.getenv("MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT", "5.0")
 )
+# Se 1, alertas de gap vs "preço alvo" só saem com anúncio MLB vivo (não PREENCHER/JSON)
+MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO = os.getenv(
+    "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", "1"
+).strip().lower() not in ("0", "false", "no")
+
+# Anúncios próprios sem venda recente
+MONITOR_SEM_VENDA_DIAS = int(os.getenv("MONITOR_SEM_VENDA_DIAS", "30"))
+MONITOR_SEM_VENDA_MAX_ITENS = int(os.getenv("MONITOR_SEM_VENDA_MAX_ITENS", "40"))
+MONITOR_SEM_VENDA_ALERTA_RESUMO = os.getenv(
+    "MONITOR_SEM_VENDA_ALERTA_RESUMO", "1"
+).strip().lower() not in ("0", "false", "no")
+MONITOR_SEM_VENDA_COOLDOWN_SEG = int(os.getenv("MONITOR_SEM_VENDA_COOLDOWN_SEG", "14400"))
+MONITOR_SEM_VENDA_VISITAS_ALTAS = int(os.getenv("MONITOR_SEM_VENDA_VISITAS_ALTAS", "20"))
 
 # Relatório de estratégia de vendas ML (ações a partir de gaps/margem)
 ESTRATEGIA_ML_MAX_ACOES = int(os.getenv("ESTRATEGIA_ML_MAX_ACOES", "3"))
@@ -135,6 +148,18 @@ COMPARATIVO_ESMALTES_ALERTA_RESUMO = os.getenv("COMPARATIVO_ESMALTES_ALERTA_RESU
     "no",
 )
 COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG", "14400"))
+
+# Comparativo Mercado Livre × Shopee (esmaltes + filamentos 3D)
+COMPARATIVO_ML_SHOPEE_CATALOGO = os.getenv(
+    "COMPARATIVO_ML_SHOPEE_CATALOGO", "catalogo/comparativo_ml_shopee_categorias.json"
+)
+COMPARATIVO_ML_SHOPEE_PAUSA_SEG = float(os.getenv("COMPARATIVO_ML_SHOPEE_PAUSA_SEG", "1.5"))
+COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO = os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG", "21600"))
 
 # Busca kit esmaltes Anita/Impala — frequência diária + cores
 ESMALTES_BUSCA_KIT_CATALOGO = os.getenv(
@@ -240,16 +265,21 @@ LEILAO_BUSCA_TODOS_VEICULOS = os.getenv("LEILAO_BUSCA_TODOS_VEICULOS", "1").stri
     "false",
     "no",
 )
-LEILAO_VARREDURA_TODAS_FONTES = os.getenv("LEILAO_VARREDURA_TODAS_FONTES", "1").strip().lower() not in (
+LEILAO_VARREDURA_TODAS_FONTES = os.getenv("LEILAO_VARREDURA_TODAS_FONTES", "0").strip().lower() not in (
     "0",
     "false",
     "no",
 )
-LEILAO_ALERTAR_TODOS_ACHADOS = os.getenv("LEILAO_ALERTAR_TODOS_ACHADOS", "1").strip().lower() not in (
+LEILAO_ALERTAR_TODOS_ACHADOS = os.getenv("LEILAO_ALERTAR_TODOS_ACHADOS", "0").strip().lower() not in (
     "0",
     "false",
     "no",
 )
+LEILAO_ALERTA_TOP_N = int(os.getenv("LEILAO_ALERTA_TOP_N", "8"))
+# Haircut na FIPE para veículos sinistrados/recuperados (0–100)
+LEILAO_FIPE_HAIRCUT_SINISTRO_PCT = float(os.getenv("LEILAO_FIPE_HAIRCUT_SINISTRO_PCT", "40"))
+CARROS_BATIDOS_ALERTA_TOP_N = int(os.getenv("CARROS_BATIDOS_ALERTA_TOP_N", "10"))
+CARROS_BATIDOS_FIPE_HAIRCUT_PCT = float(os.getenv("CARROS_BATIDOS_FIPE_HAIRCUT_PCT", "40"))
 
 # Leilão × FIPE (lance + taxas vs tabela)
 LEILAO_COMISSAO_PCT = float(os.getenv("LEILAO_COMISSAO_PCT", "5.0"))
@@ -311,6 +341,16 @@ CAMBIO_API_URL = os.getenv(
 CAMBIO_HISTORICO_MAX = int(os.getenv("CAMBIO_HISTORICO_MAX", "500"))
 CAMBIO_FALLBACK_USD_BRL = float(os.getenv("CAMBIO_FALLBACK_USD_BRL", os.getenv("DESCOBERTA_CAMBIO_USD_BRL", "5.5")))
 CAMBIO_ALERTA_VARIACAO_PCT = float(os.getenv("CAMBIO_ALERTA_VARIACAO_PCT", "1.5"))
+# Se 1, margem/alertas de importação não usam câmbio fallback (só awesomeapi)
+CAMBIO_BLOQUEAR_FALLBACK_MARGEM = os.getenv("CAMBIO_BLOQUEAR_FALLBACK_MARGEM", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CAMBIO_MAX_IDADE_SEG = int(os.getenv("CAMBIO_MAX_IDADE_SEG", "21600"))  # 6h
+ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE = os.getenv(
+    "ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE", "0"
+).strip().lower() not in ("0", "false", "no")
 
 # Custo landed importação (China → Brasil)
 IMPORTACAO_II_PCT_DEFAULT = float(os.getenv("IMPORTACAO_II_PCT_DEFAULT", "16.0"))

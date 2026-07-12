@@ -256,6 +256,46 @@ def _atualizar_campanha(
         return {"ok": False, "dry_run": False, "acao": acao, "campaign_id": campaign_id, "erro": str(exc)}
 
 
+def probe_escrita_product_ads() -> dict:
+    """
+    Testa se a API de escrita Product Ads está autorizada (scopes).
+    Faz PUT idempotente (mesmo status atual) na 1ª campanha.
+    Retorna {ok, codigo, erro?} — não lança.
+    """
+    adv = obter_advertiser()
+    if not adv.get("ok"):
+        return {
+            "ok": False,
+            "codigo": str(adv.get("codigo") or "sem_advertiser"),
+            "erro": adv.get("erro") or "advertiser indisponível",
+        }
+    campanhas = listar_campanhas(advertiser_id=adv.get("advertiser_id"))
+    if not campanhas:
+        return {
+            "ok": False,
+            "codigo": "sem_campanhas",
+            "erro": "Nenhuma campanha Product Ads para testar escrita",
+        }
+    camp = campanhas[0]
+    cid = str(camp.get("id") or "").strip()
+    status_atual = str(camp.get("status") or "paused").lower()
+    if status_atual not in {"active", "paused"}:
+        status_atual = "paused"
+    out = _atualizar_campanha(
+        cid,
+        adv["site_id"],
+        {"status": status_atual, "channel": "marketplace"},
+        "probe_escrita",
+        dry_run=False,
+        confirmar=True,
+    )
+    if out.get("ok"):
+        return {"ok": True, "codigo": "ok", "campaign_id": cid}
+    erro = str(out.get("erro") or "escrita falhou")
+    codigo = "http_401" if "401" in erro else "escrita_falhou"
+    return {"ok": False, "codigo": codigo, "erro": erro, "campaign_id": cid}
+
+
 def pausar_campanha(
     campaign_id: str,
     advertiser_site_id: str,

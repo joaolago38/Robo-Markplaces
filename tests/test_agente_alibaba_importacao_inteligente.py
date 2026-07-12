@@ -27,7 +27,7 @@ class AgenteAlibabaInteligenteTests(unittest.TestCase):
     @patch.object(agente, "_carregar_produtos")
     @patch.object(agente, "obter_cotacao_usd")
     def test_fluxo_completo(self, mock_cambio, mock_prod, mock_busca, mock_analise, _mock_alertar):
-        mock_cambio.return_value = {"ok": True, "usd_brl": 5.5, "fonte": "teste"}
+        mock_cambio.return_value = {"ok": True, "usd_brl": 5.5, "fonte": "awesomeapi", "confiavel": True}
         mock_prod.return_value = [
             {
                 "id": "p1",
@@ -135,6 +135,52 @@ class AgenteAlibabaInteligenteTests(unittest.TestCase):
         self.assertIn("Formal VCP", texto)
         self.assertIn("Mercado BR", texto)
         self.assertIn("pacote 100", texto)
+
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "analisar_produto_catalogo")
+    @patch.object(agente, "buscar_oportunidades")
+    @patch.object(agente, "_carregar_produtos")
+    @patch.object(agente, "obter_cotacao_usd")
+    def test_pula_alerta_lucro_com_cambio_fallback(
+        self, mock_cambio, mock_prod, mock_busca, mock_analise, mock_alertar
+    ):
+        mock_cambio.return_value = {
+            "ok": True,
+            "usd_brl": 5.5,
+            "fonte": "fallback",
+            "confiavel": False,
+        }
+        mock_prod.return_value = [{"id": "p1", "ativo": True, "nome": "X", "termo_busca": "x"}]
+        mock_busca.return_value = [{"preco_usd": 1.0, "moq": 10, "titulo": "X", "url": "http://x"}]
+        mock_analise.return_value = {
+            "ok": True,
+            "id": "p1",
+            "produto": "X",
+            "total_oportunidades": 1,
+            "lucrativas": 1,
+            "analises": [
+                {
+                    "ok": True,
+                    "lucro_razoavel": True,
+                    "titulo": "X",
+                    "preco_usd": 1.0,
+                    "melhor_frete": "aereo",
+                    "url": "http://x",
+                    "margem_melhor": {"margem_brl": 10.0, "margem_pct": 20.0},
+                    "cenarios_frete": {"aereo": {"custo_unitario_brl": 5.0}},
+                }
+            ],
+            "melhor_analise": {"ok": True},
+        }
+        with patch.object(agente, "HISTORY_PATH", self.hist), patch.object(
+            agente, "variacao_desde_ultima_rodada", return_value={"ok": False}
+        ), patch.object(agente, "ALIBABA_INTELIGENCIA_ALERTA_RESUMO", False):
+            out = agente.executar(enviar_alerta=True)
+        self.assertTrue(out["ok"])
+        self.assertFalse(out.get("alerta_lucro"))
+        # sem painel e sem lucro → nenhum alerta de margem
+        for call in mock_alertar.call_args_list:
+            self.assertNotIn("lucro razoável", call[0][0])
 
 
 if __name__ == "__main__":

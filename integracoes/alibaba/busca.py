@@ -14,6 +14,7 @@ from html import unescape
 from typing import Any
 from urllib.parse import parse_qs, quote_plus, unquote, urlparse, urlunparse
 
+from core.config import ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE
 from core.http_client import request
 
 logger = logging.getLogger("alibaba_busca")
@@ -103,11 +104,18 @@ def _extrair_preco_usd(texto: str) -> float | None:
     ):
         m = re.search(padrao, texto, re.IGNORECASE)
         if m:
-            bruto = m.group(1).replace(",", "")
+            bruto = m.group(1).strip()
+            # US: 1,234.56 | EU/BR decimal: 0,28 | plain: 0.28
+            if "," in bruto and "." in bruto:
+                bruto = bruto.replace(",", "")
+            elif "," in bruto:
+                bruto = bruto.replace(",", ".")
             try:
-                return float(bruto)
+                valor = float(bruto)
             except ValueError:
                 continue
+            if valor > 0:
+                return valor
     return None
 
 
@@ -358,6 +366,10 @@ def _e_oportunidade(produto_cfg: dict[str, Any], item: dict[str, Any]) -> bool:
                 return False
         except (TypeError, ValueError):
             pass
+
+    exigir_moq = ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE or moq_max is not None
+    if exigir_moq and moq is None:
+        return False
 
     if moq_max is not None and moq is not None:
         try:

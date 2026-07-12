@@ -1,8 +1,8 @@
 """
 agentes/leilao/agente_leilao_veiculo.py
 Monitor 24h de leilões de veículos **recuperados de furto ou pequena/média monta** em leiloeiros
-e portais DETRAN (todos os estados). Por padrão varre **todos os veículos** (ano 2000–2020)
-em todas as fontes e notifica no Telegram cada achado novo.
+e portais DETRAN (todos os estados). Por padrão varre veículos (ano configurável) com rotação
+de fontes e alerta no Telegram o Top-N por margem FIPE (após taxas e haircut de sinistro).
 
 Configuração: catalogo/leiloes_veiculos_monitorados.json (modo legado por modelo)
 Somente leitura + alertas — não participa de leilões.
@@ -17,6 +17,7 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     LEILAO_ALERTA_RESUMO,
     LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
+    LEILAO_ALERTA_TOP_N,
     LEILAO_ALERTAR_TODOS_ACHADOS,
     LEILAO_ANO_MAX,
     LEILAO_ANO_MIN,
@@ -293,60 +294,57 @@ def _logar_achados(
 
 
 def _montar_alerta(resultados: list[dict[str, Any]], *, todos_achados: bool = False) -> str:
+    """Alerta compacto: Top-N por margem FIPE (ou por ordem se sem FIPE)."""
     titulo = (
         "🚗 *Leilões — veículos encontrados*"
         if todos_achados
         else "🚗 *Leilões — vantagem FIPE (lance + taxas)*"
     )
-    linhas = [titulo, ""]
-    ordenados = sorted(resultados, key=lambda r: int(r.get("prioridade") or 99))
-    tem_item = False
-    for r in ordenados:
+    itens: list[dict[str, Any]] = []
+    for r in resultados:
         novos = r.get("novos") if todos_achados else (r.get("novos_vantajosos") or [])
-        if not novos:
-            continue
-        tem_item = True
-        rotulo = r.get("veiculo", r.get("id", ""))
-        if todos_achados:
-            linhas.append(f"*{rotulo}* ({len(novos)} novo(s)):")
-        else:
-            linhas.append(f"*{rotulo}* ({len(novos)} com vantagem FIPE):")
-        for item in novos[:12]:
-            linhas.append(f"📍 {_formatar_local_item(item)}")
-            linhas.append(f"🚙 {_formatar_veiculo_item(item)}")
-            if item.get("valor") or item.get("lance_brl"):
-                linhas.append(f"💰 Lance {_fmt_brl(item.get('lance_brl') or item.get('valor'))}")
-            if item.get("valor_fipe"):
-                linhas.append(f"📊 FIPE {_fmt_brl(item['valor_fipe'])} ({item.get('modelo_fipe', '')})")
-                linhas.append(
-                    f"💸 Custo total leilão {_fmt_brl(item.get('custo_total_brl'))} "
-                    f"(+{_fmt_brl(item.get('comissao_leiloeiro_brl'))} comissão + taxas)"
-                )
-                if item.get("vantajoso"):
-                    linhas.append(
-                        f"✅ Vantagem {_fmt_brl(item.get('margem_fipe_reais'))} "
-                        f"({item.get('margem_fipe_pct')}% abaixo FIPE)"
-                    )
-                elif item.get("margem_fipe_reais") is not None:
-                    linhas.append(
-                        f"⚠️ Margem FIPE {_fmt_brl(item.get('margem_fipe_reais'))} "
-                        f"({item.get('margem_fipe_pct')}%)"
-                    )
-            elif item.get("analise_fipe"):
-                motivo = (item.get("analise_fipe") or {}).get("motivo")
-                if motivo:
-                    linhas.append(f"📊 {motivo}")
-            if item.get("data_leilao"):
-                linhas.append(f"📅 {item['data_leilao']}")
-            if item.get("url_cadastro"):
-                linhas.append(f"📝 Cadastro: {item['url_cadastro']}")
-            linhas.append(f"🔗 {item.get('url_anuncio') or item.get('url', '')}")
-            linhas.append("")
-        if len(novos) > 12:
-            linhas.append(f"… e mais {len(novos) - 12}")
-        linhas.append("")
-    if not tem_item:
+        for item in novos or []:
+            if isinstance(item, dict):
+                itens.append(item)
+
+    if not itens:
         return ""
+
+    def _chave_rank(item: dict[str, Any]) -> float:
+        try:
+            return float(item.get("margem_fipe_pct") or -9999)
+        except (TypeError, ValueError):
+            return -9999.0
+
+    itens.sort(key=_chave_rank, reverse=True)
+    top_n = max(1, LEILAO_ALERTA_TOP_N)
+    top = itens[:top_n]
+
+    linhas = [
+        titulo,
+        "",
+        f"_{len(itens)} item(ns); mostrando Top {len(top)} por margem FIPE._",
+        "",
+    ]
+    for i, item in enumerate(top, 1):
+        pct = item.get("margem_fipe_pct")
+        delta = f"+{pct:.0f}%" if isinstance(pct, (int, float)) else "n/d"
+        veiculo = _formatar_veiculo_item(item)
+        lance = _fmt_brl(item.get("lance_brl") or item.get("valor"))
+        fipe = _fmt_brl(item.get("valor_fipe")) if item.get("valor_fipe") else "FIPE n/d"
+        haircut = ""
+        if item.get("fipe_sinistro") and item.get("fipe_haircut_pct"):
+            haircut = f" (FIPE −{item.get('fipe_haircut_pct'):.0f}% sinistro)"
+        linhas.append(
+            f"`{i}. {delta}` | {veiculo} | lance {lance} | {fipe}{haircut}"
+        )
+        linhas.append(f"   📍 {_formatar_local_item(item)}")
+        url = item.get("url_anuncio") or item.get("url") or ""
+        if url:
+            linhas.append(f"   🔗 {url}")
+    if len(itens) > top_n:
+        linhas.append("")
+        linhas.append(f"_… +{len(itens) - top_n} outros (ver logs/histórico)_")
     return "\n".join(linhas).strip()
 
 

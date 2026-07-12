@@ -59,6 +59,7 @@ class TestPausaSeletiva(unittest.TestCase):
         self.assertEqual(kwargs.get("budget"), 10.0)
 
 
+    @patch.object(gatilho, "probe_escrita_product_ads", return_value={"ok": True, "codigo": "ok"})
     @patch.object(gatilho, "campanhas_acos_acima_limite", return_value=[
         {"id": "C1", "cost": 30.0},
     ])
@@ -80,6 +81,7 @@ class TestContextoDecisaoAds(unittest.TestCase):
         )
         self.assertTrue(ctx.get("sazonalidade_out_dez"))
 
+    @patch.object(gatilho, "probe_escrita_product_ads", return_value={"ok": True, "codigo": "ok"})
     @patch.object(gatilho, "perguntar_gestor_e_aguardar", return_value=False)
     @patch.object(gatilho, "alertar_gestor")
     @patch("agentes.ml.agente_ads_gatilho.datetime")

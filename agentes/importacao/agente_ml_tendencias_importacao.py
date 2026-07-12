@@ -27,7 +27,7 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
-from integracoes.cambio.cotacao_usd import obter_cotacao_usd
+from integracoes.cambio.cotacao_usd import cotacao_confiavel_para_margem, obter_cotacao_usd
 from integracoes.importacao.calculo_importacao_aerea import formatar_breakdown_viracopos_telegram
 from integracoes.importacao.tendencias_ml_importacao import (
     analisar_produto_ml_vs_alibaba,
@@ -131,11 +131,17 @@ def montar_mensagem_telegram(
         "🛒 *Mercado Livre × Alibaba — vale importar?*",
         "",
         f"💵 Dólar: R$ {cotacao.get('usd_brl')} ({cotacao.get('fonte', '?')})",
-        f"Produtos: *{consolidado.get('produtos_varridos', 0)}* | "
-        f"Vale importar: *{consolidado.get('vale_importar', 0)}* | "
-        f"Avaliar: *{consolidado.get('avaliar', 0)}*",
-        "",
     ]
+    if not cotacao_confiavel_para_margem(cotacao):
+        linhas.append("_⚠️ Câmbio fallback/desatualizado — margens são estimativa._")
+    linhas.extend(
+        [
+            f"Produtos: *{consolidado.get('produtos_varridos', 0)}* | "
+            f"Vale importar: *{consolidado.get('vale_importar', 0)}* | "
+            f"Avaliar: *{consolidado.get('avaliar', 0)}*",
+            "",
+        ]
+    )
 
     if diag_coleta and diag_coleta.get("coleta_vazia"):
         linhas.extend(
@@ -260,6 +266,11 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         alerta_enviado = False
         if enviar_alerta and ML_TENDENCIAS_IMPORTACAO_ALERTA_RESUMO and resultados:
+            if not cotacao_confiavel_para_margem(cotacao):
+                logger.warning(
+                    "ML×Alibaba: alerta de margem com câmbio não confiável (fonte=%s)",
+                    cotacao.get("fonte"),
+                )
             msg = montar_mensagem_telegram(
                 consolidado,
                 resultados,

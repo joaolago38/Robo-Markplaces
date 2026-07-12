@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-07-12T14:53:25.198667+00:00",
+  "enviado": true,
+  "ok": true,
+  "dias": 30,
+  "total_anuncios": 1,
+  "total_com_venda": 0,
+  "total_sem_venda": 1,
+  "por_acao": {
+    "baixar_preco_ou_listing": 1
+  },
+  "itens": [
+    {
+      "item_id": "MLB1",
+      "sku": "K1",
+      "titulo": "Kit",
+      "preco": 40.0,
+      "sold_quantity_total": 0,
+      "visitas_7d": 5,
+      "visitas_30d": 25,
+      "acao": "baixar_preco_ou_listing",
+      "acao_rotulo": "Visitas sem conversão → baixar preço / frete / fotos"
+    }
+  ]
+}

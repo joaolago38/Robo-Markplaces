@@ -27,7 +27,11 @@ from core.config import (
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
-from integracoes.cambio.cotacao_usd import obter_cotacao_usd, variacao_desde_ultima_rodada
+from integracoes.cambio.cotacao_usd import (
+    cotacao_confiavel_para_margem,
+    obter_cotacao_usd,
+    variacao_desde_ultima_rodada,
+)
 from integracoes.importacao.analise_margem import analisar_produto_catalogo
 from integracoes.importacao.avaliacao_ia_parametros import (
     avaliar_parametros_alibaba_inteligencia,
@@ -72,11 +76,15 @@ def _montar_alerta_cambio(cotacao: dict[str, Any], variacao: dict[str, Any]) -> 
     if abs(diff) < CAMBIO_ALERTA_VARIACAO_PCT:
         return None
     seta = "📈" if diff > 0 else "📉"
-    return (
-        f"{seta} *Dólar variou {diff:+.2f}%*\n"
-        f"Atual: R$ {cotacao.get('usd_brl')} | Anterior: R$ {variacao.get('usd_brl_anterior')}\n"
-        f"_Impacta diretamente o custo de importação Alibaba._"
-    )
+    linhas = [
+        f"{seta} *Dólar variou {diff:+.2f}%*",
+        f"Atual: R$ {cotacao.get('usd_brl')} | Anterior: R$ {variacao.get('usd_brl_anterior')}",
+        f"Fonte: {cotacao.get('fonte', '?')}",
+        "_Impacta diretamente o custo de importação Alibaba._",
+    ]
+    if not cotacao_confiavel_para_margem(cotacao):
+        linhas.append("_⚠️ Cotação não confiável para margem (fallback/desatualizada)._")
+    return "\n".join(linhas)
 
 
 def _resumo_custo(analise: dict[str, Any], *, cambio_usd_brl: float | None = None) -> str:
@@ -135,8 +143,10 @@ def _montar_painel_produtos(
         "📊 *Alibaba — painel de importação (todos os produtos)*",
         "",
         f"💵 Dólar: R$ {cotacao.get('usd_brl')} ({cotacao.get('fonte', '?')})",
-        "",
     ]
+    if not cotacao_confiavel_para_margem(cotacao):
+        linhas.append("_⚠️ Margens abaixo são estimativa — câmbio fallback/desatualizado._")
+    linhas.append("")
     for r in resultados:
         nome = r.get("produto") or r.get("id") or "?"
         mk = r.get("precos_marketplace") or {}
@@ -296,7 +306,15 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     )
                 )
 
-            lucro = _montar_alerta_lucrativos(resultados, cotacao)
+            lucro = None
+            if cotacao_confiavel_para_margem(cotacao):
+                lucro = _montar_alerta_lucrativos(resultados, cotacao)
+            else:
+                logger.warning(
+                    "Alibaba inteligência: pulando alerta de lucro — câmbio não confiável "
+                    "(fonte=%s)",
+                    cotacao.get("fonte"),
+                )
             if lucro:
                 alerta_lucro = bool(
                     alertar_gestor(

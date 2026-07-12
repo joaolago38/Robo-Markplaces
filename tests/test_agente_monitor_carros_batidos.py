@@ -97,6 +97,17 @@ class TestAgenteMonitorCarrosBatidos(unittest.TestCase):
         )
         self.assertIn("Civic", msg)
         self.assertIn("Motorjan", msg)
+        self.assertIn("Top", msg)
+
+    def test_ordenar_novos_prioriza_desconto(self):
+        itens = [
+            {"titulo": "A", "preco": 10000, "desconto_pct": 10},
+            {"titulo": "B", "preco": 8000, "desconto_pct": 40},
+            {"titulo": "C", "preco": 0, "desconto_pct": 99},
+        ]
+        out = agente._ordenar_novos_alerta(itens)
+        self.assertEqual(out[0]["titulo"], "B")
+        self.assertEqual(out[-1]["titulo"], "C")
 
 
 if __name__ == "__main__":
