@@ -113,14 +113,23 @@ def _request_sumare(
 
 
 def _html_e_pagina_login(html: str) -> bool:
-    """Detecta redirecionamento para login (comum no ajaxListaLotes sem sessão)."""
+    """Detecta redirecionamento real para login (não confundir com link Login no menu)."""
     if not html:
         return False
+    # Páginas de leilão/lote trazem lot-item e também um link /login no header —
+    # isso NÃO é redirect de autenticação.
+    if _html_tem_lotes(html):
+        return False
     norm = html.lower()
-    if 'id="login-form-pass"' in norm or "sumareleiloes.com.br/login" in norm:
+    if 'id="login-form-pass"' in norm:
         return True
     m = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.DOTALL)
     if m and "login" in _normalizar(m.group(1)):
+        return True
+    # Sem lotes + canonical/og apontando para /login
+    if 'property="og:url" content="https://www.sumareleiloes.com.br/login"' in norm:
+        return True
+    if 'content="https://www.sumareleiloes.com.br/login"' in norm and "login-form" in norm:
         return True
     return False
 

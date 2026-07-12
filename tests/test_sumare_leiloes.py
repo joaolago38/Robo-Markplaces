@@ -135,6 +135,12 @@ class SumareLeiloesTests(unittest.TestCase):
         html_login = '<html><title>Sumaré Leilões | Login</title><form id="login-form-pass"></form></html>'
         self.assertTrue(sl._html_e_pagina_login(html_login))
         self.assertFalse(sl._html_e_pagina_login(_LOTE_DOC))
+        # Link /login no menu NÃO deve invalidar página com lotes
+        html_com_nav_login = (
+            '<a href="https://www.sumareleiloes.com.br/login">Login</a>'
+            f"{_LOTE_DOC}"
+        )
+        self.assertFalse(sl._html_e_pagina_login(html_com_nav_login))
 
     def test_ajax_login_para_paginacao(self):
         leilao = {"leilao_id": "5075", "url": "https://www.sumareleiloes.com.br/leiloes/5075", "comitente": "PREFEITURA"}
