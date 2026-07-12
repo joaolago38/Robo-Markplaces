@@ -40,10 +40,18 @@ SERIES_PATH = ROOT / "logs" / "esmaltes_tendencias_series.json"
 GRAFICO_PATH = ROOT / "logs" / "esmaltes_tendencias_grafico.png"
 
 _SERIES_CAMPOS = [
-    ("total_web_hits", "Hits web"),
-    ("total_anuncios_mp", "Anúncios MP"),
+    ("total_web_hits", "Buscas na web"),
+    ("total_anuncios_mp", "Anúncios nos marketplaces"),
     ("oportunidades", "Oportunidades"),
     ("confirmadas", "Confirmadas"),
+]
+
+# Rótulos longos só no gráfico (3º item = descrição; formatar_comparativo usa _SERIES_CAMPOS)
+_SERIES_GRAFICO = [
+    ("total_web_hits", "Buscas na web", "Brave / DuckDuckGo"),
+    ("total_anuncios_mp", "Anúncios nos marketplaces", "ML + Magalu + Shopee + Amazon"),
+    ("oportunidades", "Oportunidades", "Web quente e marketplace frio"),
+    ("confirmadas", "Tendências confirmadas", "Aparecem na web e nos marketplaces"),
 ]
 
 _STATUS_LABEL = {
@@ -304,7 +312,10 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 )
             )
             grafico = grafico_evolucao(
-                serie, _SERIES_CAMPOS, GRAFICO_PATH, titulo="Tendências esmaltes — evolução"
+                serie,
+                _SERIES_GRAFICO,
+                GRAFICO_PATH,
+                titulo="Tendências esmaltes — evolução",
             )
             if grafico:
                 enviar_foto_gestor(

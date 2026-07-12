@@ -52,6 +52,27 @@ class GraficosTests(unittest.TestCase):
         self.assertIsNotNone(out)
         self.assertTrue(os.path.exists(self.path))
 
+    def test_gera_png_com_nomes_e_descricao(self):
+        if not graficos.disponivel():
+            self.skipTest("matplotlib não instalado")
+        serie = [
+            {"ts": "2026-07-01T10:00:00+00:00", "hits": 10, "ops": 1},
+            {"ts": "2026-07-01T16:00:00+00:00", "hits": 20, "ops": 2},
+            {"ts": "2026-07-02T10:00:00+00:00", "hits": 15, "ops": 0},
+        ]
+        out = graficos.grafico_evolucao(
+            serie,
+            [
+                ("hits", "Buscas na web", "Brave / DuckDuckGo"),
+                ("ops", "Oportunidades", "Web quente e marketplace frio"),
+            ],
+            self.path,
+            titulo="Tendências esmaltes — evolução",
+        )
+        self.assertIsNotNone(out)
+        self.assertTrue(os.path.exists(self.path))
+        self.assertGreater(os.path.getsize(self.path), 500)
+
     def test_grafico_barras_gera_png(self):
         if not graficos.disponivel():
             self.skipTest("matplotlib não instalado")
