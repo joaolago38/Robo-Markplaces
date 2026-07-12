@@ -178,6 +178,48 @@ def _top_marcas(anuncios: list[dict[str, Any]], limite: int = 4) -> list[dict[st
     return [{"marca": m, "qtd": q} for m, q in ordenado[:limite]]
 
 
+def _resumo_precos(
+    anuncios: list[dict[str, Any]],
+    *,
+    marca_esperada: str = "",
+) -> dict[str, Any]:
+    """Min / média / máx dos anúncios com preço > 0 (geral e só da marca)."""
+    precos: list[float] = []
+    precos_marca: list[float] = []
+    marca_norm = (marca_esperada or "").lower()
+    for an in anuncios:
+        try:
+            preco = float(an.get("preco") or 0)
+        except (TypeError, ValueError):
+            continue
+        if preco <= 0:
+            continue
+        precos.append(preco)
+        titulo = str(an.get("titulo") or "").lower()
+        if marca_norm and marca_norm in titulo:
+            precos_marca.append(preco)
+
+    def _agg(vals: list[float]) -> dict[str, Any]:
+        if not vals:
+            return {"com_preco": 0, "preco_min": 0.0, "preco_medio": 0.0, "preco_max": 0.0}
+        return {
+            "com_preco": len(vals),
+            "preco_min": round(min(vals), 2),
+            "preco_medio": round(sum(vals) / len(vals), 2),
+            "preco_max": round(max(vals), 2),
+        }
+
+    geral = _agg(precos)
+    marca = _agg(precos_marca)
+    return {
+        **geral,
+        "preco_min_marca": marca["preco_min"],
+        "preco_medio_marca": marca["preco_medio"],
+        "preco_max_marca": marca["preco_max"],
+        "com_preco_marca": marca["com_preco"],
+    }
+
+
 def executar_busca_item(
     item: dict[str, Any],
     anuncios: list[dict[str, Any]],
@@ -189,6 +231,7 @@ def executar_busca_item(
     marca = str(item.get("marca") or "").lower()
     resumo = _resumir_anuncios(anuncios, marca)
     cores = _contar_cores_anuncios(anuncios, cores_busca)
+    precos = _resumo_precos(anuncios, marca_esperada=marca)
     ts = timestamp or datetime.now(timezone.utc).isoformat()
 
     return {
@@ -205,7 +248,47 @@ def executar_busca_item(
         "kits_no_titulo": resumo["com_kit_no_titulo"],
         "cores_encontradas": cores,
         "top_marcas": resumo["marcas_detectadas"],
+        **precos,
     }
+
+
+def _acumular_precos_dia(reg: dict[str, Any], resultado: dict[str, Any]) -> None:
+    """Atualiza min/máx/média do dia no registro do kit (prioriza preços da marca)."""
+    usar_marca = int(resultado.get("com_preco_marca") or 0) > 0
+    if usar_marca:
+        pmin = float(resultado.get("preco_min_marca") or 0)
+        pmed = float(resultado.get("preco_medio_marca") or 0)
+        pmax = float(resultado.get("preco_max_marca") or 0)
+        n = int(resultado.get("com_preco_marca") or 0)
+        reg["com_preco_marca"] = int(reg.get("com_preco_marca") or 0) + n
+    else:
+        pmin = float(resultado.get("preco_min") or 0)
+        pmed = float(resultado.get("preco_medio") or 0)
+        pmax = float(resultado.get("preco_max") or 0)
+        n = int(resultado.get("com_preco") or 0)
+
+    if n <= 0 or pmed <= 0:
+        return
+
+    reg["com_preco"] = int(reg.get("com_preco") or 0) + n
+    antigo_min = float(reg.get("preco_min") or 0)
+    antigo_max = float(reg.get("preco_max") or 0)
+    reg["preco_min"] = round(min(pmin, antigo_min) if antigo_min > 0 else pmin, 2)
+    reg["preco_max"] = round(max(pmax, antigo_max), 2)
+
+    # Média ponderada pelas amostras da rodada
+    amostras_ant = int(reg.get("_preco_amostras") or 0)
+    soma_ant = float(reg.get("_preco_soma") or 0)
+    soma_ant += pmed * n
+    amostras_ant += n
+    reg["_preco_soma"] = soma_ant
+    reg["_preco_amostras"] = amostras_ant
+    reg["preco_medio"] = round(soma_ant / amostras_ant, 2) if amostras_ant else 0.0
+    # Espelha campos usados por _formatar_precos (sem sufixo "da marca" no acumulado genérico)
+    if usar_marca:
+        reg["preco_min_marca"] = reg["preco_min"]
+        reg["preco_max_marca"] = reg["preco_max"]
+        reg["preco_medio_marca"] = reg["preco_medio"]
 
 
 def registrar_execucao_diaria(
@@ -255,6 +338,7 @@ def registrar_execucao_diaria(
     cores_acum: dict[str, int] = reg.setdefault("cores_encontradas", {})
     for cor, qtd in (resultado.get("cores_encontradas") or {}).items():
         cores_acum[cor] = int(cores_acum.get(cor) or 0) + int(qtd)
+    _acumular_precos_dia(reg, resultado)
 
     execucoes: list[dict[str, Any]] = dia_obj.setdefault("execucoes", [])
     execucoes.append(
@@ -265,6 +349,7 @@ def registrar_execucao_diaria(
             "cor_foco": resultado.get("cor_foco"),
             "termo": resultado.get("termo_busca"),
             "anuncios": resultado.get("total_anuncios"),
+            "preco_medio": resultado.get("preco_medio_marca") or resultado.get("preco_medio"),
         }
     )
     if len(execucoes) > 100:

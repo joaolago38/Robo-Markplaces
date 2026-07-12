@@ -72,15 +72,25 @@ class BuscaKitFrequenciaTests(unittest.TestCase):
             "termo_busca": "kit 3 esmalte anita nude",
         }
         anuncios = [
-            {"titulo": "Kit 3 esmaltes Anita nude rosa manicure"},
-            {"titulo": "Esmalte Anita vermelho classico"},
-            {"titulo": "Kit impala sortido"},
+            {"titulo": "Kit 3 esmaltes Anita nude rosa manicure", "preco": 29.9},
+            {"titulo": "Esmalte Anita vermelho classico", "preco": 19.9},
+            {"titulo": "Kit impala sortido", "preco": 49.0},
         ]
         out = bkf.executar_busca_item(item, anuncios, timestamp="2026-07-06T12:00:00+00:00")
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_anuncios"], 3)
         self.assertGreaterEqual(out["anuncios_da_marca"], 2)
         self.assertIn("nude", {k.lower() for k in out["cores_encontradas"]})
+        self.assertEqual(out["com_preco"], 3)
+        self.assertAlmostEqual(out["preco_min"], 19.9)
+        self.assertAlmostEqual(out["preco_max"], 49.0)
+        self.assertAlmostEqual(out["preco_min_marca"], 19.9)
+        self.assertAlmostEqual(out["preco_max_marca"], 29.9)
+
+    def test_resumo_precos_vazio(self):
+        out = bkf._resumo_precos([{"titulo": "x", "preco": 0}], marca_esperada="anita")
+        self.assertEqual(out["com_preco"], 0)
+        self.assertEqual(out["preco_medio"], 0.0)
 
     def test_registrar_execucao_diaria(self):
         historico: dict = {}
@@ -93,15 +103,52 @@ class BuscaKitFrequenciaTests(unittest.TestCase):
             "timestamp": "2026-07-06T12:00:00+00:00",
             "total_anuncios": 10,
             "cores_encontradas": {"rosa": 4, "nude": 2},
+            "com_preco": 5,
+            "com_preco_marca": 5,
+            "preco_min": 20.0,
+            "preco_medio": 30.0,
+            "preco_max": 40.0,
+            "preco_min_marca": 20.0,
+            "preco_medio_marca": 30.0,
+            "preco_max_marca": 40.0,
         }
         dia = bkf.registrar_execucao_diaria(historico, resultado, dia="2026-07-06")
         self.assertEqual(dia["total_buscas"], 1)
         self.assertEqual(dia["impala"], 1)
         self.assertEqual(dia["itens"]["kit5-impala"]["buscas"], 1)
         self.assertEqual(dia["itens"]["kit5-impala"]["cores_encontradas"]["rosa"], 4)
+        self.assertAlmostEqual(dia["itens"]["kit5-impala"]["preco_min"], 20.0)
+        self.assertAlmostEqual(dia["itens"]["kit5-impala"]["preco_medio"], 30.0)
 
-        bkf.registrar_execucao_diaria(historico, {**resultado, "marca": "anita"}, dia="2026-07-06")
+        bkf.registrar_execucao_diaria(
+            historico,
+            {
+                **resultado,
+                "marca": "anita",
+                "item_id": "kit5-anita",
+                "preco_min_marca": 15.0,
+                "preco_medio_marca": 25.0,
+                "preco_max_marca": 35.0,
+            },
+            dia="2026-07-06",
+        )
         self.assertEqual(historico["2026-07-06"]["total_buscas"], 2)
+
+        # Segunda rodada do mesmo kit amplia min/máx
+        bkf.registrar_execucao_diaria(
+            historico,
+            {
+                **resultado,
+                "preco_min_marca": 18.0,
+                "preco_medio_marca": 50.0,
+                "preco_max_marca": 55.0,
+                "com_preco_marca": 2,
+            },
+            dia="2026-07-06",
+        )
+        kit = historico["2026-07-06"]["itens"]["kit5-impala"]
+        self.assertAlmostEqual(kit["preco_min"], 18.0)
+        self.assertAlmostEqual(kit["preco_max"], 55.0)
 
     def test_consolidar_dia(self):
         dia_obj = {
