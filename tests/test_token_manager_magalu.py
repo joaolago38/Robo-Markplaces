@@ -33,6 +33,7 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         tm._token_cache_magalu["expires_at"] = 0
         tm._magalu_refresh_efetivo["valor"] = None
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -40,7 +41,7 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         MAGALU_CLIENT_SECRET="sec",
         MAGALU_REFRESH_TOKEN="refresh_teste",
     )
-    def test_http_400_loga_corpo_e_retorna_none(self, mock_request):
+    def test_http_400_loga_corpo_e_retorna_none(self, mock_request, _log_on):
         mock_request.return_value = _resp(400, '{"error":"invalid_grant"}')
         with self.assertLogs("token_manager", level="ERROR") as logs:
             out = tm._renovar_token_magalu()
@@ -69,6 +70,7 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         self.assertEqual(out, "acc_magalu")
         self.assertEqual(tm._magalu_refresh_efetivo["valor"], "ref_novo")
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request", side_effect=ConnectionError("rede"))
     @patch.multiple(
         cfg,

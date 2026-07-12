@@ -156,6 +156,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         out = tm._renovar_token_magalu()
         self.assertEqual(out, "mag_at")
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -163,7 +164,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         MAGALU_CLIENT_SECRET="sec",
         MAGALU_REFRESH_TOKEN="rt",
     )
-    def test_magalu_refresh_400(self, mock_request):
+    def test_magalu_refresh_400(self, mock_request, _log_on):
         tm._magalu_refresh_efetivo["valor"] = "rt"
         mock_request.return_value = _resp(400, text="bad request")
         with self.assertLogs("token_manager", level="ERROR"):
@@ -202,6 +203,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         out = tm._renovar_token_shopee()
         self.assertEqual(out, "sp_at")
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -210,7 +212,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         SHOPEE_SHOP_ID="...",
         SHOPEE_REFRESH_TOKEN="rt",
     )
-    def test_shopee_ids_nao_numericos(self, mock_request):
+    def test_shopee_ids_nao_numericos(self, mock_request, _log_on):
         tm._shopee_refresh_efetivo["valor"] = "rt"
         with self.assertLogs("token_manager", level="ERROR") as logs:
             out = tm._renovar_token_shopee()
@@ -295,9 +297,10 @@ class TestTokenManagerProviders(unittest.TestCase):
         with patch.object(cfg, "SHOPEE_ACCESS_TOKEN", "static"):
             self.assertEqual(tm.get_token_shopee(), "static")
 
+    @patch.object(tm, "log_erros_bling_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(cfg, BLING_CLIENT_ID="cid", BLING_CLIENT_SECRET="sec", BLING_REFRESH_TOKEN="rt")
-    def test_bling_refresh_401_dica(self, mock_request):
+    def test_bling_refresh_401_dica(self, mock_request, _log_on):
         tm._bling_refresh_efetivo["valor"] = "rt"
         mock_request.return_value = _resp(
             401,

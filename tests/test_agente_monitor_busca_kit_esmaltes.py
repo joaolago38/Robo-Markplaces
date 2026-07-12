@@ -48,8 +48,8 @@ class AgenteMonitorBuscaKitEsmaltesTests(unittest.TestCase):
             },
         ]
         mock_resolver.return_value = lambda termo, **kwargs: [
-            {"titulo": "Kit 3 esmalte anita nude"},
-            {"titulo": "Kit 3 esmalte impala rosa"},
+            {"titulo": "Kit 3 esmalte anita nude", "preco": 32.5},
+            {"titulo": "Kit 3 esmalte impala rosa", "preco": 28.0},
         ]
 
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
@@ -80,14 +80,44 @@ class AgenteMonitorBuscaKitEsmaltesTests(unittest.TestCase):
                         "buscas": 2,
                         "total_anuncios_acum": 20,
                         "cores_encontradas": {"nude": 5},
+                        "com_preco": 8,
+                        "com_preco_marca": 8,
+                        "preco_min": 19.9,
+                        "preco_medio": 29.9,
+                        "preco_max": 45.0,
+                        "preco_min_marca": 19.9,
+                        "preco_medio_marca": 29.9,
+                        "preco_max_marca": 45.0,
                     }
                 }
             },
             {"total_buscas": 2, "anita": 2, "impala": 0, "itens_distintos": 1, "top_cores": []},
-            [{"ok": True, "marca": "anita", "nome": "Kit 3", "cor_foco": "Nude", "termo_busca": "x", "total_anuncios": 10, "anuncios_da_marca": 8, "cores_encontradas": {"nude": 3}}],
+            [
+                {
+                    "ok": True,
+                    "marca": "anita",
+                    "nome": "Kit 3",
+                    "cor_foco": "Nude",
+                    "termo_busca": "x",
+                    "total_anuncios": 10,
+                    "anuncios_da_marca": 8,
+                    "cores_encontradas": {"nude": 3},
+                    "com_preco": 8,
+                    "com_preco_marca": 8,
+                    "preco_min": 19.9,
+                    "preco_medio": 29.9,
+                    "preco_max": 45.0,
+                    "preco_min_marca": 19.9,
+                    "preco_medio_marca": 29.9,
+                    "preco_max_marca": 45.0,
+                }
+            ],
         )
         self.assertIn("Kit 3 Anita", msg)
         self.assertIn("nude", msg.lower())
+        self.assertIn("Preços", msg)
+        self.assertIn("R$", msg)
+        self.assertEqual(msg.count("Preços"), 2)  # rodada + acumulado
 
 
 if __name__ == "__main__":

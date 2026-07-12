@@ -66,6 +66,41 @@ def _formatar_cores(cores: dict[str, int]) -> str:
     return ", ".join(f"{c} ({q})" for c, q in partes[:5])
 
 
+def _fmt_brl(valor: Any) -> str:
+    try:
+        v = float(valor or 0)
+    except (TypeError, ValueError):
+        return "n/d"
+    if v <= 0:
+        return "n/d"
+    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _formatar_precos(r: dict[str, Any]) -> str:
+    """Linha de preços da rodada; prioriza anúncios da marca quando houver."""
+    usar_marca = int(r.get("com_preco_marca") or 0) > 0
+    if usar_marca:
+        pmin = r.get("preco_min_marca")
+        pmed = r.get("preco_medio_marca")
+        pmax = r.get("preco_max_marca")
+        n = int(r.get("com_preco_marca") or 0)
+        sufixo = " da marca"
+    else:
+        pmin = r.get("preco_min")
+        pmed = r.get("preco_medio")
+        pmax = r.get("preco_max")
+        n = int(r.get("com_preco") or 0)
+        sufixo = ""
+    if n <= 0:
+        return "Preços: n/d"
+    if n == 1 or _fmt_brl(pmin) == _fmt_brl(pmax):
+        return f"Preços{sufixo}: {_fmt_brl(pmed)} ({n} anúncio(s))"
+    return (
+        f"Preços{sufixo}: {_fmt_brl(pmin)} – {_fmt_brl(pmax)} "
+        f"(média {_fmt_brl(pmed)}, {n} anúncio(s))"
+    )
+
+
 def montar_mensagem_telegram(
     dia: str,
     dia_obj: dict[str, Any],
@@ -99,6 +134,7 @@ def montar_mensagem_telegram(
             f"  `{r.get('termo_usado') or r.get('termo_busca', '')}` → {r.get('total_anuncios', 0)} anúncios "
             f"({r.get('anuncios_da_marca', 0)} da marca)"
         )
+        linhas.append(f"  {_formatar_precos(r)}")
         linhas.append(f"  Cores: {_formatar_cores(r.get('cores_encontradas') or {})}")
 
     linhas.extend(["", "*Acumulado do dia por kit*"])
@@ -109,6 +145,7 @@ def montar_mensagem_telegram(
             f"• {marca} — {reg.get('nome', item_id)} ({reg.get('cor_foco', '?')}): "
             f"{reg.get('buscas', 0)} busca(s), {reg.get('total_anuncios_acum', 0)} anúncios"
         )
+        linhas.append(f"  {_formatar_precos(reg)}")
         linhas.append(f"  Cores: {_formatar_cores(reg.get('cores_encontradas') or {})}")
 
     top = consolidado.get("top_cores") or []

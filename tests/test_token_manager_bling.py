@@ -33,6 +33,7 @@ class TestRenovarTokenBling(unittest.TestCase):
         tm._token_cache_bling["expires_at"] = 0
         tm._bling_refresh_efetivo["valor"] = None
 
+    @patch.object(tm, "log_erros_bling_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -40,7 +41,7 @@ class TestRenovarTokenBling(unittest.TestCase):
         BLING_CLIENT_SECRET="sec",
         BLING_REFRESH_TOKEN="refresh_teste",
     )
-    def test_http_400_loga_detalhe_e_dica_sem_raise_for_status(self, mock_request):
+    def test_http_400_loga_detalhe_e_dica_sem_raise_for_status(self, mock_request, _log_on):
         mock_request.return_value = _resp(
             400,
             '{"error":"invalid_client","error_description":"Client authentication failed"}',
@@ -56,6 +57,7 @@ class TestRenovarTokenBling(unittest.TestCase):
         self.assertNotIn("400 Client Error", joined)
         mock_request.return_value.raise_for_status.assert_not_called()
 
+    @patch.object(tm, "log_erros_bling_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -63,7 +65,7 @@ class TestRenovarTokenBling(unittest.TestCase):
         BLING_CLIENT_SECRET="",
         BLING_REFRESH_TOKEN="refresh_teste",
     )
-    def test_sem_client_secret_nao_chama_oauth(self, mock_request):
+    def test_sem_client_secret_nao_chama_oauth(self, mock_request, _log_on):
         with self.assertLogs("token_manager", level="ERROR") as logs:
             out = tm._renovar_token_bling()
         self.assertIsNone(out)
