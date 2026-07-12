@@ -56,6 +56,33 @@ class TestWorkflowsConcurrency(unittest.TestCase):
         self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto)
         self.assertIn("cancel-in-progress: false", texto)
 
+    def test_vigia_le_heartbeats_compartilhados_sem_regravar(self):
+        path = WORKFLOWS_DIR / "vigia_datadog.yml"
+        texto = path.read_text(encoding="utf-8")
+        self.assertIn("saude-heartbeats-", texto)
+        # Não deve regravar heartbeats dos produtores no cache do vigia
+        save_bloco = texto.split("Salvar cache vigia")[-1]
+        self.assertNotIn("orquestrador_ultimo_ciclo.json", save_bloco)
+        self.assertIn("datadog_vigia_history.json", save_bloco)
+
+    def test_produtores_publicam_saude_heartbeats(self):
+        for nome in (
+            "orquestrador_30min.yml",
+            "conectividade_marketplaces.yml",
+            "operacao_24h_seguranca.yml",
+            "renovar_tokens.yml",
+            "relatorio_manha_ml.yml",
+            "monitor_mercado_esmaltes.yml",
+        ):
+            texto = (WORKFLOWS_DIR / nome).read_text(encoding="utf-8")
+            self.assertIn("saude-heartbeats-", texto, nome)
+            self.assertIn("Restaurar heartbeats de saude", texto, nome)
+            self.assertIn("actions/cache/save", texto, nome)
+            # Conjunto completo — merge entre produtores
+            self.assertIn("orquestrador_ultimo_ciclo.json", texto, nome)
+            self.assertIn("renovacao_tokens_ultima.json", texto, nome)
+            self.assertIn("esmaltes_mercado_history.json", texto, nome)
+
 
 if __name__ == "__main__":
     unittest.main()

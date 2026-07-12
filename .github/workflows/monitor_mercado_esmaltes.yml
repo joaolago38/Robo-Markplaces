@@ -25,6 +25,19 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar heartbeats de saude
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/orquestrador_ultimo_ciclo.json
+            logs/operacao_24h_ultima.json
+            logs/conectividade_ultima.json
+            logs/renovacao_tokens_ultima.json
+            logs/relatorio_manha_ml_ultima.json
+            logs/esmaltes_mercado_history.json
+          key: saude-heartbeats-${{ github.run_id }}
+          restore-keys: |
+            saude-heartbeats-
       - name: Restaurar cooldown Telegram
         uses: actions/cache@v4
         with:
@@ -44,6 +57,19 @@ jobs:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Publicar heartbeats de saude
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/orquestrador_ultimo_ciclo.json
+            logs/operacao_24h_ultima.json
+            logs/conectividade_ultima.json
+            logs/renovacao_tokens_ultima.json
+            logs/relatorio_manha_ml_ultima.json
+            logs/esmaltes_mercado_history.json
+          key: saude-heartbeats-${{ github.run_id }}
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:

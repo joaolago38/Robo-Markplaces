@@ -2,6 +2,10 @@ name: Vigia Datadog
 
 # Monitora erros no Datadog, inatividade e ausência de resposta (2h).
 # Alerta crítico quando problema não é verificado.
+#
+# Heartbeats (orquestrador/conectividade/…) vêm do cache compartilhado
+# `saude-heartbeats-*`, gravado pelos workflows produtores.
+# O vigia NÃO regrava esses arquivos — senão congela timestamps velhos.
 
 on:
   workflow_dispatch:
@@ -42,18 +46,25 @@ jobs:
           key: telegram-cooldown-${{ github.run_id }}
           restore-keys: |
             telegram-cooldown-
-      - name: Restaurar buffer erros e historico vigia
+      - name: Restaurar heartbeats de saude (produtores)
         uses: actions/cache@v4
         with:
           path: |
-            logs/datadog_erros_recentes.json
-            logs/datadog_vigia_history.json
             logs/orquestrador_ultimo_ciclo.json
             logs/operacao_24h_ultima.json
             logs/conectividade_ultima.json
             logs/renovacao_tokens_ultima.json
             logs/relatorio_manha_ml_ultima.json
             logs/esmaltes_mercado_history.json
+          key: saude-heartbeats-${{ github.run_id }}
+          restore-keys: |
+            saude-heartbeats-
+      - name: Restaurar buffer erros e historico vigia
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/datadog_erros_recentes.json
+            logs/datadog_vigia_history.json
           key: vigia-datadog-${{ github.run_id }}
           restore-keys: |
             vigia-datadog-
@@ -65,19 +76,13 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           # Alerta via Telegram; não falha o job só por detectar problemas (DD_APPLICATION_KEY opcional).
           DATADOG_VIGIA_FALHAR_PROCESSO: "0"
-      - name: Salvar cache vigia
+      - name: Salvar cache vigia (somente erros/histórico próprio)
         uses: actions/cache/save@v4
         if: always()
         with:
           path: |
             logs/datadog_erros_recentes.json
             logs/datadog_vigia_history.json
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
             logs/alertas_cooldown.json
           key: vigia-datadog-${{ github.run_id }}
       - name: Salvar snapshot vigia
