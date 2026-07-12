@@ -16,11 +16,11 @@
     "icms_pct": 18,
     "margem_minima_pct": 16,
     "margem_minima_reais": 8,
-    "preco_max_usd": 6.5,
-    "moq_max": 150,
+    "preco_max_usd": 9.0,
+    "moq_max": 500,
     "frete_preferido": "maritimo",
     "termos_extra": ["factory", "wholesale", "OEM"],
-    "notas": "PLA 1,75mm rolo 1kg. preco_max_usd/moq_max ajustados (Claude): teto FOB 4,5 bloqueava fornecedores; termo de busca ampliado para capturar volume."
+    "notas": "PLA 1,75mm rolo 1kg. preco_max_usd/moq_max afrouxados para não descartar FOB sem MOQ parseado e lotes intermediários; busca usa termo EN + PT."
   },
   {
     "id": "abracadeira-nylon-150mm",

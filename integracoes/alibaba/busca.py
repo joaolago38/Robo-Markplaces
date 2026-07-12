@@ -33,12 +33,34 @@ def _normalizar(texto: str) -> str:
 
 
 def montar_termo_busca(produto: dict[str, Any]) -> str:
-    for chave in ("termo_busca", "termo_busca_pt", "nome", "descricao"):
+    from core.config import ALIBABA_PREFERIR_TERMO_PT
+
+    chaves = ("termo_busca", "termo_busca_pt", "nome", "descricao")
+    if ALIBABA_PREFERIR_TERMO_PT:
+        chaves = ("termo_busca_pt", "termo_busca", "nome", "descricao")
+    for chave in chaves:
         valor = str(produto.get(chave) or "").strip()
         if valor:
             return valor
     partes = [str(produto.get(k) or "").strip() for k in ("categoria", "material")]
     return " ".join(p for p in partes if p)
+
+
+def termos_busca_produto(produto: dict[str, Any]) -> list[str]:
+    """Termo principal + secundário (EN/PT) para ampliar cobertura."""
+    from core.config import ALIBABA_BUSCAR_TERMO_SECUNDARIO, ALIBABA_PREFERIR_TERMO_PT
+
+    principal = montar_termo_busca(produto)
+    termos: list[str] = []
+    if principal:
+        termos.append(principal)
+    if not ALIBABA_BUSCAR_TERMO_SECUNDARIO:
+        return termos
+    secundario_chave = "termo_busca" if ALIBABA_PREFERIR_TERMO_PT else "termo_busca_pt"
+    secundario = str(produto.get(secundario_chave) or "").strip()
+    if secundario and _normalizar(secundario) != _normalizar(principal):
+        termos.append(secundario)
+    return termos
 
 
 def _hash_url(url: str) -> str:
@@ -273,49 +295,32 @@ def _extrair_links_html(html: str) -> list[dict[str, str]]:
     return achados
 
 
-def buscar_alibaba_direto(termo: str, *, max_resultados: int = 15) -> list[dict[str, Any]]:
-    """GET na página de busca pública do Alibaba. Nunca lança exceção."""
-    if not termo.strip():
-        return []
-    url = f"{_ALIBABA_SEARCH}?fsb=y&IndexArea=product_en&SearchText={quote_plus(termo)}"
-    try:
-        r = request(
-            "GET",
-            url,
-            headers={
-                "User-Agent": _USER_AGENT,
-                "Accept-Language": "en-US,en;q=0.9,pt-BR;q=0.8",
-            },
-            timeout=25,
+def _itens_da_pagina_html(html: str, termo: str, vistos: set[str]) -> list[dict[str, Any]]:
+    """Extrai anúncios de uma página de busca; atualiza `vistos` com URLs já vistas."""
+    itens: list[dict[str, Any]] = []
+    for raw in _extrair_links_html(html):
+        link = raw.get("url", "")
+        if not link or link in vistos:
+            continue
+        vistos.add(link)
+        pos = html.find(link)
+        blob = f"{raw.get('titulo', '')} {html[max(0, pos - 200) : pos + 400] if pos >= 0 else ''}"
+        item = _aplicar_url_item(
+            {
+                "url": link,
+                "titulo": raw.get("titulo") or termo,
+                "snippet": raw.get("snippet") or "",
+                "preco_usd": _extrair_preco_usd(blob),
+                "moq": _extrair_moq(blob),
+                "fonte": "alibaba_search",
+                "termo_busca": termo,
+            }
         )
-        if r.status_code >= 400:
-            logger.warning("Alibaba search HTTP %s termo=%r", r.status_code, termo[:60])
-            return []
-        html = r.text or ""
-        vistos: set[str] = set()
-        itens: list[dict[str, Any]] = []
+        itens.append(_enriquecer_distribuidor(item))
 
-        for raw in _extrair_links_html(html):
-            link = raw.get("url", "")
-            if not link or link in vistos:
-                continue
-            vistos.add(link)
-            blob = f"{raw.get('titulo', '')} {html[max(0, html.find(link) - 200):html.find(link) + 400]}"
-            item = _aplicar_url_item(
-                {
-                    "url": link,
-                    "titulo": raw.get("titulo") or termo,
-                    "snippet": raw.get("snippet") or "",
-                    "preco_usd": _extrair_preco_usd(blob),
-                    "moq": _extrair_moq(blob),
-                    "fonte": "alibaba_search",
-                    "termo_busca": termo,
-                }
-            )
-            itens.append(_enriquecer_distribuidor(item))
-
-        # Contexto ao redor do termo no HTML (preços em listagens)
-        for m in re.finditer(re.escape(termo[:20]), html, re.IGNORECASE):
+    trecho_termo = termo[:20] if termo else ""
+    if trecho_termo:
+        for m in re.finditer(re.escape(trecho_termo), html, re.IGNORECASE):
             trecho = html[m.start() : m.start() + 800]
             for link_m in re.finditer(r'href="(https?://[^"]*alibaba\.com[^"]+)"', trecho):
                 link = unescape(link_m.group(1))
@@ -334,24 +339,82 @@ def buscar_alibaba_direto(termo: str, *, max_resultados: int = 15) -> list[dict[
                     }
                 )
                 itens.append(_enriquecer_distribuidor(item))
+    return itens
+
+
+def buscar_alibaba_direto(
+    termo: str,
+    *,
+    max_resultados: int | None = None,
+    paginas: int | None = None,
+) -> list[dict[str, Any]]:
+    """GET na página de busca pública do Alibaba (com paginação). Nunca lança exceção."""
+    from core.config import ALIBABA_BUSCA_MAX_RESULTADOS, ALIBABA_BUSCA_PAGINAS
+
+    if not termo.strip():
+        return []
+    if max_resultados is None:
+        max_resultados = ALIBABA_BUSCA_MAX_RESULTADOS
+    if paginas is None:
+        paginas = max(1, ALIBABA_BUSCA_PAGINAS)
+
+    vistos: set[str] = set()
+    itens: list[dict[str, Any]] = []
+    headers = {
+        "User-Agent": _USER_AGENT,
+        "Accept-Language": "en-US,en;q=0.9,pt-BR;q=0.8",
+    }
+
+    try:
+        for pagina in range(1, paginas + 1):
+            if len(itens) >= max_resultados:
+                break
+            url = (
+                f"{_ALIBABA_SEARCH}?fsb=y&IndexArea=product_en"
+                f"&SearchText={quote_plus(termo)}&page={pagina}"
+            )
+            r = request("GET", url, headers=headers, timeout=25)
+            if r.status_code >= 400:
+                logger.warning(
+                    "Alibaba search HTTP %s termo=%r page=%s",
+                    r.status_code,
+                    termo[:60],
+                    pagina,
+                )
+                break
+            html = r.text or ""
+            antes = len(itens)
+            novos = _itens_da_pagina_html(html, termo, vistos)
+            itens.extend(novos)
+            if not novos or len(itens) == antes:
+                break
+            if pagina < paginas and len(itens) < max_resultados:
+                time.sleep(0.4)
 
         return itens[:max_resultados]
     except Exception as exc:
         logger.error("Alibaba direto falhou: %s", exc)
-        return []
+        return itens[:max_resultados]
+
+
+def _termo_relevante(termo: str, blob: str) -> bool:
+    termo_n = _normalizar(termo)
+    if not termo_n:
+        return True
+    palavras = [p for p in termo_n.split() if len(p) >= 3]
+    if not palavras:
+        palavras = termo_n.split()
+    return sum(1 for p in palavras if p in blob) >= max(1, len(palavras) // 2)
 
 
 def _relevante(produto_cfg: dict[str, Any], item: dict[str, Any]) -> bool:
-    termo = _normalizar(montar_termo_busca(produto_cfg))
     blob = _normalizar(
         f"{item.get('titulo', '')} {item.get('snippet', '')} {item.get('url', '')}"
     )
-    if not termo:
+    termos = termos_busca_produto(produto_cfg)
+    if not termos:
         return True
-    palavras = [p for p in termo.split() if len(p) >= 3]
-    if not palavras:
-        palavras = termo.split()
-    return sum(1 for p in palavras if p in blob) >= max(1, len(palavras) // 2)
+    return any(_termo_relevante(t, blob) for t in termos)
 
 
 def _e_oportunidade(produto_cfg: dict[str, Any], item: dict[str, Any]) -> bool:
@@ -367,8 +430,8 @@ def _e_oportunidade(produto_cfg: dict[str, Any], item: dict[str, Any]) -> bool:
         except (TypeError, ValueError):
             pass
 
-    exigir_moq = ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE or moq_max is not None
-    if exigir_moq and moq is None:
+    # moq_max só filtra quando MOQ foi parseado; ausente não elimina (salvo flag)
+    if ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE and moq is None:
         return False
 
     if moq_max is not None and moq is not None:
@@ -395,55 +458,76 @@ def buscar_oportunidades(
     Busca no Alibaba (direto + site:alibaba.com via DDG).
     Retorna itens marcados como oportunidade. Nunca lança exceção.
     """
-    termo = montar_termo_busca(produto)
-    if not termo:
+    from core.config import (
+        ALIBABA_BUSCA_MAX_RESULTADOS,
+        ALIBABA_BUSCA_PAGINAS,
+        DDG_ALIBABA_MIN_DIRETO_PARA_PULAR,
+        DDG_ALIBABA_SKIP_SE_DIRETO,
+    )
+
+    termos = termos_busca_produto(produto)
+    if not termos:
         return []
+    termo_principal = termos[0]
 
     vistos: set[str] = set()
     candidatos: list[dict[str, Any]] = []
 
-    for item in buscar_alibaba_direto(termo):
-        h = _hash_url(item.get("url", ""))
-        if h in vistos:
-            continue
-        vistos.add(h)
-        item["hash"] = h
-        candidatos.append(item)
+    for i, termo in enumerate(termos):
+        for item in buscar_alibaba_direto(
+            termo,
+            max_resultados=ALIBABA_BUSCA_MAX_RESULTADOS,
+            paginas=ALIBABA_BUSCA_PAGINAS,
+        ):
+            h = _hash_url(item.get("url", ""))
+            if h in vistos:
+                continue
+            vistos.add(h)
+            item["hash"] = h
+            candidatos.append(item)
+        if i < len(termos) - 1 and pausa_seg > 0:
+            time.sleep(pausa_seg)
 
     if pausa_seg > 0:
         time.sleep(pausa_seg)
 
-    from core.config import DDG_ALIBABA_SKIP_SE_DIRETO
-
-    if DDG_ALIBABA_SKIP_SE_DIRETO and candidatos:
+    pular_ddg = (
+        DDG_ALIBABA_SKIP_SE_DIRETO
+        and len(candidatos) >= DDG_ALIBABA_MIN_DIRETO_PARA_PULAR
+    )
+    if pular_ddg:
         logger.debug(
-            "Alibaba: pulando DDG — %s itens da busca direta termo=%r",
+            "Alibaba: pulando DDG — %s itens da busca direta (mín=%s) termo=%r",
             len(candidatos),
-            termo[:60],
+            DDG_ALIBABA_MIN_DIRETO_PARA_PULAR,
+            termo_principal[:60],
         )
     else:
-        query = f"site:alibaba.com wholesale {termo}"
-        for raw in buscar_duckduckgo(query, max_resultados=12):
-            if not _url_e_produto_alibaba(raw.get("url", "")):
-                continue
-            h = _hash_url(raw["url"])
-            if h in vistos:
-                continue
-            vistos.add(h)
-            blob = f"{raw.get('titulo', '')} {raw.get('snippet', '')}"
-            item = _aplicar_url_item(
-                {
-                    "url": raw["url"],
-                    "titulo": raw.get("titulo") or termo,
-                    "snippet": raw.get("snippet") or "",
-                    "preco_usd": _extrair_preco_usd(blob),
-                    "moq": _extrair_moq(blob),
-                    "fonte": "duckduckgo",
-                    "hash": h,
-                    "termo_busca": termo,
-                }
-            )
-            candidatos.append(_enriquecer_distribuidor(item))
+        for termo in termos[:2]:
+            query = f"site:alibaba.com wholesale {termo}"
+            for raw in buscar_duckduckgo(query, max_resultados=12):
+                if not _url_e_produto_alibaba(raw.get("url", "")):
+                    continue
+                h = _hash_url(raw["url"])
+                if h in vistos:
+                    continue
+                vistos.add(h)
+                blob = f"{raw.get('titulo', '')} {raw.get('snippet', '')}"
+                item = _aplicar_url_item(
+                    {
+                        "url": raw["url"],
+                        "titulo": raw.get("titulo") or termo,
+                        "snippet": raw.get("snippet") or "",
+                        "preco_usd": _extrair_preco_usd(blob),
+                        "moq": _extrair_moq(blob),
+                        "fonte": "duckduckgo",
+                        "hash": h,
+                        "termo_busca": termo,
+                    }
+                )
+                candidatos.append(_enriquecer_distribuidor(item))
+            if len(termos) > 1 and pausa_seg > 0:
+                time.sleep(min(pausa_seg, 0.5))
 
     oportunidades: list[dict[str, Any]] = []
     for item in candidatos:
@@ -451,7 +535,7 @@ def buscar_oportunidades(
             continue
         if not _e_oportunidade(produto, item):
             continue
-        item["termo_busca"] = termo
+        item["termo_busca"] = item.get("termo_busca") or termo_principal
         oportunidades.append(item)
 
     return oportunidades

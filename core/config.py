@@ -378,12 +378,13 @@ DDG_FALHAS_403_PARA_BREAKER = int(os.getenv("DDG_FALHAS_403_PARA_BREAKER", "5"))
 # lite = GET lite.duckduckgo.com | html = POST html.duckduckgo.com | auto = lite depois html
 DDG_BACKEND = os.getenv("DDG_BACKEND", "lite").strip().lower()
 DDG_DISABLED = os.getenv("DDG_DISABLED", "").strip().lower() in ("1", "true", "yes")
-# Alibaba: pula DDG quando busca direta já retornou itens (menos carga no DDG)
+# Alibaba: pula DDG só se a busca direta já trouxe muitos itens
 DDG_ALIBABA_SKIP_SE_DIRETO = os.getenv("DDG_ALIBABA_SKIP_SE_DIRETO", "1").strip().lower() not in (
     "0",
     "false",
     "no",
 )
+DDG_ALIBABA_MIN_DIRETO_PARA_PULAR = int(os.getenv("DDG_ALIBABA_MIN_DIRETO_PARA_PULAR", "12"))
 
 # Telegram — circuit breaker após token inválido (evita centenas de ERROR no Datadog)
 TELEGRAM_CIRCUIT_BREAKER_SEG = int(os.getenv("TELEGRAM_CIRCUIT_BREAKER_SEG", "3600"))
@@ -394,6 +395,20 @@ ALIBABA_IMPORTACAO_CATALOGO = os.getenv(
 ALIBABA_PAUSA_ENTRE_BUSCAS_SEG = float(os.getenv("ALIBABA_PAUSA_ENTRE_BUSCAS_SEG", "1.0"))
 ALIBABA_ALERTA_RESUMO = os.getenv("ALIBABA_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")
 ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG", "7200"))
+# Busca direta: mais resultados/páginas; termo EN principal + PT secundário
+ALIBABA_BUSCA_MAX_RESULTADOS = int(os.getenv("ALIBABA_BUSCA_MAX_RESULTADOS", "40"))
+ALIBABA_BUSCA_PAGINAS = int(os.getenv("ALIBABA_BUSCA_PAGINAS", "3"))
+ALIBABA_PREFERIR_TERMO_PT = os.getenv("ALIBABA_PREFERIR_TERMO_PT", "0").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ALIBABA_BUSCAR_TERMO_SECUNDARIO = os.getenv("ALIBABA_BUSCAR_TERMO_SECUNDARIO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ALIBABA_TELEGRAM_MAX_NOVOS = int(os.getenv("ALIBABA_TELEGRAM_MAX_NOVOS", "12"))
 
 # Câmbio USD/BRL
 CAMBIO_API_URL = os.getenv(
@@ -661,9 +676,8 @@ TELEGRAM_CHAT_ID        = (os.getenv("TELEGRAM_CHAT_ID") or "").strip()
 TELEGRAM_GESTOR_CHAT_ID = (os.getenv("TELEGRAM_GESTOR_CHAT_ID") or "").strip()
 TELEGRAM_MANICURES_CHAT_ID = (os.getenv("TELEGRAM_MANICURES_CHAT_ID") or TELEGRAM_CHAT_ID or "").strip()
 # Blocos "O que este agente faz" / "Quando roda" nos alertas Telegram.
-# Desligado por padrão; textos ficam em core/telegram_explicacao.py.
-# Para religar: TELEGRAM_EXPLICACAO_AGENTES=1
-TELEGRAM_EXPLICACAO_AGENTES = os.getenv("TELEGRAM_EXPLICACAO_AGENTES", "0").strip().lower() in (
+# Padrão ligado. Para desligar: TELEGRAM_EXPLICACAO_AGENTES=0
+TELEGRAM_EXPLICACAO_AGENTES = os.getenv("TELEGRAM_EXPLICACAO_AGENTES", "1").strip().lower() in (
     "1",
     "true",
     "yes",
