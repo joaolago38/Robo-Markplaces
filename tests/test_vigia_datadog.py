@@ -177,6 +177,37 @@ class VigiaDatadogTests(unittest.TestCase):
         self.assertIn("ml client", msg)
         self.assertIn("Monitor concorrentes", msg)
 
+    def test_detectar_heartbeats_congelados(self):
+        iguais = [
+            {"gravidade": "critica", "horas_sem_resposta": 168.43},
+            {"gravidade": "critica", "horas_sem_resposta": 168.43},
+            {"gravidade": "critica", "horas_sem_resposta": 168.44},
+        ]
+        self.assertTrue(vs._detectar_heartbeats_congelados(iguais))
+        recentes = [
+            {"gravidade": "critica", "horas_sem_resposta": 3.0},
+            {"gravidade": "critica", "horas_sem_resposta": 3.0},
+            {"gravidade": "critica", "horas_sem_resposta": 3.0},
+        ]
+        self.assertFalse(vs._detectar_heartbeats_congelados(recentes))
+        misturados = [
+            {"gravidade": "critica", "horas_sem_resposta": 100.0},
+            {"gravidade": "critica", "horas_sem_resposta": 50.0},
+            {"gravidade": "critica", "horas_sem_resposta": 168.0},
+        ]
+        self.assertFalse(vs._detectar_heartbeats_congelados(misturados))
+
+    def test_montar_mensagem_cache_congelado(self):
+        msg = vs.montar_mensagem_critica(
+            [
+                {"gravidade": "critica", "texto": "a", "nome": "A", "fonte_id": "a", "horas_sem_resposta": 168.4},
+                {"gravidade": "critica", "texto": "b", "nome": "B", "fonte_id": "b", "horas_sem_resposta": 168.4},
+                {"gravidade": "critica", "texto": "c", "nome": "C", "fonte_id": "c", "horas_sem_resposta": 168.4},
+            ],
+            [],
+        )
+        self.assertIn("cache de heartbeat congelado", msg)
+
     def test_listar_agentes_com_problema(self):
         lista = vs.listar_agentes_com_problema(
             [{"nome": "Operação 24h", "fonte_id": "operacao_24h", "horas_sem_resposta": 5}],

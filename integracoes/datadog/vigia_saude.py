@@ -328,6 +328,24 @@ def carregar_agentes_falha_orquestrador() -> list[dict[str, Any]]:
     return [f for f in falhas if isinstance(f, dict)]
 
 
+def _detectar_heartbeats_congelados(inatividades: list[dict[str, Any]]) -> bool:
+    """
+    True se vários componentes críticos estão parados há o mesmo tempo (ex.: 168h26m).
+    Indica cache Actions desatualizado, não falha independente de cada agente.
+    """
+    criticos = [
+        a
+        for a in (inatividades or [])
+        if a.get("gravidade") == "critica" and a.get("horas_sem_resposta") is not None
+    ]
+    if len(criticos) < 3:
+        return False
+    horas = [float(a["horas_sem_resposta"]) for a in criticos]
+    if min(horas) < 24:
+        return False
+    return (max(horas) - min(horas)) < 0.15
+
+
 def montar_mensagem_critica(
     inatividades: list[dict[str, Any]],
     erros: list[dict[str, Any]],
@@ -346,6 +364,17 @@ def montar_mensagem_critica(
         "_Inatividade ou erros sem resposta há 2h+ — risco de operação cega._",
         "",
     ]
+
+    if _detectar_heartbeats_congelados(inatividades):
+        linhas.extend(
+            [
+                "🧊 *Possível cache de heartbeat congelado*",
+                "_Vários componentes com o mesmo tempo parado — o Vigia pode estar lendo "
+                "arquivos antigos do Actions. Confira se Orquestrador / Renovar tokens / "
+                "Conectividade rodaram e publicaram `saude-heartbeats-*`._",
+                "",
+            ]
+        )
 
     if problemas:
         linhas.append(f"*Agentes com problemas ({len(problemas)}):*")
