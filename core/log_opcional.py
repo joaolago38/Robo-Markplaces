@@ -8,6 +8,7 @@ Religar no .env / secrets do Actions:
   LOG_ERROS_CLAUDE=1
   LOG_ERROS_BLING=1
   LOG_ERROS_TOKENS=1   # Magalu / Shopee / Amazon (credenciais / refresh)
+  LOG_ERROS_PEDIDOS=1  # busca de pedidos FALHOU (margem / notificador)
 """
 from __future__ import annotations
 
@@ -36,6 +37,11 @@ def log_erros_bling_ativos() -> bool:
 def log_erros_tokens_ativos() -> bool:
     """Magalu / Shopee / Amazon — credenciais ausentes ou refresh inválido."""
     return _env_ligado("LOG_ERROS_TOKENS", "0")
+
+
+def log_erros_pedidos_ativos() -> bool:
+    """Falha ao listar pedidos (monitor margem / notificador de vendas)."""
+    return _env_ligado("LOG_ERROS_PEDIDOS", "0")
 
 
 # Hosts dos scrapers de veículos (http_client silencia falhas de conexão quando off).

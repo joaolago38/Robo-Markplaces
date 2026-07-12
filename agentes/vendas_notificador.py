@@ -12,6 +12,7 @@ from pathlib import Path
 
 from core.atomic_io import escrever_json_atomico, lock_exclusivo
 from core.config import ROOT, SPEC
+from core.log_opcional import erro_opcional, log_erros_pedidos_ativos
 from core.notificador import alertar_critico
 from core.whatsapp import notificar_venda
 
@@ -52,11 +53,16 @@ def _checar_busca_falhou(marketplace: str, ok: bool) -> None:
     ar, etc.), `pedidos` volta vazio igual a "sem venda nova" — sem isto,
     as duas situações são indistinguíveis e o time nunca saberia que está
     cego para vendas reais enquanto o problema persistir.
+
+    Religar ERROR no Datadog: LOG_ERROS_PEDIDOS=1
     """
     if not ok:
-        logger.error(
+        erro_opcional(
+            logger,
+            log_erros_pedidos_ativos(),
             "%s: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
             marketplace,
+            flag_hint="LOG_ERROS_PEDIDOS",
         )
         alertar_critico(
             f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
