@@ -75,7 +75,7 @@ jobs:
       - name: Rodar orquestrador 30min
         run: python -m agentes.orquestrador.agente_orquestrador
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,alibaba,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures
+          ORQUESTRADOR_EXCLUIR: leilao,alibaba,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

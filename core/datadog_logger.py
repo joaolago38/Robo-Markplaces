@@ -76,6 +76,7 @@ _LOGGER_META = {
     "agente_ads_gatilho": ("mercadolivre_ads", "agente"),
     "agente_otimizador_listing": ("mercadolivre", "agente"),
     "agente_monitor_concorrentes": ("mercadolivre", "agente"),
+    "agente_resumo_diario_novamix": ("mercadolivre", "agente"),
     "agente_monitor_sem_venda_ml": ("mercadolivre", "agente"),
     "analise_sem_venda": ("mercadolivre", "integracao"),
     "analise_loja_concorrente": ("mercadolivre", "integracao"),
