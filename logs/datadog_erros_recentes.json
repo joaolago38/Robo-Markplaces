@@ -1,6 +1,39 @@
 {
   "erros": [
     {
+      "fingerprint": "94db86c08bd0ee571d59",
+      "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
+      "ultima_vez": "2026-07-12T19:49:22.061091+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram answerCallbackQuery erro: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "ee9e1449eb1e2b213968",
+      "primeira_vez": "2026-07-05T20:44:29.109362+00:00",
+      "ultima_vez": "2026-07-12T19:49:22.029514+00:00",
+      "logger": "notificador",
+      "mensagem": "notificar_venda_whatsapp: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "c0666657a88010b25c8c",
+      "primeira_vez": "2026-07-05T20:44:29.080934+00:00",
+      "ultima_vez": "2026-07-12T19:49:22.012619+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "7835a6676fa701a6460f",
       "primeira_vez": "2026-07-05T20:44:32.184596+00:00",
       "ultima_vez": "2026-07-10T17:43:01.244910+00:00",
@@ -186,39 +219,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 23
-    },
-    {
-      "fingerprint": "94db86c08bd0ee571d59",
-      "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
-      "ultima_vez": "2026-07-10T17:42:36.630810+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram answerCallbackQuery erro: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
-      "fingerprint": "ee9e1449eb1e2b213968",
-      "primeira_vez": "2026-07-05T20:44:29.109362+00:00",
-      "ultima_vez": "2026-07-10T17:42:36.601786+00:00",
-      "logger": "notificador",
-      "mensagem": "notificar_venda_whatsapp: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
-      "fingerprint": "c0666657a88010b25c8c",
-      "primeira_vez": "2026-07-05T20:44:29.080934+00:00",
-      "ultima_vez": "2026-07-10T17:42:36.586580+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     },
     {
       "fingerprint": "ceb0597e581d107c2a9f",
@@ -1552,5 +1552,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-10T17:43:01.244910+00:00"
+  "atualizado_em": "2026-07-12T19:49:22.061091+00:00"
 }
