@@ -4,6 +4,9 @@ Monitora lojas de carros batidos/salvados e envia novos anúncios ao Telegram.
 
 Catálogo: catalogo/carros_batidos_fontes.json
 
+Erros de scrape (Leopardo/timeout) silenciados no Datadog por padrão.
+Religar logs: LOG_ERROS_VEICULOS_SCRAPERS=1
+
 Uso:
   python -m agentes.veiculos.agente_monitor_carros_batidos
 """

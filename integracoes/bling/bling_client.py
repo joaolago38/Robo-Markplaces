@@ -1,14 +1,22 @@
 """
 integracoes/bling/bling_client.py
 Cliente da API Bling v3. Nunca lança exceção.
+
+Erros de auth/API silenciados no Datadog por padrão (empresa inativa / token).
+Religar: LOG_ERROS_BLING=1
 """
 import logging
 from core.config import BLING_ACCESS_TOKEN
 from core.http_client import request
+from core.log_opcional import erro_opcional, log_erros_bling_ativos
 from core import token_manager
 
 logger = logging.getLogger("bling")
 BASE = "https://www.bling.com.br/Api/v3"
+
+
+def _erro_bling(msg: str, *args) -> None:
+    erro_opcional(logger, log_erros_bling_ativos(), msg, *args, flag_hint="LOG_ERROS_BLING")
 
 
 class NfeVerificacaoIndisponivel(Exception):
@@ -146,10 +154,10 @@ def buscar_produto(sku: str) -> dict | None:
             return None
         return _normalizar_produto(itens[0])
     except ValueError as e:
-        logger.error("Bling buscar_produto JSON inválido sku=%s erro=%s", sku, e)
+        _erro_bling("Bling buscar_produto JSON inválido sku=%s erro=%s", sku, e)
         return None
     except Exception as e:
-        logger.error("Bling buscar_produto erro sku=%s: %s", sku, e)
+        _erro_bling("Bling buscar_produto erro sku=%s: %s", sku, e)
         return None
 
 def listar_produtos() -> list[dict]:
@@ -157,7 +165,7 @@ def listar_produtos() -> list[dict]:
         r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
         status = getattr(r, "status_code", 0)
         if status != 200:
-            logger.error(
+            _erro_bling(
                 "Bling listar_produtos HTTP %s: %s",
                 status,
                 (getattr(r, "text", "") or "")[:300],
@@ -165,10 +173,10 @@ def listar_produtos() -> list[dict]:
             return []
         return [_normalizar_produto(p) for p in r.json().get("data", [])]
     except ValueError as e:
-        logger.error("Bling listar_produtos JSON inválido: %s", e)
+        _erro_bling("Bling listar_produtos JSON inválido: %s", e)
         return []
     except Exception as e:
-        logger.error("Bling listar_produtos erro: %s", e)
+        _erro_bling("Bling listar_produtos erro: %s", e)
         return []
 
 def listar_produtos_por_sku() -> dict[str, dict]:

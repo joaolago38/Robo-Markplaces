@@ -29,6 +29,8 @@ def _status_http_erro(exc: Exception) -> int | None:
 
 
 def _log_erro_claude(exc: Exception, *, contexto: str) -> None:
+    from core.log_opcional import erro_opcional, log_erros_claude_ativos
+
     status = _status_http_erro(exc)
     if status in (401, 403):
         logger.warning(
@@ -37,10 +39,13 @@ def _log_erro_claude(exc: Exception, *, contexto: str) -> None:
             status,
         )
         return
-    logger.error(
+    erro_opcional(
+        logger,
+        log_erros_claude_ativos(),
         "Claude erro — %s: %s",
         contexto,
         exc,
+        flag_hint="LOG_ERROS_CLAUDE",
         extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
     )
 

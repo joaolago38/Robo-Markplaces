@@ -12,9 +12,23 @@ from typing import Any
 from urllib.parse import urljoin, urlparse
 
 from core.http_client import request
+from core.log_opcional import erro_opcional, log_erros_veiculos_ativos
 from integracoes.veiculos.fontes import FONTES_PADRAO
 
 logger = logging.getLogger("veiculos_scrapers")
+
+# Erros de scrape (timeout/bloqueio) silenciados no Datadog por padrão.
+# Religar: LOG_ERROS_VEICULOS_SCRAPERS=1
+
+
+def _erro_scraper(msg: str, *args: Any) -> None:
+    erro_opcional(
+        logger,
+        log_erros_veiculos_ativos(),
+        msg,
+        *args,
+        flag_hint="LOG_ERROS_VEICULOS_SCRAPERS",
+    )
 
 _HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; RoboMarkplaces/1.0)"}
 _RE_PRECO = re.compile(r"R\$\s*([\d\.\,]+)")
@@ -116,7 +130,7 @@ def coletar_lucineia(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]
             return []
         html = r.text
     except Exception as exc:
-        logger.error("Lucinei: erro ao buscar listagem: %s", exc)
+        _erro_scraper("Lucinei: erro ao buscar listagem: %s", exc)
         return []
 
     anuncios: list[dict[str, Any]] = []
@@ -231,7 +245,7 @@ def coletar_leopardo(
         html = r.text
         token = _extrair_csrf(html)
     except Exception as exc:
-        logger.error("Leopardo: erro ao abrir listagem: %s", exc)
+        _erro_scraper("Leopardo: erro ao abrir listagem: %s", exc)
         return []
 
     tipo_tab = str(fonte.get("categoria_carros") or "49874") if categoria_carros else "6"
@@ -269,7 +283,7 @@ def coletar_leopardo(
                 break
             data = r_ajax.json()
         except Exception as exc:
-            logger.error("Leopardo AJAX página %s: %s", pagina, exc)
+            _erro_scraper("Leopardo AJAX página %s: %s", pagina, exc)
             break
 
         fragmento = str(data.get("returnhtml") or "")
@@ -308,7 +322,7 @@ def coletar_motorjan(fonte: dict[str, Any] | None = None) -> list[dict[str, Any]
             return []
         html = r.text
     except Exception as exc:
-        logger.error("Motorjan: erro ao buscar listagem: %s", exc)
+        _erro_scraper("Motorjan: erro ao buscar listagem: %s", exc)
         return []
 
     anuncios: list[dict[str, Any]] = []
@@ -347,7 +361,7 @@ def coletar_velozes(fonte: dict[str, Any] | None = None, *, max_produtos: int = 
             return []
         html = r.text
     except Exception as exc:
-        logger.error("Velozes: erro ao buscar listagem: %s", exc)
+        _erro_scraper("Velozes: erro ao buscar listagem: %s", exc)
         return []
 
     urls: list[str] = []
@@ -418,7 +432,7 @@ def coletar_esperanca(fonte: dict[str, Any] | None = None) -> list[dict[str, Any
             return []
         html = r.text
     except Exception as exc:
-        logger.error("Esperança Batidos: erro ao buscar listagem: %s", exc)
+        _erro_scraper("Esperança Batidos: erro ao buscar listagem: %s", exc)
         return []
 
     anuncios: list[dict[str, Any]] = []
@@ -463,7 +477,7 @@ def coletar_007_batidos(fonte: dict[str, Any] | None = None) -> list[dict[str, A
             return []
         html = r.text
     except Exception as exc:
-        logger.error("007 Batidos: erro ao buscar listagem: %s", exc)
+        _erro_scraper("007 Batidos: erro ao buscar listagem: %s", exc)
         return []
 
     anuncios: list[dict[str, Any]] = []

@@ -1,6 +1,9 @@
 """
 core/telegram_explicacao.py
-Textos curtos e claros do que cada agente faz — inseridos nos alertas Telegram.
+Textos curtos do que cada agente faz + horário — prontos para os alertas Telegram.
+
+DESATIVADO por padrão (mensagens saem sem estes blocos).
+Para religar no futuro: TELEGRAM_EXPLICACAO_AGENTES=1 no .env / secrets do Actions.
 Horários em Brasília (BRT = UTC−3), conforme crons dos workflows + orquestrador.
 """
 from __future__ import annotations
@@ -333,6 +336,13 @@ _MARCADOR = "_O que este agente faz:_"
 _MARCADOR_HORARIO = "_Quando roda:_"
 
 
+def explicacao_ativa() -> bool:
+    """True só com TELEGRAM_EXPLICACAO_AGENTES=1 (ver core/config.py)."""
+    from core.config import TELEGRAM_EXPLICACAO_AGENTES
+
+    return bool(TELEGRAM_EXPLICACAO_AGENTES)
+
+
 def explicacao_de(agente_id: str | None) -> str:
     if not agente_id:
         return ""
@@ -358,8 +368,11 @@ def agente_id_da_chave(chave: str | None) -> str | None:
 def inserir_explicacao(mensagem: str, agente_id: str | None = None, *, chave: str | None = None) -> str:
     """
     Insere bloco 'O que este agente faz' (+ horário) após a 1ª linha (título).
+    Sem efeito se TELEGRAM_EXPLICACAO_AGENTES estiver desligado.
     Não duplica se o marcador já existir.
     """
+    if not explicacao_ativa():
+        return mensagem
     msg = (mensagem or "").strip()
     if not msg or _MARCADOR in msg:
         return mensagem
@@ -381,5 +394,5 @@ def inserir_explicacao(mensagem: str, agente_id: str | None = None, *, chave: st
 
 
 def cabecalho_agente(agente_id: str, titulo: str) -> str:
-    """Título + explicação (para montar mensagens do zero)."""
+    """Título (+ explicação se TELEGRAM_EXPLICACAO_AGENTES=1)."""
     return inserir_explicacao(titulo.strip(), agente_id)
