@@ -831,6 +831,13 @@ LOG_ERROS_TOKENS = os.getenv("LOG_ERROS_TOKENS", "0").strip().lower() in (
     "yes",
     "on",
 )
+# Busca de pedidos FALHOU (monitor margem / vendas_notificador)
+LOG_ERROS_PEDIDOS = os.getenv("LOG_ERROS_PEDIDOS", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 # Storage de estado (file = padrão local; dynamodb = AWS Free Tier)
 STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "file").strip().lower() or "file"

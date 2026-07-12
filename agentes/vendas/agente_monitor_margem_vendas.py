@@ -2,6 +2,8 @@
 agentes/vendas/agente_monitor_margem_vendas.py
 Monitora margem de lucro das vendas em ML / Shopee / Magalu / Amazon e alerta no Telegram.
 
+Religar logs de falha de pedidos no Datadog: LOG_ERROS_PEDIDOS=1
+
 Uso:
   python -m agentes.vendas.agente_monitor_margem_vendas
   python -m agentes.vendas.agente_monitor_margem_vendas --sem-envio
@@ -26,6 +28,7 @@ from core.config import (
     SPEC,
 )
 from core.datadog_metrics import gauge, incrementar
+from core.log_opcional import erro_opcional, log_erros_pedidos_ativos
 from core.notificador import (
     alertar_critico,
     alertar_gestor,
@@ -91,14 +94,28 @@ def _buscar_pedidos(dias: int) -> tuple[dict[str, list[dict]], dict[str, bool]]:
             pedidos[mp_id] = lista if ok else []
             ok_map[mp_id] = bool(ok)
             if not ok:
-                logger.error("%s: busca de pedidos FALHOU no monitor de margem", nome)
+                # Religar no Datadog: LOG_ERROS_PEDIDOS=1
+                erro_opcional(
+                    logger,
+                    log_erros_pedidos_ativos(),
+                    "%s: busca de pedidos FALHOU no monitor de margem",
+                    nome,
+                    flag_hint="LOG_ERROS_PEDIDOS",
+                )
                 alertar_critico(
                     f"⚠️ Margem vendas: não consegui buscar pedidos no {nome}.\n"
                     "Vendas desse canal podem estar sem monitoramento de lucro.",
                     chave=f"margem_vendas_falha_pedidos:{mp_id}",
                 )
         except Exception as exc:
-            logger.error("Erro ao buscar pedidos %s: %s", mp_id, exc)
+            erro_opcional(
+                logger,
+                log_erros_pedidos_ativos(),
+                "Erro ao buscar pedidos %s: %s",
+                mp_id,
+                exc,
+                flag_hint="LOG_ERROS_PEDIDOS",
+            )
             pedidos[mp_id] = []
             ok_map[mp_id] = False
 

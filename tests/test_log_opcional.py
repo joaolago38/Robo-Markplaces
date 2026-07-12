@@ -64,6 +64,24 @@ class TestLogOpcional(unittest.TestCase):
             mock_dbg.assert_called()
             self.assertIn("LOG_ERROS_TOKENS=1", mock_dbg.call_args.args[0])
 
+    @patch.object(lo, "log_erros_pedidos_ativos", return_value=False)
+    def test_pedidos_margem_silenciado(self, _):
+        from agentes.vendas import agente_monitor_margem_vendas as margem
+
+        with patch.object(margem.logger, "error") as mock_err, patch.object(
+            margem.logger, "debug"
+        ) as mock_dbg, patch.object(margem, "alertar_critico"), patch(
+            "importlib.import_module"
+        ) as mock_imp:
+            client = MagicMock()
+            client.listar_pedidos_detalhado.return_value = ([], False)
+            mock_imp.return_value = client
+            with patch.object(margem, "_MARKETPLACES_ATIVOS", set()):
+                margem._buscar_pedidos(2)
+            mock_err.assert_not_called()
+            self.assertTrue(mock_dbg.called)
+            self.assertIn("LOG_ERROS_PEDIDOS=1", mock_dbg.call_args.args[0])
+
 
 if __name__ == "__main__":
     unittest.main()
