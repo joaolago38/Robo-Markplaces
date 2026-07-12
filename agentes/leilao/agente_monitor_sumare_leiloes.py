@@ -59,6 +59,7 @@ def _montar_linha_lote(item: dict[str, Any]) -> list[str]:
     lance = _fmt_brl(item.get("lance_brl"))
     local = item.get("cidade") and item.get("uf")
     loc_txt = f"{item.get('cidade')}/{item.get('uf')}" if local else (item.get("local_data") or "")
+    doc = "✅ Com documento" if item.get("tem_documento") else "⚠️ Sem selo DOCUMENTO no card"
     linhas = [
         f"• *LOTE {item.get('numero_lote', '?')}* — {item.get('titulo', '?')}",
         f"  {tipo}: {comitente}",
@@ -68,7 +69,7 @@ def _montar_linha_lote(item: dict[str, Any]) -> list[str]:
         linhas.append(f"  📍 {loc_txt}")
     if item.get("data_fechamento"):
         linhas.append(f"  📅 Fecha {item['data_fechamento']}")
-    linhas.append("  ✅ Com documento")
+    linhas.append(f"  {doc}")
     linhas.append(f"  🔗 {item.get('url', '')}")
     return linhas
 
@@ -79,16 +80,28 @@ def _montar_alerta(
     resumo: dict[str, Any],
     ia: dict[str, Any] | None = None,
 ) -> str:
+    exigir_doc = resumo.get("exigir_documento")
+    doc_txt = "só com documento" if exigir_doc else "com ou sem documento"
     linhas = [
         "🏛️ *Sumaré Leilões — PREFEITURA/DETRAN*",
         "",
         f"_{resumo.get('leiloes_encontrados', 0)} leilão(ões) | "
-        f"{resumo.get('lotes_veiculo_documento', 0)} veículo(s) com documento "
-        f"(lance ≥ {_fmt_brl(resumo.get('lance_minimo_brl'))})_",
-        "",
-        "⚠️ _Site oficial: sumareleiloes.com.br — ignore domínios falsos_",
-        "",
+        f"{resumo.get('lotes_veiculo_documento', 0)} veículo(s) "
+        f"({doc_txt}, lance ≥ {_fmt_brl(resumo.get('lance_minimo_brl'))})_",
     ]
+    if resumo.get("lotes_sem_documento") is not None:
+        linhas.append(
+            f"_Com documento: {resumo.get('lotes_com_documento', 0)} | "
+            f"Sem selo: {resumo.get('lotes_sem_documento', 0)} | "
+            f"Abaixo do mín.: {resumo.get('lotes_abaixo_lance_min', 0)}_"
+        )
+    linhas.extend(
+        [
+            "",
+            "⚠️ _Site oficial: sumareleiloes.com.br — ignore domínios falsos_",
+            "",
+        ]
+    )
 
     if novos:
         linhas.append(f"🆕 *Novos lotes ({len(novos)})*")
@@ -109,11 +122,14 @@ def _montar_alerta(
         top = resumo.get("lotes_destaque") or []
         if top:
             linhas.append("*Destaques (lances atuais)*")
-            for item in top[:6]:
+            for item in top[:8]:
                 linhas.extend(_montar_linha_lote(item))
                 linhas.append("")
         else:
-            linhas.append("_Nenhum veículo com documento acima do lance mínimo nesta rodada._")
+            linhas.append(
+                "_Nenhum veículo acima do lance mínimo nesta rodada "
+                "(filtre documento/lance no catálogo sumare_leiloes_monitorados.json)._"
+            )
 
     secao_ia = formatar_secao_ia(ia)
     if secao_ia:
@@ -185,10 +201,14 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "timestamp": agora,
             "leiloes_encontrados": resultado.get("leiloes_encontrados"),
             "lotes_veiculo_documento": len(lotes),
+            "lotes_com_documento": resultado.get("lotes_com_documento"),
+            "lotes_sem_documento": resultado.get("lotes_sem_documento"),
+            "lotes_abaixo_lance_min": resultado.get("lotes_abaixo_lance_min"),
+            "exigir_documento": resultado.get("exigir_documento", config.get("exigir_documento")),
             "lance_minimo_brl": lance_min,
             "novos": len(novos),
             "mudancas_lance": len(mudancas),
-            "lotes": lotes[:50],
+            "lotes": lotes[:80],
             "avaliacao_ia_parametros": ia_parametros,
         }
         escrever_json_atomico(SNAPSHOT_PATH, snapshot)
