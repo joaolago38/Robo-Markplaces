@@ -254,6 +254,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Demanda, perfil de consumidor e plano para vencer Impala no ML",
     ),
     AgenteRegistrado(
+        "comparativo_ml_shopee",
+        "Comparativo ML × Shopee",
+        "monitor",
+        "agentes.comparativo.agente_comparativo_ml_shopee:executar",
+        {"enviar_alerta": True},
+        notas="Esmaltes e filamentos 3D: score e veredito de canal (ML vs Shopee)",
+    ),
+    AgenteRegistrado(
         "monitor_acetona_cruzeiro",
         "Monitor Acetona Cruzeiro ML",
         "monitor",

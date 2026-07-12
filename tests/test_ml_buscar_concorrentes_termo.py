@@ -31,12 +31,28 @@ class TestBuscarConcorrentesPorTermo(unittest.TestCase):
     def test_exclui_proprio_vendedor(self):
         with patch.object(ml_client, "ML_SELLER_ID", "999"), patch.object(
             ml_client, "_enabled", return_value=True
-        ), patch.object(ml_client, "_request_ml") as mock_req:
+        ), patch.object(ml_client, "_request_ml") as mock_req, patch.object(
+            busca_termo_ml,
+            "ML_BUSCA_TERMO_FALLBACK_PRODUCTS",
+            False,
+        ), patch.object(
+            busca_termo_ml,
+            "ML_BUSCA_TERMO_FALLBACK_CATALOGO",
+            False,
+        ), patch.object(
+            busca_termo_ml,
+            "ML_BUSCA_TERMO_FALLBACK_BRAVE",
+            False,
+        ), patch.object(
+            busca_termo_ml,
+            "ML_BUSCA_TERMO_FALLBACK_DDG",
+            False,
+        ):
             mock_req.return_value = _mock_resp({
                 "results": [
                     {
                         "id": "MLB1",
-                        "title": "Meu",
+                        "title": "Kit Impala Meu",
                         "price": 40,
                         "seller": {"id": "999"},
                         "shipping": {},
@@ -45,7 +61,7 @@ class TestBuscarConcorrentesPorTermo(unittest.TestCase):
                     },
                     {
                         "id": "MLB2",
-                        "title": "Concorrente",
+                        "title": "Kit Impala Concorrente",
                         "price": 35,
                         "seller": {"id": "888"},
                         "shipping": {"free_shipping": True},

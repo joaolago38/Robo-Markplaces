@@ -149,6 +149,18 @@ COMPARATIVO_ESMALTES_ALERTA_RESUMO = os.getenv("COMPARATIVO_ESMALTES_ALERTA_RESU
 )
 COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG", "14400"))
 
+# Comparativo Mercado Livre × Shopee (esmaltes + filamentos 3D)
+COMPARATIVO_ML_SHOPEE_CATALOGO = os.getenv(
+    "COMPARATIVO_ML_SHOPEE_CATALOGO", "catalogo/comparativo_ml_shopee_categorias.json"
+)
+COMPARATIVO_ML_SHOPEE_PAUSA_SEG = float(os.getenv("COMPARATIVO_ML_SHOPEE_PAUSA_SEG", "1.5"))
+COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO = os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG", "21600"))
+
 # Busca kit esmaltes Anita/Impala — frequência diária + cores
 ESMALTES_BUSCA_KIT_CATALOGO = os.getenv(
     "ESMALTES_BUSCA_KIT_CATALOGO", "catalogo/esmaltes_busca_kit_frequencia.json"

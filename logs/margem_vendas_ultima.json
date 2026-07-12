@@ -1,71 +1,25 @@
 {
-  "timestamp": "2026-07-11T15:59:17.325498+00:00",
+  "timestamp": "2026-07-12T14:53:23.142472+00:00",
   "dias": 1,
   "margem_min_pct": 15.0,
   "apis_ok": {
     "mercadolivre": true
   },
-  "alertas_enviados": 1,
-  "resumo_enviado": true,
+  "alertas_enviados": 0,
+  "resumo_enviado": false,
   "analise": {
     "ok": true,
     "margem_min_pct": 15.0,
-    "total_itens": 1,
-    "total_com_margem": 1,
-    "total_alertas": 1,
+    "total_itens": 0,
+    "total_com_margem": 0,
+    "total_alertas": 0,
     "total_incompletos": 0,
-    "receita_bruta": 22.0,
-    "lucro_reais": -6.96,
-    "margem_media_pct": -31.64,
-    "alertas": [
-      {
-        "chave": "mercadolivre:99:IMP-BAIL-005",
-        "marketplace": "mercadolivre",
-        "order_id": "99",
-        "sku": "IMP-BAIL-005",
-        "item_id": "",
-        "quantidade": 1,
-        "preco_unitario": 22.0,
-        "receita_bruta": 22.0,
-        "receita_liquida": 18.04,
-        "custo_unitario": 25.0,
-        "custo_total": 25.0,
-        "taxa_canal_pct": 18.0,
-        "lucro_reais": -6.96,
-        "margem_operacional_pct": -31.64,
-        "status": "prejuizo",
-        "abaixo_minimo": true
-      }
-    ],
+    "receita_bruta": 0,
+    "lucro_reais": 0,
+    "margem_media_pct": 0.0,
+    "alertas": [],
     "incompletos": [],
-    "por_marketplace": {
-      "mercadolivre": {
-        "vendas": 1,
-        "receita_bruta": 22.0,
-        "lucro_reais": -6.96,
-        "alertas": 1,
-        "incompletos": 0
-      }
-    }
+    "por_marketplace": {}
   },
-  "linhas": [
-    {
-      "chave": "mercadolivre:99:IMP-BAIL-005",
-      "marketplace": "mercadolivre",
-      "order_id": "99",
-      "sku": "IMP-BAIL-005",
-      "item_id": "",
-      "quantidade": 1,
-      "preco_unitario": 22.0,
-      "receita_bruta": 22.0,
-      "receita_liquida": 18.04,
-      "custo_unitario": 25.0,
-      "custo_total": 25.0,
-      "taxa_canal_pct": 18.0,
-      "lucro_reais": -6.96,
-      "margem_operacional_pct": -31.64,
-      "status": "prejuizo",
-      "abaixo_minimo": true
-    }
-  ]
+  "linhas": []
 }
