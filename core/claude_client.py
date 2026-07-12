@@ -6,14 +6,27 @@ Nunca lança exceção — erro retorna string de fallback.
 import logging
 import time
 
-from core.config import ANTHROPIC_API_KEY
+from core.config import (
+    ANTHROPIC_API_KEY,
+    CLAUDE_ECONOMICO,
+    CLAUDE_MODELO,
+    CLAUDE_MODELO_RAPIDO,
+)
 from core.datadog_metrics import gauge, incrementar
 from core.http_client import request
 
 logger = logging.getLogger("claude")
 API_URL = "https://api.anthropic.com/v1/messages"
-MODELO = "claude-sonnet-4-5"
-MODELO_RAPIDO = "claude-haiku-4-5"
+# Preferir CLAUDE_MODELO / CLAUDE_MODELO_RAPIDO no .env; CLAUDE_ECONOMICO=1 força o barato.
+MODELO = CLAUDE_MODELO
+MODELO_RAPIDO = CLAUDE_MODELO_RAPIDO
+
+
+def _modelo_efetivo(modelo: str | None = None) -> str:
+    """Resolve o modelo da chamada; modo econômico ignora Sonnet e usa o rápido."""
+    if CLAUDE_ECONOMICO:
+        return MODELO_RAPIDO
+    return (modelo or MODELO).strip() or MODELO
 
 
 def _status_http_erro(exc: Exception) -> int | None:
@@ -81,7 +94,7 @@ def perguntar(
         )
     content.append({"type": "text", "text": mensagem_texto})
 
-    modelo_efetivo = modelo or MODELO
+    modelo_efetivo = _modelo_efetivo(modelo)
     _tags = [f"modelo:{modelo_efetivo}", f"com_imagem:{bool(imagens)}"]
     inicio = time.monotonic()
     try:
@@ -149,7 +162,7 @@ def perguntar_estruturado(
         logger.warning("perguntar_estruturado sem ANTHROPIC_API_KEY.")
         return None
     mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
-    modelo_efetivo = modelo or MODELO
+    modelo_efetivo = _modelo_efetivo(modelo)
     _tags = [f"modelo:{modelo_efetivo}", f"tool:{tool_name}"]
     inicio = time.monotonic()
     try:

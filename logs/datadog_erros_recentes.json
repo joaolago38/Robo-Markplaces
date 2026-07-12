@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "4ff070dcfb581720bea0",
+      "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
+      "ultima_vez": "2026-07-12T20:22:07.739999+00:00",
+      "logger": "claude",
+      "mensagem": "Claude não retornou tool_use esperado (meu_tool): {'content': [{'type': 'text', 'text': 'x'}]}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "94db86c08bd0ee571d59",
       "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
       "ultima_vez": "2026-07-12T19:49:22.061091+00:00",
@@ -347,17 +358,6 @@
       "ultima_vez": "2026-07-10T17:42:15.867179+00:00",
       "logger": "conectividade_marketplaces",
       "mensagem": "Conectividade amazon FALHOU (status=403): sem permissão",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "4ff070dcfb581720bea0",
-      "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
-      "ultima_vez": "2026-07-10T17:41:52.032583+00:00",
-      "logger": "claude",
-      "mensagem": "Claude não retornou tool_use esperado (meu_tool): {'content': [{'type': 'text', 'text': 'x'}]}",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1552,5 +1552,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-12T19:49:22.061091+00:00"
+  "atualizado_em": "2026-07-12T20:22:07.739999+00:00"
 }
