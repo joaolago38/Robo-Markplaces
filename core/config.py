@@ -661,9 +661,8 @@ TELEGRAM_CHAT_ID        = (os.getenv("TELEGRAM_CHAT_ID") or "").strip()
 TELEGRAM_GESTOR_CHAT_ID = (os.getenv("TELEGRAM_GESTOR_CHAT_ID") or "").strip()
 TELEGRAM_MANICURES_CHAT_ID = (os.getenv("TELEGRAM_MANICURES_CHAT_ID") or TELEGRAM_CHAT_ID or "").strip()
 # Blocos "O que este agente faz" / "Quando roda" nos alertas Telegram.
-# Desligado por padrão; textos ficam em core/telegram_explicacao.py.
-# Para religar: TELEGRAM_EXPLICACAO_AGENTES=1
-TELEGRAM_EXPLICACAO_AGENTES = os.getenv("TELEGRAM_EXPLICACAO_AGENTES", "0").strip().lower() in (
+# Padrão ligado. Para desligar: TELEGRAM_EXPLICACAO_AGENTES=0
+TELEGRAM_EXPLICACAO_AGENTES = os.getenv("TELEGRAM_EXPLICACAO_AGENTES", "1").strip().lower() in (
     "1",
     "true",
     "yes",

@@ -13,7 +13,7 @@ from core import notificador
 
 
 class TestTelegramExplicacao(unittest.TestCase):
-    def test_desligada_por_padrao_nao_injeta(self):
+    def test_desligada_quando_flag_off_nao_injeta(self):
         msg = "🔍 *Busca kit*\nData: 2026-07-12"
         with patch.object(te, "explicacao_ativa", return_value=False):
             out = te.inserir_explicacao(msg, "monitor_busca_kit_esmaltes")
@@ -26,6 +26,7 @@ class TestTelegramExplicacao(unittest.TestCase):
         out = te.inserir_explicacao(msg, "monitor_busca_kit_esmaltes")
         self.assertIn("O que este agente faz", out)
         self.assertIn("Anita e Impala", out)
+        self.assertIn("frequência", out.lower())
         self.assertIn("Quando roda", out)
         self.assertIn("A cada 4h", out)
         self.assertIn("Data: 2026-07-12", out)

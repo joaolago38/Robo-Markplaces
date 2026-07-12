@@ -1,191 +1,240 @@
 """
 core/telegram_explicacao.py
-Textos curtos do que cada agente faz + horário — prontos para os alertas Telegram.
+Descrições detalhadas do que cada agente faz + horário — inseridas nos alertas Telegram.
 
-DESATIVADO por padrão (mensagens saem sem estes blocos).
-Para religar no futuro: TELEGRAM_EXPLICACAO_AGENTES=1 no .env / secrets do Actions.
+Ativo com TELEGRAM_EXPLICACAO_AGENTES=1 (padrão ligado).
 Horários em Brasília (BRT = UTC−3), conforme crons dos workflows + orquestrador.
 """
 from __future__ import annotations
 
-# Explicações em 1–2 frases (Markdown itálico no Telegram).
+# Descrições para o bloco "_O que este agente faz:_" (Markdown itálico no Telegram).
 EXPLICACOES_AGENTES: dict[str, str] = {
     "vigia_datadog": (
-        "Monitora erros e silêncio no Datadog. Se algo crítico aparece ou o sistema "
-        "fica parado demais tempo, avisa para você investigar."
+        "Monitora erros e silêncio no Datadog. Se aparece erro crítico ou o sistema "
+        "fica parado demais tempo (sem heartbeat), avisa no Telegram para você investigar. "
+        "Não corrige sozinho — só alerta."
     ),
     "monitor_margem_vendas": (
-        "Calcula lucro e margem dos pedidos nos marketplaces. Alerta quando a venda "
-        "fica abaixo do mínimo configurado — para não vender no prejuízo."
+        "Calcula lucro e margem dos pedidos em ML, Shopee, Magalu e Amazon (custo do "
+        "catálogo/Bling). Alerta quando a venda fica abaixo do mínimo configurado e "
+        "pode enviar resumo do período — para não vender no prejuízo."
     ),
     "inteligencia_precos": (
-        "Analisa comportamento de compra e sugere preço por canal (ML, Shopee, etc.), "
-        "ajudando a precificar com margem e competitividade."
+        "Analisa sinais de compra (visitas, concorrentes quando há item_id válido) e "
+        "sugere preço por canal (ML, Shopee etc.) respeitando margem mínima. "
+        "Entrega recomendações de preço no Telegram — não altera preço sozinho."
     ),
     "leilao": (
-        "Varre leiloeiros e DETRANs (e coletores diretos Sumaré/Copart/Superbid/Sodré) "
-        "em busca de veículos com vantagem vs FIPE (após taxas). Só leitura — não dá lance."
+        "Varre leiloeiros, DETRANs e coletores diretos (Sumaré, Copart, Superbid, Sodré) "
+        "em busca de veículos com vantagem vs FIPE após taxas. Só leitura — nunca dá "
+        "lance. No Telegram: lotes novos com margem e/ou resumo da varredura."
     ),
     "sumare_leiloes": (
-        "Abre o site oficial Sumaré Leilões, lista lotes de PREFEITURA/DETRAN e avisa "
-        "lances novos ou alterados. Foco em veículos (não sucata)."
+        "Abre o site oficial Sumaré Leilões, lista lotes PREFEITURA/DETRAN com documento "
+        "(não sucata) e detecta lances novos ou alterados. Telegram: alerta de mudança "
+        "de lance e resumo da rodada."
     ),
     "lojas_veiculos": (
-        "Varre lojas de carros (ex.: Lucinei, Leopardo) e compara preço com FIPE, "
-        "destacando oportunidades até o teto configurado."
+        "Varre lojas cadastradas (Lucinei, Leopardo etc.), compara preço anunciado com "
+        "FIPE e destaca oportunidades até o teto configurado. Telegram: carros abaixo "
+        "da FIPE e resumo da coleta."
     ),
     "carros_batidos": (
-        "Monitora anúncios de carros batidos/sinistrados nas lojas cadastradas e "
-        "avisa quando surge carro novo (Top-N por margem FIPE com haircut de sinistro)."
+        "Monitora lojas de carros batidos/sinistrados (e busca web). Ranqueia Top-N por "
+        "margem FIPE com haircut de sinistro. Telegram: anúncio novo detectado e "
+        "resumo da varredura."
     ),
     "licitacoes": (
-        "Busca licitações públicas (PNCP e portais estaduais) alinhadas ao seu perfil. "
-        "Somente leitura — não participa do pregão."
+        "Busca licitações públicas no PNCP (27 UFs) e portais alinhadas ao seu perfil "
+        "(termo, UF, valor). Somente leitura — não participa do pregão. Telegram: "
+        "licitações novas + resumo com checklist de participação."
     ),
     "alibaba": (
-        "Busca fornecedores e ofertas no Alibaba para produtos do catálogo e resume "
-        "oportunidades de importação no Telegram."
+        "Busca fornecedores e ofertas no Alibaba para produtos do catálogo (preço, MOQ) "
+        "e filtra oportunidades de importação. Telegram: lista de ofertas e resumo "
+        "da varredura."
     ),
     "alibaba_inteligencia": (
-        "Cruza cotação do dólar, custo landed e preços no ML para dizer se o produto "
-        "ainda dá lucro importando — e alerta queda/alta forte do câmbio."
+        "Cruza cotação do dólar, custo landed e preços no ML para dizer se ainda dá "
+        "lucro importar. Também alerta queda/alta forte do câmbio. Telegram: "
+        "oportunidades com lucro razoável e alerta de variação USD."
     ),
     "ml_tendencias_importacao": (
-        "Vê o que está em alta no Mercado Livre e cruza com preços Alibaba para "
-        "indicar se vale importar aquele item agora."
+        "Detecta o que está em alta no Mercado Livre e cruza com preços Alibaba para "
+        "indicar se vale importar aquele item agora. Telegram: tendências + veredito "
+        "de importação."
     ),
     "monitor_ml": (
-        "Acompanha anúncios e saúde da conta no Mercado Livre e resume o que precisa "
-        "de atenção (preço, status, concorrência)."
+        "Acompanha anúncios e saúde da conta no Mercado Livre (preço, status, "
+        "concorrência) e resume o que precisa de atenção na rodada. Telegram: "
+        "resumo de atenção da conta."
     ),
     "relatorio_manha_ml": (
         "Relatório matinal da operação ML: conta, anúncios, concorrentes e propostas "
-        "de preço com margem viável para o dia."
+        "de preço com margem viável para o dia. Telegram: briefing completo da manhã."
     ),
     "relatorio_estrategia_ml": (
-        "Monta o plano da semana no ML: o que baixar/reposicionar, onde investir Ads, "
-        "o que diferenciar ou empurrar no canal próprio — com base em gaps e margem."
+        "Monta o plano da semana no ML com base em gaps e margem: o que baixar/"
+        "reposicionar, onde investir Ads, o que diferenciar ou empurrar no canal "
+        "próprio. Telegram: top ações da semana."
     ),
     "monitor_concorrentes": (
         "Monitora lojas e termos concorrentes no ML (incluindo Novamix). Avisa quando "
-        "seu preço alvo fica longe do mercado ou surge ameaça forte."
+        "seu preço alvo fica longe do mercado ou surge ameaça forte. Telegram: "
+        "alertas de gap e resumo de concorrência."
     ),
     "resumo_diario_novamix": (
-        "Resume o desempenho da loja Novamix no ML (preços, giro, perfil) e sugere "
-        "ações de guerra/competir/Ads — preço nunca muda sozinho."
+        "Resume desempenho da loja Novamix (preços, giro, perfil), classifica "
+        "guerra/competir/observar e pode sugerir Ads (com confirmação). Preço nunca "
+        "muda sozinho. Telegram: resumo diário + plano de ação."
     ),
     "monitor_sem_venda_ml": (
         "Lista anúncios ativos sem venda recente e sugere preço, Ads ou republicar "
-        "para reativar o giro."
+        "para reativar o giro. Telegram: lista priorizada de reativação."
     ),
     "monitor_anita": (
-        "Acompanha esmaltes Anita no ML: cores, kits, ranking de marcas e margem, "
-        "para comparar com a preferência do seu catálogo."
+        "Acompanha esmaltes Anita no ML (cores, kits, ranking de marcas e margem) e "
+        "compara com a preferência do seu catálogo Impala. Telegram: painel dos seus "
+        "kits vs mercado."
     ),
     "monitor_mercado_esmaltes": (
-        "Varre o mercado de esmaltes no ML (não só uma marca): cores, kits, preços "
-        "e propostas de como competir com margem."
+        "Varre o mercado de esmaltes no ML (não só uma marca): cores, kits, preços e "
+        "propostas de como competir mantendo margem. Telegram: visão competitiva "
+        "consolidada."
     ),
     "monitor_busca_kit_esmaltes": (
-        "Simula/consulta no ML as buscas de kits Anita e Impala (por cor) e conta a "
-        "frequência do dia — mostra o que o mercado está procurando agora."
+        "Consulta no ML buscas de kits Anita e Impala (por cor), acumula a frequência "
+        "do dia e destaca cores nos títulos. Telegram: contagem diária por marca/cor "
+        "e última rodada — o que o mercado está procurando agora."
     ),
     "monitor_kits_esmaltes": (
         "Lista kits de esmaltes no ML com vendas e preços, ranqueia marcas e destaca "
-        "o que está girando mais."
+        "o que está girando mais. Pode enviar gráfico. Telegram: ranking de kits/"
+        "marcas."
     ),
     "monitor_removedores_unha": (
         "Monitora removedores de unha no ML: fabricantes, nomes e ranking por vendas, "
-        "para ver líderes e oportunidades."
+        "para ver líderes e oportunidades. Telegram: ranking (+ gráfico quando houver)."
     ),
     "monitor_tendencias_esmaltes": (
-        "Busca tendências de esmaltes na internet e cruza com ML/Magalu/Shopee/Amazon "
-        "para antecipar cores e kits em alta."
+        "Busca tendências de esmaltes na internet (Brave/DDG) e cruza com ML, Magalu, "
+        "Shopee e Amazon para antecipar cores e kits em alta. Telegram: tendências + "
+        "cruzamento com marketplaces."
     ),
     "comparativo_anita_impala": (
-        "Compara Anita vs Impala no ML (demanda, preço, perfil) e sugere como ganhar "
-        "espaço frente à Impala."
+        "Compara Anita vs Impala no ML (demanda, preço, perfil de consumidor) e "
+        "sugere como ganhar espaço frente à Impala. Telegram: comparativo + plano."
     ),
     "comparativo_ml_shopee": (
-        "Para esmaltes e filamentos 3D, pontua se o canal ideal é ML ou Shopee "
-        "(demanda, preço, competição) e dá um veredito."
+        "Para esmaltes e filamentos 3D, pontua demanda, preço e competição em ML vs "
+        "Shopee e fecha um veredito de canal. Telegram: score + recomendação ML ou "
+        "Shopee."
     ),
     "monitor_acetona_cruzeiro": (
-        "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, "
-        "com ideias de estratégia (Claude + Impala)."
+        "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
+        "ideias de estratégia (Claude + Impala). Telegram: relatório completo da "
+        "categoria."
     ),
     "descoberta_produtos": (
-        "Descobre produtos com potencial por marketplace (público-alvo + busca ML) "
-        "e pode cruzar com Alibaba quando há novidade."
+        "Descobre produtos com potencial por marketplace (público-alvo + busca ML) e "
+        "pode cruzar com Alibaba quando há novidade. Telegram: painel de decisão e/"
+        "ou novos fornecedores."
     ),
     "ads_gatilho": (
         "Decide ligar, pausar ou escalar Product Ads no ML com base em regras e "
-        "sempre pede sua confirmação no Telegram antes de aplicar."
+        "sempre pede sua confirmação no Telegram antes de aplicar. Não executa "
+        "sozinho sem o seu OK."
     ),
     "meta_metricas": (
         "Lê métricas das campanhas Meta Ads (gasto, CTR, ROAS) e alerta campanhas "
-        "em atenção ou críticas."
+        "em atenção ou críticas. No orquestrador costuma alertar só o crítico."
     ),
     "trafego_manicures": (
         "Avalia o tráfego pago voltado a manicures e resume se as campanhas estão "
-        "saudáveis ou precisam de ajuste."
+        "saudáveis ou precisam de ajuste. No ciclo 30 min o alerta costuma ficar off."
     ),
     "promocoes_manicures": (
-        "Monta e envia promoções de kits Impala para o grupo de manicures "
-        "(WhatsApp/Telegram), com base no catálogo ML."
+        "Monta promoções de kits Impala a partir do catálogo ML e envia ao grupo de "
+        "manicures (WhatsApp + Telegram manicures — não é o chat do gestor). "
+        "Tipicamente 2 envios por dia."
     ),
     "panorama": (
-        "Consolida um panorama de ML, Magalu e Bling (estoque, vendas, alertas) "
-        "para visão geral da operação."
+        "Consolida panorama de ML, Magalu e Bling (estoque, vendas, alertas) para "
+        "visão geral. No orquestrador o alerta próprio fica off — o consolidado vai "
+        "no resumo do ciclo; ainda pode alertar crítico se houver falha interna."
     ),
     "orquestrador": (
         "Roda o ciclo de vários agentes a cada ~30 min e manda um resumo do que "
-        "passou, falhou ou precisa de atenção."
+        "passou, falhou ou precisa de atenção. Não reenvia o relatório completo de "
+        "cada agente — só o consolidado do ciclo."
     ),
     "operacao_24h": (
-        "Snapshot da operação 24h (preços, estoque, NFe em dry-run no orquestrador). "
-        "Escrita real fica no workflow de segurança."
+        "Gera snapshot da operação 24h (preços, estoque, NFe). No orquestrador roda "
+        "em dry-run e sempre manda resumo ao gestor. Escrita real fica no workflow "
+        "de segurança (a cada 2h)."
     ),
     "repricing": (
-        "Simula ou aplica ajustes de preço nos marketplaces conforme regras "
-        "(no orquestrador costuma rodar em dry-run)."
+        "Simula ou aplica ajustes de preço nos marketplaces conforme regras. No "
+        "orquestrador costuma ser dry-run, mas ainda avisa no Telegram quando detecta "
+        "ajustes necessários."
     ),
     "repricing_impala": (
-        "Repricing focado em SKUs Impala — ajusta ou simula preços para manter "
-        "competitividade com margem."
+        "Repricing focado em SKUs Impala para manter competitividade com margem. "
+        "Dry-run no orquestrador; Telegram quando há kits a ajustar."
     ),
     "sincronizar_estoque": (
-        "Compara estoque Bling × marketplaces e aponta (ou aplica) divergências "
-        "para não vender sem saldo."
+        "Compara estoque Bling × marketplaces e aponta (ou aplica) divergências para "
+        "não vender sem saldo. Dry-run no orquestrador; Telegram quando há diferenças."
     ),
     "algoritmo": (
         "Checa sinais de saúde do algoritmo/conta nos marketplaces e alerta quando "
-        "há risco de queda de exposição."
+        "há risco de queda de exposição. Em geral só Telegram em estado crítico."
     ),
     "manutencao": (
         "Keepalive: renova tokens e confirma que as APIs dos marketplaces continuam "
-        "respondendo."
+        "respondendo. Telegram principalmente se algo não estiver ok."
     ),
     "otimizador_listing": (
-        "Sugere melhorias de título/descrição/fotos dos anúncios ML com base em "
-        "métricas e concorrentes."
+        "Sugere melhorias de título, descrição e fotos dos anúncios ML com base em "
+        "métricas e concorrentes (somente leitura). Telegram: lista de sugestões."
     ),
     "relatorio_financeiro": (
-        "Resume economia de repricing e gasto de Ads do período para o gestor."
+        "Resume economia estimada de repricing e gasto de Ads do período para o "
+        "gestor. Telegram: relatório financeiro semanal."
     ),
     "push_deploy": (
-        "Roda checks (ruff/pytest) e prepara/push de deploy — avisa sucesso ou falha."
+        "Roda checks (ruff/pytest) e prepara/push de deploy. Telegram: avisa sucesso "
+        "ou falha do pipeline (execução manual)."
     ),
     "auto_respostas": (
         "Responde perguntas frequentes nos chats dos marketplaces com mensagens "
-        "padronizadas (visuais quando configurado)."
+        "padronizadas (visuais quando configurado). Telegram se processou mensagens "
+        "na rodada."
     ),
-    "chat_ml": "Lê e processa mensagens do chat do Mercado Livre.",
-    "chat_shopee": "Lê e processa mensagens do chat da Shopee.",
-    "chat_magalu": "Lê e processa mensagens do chat do Magalu.",
-    "chat_amazon": "Lê e processa mensagens do chat da Amazon.",
-    "conectividade": "Testa se as conexões com os marketplaces estão no ar.",
-    "vendas_whatsapp": "Notifica vendas relevantes no WhatsApp do time.",
+    "chat_ml": (
+        "Lê e processa mensagens do chat do Mercado Livre. Telegram sobretudo em "
+        "erro ou taxa alta de reclamações — não é resumo rotineiro ao gestor."
+    ),
+    "chat_shopee": (
+        "Lê e processa mensagens do chat da Shopee. Telegram sobretudo em erro/IA — "
+        "canal de chat, não resumo rotineiro ao gestor."
+    ),
+    "chat_magalu": (
+        "Lê e processa mensagens do chat do Magalu. Telegram sobretudo em erro/IA — "
+        "canal de chat, não resumo rotineiro ao gestor."
+    ),
+    "chat_amazon": (
+        "Lê e processa mensagens do chat da Amazon. Telegram sobretudo em erro/IA — "
+        "canal de chat, não resumo rotineiro ao gestor."
+    ),
+    "conectividade": (
+        "Testa se as conexões com os marketplaces estão no ar. Telegram só em falha "
+        "real de conectividade (alerta crítico)."
+    ),
+    "vendas_whatsapp": (
+        "Notifica vendas relevantes no WhatsApp do time. Telegram só se a API de "
+        "pedidos falhar — o canal principal é WhatsApp."
+    ),
 }
 
 # Quando cada agente roda (BRT). Inclui workflow dedicado e/ou orquestrador 30 min.
