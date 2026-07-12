@@ -16,6 +16,11 @@ env:
   DD_SITE: ${{ secrets.DD_SITE }}
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   LEILAO_INCLUIR_SUMARE_DIRETO: "1"
+  LEILAO_INCLUIR_COPART_DIRETO: "1"
+  LEILAO_INCLUIR_SUPERBID_DIRETO: "1"
+  LEILAO_INCLUIR_SODRE_DIRETO: "1"
+  LEILAO_COLETORES_LANCE_MIN_BRL: "500"
+  LEILAO_COLETORES_EXIGIR_DOCUMENTO: "0"
   LEILAO_DETRAN_POR_RODADA: "5"
   LEILAO_LEILOEIROS_POR_RODADA: "5"
   LEILAO_PAUSA_ENTRE_FONTES_SEG: "3"
@@ -33,7 +38,7 @@ env:
 
 jobs:
   monitorar:
-    name: Varredura leiloeiros + DETRAN (rotacionado) + Sumaré
+    name: Varredura leiloeiros + DETRAN + coletores diretos (Sumaré/Copart/Superbid/Sodré)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:

@@ -286,7 +286,35 @@ LEILAO_INCLUIR_SUMARE_DIRETO = os.getenv("LEILAO_INCLUIR_SUMARE_DIRETO", "1").st
     "false",
     "no",
 )
+LEILAO_INCLUIR_COPART_DIRETO = os.getenv("LEILAO_INCLUIR_COPART_DIRETO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+LEILAO_INCLUIR_SUPERBID_DIRETO = os.getenv("LEILAO_INCLUIR_SUPERBID_DIRETO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+LEILAO_INCLUIR_SODRE_DIRETO = os.getenv("LEILAO_INCLUIR_SODRE_DIRETO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 LEILAO_SUMARE_MAX_LEILOES = int(os.getenv("LEILAO_SUMARE_MAX_LEILOES", "10"))
+LEILAO_COLETORES_LANCE_MIN_BRL = float(os.getenv("LEILAO_COLETORES_LANCE_MIN_BRL", "500"))
+LEILAO_COLETORES_EXIGIR_DOCUMENTO = os.getenv(
+    "LEILAO_COLETORES_EXIGIR_DOCUMENTO", "0"
+).strip().lower() not in ("0", "false", "no")
+COPART_LEILOES_CATALOGO = os.getenv(
+    "COPART_LEILOES_CATALOGO", "catalogo/copart_leiloes_monitorados.json"
+)
+SUPERBID_LEILOES_CATALOGO = os.getenv(
+    "SUPERBID_LEILOES_CATALOGO", "catalogo/superbid_leiloes_monitorados.json"
+)
+SODRE_LEILOES_CATALOGO = os.getenv(
+    "SODRE_LEILOES_CATALOGO", "catalogo/sodre_leiloes_monitorados.json"
+)
 LEILAO_DDG_RETRY_MAX = int(os.getenv("LEILAO_DDG_RETRY_MAX", os.getenv("DDG_RETRY_MAX", "3")))
 LEILAO_DDG_RETRY_BASE_SEG = float(os.getenv("LEILAO_DDG_RETRY_BASE_SEG", os.getenv("DDG_RETRY_BASE_SEG", "5")))
 LEILAO_ALERTA_RESUMO = os.getenv("LEILAO_ALERTA_RESUMO", "1").strip().lower() not in ("0", "false", "no")

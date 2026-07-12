@@ -34,11 +34,12 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_veiculos"], 0)
 
+    @patch.object(agente, "obter_lotes_diretos", return_value={})
     @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_veiculo_em_fontes")
     @patch.object(agente, "_carregar_veiculos")
-    def test_alerta_todos_achados_novos(self, mock_veiculos, mock_busca, mock_alertar, _sumare):
+    def test_alerta_todos_achados_novos(self, mock_veiculos, mock_busca, mock_alertar, _sumare, _diretos):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015}
         ]
@@ -80,10 +81,11 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("R$ 9.800,00", msg)
         self.assertEqual(out2["com_novos"], 0)
 
+    @patch.object(agente, "obter_lotes_diretos", return_value={})
     @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_veiculo_em_fontes")
-    def test_modo_busca_todos_veiculos(self, mock_busca, mock_alertar, _sumare):
+    def test_modo_busca_todos_veiculos(self, mock_busca, mock_alertar, _sumare, _diretos):
         mock_busca.return_value = {"achados": [], "diagnostico": {}}
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
             agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
@@ -177,11 +179,12 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("Diagnóstico da coleta", msg)
         self.assertIn("Sumaré direto", msg)
 
+    @patch.object(agente, "obter_lotes_diretos", return_value={})
     @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_veiculo_em_fontes", return_value={"achados": [], "diagnostico": {}})
     @patch.object(agente, "_carregar_veiculos")
-    def test_envia_resumo_mesmo_sem_novos(self, mock_veiculos, _mock_busca, mock_alertar, _sumare):
+    def test_envia_resumo_mesmo_sem_novos(self, mock_veiculos, _mock_busca, mock_alertar, _sumare, _diretos):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino", "prioridade": 1}
         ]
@@ -198,10 +201,11 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         mock_alertar.assert_called()
         self.assertIn("resumo da varredura", mock_alertar.call_args_list[-1][0][0])
 
+    @patch.object(agente, "obter_lotes_diretos", return_value={})
     @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "buscar_veiculo_em_fontes", return_value={"achados": [], "diagnostico": {}})
     @patch.object(agente, "_carregar_veiculos")
-    def test_loga_ddg_quando_sem_achados(self, mock_veiculos, _mock_busca, _sumare):
+    def test_loga_ddg_quando_sem_achados(self, mock_veiculos, _mock_busca, _sumare, _diretos):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Fiat", "modelo": "Fiorino"}
         ]
@@ -214,10 +218,11 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
                 agente.executar(enviar_alerta=False)
         self.assertTrue(any("circuit breaker" in line for line in logs.output))
 
+    @patch.object(agente, "obter_lotes_diretos", return_value={})
     @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
     @patch.object(agente, "buscar_veiculo_em_fontes")
     @patch.object(agente, "_carregar_veiculos")
-    def test_loga_achados_com_data_e_cadastro(self, mock_veiculos, mock_busca, _sumare):
+    def test_loga_achados_com_data_e_cadastro(self, mock_veiculos, mock_busca, _sumare, _diretos):
         mock_veiculos.return_value = [
             {"id": "v1", "ativo": True, "marca": "Honda", "modelo": "Civic"}
         ]
