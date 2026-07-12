@@ -1,0 +1,68 @@
+[
+  {
+    "id": "fil-pla-1kg",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Filamento PLA 1kg",
+    "material": "PLA",
+    "alibaba_produto_id": "filamento-impressora-3d-pla",
+    "termo_busca": "filamento pla 1kg impressora 3d",
+    "limite_resultados": 30
+  },
+  {
+    "id": "fil-pla-plus",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Filamento PLA+",
+    "material": "PLA+",
+    "alibaba_produto_id": "filamento-impressora-3d-pla",
+    "termo_busca": "filamento pla+ 1kg impressora 3d",
+    "limite_resultados": 25
+  },
+  {
+    "id": "fil-petg-1kg",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Filamento PETG 1kg",
+    "material": "PETG",
+    "termo_busca": "filamento petg 1kg impressora 3d",
+    "limite_resultados": 25
+  },
+  {
+    "id": "fil-abs-1kg",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Filamento ABS 1kg",
+    "material": "ABS",
+    "termo_busca": "filamento abs 1kg impressora 3d",
+    "limite_resultados": 25
+  },
+  {
+    "id": "fil-tpu",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Filamento TPU flexível",
+    "material": "TPU",
+    "termo_busca": "filamento tpu flexivel 1kg impressora 3d",
+    "limite_resultados": 20
+  },
+  {
+    "id": "fil-silk",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Filamento PLA Silk",
+    "material": "PLA Silk",
+    "alibaba_produto_id": "filamento-impressora-3d-pla",
+    "termo_busca": "filamento pla silk 1kg impressora 3d",
+    "limite_resultados": 20
+  },
+  {
+    "id": "fil-asa",
+    "ativo": false,
+    "prioridade": 3,
+    "nome": "Filamento ASA",
+    "material": "ASA",
+    "termo_busca": "filamento asa 1kg impressora 3d",
+    "limite_resultados": 15
+  }
+]

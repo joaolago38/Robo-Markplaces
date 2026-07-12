@@ -15,23 +15,31 @@ from urllib.parse import urlparse
 
 from core.config import (
     COPART_LEILOES_CATALOGO,
+    DDG_DISABLED,
     LEILAO_ANO_MAX,
     LEILAO_ANO_MIN,
     LEILAO_COLETORES_EXIGIR_DOCUMENTO,
     LEILAO_COLETORES_LANCE_MIN_BRL,
+    LEILAO_DETRAN_DDG_AMPLA,
     LEILAO_DETRAN_POR_RODADA,
+    LEILAO_DETRAN_VIA_DDG,
     LEILAO_INCLUIR_COPART_DIRETO,
     LEILAO_INCLUIR_SODRE_DIRETO,
     LEILAO_INCLUIR_SUMARE_DIRETO,
     LEILAO_INCLUIR_SUPERBID_DIRETO,
     LEILAO_LEILOEIROS_POR_RODADA,
+    LEILAO_PULAR_DDG_SE_BREAKER,
     LEILAO_SUMARE_MAX_LEILOES,
     LEILAO_VARREDURA_TODAS_FONTES,
     ROOT,
     SODRE_LEILOES_CATALOGO,
     SUPERBID_LEILOES_CATALOGO,
 )
-from core.ddg_lite import buscar as ddg_buscar, circuit_breaker_ativo, mensagem_circuit_breaker
+from core.ddg_lite import (
+    buscar as ddg_buscar,
+    circuit_breaker_ativo,
+    mensagem_circuit_breaker,
+)
 from core.atomic_io import ler_json, escrever_json_atomico
 from integracoes.leilao.coletores_base import lote_para_achado
 from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS, URLS_CADASTRO_POR_DOMINIO
@@ -776,29 +784,57 @@ def _buscar_em_dominio(
     sufixo_query: str = "leilão veículo",
     diagnostico: dict[str, int] | None = None,
 ) -> list[dict[str, Any]]:
-    query = f'site:{dominio} {sufixo_query} {termo}'
+    """Busca DDG em um domínio; DETRAN tenta query ampla se a específica vier vazia."""
+    queries = [f"site:{dominio} {sufixo_query} {termo}".strip()]
+    if tipo_fonte == "detran" and LEILAO_DETRAN_DDG_AMPLA:
+        queries.append(f"site:{dominio} (leilão OR leilao) (veículo OR veiculo OR automóvel)")
+
     achados: list[dict[str, Any]] = []
-    brutos = buscar_duckduckgo(query, max_resultados=6)
-    if diagnostico is not None:
-        diagnostico["ddg_queries"] = diagnostico.get("ddg_queries", 0) + 1
-        diagnostico["ddg_brutos"] = diagnostico.get("ddg_brutos", 0) + len(brutos)
-    for item in brutos:
-        if dominio not in item.get("url", ""):
-            continue
-        achados.append(
-            {
-                "url": item["url"],
-                "titulo": item.get("titulo") or item["url"],
-                "snippet": item.get("snippet") or "",
-                "fonte_tipo": tipo_fonte,
-                "fonte_id": fonte_id,
-                "fonte_nome": fonte_nome,
-                "dominio": dominio,
-                "hash": _hash_url(item["url"]),
-                **({"uf": fonte_id} if tipo_fonte == "detran" else {}),
-            }
-        )
+    vistos_url: set[str] = set()
+    for qi, query in enumerate(queries):
+        brutos = buscar_duckduckgo(query, max_resultados=6)
+        if diagnostico is not None:
+            diagnostico["ddg_queries"] = diagnostico.get("ddg_queries", 0) + 1
+            diagnostico["ddg_brutos"] = diagnostico.get("ddg_brutos", 0) + len(brutos)
+            if tipo_fonte == "detran":
+                diagnostico["ddg_detran_queries"] = diagnostico.get("ddg_detran_queries", 0) + 1
+                diagnostico["ddg_detran_brutos"] = diagnostico.get("ddg_detran_brutos", 0) + len(brutos)
+        for item in brutos:
+            url = item.get("url", "")
+            if dominio not in url or url in vistos_url:
+                continue
+            vistos_url.add(url)
+            achados.append(
+                {
+                    "url": url,
+                    "titulo": item.get("titulo") or url,
+                    "snippet": item.get("snippet") or "",
+                    "fonte_tipo": tipo_fonte,
+                    "fonte_id": fonte_id,
+                    "fonte_nome": fonte_nome,
+                    "dominio": dominio,
+                    "hash": _hash_url(url),
+                    "query_ampla": qi > 0,
+                    **({"uf": fonte_id} if tipo_fonte == "detran" else {}),
+                }
+            )
+        # Só cai na query ampla se a específica não trouxe nada do domínio
+        if achados:
+            break
     return achados
+
+
+def _ddg_status_atual() -> dict[str, Any]:
+    if DDG_DISABLED:
+        return {"ddg_status": "desabilitado", "ddg_nota": "DDG_DISABLED=1 — buscas web desligadas"}
+    if circuit_breaker_ativo("leilao"):
+        return {
+            "ddg_status": "breaker",
+            "ddg_nota": mensagem_circuit_breaker("leilao") or "circuit breaker ativo",
+            "circuit_breaker_ativo": True,
+            "circuit_breaker_msg": mensagem_circuit_breaker("leilao"),
+        }
+    return {"ddg_status": "ok", "ddg_nota": None}
 
 
 def buscar_veiculo_em_fontes(
@@ -823,12 +859,17 @@ def buscar_veiculo_em_fontes(
 
     vistos: set[str] = set()
     todos: list[dict[str, Any]] = []
-    contadores: dict[str, int] = {
+    contadores: dict[str, Any] = {
         "ddg_queries": 0,
         "ddg_brutos": 0,
         "ddg_descartados_filtro": 0,
+        "ddg_detran_queries": 0,
+        "ddg_detran_brutos": 0,
+        "ddg_fontes_puladas": 0,
         "sumare_candidatos": 0,
         "sumare_achados": 0,
+        "sumare_detran_candidatos": 0,
+        "sumare_detran_achados": 0,
         "copart_candidatos": 0,
         "copart_achados": 0,
         "superbid_candidatos": 0,
@@ -843,6 +884,12 @@ def buscar_veiculo_em_fontes(
         fontes = [f for f in fontes if f[1] != "leiloeiro"]
     if not incluir_detran:
         fontes = [f for f in fontes if f[1] != "detran"]
+
+    ddg_info = _ddg_status_atual()
+    pular_ddg = bool(
+        DDG_DISABLED
+        or (LEILAO_PULAR_DDG_SE_BREAKER and circuit_breaker_ativo("leilao"))
+    )
 
     if lotes_sumare is None and LEILAO_INCLUIR_SUMARE_DIRETO:
         lotes_sumare, diag_sumare = obter_lotes_sumare()
@@ -859,6 +906,10 @@ def buscar_veiculo_em_fontes(
 
     for lote in lotes_sumare or []:
         contadores["sumare_candidatos"] += 1
+        comitente = _normalizar(str(lote.get("comitente") or lote.get("tipo_comitente") or ""))
+        eh_detran_sumare = "detran" in comitente
+        if eh_detran_sumare:
+            contadores["sumare_detran_candidatos"] += 1
         item = _lote_sumare_para_item(lote, veiculo)
         if not item:
             continue
@@ -869,6 +920,9 @@ def buscar_veiculo_em_fontes(
             continue
         vistos.add(h)
         contadores["sumare_achados"] += 1
+        if eh_detran_sumare:
+            contadores["sumare_detran_achados"] += 1
+            item["fonte_nome"] = "Sumaré — DETRAN"
         todos.append(enriquecer_achado_leilao(item, veiculo))
 
     for fonte, lotes in (lotes_diretos or {}).items():
@@ -896,10 +950,15 @@ def buscar_veiculo_em_fontes(
         nome = fonte.get("nome", dominio)
         if not dominio:
             continue
-        # Evita DDG duplicado quando já há coletor direto ativo para o mesmo domínio
         if tipo == "leiloeiro" and fid in _META_COLETORES and _META_COLETORES[fid]["enabled"]():
             continue
         if tipo == "leiloeiro" and fid == "sumare" and LEILAO_INCLUIR_SUMARE_DIRETO:
+            continue
+        if tipo == "detran" and not LEILAO_DETRAN_VIA_DDG:
+            contadores["ddg_fontes_puladas"] = contadores.get("ddg_fontes_puladas", 0) + 1
+            continue
+        if pular_ddg:
+            contadores["ddg_fontes_puladas"] = contadores.get("ddg_fontes_puladas", 0) + 1
             continue
         sufixo = _sufixo_query_leilao(veiculo, tipo_fonte=tipo)
         try:
@@ -913,7 +972,17 @@ def buscar_veiculo_em_fontes(
                 diagnostico=contadores,
             )
             for item in lote:
-                if not _relevante_para_veiculo(item, veiculo):
+                # Query ampla DETRAN: aceita página de leilão mesmo sem o modelo no título
+                ampla = bool(item.pop("query_ampla", False))
+                relevante = _relevante_para_veiculo(item, veiculo)
+                if not relevante and not (
+                    ampla
+                    and tipo == "detran"
+                    and any(
+                        w in _normalizar(f"{item.get('titulo')} {item.get('snippet')}")
+                        for w in ("leilao", "hasta", "lote", "edital")
+                    )
+                ):
                     contadores["ddg_descartados_filtro"] += 1
                     continue
                 h = item["hash"]
@@ -927,40 +996,60 @@ def buscar_veiculo_em_fontes(
         if pausa_entre_fontes_seg > 0:
             time.sleep(pausa_entre_fontes_seg)
 
-    try:
-        query_geral = f'{_sufixo_query_leilao(veiculo, tipo_fonte="web")} {termo} Brasil'
-        contadores["ddg_queries"] += 1
-        for item in buscar_duckduckgo(query_geral, max_resultados=10):
-            contadores["ddg_brutos"] += 1
-            enriquecido = {
-                "url": item["url"],
-                "titulo": item.get("titulo") or item["url"],
-                "snippet": item.get("snippet") or "",
-                "fonte_tipo": "web",
-                "fonte_id": "busca_geral",
-                "fonte_nome": "Busca geral",
-                "dominio": urlparse(item["url"]).netloc,
-                "hash": _hash_url(item["url"]),
+    if not pular_ddg:
+        try:
+            query_geral = f'{_sufixo_query_leilao(veiculo, tipo_fonte="web")} {termo} Brasil'
+            contadores["ddg_queries"] += 1
+            for item in buscar_duckduckgo(query_geral, max_resultados=10):
+                contadores["ddg_brutos"] += 1
+                enriquecido = {
+                    "url": item["url"],
+                    "titulo": item.get("titulo") or item["url"],
+                    "snippet": item.get("snippet") or "",
+                    "fonte_tipo": "web",
+                    "fonte_id": "busca_geral",
+                    "fonte_nome": "Busca geral",
+                    "dominio": urlparse(item["url"]).netloc,
+                    "hash": _hash_url(item["url"]),
+                }
+                if not _relevante_para_veiculo(enriquecido, veiculo):
+                    contadores["ddg_descartados_filtro"] += 1
+                    continue
+                if enriquecido["hash"] in vistos:
+                    continue
+                vistos.add(enriquecido["hash"])
+                todos.append(enriquecer_achado_leilao(enriquecido, veiculo))
+        except Exception as exc:
+            logger.warning("Busca geral falhou: %s", exc)
+
+    # Status final do DDG após as queries
+    if ddg_info.get("ddg_status") == "ok":
+        if contadores["ddg_queries"] and contadores["ddg_brutos"] == 0:
+            ddg_info = {
+                "ddg_status": "vazio",
+                "ddg_nota": (
+                    "DDG respondeu vazio em todas as queries "
+                    "(rate limit, indexação fraca ou termo muito específico)"
+                ),
             }
-            if not _relevante_para_veiculo(enriquecido, veiculo):
-                contadores["ddg_descartados_filtro"] += 1
-                continue
-            if enriquecido["hash"] in vistos:
-                continue
-            vistos.add(enriquecido["hash"])
-            todos.append(enriquecer_achado_leilao(enriquecido, veiculo))
-    except Exception as exc:
-        logger.warning("Busca geral falhou: %s", exc)
+        elif contadores.get("ddg_fontes_puladas") and contadores["ddg_queries"] == 0:
+            ddg_info = {
+                "ddg_status": "pulado",
+                "ddg_nota": "DDG pulado (breaker/desabilitado) — DETRAN via site: não consultado",
+            }
 
     diagnostico: dict[str, Any] = {
         **contadores,
         **meta_fontes,
+        **ddg_info,
         "fontes_consultadas": len(fontes),
         "achados_total": len(todos),
         "achados_ddg_por_dominio": achados_por_dominio,
-        "circuit_breaker_ativo": circuit_breaker_ativo("leilao"),
-        "circuit_breaker_msg": mensagem_circuit_breaker("leilao"),
+        "circuit_breaker_ativo": circuit_breaker_ativo("leilao") or bool(ddg_info.get("circuit_breaker_ativo")),
+        "circuit_breaker_msg": mensagem_circuit_breaker("leilao") or ddg_info.get("circuit_breaker_msg"),
         "sumare_coleta": diag_sumare or {},
         "coletores_diretos": diag_diretos,
+        "detran_via_ddg": LEILAO_DETRAN_VIA_DDG,
+        "detran_ddg_ampla": LEILAO_DETRAN_DDG_AMPLA,
     }
     return {"achados": todos, "diagnostico": diagnostico}

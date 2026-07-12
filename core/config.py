@@ -208,6 +208,25 @@ COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO = os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_RE
 )
 COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG", "21600"))
 
+# Monitor filamentos 3D no Mercado Livre (preços, marcas, vendas)
+FILAMENTOS_ML_CATALOGO = os.getenv(
+    "FILAMENTOS_ML_CATALOGO", "catalogo/filamentos_3d_monitor.json"
+)
+FILAMENTOS_ML_PAUSA_SEG = float(os.getenv("FILAMENTOS_ML_PAUSA_SEG", "1.5"))
+FILAMENTOS_ML_ALERTA_RESUMO = os.getenv("FILAMENTOS_ML_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+FILAMENTOS_ML_ALERTA_COOLDOWN_SEG = int(os.getenv("FILAMENTOS_ML_ALERTA_COOLDOWN_SEG", "21600"))
+FILAMENTOS_ML_CRUZAR_ALIBABA = os.getenv("FILAMENTOS_ML_CRUZAR_ALIBABA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+FILAMENTOS_ML_ALIBABA_MAX_CORES = int(os.getenv("FILAMENTOS_ML_ALIBABA_MAX_CORES", "3"))
+FILAMENTOS_ML_ALIBABA_PAUSA_SEG = float(os.getenv("FILAMENTOS_ML_ALIBABA_PAUSA_SEG", "1.0"))
+
 # Busca kit esmaltes Anita/Impala — frequência diária + cores
 ESMALTES_BUSCA_KIT_CATALOGO = os.getenv(
     "ESMALTES_BUSCA_KIT_CATALOGO", "catalogo/esmaltes_busca_kit_frequencia.json"
@@ -295,6 +314,24 @@ LEILAO_VEICULOS_CATALOGO = os.getenv(
 LEILAO_PAUSA_ENTRE_FONTES_SEG = float(os.getenv("LEILAO_PAUSA_ENTRE_FONTES_SEG", "3.0"))
 LEILAO_DETRAN_POR_RODADA = int(os.getenv("LEILAO_DETRAN_POR_RODADA", "5"))
 LEILAO_LEILOEIROS_POR_RODADA = int(os.getenv("LEILAO_LEILOEIROS_POR_RODADA", "5"))
+# DETRAN via DDG (site:detran.xx.gov.br). Se 0, só Sumaré/diretos cobrem DETRAN.
+LEILAO_DETRAN_VIA_DDG = os.getenv("LEILAO_DETRAN_VIA_DDG", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# 2ª query DETRAN mais ampla se a busca com o veículo específico vier vazia
+LEILAO_DETRAN_DDG_AMPLA = os.getenv("LEILAO_DETRAN_DDG_AMPLA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Não martela DDG quando o circuit breaker já está ativo
+LEILAO_PULAR_DDG_SE_BREAKER = os.getenv("LEILAO_PULAR_DDG_SE_BREAKER", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 LEILAO_INCLUIR_SUMARE_DIRETO = os.getenv("LEILAO_INCLUIR_SUMARE_DIRETO", "1").strip().lower() not in (
     "0",
     "false",
@@ -532,6 +569,7 @@ LOJAS_VEICULOS_ALERTA_RESUMO_COOLDOWN_SEG = int(os.getenv("LOJAS_VEICULOS_ALERTA
 # Monitor carros batidos — todas as lojas, alerta Telegram
 CARROS_BATIDOS_CATALOGO = os.getenv("CARROS_BATIDOS_CATALOGO", "catalogo/carros_batidos_fontes.json")
 CARROS_BATIDOS_PRECO_MAX = float(os.getenv("CARROS_BATIDOS_PRECO_MAX", "150000"))
+CARROS_BATIDOS_ANO_MIN = int(os.getenv("CARROS_BATIDOS_ANO_MIN", "1998"))
 CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG = float(os.getenv("CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG", "2"))
 CARROS_BATIDOS_INCLUIR_FIPE = os.getenv("CARROS_BATIDOS_INCLUIR_FIPE", "1").strip().lower() not in (
     "0",

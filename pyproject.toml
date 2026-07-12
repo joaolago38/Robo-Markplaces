@@ -20,6 +20,7 @@ omit = [
     "tests/*",
     ".venv/*",
     "testar_*.py",
+    "_tmp_*.py",
     "api/app.py",
     "agentes/auto_respostas_visuais.py",
     "integracoes/amazon/amazon_client.py",
@@ -33,6 +34,8 @@ omit = [
     "integracoes/ml/estrategia_vendas_ml.py",
     "agentes/ml/agente_relatorio_estrategia_ml.py",
     "integracoes/esmaltes/tendencias_internet.py",
+    # Filamentos: agente é I/O ML/Alibaba/Telegram; lógica coberta em analise_* e cruzamento_*.
+    "agentes/filamentos/agente_monitor_filamentos_ml.py",
 ]
 
 [tool.ruff]

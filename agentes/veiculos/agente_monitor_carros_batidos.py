@@ -23,6 +23,7 @@ from core.config import (
     CARROS_BATIDOS_ALERTA_RESUMO,
     CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG,
     CARROS_BATIDOS_ALERTA_TOP_N,
+    CARROS_BATIDOS_ANO_MIN,
     CARROS_BATIDOS_BUSCA_WEB,
     CARROS_BATIDOS_BUSCA_WEB_MAX_UFS,
     CARROS_BATIDOS_BUSCA_WEB_PAUSA_SEG,
@@ -86,17 +87,50 @@ def _enriquecer_fipe(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _ano_int(valor: Any) -> int | None:
+    try:
+        ano = int(str(valor).strip()[:4])
+    except (TypeError, ValueError):
+        return None
+    if 1900 <= ano <= 2100:
+        return ano
+    return None
+
+
 def _filtrar_preco(
     anuncios: list[dict[str, Any]],
     *,
     ignorar: bool = False,
 ) -> list[dict[str, Any]]:
-    if ignorar:
-        return anuncios
     limite = CARROS_BATIDOS_PRECO_MAX
-    if limite <= 0:
-        return anuncios
-    return [a for a in anuncios if 0 < float(a.get("preco") or 0) <= limite]
+    ano_min = CARROS_BATIDOS_ANO_MIN
+    saida: list[dict[str, Any]] = []
+    for a in anuncios:
+        preco = float(a.get("preco") or 0)
+        if not ignorar and limite > 0 and not (0 < preco <= limite):
+            continue
+        ano = _ano_int(a.get("ano"))
+        if ano_min > 0 and ano is not None and ano < ano_min:
+            continue
+        saida.append(a)
+    return saida
+
+
+def _vale_alertar(item: dict[str, Any]) -> bool:
+    """Descarta clássicos, acima do teto e 'oportunidades' com margem FIPE negativa."""
+    preco = float(item.get("preco") or 0)
+    if CARROS_BATIDOS_PRECO_MAX > 0 and not (0 < preco <= CARROS_BATIDOS_PRECO_MAX):
+        return False
+    ano = _ano_int(item.get("ano"))
+    if CARROS_BATIDOS_ANO_MIN > 0 and ano is not None and ano < CARROS_BATIDOS_ANO_MIN:
+        return False
+    if item.get("valor_fipe"):
+        try:
+            if float(item.get("desconto_pct") or 0) <= 0:
+                return False
+        except (TypeError, ValueError):
+            return False
+    return True
 
 
 def _montar_linha_anuncio(item: dict[str, Any], *, rank: int | None = None) -> list[str]:
@@ -141,13 +175,14 @@ def _ordenar_novos_alerta(itens: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _montar_alerta_novos(itens: list[dict[str, Any]]) -> str:
     from core.telegram_explicacao import cabecalho_agente
 
-    ordenados = _ordenar_novos_alerta(itens)
+    candidatos = [i for i in itens if _vale_alertar(i)]
+    ordenados = _ordenar_novos_alerta(candidatos)
     top_n = max(1, CARROS_BATIDOS_ALERTA_TOP_N)
     top = ordenados[:top_n]
     linhas = [
         cabecalho_agente("carros_batidos", "🚗 *Carros batidos — novos anúncios*"),
         "",
-        f"_{len(itens)} veículo(s) novo(s); mostrando Top {len(top)} por desconto FIPE._",
+        f"_{len(candidatos)} veículo(s) novo(s) elegível(is); mostrando Top {len(top)} por desconto FIPE._",
         "",
     ]
     for i, item in enumerate(top, 1):
@@ -225,7 +260,7 @@ def _processar_anuncios(
 
 def _monitorar_loja(fonte: dict[str, Any], historico: dict[str, Any]) -> dict[str, Any]:
     loja_id = str(fonte.get("id") or "")
-    # Esperança/Motorjan: estoque atual costuma ficar acima do teto global — não zerar a loja
+    # Flag opcional no catálogo: ignorar_preco_max (não recomendado — gera alertas caros)
     ignorar_teto = bool(fonte.get("ignorar_preco_max"))
     anuncios = _filtrar_preco(coletar_fonte(fonte), ignorar=ignorar_teto)
     return _processar_anuncios(loja_id, str(fonte.get("nome") or loja_id), anuncios, historico)
@@ -286,15 +321,17 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         alerta_resumo = False
 
         if enviar_alerta and todos_novos:
-            msg = _montar_alerta_novos(todos_novos)
-            alerta_novos = bool(
-                alertar_gestor(
-                    msg,
-                    chave=chave_itens_novos("carros_batidos:novos", todos_novos),
-                    cooldown_segundos=CARROS_BATIDOS_ALERTA_COOLDOWN_SEG,
-                    agente_id="carros_batidos",
+            elegiveis = [i for i in todos_novos if _vale_alertar(i)]
+            if elegiveis:
+                msg = _montar_alerta_novos(todos_novos)
+                alerta_novos = bool(
+                    alertar_gestor(
+                        msg,
+                        chave=chave_itens_novos("carros_batidos:novos", elegiveis),
+                        cooldown_segundos=CARROS_BATIDOS_ALERTA_COOLDOWN_SEG,
+                        agente_id="carros_batidos",
+                    )
                 )
-            )
 
         if enviar_alerta and CARROS_BATIDOS_ALERTA_RESUMO:
             msg_resumo = _montar_resumo(por_loja, todos_novos)

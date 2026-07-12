@@ -307,6 +307,98 @@ class TestBuscarVeiculo(unittest.TestCase):
         self.assertIn("diagnostico", out)
         self.assertGreaterEqual(out["diagnostico"].get("ddg_brutos", 0), 1)
         self.assertIn("achados_ddg_por_dominio", out["diagnostico"])
+        self.assertIn("ddg_status", out["diagnostico"])
+
+    @patch.object(busca, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))
+    @patch.object(busca, "_fontes_da_rodada")
+    @patch.object(busca, "buscar_duckduckgo")
+    @patch.object(busca.time, "sleep")
+    def test_pula_ddg_quando_breaker(self, _sleep, mock_ddg, mock_fontes, _sumare):
+        mock_fontes.return_value = (
+            [
+                ({"dominio": "detran.sp.gov.br", "nome": "DETRAN SP", "id": "SP"}, "detran", "SP"),
+            ],
+            {"leiloeiros_na_rodada": 0, "detrans_na_rodada": 1, "detrans_ufs": ["SP"]},
+        )
+        veiculo = {"marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015}
+        with patch.object(busca, "circuit_breaker_ativo", return_value=True), patch.object(
+            busca, "LEILAO_PULAR_DDG_SE_BREAKER", True
+        ), patch.object(busca, "LEILAO_INCLUIR_COPART_DIRETO", False), patch.object(
+            busca, "LEILAO_INCLUIR_SUPERBID_DIRETO", False
+        ), patch.object(busca, "LEILAO_INCLUIR_SODRE_DIRETO", False), patch.object(
+            busca, "LEILAO_INCLUIR_SUMARE_DIRETO", False
+        ):
+            out = busca.buscar_veiculo_em_fontes(
+                veiculo,
+                pausa_entre_fontes_seg=0,
+                lotes_sumare=[],
+                lotes_diretos={},
+                diag_diretos={},
+            )
+        mock_ddg.assert_not_called()
+        self.assertEqual(out["diagnostico"].get("ddg_status"), "breaker")
+        self.assertGreaterEqual(out["diagnostico"].get("ddg_fontes_puladas", 0), 1)
+
+    @patch.object(busca, "buscar_duckduckgo")
+    def test_detran_tenta_query_ampla(self, mock_ddg):
+        mock_ddg.side_effect = [
+            [],
+            [
+                {
+                    "titulo": "Edital de leilão de veículos automotores",
+                    "url": "https://www.detran.pr.gov.br/leilao/edital",
+                    "snippet": "hasta pública de veículos",
+                }
+            ],
+        ]
+        with patch.object(busca, "LEILAO_DETRAN_DDG_AMPLA", True):
+            achados = busca._buscar_em_dominio(
+                "detran.pr.gov.br",
+                "Fiat Uno",
+                tipo_fonte="detran",
+                fonte_id="PR",
+                fonte_nome="DETRAN PR",
+                diagnostico={},
+            )
+        self.assertEqual(mock_ddg.call_count, 2)
+        self.assertEqual(len(achados), 1)
+        self.assertTrue(achados[0].get("query_ampla"))
+
+    def test_sumare_marca_detran_no_diagnostico(self):
+        lote = {
+            "hash": "abc123",
+            "url": "https://www.sumareleiloes.com.br/lote/1",
+            "titulo": "Fiat Uno 2012",
+            "descricao": "Fiat Uno Fire 2012 completo",
+            "comitente": "DETRAN-SP",
+            "lance_atual": 8000,
+            "marca": "Fiat",
+            "modelo": "Uno",
+            "ano": 2012,
+        }
+        veiculo = {"marca": "Fiat", "modelo": "Uno", "ano_min": 2010, "ano_max": 2015}
+        with patch.object(busca, "circuit_breaker_ativo", return_value=True), patch.object(
+            busca, "LEILAO_PULAR_DDG_SE_BREAKER", True
+        ), patch.object(busca, "LEILAO_INCLUIR_SUMARE_DIRETO", True), patch.object(
+            busca, "LEILAO_INCLUIR_COPART_DIRETO", False
+        ), patch.object(busca, "LEILAO_INCLUIR_SUPERBID_DIRETO", False), patch.object(
+            busca, "LEILAO_INCLUIR_SODRE_DIRETO", False
+        ), patch.object(
+            busca,
+            "_fontes_da_rodada",
+            return_value=([], {"leiloeiros_na_rodada": 0, "detrans_na_rodada": 0}),
+        ), patch.object(busca, "_relevante_para_veiculo", return_value=True), patch.object(
+            busca, "enriquecer_achado_leilao", side_effect=lambda item, _v: item
+        ):
+            out = busca.buscar_veiculo_em_fontes(
+                veiculo,
+                pausa_entre_fontes_seg=0,
+                lotes_sumare=[lote],
+                lotes_diretos={},
+                diag_diretos={},
+            )
+        self.assertEqual(out["diagnostico"].get("sumare_detran_achados"), 1)
+        self.assertTrue(any(a.get("fonte_nome") == "Sumaré — DETRAN" for a in out["achados"]))
 
 
 if __name__ == "__main__":

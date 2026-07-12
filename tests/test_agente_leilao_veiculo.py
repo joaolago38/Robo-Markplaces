@@ -146,8 +146,14 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             "ddg_queries": 10,
             "ddg_brutos": 4,
             "ddg_descartados_filtro": 2,
+            "ddg_detran_queries": 2,
+            "ddg_detran_brutos": 0,
+            "ddg_status": "vazio",
+            "ddg_nota": "DDG respondeu vazio em todas as queries",
             "sumare_achados": 1,
             "sumare_candidatos": 5,
+            "sumare_detran_candidatos": 2,
+            "sumare_detran_achados": 0,
             "meta_fontes": {"leiloeiros_na_rodada": 5, "detrans_na_rodada": 5, "leiloeiros_ids": ["copart"], "detrans_ufs": ["SP"]},
             "sumare_coleta": {"lotes_veiculo": 3, "leiloes_ok": 2, "leiloes_falha": 0},
         }
@@ -178,6 +184,27 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("vantagem FIPE", msg)
         self.assertIn("Diagnóstico da coleta", msg)
         self.assertIn("Sumaré direto", msg)
+        self.assertIn("DDG (vazio)", msg)
+        self.assertIn("DETRAN:", msg)
+        self.assertIn("Nota DDG:", msg)
+
+    def test_agregar_diagnostico_prioriza_status_ddg(self):
+        agg = agente._agregar_diagnostico(
+            [
+                {"diagnostico": {"ddg_status": "ok", "ddg_queries": 1, "ddg_brutos": 0}},
+                {
+                    "diagnostico": {
+                        "ddg_status": "breaker",
+                        "ddg_nota": "breaker ativo",
+                        "ddg_queries": 0,
+                        "sumare_detran_achados": 1,
+                    }
+                },
+            ]
+        )
+        self.assertEqual(agg["ddg_status"], "breaker")
+        self.assertEqual(agg["sumare_detran_achados"], 1)
+        self.assertEqual(agg["ddg_queries"], 1)
 
     @patch.object(agente, "obter_lotes_diretos", return_value={})
     @patch.object(agente, "obter_lotes_sumare", return_value=([], {"lotes_veiculo": 0}))

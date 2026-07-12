@@ -110,10 +110,50 @@ class TestAgenteMonitorCarrosBatidos(unittest.TestCase):
         self.assertEqual(out[-1]["titulo"], "C")
 
     def test_filtrar_preco_ignorar(self):
-        caros = [{"preco": 219900.0, "titulo": "Titano"}]
+        caros = [{"preco": 219900.0, "titulo": "Titano", "ano": "2025"}]
         with patch.object(agente, "CARROS_BATIDOS_PRECO_MAX", 150000.0):
             self.assertEqual(agente._filtrar_preco(caros), [])
             self.assertEqual(len(agente._filtrar_preco(caros, ignorar=True)), 1)
+
+    def test_filtrar_ano_minimo(self):
+        itens = [
+            {"preco": 50000.0, "titulo": "Ford Coupê", "ano": "1940"},
+            {"preco": 50000.0, "titulo": "Gol", "ano": "2015"},
+        ]
+        with patch.object(agente, "CARROS_BATIDOS_PRECO_MAX", 150000.0), patch.object(
+            agente, "CARROS_BATIDOS_ANO_MIN", 1998
+        ):
+            out = agente._filtrar_preco(itens)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["titulo"], "Gol")
+
+    def test_vale_alertar_descarta_margem_negativa_e_caro(self):
+        self.assertFalse(
+            agente._vale_alertar(
+                {
+                    "preco": 219900.0,
+                    "ano": "2025",
+                    "valor_fipe": 110027.0,
+                    "desconto_pct": -99.9,
+                }
+            )
+        )
+        self.assertFalse(
+            agente._vale_alertar({"preco": 180000.0, "ano": "1940", "desconto_pct": None})
+        )
+        with patch.object(agente, "CARROS_BATIDOS_PRECO_MAX", 150000.0), patch.object(
+            agente, "CARROS_BATIDOS_ANO_MIN", 1998
+        ):
+            self.assertTrue(
+                agente._vale_alertar(
+                    {
+                        "preco": 40000.0,
+                        "ano": "2018",
+                        "valor_fipe": 70000.0,
+                        "desconto_pct": 25.0,
+                    }
+                )
+            )
 
     @patch.object(agente, "carregar_fontes")
     @patch.object(agente, "coletar_fonte")
@@ -145,7 +185,34 @@ class TestAgenteMonitorCarrosBatidos(unittest.TestCase):
         ):
             out = agente.executar(enviar_alerta=False)
         self.assertTrue(out["ok"])
+        # Flag ainda permite coletar acima do teto; alerta é filtrado por _vale_alertar
         self.assertEqual(out["resultados"][0]["total"], 1)
+
+    @patch.object(agente, "carregar_fontes")
+    @patch.object(agente, "coletar_fonte")
+    def test_respeita_preco_max_sem_flag(self, mock_coleta, mock_fontes):
+        mock_fontes.return_value = [
+            {"id": "motorjan", "nome": "Motorjan", "tipo": "motorjan"}
+        ]
+        mock_coleta.return_value = [
+            {
+                "hash": "m1",
+                "titulo": "Ford Coupê Carreteira",
+                "preco": 180000.0,
+                "ano": "1940",
+                "url": "http://x",
+            }
+        ]
+        with patch.object(agente, "CARROS_BATIDOS_PRECO_MAX", 150000.0), patch.object(
+            agente, "CARROS_BATIDOS_ANO_MIN", 1998
+        ), patch.object(agente, "CARROS_BATIDOS_BUSCA_WEB", False), patch.object(
+            agente, "CARROS_BATIDOS_INCLUIR_FIPE", False
+        ), patch.object(agente, "CARROS_BATIDOS_ALERTA_RESUMO", False), patch.object(
+            agente, "HISTORY_PATH", self.tmp_path / "hist.json"
+        ), patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"):
+            out = agente.executar(enviar_alerta=False)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["resultados"][0]["total"], 0)
 
 
 if __name__ == "__main__":
