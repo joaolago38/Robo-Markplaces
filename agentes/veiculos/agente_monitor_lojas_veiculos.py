@@ -49,8 +49,10 @@ def _formatar_moeda(valor: float) -> str:
 
 
 def _montar_alerta_oportunidades(itens: list[dict[str, Any]]) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🚗 *Oportunidade — carros abaixo da FIPE*",
+        cabecalho_agente("lojas_veiculos", "🚗 *Oportunidade — carros abaixo da FIPE*"),
         f"Preço máx. anúncio: {_formatar_moeda(LOJAS_VEICULOS_PRECO_MAX)}",
         f"Margem mínima vs FIPE: {LOJAS_VEICULOS_MARGEM_FIPE_MIN_PCT:.0f}%",
         "",
@@ -81,8 +83,10 @@ def _montar_resumo(
     oportunidades: list[dict[str, Any]],
     novos: list[dict[str, Any]],
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🚗 *Lojas veículos — resumo*",
+        cabecalho_agente("lojas_veiculos", "🚗 *Lojas veículos — resumo*"),
         "",
         f"Preço máx.: {_formatar_moeda(LOJAS_VEICULOS_PRECO_MAX)} | Margem FIPE mín.: {LOJAS_VEICULOS_MARGEM_FIPE_MIN_PCT:.0f}%",
         f"Anúncios coletados: {sum(int(x.get('total') or 0) for x in por_loja)}",
@@ -187,6 +191,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg,
                     chave=chave_itens_novos("lojas_veiculos:novos", todos_novos),
                     cooldown_segundos=86400,
+                    agente_id="lojas_veiculos",
                 )
             )
 
@@ -197,6 +202,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg_resumo,
                     chave=chave_resumo_periodo("lojas_veiculos", horas_por_bucket=2),
                     cooldown_segundos=LOJAS_VEICULOS_ALERTA_RESUMO_COOLDOWN_SEG,
+                    agente_id="lojas_veiculos",
                 )
             )
 

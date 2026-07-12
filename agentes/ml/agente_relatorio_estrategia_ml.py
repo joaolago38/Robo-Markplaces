@@ -134,6 +134,9 @@ def executar(
             max_acoes=ESTRATEGIA_ML_MAX_ACOES,
         )
         relatorio = montar_mensagem_estrategia(estrategia)
+        from core.telegram_explicacao import inserir_explicacao
+
+        relatorio = inserir_explicacao(relatorio, "relatorio_estrategia_ml")
 
         snapshot = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -155,6 +158,7 @@ def executar(
                     relatorio,
                     chave=chave,
                     cooldown_segundos=ESTRATEGIA_ML_COOLDOWN_SEG,
+                    agente_id="relatorio_estrategia_ml",
                 )
             )
 

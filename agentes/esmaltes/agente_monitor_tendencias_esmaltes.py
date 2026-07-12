@@ -140,8 +140,13 @@ def montar_mensagem_telegram(
     serie: list[dict[str, Any]] | None = None,
     diag_coleta: dict[str, Any] | None = None,
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🌐 *Tendências esmaltes — web × marketplaces*",
+        cabecalho_agente(
+            "monitor_tendencias_esmaltes",
+            "🌐 *Tendências esmaltes — web × marketplaces*",
+        ),
         "",
         f"Segmentos: *{consolidado.get('segmentos_varridos', 0)}* | "
         f"Hits web: *{consolidado.get('total_web_hits', 0)}* | "
@@ -291,7 +296,12 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             )
             chave = chave_resumo_periodo("esmaltes:tendencias", horas_por_bucket=12)
             alerta_enviado = bool(
-                alertar_gestor(msg, chave=chave, cooldown_segundos=ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG)
+                alertar_gestor(
+                    msg,
+                    chave=chave,
+                    cooldown_segundos=ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG,
+                    agente_id="monitor_tendencias_esmaltes",
+                )
             )
             grafico = grafico_evolucao(
                 serie, _SERIES_CAMPOS, GRAFICO_PATH, titulo="Tendências esmaltes — evolução"

@@ -246,8 +246,10 @@ def _montar_painel(
     *,
     diag_coleta: dict[str, Any] | None = None,
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "💅 *Seus kits Impala vs mercado ML*",
+        cabecalho_agente("monitor_anita", "💅 *Seus kits Impala vs mercado ML*"),
         "_Compara seu preço/margem com Anita e outras marcas no mesmo termo de busca._",
         "",
     ]
@@ -398,6 +400,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     painel,
                     chave=chave_resumo_periodo("anita:esmaltes", horas_por_bucket=2),
                     cooldown_segundos=ANITA_ALERTA_RESUMO_COOLDOWN_SEG,
+                    agente_id="monitor_anita",
                 )
             )
 

@@ -130,11 +130,13 @@ def _ordenar_novos_alerta(itens: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _montar_alerta_novos(itens: list[dict[str, Any]]) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     ordenados = _ordenar_novos_alerta(itens)
     top_n = max(1, CARROS_BATIDOS_ALERTA_TOP_N)
     top = ordenados[:top_n]
     linhas = [
-        "🚗 *Carros batidos — novos anúncios*",
+        cabecalho_agente("carros_batidos", "🚗 *Carros batidos — novos anúncios*"),
         "",
         f"_{len(itens)} veículo(s) novo(s); mostrando Top {len(top)} por desconto FIPE._",
         "",
@@ -148,9 +150,11 @@ def _montar_alerta_novos(itens: list[dict[str, Any]]) -> str:
 
 
 def _montar_resumo(por_loja: list[dict[str, Any]], novos: list[dict[str, Any]]) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     total = sum(int(x.get("total") or 0) for x in por_loja)
     linhas = [
-        "🚗 *Carros batidos — resumo da varredura*",
+        cabecalho_agente("carros_batidos", "🚗 *Carros batidos — resumo da varredura*"),
         "",
         f"Lojas monitoradas: {len(por_loja)}",
         f"Anúncios coletados: {total}",
@@ -277,6 +281,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg,
                     chave=chave_itens_novos("carros_batidos:novos", todos_novos),
                     cooldown_segundos=CARROS_BATIDOS_ALERTA_COOLDOWN_SEG,
+                    agente_id="carros_batidos",
                 )
             )
 
@@ -287,6 +292,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg_resumo,
                     chave=chave_resumo_periodo("carros_batidos", horas_por_bucket=4),
                     cooldown_segundos=CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG,
+                    agente_id="carros_batidos",
                 )
             )
 

@@ -72,8 +72,14 @@ def montar_mensagem_telegram(
     consolidado: dict[str, Any],
     rodada: list[dict[str, Any]],
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🔍 *Busca kit esmaltes — frequência diária*",
+        cabecalho_agente(
+            "monitor_busca_kit_esmaltes",
+            "🔍 *Busca kit esmaltes — frequência diária*",
+        ),
+        "",
         f"Data: {dia}",
         "",
         f"Buscas hoje: *{consolidado.get('total_buscas', 0)}* "

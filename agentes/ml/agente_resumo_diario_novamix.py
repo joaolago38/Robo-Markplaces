@@ -102,10 +102,13 @@ def executar(enviar_alerta: bool = True, executar_ads: bool = True) -> dict[str,
             top_n=max(1, NOVAMIX_RESUMO_DIARIO_TOP_N),
         )
         plano = gerar_plano_acoes_novamix(analise)
+        from core.telegram_explicacao import inserir_explicacao
+
         msg = montar_resumo_diario(analise, desempenho, data_local=_data_brt())
         secao_acoes = formatar_secao_acoes_telegram(plano)
         if secao_acoes:
             msg = f"{msg}\n{secao_acoes}"
+        msg = inserir_explicacao(msg, "resumo_diario_novamix")
 
         agora = datetime.now(timezone.utc).isoformat()
         ads_out: dict[str, Any] = {"ok": True, "executado": False, "motivo": "não solicitado"}
@@ -196,6 +199,7 @@ def executar(enviar_alerta: bool = True, executar_ads: bool = True) -> dict[str,
                     msg,
                     chave=chave_resumo_periodo("novamix:resumo_diario", horas_por_bucket=20),
                     cooldown_segundos=NOVAMIX_RESUMO_DIARIO_COOLDOWN_SEG,
+                    agente_id="resumo_diario_novamix",
                 )
             )
 

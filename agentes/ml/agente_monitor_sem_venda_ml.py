@@ -25,6 +25,7 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
+from core.telegram_explicacao import inserir_explicacao
 from integracoes.ml.analise_sem_venda import analisar_anuncios_sem_venda, montar_mensagem_sem_venda
 from integracoes.ml.ml_client import buscar_metricas_item, listar_meus_anuncios, listar_pedidos_detalhado
 
@@ -101,12 +102,16 @@ def executar(
         ):
             enviado = bool(
                 alertar_gestor(
-                    montar_mensagem_sem_venda(analise),
+                    inserir_explicacao(
+                        montar_mensagem_sem_venda(analise),
+                        "monitor_sem_venda_ml",
+                    ),
                     chave=chave_resumo_periodo(
                         "sem_venda_ml",
                         horas_por_bucket=max(1, MONITOR_SEM_VENDA_COOLDOWN_SEG // 3600),
                     ),
                     cooldown_segundos=MONITOR_SEM_VENDA_COOLDOWN_SEG,
+                    agente_id="monitor_sem_venda_ml",
                 )
             )
 

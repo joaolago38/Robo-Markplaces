@@ -79,11 +79,14 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
                     )
                 )
             else:
+                from core.telegram_explicacao import cabecalho_agente
+
                 alerta_enviado = bool(
                     alertar_gestor(
-                        f"⚠️ *Vigia Datadog*\n\n{msg}",
+                        cabecalho_agente("vigia_datadog", "⚠️ *Vigia Datadog*") + f"\n\n{msg}",
                         chave="vigia_datadog:aviso",
                         cooldown_segundos=DATADOG_VIGIA_ALERTA_COOLDOWN_SEG,
+                        agente_id="vigia_datadog",
                     )
                 )
 

@@ -76,8 +76,10 @@ def _montar_alerta_cambio(cotacao: dict[str, Any], variacao: dict[str, Any]) -> 
     if abs(diff) < CAMBIO_ALERTA_VARIACAO_PCT:
         return None
     seta = "📈" if diff > 0 else "📉"
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        f"{seta} *Dólar variou {diff:+.2f}%*",
+        cabecalho_agente("alibaba_inteligencia", f"{seta} *Dólar variou {diff:+.2f}%*"),
         f"Atual: R$ {cotacao.get('usd_brl')} | Anterior: R$ {variacao.get('usd_brl_anterior')}",
         f"Fonte: {cotacao.get('fonte', '?')}",
         "_Impacta diretamente o custo de importação Alibaba._",
@@ -139,8 +141,13 @@ def _montar_painel_produtos(
     cotacao: dict[str, Any],
     ia: dict[str, Any] | None = None,
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "📊 *Alibaba — painel de importação (todos os produtos)*",
+        cabecalho_agente(
+            "alibaba_inteligencia",
+            "📊 *Alibaba — painel de importação (todos os produtos)*",
+        ),
         "",
         f"💵 Dólar: R$ {cotacao.get('usd_brl')} ({cotacao.get('fonte', '?')})",
     ]
@@ -196,8 +203,10 @@ def _montar_alerta_lucrativos(resultados: list[dict[str, Any]], cotacao: dict[st
             )
     if not itens:
         return None
+    from core.telegram_explicacao import cabecalho_agente
+
     cab = [
-        "💰 *Alibaba — oportunidades com lucro razoável*",
+        cabecalho_agente("alibaba_inteligencia", "💰 *Alibaba — oportunidades com lucro razoável*"),
         "",
         f"Dólar: R$ {cotacao.get('usd_brl')}",
         "",
@@ -293,6 +302,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         msg_cambio,
                         chave=chave_resumo_periodo("cambio:usd", horas_por_bucket=2),
                         cooldown_segundos=ALIBABA_INTELIGENCIA_COOLDOWN_SEG,
+                        agente_id="alibaba_inteligencia",
                     )
                 )
 
@@ -303,6 +313,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         painel,
                         chave=chave_resumo_periodo("alibaba:inteligencia:painel", horas_por_bucket=2),
                         cooldown_segundos=ALIBABA_INTELIGENCIA_COOLDOWN_SEG,
+                        agente_id="alibaba_inteligencia",
                     )
                 )
 
@@ -321,6 +332,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         lucro,
                         chave=chave_resumo_periodo("alibaba:inteligencia:lucro", horas_por_bucket=2),
                         cooldown_segundos=ALIBABA_MARGEM_ALERTA_COOLDOWN_SEG,
+                        agente_id="alibaba_inteligencia",
                     )
                 )
 

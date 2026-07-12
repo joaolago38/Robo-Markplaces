@@ -99,8 +99,13 @@ def _montar_painel(
         titulo_veredito = "sem dados"
 
     scores = consolidado.get("scores_globais") or {}
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "⚖️ *ML × Shopee — esmaltes e filamentos 3D*",
+        cabecalho_agente(
+            "comparativo_ml_shopee",
+            "⚖️ *ML × Shopee — esmaltes e filamentos 3D*",
+        ),
         "",
         f"*Veredito global:* {titulo_veredito}",
         f"  Score médio — ML: *{scores.get('mercadolivre', 0):.2f}* | "
@@ -263,6 +268,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     painel,
                     chave=chave_resumo_periodo("comparativo:ml_shopee", horas_por_bucket=6),
                     cooldown_segundos=COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG,
+                    agente_id="comparativo_ml_shopee",
                 )
             )
 

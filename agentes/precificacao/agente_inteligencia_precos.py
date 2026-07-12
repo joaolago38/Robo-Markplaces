@@ -185,6 +185,8 @@ def _formatar_linha(item: dict[str, Any]) -> str:
 
 
 def _montar_painel_telegram(analises: list[dict[str, Any]], *, total_skus: int) -> str:
+    from core.telegram_explicacao import inserir_explicacao
+
     alta = [a for a in analises if a.get("prioridade") == "alta"]
     media = [a for a in analises if a.get("prioridade") == "media"]
     ordenados = alta + media + [a for a in analises if a.get("prioridade") == "baixa"]
@@ -196,12 +198,13 @@ def _montar_painel_telegram(analises: list[dict[str, Any]], *, total_skus: int) 
     monitorar = sum(1 for a in analises if "monitorar" in str(a.get("acao", "")))
     subir = sum(1 for a in analises if "subir" in str(a.get("acao", "")))
 
-    return (
+    return inserir_explicacao(
         "💰 Inteligência de preços (comportamento + lucro operação)\n"
         f"SKUs no catálogo: {total_skus} | canais analisados: {len(analises)}\n"
         f"Lucro = preço − taxa marketplace − custo | mínimo por fase em spec\n"
         f"Sugestões: ↓{reduzir} reduzir | 👀{monitorar} monitorar | ↑{subir} subir\n\n"
-        + ("\n".join(linhas) if linhas else "Nenhum canal ativo no catálogo.")
+        + ("\n".join(linhas) if linhas else "Nenhum canal ativo no catálogo."),
+        "inteligencia_precos",
     )
 
 
@@ -271,6 +274,7 @@ def executar(*, enviar_alerta: bool = True, lucro_minimo_pct: float | None = Non
                 texto,
                 chave=chave_resumo_periodo("precificacao:painel", horas_por_bucket=24),
                 cooldown_segundos=PRECIFICACAO_ALERTA_PAINEL_COOLDOWN_SEG,
+                agente_id="inteligencia_precos",
             )
         )
         if not alerta_enviado:
@@ -286,10 +290,16 @@ def executar(*, enviar_alerta: bool = True, lucro_minimo_pct: float | None = Non
             )
         ]
         if urgentes:
+            from core.telegram_explicacao import inserir_explicacao
+
             linhas_urg = [_formatar_linha(u) for u in urgentes[:5]]
             alertar_gestor(
-                "⚡ Preço para atrair vendas (com lucro operacional):\n"
-                + "\n".join(linhas_urg)
+                inserir_explicacao(
+                    "⚡ Preço para atrair vendas (com lucro operacional):\n"
+                    + "\n".join(linhas_urg),
+                    "inteligencia_precos",
+                ),
+                agente_id="inteligencia_precos",
             )
 
     resultado = {

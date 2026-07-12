@@ -306,10 +306,15 @@ def _logar_achados(
 
 def _montar_alerta(resultados: list[dict[str, Any]], *, todos_achados: bool = False) -> str:
     """Alerta compacto: Top-N por margem FIPE (ou por ordem se sem FIPE)."""
-    titulo = (
-        "🚗 *Leilões — veículos encontrados*"
-        if todos_achados
-        else "🚗 *Leilões — vantagem FIPE (lance + taxas)*"
+    from core.telegram_explicacao import cabecalho_agente
+
+    titulo = cabecalho_agente(
+        "leilao",
+        (
+            "🚗 *Leilões — veículos encontrados*"
+            if todos_achados
+            else "🚗 *Leilões — vantagem FIPE (lance + taxas)*"
+        ),
     )
     itens: list[dict[str, Any]] = []
     for r in resultados:
@@ -425,8 +430,10 @@ def _montar_resumo_varredura(
     total_novos = sum(len(r.get("novos") or []) for r in resultados)
     total_vantajosos = sum(int(r.get("vantajosos_total") or 0) for r in resultados)
     total_novos_vantajosos = sum(len(r.get("novos_vantajosos") or []) for r in resultados)
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🚗 *Leilões — resumo da varredura (FIPE × taxas)*",
+        cabecalho_agente("leilao", "🚗 *Leilões — resumo da varredura (FIPE × taxas)*"),
         "",
         f"Veículos monitorados: {len(resultados)}",
         f"Achados nesta rodada: {total_achados}",
@@ -628,6 +635,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         msg,
                         chave=chave,
                         cooldown_segundos=86400,
+                        agente_id="leilao",
                     )
                 )
                 if not alerta_novos_enviado:
@@ -643,6 +651,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg_resumo,
                     chave=chave_resumo_periodo("leilao", horas_por_bucket=1),
                     cooldown_segundos=LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
+                    agente_id="leilao",
                 )
             )
             if not alerta_resumo_enviado:

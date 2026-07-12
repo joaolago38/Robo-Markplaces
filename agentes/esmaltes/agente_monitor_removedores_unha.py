@@ -89,8 +89,13 @@ def montar_mensagem_telegram(
     avaliacao_ia: dict[str, Any] | None = None,
     serie: list[dict[str, Any]] | None = None,
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "💅 *Removedores de unha — ranking (ML + Magalu + Shopee + Amazon)*",
+        cabecalho_agente(
+            "monitor_removedores_unha",
+            "💅 *Removedores de unha — ranking (ML + Magalu + Shopee + Amazon)*",
+        ),
         "",
         f"Produtos únicos: *{consolidado.get('total_produtos_unicos', 0)}* | "
         f"Vendas (proxy ML): *{consolidado.get('total_vendas', 0):,}*".replace(",", "."),
@@ -232,7 +237,12 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             msg = montar_mensagem_telegram(consolidado, resultados, avaliacao_ia=avaliacao_ia, serie=serie)
             chave = chave_resumo_periodo("esmaltes:removedores", horas_por_bucket=6)
             alerta_enviado = bool(
-                alertar_gestor(msg, chave=chave, cooldown_segundos=REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG)
+                alertar_gestor(
+                    msg,
+                    chave=chave,
+                    cooldown_segundos=REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG,
+                    agente_id="monitor_removedores_unha",
+                )
             )
             grafico = grafico_evolucao(
                 serie, _SERIES_CAMPOS, GRAFICO_PATH, titulo="Removedores de unha — evolução"

@@ -196,8 +196,12 @@ def alertar_gestor(
     *,
     chave: str | None = None,
     cooldown_segundos: int | None = None,
+    agente_id: str | None = None,
     _ignorar_cooldown: bool = False,
 ) -> bool:
+    from core.telegram_explicacao import inserir_explicacao
+
+    msg = inserir_explicacao(msg, agente_id=agente_id, chave=chave)
     cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
     chave_final = chave or _chave_msg(msg)
     if not _ignorar_cooldown and _deve_suprimir(chave_final, cooldown):

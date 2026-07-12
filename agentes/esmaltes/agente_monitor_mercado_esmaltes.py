@@ -88,8 +88,10 @@ def _montar_secao_segmento(seg: dict[str, Any]) -> list[str]:
 
 
 def _montar_painel(resultados: list[dict[str, Any]], consolidado: dict[str, Any]) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "💄 *Mercado esmaltes ML — visão competitiva*",
+        cabecalho_agente("monitor_mercado_esmaltes", "💄 *Mercado esmaltes ML — visão competitiva*"),
         "",
         f"_{consolidado.get('total_anuncios_unicos', 0)} anúncios únicos em "
         f"{consolidado.get('total_segmentos', 0)} segmentos | "
@@ -221,6 +223,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     painel,
                     chave=chave_resumo_periodo("esmaltes:mercado", horas_por_bucket=4),
                     cooldown_segundos=ESMALTES_MERCADO_ALERTA_COOLDOWN_SEG,
+                    agente_id="monitor_mercado_esmaltes",
                 )
             )
 

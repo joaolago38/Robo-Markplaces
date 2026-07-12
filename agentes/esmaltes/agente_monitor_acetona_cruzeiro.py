@@ -156,8 +156,10 @@ def _montar_painel(
     manicures: dict[str, Any],
     estrategias_ia: dict[str, Any] | None,
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🧴 *Acetona Cruzeiro — monitor ML completo*",
+        cabecalho_agente("monitor_acetona_cruzeiro", "🧴 *Acetona Cruzeiro — monitor ML completo*"),
         "",
         "*Mercado Cruzeiro (soma dos termos)*",
         f"  • Vendedores únicos: *{consolidado.get('vendedores_cruzeiro_unicos', 0)}*",
@@ -280,6 +282,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     painel,
                     chave=chave_resumo_periodo("acetona:cruzeiro", horas_por_bucket=4),
                     cooldown_segundos=ACETONA_CRUZEIRO_ALERTA_COOLDOWN_SEG,
+                    agente_id="monitor_acetona_cruzeiro",
                 )
             )
 

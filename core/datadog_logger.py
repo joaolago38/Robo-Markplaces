@@ -139,6 +139,7 @@ _LOGGER_META = {
     "veiculos_scrapers": ("multi", "integracao"),
     "veiculos_comparacao": ("multi", "integracao"),
     "ddg_lite": ("multi", "integracao"),
+    "telegram_explicacao": ("infra", "core"),
     "telegram_gate": ("infra", "core"),
     "agente_ml": ("mercadolivre", "agente"),
     "painel_item": ("mercadolivre", "agente"),

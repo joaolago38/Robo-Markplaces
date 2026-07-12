@@ -108,8 +108,13 @@ def _montar_painel(consolidado: dict[str, Any], estrategias: list[dict[str, Any]
     unidade = {"vendas": "un.", "avaliacoes": "aval.", "anuncios": "anúncios"}.get(fonte, "un.")
     if not proxy:
         unidade = "un."
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "⚖️ *Anita vs Impala — desempenho e consumidor (ML)*",
+        cabecalho_agente(
+            "comparativo_anita_impala",
+            "⚖️ *Anita vs Impala — desempenho e consumidor (ML)*",
+        ),
         "",
         "_Volume = vendas da API; se vier zerado, usa avaliações ou nº de anúncios._",
         "",
@@ -271,6 +276,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     painel,
                     chave=chave_resumo_periodo("esmaltes:anita_impala", horas_por_bucket=4),
                     cooldown_segundos=COMPARATIVO_ESMALTES_ALERTA_COOLDOWN_SEG,
+                    agente_id="comparativo_anita_impala",
                 )
             )
 
