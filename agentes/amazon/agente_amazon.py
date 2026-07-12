@@ -15,6 +15,7 @@ from integracoes.amazon.amazon_client import (
 )
 
 
+
 logger = logging.getLogger("agente_amazon")
 
 def processar_mensagens() -> int:
