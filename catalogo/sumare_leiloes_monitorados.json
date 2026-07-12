@@ -1,9 +1,9 @@
 {
   "ativo": true,
   "comitentes": ["prefeitura", "detran"],
-  "lance_minimo_brl": 2000,
-  "exigir_documento": true,
+  "lance_minimo_brl": 500,
+  "exigir_documento": false,
   "excluir_sucata": true,
   "alertar_mudanca_lance": true,
-  "notas": "Somente veículos com DOCUMENTO no site oficial sumareleiloes.com.br — exclui sucata"
+  "notas": "Veículos PREFEITURA/DETRAN no site oficial (exclui sucata). Documento marcado no alerta quando houver selo no card. Lance mínimo R$ 500."
 }

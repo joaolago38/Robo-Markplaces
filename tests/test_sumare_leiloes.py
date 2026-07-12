@@ -75,6 +75,14 @@ class SumareLeiloesTests(unittest.TestCase):
         self.assertIsNotNone(lote_suc)
         self.assertFalse(sl.eh_veiculo_com_documento(lote_suc))
 
+    def test_eh_veiculo_sem_exigir_documento(self):
+        lote = {
+            "titulo": "FIAT/PALIO EDX, 96/96",
+            "tem_documento": False,
+        }
+        self.assertFalse(sl.eh_veiculo(lote, exigir_documento=True))
+        self.assertTrue(sl.eh_veiculo(lote, exigir_documento=False))
+
     def test_classificar_comitente(self):
         self.assertEqual(sl._classificar_comitente("PREFEITURA - RIBEIRÃO DO SUL"), "prefeitura")
         self.assertEqual(sl._classificar_comitente("DETRAN SÃO PAULO"), "detran")

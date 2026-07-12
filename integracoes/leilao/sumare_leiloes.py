@@ -396,11 +396,12 @@ def _parse_local_data(texto: str) -> tuple[str | None, str | None, str | None]:
     return None, None, None
 
 
-def eh_veiculo_com_documento(lote: dict[str, Any]) -> bool:
+def eh_veiculo(lote: dict[str, Any], *, exigir_documento: bool = True) -> bool:
+    """Veículo útil (marca/ano), opcionalmente só com selo DOCUMENTO no card."""
     titulo = str(lote.get("titulo") or "")
     norm = _normalizar(titulo)
 
-    if not lote.get("tem_documento"):
+    if exigir_documento and not lote.get("tem_documento"):
         return False
     if any(p in norm for p in _PALAVRAS_SUCATA):
         return False
@@ -417,6 +418,9 @@ def eh_veiculo_com_documento(lote: dict[str, Any]) -> bool:
         return False
     return bool(_RE_ANO_VEIC.search(titulo.strip()))
 
+
+def eh_veiculo_com_documento(lote: dict[str, Any]) -> bool:
+    return eh_veiculo(lote, exigir_documento=True)
 
 def _extrair_lotes_html(html: str, leilao: dict[str, Any]) -> list[dict[str, Any]]:
     lotes: list[dict[str, Any]] = []
@@ -590,6 +594,7 @@ def varredura_sumare(
     """
     tipos = config.get("comitentes") or ["prefeitura", "detran"]
     lance_min = float(config.get("lance_minimo_brl") or 2000)
+    exigir_documento = bool(config.get("exigir_documento", True))
 
     sess = _criar_sessao()
 
@@ -607,6 +612,10 @@ def varredura_sumare(
     falhas_consecutivas = 0
     leiloes_ok = 0
     leiloes_falha = 0
+    lotes_veiculo_brutos = 0
+    lotes_com_documento = 0
+    lotes_sem_documento = 0
+    lotes_abaixo_min = 0
 
     todos_lotes: list[dict[str, Any]] = []
     for i, leilao in enumerate(leiloes_filtrados):
@@ -627,8 +636,13 @@ def varredura_sumare(
         leiloes_ok += 1
         falhas_consecutivas = 0
         for lote in brutos:
-            if not eh_veiculo_com_documento(lote):
+            if not eh_veiculo(lote, exigir_documento=exigir_documento):
                 continue
+            lotes_veiculo_brutos += 1
+            if lote.get("tem_documento"):
+                lotes_com_documento += 1
+            else:
+                lotes_sem_documento += 1
             if enriquecer_lances and not lote.get("lance_brl"):
                 lote = enriquecer_lance_lote(lote, sess)
                 time.sleep(0.3)
@@ -636,6 +650,7 @@ def varredura_sumare(
             lote["lance_brl"] = lance or None
             if lance and lance < lance_min:
                 lote["abaixo_lance_minimo"] = True
+                lotes_abaixo_min += 1
                 continue
             lote["abaixo_lance_minimo"] = False
             todos_lotes.append(lote)
@@ -654,11 +669,28 @@ def varredura_sumare(
             len(leiloes_filtrados),
             leiloes_falha,
         )
+    logger.info(
+        "Sumaré filtros: exigir_doc=%s lance_min=%.0f → %s lotes "
+        "(veíc=%s doc=%s sem_doc=%s abaixo_min=%s)",
+        exigir_documento,
+        lance_min,
+        len(todos_lotes),
+        lotes_veiculo_brutos,
+        lotes_com_documento,
+        lotes_sem_documento,
+        lotes_abaixo_min,
+    )
     return {
         "leiloes_encontrados": len(leiloes_filtrados),
         "leiloes_coletados_ok": leiloes_ok,
         "leiloes_coleta_falha": leiloes_falha,
         "lotes_veiculo_documento": len(todos_lotes),
+        "lotes_veiculo_brutos": lotes_veiculo_brutos,
+        "lotes_com_documento": lotes_com_documento,
+        "lotes_sem_documento": lotes_sem_documento,
+        "lotes_abaixo_lance_min": lotes_abaixo_min,
+        "exigir_documento": exigir_documento,
+        "lance_minimo_brl": lance_min,
         "lotes": todos_lotes,
         "leiloes": leiloes_filtrados,
     }
