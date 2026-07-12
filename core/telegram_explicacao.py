@@ -1,6 +1,7 @@
 """
 core/telegram_explicacao.py
 Textos curtos e claros do que cada agente faz — inseridos nos alertas Telegram.
+Horários em Brasília (BRT = UTC−3), conforme crons dos workflows + orquestrador.
 """
 from __future__ import annotations
 
@@ -184,6 +185,87 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     "vendas_whatsapp": "Notifica vendas relevantes no WhatsApp do time.",
 }
 
+# Quando cada agente roda (BRT). Inclui workflow dedicado e/ou orquestrador 30 min.
+# Excluídos do orquestrador por padrão: vigia_datadog, promocoes_manicures,
+# relatorio_estrategia_ml, ads_gatilho, resumo_diario_novamix.
+HORARIOS_AGENTES: dict[str, str] = {
+    "vigia_datadog": "A cada 30 min (workflow próprio; fora do orquestrador)",
+    "monitor_margem_vendas": "A cada 3h (Actions) e a cada 30 min (orquestrador)",
+    "inteligencia_precos": "A cada 30 min (orquestrador)",
+    "leilao": "A cada hora (Actions) e a cada 30 min (orquestrador)",
+    "sumare_leiloes": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
+    "lojas_veiculos": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
+    "carros_batidos": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
+    "licitacoes": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
+    "alibaba": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
+    "alibaba_inteligencia": "A cada 2h (Actions Alibaba) e a cada 30 min (orquestrador)",
+    "ml_tendencias_importacao": "A cada 2h (Actions Alibaba) e a cada 30 min (orquestrador)",
+    "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions) e a cada 30 min (orquestrador)",
+    "relatorio_estrategia_ml": "Segundas às 08:00 BRT (fora do orquestrador)",
+    "monitor_concorrentes": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "resumo_diario_novamix": "Todo dia às 08:00 BRT (fora do orquestrador)",
+    "monitor_sem_venda_ml": "A cada 30 min (orquestrador)",
+    "monitor_anita": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "monitor_mercado_esmaltes": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "monitor_busca_kit_esmaltes": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_kits_esmaltes": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_removedores_unha": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_tendencias_esmaltes": (
+        "2x ao dia às 05:15 e 17:15 BRT (Actions) e a cada 30 min (orquestrador)"
+    ),
+    "comparativo_anita_impala": (
+        "Segundas e quintas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)"
+    ),
+    "comparativo_ml_shopee": (
+        "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
+    ),
+    "monitor_acetona_cruzeiro": (
+        "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
+    ),
+    "descoberta_produtos": "Quartas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)",
+    "ads_gatilho": "Todo dia às 08:00 BRT (fora do orquestrador)",
+    "meta_metricas": "A cada 30 min (orquestrador)",
+    "trafego_manicures": "A cada 30 min (orquestrador)",
+    "promocoes_manicures": "Todo dia às 10:00 e 18:00 BRT (fora do orquestrador)",
+    "panorama": "Todo dia às 06:30 BRT (Actions) e a cada 30 min (orquestrador)",
+    "orquestrador": "A cada 30 min (GitHub Actions)",
+    "operacao_24h": (
+        "Snapshot a cada 30 min (orquestrador, dry-run); escrita real a cada 2h "
+        "(workflow de segurança)"
+    ),
+    "repricing": "A cada 30 min (orquestrador, dry-run)",
+    "repricing_impala": "A cada 30 min (orquestrador, dry-run)",
+    "sincronizar_estoque": "A cada 2h (Actions) e a cada 30 min (orquestrador, dry-run)",
+    "algoritmo": (
+        "4x ao dia às 00:00, 06:00, 12:00 e 18:00 BRT (agente principal) e a cada "
+        "30 min (orquestrador)"
+    ),
+    "manutencao": "A cada 30 min (orquestrador / renovação de tokens)",
+    "otimizador_listing": "Terças às 06:00 BRT (Actions; fora do ciclo 30 min)",
+    "relatorio_financeiro": "Segundas às 06:00 BRT (Actions; fora do ciclo 30 min)",
+    "push_deploy": "Somente manual (workflow_dispatch)",
+    "auto_respostas": "A cada 30 min (orquestrador)",
+    "chat_ml": (
+        "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
+        "no orquestrador"
+    ),
+    "chat_shopee": (
+        "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
+        "no orquestrador"
+    ),
+    "chat_magalu": (
+        "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
+        "no orquestrador"
+    ),
+    "chat_amazon": (
+        "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
+        "no orquestrador"
+    ),
+    "conectividade": "A cada hora (Actions) e a cada 30 min (orquestrador)",
+    "vendas_whatsapp": "A cada 30 min (orquestrador / agente principal)",
+}
+
 # Prefixo da chave de cooldown → id do agente (fallback automático)
 _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("vigia_datadog", "vigia_datadog"),
@@ -248,12 +330,19 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
 )
 
 _MARCADOR = "_O que este agente faz:_"
+_MARCADOR_HORARIO = "_Quando roda:_"
 
 
 def explicacao_de(agente_id: str | None) -> str:
     if not agente_id:
         return ""
     return (EXPLICACOES_AGENTES.get(str(agente_id).strip()) or "").strip()
+
+
+def horario_de(agente_id: str | None) -> str:
+    if not agente_id:
+        return ""
+    return (HORARIOS_AGENTES.get(str(agente_id).strip()) or "").strip()
 
 
 def agente_id_da_chave(chave: str | None) -> str | None:
@@ -268,7 +357,7 @@ def agente_id_da_chave(chave: str | None) -> str | None:
 
 def inserir_explicacao(mensagem: str, agente_id: str | None = None, *, chave: str | None = None) -> str:
     """
-    Insere bloco 'O que este agente faz' após a 1ª linha (título).
+    Insere bloco 'O que este agente faz' (+ horário) após a 1ª linha (título).
     Não duplica se o marcador já existir.
     """
     msg = (mensagem or "").strip()
@@ -283,6 +372,9 @@ def inserir_explicacao(mensagem: str, agente_id: str | None = None, *, chave: st
     titulo = partes[0]
     resto = partes[1] if len(partes) > 1 else ""
     bloco = f"{titulo}\n\n{_MARCADOR}\n_{texto}_"
+    horario = horario_de(aid)
+    if horario and _MARCADOR_HORARIO not in msg:
+        bloco = f"{bloco}\n\n{_MARCADOR_HORARIO}\n_{horario}_"
     if resto.strip():
         return f"{bloco}\n\n{resto.lstrip()}"
     return bloco

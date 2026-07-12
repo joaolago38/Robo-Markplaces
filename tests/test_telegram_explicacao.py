@@ -18,6 +18,8 @@ class TestTelegramExplicacao(unittest.TestCase):
         out = te.inserir_explicacao(msg, "monitor_busca_kit_esmaltes")
         self.assertIn("O que este agente faz", out)
         self.assertIn("Anita e Impala", out)
+        self.assertIn("Quando roda", out)
+        self.assertIn("A cada 4h", out)
         self.assertIn("Data: 2026-07-12", out)
         # título continua na primeira linha
         self.assertTrue(out.startswith("🔍 *Busca kit"))
@@ -26,7 +28,13 @@ class TestTelegramExplicacao(unittest.TestCase):
         msg = te.inserir_explicacao("Título\ncorpo", "leilao")
         out2 = te.inserir_explicacao(msg, "leilao")
         self.assertEqual(msg.count("O que este agente faz"), 1)
+        self.assertEqual(msg.count("Quando roda"), 1)
         self.assertEqual(out2, msg)
+
+    def test_horario_novamix_diario(self):
+        out = te.inserir_explicacao("Título", "resumo_diario_novamix")
+        self.assertIn("08:00 BRT", out)
+        self.assertIn("fora do orquestrador", out)
 
     def test_chave_infere_agente(self):
         self.assertEqual(te.agente_id_da_chave("esmaltes:busca_kit:2026-07-12:resumo:x"), "monitor_busca_kit_esmaltes")
@@ -43,6 +51,7 @@ class TestTelegramExplicacao(unittest.TestCase):
         )
         enviado = mock_enviar.call_args[0][1]
         self.assertIn("O que este agente faz", enviado)
+        self.assertIn("Quando roda", enviado)
         self.assertIn("frequência", enviado.lower())
 
 
