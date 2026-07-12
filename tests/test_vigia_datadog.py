@@ -167,11 +167,26 @@ class VigiaDatadogTests(unittest.TestCase):
 
     def test_montar_mensagem_critica(self):
         msg = vs.montar_mensagem_critica(
-            [{"gravidade": "critica", "texto": "Orquestrador parado"}],
-            [{"gravidade": "critica", "texto": "Erro ML aberto"}],
+            [{"gravidade": "critica", "texto": "Orquestrador parado", "nome": "Orquestrador 30min", "fonte_id": "orquestrador", "horas_sem_resposta": 3}],
+            [{"gravidade": "critica", "texto": "Erro ML aberto", "logger": "ml_client", "horas_aberto": 4}],
+            agentes_falha_ciclo=[{"id": "monitor_concorrentes", "nome": "Monitor concorrentes", "erro": "timeout"}],
         )
         self.assertIn("GRAVE", msg.upper())
-        self.assertIn("Orquestrador", msg)
+        self.assertIn("Agentes com problemas", msg)
+        self.assertIn("Orquestrador 30min", msg)
+        self.assertIn("ml client", msg)
+        self.assertIn("Monitor concorrentes", msg)
+
+    def test_listar_agentes_com_problema(self):
+        lista = vs.listar_agentes_com_problema(
+            [{"nome": "Operação 24h", "fonte_id": "operacao_24h", "horas_sem_resposta": 5}],
+            [{"logger": "agente_ads_gatilho", "horas_aberto": 2}],
+            agentes_falha_ciclo=[{"id": "vendas_whatsapp", "nome": "Vendas WhatsApp"}],
+        )
+        nomes = [p["nome"] for p in lista]
+        self.assertIn("Operação 24h", nomes)
+        self.assertIn("ads gatilho", nomes)
+        self.assertIn("Vendas WhatsApp", nomes)
 
     def test_analisar_saude_ok(self):
         with patch.object(vs, "verificar_inatividade", return_value=[]):
