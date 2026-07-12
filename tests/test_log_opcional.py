@@ -54,6 +54,16 @@ class TestLogOpcional(unittest.TestCase):
             mock_err.assert_not_called()
             mock_dbg.assert_called()
 
+    @patch.object(lo, "log_erros_tokens_ativos", return_value=False)
+    def test_token_mp_silenciado(self, _):
+        from core import token_manager as tm
+
+        with patch.object(tm.logger, "error") as mock_err, patch.object(tm.logger, "debug") as mock_dbg:
+            tm._erro_token_mp("Credenciais Amazon ausentes para renovação")
+            mock_err.assert_not_called()
+            mock_dbg.assert_called()
+            self.assertIn("LOG_ERROS_TOKENS=1", mock_dbg.call_args.args[0])
+
 
 if __name__ == "__main__":
     unittest.main()

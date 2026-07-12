@@ -1,12 +1,13 @@
 """
 core/log_opcional.py
-Erros ruidosos (scrapers de veículos, Claude, Bling) — silenciados no Datadog
-por padrão. Só sobem como ERROR quando a flag correspondente estiver ligada.
+Erros ruidosos (scrapers, Claude, tokens de marketplace) — silenciados no
+Datadog por padrão. Só sobem como ERROR quando a flag estiver ligada.
 
-Religar no .env / secrets:
+Religar no .env / secrets do Actions:
   LOG_ERROS_VEICULOS_SCRAPERS=1
   LOG_ERROS_CLAUDE=1
   LOG_ERROS_BLING=1
+  LOG_ERROS_TOKENS=1   # Magalu / Shopee / Amazon (credenciais / refresh)
 """
 from __future__ import annotations
 
@@ -30,6 +31,11 @@ def log_erros_claude_ativos() -> bool:
 
 def log_erros_bling_ativos() -> bool:
     return _env_ligado("LOG_ERROS_BLING", "0")
+
+
+def log_erros_tokens_ativos() -> bool:
+    """Magalu / Shopee / Amazon — credenciais ausentes ou refresh inválido."""
+    return _env_ligado("LOG_ERROS_TOKENS", "0")
 
 
 # Hosts dos scrapers de veículos (http_client silencia falhas de conexão quando off).
