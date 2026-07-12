@@ -190,9 +190,10 @@ def analisar_produto_catalogo(
     *,
     cambio_usd_brl: float,
     max_oportunidades: int = 3,
+    precos_marketplace: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     termo_mk = _termo_marketplace(produto)
-    precos_mk = consultar_precos_marketplace(termo_mk)
+    precos_mk = precos_marketplace if precos_marketplace is not None else consultar_precos_marketplace(termo_mk)
 
     com_preco = [o for o in oportunidades if o.get("preco_usd") is not None]
     com_preco.sort(key=lambda x: float(x.get("preco_usd") or 9999))

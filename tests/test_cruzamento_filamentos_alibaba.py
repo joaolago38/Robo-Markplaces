@@ -3,7 +3,9 @@ tests/test_cruzamento_filamentos_alibaba.py
 """
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -14,9 +16,73 @@ from integracoes.filamentos import cruzamento_alibaba as cruz
 class CruzamentoFilamentosTests(unittest.TestCase):
     def test_eh_produto_filamento(self):
         self.assertTrue(
-            cruz._eh_produto_filamento({"id": "filamento-impressora-3d-pla", "nome": "PLA", "material": "PLA"})
+            cruz._eh_produto_filamento(
+                {"id": "filamento-impressora-3d-pla", "nome": "PLA", "material": "PLA"}
+            )
         )
-        self.assertFalse(cruz._eh_produto_filamento({"id": "abracadeira", "nome": "Abraçadeira nylon"}))
+        self.assertFalse(
+            cruz._eh_produto_filamento({"id": "abracadeira", "nome": "Abraçadeira nylon"})
+        )
+
+    def test_carregar_produtos_filtro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cat.json"
+            path.write_text(
+                '[{"id":"filamento-x","ativo":true,"nome":"Filamento PLA","material":"PLA"},'
+                '{"id":"abra","ativo":true,"nome":"Abraçadeira"},'
+                '{"id":"fil-off","ativo":false,"nome":"Filamento ABS","material":"ABS"}]',
+                encoding="utf-8",
+            )
+            with patch("core.config.ROOT", Path(tmp)), patch(
+                "core.config.ALIBABA_IMPORTACAO_CATALOGO", "cat.json"
+            ):
+                produtos = cruz.carregar_produtos_filamento_alibaba()
+            self.assertEqual(len(produtos), 1)
+            self.assertEqual(produtos[0]["id"], "filamento-x")
+
+    def test_precos_ml_fallback_global(self):
+        consolidado = {
+            "preco_min": 60,
+            "preco_medio": 80,
+            "preco_max": 100,
+            "total_filamentos_unicos": 3,
+            "por_termo": [],
+        }
+        out = cruz._precos_ml_do_consolidado(
+            consolidado, [], {"material": "PLA", "termo_marketplace": "filamento pla"}
+        )
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["preco_medio_brl"], 80)
+        self.assertEqual(out["fonte"], "consolidado_global")
+
+    def test_cruzar_sem_produtos(self):
+        with patch.object(cruz, "carregar_produtos_filamento_alibaba", return_value=[]), patch(
+            "integracoes.cambio.cotacao_usd.obter_cotacao_usd",
+            return_value={"ok": True, "usd_brl": 5.0, "confiavel": True, "fonte": "api"},
+        ), patch(
+            "integracoes.cambio.cotacao_usd.cotacao_confiavel_para_margem", return_value=True
+        ):
+            out = cruz.cruzar_filamentos_ml_alibaba(
+                {"ranking_cores": [{"cor": "Preto"}]}, [], max_cores=1, pausa_seg=0
+            )
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["produtos_catalogo"], 0)
+        self.assertIn("sem produto", out.get("motivo", ""))
+
+    def test_cruzar_cambio_invalido(self):
+        with patch.object(
+            cruz,
+            "carregar_produtos_filamento_alibaba",
+            return_value=[{"id": "f1", "nome": "PLA", "material": "PLA"}],
+        ), patch(
+            "integracoes.cambio.cotacao_usd.obter_cotacao_usd",
+            return_value={"ok": False, "usd_brl": 0, "fonte": "fallback"},
+        ), patch(
+            "integracoes.cambio.cotacao_usd.cotacao_confiavel_para_margem", return_value=False
+        ):
+            out = cruz.cruzar_filamentos_ml_alibaba({}, [], max_cores=0, pausa_seg=0)
+        self.assertFalse(out["ok"])
+        self.assertIn("cambio", out.get("motivo", ""))
 
     @patch.object(cruz, "carregar_produtos_filamento_alibaba")
     def test_cruzar_com_mocks(self, mock_produtos):
@@ -40,15 +106,31 @@ class CruzamentoFilamentosTests(unittest.TestCase):
             "preco_medio": 90,
             "preco_max": 120,
             "total_filamentos_unicos": 5,
-            "ranking_cores": [{"cor": "Preto", "vendidos": 100}, {"cor": "Branco", "vendidos": 50}],
+            "ranking_cores": [
+                {"cor": "Preto", "vendidos": 100},
+                {"cor": "Branco", "vendidos": 50},
+            ],
             "por_termo": [
-                {"material": "PLA", "preco_min": 70, "preco_medio": 90, "preco_max": 110, "total": 5}
+                {
+                    "material": "PLA",
+                    "preco_min": 70,
+                    "preco_medio": 90,
+                    "preco_max": 110,
+                    "total": 5,
+                }
             ],
         }
 
-        with patch("integracoes.cambio.cotacao_usd.obter_cotacao_usd", return_value={
-            "ok": True, "usd_brl": 5.5, "confiavel": True, "fonte": "api", "idade_seg": 10
-        }), patch(
+        with patch(
+            "integracoes.cambio.cotacao_usd.obter_cotacao_usd",
+            return_value={
+                "ok": True,
+                "usd_brl": 5.5,
+                "confiavel": True,
+                "fonte": "api",
+                "idade_seg": 10,
+            },
+        ), patch(
             "integracoes.cambio.cotacao_usd.cotacao_confiavel_para_margem", return_value=True
         ), patch(
             "integracoes.alibaba.busca.buscar_oportunidades",
@@ -76,7 +158,9 @@ class CruzamentoFilamentosTests(unittest.TestCase):
                 },
             },
         ):
-            out = cruz.cruzar_filamentos_ml_alibaba(consolidado, [], max_cores=1, pausa_seg=0)
+            out = cruz.cruzar_filamentos_ml_alibaba(
+                consolidado, [], max_cores=1, pausa_seg=0
+            )
 
         self.assertTrue(out["ok"])
         self.assertEqual(out["cores_usadas"], ["Preto"])
@@ -93,7 +177,11 @@ class CruzamentoFilamentosTests(unittest.TestCase):
                     {
                         "produto": "Filamento PLA",
                         "material": "PLA",
-                        "precos_ml": {"preco_min_brl": 70, "preco_medio_brl": 90, "preco_max_brl": 110},
+                        "precos_ml": {
+                            "preco_min_brl": 70,
+                            "preco_medio_brl": 90,
+                            "preco_max_brl": 110,
+                        },
                         "total_oportunidades_alibaba": 3,
                         "lucrativa": True,
                         "melhor_analise": {
@@ -104,7 +192,9 @@ class CruzamentoFilamentosTests(unittest.TestCase):
                             "margem_melhor": {"margem_brl": 20, "margem_pct": 18},
                             "cenarios_frete": {"maritimo": {"custo_landed_brl": 50}},
                         },
-                        "por_cor": [{"cor": "Preto", "total_oportunidades": 2, "lucrativas": 1}],
+                        "por_cor": [
+                            {"cor": "Preto", "total_oportunidades": 2, "lucrativas": 1}
+                        ],
                     }
                 ],
             },
@@ -113,6 +203,13 @@ class CruzamentoFilamentosTests(unittest.TestCase):
         texto = "\n".join(linhas)
         self.assertIn("Cruzamento Alibaba", texto)
         self.assertIn("Preto", texto)
+
+    def test_formatar_secao_erro(self):
+        linhas = cruz.formatar_secao_cruzamento(
+            {"ok": False, "motivo": "cambio: fallback"},
+            fmt_brl=lambda v: "n/d",
+        )
+        self.assertTrue(any("indisponível" in ln for ln in linhas))
 
 
 if __name__ == "__main__":
