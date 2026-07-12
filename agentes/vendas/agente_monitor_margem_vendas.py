@@ -32,6 +32,7 @@ from core.notificador import (
     chave_resumo_periodo,
     gestor_telegram_configurado,
 )
+from core.telegram_explicacao import inserir_explicacao
 from integracoes.vendas.analise_margem_vendas import (
     analisar_pedidos,
     montar_mensagem_alerta_baixa,
@@ -167,11 +168,15 @@ def executar(
                     chave = str(linha.get("chave") or "")
                     if not chave or chave in ja:
                         continue
-                    msg = montar_mensagem_alerta_baixa(linha, margem_min_pct=min_pct)
+                    msg = inserir_explicacao(
+                        montar_mensagem_alerta_baixa(linha, margem_min_pct=min_pct),
+                        "monitor_margem_vendas",
+                    )
                     ok = alertar_gestor(
                         msg,
                         chave=f"margem_baixa:{chave}",
                         cooldown_segundos=86400,
+                        agente_id="monitor_margem_vendas",
                     )
                     if ok:
                         alertas_enviados += 1
@@ -184,9 +189,13 @@ def executar(
             ):
                 resumo_enviado = bool(
                     alertar_gestor(
-                        montar_mensagem_resumo(analise, dias=janela),
+                        inserir_explicacao(
+                            montar_mensagem_resumo(analise, dias=janela),
+                            "monitor_margem_vendas",
+                        ),
                         chave=chave_resumo_periodo("margem_vendas", horas_por_bucket=max(1, MONITOR_MARGEM_VENDAS_RESUMO_COOLDOWN_SEG // 3600)),
                         cooldown_segundos=MONITOR_MARGEM_VENDAS_RESUMO_COOLDOWN_SEG,
+                        agente_id="monitor_margem_vendas",
                     )
                 )
 

@@ -448,8 +448,14 @@ def executar(
 
         enviado = False
         if enviar_alerta and alertas_todos:
-            msg = "🔎 Monitor concorrentes ML\n\n" + "\n".join(f"• {a}" for a in alertas_todos)
-            enviado = bool(alertar_gestor(msg))
+            from core.telegram_explicacao import cabecalho_agente
+
+            msg = (
+                cabecalho_agente("monitor_concorrentes", "🔎 *Monitor concorrentes ML*")
+                + "\n\n"
+                + "\n".join(f"• {a}" for a in alertas_todos)
+            )
+            enviado = bool(alertar_gestor(msg, agente_id="monitor_concorrentes"))
 
         payload = {
             "ok": True,

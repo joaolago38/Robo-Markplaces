@@ -405,7 +405,12 @@ def _formatar_bloco_alibaba(bloco: dict[str, Any]) -> list[str]:
 
 
 def _montar_painel_decisao(resultados: list[dict[str, Any]]) -> str:
-    linhas = ["📋 *Painel de decisão — Descoberta + Importação*", ""]
+    from core.telegram_explicacao import cabecalho_agente
+
+    linhas = [
+        cabecalho_agente("descoberta_produtos", "📋 *Painel de decisão — Descoberta + Importação*"),
+        "",
+    ]
     total_ali = sum((r.get("cruzamento_alibaba") or {}).get("total_fornecedores", 0) for r in resultados)
     linhas.append(f"Análises: {len(resultados)} | Fornecedores Alibaba: {total_ali}")
     linhas.append("")
@@ -445,7 +450,12 @@ def _montar_painel_decisao(resultados: list[dict[str, Any]]) -> str:
 
 
 def _montar_alerta_alibaba_novos(resultados: list[dict[str, Any]]) -> str:
-    linhas = ["🌐 *Alibaba — novos fornecedores para importar*", ""]
+    from core.telegram_explicacao import cabecalho_agente
+
+    linhas = [
+        cabecalho_agente("descoberta_produtos", "🌐 *Alibaba — novos fornecedores para importar*"),
+        "",
+    ]
     tem = False
     for r in resultados:
         if not r.get("alibaba_novo"):
@@ -462,7 +472,12 @@ def _montar_alerta_alibaba_novos(resultados: list[dict[str, Any]]) -> str:
 
 
 def _montar_alerta_novos(resultados: list[dict[str, Any]]) -> str:
-    linhas = ["🔍 *Nova análise de marketplace*", ""]
+    from core.telegram_explicacao import cabecalho_agente
+
+    linhas = [
+        cabecalho_agente("descoberta_produtos", "🔍 *Nova análise de marketplace*"),
+        "",
+    ]
     for r in resultados:
         if not r.get("novo"):
             continue
@@ -544,6 +559,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                             [{"hash": r.get("hash")} for r in com_novos],
                         ),
                         cooldown_segundos=86400,
+                        agente_id="descoberta_produtos",
                     )
                 )
 
@@ -558,6 +574,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                             [{"hash": r.get("hash_alibaba")} for r in com_alibaba_novos],
                         ),
                         cooldown_segundos=86400,
+                        agente_id="descoberta_produtos",
                     )
                 )
 
@@ -569,6 +586,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         painel,
                         chave=chave_resumo_periodo("descoberta:painel", horas_por_bucket=24),
                         cooldown_segundos=DESCOBERTA_ALERTA_PAINEL_COOLDOWN_SEG,
+                        agente_id="descoberta_produtos",
                     )
                 )
                 if not alerta_painel:

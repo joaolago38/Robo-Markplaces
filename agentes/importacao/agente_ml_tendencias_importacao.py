@@ -127,8 +127,13 @@ def montar_mensagem_telegram(
     diag_coleta: dict[str, Any] | None = None,
 ) -> str:
     cambio = float(cotacao.get("usd_brl") or 0)
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🛒 *Mercado Livre × Alibaba — vale importar?*",
+        cabecalho_agente(
+            "ml_tendencias_importacao",
+            "🛒 *Mercado Livre × Alibaba — vale importar?*",
+        ),
         "",
         f"💵 Dólar: R$ {cotacao.get('usd_brl')} ({cotacao.get('fonte', '?')})",
     ]
@@ -282,6 +287,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg,
                     chave=chave_resumo_periodo("importacao:ml_tendencias", horas_por_bucket=4),
                     cooldown_segundos=ML_TENDENCIAS_IMPORTACAO_COOLDOWN_SEG,
+                    agente_id="ml_tendencias_importacao",
                 )
             )
 

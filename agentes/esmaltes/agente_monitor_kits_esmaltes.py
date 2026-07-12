@@ -77,8 +77,13 @@ def montar_mensagem_telegram(
     *,
     serie: list[dict[str, Any]] | None = None,
 ) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🎨 *Kits esmaltes — vendas e marcas (ML + Magalu + Shopee + Amazon)*",
+        cabecalho_agente(
+            "monitor_kits_esmaltes",
+            "🎨 *Kits esmaltes — vendas e marcas (ML + Magalu + Shopee + Amazon)*",
+        ),
         "",
         f"Kits únicos: *{consolidado.get('total_kits_unicos', 0)}* | "
         f"Vendas (proxy ML): *{consolidado.get('total_vendas', 0):,}*".replace(",", "."),
@@ -201,7 +206,12 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             msg = montar_mensagem_telegram(consolidado, resultados, serie=serie)
             chave = chave_resumo_periodo("esmaltes:kits_monitor", horas_por_bucket=6)
             alerta_enviado = bool(
-                alertar_gestor(msg, chave=chave, cooldown_segundos=ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG)
+                alertar_gestor(
+                    msg,
+                    chave=chave,
+                    cooldown_segundos=ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG,
+                    agente_id="monitor_kits_esmaltes",
+                )
             )
             grafico = grafico_evolucao(
                 serie, _SERIES_CAMPOS, GRAFICO_PATH, titulo="Kits esmaltes — evolução"

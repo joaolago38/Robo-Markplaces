@@ -247,8 +247,10 @@ def _montar_relatorio(
     ]
 
     agora = datetime.now(timezone(timedelta(hours=-3)))
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "☀️ *Relatório manhã — Mercado Livre*",
+        cabecalho_agente("relatorio_manha_ml", "☀️ *Relatório manhã — Mercado Livre*"),
         f"_{agora.strftime('%d/%m/%Y %H:%M')}_",
         "",
         "_Lucro = preço − taxa ML − custo | respeita margem mínima por fase_",
@@ -307,6 +309,7 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
                     relatorio,
                     chave=chave_resumo_periodo("ml:relatorio:manha", horas_por_bucket=12),
                     cooldown_segundos=ML_RELATORIO_MANHA_COOLDOWN_SEG,
+                    agente_id="relatorio_manha_ml",
                 )
             )
 

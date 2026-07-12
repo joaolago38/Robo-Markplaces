@@ -144,7 +144,12 @@ def _monitorar_item(item_cat: dict[str, Any], historico: dict[str, Any]) -> dict
 
 
 def _montar_alerta_novos(resultados: list[dict[str, Any]]) -> str:
-    linhas = ["📋 *Licitações públicas — novas oportunidades*", ""]
+    from core.telegram_explicacao import cabecalho_agente
+
+    linhas = [
+        cabecalho_agente("licitacoes", "📋 *Licitações públicas — novas oportunidades*"),
+        "",
+    ]
     ordenados = sorted(resultados, key=lambda r: int(r.get("prioridade") or 99))
     for r in ordenados:
         novos = r.get("novos") or []
@@ -173,10 +178,12 @@ def _montar_alerta_novos(resultados: list[dict[str, Any]]) -> str:
 
 
 def _montar_resumo_varredura(resultados: list[dict[str, Any]]) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     total_achados = sum(int(r.get("achados_total") or 0) for r in resultados)
     total_novos = sum(len(r.get("novos") or []) for r in resultados)
     linhas = [
-        "📋 *Licitações — resumo da varredura (27 UFs via PNCP)*",
+        cabecalho_agente("licitacoes", "📋 *Licitações — resumo da varredura (27 UFs via PNCP)*"),
         "",
         f"Itens monitorados: {len(resultados)}",
         f"Achados nesta rodada: {total_achados}",
@@ -244,6 +251,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         msg,
                         chave=chave_itens_novos("licitacao:novos", novos_flat),
                         cooldown_segundos=86400,
+                        agente_id="licitacoes",
                     )
                 )
 
@@ -253,6 +261,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     _montar_resumo_varredura(resultados),
                     chave=chave_resumo_periodo("licitacao", horas_por_bucket=4),
                     cooldown_segundos=LICITACOES_ALERTA_RESUMO_COOLDOWN_SEG,
+                    agente_id="licitacoes",
                 )
             )
 

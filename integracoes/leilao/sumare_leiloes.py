@@ -13,8 +13,6 @@ import unicodedata
 from typing import Any
 
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 from core.config import (
     SUMARE_LEILOES_PAUSA_PAGINAS_SEG,
@@ -22,6 +20,10 @@ from core.config import (
     SUMARE_LEILOES_TIMEOUT_SEG,
 )
 from core.ddg_lite import buscar as ddg_buscar
+from integracoes.leilao.coletores_base import (
+    criar_sessao as _criar_sessao_base,
+    request_com_retry,
+)
 
 logger = logging.getLogger("sumare_leiloes")
 
@@ -39,22 +41,7 @@ _HEADERS = {
 
 def _criar_sessao() -> requests.Session:
     """Sessão com retry urllib3 — reduz falhas transitórias HTTPSConnectionPool."""
-    retry = Retry(
-        total=SUMARE_LEILOES_RETRY_MAX,
-        connect=SUMARE_LEILOES_RETRY_MAX,
-        read=SUMARE_LEILOES_RETRY_MAX,
-        status=2,
-        backoff_factor=1.0,
-        status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=frozenset({"GET", "POST"}),
-        raise_on_status=False,
-    )
-    adapter = HTTPAdapter(max_retries=retry, pool_maxsize=4)
-    sess = requests.Session()
-    sess.mount("https://", adapter)
-    sess.mount("http://", adapter)
-    sess.headers.update(_HEADERS)
-    return sess
+    return _criar_sessao_base(retry_max=SUMARE_LEILOES_RETRY_MAX, headers=_HEADERS)
 
 
 def _request_sumare(
@@ -66,51 +53,16 @@ def _request_sumare(
     timeout: float | None = None,
     **kwargs: Any,
 ) -> requests.Response | None:
-    """
-    Request com backoff manual extra (além do adapter) para timeouts de rede.
-    Falhas transitórias → warning (não ERROR no Datadog).
-    """
-    timeout = timeout if timeout is not None else SUMARE_LEILOES_TIMEOUT_SEG
-    ultimo_erro: Exception | None = None
-    for tentativa in range(1, SUMARE_LEILOES_RETRY_MAX + 1):
-        try:
-            resp = sess.request(method.upper(), url, timeout=timeout, **kwargs)
-            if resp.status_code == 429 and tentativa < SUMARE_LEILOES_RETRY_MAX:
-                espera = min(30.0, 2.0 ** tentativa)
-                logger.warning(
-                    "Sumaré %s HTTP 429 — aguardando %.0fs (tentativa %s/%s)",
-                    contexto,
-                    espera,
-                    tentativa,
-                    SUMARE_LEILOES_RETRY_MAX,
-                )
-                time.sleep(espera)
-                continue
-            return resp
-        except requests.RequestException as exc:
-            ultimo_erro = exc
-            if tentativa < SUMARE_LEILOES_RETRY_MAX:
-                espera = min(20.0, 1.5 * tentativa + random.uniform(0, 0.5))
-                logger.warning(
-                    "Sumaré %s rede (tentativa %s/%s): %s — retry em %.1fs",
-                    contexto,
-                    tentativa,
-                    SUMARE_LEILOES_RETRY_MAX,
-                    exc,
-                    espera,
-                )
-                time.sleep(espera)
-            else:
-                logger.warning(
-                    "Sumaré %s indisponível após %s tentativas: %s",
-                    contexto,
-                    SUMARE_LEILOES_RETRY_MAX,
-                    exc,
-                )
-    if ultimo_erro:
-        logger.debug("Sumaré %s falha final: %s", contexto, ultimo_erro)
-    return None
-
+    return request_com_retry(
+        sess,
+        method,
+        url,
+        contexto=contexto,
+        logger_nome="sumare_leiloes",
+        timeout=timeout if timeout is not None else SUMARE_LEILOES_TIMEOUT_SEG,
+        retry_max=SUMARE_LEILOES_RETRY_MAX,
+        **kwargs,
+    )
 
 def _html_e_pagina_login(html: str) -> bool:
     """Detecta redirecionamento real para login (não confundir com link Login no menu)."""

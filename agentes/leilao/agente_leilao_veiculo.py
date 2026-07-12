@@ -23,7 +23,10 @@ from core.config import (
     LEILAO_ANO_MIN,
     LEILAO_BUSCA_TODOS_VEICULOS,
     LEILAO_IA_AVALIAR_PARAMETROS,
+    LEILAO_INCLUIR_COPART_DIRETO,
+    LEILAO_INCLUIR_SODRE_DIRETO,
     LEILAO_INCLUIR_SUMARE_DIRETO,
+    LEILAO_INCLUIR_SUPERBID_DIRETO,
     LEILAO_MARGEM_FIPE_MIN_PCT,
     LEILAO_MARGEM_FIPE_MIN_REAIS,
     LEILAO_PAUSA_ENTRE_FONTES_SEG,
@@ -38,7 +41,11 @@ from integracoes.leilao.avaliacao_ia_parametros import (
     avaliar_parametros_leilao_veiculos,
     formatar_secao_ia,
 )
-from integracoes.leilao.busca import buscar_veiculo_em_fontes, obter_lotes_sumare
+from integracoes.leilao.busca import (
+    buscar_veiculo_em_fontes,
+    obter_lotes_diretos,
+    obter_lotes_sumare,
+)
 from integracoes.leilao.comparacao_fipe import avaliar_achado_leilao, filtrar_vantajosos
 
 logger = logging.getLogger("agente_leilao_veiculo")
@@ -125,6 +132,8 @@ def _monitorar_veiculo(
     *,
     lotes_sumare: list[dict[str, Any]] | None = None,
     diag_sumare: dict[str, Any] | None = None,
+    lotes_diretos: dict[str, list[dict[str, Any]]] | None = None,
+    diag_diretos: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     vid = str(veiculo.get("id") or "").strip()
     nome = (
@@ -140,6 +149,8 @@ def _monitorar_veiculo(
         pausa_entre_fontes_seg=LEILAO_PAUSA_ENTRE_FONTES_SEG,
         lotes_sumare=lotes_sumare,
         diag_sumare=diag_sumare,
+        lotes_diretos=lotes_diretos,
+        diag_diretos=diag_diretos,
     )
     brutos = busca.get("achados") or []
     diagnostico = busca.get("diagnostico") or {}
@@ -295,10 +306,15 @@ def _logar_achados(
 
 def _montar_alerta(resultados: list[dict[str, Any]], *, todos_achados: bool = False) -> str:
     """Alerta compacto: Top-N por margem FIPE (ou por ordem se sem FIPE)."""
-    titulo = (
-        "🚗 *Leilões — veículos encontrados*"
-        if todos_achados
-        else "🚗 *Leilões — vantagem FIPE (lance + taxas)*"
+    from core.telegram_explicacao import cabecalho_agente
+
+    titulo = cabecalho_agente(
+        "leilao",
+        (
+            "🚗 *Leilões — veículos encontrados*"
+            if todos_achados
+            else "🚗 *Leilões — vantagem FIPE (lance + taxas)*"
+        ),
     )
     itens: list[dict[str, Any]] = []
     for r in resultados:
@@ -355,11 +371,21 @@ def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "ddg_descartados_filtro": 0,
         "sumare_candidatos": 0,
         "sumare_achados": 0,
+        "copart_candidatos": 0,
+        "copart_achados": 0,
+        "superbid_candidatos": 0,
+        "superbid_achados": 0,
+        "sodre_candidatos": 0,
+        "sodre_achados": 0,
+        "diretos_candidatos": 0,
+        "diretos_achados": 0,
         "fontes_consultadas": 0,
     }
     circuit_breaker = False
     circuit_msg = None
     sumare_coleta: dict[str, Any] = {}
+    coletores_diretos: dict[str, Any] = {}
+    achados_ddg_por_dominio: dict[str, int] = {}
     meta_fontes: dict[str, Any] = {}
 
     for r in resultados:
@@ -372,6 +398,10 @@ def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
             circuit_msg = d["circuit_breaker_msg"]
         if d.get("sumare_coleta"):
             sumare_coleta = d["sumare_coleta"]
+        if d.get("coletores_diretos"):
+            coletores_diretos = d["coletores_diretos"]
+        for dom, n in (d.get("achados_ddg_por_dominio") or {}).items():
+            achados_ddg_por_dominio[dom] = achados_ddg_por_dominio.get(dom, 0) + int(n or 0)
         if d.get("leiloeiros_na_rodada") and not meta_fontes:
             meta_fontes = {
                 "hora_utc": d.get("hora_utc"),
@@ -386,9 +416,10 @@ def _agregar_diagnostico(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "circuit_breaker_ativo": circuit_breaker,
         "circuit_breaker_msg": circuit_msg,
         "sumare_coleta": sumare_coleta,
+        "coletores_diretos": coletores_diretos,
+        "achados_ddg_por_dominio": achados_ddg_por_dominio,
         "meta_fontes": meta_fontes,
     }
-
 
 def _montar_resumo_varredura(
     resultados: list[dict[str, Any]],
@@ -399,8 +430,10 @@ def _montar_resumo_varredura(
     total_novos = sum(len(r.get("novos") or []) for r in resultados)
     total_vantajosos = sum(int(r.get("vantajosos_total") or 0) for r in resultados)
     total_novos_vantajosos = sum(len(r.get("novos_vantajosos") or []) for r in resultados)
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🚗 *Leilões — resumo da varredura (FIPE × taxas)*",
+        cabecalho_agente("leilao", "🚗 *Leilões — resumo da varredura (FIPE × taxas)*"),
         "",
         f"Veículos monitorados: {len(resultados)}",
         f"Achados nesta rodada: {total_achados}",
@@ -435,13 +468,38 @@ def _montar_resumo_varredura(
                 f"Sumaré direto: {sumare.get('lotes_veiculo', 0)} lotes catálogo "
                 f"({sumare.get('leiloes_ok', 0)} leilões OK, {sumare.get('leiloes_falha', 0)} falhas)"
             )
+        coletores = diag.get("coletores_diretos") or {}
+        for nome, flag, rotulo in (
+            ("copart", LEILAO_INCLUIR_COPART_DIRETO, "Copart"),
+            ("superbid", LEILAO_INCLUIR_SUPERBID_DIRETO, "Superbid"),
+            ("sodre", LEILAO_INCLUIR_SODRE_DIRETO, "Sodré"),
+        ):
+            if not flag:
+                continue
+            c = coletores.get(nome) or {}
+            linhas.append(
+                f"{rotulo} direto: {c.get('lotes_veiculo', 0)} lotes "
+                f"(modo={c.get('modo_coleta') or '?'}, "
+                f"{c.get('leiloes_ok', 0)} OK / {c.get('leiloes_falha', 0)} falha)"
+            )
         linhas.append(
             f"DDG: {diag.get('ddg_queries', 0)} queries, {diag.get('ddg_brutos', 0)} brutos, "
             f"{diag.get('ddg_descartados_filtro', 0)} descartados no filtro"
         )
+        por_dom = diag.get("achados_ddg_por_dominio") or {}
+        if por_dom:
+            top_dom = sorted(por_dom.items(), key=lambda x: -x[1])[:5]
+            linhas.append(
+                "DDG por domínio: "
+                + ", ".join(f"{dom}={n}" for dom, n in top_dom)
+            )
         linhas.append(
-            f"Sumaré no veículo: {diag.get('sumare_achados', 0)} achados de "
-            f"{diag.get('sumare_candidatos', 0)} candidatos"
+            f"Diretos no veículo: {diag.get('diretos_achados', 0)} achados de "
+            f"{diag.get('diretos_candidatos', 0)} candidatos "
+            f"(Sumaré {diag.get('sumare_achados', 0)}, "
+            f"Copart {diag.get('copart_achados', 0)}, "
+            f"Superbid {diag.get('superbid_achados', 0)}, "
+            f"Sodré {diag.get('sodre_achados', 0)})"
         )
 
     ddg = diag.get("circuit_breaker_msg") or mensagem_circuit_breaker("leilao")
@@ -506,6 +564,13 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         if LEILAO_INCLUIR_SUMARE_DIRETO:
             lotes_sumare, diag_sumare = obter_lotes_sumare()
 
+        lotes_diretos: dict[str, list[dict[str, Any]]] = {}
+        diag_diretos: dict[str, dict[str, Any]] = {}
+        for nome, lots_diag in obter_lotes_diretos().items():
+            lots, diag_c = lots_diag
+            lotes_diretos[nome] = lots
+            diag_diretos[nome] = diag_c
+
         for veiculo in veiculos:
             vid = str(veiculo.get("id") or "").strip()
             if not vid:
@@ -517,6 +582,8 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 historico,
                 lotes_sumare=lotes_sumare,
                 diag_sumare=diag_sumare,
+                lotes_diretos=lotes_diretos,
+                diag_diretos=diag_diretos,
             )
             if nome:
                 resultado["veiculo"] = nome
@@ -568,6 +635,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         msg,
                         chave=chave,
                         cooldown_segundos=86400,
+                        agente_id="leilao",
                     )
                 )
                 if not alerta_novos_enviado:
@@ -583,6 +651,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg_resumo,
                     chave=chave_resumo_periodo("leilao", horas_por_bucket=1),
                     cooldown_segundos=LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
+                    agente_id="leilao",
                 )
             )
             if not alerta_resumo_enviado:

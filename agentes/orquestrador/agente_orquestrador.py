@@ -100,8 +100,10 @@ def _executar_agente(registro: AgenteRegistrado) -> dict[str, Any]:
 
 
 def _montar_resumo_telegram(ciclo: dict[str, Any], *, titulo: str) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        titulo,
+        cabecalho_agente("orquestrador", titulo),
         "",
         (
             f"✅ {ciclo['ok']} ok | ❌ {ciclo['falhas']} falha | "
@@ -213,6 +215,7 @@ def executar_ciclo(
                 msg,
                 chave=chave_cooldown,
                 cooldown_segundos=cooldown_segundos,
+                agente_id="orquestrador",
             )
         )
 

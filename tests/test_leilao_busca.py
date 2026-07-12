@@ -290,16 +290,23 @@ class TestBuscarVeiculo(unittest.TestCase):
             "ano_max": 2015,
             "perfil": "recuperado_furto_media_monta",
         }
-        out = busca.buscar_veiculo_em_fontes(
-            veiculo,
-            incluir_detran=False,
-            pausa_entre_fontes_seg=0,
-            lotes_sumare=[],
-        )
+        # Desliga coletor direto neste teste para exercitar DDG no domínio Copart
+        with patch.object(busca, "LEILAO_INCLUIR_COPART_DIRETO", False), patch.object(
+            busca, "LEILAO_INCLUIR_SUPERBID_DIRETO", False
+        ), patch.object(busca, "LEILAO_INCLUIR_SODRE_DIRETO", False):
+            out = busca.buscar_veiculo_em_fontes(
+                veiculo,
+                incluir_detran=False,
+                pausa_entre_fontes_seg=0,
+                lotes_sumare=[],
+                lotes_diretos={},
+                diag_diretos={},
+            )
         achados = out["achados"]
         self.assertTrue(any("copart.com.br" in a.get("url", "") for a in achados))
         self.assertIn("diagnostico", out)
         self.assertGreaterEqual(out["diagnostico"].get("ddg_brutos", 0), 1)
+        self.assertIn("achados_ddg_por_dominio", out["diagnostico"])
 
 
 if __name__ == "__main__":

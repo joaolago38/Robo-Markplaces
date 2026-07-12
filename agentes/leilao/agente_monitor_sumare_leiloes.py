@@ -82,8 +82,10 @@ def _montar_alerta(
 ) -> str:
     exigir_doc = resumo.get("exigir_documento")
     doc_txt = "só com documento" if exigir_doc else "com ou sem documento"
+    from core.telegram_explicacao import cabecalho_agente
+
     linhas = [
-        "🏛️ *Sumaré Leilões — PREFEITURA/DETRAN*",
+        cabecalho_agente("sumare_leiloes", "🏛️ *Sumaré Leilões — PREFEITURA/DETRAN*"),
         "",
         f"_{resumo.get('leiloes_encontrados', 0)} leilão(ões) | "
         f"{resumo.get('lotes_veiculo_documento', 0)} veículo(s) "
@@ -234,6 +236,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg,
                     chave=chave_itens_novos("sumare:leiloes:lances", itens_alerta),
                     cooldown_segundos=SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
+                    agente_id="sumare_leiloes",
                 )
             )
         elif enviar_alerta and lotes:
@@ -252,6 +255,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg,
                     chave=chave_resumo_periodo("sumare:leiloes", horas_por_bucket=4),
                     cooldown_segundos=SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
+                    agente_id="sumare_leiloes",
                 )
             )
 

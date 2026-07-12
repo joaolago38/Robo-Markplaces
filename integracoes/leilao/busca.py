@@ -14,21 +14,68 @@ from typing import Any
 from urllib.parse import urlparse
 
 from core.config import (
+    COPART_LEILOES_CATALOGO,
     LEILAO_ANO_MAX,
     LEILAO_ANO_MIN,
+    LEILAO_COLETORES_EXIGIR_DOCUMENTO,
+    LEILAO_COLETORES_LANCE_MIN_BRL,
     LEILAO_DETRAN_POR_RODADA,
+    LEILAO_INCLUIR_COPART_DIRETO,
+    LEILAO_INCLUIR_SODRE_DIRETO,
     LEILAO_INCLUIR_SUMARE_DIRETO,
+    LEILAO_INCLUIR_SUPERBID_DIRETO,
     LEILAO_LEILOEIROS_POR_RODADA,
     LEILAO_SUMARE_MAX_LEILOES,
     LEILAO_VARREDURA_TODAS_FONTES,
+    ROOT,
+    SODRE_LEILOES_CATALOGO,
+    SUPERBID_LEILOES_CATALOGO,
 )
 from core.ddg_lite import buscar as ddg_buscar, circuit_breaker_ativo, mensagem_circuit_breaker
+from core.atomic_io import ler_json, escrever_json_atomico
+from integracoes.leilao.coletores_base import lote_para_achado
 from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS, URLS_CADASTRO_POR_DOMINIO
 
 logger = logging.getLogger("leilao_busca")
 
 _SUMARE_LOTES_CACHE: tuple[list[dict[str, Any]], dict[str, Any]] | None = None
+_COLETORES_CACHE: dict[str, tuple[list[dict[str, Any]], dict[str, Any]]] = {}
 
+_META_COLETORES = {
+    "copart": {
+        "enabled": lambda: LEILAO_INCLUIR_COPART_DIRETO,
+        "catalogo": COPART_LEILOES_CATALOGO,
+        "fonte_tipo": "copart",
+        "fonte_id": "copart",
+        "fonte_nome": "Copart Brasil",
+        "dominio": "copart.com.br",
+        "url_cadastro": "https://www.copart.com.br/",
+        "snapshot": "logs/copart_leiloes_ultima.json",
+        "varredura": "integracoes.leilao.copart_leiloes:varredura_copart",
+    },
+    "superbid": {
+        "enabled": lambda: LEILAO_INCLUIR_SUPERBID_DIRETO,
+        "catalogo": SUPERBID_LEILOES_CATALOGO,
+        "fonte_tipo": "superbid",
+        "fonte_id": "superbid",
+        "fonte_nome": "Superbid",
+        "dominio": "superbid.net",
+        "url_cadastro": "https://www.superbid.net/",
+        "snapshot": "logs/superbid_leiloes_ultima.json",
+        "varredura": "integracoes.leilao.superbid_leiloes:varredura_superbid",
+    },
+    "sodre": {
+        "enabled": lambda: LEILAO_INCLUIR_SODRE_DIRETO,
+        "catalogo": SODRE_LEILOES_CATALOGO,
+        "fonte_tipo": "sodre",
+        "fonte_id": "sodre",
+        "fonte_nome": "Sodré Santoro",
+        "dominio": "sodresantoro.com.br",
+        "url_cadastro": "https://www.sodresantoro.com.br/cadastro-de-cliente",
+        "snapshot": "logs/sodre_leiloes_ultima.json",
+        "varredura": "integracoes.leilao.sodre_leiloes:varredura_sodre",
+    },
+}
 _DDG_HTML = "https://html.duckduckgo.com/html/"  # compat testes legados
 _PALAVRAS_LEILAO = ("leilao", "leilão", "lote", "arremate", "edital", "veiculo", "veículo", "automotor")
 _PERFIL_RECUPERADO_FURTO = "recuperado_furto_pequena_monta"
@@ -470,6 +517,148 @@ def reset_cache_sumare() -> None:
     _SUMARE_LOTES_CACHE = None
 
 
+def reset_cache_coletores() -> None:
+    """Limpa caches de coletores diretos (testes)."""
+    global _SUMARE_LOTES_CACHE, _COLETORES_CACHE
+    _SUMARE_LOTES_CACHE = None
+    _COLETORES_CACHE = {}
+
+
+def _carregar_cfg_coletor(caminho_rel: str) -> dict[str, Any]:
+    cfg = ler_json(ROOT / caminho_rel, default={})
+    if not isinstance(cfg, dict):
+        cfg = {}
+    if "lance_minimo_brl" not in cfg:
+        cfg["lance_minimo_brl"] = LEILAO_COLETORES_LANCE_MIN_BRL
+    if "exigir_documento" not in cfg:
+        cfg["exigir_documento"] = LEILAO_COLETORES_EXIGIR_DOCUMENTO
+    if "ativo" not in cfg:
+        cfg["ativo"] = True
+    return cfg
+
+
+def _import_varredura(ref: str):
+    modulo, nome = ref.split(":")
+    import importlib
+
+    mod = importlib.import_module(modulo)
+    return getattr(mod, nome)
+
+
+def obter_lotes_coletor(fonte: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Coleta lotes de um coletor direto (Copart/Superbid/Sodré). Cache por processo."""
+    global _COLETORES_CACHE
+    meta = _META_COLETORES.get(fonte)
+    if not meta:
+        return [], {"ativo": False, "erro": f"fonte desconhecida: {fonte}"}
+    if fonte in _COLETORES_CACHE:
+        return _COLETORES_CACHE[fonte]
+
+    diag: dict[str, Any] = {
+        "ativo": bool(meta["enabled"]()),
+        "fonte": fonte,
+        "leiloes_ok": 0,
+        "leiloes_falha": 0,
+        "lotes_veiculo": 0,
+        "modo_coleta": None,
+        "erro": None,
+    }
+    if not meta["enabled"]():
+        _COLETORES_CACHE[fonte] = ([], diag)
+        return _COLETORES_CACHE[fonte]
+
+    try:
+        cfg = _carregar_cfg_coletor(str(meta["catalogo"]))
+        varredura = _import_varredura(str(meta["varredura"]))
+        resultado = varredura(cfg)
+        lotes = list(resultado.get("lotes") or [])
+        diag.update(
+            {
+                "leiloes_ok": int(resultado.get("leiloes_coletados_ok") or 0),
+                "leiloes_falha": int(resultado.get("leiloes_coleta_falha") or 0),
+                "lotes_veiculo": len(lotes),
+                "lotes_com_documento": resultado.get("lotes_com_documento"),
+                "lotes_sem_documento": resultado.get("lotes_sem_documento"),
+                "modo_coleta": resultado.get("modo_coleta"),
+                "lance_minimo_brl": resultado.get("lance_minimo_brl"),
+            }
+        )
+        try:
+            escrever_json_atomico(
+                ROOT / str(meta["snapshot"]),
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "diagnostico": diag,
+                    "lotes": lotes[:80],
+                    "resultado": {
+                        k: resultado.get(k)
+                        for k in (
+                            "leiloes_encontrados",
+                            "leiloes_coletados_ok",
+                            "modo_coleta",
+                            "lotes_veiculo_documento",
+                        )
+                    },
+                },
+            )
+        except Exception as exc:
+            logger.warning("snapshot %s: %s", fonte, exc)
+        logger.info(
+            "%s direto: %s lotes (modo=%s, ok=%s falha=%s)",
+            meta["fonte_nome"],
+            diag["lotes_veiculo"],
+            diag.get("modo_coleta"),
+            diag["leiloes_ok"],
+            diag["leiloes_falha"],
+        )
+        _COLETORES_CACHE[fonte] = (lotes, diag)
+        return _COLETORES_CACHE[fonte]
+    except Exception as exc:
+        logger.warning("%s direto indisponível: %s", fonte, exc)
+        diag["erro"] = str(exc)
+        _COLETORES_CACHE[fonte] = ([], diag)
+        return _COLETORES_CACHE[fonte]
+
+
+def obter_lotes_copart() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    return obter_lotes_coletor("copart")
+
+
+def obter_lotes_superbid() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    return obter_lotes_coletor("superbid")
+
+
+def obter_lotes_sodre() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    return obter_lotes_coletor("sodre")
+
+
+def obter_lotes_diretos() -> dict[str, tuple[list[dict[str, Any]], dict[str, Any]]]:
+    """Todos os coletores diretos habilitados (exceto Sumaré, que tem cache próprio)."""
+    return {nome: obter_lotes_coletor(nome) for nome in _META_COLETORES}
+
+
+def _lote_direto_para_item(
+    lote: dict[str, Any],
+    veiculo: dict[str, Any],
+    *,
+    fonte: str,
+) -> dict[str, Any] | None:
+    meta = _META_COLETORES.get(fonte)
+    if not meta:
+        return None
+    titulo = str(lote.get("titulo") or "")
+    if not veiculo.get("busca_todos") and not _modelo_no_texto(titulo, veiculo):
+        return None
+    return lote_para_achado(
+        lote,
+        fonte_tipo=str(meta["fonte_tipo"]),
+        fonte_id=str(meta["fonte_id"]),
+        fonte_nome=str(meta["fonte_nome"]),
+        dominio=str(meta["dominio"]),
+        url_cadastro=str(meta["url_cadastro"]),
+    )
+
+
 def obter_lotes_sumare() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
     Coleta lotes Sumaré uma vez por processo (DETRAN/prefeitura, com documento).
@@ -620,9 +809,11 @@ def buscar_veiculo_em_fontes(
     pausa_entre_fontes_seg: float = 0.8,
     lotes_sumare: list[dict[str, Any]] | None = None,
     diag_sumare: dict[str, Any] | None = None,
+    lotes_diretos: dict[str, list[dict[str, Any]]] | None = None,
+    diag_diretos: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
-    Varre leiloeiros/DETRAN (rotacionados) + Sumaré direto + fallback DDG.
+    Varre leiloeiros/DETRAN (rotacionados) + coletores diretos (Sumaré/Copart/…) + fallback DDG.
     Retorna {"achados": [...], "diagnostico": {...}}. Nunca lança exceção.
     """
     termo = montar_termo_busca(veiculo)
@@ -638,8 +829,15 @@ def buscar_veiculo_em_fontes(
         "ddg_descartados_filtro": 0,
         "sumare_candidatos": 0,
         "sumare_achados": 0,
+        "copart_candidatos": 0,
+        "copart_achados": 0,
+        "superbid_candidatos": 0,
+        "superbid_achados": 0,
+        "sodre_candidatos": 0,
+        "sodre_achados": 0,
+        "diretos_candidatos": 0,
+        "diretos_achados": 0,
     }
-
     fontes, meta_fontes = _fontes_da_rodada()
     if not incluir_leiloeiros:
         fontes = [f for f in fontes if f[1] != "leiloeiro"]
@@ -648,6 +846,16 @@ def buscar_veiculo_em_fontes(
 
     if lotes_sumare is None and LEILAO_INCLUIR_SUMARE_DIRETO:
         lotes_sumare, diag_sumare = obter_lotes_sumare()
+
+    if lotes_diretos is None:
+        lotes_diretos = {}
+        diag_diretos = diag_diretos or {}
+        for nome in _META_COLETORES:
+            if _META_COLETORES[nome]["enabled"]():
+                lots, diag = obter_lotes_coletor(nome)
+                lotes_diretos[nome] = lots
+                diag_diretos[nome] = diag
+    diag_diretos = diag_diretos or {}
 
     for lote in lotes_sumare or []:
         contadores["sumare_candidatos"] += 1
@@ -663,10 +871,35 @@ def buscar_veiculo_em_fontes(
         contadores["sumare_achados"] += 1
         todos.append(enriquecer_achado_leilao(item, veiculo))
 
+    for fonte, lotes in (lotes_diretos or {}).items():
+        chave_c = f"{fonte}_candidatos"
+        chave_a = f"{fonte}_achados"
+        for lote in lotes or []:
+            contadores[chave_c] = contadores.get(chave_c, 0) + 1
+            contadores["diretos_candidatos"] += 1
+            item = _lote_direto_para_item(lote, veiculo, fonte=fonte)
+            if not item:
+                continue
+            if not _relevante_para_veiculo(item, veiculo):
+                continue
+            h = item["hash"]
+            if h in vistos:
+                continue
+            vistos.add(h)
+            contadores[chave_a] = contadores.get(chave_a, 0) + 1
+            contadores["diretos_achados"] += 1
+            todos.append(enriquecer_achado_leilao(item, veiculo))
+
+    achados_por_dominio: dict[str, int] = {}
     for fonte, tipo, fid in fontes:
         dominio = fonte.get("dominio", "")
         nome = fonte.get("nome", dominio)
         if not dominio:
+            continue
+        # Evita DDG duplicado quando já há coletor direto ativo para o mesmo domínio
+        if tipo == "leiloeiro" and fid in _META_COLETORES and _META_COLETORES[fid]["enabled"]():
+            continue
+        if tipo == "leiloeiro" and fid == "sumare" and LEILAO_INCLUIR_SUMARE_DIRETO:
             continue
         sufixo = _sufixo_query_leilao(veiculo, tipo_fonte=tipo)
         try:
@@ -687,6 +920,7 @@ def buscar_veiculo_em_fontes(
                 if h in vistos:
                     continue
                 vistos.add(h)
+                achados_por_dominio[dominio] = achados_por_dominio.get(dominio, 0) + 1
                 todos.append(enriquecer_achado_leilao(item, veiculo))
         except Exception as exc:
             logger.warning("Fonte %s (%s) falhou: %s", nome, dominio, exc)
@@ -723,8 +957,10 @@ def buscar_veiculo_em_fontes(
         **meta_fontes,
         "fontes_consultadas": len(fontes),
         "achados_total": len(todos),
+        "achados_ddg_por_dominio": achados_por_dominio,
         "circuit_breaker_ativo": circuit_breaker_ativo("leilao"),
         "circuit_breaker_msg": mensagem_circuit_breaker("leilao"),
         "sumare_coleta": diag_sumare or {},
+        "coletores_diretos": diag_diretos,
     }
     return {"achados": todos, "diagnostico": diagnostico}

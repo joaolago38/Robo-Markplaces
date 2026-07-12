@@ -199,7 +199,12 @@ def _montar_alerta(
 ) -> str:
     cambio = float((cotacao or {}).get("usd_brl") or 0)
     fonte = str((cotacao or {}).get("fonte") or "?")
-    linhas = ["📦 *Alibaba — oportunidades de importação*", ""]
+    from core.telegram_explicacao import cabecalho_agente
+
+    linhas = [
+        cabecalho_agente("alibaba", "📦 *Alibaba — oportunidades de importação*"),
+        "",
+    ]
     if cotacao:
         linhas.append(f"💵 Dólar: R$ {cotacao.get('usd_brl')} ({fonte})")
         if not cotacao_confiavel_para_margem(cotacao):
@@ -228,10 +233,12 @@ def _montar_alerta(
 
 
 def _montar_resumo_varredura(resultados: list[dict[str, Any]], ia: dict[str, Any] | None = None) -> str:
+    from core.telegram_explicacao import cabecalho_agente
+
     total_oportunidades = sum(int(r.get("oportunidades_total") or 0) for r in resultados)
     total_novos = sum(len(r.get("novos") or []) for r in resultados)
     linhas = [
-        "📦 *Alibaba — resumo da varredura*",
+        cabecalho_agente("alibaba", "📦 *Alibaba — resumo da varredura*"),
         "",
         f"Produtos monitorados: {len(resultados)}",
         f"Oportunidades nesta rodada: {total_oportunidades}",
@@ -316,6 +323,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                         msg,
                         chave=chave_itens_novos("alibaba:importacao:novos", novos_itens),
                         cooldown_segundos=86400,
+                        agente_id="alibaba",
                     )
                 )
                 if not alerta_novos_enviado:
@@ -331,6 +339,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     msg_resumo,
                     chave=chave_resumo_periodo("alibaba", horas_por_bucket=2),
                     cooldown_segundos=ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG,
+                    agente_id="alibaba",
                 )
             )
             if not alerta_resumo_enviado:
