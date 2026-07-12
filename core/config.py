@@ -29,6 +29,20 @@ REGRAS = SPEC.get("regras_negocio", {})
 
 # IA
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+# Modelos Claude — Haiku ≈ bem mais barato que Sonnet
+CLAUDE_MODELO = (
+    os.getenv("CLAUDE_MODELO", "claude-sonnet-4-5").strip() or "claude-sonnet-4-5"
+)
+CLAUDE_MODELO_RAPIDO = (
+    os.getenv("CLAUDE_MODELO_RAPIDO", "claude-haiku-4-5").strip() or "claude-haiku-4-5"
+)
+# 1 = força Haiku (MODELO_RAPIDO) em TODAS as chamadas — reduz custo
+CLAUDE_ECONOMICO = os.getenv("CLAUDE_ECONOMICO", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 # Lojahub
 LOJAHUB_TOKEN           = os.getenv("LOJAHUB_TOKEN", "").strip()
