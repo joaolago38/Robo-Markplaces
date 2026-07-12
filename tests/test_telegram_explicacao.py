@@ -50,6 +50,18 @@ class TestTelegramExplicacao(unittest.TestCase):
         self.assertEqual(te.agente_id_da_chave("esmaltes:busca_kit:2026-07-12:resumo:x"), "monitor_busca_kit_esmaltes")
         self.assertEqual(te.agente_id_da_chave("sumare:leiloes:resumo:y"), "sumare_leiloes")
 
+    def test_escapar_markdown_legado(self):
+        self.assertEqual(te._escapar_markdown_legado("item_id e *preço*"), r"item\_id e \*preço\*")
+
+    @patch.object(te, "explicacao_ativa", return_value=True)
+    def test_explicacao_com_underscore_escapa(self, _ativa):
+        with patch.dict(te.EXPLICACOES_AGENTES, {"leilao": "texto com item_id e mais"}):
+            out = te.inserir_explicacao("Título", "leilao")
+        self.assertIn(r"item\_id", out)
+        # Não pode sobrar _ cru no corpo itálico (quebraria o Telegram)
+        corpo = out.split("_O que este agente faz:_", 1)[-1]
+        self.assertNotIn("item_id", corpo.replace(r"item\_id", ""))
+
     @patch.object(te, "explicacao_ativa", return_value=False)
     @patch.object(notificador, "_enviar", return_value=True)
     @patch.object(notificador, "_deve_suprimir", return_value=False)

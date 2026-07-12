@@ -106,6 +106,23 @@ class TestNotificadorAlertar(unittest.TestCase):
         self.assertIn("bot***", joined)
         self.assertNotIn("SECRET123", joined)
 
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "token")
+    def test_fallback_sem_markdown_em_400(self, mock_request, *_patches):
+        r_bad = MagicMock()
+        r_bad.status_code = 400
+        r_bad.text = '{"ok":false,"description":"Bad Request: can\'t parse entities"}'
+        r_bad.raise_for_status = MagicMock(side_effect=Exception("should not"))
+        r_ok = _mock_resp()
+        mock_request.side_effect = [r_bad, r_ok]
+        self.assertTrue(notificador.alertar("url com_underscore e *asterisco*"))
+        self.assertEqual(mock_request.call_count, 2)
+        primeiro = mock_request.call_args_list[0][1]["json"]
+        segundo = mock_request.call_args_list[1][1]["json"]
+        self.assertEqual(primeiro.get("parse_mode"), "Markdown")
+        self.assertNotIn("parse_mode", segundo)
+
 
 class TestNotificadorFoto(unittest.TestCase):
     def setUp(self):

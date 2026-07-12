@@ -95,6 +95,23 @@ def _marcar_enviado(chave: str) -> None:
         logger.warning("Cooldown: falha ao marcar envio %s: %s", chave, exc)
 
 
+def _trecho_erro_telegram(resposta) -> str:
+    try:
+        from core.http_errors import trecho_corpo
+
+        body = getattr(resposta, "text", "") or ""
+        if "description" in body:
+            import json
+
+            data = json.loads(body)
+            desc = str(data.get("description") or "").strip()
+            if desc:
+                return desc[:200]
+        return trecho_corpo(resposta)
+    except Exception:
+        return ""
+
+
 def _enviar(chat_id: str, msg: str) -> bool:
     token = (TELEGRAM_TOKEN or "").strip()
     cid = (chat_id or "").strip()
@@ -110,12 +127,26 @@ def _enviar(chat_id: str, msg: str) -> bool:
             return False
     try:
         url = f"https://api.telegram.org/bot{token}/sendMessage"
+        texto = (msg or "")[:4096]
         r = request(
             "POST",
             url,
-            json={"chat_id": cid, "text": msg, "parse_mode": "Markdown"},
+            json={"chat_id": cid, "text": texto, "parse_mode": "Markdown"},
             timeout=10,
         )
+        # 400 quase sempre = Markdown inválido (_, * em URLs/títulos). Outras msgs ok.
+        if getattr(r, "status_code", 0) == 400:
+            detalhe = _trecho_erro_telegram(r) or "Bad Request"
+            logger.warning(
+                "Telegram Markdown rejeitado — reenviando sem formatação: %s",
+                detalhe,
+            )
+            r = request(
+                "POST",
+                url,
+                json={"chat_id": cid, "text": texto},
+                timeout=10,
+            )
         r.raise_for_status()
         return True
     except Exception as e:
@@ -144,9 +175,10 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
             logger.warning("Telegram sendPhoto: arquivo inexistente %s", foto_path)
             return False
         url = f"https://api.telegram.org/bot{token}/sendPhoto"
+        caption = (legenda or "")[:1024]
         data = {"chat_id": cid}
-        if legenda:
-            data["caption"] = legenda[:1024]
+        if caption:
+            data["caption"] = caption
             data["parse_mode"] = "Markdown"
         with open(str(foto_path), "rb") as fh:
             r = request(
@@ -156,6 +188,21 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
                 files={"photo": ("grafico.png", fh, "image/png")},
                 timeout=30,
             )
+        if getattr(r, "status_code", 0) == 400 and caption:
+            detalhe = _trecho_erro_telegram(r) or "Bad Request"
+            logger.warning(
+                "Telegram sendPhoto Markdown rejeitado — reenviando sem formatação: %s",
+                detalhe,
+            )
+            data_plain = {"chat_id": cid, "caption": caption}
+            with open(str(foto_path), "rb") as fh2:
+                r = request(
+                    "POST",
+                    url,
+                    data=data_plain,
+                    files={"photo": ("grafico.png", fh2, "image/png")},
+                    timeout=30,
+                )
         r.raise_for_status()
         return True
     except Exception as e:

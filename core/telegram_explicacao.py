@@ -20,7 +20,7 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "pode enviar resumo do período — para não vender no prejuízo."
     ),
     "inteligencia_precos": (
-        "Analisa sinais de compra (visitas, concorrentes quando há item_id válido) e "
+        "Analisa sinais de compra (visitas, concorrentes quando há item id válido) e "
         "sugere preço por canal (ML, Shopee etc.) respeitando margem mínima. "
         "Entrega recomendações de preço no Telegram — não altera preço sozinho."
     ),
@@ -385,6 +385,14 @@ _MARCADOR = "_O que este agente faz:_"
 _MARCADOR_HORARIO = "_Quando roda:_"
 
 
+def _escapar_markdown_legado(texto: str) -> str:
+    """Escapa _, *, ` e [ para parse_mode=Markdown (legado) do Telegram."""
+    out = (texto or "").replace("\\", "\\\\")
+    for ch in ("_", "*", "`", "["):
+        out = out.replace(ch, "\\" + ch)
+    return out
+
+
 def explicacao_ativa() -> bool:
     """True só com TELEGRAM_EXPLICACAO_AGENTES=1 (ver core/config.py)."""
     from core.config import TELEGRAM_EXPLICACAO_AGENTES
@@ -433,10 +441,11 @@ def inserir_explicacao(mensagem: str, agente_id: str | None = None, *, chave: st
     partes = msg.split("\n", 1)
     titulo = partes[0]
     resto = partes[1] if len(partes) > 1 else ""
-    bloco = f"{titulo}\n\n{_MARCADOR}\n_{texto}_"
+    # Itálico Markdown: o corpo precisa escapar _, * etc. (ex.: item_id)
+    bloco = f"{titulo}\n\n{_MARCADOR}\n_{_escapar_markdown_legado(texto)}_"
     horario = horario_de(aid)
     if horario and _MARCADOR_HORARIO not in msg:
-        bloco = f"{bloco}\n\n{_MARCADOR_HORARIO}\n_{horario}_"
+        bloco = f"{bloco}\n\n{_MARCADOR_HORARIO}\n_{_escapar_markdown_legado(horario)}_"
     if resto.strip():
         return f"{bloco}\n\n{resto.lstrip()}"
     return bloco
