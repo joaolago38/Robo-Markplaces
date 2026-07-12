@@ -192,6 +192,15 @@ def executar_ciclo(
                 "ok": ok_count == len(resultados),
                 "falhas": falhas,
                 "total": len(resultados),
+                "agentes_falha": [
+                    {
+                        "id": r.get("id"),
+                        "nome": r.get("nome"),
+                        "erro": (r.get("erro") or r.get("resumo") or "")[:160],
+                    }
+                    for r in resultados
+                    if not r.get("ok")
+                ],
             },
         )
     except Exception as exc:

@@ -256,10 +256,90 @@ def verificar_erros_nao_tratados(
     return alertas
 
 
+def _nome_amigavel_logger(logger_name: str) -> str:
+    nome = str(logger_name or "").strip()
+    if not nome or nome == "datadog_api":
+        return "Datadog (API)"
+    if nome.startswith("agente_"):
+        return nome[7:].replace("_", " ")
+    return nome.replace("_", " ")
+
+
+def listar_agentes_com_problema(
+    inatividades: list[dict[str, Any]],
+    erros: list[dict[str, Any]],
+    *,
+    agentes_falha_ciclo: list[dict[str, Any]] | None = None,
+) -> list[dict[str, str]]:
+    """
+    Lista consolidada (sem duplicar) dos agentes/componentes com problema.
+    Cada item: {id, nome, motivo}.
+    """
+    vistos: set[str] = set()
+    out: list[dict[str, str]] = []
+
+    def _add(aid: str, nome: str, motivo: str) -> None:
+        chave = (aid or nome).strip().lower()
+        if not chave or chave in vistos:
+            return
+        vistos.add(chave)
+        out.append({"id": aid or nome, "nome": nome or aid, "motivo": motivo})
+
+    for a in inatividades or []:
+        nome = str(a.get("nome") or a.get("fonte_id") or "?")
+        fid = str(a.get("fonte_id") or nome)
+        horas = a.get("horas_sem_resposta")
+        if horas is not None:
+            motivo = f"inativo {_fmt_horas(float(horas))}"
+        elif a.get("motivo") == "arquivo_ausente":
+            motivo = "sem heartbeat (arquivo ausente)"
+        else:
+            motivo = "inatividade"
+        _add(fid, nome, motivo)
+
+    for e in erros or []:
+        logger_name = str(e.get("logger") or "?")
+        nome = _nome_amigavel_logger(logger_name)
+        horas = e.get("horas_aberto")
+        if horas is not None:
+            motivo = f"erro há {_fmt_horas(float(horas))}"
+        else:
+            motivo = "erro Datadog"
+        _add(logger_name, nome, motivo)
+
+    for falha in agentes_falha_ciclo or []:
+        if not isinstance(falha, dict):
+            continue
+        aid = str(falha.get("id") or "").strip()
+        nome = str(falha.get("nome") or aid or "?").strip()
+        detalhe = str(falha.get("erro") or "").strip()
+        motivo = f"falha no ciclo — {detalhe[:80]}" if detalhe else "falha no último ciclo"
+        _add(aid or nome, nome, motivo)
+
+    return out
+
+
+def carregar_agentes_falha_orquestrador() -> list[dict[str, Any]]:
+    """Lê agentes que falharam no último heartbeat do orquestrador."""
+    data = ler_json(ROOT / "logs" / "orquestrador_ultimo_ciclo.json", default={})
+    if not isinstance(data, dict):
+        return []
+    falhas = data.get("agentes_falha") or []
+    return [f for f in falhas if isinstance(f, dict)]
+
+
 def montar_mensagem_critica(
     inatividades: list[dict[str, Any]],
     erros: list[dict[str, Any]],
+    *,
+    agentes_falha_ciclo: list[dict[str, Any]] | None = None,
 ) -> str:
+    problemas = listar_agentes_com_problema(
+        inatividades,
+        erros,
+        agentes_falha_ciclo=agentes_falha_ciclo,
+    )
+
     linhas = [
         "🚨 *VIGIA DATADOG — FALHA GRAVE NÃO VERIFICADA*",
         "",
@@ -267,18 +347,26 @@ def montar_mensagem_critica(
         "",
     ]
 
+    if problemas:
+        linhas.append(f"*Agentes com problemas ({len(problemas)}):*")
+        for p in problemas[:20]:
+            linhas.append(f"  • *{p['nome']}* — {p['motivo']}")
+        if len(problemas) > 20:
+            linhas.append(f"  • … +{len(problemas) - 20} outros")
+        linhas.append("")
+
     criticos_inat = [a for a in inatividades if a.get("gravidade") == "critica"]
     outros_inat = [a for a in inatividades if a.get("gravidade") != "critica"]
     erros_crit = [e for e in erros if e.get("gravidade") == "critica"]
 
     if criticos_inat:
-        linhas.append("⏱ *Inatividade crítica (sem resposta)*")
+        linhas.append("⏱ *Detalhe — inatividade crítica*")
         for a in criticos_inat:
             linhas.append(f"  • {a.get('texto', '')}")
         linhas.append("")
 
     if erros_crit:
-        linhas.append("🔥 *Erros Datadog não tratados*")
+        linhas.append("🔥 *Detalhe — erros Datadog não tratados*")
         for e in erros_crit[:8]:
             linhas.append(f"  • {e.get('texto', '')}")
         linhas.append("")
@@ -323,21 +411,32 @@ def analisar_saude(
     filtros = carregar_filtros_erro(catalogo_filtros or DATADOG_VIGIA_CATALOGO_FILTROS)
     inatividades = verificar_inatividade(fontes, limite_horas_padrao=limite_horas_inatividade)
     erros = verificar_erros_nao_tratados(limite_horas=limite_horas_erro, filtros=filtros)
+    agentes_falha_ciclo = carregar_agentes_falha_orquestrador()
 
     tem_critico = any(
         a.get("gravidade") == "critica" for a in inatividades
     ) or any(e.get("gravidade") == "critica" for e in erros)
 
     inatividades_relevantes = [a for a in inatividades if _gravidade_relevante(a.get("gravidade"))]
+    agentes_problema = listar_agentes_com_problema(
+        inatividades_relevantes,
+        erros,
+        agentes_falha_ciclo=agentes_falha_ciclo if inatividades_relevantes or erros else [],
+    )
 
     return {
         "ok": not inatividades_relevantes and not erros,
         "tem_critico": tem_critico,
         "inatividades": inatividades,
         "erros": erros,
+        "agentes_com_problema": agentes_problema,
         "total_inatividades": len(inatividades),
         "total_erros": len(erros),
-        "mensagem_critica": montar_mensagem_critica(inatividades, erros)
+        "mensagem_critica": montar_mensagem_critica(
+            inatividades,
+            erros,
+            agentes_falha_ciclo=agentes_falha_ciclo if inatividades_relevantes or erros else [],
+        )
         if (inatividades or erros)
         else "",
     }
