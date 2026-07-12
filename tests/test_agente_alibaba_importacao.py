@@ -27,10 +27,11 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_produtos"], 0)
 
+    @patch.object(agente, "obter_cotacao_usd", return_value={"ok": True, "usd_brl": 5.5, "fonte": "awesomeapi", "confiavel": True})
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_oportunidades")
     @patch.object(agente, "_carregar_produtos")
-    def test_loga_valores_encontrados(self, mock_produtos, mock_busca, _mock_alertar):
+    def test_loga_valores_encontrados(self, mock_produtos, mock_busca, _mock_alertar, _cotacao):
         mock_produtos.return_value = [
             {
                 "id": "p1",
@@ -60,9 +61,10 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
         self.assertIn("MOQ 50", joined)
         self.assertIn("Shenzhen ABC Technology Co., Ltd.", joined)
 
+    @patch.object(agente, "obter_cotacao_usd", return_value={"ok": True, "usd_brl": 5.5, "fonte": "awesomeapi", "confiavel": True})
     @patch.object(agente, "buscar_oportunidades", return_value=[])
     @patch.object(agente, "_carregar_produtos")
-    def test_loga_ddg_quando_sem_oportunidades(self, mock_produtos, _mock_busca):
+    def test_loga_ddg_quando_sem_oportunidades(self, mock_produtos, _mock_busca, _cotacao):
         mock_produtos.return_value = [
             {
                 "id": "p1",
@@ -78,10 +80,11 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
                 agente.executar(enviar_alerta=False)
         self.assertTrue(any("circuit breaker" in line for line in logs.output))
 
+    @patch.object(agente, "obter_cotacao_usd", return_value={"ok": True, "usd_brl": 5.5, "fonte": "awesomeapi", "confiavel": True})
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_oportunidades")
     @patch.object(agente, "_carregar_produtos")
-    def test_alerta_somente_novos(self, mock_produtos, mock_busca, mock_alertar):
+    def test_alerta_somente_novos(self, mock_produtos, mock_busca, mock_alertar, _cotacao):
         mock_produtos.return_value = [
             {
                 "id": "p1",
@@ -110,7 +113,32 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
         self.assertTrue(out1["ok"])
         self.assertEqual(out1["com_novos"], 1)
         mock_alertar.assert_called_once()
+        msg = mock_alertar.call_args[0][0]
+        self.assertIn("US$ 0.20", msg)
+        self.assertIn("R$", msg)
         self.assertEqual(out2["com_novos"], 0)
+
+    def test_montar_alerta_mostra_brl(self):
+        msg = agente._montar_alerta(
+            [
+                {
+                    "produto": "Frasco",
+                    "novos": [
+                        {
+                            "titulo": "Bottle",
+                            "preco_usd": 0.2,
+                            "moq": 100,
+                            "url": "http://x",
+                            "distribuidor": "Factory X",
+                        }
+                    ],
+                }
+            ],
+            cotacao={"ok": True, "usd_brl": 5.0, "fonte": "awesomeapi", "confiavel": True},
+        )
+        self.assertIn("US$ 0.20", msg)
+        self.assertIn("R$ 1,00", msg)
+        self.assertIn("Dólar", msg)
 
     def test_montar_resumo_varredura(self):
         msg = agente._montar_resumo_varredura(
@@ -126,10 +154,11 @@ class TestAgenteAlibabaImportacao(unittest.TestCase):
         self.assertIn("Filamento 3D", msg)
         self.assertIn("3 oportunidade(s)", msg)
 
+    @patch.object(agente, "obter_cotacao_usd", return_value={"ok": True, "usd_brl": 5.5, "fonte": "awesomeapi", "confiavel": True})
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "buscar_oportunidades", return_value=[])
     @patch.object(agente, "_carregar_produtos")
-    def test_envia_resumo_mesmo_sem_novos(self, mock_produtos, _mock_busca, mock_alertar):
+    def test_envia_resumo_mesmo_sem_novos(self, mock_produtos, _mock_busca, mock_alertar, _cotacao):
         mock_produtos.return_value = [
             {"id": "p1", "ativo": True, "nome": "Filamento 3D", "termo_busca": "filament"}
         ]

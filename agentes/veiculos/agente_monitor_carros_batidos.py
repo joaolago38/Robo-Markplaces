@@ -19,10 +19,12 @@ from core.config import (
     CARROS_BATIDOS_ALERTA_COOLDOWN_SEG,
     CARROS_BATIDOS_ALERTA_RESUMO,
     CARROS_BATIDOS_ALERTA_RESUMO_COOLDOWN_SEG,
+    CARROS_BATIDOS_ALERTA_TOP_N,
     CARROS_BATIDOS_BUSCA_WEB,
     CARROS_BATIDOS_BUSCA_WEB_MAX_UFS,
     CARROS_BATIDOS_BUSCA_WEB_PAUSA_SEG,
     CARROS_BATIDOS_BUSCA_WEB_RESULTADOS,
+    CARROS_BATIDOS_FIPE_HAIRCUT_PCT,
     CARROS_BATIDOS_INCLUIR_FIPE,
     CARROS_BATIDOS_PAUSA_ENTRE_LOJAS_SEG,
     CARROS_BATIDOS_PRECO_MAX,
@@ -30,6 +32,7 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
+from integracoes.leilao.comparacao_fipe import aplicar_haircut_fipe
 from integracoes.veiculos.carros_batidos_fontes import carregar_fontes
 from integracoes.veiculos.comparacao import calcular_margem_fipe
 from integracoes.veiculos.fipe_client import consultar_preco_fipe
@@ -60,9 +63,24 @@ def _enriquecer_fipe(item: dict[str, Any]) -> dict[str, Any]:
     )
     if not fipe:
         return item
+    contexto = f"{item.get('titulo') or ''} {item.get('condicao') or ''} {item.get('observacao') or ''} batido sinistro"
+    haircut = aplicar_haircut_fipe(
+        float(fipe["valor_fipe"]),
+        texto_contexto=contexto,
+        haircut_pct=CARROS_BATIDOS_FIPE_HAIRCUT_PCT,
+    )
+    valor_fipe = float(haircut["valor_fipe_ajustado"])
     preco = float(item.get("preco") or 0)
-    margem = calcular_margem_fipe(preco_anunciado=preco, valor_fipe=float(fipe["valor_fipe"]))
-    return {**item, **fipe, **margem}
+    margem = calcular_margem_fipe(preco_anunciado=preco, valor_fipe=valor_fipe)
+    return {
+        **item,
+        **fipe,
+        **margem,
+        "valor_fipe_tabela": float(fipe["valor_fipe"]),
+        "valor_fipe": valor_fipe,
+        "fipe_haircut_pct": haircut["fipe_haircut_pct"],
+        "fipe_sinistro": haircut["fipe_sinistro"],
+    }
 
 
 def _filtrar_preco(anuncios: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -72,37 +90,60 @@ def _filtrar_preco(anuncios: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [a for a in anuncios if 0 < float(a.get("preco") or 0) <= limite]
 
 
-def _montar_linha_anuncio(item: dict[str, Any]) -> list[str]:
+def _montar_linha_anuncio(item: dict[str, Any], *, rank: int | None = None) -> list[str]:
+    prefixo = f"`{rank}.` " if rank is not None else ""
+    pct = item.get("desconto_pct")
+    delta = f"+{pct:.0f}%" if isinstance(pct, (int, float)) else "n/d"
     linhas = [
-        f"🚙 *{item.get('titulo', '?')}*",
-        f"🏪 {item.get('loja_nome', '?')}",
-        f"💰 {_fmt_brl(item.get('preco'))}",
+        f"{prefixo}`{delta}` | *{item.get('titulo', '?')}*",
+        f"🏪 {item.get('loja_nome', '?')} | 💰 {_fmt_brl(item.get('preco'))}",
     ]
     if item.get("ano"):
         linhas.append(f"📅 Ano: {item['ano']}")
     if item.get("condicao"):
         linhas.append(f"🔧 {item['condicao']}")
     if item.get("valor_fipe"):
-        linhas.append(f"📊 FIPE: {_fmt_brl(item['valor_fipe'])} ({item.get('modelo_fipe', '')})")
+        haircut = ""
+        if item.get("fipe_sinistro") and item.get("fipe_haircut_pct"):
+            haircut = f" (FIPE −{item.get('fipe_haircut_pct'):.0f}% sinistro)"
         linhas.append(
-            f"📉 {_fmt_brl(item.get('margem_reais'))} abaixo da FIPE ({item.get('desconto_pct', 0):.1f}%)"
+            f"📊 FIPE {_fmt_brl(item['valor_fipe'])}{haircut} | "
+            f"📉 {_fmt_brl(item.get('margem_reais'))} ({item.get('desconto_pct', 0):.1f}%)"
         )
     linhas.append(f"🔗 {item.get('url', '')}")
     return linhas
 
 
+def _ordenar_novos_alerta(itens: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Prioriza anúncios com preço > 0 e maior desconto FIPE."""
+    com_preco = [i for i in itens if float(i.get("preco") or 0) > 0]
+    sem_preco = [i for i in itens if float(i.get("preco") or 0) <= 0]
+
+    def _chave(item: dict[str, Any]) -> float:
+        try:
+            return float(item.get("desconto_pct") or item.get("margem_reais") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    com_preco.sort(key=_chave, reverse=True)
+    return com_preco + sem_preco
+
+
 def _montar_alerta_novos(itens: list[dict[str, Any]]) -> str:
+    ordenados = _ordenar_novos_alerta(itens)
+    top_n = max(1, CARROS_BATIDOS_ALERTA_TOP_N)
+    top = ordenados[:top_n]
     linhas = [
         "🚗 *Carros batidos — novos anúncios*",
         "",
-        f"_{len(itens)} veículo(s) novo(s) em lojas de salvados/sinistrados._",
+        f"_{len(itens)} veículo(s) novo(s); mostrando Top {len(top)} por desconto FIPE._",
         "",
     ]
-    for item in itens[:15]:
-        linhas.extend(_montar_linha_anuncio(item))
+    for i, item in enumerate(top, 1):
+        linhas.extend(_montar_linha_anuncio(item, rank=i))
         linhas.append("")
-    if len(itens) > 15:
-        linhas.append(f"… e mais {len(itens) - 15} anúncio(s)")
+    if len(ordenados) > top_n:
+        linhas.append(f"_… +{len(ordenados) - top_n} outros (ver logs/histórico)_")
     return "\n".join(linhas).strip()
 
 

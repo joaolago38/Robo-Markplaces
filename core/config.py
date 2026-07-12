@@ -253,16 +253,21 @@ LEILAO_BUSCA_TODOS_VEICULOS = os.getenv("LEILAO_BUSCA_TODOS_VEICULOS", "1").stri
     "false",
     "no",
 )
-LEILAO_VARREDURA_TODAS_FONTES = os.getenv("LEILAO_VARREDURA_TODAS_FONTES", "1").strip().lower() not in (
+LEILAO_VARREDURA_TODAS_FONTES = os.getenv("LEILAO_VARREDURA_TODAS_FONTES", "0").strip().lower() not in (
     "0",
     "false",
     "no",
 )
-LEILAO_ALERTAR_TODOS_ACHADOS = os.getenv("LEILAO_ALERTAR_TODOS_ACHADOS", "1").strip().lower() not in (
+LEILAO_ALERTAR_TODOS_ACHADOS = os.getenv("LEILAO_ALERTAR_TODOS_ACHADOS", "0").strip().lower() not in (
     "0",
     "false",
     "no",
 )
+LEILAO_ALERTA_TOP_N = int(os.getenv("LEILAO_ALERTA_TOP_N", "8"))
+# Haircut na FIPE para veículos sinistrados/recuperados (0–100)
+LEILAO_FIPE_HAIRCUT_SINISTRO_PCT = float(os.getenv("LEILAO_FIPE_HAIRCUT_SINISTRO_PCT", "40"))
+CARROS_BATIDOS_ALERTA_TOP_N = int(os.getenv("CARROS_BATIDOS_ALERTA_TOP_N", "10"))
+CARROS_BATIDOS_FIPE_HAIRCUT_PCT = float(os.getenv("CARROS_BATIDOS_FIPE_HAIRCUT_PCT", "40"))
 
 # Leilão × FIPE (lance + taxas vs tabela)
 LEILAO_COMISSAO_PCT = float(os.getenv("LEILAO_COMISSAO_PCT", "5.0"))
@@ -324,6 +329,16 @@ CAMBIO_API_URL = os.getenv(
 CAMBIO_HISTORICO_MAX = int(os.getenv("CAMBIO_HISTORICO_MAX", "500"))
 CAMBIO_FALLBACK_USD_BRL = float(os.getenv("CAMBIO_FALLBACK_USD_BRL", os.getenv("DESCOBERTA_CAMBIO_USD_BRL", "5.5")))
 CAMBIO_ALERTA_VARIACAO_PCT = float(os.getenv("CAMBIO_ALERTA_VARIACAO_PCT", "1.5"))
+# Se 1, margem/alertas de importação não usam câmbio fallback (só awesomeapi)
+CAMBIO_BLOQUEAR_FALLBACK_MARGEM = os.getenv("CAMBIO_BLOQUEAR_FALLBACK_MARGEM", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CAMBIO_MAX_IDADE_SEG = int(os.getenv("CAMBIO_MAX_IDADE_SEG", "21600"))  # 6h
+ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE = os.getenv(
+    "ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE", "0"
+).strip().lower() not in ("0", "false", "no")
 
 # Custo landed importação (China → Brasil)
 IMPORTACAO_II_PCT_DEFAULT = float(os.getenv("IMPORTACAO_II_PCT_DEFAULT", "16.0"))

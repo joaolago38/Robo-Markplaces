@@ -136,7 +136,8 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("Curitiba — DETRAN Paraná", msg)
         self.assertIn("Honda Civic 2016", msg)
         self.assertIn("FIPE", msg)
-        self.assertIn("Vantagem", msg)
+        self.assertIn("+50%", msg)
+        self.assertIn("Top", msg)
 
     def test_montar_resumo_varredura(self):
         diag = {

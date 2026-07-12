@@ -19,6 +19,10 @@ class TestAlibabaBuscaHelpers(unittest.TestCase):
     def test_extrair_preco_usd(self):
         self.assertAlmostEqual(busca._extrair_preco_usd("from US $0.28 / piece"), 0.28)
 
+    def test_extrair_preco_usd_virgula_decimal(self):
+        self.assertAlmostEqual(busca._extrair_preco_usd("US $0,28 / piece"), 0.28)
+        self.assertAlmostEqual(busca._extrair_preco_usd("USD 1,50"), 1.50)
+
     def test_extrair_moq(self):
         self.assertEqual(busca._extrair_moq("MOQ: 500 pieces"), 500)
 
@@ -64,6 +68,17 @@ class TestAlibabaBuscaHelpers(unittest.TestCase):
         produto = {"preco_max_usd": 0.5}
         self.assertTrue(busca._e_oportunidade(produto, {"preco_usd": 0.3, "url": "http://x"}))
         self.assertFalse(busca._e_oportunidade(produto, {"preco_usd": 0.9, "url": "http://x"}))
+
+    def test_e_oportunidade_exige_moq_quando_moq_max(self):
+        produto = {"moq_max": 1000}
+        self.assertFalse(busca._e_oportunidade(produto, {"preco_usd": 0.2, "url": "http://x"}))
+        self.assertTrue(busca._e_oportunidade(produto, {"preco_usd": 0.2, "moq": 100, "url": "http://x"}))
+        self.assertFalse(busca._e_oportunidade(produto, {"preco_usd": 0.2, "moq": 5000, "url": "http://x"}))
+
+    def test_e_oportunidade_exige_moq_por_flag(self):
+        with patch.object(busca, "ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE", True):
+            self.assertFalse(busca._e_oportunidade({}, {"preco_usd": 0.2, "url": "http://x"}))
+            self.assertTrue(busca._e_oportunidade({}, {"preco_usd": 0.2, "moq": 50, "url": "http://x"}))
 
 
 class TestBuscarOportunidades(unittest.TestCase):

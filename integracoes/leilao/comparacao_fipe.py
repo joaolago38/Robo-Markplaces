@@ -9,6 +9,7 @@ from typing import Any
 
 from core.config import (
     LEILAO_COMISSAO_PCT,
+    LEILAO_FIPE_HAIRCUT_SINISTRO_PCT,
     LEILAO_LAUDO_BRL,
     LEILAO_MARGEM_FIPE_MIN_PCT,
     LEILAO_MARGEM_FIPE_MIN_REAIS,
@@ -20,6 +21,49 @@ from core.config import (
 from integracoes.veiculos.fipe_client import consultar_preco_fipe, parse_valor_fipe
 
 logger = logging.getLogger("leilao_comparacao_fipe")
+
+_SINISTRO_TOKENS = (
+    "sinistro",
+    "sinistrado",
+    "batido",
+    "recuperado",
+    "salvado",
+    "sucata",
+    "perda total",
+    "pt ",
+    " pt",
+    "monta",
+    "classificação",
+)
+
+
+def _parece_sinistro(texto: str) -> bool:
+    t = (texto or "").lower()
+    return any(tok in t for tok in _SINISTRO_TOKENS)
+
+
+def aplicar_haircut_fipe(
+    valor_fipe: float,
+    *,
+    texto_contexto: str = "",
+    haircut_pct: float | None = None,
+) -> dict[str, float | bool]:
+    """Reduz FIPE de tabela limpa quando o contexto indica sinistro/recuperado."""
+    pct = LEILAO_FIPE_HAIRCUT_SINISTRO_PCT if haircut_pct is None else float(haircut_pct)
+    pct = max(0.0, min(90.0, pct))
+    sinistro = _parece_sinistro(texto_contexto)
+    if not sinistro or pct <= 0 or valor_fipe <= 0:
+        return {
+            "valor_fipe_ajustado": round(float(valor_fipe), 2),
+            "fipe_haircut_pct": 0.0,
+            "fipe_sinistro": False,
+        }
+    ajustado = float(valor_fipe) * (1.0 - pct / 100.0)
+    return {
+        "valor_fipe_ajustado": round(ajustado, 2),
+        "fipe_haircut_pct": pct,
+        "fipe_sinistro": True,
+    }
 
 
 def parse_valor_leilao(valor: Any) -> float | None:
@@ -124,7 +168,14 @@ def avaliar_achado_leilao(
         return out
 
     out.update(fipe)
-    margem = calcular_vantagem_fipe(valor_fipe=float(fipe["valor_fipe"]), custo_total_brl=custo["custo_total_brl"])
+    contexto = f"{titulo} {achado.get('condicao') or ''} {achado.get('observacao') or ''}"
+    haircut = aplicar_haircut_fipe(float(fipe["valor_fipe"]), texto_contexto=contexto)
+    valor_fipe_uso = float(haircut["valor_fipe_ajustado"])
+    out["valor_fipe_tabela"] = float(fipe["valor_fipe"])
+    out["valor_fipe"] = valor_fipe_uso
+    out["fipe_haircut_pct"] = haircut["fipe_haircut_pct"]
+    out["fipe_sinistro"] = haircut["fipe_sinistro"]
+    margem = calcular_vantagem_fipe(valor_fipe=valor_fipe_uso, custo_total_brl=custo["custo_total_brl"])
     out.update(margem)
     vantajoso = margem["margem_fipe_pct"] >= margem_min_pct and margem["margem_fipe_reais"] >= margem_min_reais
     out["vantajoso"] = vantajoso
@@ -133,6 +184,8 @@ def avaliar_achado_leilao(
         "vantajoso": vantajoso,
         "margem_min_pct": margem_min_pct,
         "margem_min_reais": margem_min_reais,
+        "fipe_sinistro": haircut["fipe_sinistro"],
+        "fipe_haircut_pct": haircut["fipe_haircut_pct"],
     }
     return out
 
