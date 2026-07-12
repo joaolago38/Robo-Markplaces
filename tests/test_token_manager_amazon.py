@@ -50,6 +50,7 @@ class TestRenovarTokenAmazon(unittest.TestCase):
         self.assertEqual(out, "acc_amz")
         self.assertEqual(cfg.AMAZON_ACCESS_TOKEN, "acc_amz")
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -57,20 +58,21 @@ class TestRenovarTokenAmazon(unittest.TestCase):
         AMAZON_LWA_CLIENT_SECRET="sec",
         AMAZON_REFRESH_TOKEN="refresh_amz",
     )
-    def test_http_401_tratado(self, mock_request):
+    def test_http_401_tratado(self, mock_request, _log_on):
         mock_request.return_value = _resp(401, '{"error":"invalid_grant"}')
         with self.assertLogs("token_manager", level="ERROR") as logs:
             out = tm._renovar_token_amazon()
         self.assertIsNone(out)
         self.assertIn("HTTP 401", logs.output[0])
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.multiple(
         cfg,
         AMAZON_LWA_CLIENT_ID="",
         AMAZON_LWA_CLIENT_SECRET="",
         AMAZON_REFRESH_TOKEN="",
     )
-    def test_sem_credenciais_retorna_none(self):
+    def test_sem_credenciais_retorna_none(self, _log_on):
         tm._amazon_refresh_efetivo["valor"] = None
         with self.assertLogs("token_manager", level="ERROR"):
             self.assertIsNone(tm._renovar_token_amazon())
