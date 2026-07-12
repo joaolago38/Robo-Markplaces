@@ -195,7 +195,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.ml.agente_resumo_diario_novamix:executar",
         {"enviar_alerta": True},
-        notas="Desempenho + produtos com giro (vendas/avaliações) da loja Novamix → Telegram",
+        notas="Desempenho + plano guerra/competir + Ads (pausar com confirmação) Novamix",
     ),
     AgenteRegistrado(
         "monitor_sem_venda_ml",
