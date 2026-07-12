@@ -86,7 +86,13 @@ def _enriquecer_fipe(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _filtrar_preco(anuncios: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _filtrar_preco(
+    anuncios: list[dict[str, Any]],
+    *,
+    ignorar: bool = False,
+) -> list[dict[str, Any]]:
+    if ignorar:
+        return anuncios
     limite = CARROS_BATIDOS_PRECO_MAX
     if limite <= 0:
         return anuncios
@@ -219,7 +225,9 @@ def _processar_anuncios(
 
 def _monitorar_loja(fonte: dict[str, Any], historico: dict[str, Any]) -> dict[str, Any]:
     loja_id = str(fonte.get("id") or "")
-    anuncios = _filtrar_preco(coletar_fonte(fonte))
+    # Esperança/Motorjan: estoque atual costuma ficar acima do teto global — não zerar a loja
+    ignorar_teto = bool(fonte.get("ignorar_preco_max"))
+    anuncios = _filtrar_preco(coletar_fonte(fonte), ignorar=ignorar_teto)
     return _processar_anuncios(loja_id, str(fonte.get("nome") or loja_id), anuncios, historico)
 
 

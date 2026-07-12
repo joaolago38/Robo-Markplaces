@@ -41,11 +41,11 @@ _RE_LEOPARDO_BLOCO = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 _RE_MOTORJAN_ITEM = re.compile(
-    r'<div class=offer_item[^>]*>.*?'
+    r'<div class="?offer_item\b[^>]*>.*?'
     r'<a href="?([^">\s]+)"?[^>]*title="([^"]*)"[^>]*>.*?'
     r'<h2><a href=[^>]+>([^<]+)</a></h2>.*?<p>Modelo\s+([^<]+)</p>.*?'
-    r'C[ÓO]DIGO:\s*(\d+).*?'
-    r'class=offer_price>R\$\s*([\d\.\,]+)',
+    r'C[ÓOóo]DIGO:\s*(\d+).*?'
+    r'class="?offer_price"?\s*>R\$\s*([\d\.\,]+)',
     re.DOTALL | re.IGNORECASE,
 )
 _RE_VELOZES_PRODUTO = re.compile(

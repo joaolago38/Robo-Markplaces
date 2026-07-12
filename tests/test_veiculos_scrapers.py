@@ -83,7 +83,7 @@ class VeiculosScrapersTests(unittest.TestCase):
 
     def test_coletar_motorjan(self):
         html = """
-        <div class=offer_item clearfix>
+        <div class="offer_item clearfix">
         <a href=/veiculos/carro/10033/ford title="Ford Gol">
         <h2><a href=/veiculos/carro/10033/ford>Ford Gol 1.0</a></h2>
         <p>Modelo 2012</p>
@@ -96,6 +96,21 @@ class VeiculosScrapersTests(unittest.TestCase):
             itens = sc.coletar_motorjan()
         self.assertEqual(len(itens), 1)
         self.assertEqual(itens[0]["preco"], 18500.0)
+
+    def test_coletar_motorjan_html_sem_aspas(self):
+        html = """
+        <div class=offer_item clearfix>
+        <a href=/veiculos/carro/10033/ford title="Ford Gol">
+        <h2><a href=/veiculos/carro/10033/ford>Ford Gol 1.0</a></h2>
+        <p>Modelo 2012</p>
+        <span class=offer_miliage>CÓDIGO: 10033</span>
+        <div class=offer_price>R$ 18.500,00</div>
+        </div></div></div>
+        """
+        with patch("integracoes.veiculos.scrapers.request") as mock_req:
+            mock_req.return_value = type("R", (), {"status_code": 200, "text": html})()
+            itens = sc.coletar_motorjan()
+        self.assertEqual(len(itens), 1)
 
     @patch("integracoes.veiculos.scrapers.request")
     def test_coletar_velozes(self, mock_req):

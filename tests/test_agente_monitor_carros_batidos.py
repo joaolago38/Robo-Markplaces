@@ -109,6 +109,44 @@ class TestAgenteMonitorCarrosBatidos(unittest.TestCase):
         self.assertEqual(out[0]["titulo"], "B")
         self.assertEqual(out[-1]["titulo"], "C")
 
+    def test_filtrar_preco_ignorar(self):
+        caros = [{"preco": 219900.0, "titulo": "Titano"}]
+        with patch.object(agente, "CARROS_BATIDOS_PRECO_MAX", 150000.0):
+            self.assertEqual(agente._filtrar_preco(caros), [])
+            self.assertEqual(len(agente._filtrar_preco(caros, ignorar=True)), 1)
+
+    @patch.object(agente, "carregar_fontes")
+    @patch.object(agente, "coletar_fonte")
+    def test_ignorar_preco_max_no_catalogo(self, mock_coleta, mock_fontes):
+        mock_fontes.return_value = [
+            {
+                "id": "esperanca_batidos",
+                "nome": "Esperança Batidos",
+                "tipo": "esperanca",
+                "ignorar_preco_max": True,
+            }
+        ]
+        mock_coleta.return_value = [
+            {
+                "hash": "e1",
+                "titulo": "Fiat Titano",
+                "loja_nome": "Esperança Batidos",
+                "preco": 219900.0,
+                "url": "http://x",
+                "ano": "2025",
+            }
+        ]
+        with patch.object(agente, "CARROS_BATIDOS_PRECO_MAX", 150000.0), patch.object(
+            agente, "CARROS_BATIDOS_BUSCA_WEB", False
+        ), patch.object(agente, "CARROS_BATIDOS_INCLUIR_FIPE", False), patch.object(
+            agente, "CARROS_BATIDOS_ALERTA_RESUMO", False
+        ), patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
+            agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
+        ):
+            out = agente.executar(enviar_alerta=False)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["resultados"][0]["total"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -33,7 +33,8 @@
     "nome": "Esperança Batidos",
     "tipo": "esperanca",
     "url_listagem": "http://esperancabatidos.com.br/estoque.php",
-    "notas": "São Mateus/SP — Av. Adélia Chohfi"
+    "ignorar_preco_max": true,
+    "notas": "São Mateus/SP — Av. Adélia Chohfi. Sem teto CARROS_BATIDOS_PRECO_MAX (estoque costuma > R$ 150k)."
   },
   {
     "id": "007_batidos",
@@ -49,7 +50,8 @@
     "nome": "Motorjan Veículos",
     "tipo": "motorjan",
     "url_listagem": "https://www.motorjanveiculos.com.br/veiculos",
-    "notas": "Sinistrados e salvados — Curitiba/PR"
+    "ignorar_preco_max": true,
+    "notas": "Sinistrados e salvados — Curitiba/PR. Sem teto CARROS_BATIDOS_PRECO_MAX."
   },
   {
     "id": "velozes",
