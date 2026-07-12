@@ -69,7 +69,7 @@ jobs:
       - name: Rodar sync push main
         run: python -m agentes.orquestrador.agente_sync_push_main
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,alibaba,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures
+          ORQUESTRADOR_EXCLUIR: leilao,alibaba,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}

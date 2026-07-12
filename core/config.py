@@ -99,6 +99,22 @@ MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO = os.getenv(
     "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", "1"
 ).strip().lower() not in ("0", "false", "no")
 
+# Resumo diário Novamix (loja concorrente ML)
+NOVAMIX_RESUMO_DIARIO_SELLER_ID = os.getenv("NOVAMIX_RESUMO_DIARIO_SELLER_ID", "1666381510").strip()
+NOVAMIX_RESUMO_DIARIO_NICKNAME = os.getenv("NOVAMIX_RESUMO_DIARIO_NICKNAME", "NOVAMIX_COMERCIAL").strip()
+NOVAMIX_RESUMO_DIARIO_ALERTA = os.getenv("NOVAMIX_RESUMO_DIARIO_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+NOVAMIX_RESUMO_DIARIO_COOLDOWN_SEG = int(os.getenv("NOVAMIX_RESUMO_DIARIO_COOLDOWN_SEG", "72000"))
+NOVAMIX_RESUMO_DIARIO_TOP_N = int(os.getenv("NOVAMIX_RESUMO_DIARIO_TOP_N", "6"))
+NOVAMIX_RESUMO_DIARIO_ENRIQUECER = os.getenv("NOVAMIX_RESUMO_DIARIO_ENRIQUECER", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+
 # Anúncios próprios sem venda recente
 MONITOR_SEM_VENDA_DIAS = int(os.getenv("MONITOR_SEM_VENDA_DIAS", "30"))
 MONITOR_SEM_VENDA_MAX_ITENS = int(os.getenv("MONITOR_SEM_VENDA_MAX_ITENS", "40"))
@@ -475,7 +491,7 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho",
+        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix",
     ).split(",")
     if x.strip()
 }

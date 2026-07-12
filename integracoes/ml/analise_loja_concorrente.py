@@ -253,6 +253,258 @@ def _analise_estrategica(perfil: dict[str, Any], anuncios: list[dict[str, Any]],
     }
 
 
+def _sinal_giro_anuncio(anuncio: dict[str, Any]) -> dict[str, Any]:
+    """Pontua indício de giro: vendas API > vendas/dia > avaliações > preço só."""
+    m = anuncio.get("metricas") if isinstance(anuncio.get("metricas"), dict) else {}
+    try:
+        vendidos = int(anuncio.get("quantidade_vendida") or m.get("vendas") or 0)
+    except (TypeError, ValueError):
+        vendidos = 0
+    try:
+        avaliacoes = int(anuncio.get("avaliacoes") or m.get("avaliacoes") or 0)
+    except (TypeError, ValueError):
+        avaliacoes = 0
+    try:
+        vpd = float(m.get("vendas_por_dia") or 0)
+    except (TypeError, ValueError):
+        vpd = 0.0
+    try:
+        nota = float(anuncio.get("nota") or m.get("nota") or 0)
+    except (TypeError, ValueError):
+        nota = 0.0
+
+    if vendidos > 0:
+        fonte = "vendas_api"
+        score = float(vendidos) * 1000.0 + vpd * 100.0 + avaliacoes
+    elif vpd > 0:
+        fonte = "vendas_dia_est"
+        score = vpd * 100.0 + avaliacoes
+    elif avaliacoes > 0:
+        fonte = "avaliacoes_proxy"
+        score = float(avaliacoes) + nota
+    else:
+        fonte = "sem_sinal"
+        score = 0.0
+
+    return {
+        "score": score,
+        "fonte_giro": fonte,
+        "vendidos": vendidos,
+        "vendas_por_dia": vpd if vpd > 0 else None,
+        "avaliacoes": avaliacoes if avaliacoes > 0 else None,
+        "nota": nota if nota > 0 else None,
+    }
+
+
+def ranquear_produtos_giro(
+    anuncios: list[dict[str, Any]],
+    *,
+    top_n: int = 8,
+) -> list[dict[str, Any]]:
+    """Ordena anúncios por indício de saída (vendas > avaliações)."""
+    ranked: list[dict[str, Any]] = []
+    for a in anuncios or []:
+        if not isinstance(a, dict):
+            continue
+        sinal = _sinal_giro_anuncio(a)
+        ranked.append(
+            {
+                "item_id": a.get("item_id"),
+                "titulo": a.get("titulo") or "?",
+                "preco": float(a.get("preco") or 0),
+                "permalink": a.get("permalink") or "",
+                "marcas": list(a.get("marcas") or []),
+                **sinal,
+            }
+        )
+    ranked.sort(key=lambda x: float(x.get("score") or 0), reverse=True)
+    com_sinal = [r for r in ranked if float(r.get("score") or 0) > 0]
+    return (com_sinal or ranked)[: max(1, top_n)]
+
+
+def analisar_desempenho_diario(
+    analise: dict[str, Any],
+    *,
+    historico_anterior: dict[str, Any] | None = None,
+    top_n: int = 8,
+) -> dict[str, Any]:
+    """Compara amostra atual vs ontem e destaca produtos com sinal de giro."""
+    anuncios = list(analise.get("anuncios") or [])
+    top = ranquear_produtos_giro(anuncios, top_n=top_n)
+    com_vendas = [t for t in top if int(t.get("vendidos") or 0) > 0]
+    com_proxy = [t for t in top if t.get("fonte_giro") == "avaliacoes_proxy"]
+
+    atual = {
+        "anuncios": int(analise.get("total_anuncios_coletados") or len(anuncios)),
+        "preco_min": float(analise.get("preco_min") or 0),
+        "preco_med": float(analise.get("preco_med") or 0),
+        "preco_max": float(analise.get("preco_max") or 0),
+        "ameacas": len(analise.get("ameacas_preco") or []),
+    }
+    ant = historico_anterior or {}
+    deltas: dict[str, Any] = {}
+    for chave in ("anuncios", "preco_min", "preco_med", "ameacas"):
+        try:
+            antes = float(ant.get(chave) or 0)
+        except (TypeError, ValueError):
+            antes = 0.0
+        agora = float(atual.get(chave) or 0)
+        if antes > 0 or agora > 0:
+            deltas[chave] = round(agora - antes, 2)
+
+    perfil = analise.get("perfil") or {}
+    estrategia = analise.get("estrategia") or {}
+    leitura = []
+    if com_vendas:
+        leitura.append(
+            f"{len(com_vendas)} anúncio(s) com vendas na API — melhor indício de giro real."
+        )
+    elif com_proxy:
+        leitura.append(
+            "API sem sold_quantity; ranking por avaliações (proxy de demanda)."
+        )
+    else:
+        leitura.append(
+            "Sem vendas/avaliações na amostra — desempenho limitado a preço e volume de anúncios."
+        )
+    if deltas.get("preco_min") is not None and deltas["preco_min"] < 0:
+        leitura.append(
+            f"Menor preço da amostra caiu R$ {abs(deltas['preco_min']):.2f} vs última leitura."
+        )
+    elif deltas.get("preco_min") is not None and deltas["preco_min"] > 0:
+        leitura.append(
+            f"Menor preço da amostra subiu R$ {deltas['preco_min']:.2f} vs última leitura."
+        )
+    if atual["ameacas"] > 0:
+        leitura.append(
+            f"{atual['ameacas']} SKU(s) seus sob pressão de preço (≥5% acima da loja)."
+        )
+
+    return {
+        "ok": True,
+        "atual": atual,
+        "deltas": deltas,
+        "top_giro": top,
+        "produtos_saindo": com_vendas or com_proxy[:top_n],
+        "fonte_giro_predominante": (
+            "vendas_api" if com_vendas else ("avaliacoes_proxy" if com_proxy else "sem_sinal")
+        ),
+        "leitura": leitura,
+        "porte": estrategia.get("porte") or "?",
+        "ameaca_geral": estrategia.get("ameaca_geral") or "?",
+        "transactions_total": perfil.get("transactions_total"),
+    }
+
+
+def montar_resumo_diario(
+    analise: dict[str, Any],
+    desempenho: dict[str, Any] | None = None,
+    *,
+    data_local: str | None = None,
+) -> str:
+    """Mensagem Telegram: resumo diário Novamix + desempenho + produtos saindo."""
+    desempenho = desempenho or analisar_desempenho_diario(analise)
+    p = analise.get("perfil") or {}
+    nick = analise.get("nickname") or p.get("nickname") or "NOVAMIX_COMERCIAL"
+    linhas = [
+        "🏪 *Novamix — resumo diário*",
+        f"_{data_local or 'hoje'}_",
+        "",
+        f"*{nick}* (`{analise.get('seller_id') or p.get('seller_id') or '?'}`)",
+        f"Reputação: {p.get('level_id') or '?'} | Líder: {p.get('power_seller_status') or '?'}",
+        f"Transações: {p.get('transactions_total') or '?'}",
+        f"Porte/ameaça: *{desempenho.get('porte', '?')}* / *{desempenho.get('ameaca_geral', '?')}*",
+        f"Anúncios na amostra: *{desempenho.get('atual', {}).get('anuncios', 0)}*",
+    ]
+    atual = desempenho.get("atual") or {}
+    if atual.get("preco_med"):
+        linhas.append(
+            f"Preços: R$ {atual.get('preco_min', 0):.2f} – "
+            f"{atual.get('preco_med', 0):.2f} – {atual.get('preco_max', 0):.2f}"
+        )
+
+    deltas = desempenho.get("deltas") or {}
+    if deltas:
+        pedacos = []
+        if "preco_min" in deltas:
+            pedacos.append(f"mín {deltas['preco_min']:+.2f}")
+        if "anuncios" in deltas:
+            pedacos.append(f"anúncios {deltas['anuncios']:+.0f}")
+        if "ameacas" in deltas:
+            pedacos.append(f"ameaças {deltas['ameacas']:+.0f}")
+        if pedacos:
+            linhas.append("Δ vs última leitura: " + " | ".join(pedacos))
+
+    linhas.extend(["", "*Análise de desempenho*"])
+    for txt in desempenho.get("leitura") or []:
+        linhas.append(f"• {txt}")
+
+    marcas = analise.get("marcas") or {}
+    if marcas:
+        top_m = ", ".join(f"{k} ({v})" for k, v in list(marcas.items())[:5])
+        linhas.extend(["", f"Marcas no mix: {top_m}"])
+
+    ameacas = analise.get("ameacas_preco") or []
+    if ameacas:
+        linhas.extend(["", "*Pressão vs seus preços alvo*"])
+        for a in ameacas[:5]:
+            linhas.append(
+                f"• {a.get('sku')}: alvo R$ {float(a.get('meu_preco') or 0):.2f} vs "
+                f"loja R$ {float(a.get('menor_preco_loja') or 0):.2f} "
+                f"(+{a.get('gap_pct')}%)"
+            )
+
+    saindo = desempenho.get("produtos_saindo") or desempenho.get("top_giro") or []
+    fonte = desempenho.get("fonte_giro_predominante") or "sem_sinal"
+    if saindo and fonte != "sem_sinal":
+        titulo_sec = (
+            "*Produtos que estão saindo (vendas API)*"
+            if fonte == "vendas_api"
+            else "*Produtos com maior demanda (proxy avaliações)*"
+        )
+        linhas.extend(["", titulo_sec])
+        for i, item in enumerate(saindo[:6], 1):
+            tit = str(item.get("titulo") or "?")[:48]
+            ped = [f"R$ {float(item.get('preco') or 0):.2f}"]
+            if int(item.get("vendidos") or 0) > 0:
+                ped.append(f"{item['vendidos']} vendidos")
+            if item.get("vendas_por_dia"):
+                ped.append(f"{item['vendas_por_dia']}/dia")
+            if item.get("avaliacoes"):
+                nota = item.get("nota")
+                ped.append(
+                    f"★{nota} ({item['avaliacoes']})" if nota else f"{item['avaliacoes']} aval."
+                )
+            linhas.append(f"{i}. {tit}")
+            linhas.append(f"   {' | '.join(ped)}")
+            if item.get("permalink"):
+                linhas.append(f"   🔗 {item['permalink']}")
+    else:
+        linhas.extend(
+            [
+                "",
+                "*Produtos saindo*",
+                "_API não retornou vendas/avaliações nesta amostra — "
+                "não dá para afirmar giro por SKU hoje._",
+            ]
+        )
+
+    implic = (analise.get("estrategia") or {}).get("implicacoes_para_voce") or []
+    if implic:
+        linhas.extend(["", "*O que fazer*"])
+        for i in implic[:3]:
+            linhas.append(f"• {i}")
+
+    linhas.extend(
+        [
+            "",
+            "_Amostra por termos (não é catálogo completo da loja). "
+            "Vendas de terceiros dependem da API ML._",
+        ]
+    )
+    return "\n".join(linhas).strip()
+
+
 def analisar_loja(
     seller_id: str | int,
     *,

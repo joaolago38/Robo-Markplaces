@@ -1,0 +1,72 @@
+name: Resumo Diario Novamix
+
+# Perfil, desempenho e produtos com sinal de giro da loja NOVAMIX_COMERCIAL → Telegram.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 08:00 BRT = 11:00 UTC — todo dia
+    - cron: "0 11 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  NOVAMIX_RESUMO_DIARIO_ALERTA: "1"
+  NOVAMIX_RESUMO_DIARIO_ENRIQUECER: "1"
+
+jobs:
+  resumo:
+    name: Novamix — resumo diário Telegram
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown + historico Novamix
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/novamix_diario_history.json
+            logs/ml_busca_termo_cache.json
+          key: novamix-diario-${{ github.run_id }}
+          restore-keys: |
+            novamix-diario-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar resumo diario Novamix
+        run: python -m agentes.ml.agente_resumo_diario_novamix
+        env:
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: novamix-diario
+          path: |
+            logs/novamix_diario_ultima.json
+            logs/novamix_diario_history.json
+            logs/analise_loja_novamix_ultima.json
+          retention-days: 90
+          if-no-files-found: ignore
