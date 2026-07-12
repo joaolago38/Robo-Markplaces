@@ -18,12 +18,13 @@ from core.config import (
     ALIBABA_IA_AVALIAR_PARAMETROS,
     ALIBABA_IMPORTACAO_CATALOGO,
     ALIBABA_PAUSA_ENTRE_BUSCAS_SEG,
+    ALIBABA_TELEGRAM_MAX_NOVOS,
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
 from core.ddg_lite import mensagem_circuit_breaker
 from core.notificador import alertar_gestor, chave_itens_novos, chave_resumo_periodo, gestor_telegram_configurado
-from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca
+from integracoes.alibaba.busca import buscar_oportunidades, montar_termo_busca, termos_busca_produto
 from integracoes.cambio.cotacao_usd import cotacao_confiavel_para_margem, obter_cotacao_usd
 from integracoes.importacao.avaliacao_ia_parametros import avaliar_parametros_alibaba_busca, formatar_secao_ia
 
@@ -215,7 +216,8 @@ def _montar_alerta(
         if not novos:
             continue
         linhas.append(f"*{r.get('produto', r.get('id', ''))}* ({len(novos)} novo(s)):")
-        for item in novos[:6]:
+        limite = max(1, ALIBABA_TELEGRAM_MAX_NOVOS)
+        for item in novos[:limite]:
             titulo = str(item.get("titulo") or "Anúncio")[:70]
             preco = _formatar_preco(item.get("preco_usd"))
             moq_txt = _formatar_moq(item.get("moq"))
@@ -226,8 +228,8 @@ def _montar_alerta(
             linhas.append(f"  🔗 {item.get('url', '')}")
             if item.get("url_busca"):
                 linhas.append(f"  🔍 Busca: {item['url_busca']}")
-        if len(novos) > 6:
-            linhas.append(f"  … e mais {len(novos) - 6}")
+        if len(novos) > limite:
+            linhas.append(f"  … e mais {len(novos) - limite}")
         linhas.append("")
     return "\n".join(linhas).strip()
 
@@ -289,7 +291,8 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             pid = str(produto.get("id") or "").strip()
             if not pid:
                 continue
-            logger.info("Buscando no Alibaba: %s", montar_termo_busca(produto))
+            termos = termos_busca_produto(produto)
+            logger.info("Buscando no Alibaba: %s", " | ".join(termos) or montar_termo_busca(produto))
             resultados.append(_monitorar_produto(produto, historico))
 
         escrever_json_atomico(HISTORY_PATH, historico)
