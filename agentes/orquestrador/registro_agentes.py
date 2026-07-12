@@ -190,6 +190,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "monitor_sem_venda_ml",
+        "Anúncios ML sem venda 30d",
+        "monitor",
+        "agentes.ml.agente_monitor_sem_venda_ml:executar",
+        {"enviar_alerta": True},
+        notas="Sugere preço/ads/republicar para ativos sem pedido no período",
+    ),
+    AgenteRegistrado(
         "monitor_anita",
         "Monitor esmaltes Anita",
         "monitor",

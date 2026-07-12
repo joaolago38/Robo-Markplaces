@@ -94,6 +94,19 @@ MONITOR_CONCORRENTES_ARQUIVO = os.getenv(
 MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT = float(
     os.getenv("MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT", "5.0")
 )
+# Se 1, alertas de gap vs "preço alvo" só saem com anúncio MLB vivo (não PREENCHER/JSON)
+MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO = os.getenv(
+    "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", "1"
+).strip().lower() not in ("0", "false", "no")
+
+# Anúncios próprios sem venda recente
+MONITOR_SEM_VENDA_DIAS = int(os.getenv("MONITOR_SEM_VENDA_DIAS", "30"))
+MONITOR_SEM_VENDA_MAX_ITENS = int(os.getenv("MONITOR_SEM_VENDA_MAX_ITENS", "40"))
+MONITOR_SEM_VENDA_ALERTA_RESUMO = os.getenv(
+    "MONITOR_SEM_VENDA_ALERTA_RESUMO", "1"
+).strip().lower() not in ("0", "false", "no")
+MONITOR_SEM_VENDA_COOLDOWN_SEG = int(os.getenv("MONITOR_SEM_VENDA_COOLDOWN_SEG", "14400"))
+MONITOR_SEM_VENDA_VISITAS_ALTAS = int(os.getenv("MONITOR_SEM_VENDA_VISITAS_ALTAS", "20"))
 
 # Relatório de estratégia de vendas ML (ações a partir de gaps/margem)
 ESTRATEGIA_ML_MAX_ACOES = int(os.getenv("ESTRATEGIA_ML_MAX_ACOES", "3"))

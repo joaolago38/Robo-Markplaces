@@ -507,6 +507,8 @@ def buscar_metricas_item(item_id: str) -> dict:
             "estoque": estoque_int,
             "visitas_7d": v7,
             "visitas_30d": v30,
+            "sold_quantity": int(item.get("sold_quantity", 0) or 0),
+            "sku": str(item.get("seller_sku", "") or ""),
         }
     except Exception as exc:
         _log_erro_leitura_item("buscar_metricas_item", item_id, exc)
@@ -846,7 +848,7 @@ def listar_meus_anuncios() -> list[dict]:
 
         normalized: list[dict] = []
         batch_size = 20
-        attrs = "id,title,price,seller_sku,status"
+        attrs = "id,title,price,seller_sku,status,sold_quantity,date_created"
         for i in range(0, len(item_ids), batch_size):
             batch = item_ids[i : i + batch_size]
             rm = request(
@@ -873,6 +875,8 @@ def listar_meus_anuncios() -> list[dict]:
                         "preco": float(b.get("price", 0) or 0),
                         "sku": str(b.get("seller_sku", "") or ""),
                         "status": str(b.get("status", "") or ""),
+                        "sold_quantity": int(b.get("sold_quantity", 0) or 0),
+                        "date_created": str(b.get("date_created", "") or ""),
                     }
                 )
         return normalized

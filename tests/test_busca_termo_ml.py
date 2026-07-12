@@ -260,5 +260,29 @@ class TestExecutarBuscaTermo(unittest.TestCase):
         self.assertEqual(out[0]["fonte_busca"], "brave")
 
 
+class TestTituloRelevante(unittest.TestCase):
+    def test_exige_marca_quando_no_termo(self):
+        self.assertTrue(
+            busca_termo_ml._titulo_relevante(
+                "kit 5 esmaltes impala bailarina",
+                "Kit 5 Esmaltes Impala Bailarina Sortidos",
+            )
+        )
+        self.assertFalse(
+            busca_termo_ml._titulo_relevante(
+                "kit 5 esmaltes impala bailarina",
+                "Kit 5 Esmaltes Risqué Sortidos",
+            )
+        )
+
+    def test_filtra_lista(self):
+        rows = [
+            {"titulo": "Kit Impala Bailarina", "preco": 30},
+            {"titulo": "Cabo USB", "preco": 10},
+        ]
+        out = busca_termo_ml.filtrar_por_relevancia_titulo("kit impala bailarina", rows)
+        self.assertEqual(len(out), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

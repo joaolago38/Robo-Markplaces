@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from core.config import (
+    MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO,
     MONITOR_CONCORRENTES_ARQUIVO,
     MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT,
     ROOT,
@@ -138,6 +139,13 @@ def _resolver_preco_referencia(entrada: dict) -> tuple[float, str]:
     return 0.0, "indefinido"
 
 
+def _pode_alertar_gap_preco(origem_preco: str) -> bool:
+    """Gap vs preço alvo só alerta com anúncio vivo (evita Telegram fictício)."""
+    if not MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO:
+        return True
+    return origem_preco == "anuncio_vivo"
+
+
 def _leituras_recentes(entrada_hist: dict, limite: int = 5) -> list[dict]:
     leituras = entrada_hist.get("leituras")
     if isinstance(leituras, list) and leituras:
@@ -230,12 +238,13 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     menor_ant = float(anterior.get("menor_preco") or 0)
 
     alertas: list[str] = []
-    for ameaca in analise.get("ameacas_preco") or []:
-        alertas.append(
-            f"{nome}: {ameaca.get('sku')} {rotulo} R$ {ameaca.get('meu_preco'):.2f} está "
-            f"{ameaca.get('gap_pct')}% acima do anúncio da loja "
-            f"(R$ {ameaca.get('menor_preco_loja'):.2f})."
-        )
+    if _pode_alertar_gap_preco(origem_preco):
+        for ameaca in analise.get("ameacas_preco") or []:
+            alertas.append(
+                f"{nome}: {ameaca.get('sku')} {rotulo} R$ {ameaca.get('meu_preco'):.2f} está "
+                f"{ameaca.get('gap_pct')}% acima do anúncio da loja "
+                f"(R$ {ameaca.get('menor_preco_loja'):.2f})."
+            )
 
     if menor_ant > 0 and menor > 0:
         var = _pct_variacao(menor_ant, menor)
@@ -246,7 +255,12 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
                 f"para R$ {menor:.2f} ({var:.1f}%)."
             )
 
-    if meu_preco > 0 and menor > 0 and meu_preco > menor:
+    if (
+        _pode_alertar_gap_preco(origem_preco)
+        and meu_preco > 0
+        and menor > 0
+        and meu_preco > menor
+    ):
         diff = (meu_preco - menor) / menor * 100.0
         if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
             alertas.append(
@@ -315,6 +329,12 @@ def _monitorar_entrada(
         return {"id": eid, "ok": False, "erro": "termo_busca vazio", "alertas": []}
 
     concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+    try:
+        from integracoes.ml.busca_termo_ml import filtrar_por_relevancia_titulo
+
+        concorrentes = filtrar_por_relevancia_titulo(termo, concorrentes)
+    except Exception as exc:
+        logger.debug("filtro relevância termo: %s", exc)
     # Filtro opcional: só anúncios de um seller específico no termo
     seller_filtro = str(entrada.get("seller_id") or "").strip()
     if seller_filtro:
@@ -333,7 +353,11 @@ def _monitorar_entrada(
     menor_ant = float(anterior.get("menor_preco") or 0)
 
     alertas: list[str] = []
-    if menor > 0 and meu_preco > menor:
+    if (
+        _pode_alertar_gap_preco(origem_preco)
+        and menor > 0
+        and meu_preco > menor
+    ):
         diff = (meu_preco - menor) / menor * 100.0
         if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
             alertas.append(

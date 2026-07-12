@@ -21,6 +21,7 @@
     "agente_ads_gatilho",
     "agente_otimizador_listing",
     "agente_monitor_concorrentes",
+    "agente_monitor_sem_venda_ml",
     "agente_monitor_anita",
     "agente_monitor_mercado_esmaltes",
     "agente_comparativo_anita_impala",
