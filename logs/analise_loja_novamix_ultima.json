@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-12T15:15:42.855535+00:00",
+  "timestamp": "2026-07-12T15:25:53.809106+00:00",
   "ok": true,
   "nickname": "NOVAMIX_COMERCIAL",
   "seller_id": "1666381510",
@@ -10,7 +10,14 @@
   "marcas": {
     "impala": 1
   },
-  "ameacas_preco": [],
+  "ameacas_preco": [
+    {
+      "sku": "IMP-BAIL-005",
+      "meu_preco": 48.9,
+      "menor_preco_loja": 30.99,
+      "gap_pct": 57.8
+    }
+  ],
   "perfil": {
     "power_seller_status": "platinum",
     "transactions_total": 1000

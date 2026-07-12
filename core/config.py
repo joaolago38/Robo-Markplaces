@@ -114,6 +114,23 @@ NOVAMIX_RESUMO_DIARIO_ENRIQUECER = os.getenv("NOVAMIX_RESUMO_DIARIO_ENRIQUECER",
     "false",
     "no",
 )
+# Gap máximo vs Novamix para classificar SKU como "competir" (Ads)
+NOVAMIX_GAP_COMPETIR_PCT = float(os.getenv("NOVAMIX_GAP_COMPETIR_PCT", "10.0"))
+# Após resumo diário: pedir confirmação e pausar Ads se maioria em guerra
+NOVAMIX_AUTO_ADS_PAUSAR = os.getenv("NOVAMIX_AUTO_ADS_PAUSAR", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Ligar Ads automaticamente só se flag explícita (mais agressivo)
+NOVAMIX_AUTO_ADS_INVESTIR = os.getenv("NOVAMIX_AUTO_ADS_INVESTIR", "0").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+NOVAMIX_AUTO_ADS_PEDIR_CONFIRMACAO = os.getenv(
+    "NOVAMIX_AUTO_ADS_PEDIR_CONFIRMACAO", "1"
+).strip().lower() not in ("0", "false", "no")
 
 # Anúncios próprios sem venda recente
 MONITOR_SEM_VENDA_DIAS = int(os.getenv("MONITOR_SEM_VENDA_DIAS", "30"))

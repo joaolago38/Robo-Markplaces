@@ -80,6 +80,7 @@ _LOGGER_META = {
     "agente_monitor_sem_venda_ml": ("mercadolivre", "agente"),
     "analise_sem_venda": ("mercadolivre", "integracao"),
     "analise_loja_concorrente": ("mercadolivre", "integracao"),
+    "acoes_novamix": ("mercadolivre", "integracao"),
     "analise_anuncio_concorrente": ("mercadolivre", "integracao"),
     "estrategia_vendas_ml": ("mercadolivre", "integracao"),
     "agente_monitor_anita": ("mercadolivre", "agente"),

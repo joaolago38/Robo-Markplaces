@@ -105,9 +105,15 @@ class TestAgenteResumoDiario(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    @patch.object(agente, "executar_acoes_ads_novamix")
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "analisar_loja")
-    def test_executar_envia_telegram(self, mock_loja, mock_alertar):
+    def test_executar_envia_telegram(self, mock_loja, mock_alertar, mock_ads):
+        mock_ads.return_value = {
+            "ok": True,
+            "executado": False,
+            "motivo": "sem mudança de Ads sugerida",
+        }
         mock_loja.return_value = {
             "ok": True,
             "nickname": "NOVAMIX_COMERCIAL",
@@ -117,7 +123,14 @@ class TestAgenteResumoDiario(unittest.TestCase):
             "preco_med": 30.99,
             "preco_max": 30.99,
             "marcas": {"impala": 1},
-            "ameacas_preco": [],
+            "ameacas_preco": [
+                {
+                    "sku": "IMP-BAIL-005",
+                    "meu_preco": 48.9,
+                    "menor_preco_loja": 30.99,
+                    "gap_pct": 57.8,
+                }
+            ],
             "perfil": {"power_seller_status": "platinum", "transactions_total": 1000},
             "estrategia": {"porte": "grande", "ameaca_geral": "alta", "implicacoes_para_voce": []},
             "anuncios": [
@@ -132,21 +145,35 @@ class TestAgenteResumoDiario(unittest.TestCase):
         }
         with patch.object(agente, "HISTORY_PATH", self.tmp_path / "hist.json"), patch.object(
             agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"
-        ), patch.object(agente, "_carregar_entrada_catalogo", return_value={
-            "seller_id": "1666381510",
-            "nickname": "NOVAMIX_COMERCIAL",
-            "termos_busca": ["kit impala"],
-            "limite_resultados": 10,
-        }), patch.object(agente, "NOVAMIX_RESUMO_DIARIO_ALERTA", True), patch.object(
+        ), patch.object(agente, "ACOES_PATH", self.tmp_path / "acoes.json"), patch.object(
+            agente, "_carregar_entrada_catalogo", return_value={
+                "seller_id": "1666381510",
+                "nickname": "NOVAMIX_COMERCIAL",
+                "termos_busca": ["kit impala"],
+                "limite_resultados": 10,
+            }
+        ), patch.object(agente, "NOVAMIX_RESUMO_DIARIO_ALERTA", True), patch.object(
             agente, "NOVAMIX_RESUMO_DIARIO_ENRIQUECER", False
+        ), patch(
+            "integracoes.ml.acoes_novamix._carregar_produtos",
+            return_value=[
+                {
+                    "sku": "IMP-BAIL-005",
+                    "custo": 20.0,
+                    "canais": {"mercadolivre": {"preco": 48.9}},
+                }
+            ],
         ):
-            out = agente.executar(enviar_alerta=True)
+            out = agente.executar(enviar_alerta=True, executar_ads=True)
         self.assertTrue(out["ok"])
         self.assertTrue(out["alerta_enviado"])
+        self.assertEqual(out.get("ads_sugerido"), "pausar")
         mock_alertar.assert_called_once()
+        mock_ads.assert_called_once()
         msg = mock_alertar.call_args[0][0]
         self.assertIn("Novamix", msg)
         self.assertIn("desempenho", msg.lower())
+        self.assertIn("Plano de ação", msg)
 
 
 if __name__ == "__main__":

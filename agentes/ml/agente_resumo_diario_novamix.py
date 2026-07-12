@@ -1,11 +1,14 @@
 """
 agentes/ml/agente_resumo_diario_novamix.py
 Resumo diário da loja NOVAMIX_COMERCIAL no Telegram:
-perfil, desempenho vs leitura anterior e produtos com sinal de giro.
+perfil, desempenho, produtos com giro e plano de ação (Ads/preço/canal).
+
+Opcionalmente pede confirmação e pausa/liga Product Ads conforme o plano.
 
 Uso:
   python -m agentes.ml.agente_resumo_diario_novamix
   python -m agentes.ml.agente_resumo_diario_novamix --sem-alerta
+  python -m agentes.ml.agente_resumo_diario_novamix --sem-ads
 """
 from __future__ import annotations
 
@@ -17,6 +20,7 @@ from typing import Any
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     MONITOR_CONCORRENTES_ARQUIVO,
+    NOVAMIX_AUTO_ADS_PEDIR_CONFIRMACAO,
     NOVAMIX_RESUMO_DIARIO_ALERTA,
     NOVAMIX_RESUMO_DIARIO_COOLDOWN_SEG,
     NOVAMIX_RESUMO_DIARIO_ENRIQUECER,
@@ -27,6 +31,11 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
+from integracoes.ml.acoes_novamix import (
+    executar_acoes_ads_novamix,
+    formatar_secao_acoes_telegram,
+    gerar_plano_acoes_novamix,
+)
 from integracoes.ml.analise_loja_concorrente import (
     analisar_desempenho_diario,
     analisar_loja,
@@ -37,6 +46,7 @@ logger = logging.getLogger("agente_resumo_diario_novamix")
 
 HISTORY_PATH = ROOT / "logs" / "novamix_diario_history.json"
 SNAPSHOT_PATH = ROOT / "logs" / "novamix_diario_ultima.json"
+ACOES_PATH = ROOT / "logs" / "novamix_acoes_ultima.json"
 
 
 def _data_brt() -> str:
@@ -58,8 +68,8 @@ def _carregar_entrada_catalogo() -> dict[str, Any]:
     return {}
 
 
-def executar(enviar_alerta: bool = True) -> dict[str, Any]:
-    """Coleta Novamix, monta resumo diário e envia Telegram. Nunca lança."""
+def executar(enviar_alerta: bool = True, executar_ads: bool = True) -> dict[str, Any]:
+    """Coleta Novamix, plano de ação, Telegram e Ads opcional. Nunca lança."""
     try:
         if enviar_alerta and not gestor_telegram_configurado():
             logger.warning("Telegram gestor não configurado — resumo Novamix sem envio")
@@ -91,9 +101,22 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             historico_anterior=anterior,
             top_n=max(1, NOVAMIX_RESUMO_DIARIO_TOP_N),
         )
+        plano = gerar_plano_acoes_novamix(analise)
         msg = montar_resumo_diario(analise, desempenho, data_local=_data_brt())
+        secao_acoes = formatar_secao_acoes_telegram(plano)
+        if secao_acoes:
+            msg = f"{msg}\n{secao_acoes}"
 
         agora = datetime.now(timezone.utc).isoformat()
+        ads_out: dict[str, Any] = {"ok": True, "executado": False, "motivo": "não solicitado"}
+        if executar_ads:
+            ads_out = executar_acoes_ads_novamix(
+                plano,
+                pedir_confirmacao=NOVAMIX_AUTO_ADS_PEDIR_CONFIRMACAO,
+            )
+            if ads_out.get("motivo") and not ads_out.get("executado"):
+                msg += f"\n\n_Ads: {ads_out.get('motivo')}_"
+
         snapshot = {
             "timestamp": agora,
             "ok": bool(analise.get("ok")),
@@ -110,10 +133,21 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 "estrategia": analise.get("estrategia"),
             },
             "desempenho": desempenho,
+            "plano_acoes": plano,
+            "ads": ads_out,
             "mensagem": msg,
         }
         escrever_json_atomico(SNAPSHOT_PATH, snapshot)
-        # Compatível com relatório de estratégia
+        escrever_json_atomico(
+            ACOES_PATH,
+            {
+                "timestamp": agora,
+                "ads_sugerido": plano.get("ads_sugerido"),
+                "caixas": plano.get("caixas"),
+                "acoes": plano.get("acoes"),
+                "ads_execucao": ads_out,
+            },
+        )
         try:
             escrever_json_atomico(
                 ROOT / "logs" / "analise_loja_novamix_ultima.json",
@@ -131,6 +165,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 "amostra": amostra,
                 "fonte_giro": desempenho.get("fonte_giro_predominante"),
                 "top": (desempenho.get("produtos_saindo") or [])[:3],
+                "ads_sugerido": plano.get("ads_sugerido"),
             }
         )
         historico["rodadas"] = rodadas[-60:]
@@ -139,6 +174,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "timestamp": agora,
             "desempenho": desempenho,
             "nickname": analise.get("nickname"),
+            "ads_sugerido": plano.get("ads_sugerido"),
         }
         escrever_json_atomico(HISTORY_PATH, historico)
 
@@ -147,7 +183,10 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             gauge("novamix.diario.preco_min", float(amostra["preco_min"]))
         incrementar(
             "novamix.diario.rodadas",
-            tags=[f"fonte_giro:{desempenho.get('fonte_giro_predominante', '?')}"],
+            tags=[
+                f"fonte_giro:{desempenho.get('fonte_giro_predominante', '?')}",
+                f"ads:{plano.get('ads_sugerido', 'manter')}",
+            ],
         )
 
         enviado = False
@@ -166,6 +205,9 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "nickname": analise.get("nickname") or nickname,
             "anuncios": int(analise.get("total_anuncios_coletados") or 0),
             "fonte_giro": desempenho.get("fonte_giro_predominante"),
+            "ads_sugerido": plano.get("ads_sugerido"),
+            "ads_executado": bool(ads_out.get("executado")),
+            "plano_acoes": plano,
             "alerta_enviado": enviado,
             "desempenho": desempenho,
             "mensagem": msg,
@@ -177,18 +219,21 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Resumo diário Novamix → Telegram")
+    parser = argparse.ArgumentParser(description="Resumo diário Novamix → ações → Telegram/Ads")
     parser.add_argument("--sem-alerta", action="store_true")
+    parser.add_argument("--sem-ads", action="store_true", help="Não tenta pausar/ligar Product Ads")
     args = parser.parse_args()
     logger.info("=== Resumo diário Novamix ===")
-    out = executar(enviar_alerta=not args.sem_alerta)
+    out = executar(enviar_alerta=not args.sem_alerta, executar_ads=not args.sem_ads)
     if not out.get("ok"):
         logger.error("Falhou: %s", out.get("erro"))
         return 1
     logger.info(
-        "Novamix OK: %s anúncio(s), giro=%s, alerta=%s",
+        "Novamix OK: %s anúncio(s), giro=%s, ads=%s exec=%s, alerta=%s",
         out.get("anuncios"),
         out.get("fonte_giro"),
+        out.get("ads_sugerido"),
+        out.get("ads_executado"),
         out.get("alerta_enviado"),
     )
     return 0
