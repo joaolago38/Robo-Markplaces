@@ -130,6 +130,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Shopee e fecha um veredito de canal. Telegram: score + recomendação ML ou "
         "Shopee."
     ),
+    "monitor_filamentos_ml": (
+        "Varre filamentos 3D no Mercado Livre (PLA, PETG, ABS, TPU…): cores mais vendidas, "
+        "preços e marcas; cruza com o catálogo Alibaba (FOB/landed × preço ML). "
+        "Telegram: ranking de cores + margem de importação."
+    ),
     "monitor_acetona_cruzeiro": (
         "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
         "ideias de estratégia (Claude + Impala). Telegram: relatório completo da "
@@ -272,6 +277,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "comparativo_ml_shopee": (
         "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
+    "monitor_filamentos_ml": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
     "monitor_acetona_cruzeiro": (
         "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
@@ -359,6 +365,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("anita_impala", "comparativo_anita_impala"),
     ("comparativo:ml_shopee", "comparativo_ml_shopee"),
     ("ml_shopee", "comparativo_ml_shopee"),
+    ("filamentos", "monitor_filamentos_ml"),
+    ("filamentos:ml", "monitor_filamentos_ml"),
     ("acetona", "monitor_acetona_cruzeiro"),
     ("descoberta", "descoberta_produtos"),
     ("ads_ml", "ads_gatilho"),

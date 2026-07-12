@@ -208,6 +208,25 @@ COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO = os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_RE
 )
 COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG = int(os.getenv("COMPARATIVO_ML_SHOPEE_ALERTA_COOLDOWN_SEG", "21600"))
 
+# Monitor filamentos 3D no Mercado Livre (preços, marcas, vendas)
+FILAMENTOS_ML_CATALOGO = os.getenv(
+    "FILAMENTOS_ML_CATALOGO", "catalogo/filamentos_3d_monitor.json"
+)
+FILAMENTOS_ML_PAUSA_SEG = float(os.getenv("FILAMENTOS_ML_PAUSA_SEG", "1.5"))
+FILAMENTOS_ML_ALERTA_RESUMO = os.getenv("FILAMENTOS_ML_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+FILAMENTOS_ML_ALERTA_COOLDOWN_SEG = int(os.getenv("FILAMENTOS_ML_ALERTA_COOLDOWN_SEG", "21600"))
+FILAMENTOS_ML_CRUZAR_ALIBABA = os.getenv("FILAMENTOS_ML_CRUZAR_ALIBABA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+FILAMENTOS_ML_ALIBABA_MAX_CORES = int(os.getenv("FILAMENTOS_ML_ALIBABA_MAX_CORES", "3"))
+FILAMENTOS_ML_ALIBABA_PAUSA_SEG = float(os.getenv("FILAMENTOS_ML_ALIBABA_PAUSA_SEG", "1.0"))
+
 # Busca kit esmaltes Anita/Impala — frequência diária + cores
 ESMALTES_BUSCA_KIT_CATALOGO = os.getenv(
     "ESMALTES_BUSCA_KIT_CATALOGO", "catalogo/esmaltes_busca_kit_frequencia.json"

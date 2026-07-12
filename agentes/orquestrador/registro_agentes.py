@@ -270,6 +270,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Esmaltes e filamentos 3D: score e veredito de canal (ML vs Shopee)",
     ),
     AgenteRegistrado(
+        "monitor_filamentos_ml",
+        "Monitor filamentos 3D ML",
+        "monitor",
+        "agentes.filamentos.agente_monitor_filamentos_ml:executar",
+        {"enviar_alerta": True},
+        notas="PLA/PETG/ABS/TPU no ML: cores mais vendidas + cruzamento Alibaba (FOB×ML)",
+    ),
+    AgenteRegistrado(
         "monitor_acetona_cruzeiro",
         "Monitor Acetona Cruzeiro ML",
         "monitor",

@@ -1,0 +1,75 @@
+name: Monitor Filamentos 3D ML
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 6 horas
+    - cron: "45 */6 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  FILAMENTOS_ML_ALERTA_RESUMO: "1"
+  FILAMENTOS_ML_PAUSA_SEG: "1.5"
+  FILAMENTOS_ML_CRUZAR_ALIBABA: "1"
+  FILAMENTOS_ML_ALIBABA_MAX_CORES: "3"
+
+jobs:
+  monitorar:
+    name: Filamentos 3D — preços e marcas no ML
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Restaurar série histórica
+        uses: actions/cache@v4
+        with:
+          path: logs/filamentos_ml_series.json
+          key: filamentos-ml-series-${{ github.run_id }}
+          restore-keys: |
+            filamentos-ml-series-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor filamentos ML
+        run: python -m agentes.filamentos.agente_monitor_filamentos_ml
+        env:
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: filamentos-ml-snapshot
+          path: |
+            logs/filamentos_ml_ultima.json
+            logs/filamentos_ml_history.json
+            logs/filamentos_ml_series.json
+          if-no-files-found: ignore
