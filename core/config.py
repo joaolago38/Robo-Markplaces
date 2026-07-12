@@ -810,6 +810,13 @@ LOG_ERROS_BLING = os.getenv("LOG_ERROS_BLING", "0").strip().lower() in (
     "yes",
     "on",
 )
+# Tokens Magalu / Shopee / Amazon (credenciais ausentes, invalid_grant, etc.)
+LOG_ERROS_TOKENS = os.getenv("LOG_ERROS_TOKENS", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 # Storage de estado (file = padrão local; dynamodb = AWS Free Tier)
 STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "file").strip().lower() or "file"

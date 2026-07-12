@@ -12,7 +12,11 @@ import core.config as cfg
 from core.datadog_metrics import incrementar
 from core.github_secrets import sync_secrets_github
 from core.http_client import request
-from core.log_opcional import erro_opcional, log_erros_bling_ativos
+from core.log_opcional import (
+    erro_opcional,
+    log_erros_bling_ativos,
+    log_erros_tokens_ativos,
+)
 
 logger = logging.getLogger("token_manager")
 
@@ -20,6 +24,11 @@ logger = logging.getLogger("token_manager")
 def _erro_bling_token(msg: str, *args) -> None:
     # Religar logs Bling (401/403/refresh): LOG_ERROS_BLING=1
     erro_opcional(logger, log_erros_bling_ativos(), msg, *args, flag_hint="LOG_ERROS_BLING")
+
+
+def _erro_token_mp(msg: str, *args) -> None:
+    # Magalu / Shopee / Amazon — religar: LOG_ERROS_TOKENS=1
+    erro_opcional(logger, log_erros_tokens_ativos(), msg, *args, flag_hint="LOG_ERROS_TOKENS")
 
 _token_cache_ml = {"access_token": None, "expires_at": 0}
 _ml_refresh_efetivo = {"valor": None}
@@ -382,13 +391,13 @@ def _renovar_token_shopee():
     path = "/api/v2/auth/access_token/get"
 
     if not all([cfg.SHOPEE_PARTNER_ID, cfg.SHOPEE_PARTNER_KEY, cfg.SHOPEE_SHOP_ID, refresh]):
-        logger.error("Credenciais Shopee ausentes para renovação de token.")
+        _erro_token_mp("Credenciais Shopee ausentes para renovação de token.")
         return None
 
     pid = (cfg.SHOPEE_PARTNER_ID or "").strip()
     sid = (cfg.SHOPEE_SHOP_ID or "").strip()
     if not pid.isdigit() or not sid.isdigit():
-        logger.error(
+        _erro_token_mp(
             "Shopee mal configurado: SHOPEE_PARTNER_ID/SHOPEE_SHOP_ID devem ser numéricos "
             "(valor atual não é um ID válido)"
         )
@@ -417,12 +426,12 @@ def _renovar_token_shopee():
 
         err = body.get("error")
         if err not in (None, "", 0):
-            logger.error("Shopee refresh falhou (error=%s message=%s)", err, body.get("message"))
+            _erro_token_mp("Shopee refresh falhou (error=%s message=%s)", err, body.get("message"))
             return None
 
         tok_payload = body.get("response") if isinstance(body.get("response"), dict) else body
         if not isinstance(tok_payload, dict):
-            logger.error("Shopee refresh resposta inesperada.")
+            _erro_token_mp("Shopee refresh resposta inesperada.")
             return None
 
         access_token = tok_payload.get("access_token")
@@ -435,7 +444,7 @@ def _renovar_token_shopee():
         novo_refresh = tok_payload.get("refresh_token") or body.get("refresh_token")
 
         if not access_token:
-            logger.error("Shopee refresh sem access_token na resposta.")
+            _erro_token_mp("Shopee refresh sem access_token na resposta.")
             return None
 
         _token_cache_shopee["access_token"] = access_token
@@ -454,7 +463,7 @@ def _renovar_token_shopee():
 
     except Exception as e:
         incrementar("token.falha", tags=["provider:shopee"])
-        logger.error("Erro ao renovar token Shopee: %s", e)
+        _erro_token_mp("Erro ao renovar token Shopee: %s", e)
         return None
 
 
@@ -547,7 +556,7 @@ def _magalu_refresh_disponivel() -> str | None:
 def _renovar_token_magalu():
     rt = _magalu_refresh_disponivel()
     if not all([cfg.MAGALU_CLIENT_ID, cfg.MAGALU_CLIENT_SECRET, rt]):
-        logger.error("Credenciais Magalu ausentes para renovação (client_id/secret ou refresh_token).")
+        _erro_token_mp("Credenciais Magalu ausentes para renovação (client_id/secret ou refresh_token).")
         return None
 
     body = urllib.parse.urlencode(
@@ -568,7 +577,7 @@ def _renovar_token_magalu():
             timeout=25,
         )
         if r.status_code >= 400:
-            logger.error(
+            _erro_token_mp(
                 "Erro ao renovar token Magazine Luiza: HTTP %s — %s",
                 r.status_code,
                 (r.text or "")[:500],
@@ -581,7 +590,7 @@ def _renovar_token_magalu():
         novo_refresh = tokens.get("refresh_token")
 
         if not access_token:
-            logger.error("Magalu refresh sem access_token na resposta.")
+            _erro_token_mp("Magalu refresh sem access_token na resposta.")
             return None
 
         _token_cache_magalu["access_token"] = access_token
@@ -622,7 +631,7 @@ def _renovar_token_magalu():
 
     except Exception as e:
         incrementar("token.falha", tags=["provider:magalu"])
-        logger.error("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
+        _erro_token_mp("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
         return None
 
 
@@ -820,11 +829,11 @@ def _renovar_token_bling():
         return access_token
 
     except ValueError as e:
-        logger.error("Erro de parse da resposta do token Bling: %s", e)
+        _erro_bling_token("Erro de parse da resposta do token Bling: %s", e)
         return None
     except Exception as e:
         incrementar("token.falha", tags=["provider:bling"])
-        logger.error("Erro ao renovar token Bling: %s", e)
+        _erro_bling_token("Erro ao renovar token Bling: %s", e)
         return None
 
 
@@ -941,7 +950,7 @@ def _renovar_token_amazon():
     """
     refresh = _amazon_refresh_disponivel()
     if not all([cfg.AMAZON_LWA_CLIENT_ID, cfg.AMAZON_LWA_CLIENT_SECRET, refresh]):
-        logger.error(
+        _erro_token_mp(
             "Credenciais Amazon ausentes para renovação "
             "(AMAZON_LWA_CLIENT_ID/SECRET ou AMAZON_REFRESH_TOKEN)."
         )
@@ -965,7 +974,7 @@ def _renovar_token_amazon():
             timeout=25,
         )
         if r.status_code >= 400:
-            logger.error(
+            _erro_token_mp(
                 "Amazon refresh falhou (HTTP %s): %s",
                 r.status_code,
                 (r.text or "")[:500],
@@ -979,7 +988,7 @@ def _renovar_token_amazon():
         novo_refresh = tokens.get("refresh_token")
 
         if not access_token:
-            logger.error("Amazon refresh sem access_token na resposta.")
+            _erro_token_mp("Amazon refresh sem access_token na resposta.")
             return None
 
         _token_cache_amazon["access_token"] = access_token
@@ -1009,7 +1018,7 @@ def _renovar_token_amazon():
 
     except Exception as e:
         incrementar("token.falha", tags=["provider:amazon"])
-        logger.error("Erro ao renovar token Amazon: %s", e)
+        _erro_token_mp("Erro ao renovar token Amazon: %s", e)
         return None
 
 
