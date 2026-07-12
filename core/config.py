@@ -660,6 +660,15 @@ TELEGRAM_TOKEN          = (os.getenv("TELEGRAM_TOKEN") or "").strip()
 TELEGRAM_CHAT_ID        = (os.getenv("TELEGRAM_CHAT_ID") or "").strip()
 TELEGRAM_GESTOR_CHAT_ID = (os.getenv("TELEGRAM_GESTOR_CHAT_ID") or "").strip()
 TELEGRAM_MANICURES_CHAT_ID = (os.getenv("TELEGRAM_MANICURES_CHAT_ID") or TELEGRAM_CHAT_ID or "").strip()
+# Blocos "O que este agente faz" / "Quando roda" nos alertas Telegram.
+# Desligado por padrão; textos ficam em core/telegram_explicacao.py.
+# Para religar: TELEGRAM_EXPLICACAO_AGENTES=1
+TELEGRAM_EXPLICACAO_AGENTES = os.getenv("TELEGRAM_EXPLICACAO_AGENTES", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 ALERTA_COOLDOWN_SEG      = int(os.getenv("ALERTA_COOLDOWN_SEG", "7200"))
 
 # Fiscal (NF-e)
@@ -779,6 +788,28 @@ DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
 DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
 # Ambiente exibido na tag `env:` no Datadog (production/staging/dev). Antes era fixo em "production".
 DD_ENV = os.getenv("DD_ENV", "production").strip() or "production"
+
+# Erros ruidosos no Datadog (Leopardo/scrapers, Claude 400, Bling 401/403).
+# Padrão OFF — não sobem como ERROR. Religar individualmente com =1.
+# Ver core/log_opcional.py
+LOG_ERROS_VEICULOS_SCRAPERS = os.getenv("LOG_ERROS_VEICULOS_SCRAPERS", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+LOG_ERROS_CLAUDE = os.getenv("LOG_ERROS_CLAUDE", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+LOG_ERROS_BLING = os.getenv("LOG_ERROS_BLING", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 # Storage de estado (file = padrão local; dynamodb = AWS Free Tier)
 STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "file").strip().lower() or "file"

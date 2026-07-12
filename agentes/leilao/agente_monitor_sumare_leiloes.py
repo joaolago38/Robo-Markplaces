@@ -4,6 +4,9 @@ Monitora Sumaré Leilões (PREFEITURA/DETRAN): veículos com documento, alerta d
 
 Site oficial: https://www.sumareleiloes.com.br
 
+Erros Claude (avaliação de parâmetros) silenciados no Datadog por padrão.
+Religar logs: LOG_ERROS_CLAUDE=1
+
 Uso:
   python -m agentes.leilao.agente_monitor_sumare_leiloes
 """

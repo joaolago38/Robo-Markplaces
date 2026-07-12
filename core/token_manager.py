@@ -12,8 +12,14 @@ import core.config as cfg
 from core.datadog_metrics import incrementar
 from core.github_secrets import sync_secrets_github
 from core.http_client import request
+from core.log_opcional import erro_opcional, log_erros_bling_ativos
 
 logger = logging.getLogger("token_manager")
+
+
+def _erro_bling_token(msg: str, *args) -> None:
+    # Religar logs Bling (401/403/refresh): LOG_ERROS_BLING=1
+    erro_opcional(logger, log_erros_bling_ativos(), msg, *args, flag_hint="LOG_ERROS_BLING")
 
 _token_cache_ml = {"access_token": None, "expires_at": 0}
 _ml_refresh_efetivo = {"valor": None}
@@ -707,11 +713,20 @@ def _bling_refresh_disponivel() -> str | None:
 def _dica_erro_refresh_bling(status: int, detalhe: str) -> None:
     d = (detalhe or "").lower()
     if "invalid_grant" in d or "expired" in d or "revoked" in d:
-        logger.error("→ refresh_token invalido/expirado/ja usado. Re-bootstrap com pegar_token_bling.py e atualize BLING_ACCESS_TOKEN e BLING_REFRESH_TOKEN.")
+        _erro_bling_token(
+            "→ refresh_token invalido/expirado/ja usado. Re-bootstrap com pegar_token_bling.py "
+            "e atualize BLING_ACCESS_TOKEN e BLING_REFRESH_TOKEN."
+        )
     elif "invalid_client" in d or "client" in d or status in (401, 403):
-        logger.error("→ client_id/client_secret incorretos. Confira BLING_CLIENT_ID e BLING_CLIENT_SECRET (sem ponto, sem aspas, sem espaco).")
+        _erro_bling_token(
+            "→ client_id/client_secret incorretos. Confira BLING_CLIENT_ID e BLING_CLIENT_SECRET "
+            "(sem ponto, sem aspas, sem espaco)."
+        )
     elif status == 400:
-        logger.error("→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.")
+        _erro_bling_token(
+            "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU "
+            "BLING_CLIENT_SECRET ausente/errado."
+        )
 
 
 def _renovar_token_bling():
@@ -725,7 +740,7 @@ def _renovar_token_bling():
     refresh = _bling_refresh_disponivel()
 
     if not all([cfg.BLING_CLIENT_ID, cfg.BLING_CLIENT_SECRET, refresh]):
-        logger.error(
+        _erro_bling_token(
             "Credenciais Bling ausentes para renovação "
             "(client_id/secret ou refresh_token)."
         )
@@ -760,7 +775,7 @@ def _renovar_token_bling():
                     detalhe = detalhe.get("description") or detalhe.get("message") or str(detalhe)
             except Exception:
                 detalhe = (getattr(r, "text", "") or "")[:300]
-            logger.error("Bling refresh falhou (HTTP %s): %s", r.status_code, detalhe)
+            _erro_bling_token("Bling refresh falhou (HTTP %s): %s", r.status_code, detalhe)
             _dica_erro_refresh_bling(r.status_code, str(detalhe))
             return None
 
@@ -771,7 +786,7 @@ def _renovar_token_bling():
         novo_refresh = tokens.get("refresh_token")
 
         if not access_token:
-            logger.error("Bling refresh sem access_token na resposta.")
+            _erro_bling_token("Bling refresh sem access_token na resposta.")
             return None
 
         _token_cache_bling["access_token"] = access_token

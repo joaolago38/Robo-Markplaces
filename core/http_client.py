@@ -20,6 +20,11 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from core.datadog_metrics import gauge, incrementar
+from core.log_opcional import (
+    erro_opcional,
+    host_scraper_veiculos,
+    log_erros_veiculos_ativos,
+)
 
 logger = logging.getLogger("http_client")
 
@@ -62,13 +67,27 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("http.latencia_ms", duracao_ms, tags=[*tags_base, "status:exception"])
         incrementar("http.exception", tags=tags_base)
-        logger.error(
-            "HTTP %s %s falhou: %s",
-            metodo,
-            host,
-            exc,
-            extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
-        )
+        # Scrapers de lojas (Leopardo etc.) falham com frequência por timeout/bloqueio —
+        # não poluir Datadog enquanto LOG_ERROS_VEICULOS_SCRAPERS=0.
+        if host_scraper_veiculos(host) and not log_erros_veiculos_ativos():
+            erro_opcional(
+                logger,
+                False,
+                "HTTP %s %s falhou: %s",
+                metodo,
+                host,
+                exc,
+                flag_hint="LOG_ERROS_VEICULOS_SCRAPERS",
+                extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
+            )
+        else:
+            logger.error(
+                "HTTP %s %s falhou: %s",
+                metodo,
+                host,
+                exc,
+                extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
+            )
         raise
 
     duracao_ms = (time.monotonic() - inicio) * 1000
