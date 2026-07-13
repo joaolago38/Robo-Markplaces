@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json
+from core.chat_claim import tentar_claim
 from core.claude_client import MODELO_RAPIDO
 from core.config import (
     ANTHROPIC_API_KEY,
@@ -286,6 +287,9 @@ def _chat_ml_manicures(
     for p in perguntas[:15]:
         texto = str(p.get("text") or "").strip()
         if not pergunta_parece_manicure(texto):
+            continue
+        pid = str(p.get("id") or "")
+        if not tentar_claim("mercadolivre", pid, agente="conversao_manicures"):
             continue
         vistos += 1
         resp = resposta_chat_ml_haiku(

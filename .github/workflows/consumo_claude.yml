@@ -37,8 +37,10 @@ jobs:
           path: |
             logs/claude_uso_orcamento.json
             logs/alertas_cooldown.json
-          key: consumo-claude-${{ github.run_id }}
+          key: estado-vendas-ia-${{ github.run_id }}
           restore-keys: |
+            estado-vendas-ia-
+            claude-orcamento-
             consumo-claude-
             telegram-cooldown-
       - name: Painel consumo Claude
@@ -55,6 +57,15 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Publicar orçamento Claude
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/alertas_cooldown.json
+          key: estado-vendas-ia-${{ github.run_id }}
       - name: Artifact
         uses: actions/upload-artifact@v4
         with:

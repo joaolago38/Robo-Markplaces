@@ -51,6 +51,18 @@ jobs:
           key: telegram-cooldown-${{ github.run_id }}
           restore-keys: |
             telegram-cooldown-
+      - name: Restaurar orçamento Claude + snapshot conversão + claim chat
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+          key: estado-vendas-ia-${{ github.run_id }}
+          restore-keys: |
+            estado-vendas-ia-
+            claude-orcamento-
+            conversao-snapshot-
       - name: Restaurar historico leiloes
         uses: actions/cache@v4
         with:
@@ -85,10 +97,19 @@ jobs:
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+      - name: Validar catálogo MLB (soft)
+        continue-on-error: true
+        run: python scripts/validar_catalogo_ml.py --alerta
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       - name: Rodar orquestrador 30min
         run: python -m agentes.orquestrador.agente_orquestrador
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,alibaba,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml
+          ORQUESTRADOR_EXCLUIR: leilao,alibaba,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,conversao_manicures,consumo_claude,montar_kits_impala
+          CONVERSAO_MANICURES_CHAT_ML: "0"
+          AUTO_RESPOSTAS_ML: "0"
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -147,3 +168,13 @@ jobs:
             logs/relatorio_manha_ml_ultima.json
             logs/esmaltes_mercado_history.json
           key: saude-heartbeats-${{ github.run_id }}
+      - name: Publicar estado vendas/IA
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+          key: estado-vendas-ia-${{ github.run_id }}

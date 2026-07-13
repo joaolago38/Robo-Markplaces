@@ -176,8 +176,9 @@ class TestNotificadorFoto(unittest.TestCase):
 class TestNotificadorPerguntarGestor(unittest.TestCase):
     @patch.object(notificador, "TELEGRAM_TOKEN", "")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "")
-    def test_perguntar_gestor_sem_config_retorna_true(self, *_patches):
-        self.assertTrue(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
+    def test_perguntar_gestor_sem_config_retorna_false(self, *_patches):
+        # Fail-closed: sem Telegram não efetiva Ads
+        self.assertFalse(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
 
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")

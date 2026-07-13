@@ -68,8 +68,10 @@ def _carregar_cooldown() -> dict:
 
 def _salvar_cooldown(estado: dict) -> None:
     try:
+        from core.atomic_io import escrever_json_atomico
+
         _COOLDOWN_PATH.parent.mkdir(parents=True, exist_ok=True)
-        _COOLDOWN_PATH.write_text(json.dumps(estado, ensure_ascii=False, indent=2), encoding="utf-8")
+        escrever_json_atomico(_COOLDOWN_PATH, estado)
     except Exception as exc:
         logger.warning("Cooldown: falha ao gravar %s: %s", _COOLDOWN_PATH, exc)
 
@@ -88,9 +90,15 @@ def _deve_suprimir(chave: str, cooldown_segundos: int) -> bool:
 
 def _marcar_enviado(chave: str) -> None:
     try:
-        estado = _carregar_cooldown()
-        estado[chave] = time.time()
-        _salvar_cooldown(estado)
+        from core.atomic_io import ler_e_atualizar_json
+
+        def _upd(estado: dict) -> dict:
+            if not isinstance(estado, dict):
+                estado = {}
+            estado[chave] = time.time()
+            return estado
+
+        ler_e_atualizar_json(_COOLDOWN_PATH, _upd, default={})
     except Exception as exc:
         logger.warning("Cooldown: falha ao marcar envio %s: %s", chave, exc)
 
@@ -380,8 +388,11 @@ def perguntar_gestor_e_aguardar(
     Nunca lança exceção.
     """
     if not TELEGRAM_TOKEN or not TELEGRAM_GESTOR_CHAT_ID:
-        logger.warning("Telegram não configurado — confirmação de ads auto-aprovada")
-        return True
+        # Fail-closed: sem gestor não se efetiva Ads / ações destrutivas
+        logger.error(
+            "Telegram não configurado — confirmação NEGADA (não auto-aprova Ads)"
+        )
+        return False
     url_base = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
     try:
         texto_msg = f"❓ *Confirmação necessária*\n\n{pergunta}"

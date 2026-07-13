@@ -33,3 +33,6 @@ jobs:
         run: ruff check .
       - name: Testes
         run: python -m pytest -q
+      - name: Validar catálogo MLB (aviso; não falha CI)
+        run: python scripts/validar_catalogo_ml.py
+        continue-on-error: true

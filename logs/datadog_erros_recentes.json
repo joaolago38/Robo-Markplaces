@@ -1,6 +1,28 @@
 {
   "erros": [
     {
+      "fingerprint": "6b85b1f7cafada7d7627",
+      "primeira_vez": "2026-07-13T23:45:54.620789+00:00",
+      "ultima_vez": "2026-07-13T23:46:26.771467+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram não configurado — confirmação NEGADA (não auto-aprova Ads)",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "94db86c08bd0ee571d59",
+      "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
+      "ultima_vez": "2026-07-13T23:45:54.629982+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram answerCallbackQuery erro: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 6
+    },
+    {
       "fingerprint": "25aae72aa3da0ed7d3d5",
       "primeira_vez": "2026-07-05T20:44:29.858666+00:00",
       "ultima_vez": "2026-07-13T21:57:50.379972+00:00",
@@ -472,17 +494,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "94db86c08bd0ee571d59",
-      "primeira_vez": "2026-07-05T20:44:29.139681+00:00",
-      "ultima_vez": "2026-07-12T19:49:22.061091+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram answerCallbackQuery erro: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
     },
     {
       "fingerprint": "ee9e1449eb1e2b213968",
@@ -1638,18 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 1
-    },
-    {
-      "fingerprint": "5a74ceb3c500aafd9b71",
-      "primeira_vez": "2026-07-05T20:46:21.092672+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.843658+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama nfe dry-run ML-1: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     }
   ],
-  "atualizado_em": "2026-07-13T21:57:50.379972+00:00"
+  "atualizado_em": "2026-07-13T23:46:26.771467+00:00"
 }
