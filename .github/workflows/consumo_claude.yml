@@ -1,0 +1,66 @@
+name: Consumo Claude (orçamento)
+
+# Painel US$ usado / restante → Telegram gestor.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 6h UTC
+    - cron: "15 0,6,12,18 * * *"
+
+concurrency:
+  group: robo-markplaces-consumo-claude
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+
+jobs:
+  painel:
+    name: Orçamento Claude → Telegram
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar uso/cooldown
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/alertas_cooldown.json
+          key: consumo-claude-${{ github.run_id }}
+          restore-keys: |
+            consumo-claude-
+            telegram-cooldown-
+      - name: Painel consumo Claude
+        run: python -m agentes.infra.agente_consumo_claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ECONOMICO: "1"
+          CLAUDE_MODELO: claude-haiku-4-5
+          CLAUDE_MODELO_RAPIDO: claude-haiku-4-5
+          CLAUDE_ORCAMENTO_USD: "8.99"
+          CLAUDE_ORCAMENTO_ATIVO: "1"
+          CLAUDE_ORCAMENTO_ALERTA: "1"
+          CLAUDE_ORCAMENTO_ALERTA_TODAS: "1"
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumo-claude
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/consumo_claude_ultima.json
+          retention-days: 30
+          if-no-files-found: ignore

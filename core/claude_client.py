@@ -79,6 +79,24 @@ def perguntar(
 ) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
+    modelo_efetivo = _modelo_efetivo(modelo)
+    try:
+        from core.claude_orcamento import pode_chamar, registrar_uso
+
+        ok_orc, motivo_orc = pode_chamar()
+        if not ok_orc:
+            logger.warning("Claude bloqueado por orçamento: %s", motivo_orc)
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo="perguntar",
+                resultado="bloqueado",
+            )
+            return f"⚠️ Claude pausado: {motivo_orc}"
+    except Exception:
+        pass
+
     mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
 
     content: list[dict] = []
@@ -94,7 +112,6 @@ def perguntar(
         )
     content.append({"type": "text", "text": mensagem_texto})
 
-    modelo_efetivo = _modelo_efetivo(modelo)
     _tags = [f"modelo:{modelo_efetivo}", f"com_imagem:{bool(imagens)}"]
     inicio = time.monotonic()
     try:
@@ -120,26 +137,56 @@ def perguntar(
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
+        tin = int(uso.get("input_tokens") or 0) if uso else 0
+        tout = int(uso.get("output_tokens") or 0) if uso else 0
         if uso:
-            incrementar("ia.tokens_entrada", uso.get("input_tokens", 0) or 0, tags=_tags)
-            incrementar("ia.tokens_saida", uso.get("output_tokens", 0) or 0, tags=_tags)
+            incrementar("ia.tokens_entrada", tin, tags=_tags)
+            incrementar("ia.tokens_saida", tout, tags=_tags)
         conteudo_resposta = data.get("content", [])
         if not conteudo_resposta:
             incrementar("ia.resposta_vazia", tags=_tags)
             logger.error("Claude sem conteúdo na resposta: %s", data)
-            return "⚠️ Erro na IA: resposta vazia."
-        return conteudo_resposta[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
+            texto = "⚠️ Erro na IA: resposta vazia."
+        else:
+            texto = conteudo_resposta[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
+        try:
+            from core.claude_orcamento import classificar_resultado_texto as _cls
+            from core.claude_orcamento import registrar_uso as _reg
+
+            _reg(
+                modelo=modelo_efetivo,
+                input_tokens=tin,
+                output_tokens=tout,
+                tipo="perguntar",
+                resultado=_cls(texto),
+            )
+        except Exception:
+            pass
+        return texto
     except ValueError as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:json_invalido"])
         logger.error(
             "Claude retornou JSON inválido: %s", e,
             extra={"error_kind": type(e).__name__, "error_message": str(e)},
         )
+        try:
+            from core.claude_orcamento import registrar_uso as _reg
+
+            _reg(modelo=modelo_efetivo, input_tokens=0, output_tokens=0, tipo="perguntar", resultado="falha")
+        except Exception:
+            pass
         return "⚠️ Erro na IA: resposta inválida."
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:comunicacao"])
         _log_erro_claude(e, contexto="texto livre")
+        try:
+            from core.claude_orcamento import registrar_uso as _reg
+
+            _reg(modelo=modelo_efetivo, input_tokens=0, output_tokens=0, tipo="perguntar", resultado="falha")
+        except Exception:
+            pass
         return "⚠️ Erro na IA: falha de comunicação com o provedor."
+
 
 def perguntar_estruturado(
     prompt: str,
@@ -161,8 +208,24 @@ def perguntar_estruturado(
     if not ANTHROPIC_API_KEY:
         logger.warning("perguntar_estruturado sem ANTHROPIC_API_KEY.")
         return None
-    mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
     modelo_efetivo = _modelo_efetivo(modelo)
+    try:
+        from core.claude_orcamento import pode_chamar, registrar_uso
+
+        ok_orc, motivo_orc = pode_chamar()
+        if not ok_orc:
+            logger.warning("Claude estruturado bloqueado: %s", motivo_orc)
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo=f"estruturado:{tool_name}",
+                resultado="bloqueado",
+            )
+            return None
+    except Exception:
+        pass
+    mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
     _tags = [f"modelo:{modelo_efetivo}", f"tool:{tool_name}"]
     inicio = time.monotonic()
     try:
@@ -196,18 +259,50 @@ def perguntar_estruturado(
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
+        tin = int(uso.get("input_tokens") or 0) if uso else 0
+        tout = int(uso.get("output_tokens") or 0) if uso else 0
         if uso:
-            incrementar("ia.tokens_entrada", uso.get("input_tokens", 0) or 0, tags=_tags)
-            incrementar("ia.tokens_saida", uso.get("output_tokens", 0) or 0, tags=_tags)
+            incrementar("ia.tokens_entrada", tin, tags=_tags)
+            incrementar("ia.tokens_saida", tout, tags=_tags)
+        resultado_final = "falha"
+        payload_out = None
         for bloco in data.get("content", []):
             if bloco.get("type") == "tool_use" and bloco.get("name") == tool_name:
-                return bloco.get("input") or {}
-        incrementar("ia.resposta_vazia", tags=_tags)
-        logger.error("Claude não retornou tool_use esperado (%s): %s", tool_name, data)
-        return None
+                payload_out = bloco.get("input") or {}
+                resultado_final = "ok" if payload_out else "vazio"
+                break
+        if payload_out is None:
+            incrementar("ia.resposta_vazia", tags=_tags)
+            logger.error("Claude não retornou tool_use esperado (%s): %s", tool_name, data)
+            resultado_final = "falha"
+        try:
+            from core.claude_orcamento import registrar_uso
+
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=tin,
+                output_tokens=tout,
+                tipo=f"estruturado:{tool_name}",
+                resultado=resultado_final,
+            )
+        except Exception:
+            pass
+        return payload_out
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:estruturado"])
         _log_erro_claude(e, contexto=f"estruturado tool={tool_name}")
+        try:
+            from core.claude_orcamento import registrar_uso
+
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo=f"estruturado:{tool_name}",
+                resultado="falha",
+            )
+        except Exception:
+            pass
         return None
 
 def responder_chat(pergunta: str, produto: dict, canal: str) -> str:

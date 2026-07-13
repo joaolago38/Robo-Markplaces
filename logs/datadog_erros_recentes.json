@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "25aae72aa3da0ed7d3d5",
+      "primeira_vez": "2026-07-05T20:44:29.858666+00:00",
+      "ultima_vez": "2026-07-13T21:57:50.379972+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 28
+    },
+    {
       "fingerprint": "e06446f0849546bd1c7e",
       "primeira_vez": "2026-07-13T19:10:20.622781+00:00",
       "ultima_vez": "2026-07-13T19:17:31.452265+00:00",
@@ -10,17 +21,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "25aae72aa3da0ed7d3d5",
-      "primeira_vez": "2026-07-05T20:44:29.858666+00:00",
-      "ultima_vez": "2026-07-13T18:48:45.654422+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets.",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 27
     },
     {
       "fingerprint": "b874a7c2a84c89a83646",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 2
     }
   ],
-  "atualizado_em": "2026-07-13T19:17:31.452265+00:00"
+  "atualizado_em": "2026-07-13T21:57:50.379972+00:00"
 }

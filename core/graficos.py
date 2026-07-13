@@ -66,6 +66,7 @@ def grafico_evolucao(
     *,
     titulo: str = "Evolução",
     max_pontos: int = 30,
+    eixo_y_inteiro: bool = True,
 ) -> Any | None:
     """
     Gera PNG com um subplot por métrica (compartilhando o eixo X temporal).
@@ -129,7 +130,7 @@ def grafico_evolucao(
             ax.set_title(titulo_painel, fontsize=10, fontweight="semibold", loc="left", pad=6, color="#111827")
             ax.set_ylabel("qtd", fontsize=8, color="#6b7280")
             ax.grid(True, alpha=0.28, linestyle="--")
-            ax.yaxis.set_major_locator(MaxNLocator(nbins=5, integer=True))
+            ax.yaxis.set_major_locator(MaxNLocator(nbins=5, integer=eixo_y_inteiro))
             ax.tick_params(axis="y", labelsize=8)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
@@ -188,6 +189,8 @@ def grafico_barras(
     *,
     titulo: str = "Ranking",
     rotulo_x: str = "",
+    formato_valor: Any = None,
+    casas_decimais: int | None = None,
 ) -> Any | None:
     """Gráfico de barras horizontais (ex.: ranking de marcas/cores). PNG ou None."""
     if not disponivel():
@@ -196,6 +199,13 @@ def grafico_barras(
     vals = [float(v) for v in valores]
     if not cats or not vals or len(cats) != len(vals):
         return None
+
+    def _fmt(v: float) -> str:
+        if callable(formato_valor):
+            return str(formato_valor(v))
+        if casas_decimais is not None:
+            return f"{v:,.{int(casas_decimais)}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return _fmt_numero(v)
 
     try:
         import matplotlib
@@ -213,7 +223,7 @@ def grafico_barras(
             ax.set_xlabel(rotulo_x, fontsize=9)
         for i, v in enumerate(vals):
             ax.annotate(
-                _fmt_numero(v),
+                _fmt(v),
                 xy=(v, i),
                 xytext=(4, 0),
                 textcoords="offset points",

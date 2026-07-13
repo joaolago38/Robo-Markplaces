@@ -177,6 +177,8 @@ _LOGGER_META = {
     "relatorio_financeiro": ("multi", "agente"),
     "operacao_24h": ("infra", "agente"),
     "agente_vigia_datadog": ("infra", "agente"),
+    "agente_consumo_claude": ("infra", "agente"),
+    "claude_orcamento": ("infra", "integracao"),
     "buffer_erros_datadog": ("infra", "core"),
     "consulta_erros_datadog": ("infra", "core"),
     "vigia_saude_datadog": ("infra", "core"),

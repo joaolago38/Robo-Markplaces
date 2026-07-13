@@ -38,6 +38,13 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="Erros DD + inatividade 2h — alerta crítico se não verificado",
     ),
+    AgenteRegistrado(
+        "consumo_claude",
+        "Consumo Claude (orçamento US$)",
+        "infra",
+        "agentes.infra.agente_consumo_claude:executar",
+        notas="Painel usado/resta no Telegram; hard stop no claude_client",
+    ),
     AgenteRegistrado("vendas_whatsapp", "Vendas WhatsApp", "vendas", "agentes.vendas_notificador:executar"),
     AgenteRegistrado(
         "monitor_margem_vendas",

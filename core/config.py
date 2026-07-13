@@ -43,6 +43,28 @@ CLAUDE_ECONOMICO = os.getenv("CLAUDE_ECONOMICO", "0").strip().lower() in (
     "yes",
     "on",
 )
+# Orçamento local (US$) — hard stop + alertas Telegram
+CLAUDE_ORCAMENTO_USD = float(os.getenv("CLAUDE_ORCAMENTO_USD", "8.99"))
+CLAUDE_ORCAMENTO_ATIVO = os.getenv("CLAUDE_ORCAMENTO_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CLAUDE_ORCAMENTO_ALERTA = os.getenv("CLAUDE_ORCAMENTO_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# 1 = manda Telegram a cada chamada (monitoramento fino nesta fase)
+CLAUDE_ORCAMENTO_ALERTA_TODAS = os.getenv("CLAUDE_ORCAMENTO_ALERTA_TODAS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CLAUDE_PRECO_HAIKU_IN = float(os.getenv("CLAUDE_PRECO_HAIKU_IN", "1.0"))
+CLAUDE_PRECO_HAIKU_OUT = float(os.getenv("CLAUDE_PRECO_HAIKU_OUT", "5.0"))
+CLAUDE_PRECO_SONNET_IN = float(os.getenv("CLAUDE_PRECO_SONNET_IN", "3.0"))
+CLAUDE_PRECO_SONNET_OUT = float(os.getenv("CLAUDE_PRECO_SONNET_OUT", "15.0"))
 
 # Lojahub
 LOJAHUB_TOKEN           = os.getenv("LOJAHUB_TOKEN", "").strip()
@@ -623,7 +645,7 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        "vigia_datadog,promocoes_manicures,conversao_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,montar_kits_impala",
+        "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,montar_kits_impala",
     ).split(",")
     if x.strip()
 }
