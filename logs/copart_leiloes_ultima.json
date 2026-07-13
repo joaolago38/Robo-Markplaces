@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-07-13T19:31:19.109831+00:00",
+  "timestamp": "2026-07-13T22:26:01.636885+00:00",
   "diagnostico": {
     "ativo": true,
     "fonte": "copart",
     "leiloes_ok": 0,
-    "leiloes_falha": 1,
+    "leiloes_falha": 0,
     "lotes_veiculo": 0,
     "modo_coleta": "ddg",
     "erro": null,

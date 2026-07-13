@@ -101,18 +101,18 @@ class TestMain(unittest.TestCase):
         self.assertEqual(resultado, 0)
 
     # RT05
-    @patch.object(mod, "_probe_bling_conta_inativa", return_value="inativa")
-    def test_RT05_imprime_mensagem_bling_pausado(self, *_):
+    def test_RT05_imprime_mensagem_bling_pausado(self):
         with patch.dict(os.environ, self._env_vazio()):
             m = _reload({})
             saida = StringIO()
-            with patch("sys.stdout", saida):
-                m.main()
+            # Patch no módulo recarregado — @patch.object(mod) morre no importlib.reload.
+            with patch.object(m, "_probe_bling_conta_inativa", return_value="inativa"):
+                with patch("sys.stdout", saida):
+                    m.main()
         self.assertIn("PAUSADO", saida.getvalue())
         self.assertIn("empresa vinculada ao token inativa", saida.getvalue())
 
-    @patch.object(mod, "_probe_bling_conta_inativa", return_value="reativado")
-    def test_RT05b_avisa_quando_bling_parece_reativado(self, *_):
+    def test_RT05b_avisa_quando_bling_parece_reativado(self):
         env = {
             **self._env_vazio(),
             "BLING_CLIENT_ID": "cid",
@@ -122,8 +122,9 @@ class TestMain(unittest.TestCase):
         with patch.dict(os.environ, env):
             m = _reload({})
             saida = StringIO()
-            with patch("sys.stdout", saida):
-                m.main()
+            with patch.object(m, "_probe_bling_conta_inativa", return_value="reativado"):
+                with patch("sys.stdout", saida):
+                    m.main()
         self.assertIn("parece reativado", saida.getvalue())
         self.assertIn("PAUSADO", saida.getvalue())
 
