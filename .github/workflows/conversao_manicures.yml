@@ -1,0 +1,89 @@
+name: Conversão manicures (WA / IG / FB / ML)
+
+# Haiku escolhe oferta, divulga canais, lê inbox Meta/WA e fecha chat ML.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 4h UTC (01,05,09,13,17,21) ≈ sparse coverage BRT
+    - cron: "0 1,5,9,13,17,21 * * *"
+
+concurrency:
+  group: robo-markplaces-conversao-manicures
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  CONVERSAO_MANICURES_ATIVO: "1"
+  CONVERSAO_MANICURES_ALERTA: "1"
+
+jobs:
+  converter:
+    name: Conversão manicures Haiku
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown / historico
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/conversao_manicures_historico.json
+            logs/leads_manicures.json
+          key: conversao-manicures-${{ github.run_id }}
+          restore-keys: |
+            conversao-manicures-
+            telegram-cooldown-
+      - name: Rodar conversão manicures
+        run: python -m agentes.social.agente_conversao_manicures
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODELO_RAPIDO: claude-haiku-4-5
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          ML_LOJA_URL: ${{ secrets.ML_LOJA_URL }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WHATSAPP_API_TYPE: evolution
+          WHATSAPP_API_URL: ${{ secrets.WHATSAPP_API_URL }}
+          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
+          WHATSAPP_INSTANCE: ${{ secrets.WHATSAPP_INSTANCE }}
+          WHATSAPP_GRUPO_MANICURES_ID: ${{ secrets.WHATSAPP_GRUPO_MANICURES_ID }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_INSTAGRAM_ID: ${{ secrets.META_INSTAGRAM_ID }}
+          META_API_VERSION: ${{ secrets.META_API_VERSION }}
+          CONVERSAO_MANICURES_PUBLICAR_FB: ${{ vars.CONVERSAO_MANICURES_PUBLICAR_FB || '0' }}
+          CONVERSAO_MANICURES_PUBLICAR_IG: ${{ vars.CONVERSAO_MANICURES_PUBLICAR_IG || '0' }}
+          CONVERSAO_MANICURES_REPLY_META: ${{ vars.CONVERSAO_MANICURES_REPLY_META || '0' }}
+          CONVERSAO_MANICURES_REPLY_WA: ${{ vars.CONVERSAO_MANICURES_REPLY_WA || '0' }}
+          CONVERSAO_MANICURES_CHAT_ML: ${{ vars.CONVERSAO_MANICURES_CHAT_ML || '1' }}
+          CONVERSAO_MANICURES_IMAGEM_IG_URL: ${{ secrets.CONVERSAO_MANICURES_IMAGEM_IG_URL }}
+          CONVERSAO_MANICURES_COOLDOWN_SEG: "14400"
+      - name: Salvar snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: conversao-manicures
+          path: |
+            logs/conversao_manicures_ultima.json
+            logs/conversao_manicures_historico.json
+            logs/leads_manicures.json
+          retention-days: 30
+          if-no-files-found: ignore

@@ -1,0 +1,90 @@
+{
+  "ok": true,
+  "timestamp": "2026-07-13T19:11:01.730426+00:00",
+  "modelo": "claude-haiku-4-5",
+  "diagnostico": {
+    "canais": {
+      "whatsapp": {
+        "pronto": false,
+        "status": "config_pendente",
+        "nota": "WHATSAPP_* + GRUPO_MANICURES_ID"
+      },
+      "telegram_manicures": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "ok"
+      },
+      "facebook": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "token ok — PUBLICAR_FB=0"
+      },
+      "instagram": {
+        "pronto": false,
+        "status": "config_pendente",
+        "nota": "META_INSTAGRAM_ID + CONVERSAO_MANICURES_IMAGEM_IG_URL (+ instagram_basic / instagram_content_publish)"
+      },
+      "claude_haiku": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "claude-haiku-4-5"
+      },
+      "chat_ml": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "ok"
+      },
+      "reply_meta": {
+        "pronto": false,
+        "status": "desligado",
+        "nota": "CONVERSAO_MANICURES_REPLY_META=1 quando permissões fecharem"
+      },
+      "reply_wa": {
+        "pronto": false,
+        "status": "desligado",
+        "nota": "CONVERSAO_MANICURES_REPLY_WA=1"
+      }
+    },
+    "pendentes": [
+      "whatsapp",
+      "instagram"
+    ],
+    "checklist_meta": [
+      "Token long-lived Meta (META_ACCESS_TOKEN)",
+      "META_PAGE_ID + pages_manage_posts / pages_read_engagement",
+      "META_INSTAGRAM_ID + instagram_basic / instagram_content_publish",
+      "pages_manage_engagement / instagram_manage_comments (para REPLY_META)",
+      "CONVERSAO_MANICURES_IMAGEM_IG_URL (URL pública HTTPS da arte)"
+    ]
+  },
+  "ads": {
+    "campanhas": 0
+  },
+  "oferta": {
+    "campanha_id": "kit-3",
+    "campanha_nome": "Kit 3",
+    "sku": "X",
+    "preco_brl": 40,
+    "link_ml": "https://ml/x",
+    "angulo": "atacado",
+    "motivo": "t",
+    "fonte": "fallback",
+    "cta_ml": "compre",
+    "copy_whatsapp": "wa",
+    "copy_facebook": "fb",
+    "copy_instagram": "ig"
+  },
+  "envios": {
+    "whatsapp": false
+  },
+  "inbox": {
+    "novos": 0,
+    "respondidos": 0,
+    "enfileirados": 0
+  },
+  "chat_ml": {
+    "respondidas": 0
+  },
+  "modo": "dry_run",
+  "mensagem": "💅 *Conversão manicures — WA / IG / FB / ML*\n\n_O que este agente faz:_\n_Converte manicures para compra no Mercado Livre: Haiku escolhe oferta e copy, dispara WhatsApp/Telegram/Facebook/Instagram, lê comentários Meta e grupo WA, responde chat ML com CTA. Flags ligam IG/FB conforme a config fecha._\n\n_Quando roda:_\n_A cada 4h (Actions); fora do ciclo 30 min_\n\n_Oferta: *Kit 3* (fallback: atacado)_\n_Link: https://ml/x_\n\n*Envios ativos*\n• WhatsApp: —\n• Telegram manicures: —\n• Facebook: — | Instagram: —\n\n*Inbox:* 0 novos · 0 respondidos · 0 na fila\n*Chat ML manicure:* 0 respostas\n\n*Config pendente:* whatsapp, instagram\n  · Token long-lived Meta (META_ACCESS_TOKEN)\n  · META_PAGE_ID + pages_manage_posts / pages_read_engagement\n  · META_INSTAGRAM_ID + instagram_basic / instagram_content_publish\n  · pages_manage_engagement / instagram_manage_comments (para REPLY_META)"
+}

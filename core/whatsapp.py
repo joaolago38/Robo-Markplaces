@@ -93,6 +93,88 @@ def whatsapp_grupo_manicures_configurado() -> bool:
     return bool((WHATSAPP_GRUPO_MANICURES_ID or "").strip() and _enabled() and _api_type() == "evolution")
 
 
+def buscar_mensagens_grupo_recentes(
+    grupo_id: str | None = None,
+    *,
+    limite: int = 30,
+) -> list[dict]:
+    """
+    Busca mensagens recentes do grupo via Evolution API.
+    Degrade graceful: retorna [] se endpoint/instância não existir.
+    Formato: [{id, texto, autor, canal, externo_id, criado_em}]
+    """
+    gid = (grupo_id or WHATSAPP_GRUPO_MANICURES_ID or "").strip()
+    if not gid:
+        return []
+    if not _enabled() or _api_type() != "evolution":
+        logger.info("buscar_mensagens_grupo_recentes: Evolution não configurado")
+        return []
+    try:
+        base = WHATSAPP_API_URL.rstrip("/")
+        headers = {
+            "apikey": WHATSAPP_API_KEY,
+            "Content-Type": "application/json",
+        }
+        # Evolution v2: POST /chat/findMessages/{instance}
+        url = f"{base}/chat/findMessages/{WHATSAPP_INSTANCE}"
+        payload = {
+            "where": {"key": {"remoteJid": gid}},
+            "limit": max(1, min(int(limite), 100)),
+        }
+        r = request("POST", url, headers=headers, json=payload, timeout=20)
+        if getattr(r, "status_code", 0) in (404, 405):
+            # tentativa alternativa (algumas builds)
+            url_alt = f"{base}/chat/findMessages/{WHATSAPP_INSTANCE}/{gid}"
+            r = request("GET", url_alt, headers=headers, timeout=20)
+        if getattr(r, "status_code", 0) >= 400:
+            logger.warning(
+                "Evolution findMessages HTTP %s — inbox WA indisponível",
+                getattr(r, "status_code", "?"),
+            )
+            return []
+        data = r.json() if r.content else {}
+        raw = data
+        if isinstance(data, dict):
+            raw = data.get("messages") or data.get("data") or data.get("records") or data
+            if isinstance(raw, dict):
+                raw = raw.get("records") or raw.get("messages") or []
+        if not isinstance(raw, list):
+            return []
+        out: list[dict] = []
+        for item in raw[: max(1, min(int(limite), 100))]:
+            if not isinstance(item, dict):
+                continue
+            key = item.get("key") or {}
+            msg = item.get("message") or {}
+            texto = (
+                msg.get("conversation")
+                or (msg.get("extendedTextMessage") or {}).get("text")
+                or item.get("text")
+                or item.get("body")
+                or ""
+            )
+            texto = str(texto).strip()
+            if not texto:
+                continue
+            mid = str(key.get("id") or item.get("id") or "")
+            autor = str(key.get("participant") or item.get("pushName") or item.get("author") or "")
+            out.append(
+                {
+                    "id": mid,
+                    "externo_id": mid or f"{gid}:{texto[:40]}",
+                    "canal": "whatsapp",
+                    "texto": texto,
+                    "autor": autor,
+                    "grupo_id": gid,
+                    "criado_em": item.get("messageTimestamp") or item.get("timestamp"),
+                }
+            )
+        return out
+    except Exception as exc:
+        logger.warning("buscar_mensagens_grupo_recentes erro: %s", exc)
+        return []
+
+
 def _enviar_evolution(numero: str, mensagem: str) -> bool:
     """Envia via Evolution API (auto-hospedada)."""
     try:
