@@ -88,6 +88,8 @@ _LOGGER_META = {
     "agente_monitor_anita": ("mercadolivre", "agente"),
     "agente_monitor_busca_kit_esmaltes": ("mercadolivre", "agente"),
     "agente_monitor_kits_esmaltes": ("mercadolivre", "agente"),
+    "agente_montar_kits_impala": ("mercadolivre", "agente"),
+    "planilha_impala": ("mercadolivre", "integracao"),
     "agente_monitor_removedores_unha": ("mercadolivre", "agente"),
     "agente_monitor_tendencias_esmaltes": ("multi", "agente"),
     "agente_monitor_mercado_esmaltes": ("mercadolivre", "agente"),

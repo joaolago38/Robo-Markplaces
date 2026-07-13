@@ -246,6 +246,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Varre todos os kits de esmaltes no ML: vendas, preços e ranking de marcas",
     ),
     AgenteRegistrado(
+        "montar_kits_impala",
+        "Montar kits Impala (planilha × ML)",
+        "monitor",
+        "agentes.esmaltes.agente_montar_kits_impala:executar",
+        {"enviar_alerta": True},
+        notas="Cruza cores Impala da planilha com kits mais vendidos no ML e sugere montagem",
+    ),
+    AgenteRegistrado(
         "monitor_removedores_unha",
         "Monitor removedores de unha — ranking",
         "monitor",
