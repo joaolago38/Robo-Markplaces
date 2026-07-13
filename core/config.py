@@ -79,14 +79,42 @@ CLAUDE_ESCALONAR_ML = os.getenv("CLAUDE_ESCALONAR_ML", "1").strip().lower() in (
 # Só sobe de modelo se restante do orçamento local >= este piso (US$)
 CLAUDE_ESCALONAR_RESTANTE_MIN_USD = float(os.getenv("CLAUDE_ESCALONAR_RESTANTE_MIN_USD", "1.50"))
 # Preço do anúncio (R$) a partir do qual chat ML vendedor escala
-CLAUDE_ESCALONAR_PRECO_MIN = float(os.getenv("CLAUDE_ESCALONAR_PRECO_MIN", "55.0"))
+CLAUDE_ESCALONAR_PRECO_MIN = float(os.getenv("CLAUDE_ESCALONAR_PRECO_MIN", "40.0"))
+# 1 = Sonnet na escolha de oferta só se análise alta OU Ads alerta/crítico (não sempre)
 CLAUDE_ESCALONAR_OFERTA = os.getenv("CLAUDE_ESCALONAR_OFERTA", "1").strip().lower() in (
     "1",
     "true",
     "yes",
     "on",
 )
+CLAUDE_ESCALONAR_OFERTA_SO_CALOR = os.getenv("CLAUDE_ESCALONAR_OFERTA_SO_CALOR", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+# 1 = bloqueia envio WA/TG/FB/IG se link ML inválido (MLB_PREENCHER) — só prepara + avisa gestor
+CONVERSAO_BLOQUEAR_LINK_INVALIDO = os.getenv("CONVERSAO_BLOQUEAR_LINK_INVALIDO", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 CLAUDE_ESCALONAR_CHAT = os.getenv("CLAUDE_ESCALONAR_CHAT", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+# Análise de calor da venda ML (0–100). >= ALTO → aumenta IA (Sonnet)
+CLAUDE_ANALISE_SCORE_ALTO = int(os.getenv("CLAUDE_ANALISE_SCORE_ALTO", "70"))
+CLAUDE_ANALISE_SCORE_MEDIO = int(os.getenv("CLAUDE_ANALISE_SCORE_MEDIO", "40"))
+# Captura IG/FB exige score maior para Sonnet (fechamento ML é o termômetro principal)
+CLAUDE_ANALISE_SCORE_ALTO_CAPTACAO = int(os.getenv("CLAUDE_ANALISE_SCORE_ALTO_CAPTACAO", "85"))
+# Gasto Meta (R$) a partir do qual pressão de captacao sobe dosagem no ML
+CLAUDE_ANALISE_GASTO_META_PRESSAO = float(os.getenv("CLAUDE_ANALISE_GASTO_META_PRESSAO", "30"))
+# 1 = no chat ML, se análise alta, NÃO usa template fixo (frete/atacado) — vai pro Sonnet
+CLAUDE_ANALISE_FURA_TEMPLATE = os.getenv("CLAUDE_ANALISE_FURA_TEMPLATE", "1").strip().lower() in (
     "1",
     "true",
     "yes",

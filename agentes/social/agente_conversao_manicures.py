@@ -151,6 +151,7 @@ def _processar_inbox(
     oferta: dict[str, Any],
     *,
     enviar: bool,
+    sinal_ads: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     conhecidos = ids_leads_conhecidos()
     coletados: list[dict[str, Any]] = []
@@ -181,7 +182,11 @@ def _processar_inbox(
         novos += 1
 
         classif = classificar_e_responder_lead(
-            texto, canal=canal, link_ml=link, oferta_nome=nome
+            texto,
+            canal=canal,
+            link_ml=link,
+            oferta_nome=nome,
+            sinal_ads=sinal_ads,
         )
         lead = append_lead(
             {
@@ -196,6 +201,7 @@ def _processar_inbox(
                 "resposta": classif.get("resposta") or "",
                 "link_ml": link,
                 "converter": bool(classif.get("converter")),
+                "escalou_ia": bool(classif.get("escalou_ia")),
             }
         )
 
@@ -210,7 +216,6 @@ def _processar_inbox(
                 enviou = bool(out.get("ok"))
             elif canal == "whatsapp" and CONVERSAO_MANICURES_REPLY_WA:
                 autor = str(item.get("autor") or "").split("@")[0]
-                # só DM se autor parecer número; senão responde no grupo
                 if autor.isdigit() and len(autor) >= 10:
                     enviou = bool(enviar_mensagem(autor, str(classif.get("resposta"))))
                 else:
@@ -231,6 +236,7 @@ def _processar_inbox(
                 "canal": canal,
                 "intencao": classif.get("intencao"),
                 "enviou": enviou,
+                "escalou_ia": bool(classif.get("escalou_ia")),
             }
         )
 
@@ -243,7 +249,12 @@ def _processar_inbox(
     }
 
 
-def _chat_ml_manicures(oferta: dict[str, Any], *, enviar: bool) -> dict[str, Any]:
+def _chat_ml_manicures(
+    oferta: dict[str, Any],
+    *,
+    enviar: bool,
+    sinal_ads: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     if not CONVERSAO_MANICURES_CHAT_ML or not ML_ACCESS_TOKEN:
         return {"respondidas": 0, "motivo": "chat_ml_desligado_ou_sem_token"}
     try:
@@ -264,7 +275,12 @@ def _chat_ml_manicures(oferta: dict[str, Any], *, enviar: bool) -> dict[str, Any
         if not pergunta_parece_manicure(texto):
             continue
         vistos += 1
-        resp = resposta_chat_ml_haiku(texto, link, produto_ctx=str(oferta.get("campanha_nome") or ""))
+        resp = resposta_chat_ml_haiku(
+            texto,
+            link,
+            produto_ctx=str(oferta.get("campanha_nome") or ""),
+            sinal_ads=sinal_ads,
+        )
         if not resp:
             continue
         if enviar:
@@ -272,7 +288,7 @@ def _chat_ml_manicures(oferta: dict[str, Any], *, enviar: bool) -> dict[str, Any
                 ok += 1
                 time.sleep(0.8)
         else:
-            ok += 1  # dry-run conta como preparada
+            ok += 1
     return {"respondidas": ok, "candidatas": vistos, "dry_run": not enviar}
 
 
@@ -403,7 +419,7 @@ def executar(
         permitir_boost, motivo_boost = _pode_impulsionar_ativo(ads)
 
         if fazer_inbox:
-            inbox = _processar_inbox(oferta, enviar=enviar)
+            inbox = _processar_inbox(oferta, enviar=enviar, sinal_ads=ads)
         if fazer_ativo:
             envios = _envios_ativos(
                 oferta,
@@ -411,8 +427,8 @@ def executar(
                 permitir_boost=permitir_boost,
                 motivo_bloqueio=motivo_boost,
             )
-            # Chat ML continua mesmo se Ads estiver insustentável (fecha venda orgânica)
-            chat_ml = _chat_ml_manicures(oferta, enviar=enviar)
+            # Chat ML = termômetro de fechamento; Ads sobe a pressão da dosagem de IA
+            chat_ml = _chat_ml_manicures(oferta, enviar=enviar, sinal_ads=ads)
         elif so_inbox:
             envios = {"motivo": "so_inbox"}
             chat_ml = {"respondidas": 0, "motivo": "so_inbox"}

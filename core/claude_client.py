@@ -317,7 +317,14 @@ def perguntar_estruturado(
             pass
         return None
 
-def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
+def responder_chat(
+    pergunta: str,
+    produto: dict,
+    canal: str,
+    *,
+    sinal_ads: dict | None = None,
+    oferta_ctx: dict | None = None,
+) -> str:
     pergunta_txt = (pergunta or "").strip()
     if len(pergunta_txt) < 3:
         return ""
@@ -328,6 +335,48 @@ def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
     estoque = int(produto.get("estoque", produto.get("estoque_total", 0)) or 0)
     if estoque <= 0:
         return "Produto indisponível no momento"
+
+    try:
+        preco = float(produto.get("preco") or 0)
+    except (TypeError, ValueError):
+        preco = 0.0
+
+    from core.claude_analise_vendas import analisar_oportunidade_ml
+    from core.claude_roteador import resolver_modelo_vendas
+    from core.config import CLAUDE_ANALISE_FURA_TEMPLATE
+
+    if sinal_ads is None:
+        try:
+            from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
+
+            ctx_f = carregar_contexto_fechamento_ml()
+            sinal_ads = ctx_f.get("sinal_ads")
+            if oferta_ctx is None:
+                oferta_ctx = ctx_f.get("oferta")
+        except Exception:
+            pass
+
+    analise = analisar_oportunidade_ml(
+        texto=pergunta_txt,
+        canal=canal,
+        preco_produto=preco,
+        estoque=estoque,
+        proposito="chat_ml",
+        sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+    )
+    rota = resolver_modelo_vendas(
+        proposito="chat_ml",
+        canal=canal,
+        texto=pergunta_txt,
+        preco_produto=preco,
+        estoque=estoque,
+        sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+        analise=analise,
+    )
+    # Se calor alto → pula templates e sobe IA (Sonnet)
+    usar_ia_direto = bool(
+        CLAUDE_ANALISE_FURA_TEMPLATE and analise.get("deve_aumentar_ia")
+    )
 
     pergunta_lower = pergunta_txt.lower()
     nome = str(produto.get("nome", "")).lower()
@@ -340,30 +389,39 @@ def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
         "Serena, Café Café, Coffee, Sutileza, Lua, Sonho, Polar, Dengo, Caricia, Buquê"
     )
 
-    if "cor" in pergunta_lower and any(term in pergunta_lower for term in ["qual", "quais", "tem", "kit"]):
-        cores = produto.get("cores")
-        if isinstance(cores, list) and cores:
+    if not usar_ia_direto:
+        if "cor" in pergunta_lower and any(term in pergunta_lower for term in ["qual", "quais", "tem", "kit"]):
+            cores = produto.get("cores")
+            if isinstance(cores, list) and cores:
+                return (
+                    f"As cores deste kit são: {', '.join(str(c) for c in cores)}. "
+                    "Todas com alta pigmentação e secagem rápida. Posso confirmar mais detalhes se precisar!"
+                )
+        if "escolher" in pergunta_lower or "escolho" in pergunta_lower or "montar" in pergunta_lower:
             return (
-                f"As cores deste kit são: {', '.join(str(c) for c in cores)}. "
-                "Todas com alta pigmentação e secagem rápida. Posso confirmar mais detalhes se precisar!"
+                "Pode sim! Deixe no campo de mensagem quais cores prefere da nossa lista. "
+                f"Vou separar exatamente o que você escolher. Lista completa: {lista_cores}."
             )
-    if "escolher" in pergunta_lower or "escolho" in pergunta_lower or "montar" in pergunta_lower:
-        return (
-            "Pode sim! Deixe no campo de mensagem quais cores prefere da nossa lista. "
-            f"Vou separar exatamente o que você escolher. Lista completa: {lista_cores}."
+        if "foto" in pergunta_lower or "real" in pergunta_lower:
+            return "Sim, as fotos mostram as cores reais. Cada frasco está identificado pelo nome Impala. O que você vê é o que recebe."
+        if "entrega" in pergunta_lower or "cep" in pergunta_lower or "full" in pergunta_lower:
+            return "Com Full ativo chegará grátis amanhã para a maioria das regiões. Confirme seu CEP para verificar disponibilidade."
+        if "atacado" in pergunta_lower or "revendedor" in pergunta_lower:
+            return "Temos preço especial para kits a partir de 3 unidades. Qual quantidade você precisa? Posso calcular o melhor preço."
+        if "profissional" in pergunta_lower:
+            return "Sim, usado por manicures profissionais. Secagem rápida, alta pigmentação, sem tolueno, sem formaldeído."
+        if "alicate" in pergunta_lower or "mundial 777" in contexto:
+            return "Alicate Mundial 777 em aço inox cirúrgico. Pode ser autoclavado para uso em clínicas e salões. Corte preciso sem necessidade de afiar."
+        if "validade" in pergunta_lower:
+            return "Validade de 24 a 30 meses a partir da fabricação. Lote e validade impressos em cada frasco."
+
+    oferta_txt = ""
+    if isinstance(oferta_ctx, dict) and oferta_ctx.get("link_ml"):
+        oferta_txt = (
+            f"Oferta ativa (captação Meta→ML): {oferta_ctx.get('campanha_nome') or 'kit'} "
+            f"| link {oferta_ctx.get('link_ml')} "
+            f"| sku {oferta_ctx.get('sku') or 'n/d'}"
         )
-    if "foto" in pergunta_lower or "real" in pergunta_lower:
-        return "Sim, as fotos mostram as cores reais. Cada frasco está identificado pelo nome Impala. O que você vê é o que recebe."
-    if "entrega" in pergunta_lower or "cep" in pergunta_lower or "full" in pergunta_lower:
-        return "Com Full ativo chegará grátis amanhã para a maioria das regiões. Confirme seu CEP para verificar disponibilidade."
-    if "atacado" in pergunta_lower or "revendedor" in pergunta_lower:
-        return "Temos preço especial para kits a partir de 3 unidades. Qual quantidade você precisa? Posso calcular o melhor preço."
-    if "profissional" in pergunta_lower:
-        return "Sim, usado por manicures profissionais. Secagem rápida, alta pigmentação, sem tolueno, sem formaldeído."
-    if "alicate" in pergunta_lower or "mundial 777" in contexto:
-        return "Alicate Mundial 777 em aço inox cirúrgico. Pode ser autoclavado para uso em clínicas e salões. Corte preciso sem necessidade de afiar."
-    if "validade" in pergunta_lower:
-        return "Validade de 24 a 30 meses a partir da fabricação. Lote e validade impressos em cada frasco."
 
     ctx = f"""
 Canal: {canal.upper()}
@@ -371,24 +429,18 @@ Produto: {produto.get('nome','N/D')}
 Preço: R$ {produto.get('preco',0):.2f}
 Estoque: {estoque} unidades
 Descrição: {produto.get('descricao','')}
+Análise oportunidade: {analise.get('resumo')} (fatores: {', '.join(analise.get('fatores') or [])})
+{oferta_txt}
+Captação Meta (resumo): {analise.get('captacao_meta') or {}}
 
 Pergunta do cliente: {pergunta_txt}
-"""
-    try:
-        preco = float(produto.get("preco") or 0)
-    except (TypeError, ValueError):
-        preco = 0.0
-    from core.claude_roteador import resolver_modelo_vendas
 
-    rota = resolver_modelo_vendas(
-        proposito="chat_ml",
-        canal=canal,
-        texto=pergunta_txt,
-        preco_produto=preco,
-    )
+Responda para maximizar chance de compra no Mercado Livre. Seja específico e próximo.
+Se houver link de oferta ativa e couber, cite sutilmente o CTA sem inventar preço.
+"""
     resposta = perguntar(
         ctx,
-        max_tokens=300,
+        max_tokens=320,
         modelo=rota["modelo"],
         forcar_modelo=bool(rota.get("forcar_modelo")),
     )
