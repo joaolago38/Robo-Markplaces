@@ -27,7 +27,13 @@ def _erro_bling_token(msg: str, *args) -> None:
 
 
 def _erro_token_mp(msg: str, *args) -> None:
-    # Magalu / Shopee / Amazon — religar: LOG_ERROS_TOKENS=1
+    # Religar Magalu / Shopee / Amazon: LOG_ERROS_TOKENS=1
+    # Falhas críticas (invalid_grant / 401) sempre sobem como ERROR
+    texto = msg % args if args else msg
+    baixo = str(texto).lower()
+    if any(x in baixo for x in ("invalid_grant", "401", "403", "unauthorized", "expired")):
+        logger.error(texto)
+        return
     erro_opcional(logger, log_erros_tokens_ativos(), msg, *args, flag_hint="LOG_ERROS_TOKENS")
 
 _token_cache_ml = {"access_token": None, "expires_at": 0}

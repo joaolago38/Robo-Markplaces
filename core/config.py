@@ -700,7 +700,10 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,montar_kits_impala",
+        # Rotinas com workflow próprio — não repetir no ciclo 30min
+        "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
+        "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
+        "montar_kits_impala,leilao,alibaba,licitacoes",
     ).split(",")
     if x.strip()
 }
@@ -885,7 +888,10 @@ CONVERSAO_MANICURES_PUBLICAR_FB = _env_bool("CONVERSAO_MANICURES_PUBLICAR_FB", "
 CONVERSAO_MANICURES_PUBLICAR_IG = _env_bool("CONVERSAO_MANICURES_PUBLICAR_IG", "0")
 CONVERSAO_MANICURES_REPLY_META = _env_bool("CONVERSAO_MANICURES_REPLY_META", "0")
 CONVERSAO_MANICURES_REPLY_WA = _env_bool("CONVERSAO_MANICURES_REPLY_WA", "0")
-CONVERSAO_MANICURES_CHAT_ML = _env_bool("CONVERSAO_MANICURES_CHAT_ML", "1")
+# 0 = chat ML fica só com agentes.ml (evita resposta duplicada com conversão)
+CONVERSAO_MANICURES_CHAT_ML = _env_bool("CONVERSAO_MANICURES_CHAT_ML", "0")
+# 0 = auto_respostas_visuais não compete com chat_ml no Mercado Livre
+AUTO_RESPOSTAS_ML = _env_bool("AUTO_RESPOSTAS_ML", "0")
 CONVERSAO_MANICURES_IMAGEM_IG_URL = os.getenv("CONVERSAO_MANICURES_IMAGEM_IG_URL", "").strip()
 # Sustentabilidade: cruza gasto Meta Ads × receita real ML
 CONVERSAO_MANICURES_SUSTENTABILIDADE = _env_bool("CONVERSAO_MANICURES_SUSTENTABILIDADE", "1")

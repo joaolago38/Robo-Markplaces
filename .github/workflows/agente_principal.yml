@@ -105,6 +105,20 @@ jobs:
           cache: pip
       - name: Instalar dependências
         run: pip install -r requirements.txt
+      - name: Restaurar estado vendas/IA
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+            logs/alertas_cooldown.json
+          key: estado-vendas-ia-${{ github.run_id }}
+          restore-keys: |
+            estado-vendas-ia-
+            claude-orcamento-
+            conversao-snapshot-
+            telegram-cooldown-
       - name: Rodar agentes de chat
         run: |
           python -c "from agentes.ml.agente_ml import executar; print(executar())"
@@ -115,6 +129,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ORCAMENTO_ATIVO: "1"
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
@@ -139,6 +154,17 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Publicar estado vendas/IA
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+            logs/alertas_cooldown.json
+          key: estado-vendas-ia-${{ github.run_id }}
 
   vendas_whatsapp:
     name: Notificações de vendas WhatsApp

@@ -1,16 +1,18 @@
 """
 agentes/ml/agente_ml.py
-Chat ML + reputação. Usa contexto da conversão (Ads/oferta) quando existir.
-Não liga Ads nem publica IG/FB — só responde perguntas (já era o comportamento).
+Chat ML + reputação. Dono único das respostas ML no ciclo 30min.
+Usa snapshot conversão (Ads/oferta) e mapeia MLB→SKU via catálogo.
 """
 
 import logging
 import time
 
+from core.chat_claim import tentar_claim
 from core.config import MARGEM_MINIMA
 from core.claude_client import responder_chat
 from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
 from core.notificador import alertar_critico
+from core.produto_lookup import buscar_produto_por_ref
 from integracoes.bling.bling_client import buscar_produto
 from integracoes.ml.ml_client import (
     listar_perguntas_nao_respondidas,
@@ -32,15 +34,17 @@ def validar_resposta(resposta: str, produto: dict) -> str:
     if not produto:
         return "Vou confirmar os detalhes e já te respondo 😊"
 
-    # Busca estoque real no Bling pelo SKU, evitando depender do catálogo local (pode estar zerado)
     sku = produto.get("sku") or produto.get("codigo") or ""
-    if sku:
+    if sku and produto.get("_fonte") != "catalogo_local":
         produto_bling = buscar_produto(str(sku)) or {}
         estoque = int(produto_bling.get("estoque", produto.get("estoque", 0)) or 0)
     else:
         estoque = int(produto.get("estoque", 0) or 0)
 
-    if estoque <= 0:
+    if estoque <= 0 and produto.get("_fonte") not in (
+        "oferta_conversao_snapshot",
+        "catalogo_local",
+    ):
         return "Produto indisponível no momento 😊"
 
     return resposta
@@ -69,20 +73,22 @@ def responder(pergunta_id, texto):
 
 
 def _montar_produto_resposta(p: dict, ctx_fechamento: dict) -> dict:
-    """Tenta produto Bling; se vazio, usa dados da oferta ativa (só contexto)."""
-    produto = buscar_produto(p.get("item_id", "")) or {}
+    """Produto via MLB→SKU→Bling; se falhar, oferta do snapshot (sem inventar estoque)."""
+    item_id = str(p.get("item_id") or "")
+    produto = buscar_produto_por_ref(item_id, canal="mercadolivre") or {}
     if produto:
         return produto
+
     oferta = ctx_fechamento.get("oferta") or {}
     if not oferta:
         return {}
+    # Contexto de copy apenas — estoque desconhecido (não declara disponível)
     return {
         "nome": oferta.get("campanha_nome") or "Kit esmaltes Impala",
         "sku": oferta.get("sku") or "",
         "preco": float(oferta.get("preco_brl") or 0),
-        # estoque desconhecido: evita early-return "indisponível" sem dado real
-        "estoque": 1,
-        "descricao": "Kit Impala para manicures — oferta ativa na captação Meta→ML",
+        "estoque": 0,
+        "descricao": "Kit Impala — oferta ativa na captação Meta→ML (estoque a confirmar)",
         "_fonte": "oferta_conversao_snapshot",
     }
 
@@ -94,27 +100,31 @@ def ciclo_chat():
     sinal_ads = ctx_f.get("sinal_ads")
     oferta = ctx_f.get("oferta")
     link_oferta = str(ctx_f.get("link_ml") or "")
+    link_ok = bool(ctx_f.get("link_valido"))
 
     for p in perguntas:
         texto = p.get("text", "").strip()
+        pid = str(p.get("id") or "")
 
         if not pergunta_valida(texto):
+            continue
+
+        if not tentar_claim("mercadolivre", pid, agente="chat_ml"):
+            logger.info("Pergunta %s já claimed por outro agente — skip", pid)
             continue
 
         produto = _montar_produto_resposta(p, ctx_f)
 
         try:
-            # Perguntas de manicure: CTA alinhado à conversão + pressão Ads
             from integracoes.social.conversao_manicures import (
                 pergunta_parece_manicure,
                 resposta_chat_ml_haiku,
             )
 
-            if pergunta_parece_manicure(texto) and (link_oferta or produto):
-                link = link_oferta or "https://www.mercadolivre.com.br"
+            if pergunta_parece_manicure(texto) and link_ok and link_oferta:
                 resposta = resposta_chat_ml_haiku(
                     texto,
-                    link,
+                    link_oferta,
                     produto_ctx=str(
                         (oferta or {}).get("campanha_nome")
                         or produto.get("nome")
@@ -138,7 +148,6 @@ def ciclo_chat():
                     sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
                     oferta_ctx=oferta if isinstance(oferta, dict) else None,
                 )
-            # Só aplica gate de estoque se produto veio do Bling (não do snapshot)
             if produto.get("_fonte") != "oferta_conversao_snapshot":
                 resposta = validar_resposta(resposta, produto)
 
@@ -196,13 +205,14 @@ def gerenciar_status_anuncio(
 def executar():
     logger.info("Agente ML iniciado")
 
+    ctx = carregar_contexto_fechamento_ml()
     out = {
         "chat": ciclo_chat(),
         "reputacao": verificar_reputacao(),
         "contexto_fechamento": {
-            "ok": carregar_contexto_fechamento_ml().get("ok"),
-            "link_valido": carregar_contexto_fechamento_ml().get("link_valido"),
-            "sustentabilidade": carregar_contexto_fechamento_ml().get("sustentabilidade"),
+            "ok": ctx.get("ok"),
+            "link_valido": ctx.get("link_valido"),
+            "sustentabilidade": ctx.get("sustentabilidade"),
         },
     }
     try:

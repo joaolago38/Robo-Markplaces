@@ -74,7 +74,11 @@ def _executar_agente(registro: AgenteRegistrado) -> dict[str, Any]:
         logger.info("Orquestrador: iniciando %s (%s)", registro.id, registro.nome)
         raw = executar_registro(registro)
         resultado["ok"] = _interpretar_ok(raw)
-        resultado["resumo"] = _extrair_resumo(raw)
+        resumo = _extrair_resumo(raw)
+        if bool((registro.kwargs or {}).get("dry_run")):
+            resumo = f"{resumo} (dry-run — sem escrita)"
+            resultado["dry_run"] = True
+        resultado["resumo"] = resumo
         resultado["payload"] = raw if isinstance(raw, dict) else {"valor": raw}
     except Exception as exc:
         resultado["erro"] = str(exc)

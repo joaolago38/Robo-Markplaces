@@ -177,10 +177,9 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Tipicamente 2 envios por dia."
     ),
     "conversao_manicures": (
-        "Converte manicures para compra no Mercado Livre: Haiku escolhe oferta e copy, "
-        "dispara WhatsApp/Telegram/Facebook/Instagram, lê comentários Meta e grupo WA, "
-        "responde chat ML com CTA. Cruza gasto Ads IG/FB com vendas reais do ML e "
-        "bloqueia boost se a operação estiver insustentável."
+        "Converte manicures (WA/IG/FB) para o ML: Haiku oferta + inbox Meta/WA. "
+        "Chat ML de fechamento fica com agentes.ml (evita resposta duplicada). "
+        "Bloqueia boost se link MLB_PREENCHER ou ROAS Ads×ML crítico."
     ),
     "panorama": (
         "Consolida panorama de ML, Magalu e Bling (estoque, vendas, alertas) para "

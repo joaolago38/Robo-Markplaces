@@ -1,6 +1,7 @@
 name: Conversão manicures (WA / IG / FB / ML)
 
-# Haiku escolhe oferta, divulga canais, lê inbox Meta/WA e fecha chat ML.
+# Haiku escolhe oferta, divulga canais, lê inbox Meta/WA.
+# Chat ML de fechamento = agentes.ml (CONVERSAO_MANICURES_CHAT_ML=0 padrão).
 
 on:
   workflow_dispatch:
@@ -33,22 +34,28 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
-      - name: Restaurar cooldown / historico
+      - name: Restaurar cooldown / historico / IA compartilhada
         uses: actions/cache@v4
         with:
           path: |
             logs/alertas_cooldown.json
             logs/conversao_manicures_historico.json
             logs/leads_manicures.json
+            logs/claude_uso_orcamento.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
           key: conversao-manicures-${{ github.run_id }}
           restore-keys: |
             conversao-manicures-
+            estado-vendas-ia-
+            claude-orcamento-
             telegram-cooldown-
       - name: Rodar conversão manicures
         run: python -m agentes.social.agente_conversao_manicures
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_MODELO_RAPIDO: claude-haiku-4-5
+          CLAUDE_ORCAMENTO_ATIVO: "1"
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
@@ -74,13 +81,24 @@ jobs:
           CONVERSAO_MANICURES_PUBLICAR_IG: ${{ vars.CONVERSAO_MANICURES_PUBLICAR_IG || '0' }}
           CONVERSAO_MANICURES_REPLY_META: ${{ vars.CONVERSAO_MANICURES_REPLY_META || '0' }}
           CONVERSAO_MANICURES_REPLY_WA: ${{ vars.CONVERSAO_MANICURES_REPLY_WA || '0' }}
-          CONVERSAO_MANICURES_CHAT_ML: ${{ vars.CONVERSAO_MANICURES_CHAT_ML || '1' }}
+          CONVERSAO_MANICURES_CHAT_ML: ${{ vars.CONVERSAO_MANICURES_CHAT_ML || '0' }}
+          CONVERSAO_BLOQUEAR_LINK_INVALIDO: "1"
           CONVERSAO_MANICURES_IMAGEM_IG_URL: ${{ secrets.CONVERSAO_MANICURES_IMAGEM_IG_URL }}
           CONVERSAO_MANICURES_COOLDOWN_SEG: "14400"
           CONVERSAO_MANICURES_SUSTENTABILIDADE: "1"
           CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL: "1"
           CONVERSAO_MANICURES_SUST_DIAS: "1"
           META_ROAS_MINIMO_MANICURES: "2.20"
+      - name: Publicar estado vendas/IA (cache compartilhado)
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+          key: estado-vendas-ia-${{ github.run_id }}
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
@@ -89,5 +107,6 @@ jobs:
             logs/conversao_manicures_ultima.json
             logs/conversao_manicures_historico.json
             logs/leads_manicures.json
+            logs/claude_uso_orcamento.json
           retention-days: 30
           if-no-files-found: ignore
