@@ -224,6 +224,9 @@ def escolher_oferta_haiku(
                     "sku": m.get("sku"),
                     "preco_brl": m.get("preco_brl"),
                     "link_ml": link,
+                    "link_valido": bool(m.get("link_valido", True)),
+                    "aviso_link": m.get("aviso_link") or "",
+                    "item_id": m.get("item_id"),
                     "angulo": (copies or {}).get("angulo") or "rotacao",
                     "motivo": (copies or {}).get("motivo") or "sem_ia_ou_fallback",
                     "copy_whatsapp": wa.strip(),
@@ -501,9 +504,17 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
         f"_Oferta: *{oferta.get('campanha_nome') or oferta.get('campanha_id') or 'n/d'}* "
         f"({oferta.get('fonte') or '-'}: {oferta.get('angulo') or '-'})_",
         f"_Link: {oferta.get('link_ml') or 'n/d'}_",
-        "",
-        "*Sustentabilidade Ads × ML*",
     ]
+    if oferta.get("link_valido") is False:
+        aviso = str(oferta.get("aviso_link") or "").strip()
+        msg = (
+            "⚠️ *Link ML inválido* (MLB_PREENCHER / genérico) — "
+            "boost WA/TG/FB/IG bloqueado até você preencher o item_id real."
+        )
+        if aviso:
+            msg = f"{msg} {aviso}"
+        linhas.append(msg)
+    linhas.extend(["", "*Sustentabilidade Ads × ML*"])
     if sust:
         emoji = {
             "sustentavel": "🟢",
@@ -521,10 +532,12 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
         )
         if sust.get("recomendacao"):
             linhas.append(f"_Ação: {sust.get('recomendacao')}_")
-        if envios.get("motivo") and str(envios.get("motivo")).startswith("bloqueado"):
-            linhas.append(f"_Boost ativo bloqueado: {envios.get('motivo')}_")
     else:
         linhas.append("_Monitor Ads×ML desligado ou sem dados nesta rodada._")
+    if envios.get("motivo") and str(envios.get("motivo")).startswith("bloqueado"):
+        linhas.append(f"_Boost ativo bloqueado: {envios.get('motivo')}_")
+    elif payload.get("boost_bloqueado") and payload.get("motivo_boost"):
+        linhas.append(f"_Boost ativo bloqueado: {payload.get('motivo_boost')}_")
 
     linhas.extend(
         [

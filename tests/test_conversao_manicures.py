@@ -52,11 +52,13 @@ class TestConversaoCore(unittest.TestCase):
             "sku": "X",
             "preco_brl": 39.9,
             "link_ml": "https://produto.mercadolivre.com.br/MLB1",
+            "link_valido": True,
             "texto": "Oferta *Kit 3*\nlink",
         }
         out = conv.escolher_oferta_haiku()
         self.assertTrue(out["ok"])
         self.assertEqual(out["campanha_id"], "kit-3")
+        self.assertTrue(out["link_valido"])
         self.assertIn("MLB1", out["copy_whatsapp"] + out["cta_ml"])
 
     @patch.object(conv, "ANTHROPIC_API_KEY", "")

@@ -22,6 +22,7 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.claude_client import MODELO_RAPIDO
 from core.config import (
     ANTHROPIC_API_KEY,
+    CONVERSAO_BLOQUEAR_LINK_INVALIDO,
     CONVERSAO_MANICURES_ALERTA,
     CONVERSAO_MANICURES_ATIVO,
     CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL,
@@ -117,8 +118,20 @@ def _sinal_ads() -> dict[str, Any]:
         return {"campanhas": 0, "gasto": 0, "compras": 0, "roas": 0, "erro": str(exc)[:120]}
 
 
-def _pode_impulsionar_ativo(ads: dict[str, Any]) -> tuple[bool, str]:
-    """False quando gasto Ads > vendas ML (modo sustentável — só status crítico)."""
+def _pode_impulsionar_ativo(
+    ads: dict[str, Any],
+    *,
+    oferta: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    """
+    False quando:
+      - link ML inválido (MLB_PREENCHER) e CONVERSAO_BLOQUEAR_LINK_INVALIDO
+      - gasto Ads >> vendas ML (status crítico)
+    Não efetiva Ads Product Ads — só bloqueia boost orgânico/publicado.
+    """
+    of = oferta if isinstance(oferta, dict) else {}
+    if CONVERSAO_BLOQUEAR_LINK_INVALIDO and of.get("link_valido") is False:
+        return False, "bloqueado_link_ml_invalido"
     if not CONVERSAO_MANICURES_SUSTENTABILIDADE:
         return True, ""
     if not CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL:
@@ -416,9 +429,10 @@ def executar(
 
         fazer_inbox = not so_ativo
         fazer_ativo = not so_inbox
-        permitir_boost, motivo_boost = _pode_impulsionar_ativo(ads)
+        permitir_boost, motivo_boost = _pode_impulsionar_ativo(ads, oferta=oferta)
 
         if fazer_inbox:
+            # Inbox/reply Meta: só com flag REPLY_META (padrão 0) — você decide no .env
             inbox = _processar_inbox(oferta, enviar=enviar, sinal_ads=ads)
         if fazer_ativo:
             envios = _envios_ativos(
@@ -449,6 +463,9 @@ def executar(
                     "sku",
                     "preco_brl",
                     "link_ml",
+                    "link_valido",
+                    "aviso_link",
+                    "item_id",
                     "angulo",
                     "motivo",
                     "fonte",
@@ -456,8 +473,12 @@ def executar(
                     "copy_whatsapp",
                     "copy_facebook",
                     "copy_instagram",
+                    "escalou_ia",
+                    "modelo_ia",
                 )
             },
+            "boost_bloqueado": not permitir_boost,
+            "motivo_boost": motivo_boost,
             "envios": envios,
             "inbox": inbox,
             "chat_ml": chat_ml,
