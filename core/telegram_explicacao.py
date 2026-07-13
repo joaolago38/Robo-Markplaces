@@ -175,7 +175,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     "conversao_manicures": (
         "Converte manicures para compra no Mercado Livre: Haiku escolhe oferta e copy, "
         "dispara WhatsApp/Telegram/Facebook/Instagram, lê comentários Meta e grupo WA, "
-        "responde chat ML com CTA. Flags ligam IG/FB conforme a config fecha."
+        "responde chat ML com CTA. Cruza gasto Ads IG/FB com vendas reais do ML e "
+        "bloqueia boost se a operação estiver insustentável."
     ),
     "panorama": (
         "Consolida panorama de ML, Magalu e Bling (estoque, vendas, alertas) para "

@@ -429,6 +429,7 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
     envios = payload.get("envios") or {}
     inbox = payload.get("inbox") or {}
     chat_ml = payload.get("chat_ml") or {}
+    sust = payload.get("sustentabilidade") or (payload.get("ads") or {}).get("sustentabilidade") or {}
 
     linhas = [
         cabecalho_agente(
@@ -440,17 +441,45 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
         f"({oferta.get('fonte') or '-'}: {oferta.get('angulo') or '-'})_",
         f"_Link: {oferta.get('link_ml') or 'n/d'}_",
         "",
-        "*Envios ativos*",
-        f"• WhatsApp: {'✅' if envios.get('whatsapp') else '—'}",
-        f"• Telegram manicures: {'✅' if envios.get('telegram') else '—'}",
-        f"• Facebook: {'✅' if envios.get('facebook') else '—'} "
-        f"| Instagram: {'✅' if envios.get('instagram') else '—'}",
-        "",
-        f"*Inbox:* {int(inbox.get('novos') or 0)} novos · "
-        f"{int(inbox.get('respondidos') or 0)} respondidos · "
-        f"{int(inbox.get('enfileirados') or 0)} na fila",
-        f"*Chat ML manicure:* {int(chat_ml.get('respondidas') or 0)} respostas",
+        "*Sustentabilidade Ads × ML*",
     ]
+    if sust:
+        emoji = {
+            "sustentavel": "🟢",
+            "alerta": "🟡",
+            "critico": "🔴",
+            "insuficiente_dados": "⚪",
+        }.get(str(sust.get("status") or ""), "⚪")
+        linhas.append(
+            f"{emoji} *{sust.get('status') or 'n/d'}* — "
+            f"gasto Ads R$ {float(sust.get('gasto_meta') or 0):.2f} | "
+            f"vendas ML R$ {float(sust.get('receita_ml') or 0):.2f} "
+            f"({int(sust.get('pedidos_ml') or 0)} ped.) | "
+            f"ROAS real {float(sust.get('roas_real') or 0):.2f} "
+            f"(pixel {float(sust.get('roas_pixel') or 0):.2f})"
+        )
+        if sust.get("recomendacao"):
+            linhas.append(f"_Ação: {sust.get('recomendacao')}_")
+        if envios.get("motivo") and str(envios.get("motivo")).startswith("bloqueado"):
+            linhas.append(f"_Boost ativo bloqueado: {envios.get('motivo')}_")
+    else:
+        linhas.append("_Monitor Ads×ML desligado ou sem dados nesta rodada._")
+
+    linhas.extend(
+        [
+            "",
+            "*Envios ativos*",
+            f"• WhatsApp: {'✅' if envios.get('whatsapp') else '—'}",
+            f"• Telegram manicures: {'✅' if envios.get('telegram') else '—'}",
+            f"• Facebook: {'✅' if envios.get('facebook') else '—'} "
+            f"| Instagram: {'✅' if envios.get('instagram') else '—'}",
+            "",
+            f"*Inbox:* {int(inbox.get('novos') or 0)} novos · "
+            f"{int(inbox.get('respondidos') or 0)} respondidos · "
+            f"{int(inbox.get('enfileirados') or 0)} na fila",
+            f"*Chat ML manicure:* {int(chat_ml.get('respondidas') or 0)} respostas",
+        ]
+    )
     pend = diag.get("pendentes") or []
     if pend:
         linhas.extend(["", f"*Config pendente:* {', '.join(pend)}"])

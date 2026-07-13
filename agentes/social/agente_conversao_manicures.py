@@ -118,15 +118,13 @@ def _sinal_ads() -> dict[str, Any]:
 
 
 def _pode_impulsionar_ativo(ads: dict[str, Any]) -> tuple[bool, str]:
-    """False quando Ads gastam mais do que o ML vende (modo sustentável)."""
+    """False quando gasto Ads > vendas ML (modo sustentável — só status crítico)."""
     if not CONVERSAO_MANICURES_SUSTENTABILIDADE:
         return True, ""
     if not CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL:
         return True, ""
     sust = ads.get("sustentabilidade") or {}
     status = str(sust.get("status") or "")
-    if status in ("critico", "alerta") and not sust.get("permitido_impulsionar", True):
-        return False, f"bloqueado_sustentabilidade:{status}"
     if status == "critico":
         return False, "bloqueado_sustentabilidade:critico"
     return True, ""
@@ -402,22 +400,31 @@ def executar(
 
         fazer_inbox = not so_ativo
         fazer_ativo = not so_inbox
+        permitir_boost, motivo_boost = _pode_impulsionar_ativo(ads)
 
         if fazer_inbox:
             inbox = _processar_inbox(oferta, enviar=enviar)
         if fazer_ativo:
-            envios = _envios_ativos(oferta, enviar=enviar)
+            envios = _envios_ativos(
+                oferta,
+                enviar=enviar,
+                permitir_boost=permitir_boost,
+                motivo_bloqueio=motivo_boost,
+            )
+            # Chat ML continua mesmo se Ads estiver insustentável (fecha venda orgânica)
             chat_ml = _chat_ml_manicures(oferta, enviar=enviar)
         elif so_inbox:
             envios = {"motivo": "so_inbox"}
             chat_ml = {"respondidas": 0, "motivo": "so_inbox"}
 
+        sust = ads.get("sustentabilidade") or {}
         payload = {
             "ok": True,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "modelo": MODELO_RAPIDO,
             "diagnostico": diag,
             "ads": ads,
+            "sustentabilidade": sust,
             "oferta": {
                 k: oferta.get(k)
                 for k in (
@@ -445,6 +452,10 @@ def executar(
 
         gauge("conversao_manicures.leads_novos", float(inbox.get("novos") or 0))
         gauge("conversao_manicures.chat_ml", float(chat_ml.get("respondidas") or 0))
+        if sust.get("roas_real") is not None:
+            gauge("conversao_manicures.roas_real", float(sust.get("roas_real") or 0))
+        if sust.get("status") == "critico":
+            incrementar("conversao_manicures.insustentavel")
 
         enviado_alerta = False
         if enviar_alerta and CONVERSAO_MANICURES_ALERTA and payload.get("mensagem"):
@@ -466,6 +477,8 @@ def executar(
             "inbox": inbox,
             "chat_ml": chat_ml,
             "pendentes": diag.get("pendentes"),
+            "sustentabilidade": sust.get("status"),
+            "roas_real": sust.get("roas_real"),
         }
     except Exception as exc:
         logger.error("agente_conversao_manicures erro: %s", exc)
@@ -494,6 +507,8 @@ def main() -> int:
             "alerta_enviado": out.get("alerta_enviado"),
             "campanha_id": out.get("campanha_id"),
             "pendentes": out.get("pendentes"),
+            "sustentabilidade": out.get("sustentabilidade"),
+            "roas_real": out.get("roas_real"),
             "inbox": out.get("inbox"),
             "envios": out.get("envios"),
             "chat_ml": out.get("chat_ml"),

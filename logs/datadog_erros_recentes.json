@@ -3,13 +3,13 @@
     {
       "fingerprint": "e06446f0849546bd1c7e",
       "primeira_vez": "2026-07-13T19:10:20.622781+00:00",
-      "ultima_vez": "2026-07-13T19:10:20.622781+00:00",
+      "ultima_vez": "2026-07-13T19:17:31.452265+00:00",
       "logger": "meta_ads_client",
-      "mensagem": "Meta Ads listar_metricas_campanhas erro: 400 Client Error: Bad Request for url: https://graph.facebook.com/v25.0/act_.../insights?access_token=...&level=campaign&fields=campaign_id%2Ccampaign_name%2Cspend%2Ccpc%2Cctr%2Cfrequency%2Cimpressions%2Cactions%2Caction_values&limit=30&date_preset=today",
+      "mensagem": "Meta Ads listar_metricas_campanhas erro: 400 Client Error: Bad Request for url: https://graph.facebook.com/v25.0/act_.../insights?access_token=...&level=campaign&fields=campaign_id%2Ccampaign_name%2Cspend%2Ccpc%2Cctr%2Cfrequency%2Cimpressions%2Cactions%2Caction_values&limit=100&date_preset=today",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 1
+      "ocorrencias": 3
     },
     {
       "fingerprint": "25aae72aa3da0ed7d3d5",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 2
     }
   ],
-  "atualizado_em": "2026-07-13T19:10:20.622781+00:00"
+  "atualizado_em": "2026-07-13T19:17:31.452265+00:00"
 }

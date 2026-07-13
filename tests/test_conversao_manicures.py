@@ -133,13 +133,66 @@ class TestMetaInbox(unittest.TestCase):
         self.assertTrue(out["ok"])
 
 
+class TestSustentabilidade(unittest.TestCase):
+    def test_critico_quando_gasto_maior_que_ml(self):
+        from integracoes.social.sustentabilidade_ads_ml import avaliar_sustentabilidade
+
+        out = avaliar_sustentabilidade(
+            gasto_meta=100,
+            receita_meta_pixel=200,
+            receita_ml=40,
+            pedidos_ml=1,
+            roas_min_real=2.0,
+            gasto_minimo_avaliar=20,
+        )
+        self.assertEqual(out["status"], "critico")
+        self.assertFalse(out["permitido_impulsionar"])
+
+    def test_sustentavel_quando_roas_ok(self):
+        from integracoes.social.sustentabilidade_ads_ml import avaliar_sustentabilidade
+
+        out = avaliar_sustentabilidade(
+            gasto_meta=50,
+            receita_meta_pixel=120,
+            receita_ml=150,
+            pedidos_ml=3,
+            roas_min_real=2.0,
+            gasto_minimo_avaliar=20,
+        )
+        self.assertEqual(out["status"], "sustentavel")
+        self.assertTrue(out["permitido_impulsionar"])
+        self.assertGreaterEqual(out["roas_real"], 2.0)
+
+    def test_gestor_mostra_sustentabilidade(self):
+        msg = conv.montar_mensagem_gestor(
+            {
+                "diagnostico": {"pendentes": [], "checklist_meta": []},
+                "oferta": {"campanha_nome": "Kit 3", "fonte": "fallback", "angulo": "a", "link_ml": "http://x"},
+                "envios": {},
+                "inbox": {},
+                "chat_ml": {},
+                "sustentabilidade": {
+                    "status": "alerta",
+                    "gasto_meta": 80,
+                    "receita_ml": 100,
+                    "pedidos_ml": 2,
+                    "roas_real": 1.25,
+                    "roas_pixel": 3.0,
+                    "recomendacao": "reduzir verba",
+                },
+            }
+        )
+        self.assertIn("Sustentabilidade", msg)
+        self.assertIn("alerta", msg)
+
+
 class TestAgenteConversao(unittest.TestCase):
     @patch("agentes.social.agente_conversao_manicures.alertar_gestor", return_value=False)
     @patch("agentes.social.agente_conversao_manicures._chat_ml_manicures", return_value={"respondidas": 0})
     @patch("agentes.social.agente_conversao_manicures._envios_ativos", return_value={"whatsapp": False})
     @patch("agentes.social.agente_conversao_manicures._processar_inbox", return_value={"novos": 0, "respondidos": 0, "enfileirados": 0})
     @patch("agentes.social.agente_conversao_manicures.escolher_oferta_haiku")
-    @patch("agentes.social.agente_conversao_manicures._sinal_ads", return_value={"campanhas": 0})
+    @patch("agentes.social.agente_conversao_manicures._sinal_ads", return_value={"campanhas": 0, "sustentabilidade": {"status": "sustentavel", "roas_real": 3.0}})
     @patch("agentes.social.agente_conversao_manicures.CONVERSAO_MANICURES_ATIVO", True)
     def test_executar_dry(self, _ads, mock_oferta, *_rest):
         from agentes.social import agente_conversao_manicures as ag
@@ -162,6 +215,7 @@ class TestAgenteConversao(unittest.TestCase):
         out = ag.executar(enviar=False, enviar_alerta=False)
         self.assertTrue(out["ok"])
         self.assertEqual(out["campanha_id"], "kit-3")
+        self.assertEqual(out.get("sustentabilidade"), "sustentavel")
 
 
 if __name__ == "__main__":

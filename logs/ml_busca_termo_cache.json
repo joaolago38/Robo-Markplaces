@@ -1,23 +1,22 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-07-13T18:39:47.761962+00:00",
+    "timestamp": "2026-07-13T19:21:00.268147+00:00",
     "resultados": [
       {
-        "item_id": "MLB4108663039",
-        "titulo": "Esmalte Impala Preto Classico Cremoso Manicure",
-        "preco": 13.99,
-        "quantidade_vendida": 0,
-        "seller_id": "1827974129",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4108663039",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB26970424",
-        "catalog_date_created": "2023-09-13T03:55:50Z",
-        "listing_type_id": "gold_pro"
+        "item_id": "MLB123",
+        "titulo": "Kit Impala",
+        "preco": 29.9,
+        "frete_gratis": false,
+        "condicao": "new",
+        "quantidade_vendida": 8,
+        "seller_id": "888",
+        "permalink": "",
+        "fonte_busca": "ddg"
       }
     ]
   },
   "kit anita": {
-    "timestamp": "2026-07-12T14:53:28.890585+00:00",
+    "timestamp": "2026-07-13T19:20:57.958586+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -33,36 +32,23 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-07-12T14:54:29.397945+00:00",
+    "timestamp": "2026-07-13T19:22:17.622427+00:00",
     "resultados": [
       {
-        "item_id": "MLB1",
-        "titulo": "MLB1",
-        "preco": 40.0,
-        "quantidade_vendida": 1,
-        "seller_id": "",
-        "permalink": "https://produto.mercadolivre.com.br/MLB1",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB1",
-        "catalog_date_created": null,
-        "listing_type_id": ""
-      },
-      {
         "item_id": "MLB2",
-        "titulo": "MLB2",
+        "titulo": "Kit Impala Concorrente",
         "preco": 35.0,
+        "frete_gratis": true,
+        "condicao": "new",
         "quantidade_vendida": 5,
-        "seller_id": "",
-        "permalink": "https://produto.mercadolivre.com.br/MLB2",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB1",
-        "catalog_date_created": null,
-        "listing_type_id": ""
+        "seller_id": "888",
+        "permalink": "",
+        "fonte_busca": "api"
       }
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-07-12T14:53:28.839862+00:00",
+    "timestamp": "2026-07-13T19:20:57.881404+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -78,7 +64,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-07-12T14:53:28.853799+00:00",
+    "timestamp": "2026-07-13T19:20:57.909558+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
