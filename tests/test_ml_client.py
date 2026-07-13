@@ -332,6 +332,95 @@ class TestMlAnuncioStatus(unittest.TestCase):
         self.assertTrue(any("HTTP 404" in m for m in cm.output))
         self.assertFalse(any("ERROR" in m for m in cm.output))
 
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML30_buscar_perfil_vendedor(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            {"id": 111, "nickname": "LOJA", "seller_reputation": {"level_id": "5_green"}, "points": 10}
+        )
+        out = ml_client.buscar_perfil_vendedor()
+        self.assertEqual(out["nickname"], "LOJA")
+        self.assertEqual(ml_client.buscar_reputacao_vendedor().get("level_id"), "5_green")
+
+    @patch.object(ml_client, "_enabled", return_value=False)
+    def test_ML31_buscar_perfil_nao_configurado(self, *_):
+        self.assertEqual(ml_client.buscar_perfil_vendedor(), {})
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML32_buscar_performance_item(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            {
+                "entity_id": "MLB1",
+                "score": 50,
+                "level": "Basic",
+                "level_wording": "Básica",
+                "status": "PENDING",
+                "buckets": [
+                    {
+                        "variables": [
+                            {
+                                "rules": [
+                                    {
+                                        "key": "PICTURES",
+                                        "status": "PENDING",
+                                        "mode": "OPPORTUNITY",
+                                        "wordings": {"label": "Adicionar fotos"},
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+            }
+        )
+        out = ml_client.buscar_performance_item("MLB1")
+        self.assertTrue(out.get("a_melhorar"))
+        self.assertEqual(out.get("score"), 50.0)
+        self.assertIn("Adicionar fotos", out["regras_pendentes"][0]["titulo"])
+
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML33_buscar_performance_sem_id(self, *_):
+        self.assertEqual(ml_client.buscar_performance_item(""), {})
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML34_contar_envios_pendentes(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            {
+                "results": [
+                    {"shipping": {"status": "ready_to_ship"}},
+                    {"shipping": {"status": "shipped"}},
+                ]
+            }
+        )
+        out = ml_client.contar_envios_pendentes()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total"], 1)
+
+    @patch.object(ml_client, "_enabled", return_value=False)
+    def test_ML35_contar_envios_nao_configurado(self, *_):
+        out = ml_client.contar_envios_pendentes()
+        self.assertFalse(out["ok"])
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML36_contar_claims_abertos(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"paging": {"total": 2}, "data": []})
+        out = ml_client.contar_claims_abertos()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total"], 2)
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML37_contar_claims_404(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 404
+        mock_req.return_value = r
+        out = ml_client.contar_claims_abertos()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "claims_indisponivel")
+
 
 if __name__ == "__main__":
     unittest.main()

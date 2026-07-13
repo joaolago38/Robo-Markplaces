@@ -1,8 +1,8 @@
 """
 agentes/leilao/agente_leilao_veiculo.py
 Monitor 24h de leilões de veículos **recuperados de furto ou pequena/média monta** em leiloeiros
-e portais DETRAN (todos os estados). Por padrão varre veículos (ano configurável) com rotação
-de fontes e alerta no Telegram o Top-N por margem FIPE (após taxas e haircut de sinistro).
+e portais DETRAN (todos os estados). Por padrão varre todos os veículos da busca (sem filtro de ano)
+com rotação de fontes e alerta no Telegram o Top-N por margem FIPE (após taxas e haircut de sinistro).
 
 Configuração: catalogo/leiloes_veiculos_monitorados.json (modo legado por modelo)
 Somente leitura + alertas — não participa de leilões.
@@ -19,8 +19,6 @@ from core.config import (
     LEILAO_ALERTA_RESUMO_COOLDOWN_SEG,
     LEILAO_ALERTA_TOP_N,
     LEILAO_ALERTAR_TODOS_ACHADOS,
-    LEILAO_ANO_MAX,
-    LEILAO_ANO_MIN,
     LEILAO_BUSCA_TODOS_VEICULOS,
     LEILAO_IA_AVALIAR_PARAMETROS,
     LEILAO_INCLUIR_COPART_DIRETO,
@@ -60,13 +58,12 @@ def _veiculo_busca_todos() -> dict[str, Any]:
         "ativo": True,
         "prioridade": 1,
         "busca_todos": True,
+        "sem_filtro_ano": True,
         "perfil": "recuperado_furto_pequena_monta",
-        "ano_min": LEILAO_ANO_MIN,
-        "ano_max": LEILAO_ANO_MAX,
         "margem_fipe_min_pct": LEILAO_MARGEM_FIPE_MIN_PCT,
         "margem_fipe_min_reais": LEILAO_MARGEM_FIPE_MIN_REAIS,
         "preco_max_lance": LEILAO_PRECO_MAX_LANCE,
-        "notas": "Varredura ampla — todos os veículos no intervalo de ano",
+        "notas": "Varredura ampla — todos os veículos da busca (sem filtro de ano)",
     }
 
 
@@ -581,7 +578,7 @@ def _todos_novos_vantajosos(resultados: list[dict[str, Any]]) -> list[dict[str, 
 def executar(enviar_alerta: bool = True) -> dict[str, Any]:
     """
     Varre leiloeiros + DETRAN (todas as fontes por padrão) e notifica Telegram.
-    Modo padrão: todos os veículos (ano 2000–2020), alerta de cada achado novo.
+    Modo padrão: todos os veículos da busca (sem filtro de ano), alerta de cada achado novo.
     """
     try:
         if enviar_alerta and not gestor_telegram_configurado():
@@ -592,9 +589,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         if LEILAO_BUSCA_TODOS_VEICULOS:
             veiculos = [_veiculo_busca_todos()]
-            veiculos[0]["veiculo"] = (
-                f"Todos os veículos ({LEILAO_ANO_MIN}–{LEILAO_ANO_MAX})"
-            )
+            veiculos[0]["veiculo"] = "Todos os veículos (sem filtro de ano)"
         else:
             veiculos = _carregar_veiculos()
         if not veiculos:

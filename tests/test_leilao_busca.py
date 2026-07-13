@@ -23,14 +23,15 @@ class TestMontarTermo(unittest.TestCase):
 
     def test_monta_termo_busca_todos(self):
         termo = busca.montar_termo_busca(
-            {"busca_todos": True, "perfil": "recuperado_furto_pequena_monta", "ano_min": 2000, "ano_max": 2020}
+            {"busca_todos": True, "perfil": "recuperado_furto_pequena_monta"}
         )
-        self.assertIn("2000-2020", termo)
+        self.assertNotIn("2000-2020", termo)
+        self.assertNotIn("1995", termo)
         self.assertIn("veículo", termo)
         self.assertIn("recuperado", termo)
 
     def test_relevante_busca_todos_aceita_qualquer_modelo(self):
-        veiculo = {"busca_todos": True, "perfil": "recuperado_furto_pequena_monta", "ano_min": 2000, "ano_max": 2020}
+        veiculo = {"busca_todos": True, "perfil": "recuperado_furto_pequena_monta"}
         ok = busca._relevante_para_veiculo(
             {
                 "titulo": "Toyota Corolla 2015 leilão recuperado furto",
@@ -41,8 +42,8 @@ class TestMontarTermo(unittest.TestCase):
         )
         self.assertTrue(ok)
 
-    def test_relevante_busca_todos_rejeita_ano_fora(self):
-        veiculo = {"busca_todos": True, "perfil": "recuperado_furto_pequena_monta", "ano_min": 2000, "ano_max": 2020}
+    def test_relevante_busca_todos_aceita_qualquer_ano(self):
+        veiculo = {"busca_todos": True, "perfil": "recuperado_furto_pequena_monta"}
         ok = busca._relevante_para_veiculo(
             {
                 "titulo": "Toyota Corolla 1995 leilão recuperado furto",
@@ -51,7 +52,7 @@ class TestMontarTermo(unittest.TestCase):
             },
             veiculo,
         )
-        self.assertFalse(ok)
+        self.assertTrue(ok)
 
     def test_rejeita_ano_fora_do_intervalo_padrao(self):
         ok = busca._relevante_para_veiculo(

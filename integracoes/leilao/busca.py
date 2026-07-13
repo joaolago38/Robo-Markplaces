@@ -123,23 +123,34 @@ _MESES_PT = {
 }
 
 
-def _limites_ano(veiculo: dict[str, Any]) -> tuple[int, int]:
-    """Ano mín/máx do veículo no catálogo, com fallback em LEILAO_ANO_MIN/MAX."""
+def _limites_ano(veiculo: dict[str, Any]) -> tuple[int, int] | None:
+    """
+    Ano mín/máx do veículo no catálogo, com fallback em LEILAO_ANO_MIN/MAX.
+    Retorna None quando não há filtro de ano (busca_todos / sem_filtro_ano / 0–0).
+    """
+    if veiculo.get("busca_todos") or veiculo.get("sem_filtro_ano"):
+        return None
     raw_min = veiculo.get("ano_min")
     raw_max = veiculo.get("ano_max")
+    if raw_min in (0, "0") and raw_max in (0, "0"):
+        return None
     ano_min = int(raw_min) if raw_min not in (None, "") else LEILAO_ANO_MIN
     ano_max = int(raw_max) if raw_max not in (None, "") else LEILAO_ANO_MAX
+    if ano_min <= 0 and ano_max <= 0:
+        return None
     return ano_min, ano_max
 
 
 def montar_termo_busca(veiculo: dict[str, Any]) -> str:
     if veiculo.get("busca_todos"):
         partes = ["veículo", "automotor"]
-        ano_min, ano_max = _limites_ano(veiculo)
-        if ano_min == ano_max:
-            partes.append(str(ano_min))
-        else:
-            partes.append(f"{ano_min}-{ano_max}")
+        limites = _limites_ano(veiculo)
+        if limites:
+            ano_min, ano_max = limites
+            if ano_min == ano_max:
+                partes.append(str(ano_min))
+            else:
+                partes.append(f"{ano_min}-{ano_max}")
         if veiculo.get("perfil") in _PERFIS_RECUPERADO_MONTA:
             partes.extend(_TERMOS_PERFIL_BUSCA)
         return " ".join(partes)
@@ -148,11 +159,13 @@ def montar_termo_busca(veiculo: dict[str, Any]) -> str:
         str(veiculo.get("marca") or "").strip(),
         str(veiculo.get("modelo") or "").strip(),
     ]
-    ano_min, ano_max = _limites_ano(veiculo)
-    if ano_min == ano_max:
-        partes.append(str(ano_min))
-    else:
-        partes.append(f"{ano_min}-{ano_max}")
+    limites = _limites_ano(veiculo)
+    if limites:
+        ano_min, ano_max = limites
+        if ano_min == ano_max:
+            partes.append(str(ano_min))
+        else:
+            partes.append(f"{ano_min}-{ano_max}")
     for extra in veiculo.get("termos_extra") or []:
         if extra:
             partes.append(str(extra).strip())
@@ -173,8 +186,8 @@ def _termo_query_site(veiculo: dict[str, Any]) -> str:
         str(veiculo.get("marca") or "").strip(),
         str(veiculo.get("modelo") or "").strip(),
     ]
-    ano_min, ano_max = _limites_ano(veiculo)
-    if ano_min == ano_max:
+    ano_min, ano_max = _limites_ano(veiculo) or (None, None)
+    if ano_min is not None and ano_max is not None and ano_min == ano_max:
         partes.append(str(ano_min))
     for extra in veiculo.get("termos_extra") or []:
         if extra:
@@ -241,7 +254,10 @@ def buscar_duckduckgo(query: str, *, max_resultados: int = 8) -> list[dict[str, 
 
 
 def _ano_no_intervalo(texto: str, veiculo: dict[str, Any]) -> bool:
-    ano_min, ano_max = _limites_ano(veiculo)
+    limites = _limites_ano(veiculo)
+    if limites is None:
+        return True
+    ano_min, ano_max = limites
     anos = [int(a) for a in re.findall(r"\b(?:19|20)\d{2}\b", texto)]
     if not anos:
         return True
@@ -316,13 +332,15 @@ def _extrair_ano(texto: str, veiculo: dict[str, Any] | None = None) -> int | Non
     if not anos:
         return None
     if veiculo:
-        ano_min, ano_max = _limites_ano(veiculo)
-        for ano in sorted(anos, reverse=True):
-            if ano < ano_min:
-                continue
-            if ano > ano_max:
-                continue
-            return ano
+        limites = _limites_ano(veiculo)
+        if limites is not None:
+            ano_min, ano_max = limites
+            for ano in sorted(anos, reverse=True):
+                if ano < ano_min:
+                    continue
+                if ano > ano_max:
+                    continue
+                return ano
     return max(anos)
 
 
