@@ -22,6 +22,7 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.claude_client import MODELO_RAPIDO
 from core.config import (
     ANTHROPIC_API_KEY,
+    CONVERSAO_BLOQUEAR_LINK_INVALIDO,
     CONVERSAO_MANICURES_ALERTA,
     CONVERSAO_MANICURES_ATIVO,
     CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL,
@@ -117,8 +118,20 @@ def _sinal_ads() -> dict[str, Any]:
         return {"campanhas": 0, "gasto": 0, "compras": 0, "roas": 0, "erro": str(exc)[:120]}
 
 
-def _pode_impulsionar_ativo(ads: dict[str, Any]) -> tuple[bool, str]:
-    """False quando gasto Ads > vendas ML (modo sustentável — só status crítico)."""
+def _pode_impulsionar_ativo(
+    ads: dict[str, Any],
+    *,
+    oferta: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    """
+    False quando:
+      - link ML inválido (MLB_PREENCHER) e CONVERSAO_BLOQUEAR_LINK_INVALIDO
+      - gasto Ads >> vendas ML (status crítico)
+    Não efetiva Ads Product Ads — só bloqueia boost orgânico/publicado.
+    """
+    of = oferta if isinstance(oferta, dict) else {}
+    if CONVERSAO_BLOQUEAR_LINK_INVALIDO and of.get("link_valido") is False:
+        return False, "bloqueado_link_ml_invalido"
     if not CONVERSAO_MANICURES_SUSTENTABILIDADE:
         return True, ""
     if not CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL:
@@ -151,6 +164,7 @@ def _processar_inbox(
     oferta: dict[str, Any],
     *,
     enviar: bool,
+    sinal_ads: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     conhecidos = ids_leads_conhecidos()
     coletados: list[dict[str, Any]] = []
@@ -181,7 +195,11 @@ def _processar_inbox(
         novos += 1
 
         classif = classificar_e_responder_lead(
-            texto, canal=canal, link_ml=link, oferta_nome=nome
+            texto,
+            canal=canal,
+            link_ml=link,
+            oferta_nome=nome,
+            sinal_ads=sinal_ads,
         )
         lead = append_lead(
             {
@@ -196,6 +214,7 @@ def _processar_inbox(
                 "resposta": classif.get("resposta") or "",
                 "link_ml": link,
                 "converter": bool(classif.get("converter")),
+                "escalou_ia": bool(classif.get("escalou_ia")),
             }
         )
 
@@ -210,7 +229,6 @@ def _processar_inbox(
                 enviou = bool(out.get("ok"))
             elif canal == "whatsapp" and CONVERSAO_MANICURES_REPLY_WA:
                 autor = str(item.get("autor") or "").split("@")[0]
-                # só DM se autor parecer número; senão responde no grupo
                 if autor.isdigit() and len(autor) >= 10:
                     enviou = bool(enviar_mensagem(autor, str(classif.get("resposta"))))
                 else:
@@ -231,6 +249,7 @@ def _processar_inbox(
                 "canal": canal,
                 "intencao": classif.get("intencao"),
                 "enviou": enviou,
+                "escalou_ia": bool(classif.get("escalou_ia")),
             }
         )
 
@@ -243,7 +262,12 @@ def _processar_inbox(
     }
 
 
-def _chat_ml_manicures(oferta: dict[str, Any], *, enviar: bool) -> dict[str, Any]:
+def _chat_ml_manicures(
+    oferta: dict[str, Any],
+    *,
+    enviar: bool,
+    sinal_ads: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     if not CONVERSAO_MANICURES_CHAT_ML or not ML_ACCESS_TOKEN:
         return {"respondidas": 0, "motivo": "chat_ml_desligado_ou_sem_token"}
     try:
@@ -264,7 +288,12 @@ def _chat_ml_manicures(oferta: dict[str, Any], *, enviar: bool) -> dict[str, Any
         if not pergunta_parece_manicure(texto):
             continue
         vistos += 1
-        resp = resposta_chat_ml_haiku(texto, link, produto_ctx=str(oferta.get("campanha_nome") or ""))
+        resp = resposta_chat_ml_haiku(
+            texto,
+            link,
+            produto_ctx=str(oferta.get("campanha_nome") or ""),
+            sinal_ads=sinal_ads,
+        )
         if not resp:
             continue
         if enviar:
@@ -272,7 +301,7 @@ def _chat_ml_manicures(oferta: dict[str, Any], *, enviar: bool) -> dict[str, Any
                 ok += 1
                 time.sleep(0.8)
         else:
-            ok += 1  # dry-run conta como preparada
+            ok += 1
     return {"respondidas": ok, "candidatas": vistos, "dry_run": not enviar}
 
 
@@ -400,10 +429,11 @@ def executar(
 
         fazer_inbox = not so_ativo
         fazer_ativo = not so_inbox
-        permitir_boost, motivo_boost = _pode_impulsionar_ativo(ads)
+        permitir_boost, motivo_boost = _pode_impulsionar_ativo(ads, oferta=oferta)
 
         if fazer_inbox:
-            inbox = _processar_inbox(oferta, enviar=enviar)
+            # Inbox/reply Meta: só com flag REPLY_META (padrão 0) — você decide no .env
+            inbox = _processar_inbox(oferta, enviar=enviar, sinal_ads=ads)
         if fazer_ativo:
             envios = _envios_ativos(
                 oferta,
@@ -411,8 +441,8 @@ def executar(
                 permitir_boost=permitir_boost,
                 motivo_bloqueio=motivo_boost,
             )
-            # Chat ML continua mesmo se Ads estiver insustentável (fecha venda orgânica)
-            chat_ml = _chat_ml_manicures(oferta, enviar=enviar)
+            # Chat ML = termômetro de fechamento; Ads sobe a pressão da dosagem de IA
+            chat_ml = _chat_ml_manicures(oferta, enviar=enviar, sinal_ads=ads)
         elif so_inbox:
             envios = {"motivo": "so_inbox"}
             chat_ml = {"respondidas": 0, "motivo": "so_inbox"}
@@ -433,6 +463,9 @@ def executar(
                     "sku",
                     "preco_brl",
                     "link_ml",
+                    "link_valido",
+                    "aviso_link",
+                    "item_id",
                     "angulo",
                     "motivo",
                     "fonte",
@@ -440,8 +473,12 @@ def executar(
                     "copy_whatsapp",
                     "copy_facebook",
                     "copy_instagram",
+                    "escalou_ia",
+                    "modelo_ia",
                 )
             },
+            "boost_bloqueado": not permitir_boost,
+            "motivo_boost": motivo_boost,
             "envios": envios,
             "inbox": inbox,
             "chat_ml": chat_ml,

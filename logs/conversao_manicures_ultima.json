@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "timestamp": "2026-07-13T23:00:13.968369+00:00",
+  "timestamp": "2026-07-13T23:31:00.693395+00:00",
   "modelo": "claude-haiku-4-5",
   "diagnostico": {
     "canais": {
@@ -74,14 +74,21 @@
     "sku": "X",
     "preco_brl": 40,
     "link_ml": "https://ml/x",
+    "link_valido": null,
+    "aviso_link": null,
+    "item_id": null,
     "angulo": "atacado",
     "motivo": "t",
     "fonte": "fallback",
     "cta_ml": "compre",
     "copy_whatsapp": "wa",
     "copy_facebook": "fb",
-    "copy_instagram": "ig"
+    "copy_instagram": "ig",
+    "escalou_ia": null,
+    "modelo_ia": null
   },
+  "boost_bloqueado": false,
+  "motivo_boost": "",
   "envios": {
     "whatsapp": false
   },

@@ -70,6 +70,24 @@ def _link_ml(produto: dict[str, Any]) -> str:
     return "https://www.mercadolivre.com.br"
 
 
+def link_ml_valido(link: str) -> bool:
+    link = (link or "").strip()
+    if not link.startswith("http"):
+        return False
+    u = link.upper()
+    if "MLB_PREENCHER" in u or "MLB-PREENCHER" in u:
+        return False
+    # Lista genérica = anúncio ainda não cadastrado no catálogo
+    if "lista.mercadolivre" in link.lower() and "/lista/" in link.lower():
+        return False
+    return True
+
+
+def _item_id_produto(produto: dict[str, Any]) -> str:
+    ml = (produto.get("canais") or {}).get("mercadolivre") or {}
+    return str(ml.get("item_id") or "").strip().upper().replace("-", "")
+
+
 def montar_mensagem_campanha(campanha: dict[str, Any]) -> dict[str, Any]:
     """Preenche template da campanha com dados do produto no catálogo."""
     sku = str(campanha.get("sku") or "").strip()
@@ -89,12 +107,17 @@ def montar_mensagem_campanha(campanha: dict[str, Any]) -> dict[str, Any]:
     if preco_de is None:
         preco_de = round(preco * 1.15, 2)
 
+    link = _link_ml(produto)
+    item_id = _item_id_produto(produto)
+    item_ok = bool(item_id) and item_id not in _ITEM_ID_INVALIDO
+    valido = link_ml_valido(link) and item_ok
+
     ctx = {
         "produto": str(produto.get("nome") or campanha.get("nome") or sku),
         "preco": _fmt_brl(preco),
         "preco_de": _fmt_brl(preco_de),
         "sku": sku,
-        "link": _link_ml(produto),
+        "link": link,
         "loja_url": (ML_LOJA_URL or "https://www.mercadolivre.com.br").strip(),
         "rodape": str(campanha.get("rodape") or PROMOCOES_MANICURES_RODAPE),
         "marketplace": "Mercado Livre",
@@ -110,17 +133,25 @@ def montar_mensagem_campanha(campanha: dict[str, Any]) -> dict[str, Any]:
 
     texto = _PLACEHOLDER_RE.sub(_sub, template)
 
-    return {
+    out = {
         "ok": True,
         "campanha_id": campanha.get("id"),
         "campanha_nome": campanha.get("nome"),
         "sku": sku,
         "preco_brl": preco,
         "link_ml": ctx["link"],
+        "link_valido": valido,
+        "item_id": item_id or None,
         "texto": texto,
         "texto_telegram": texto,
         "texto_whatsapp": _para_whatsapp(texto),
     }
+    if not valido:
+        out["aviso_link"] = (
+            "item_id ainda é MLB_PREENCHER ou link genérico — "
+            "não efetive divulgação até preencher o MLB real no catálogo"
+        )
+    return out
 
 
 def _para_whatsapp(texto: str) -> str:

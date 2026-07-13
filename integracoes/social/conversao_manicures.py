@@ -224,6 +224,9 @@ def escolher_oferta_haiku(
                     "sku": m.get("sku"),
                     "preco_brl": m.get("preco_brl"),
                     "link_ml": link,
+                    "link_valido": bool(m.get("link_valido", True)),
+                    "aviso_link": m.get("aviso_link") or "",
+                    "item_id": m.get("item_id"),
                     "angulo": (copies or {}).get("angulo") or "rotacao",
                     "motivo": (copies or {}).get("motivo") or "sem_ia_ou_fallback",
                     "copy_whatsapp": wa.strip(),
@@ -285,8 +288,9 @@ def classificar_e_responder_lead(
     canal: str,
     link_ml: str,
     oferta_nome: str = "",
+    sinal_ads: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Classifica intenção (Haiku) e, se for converter quente, escala resposta."""
+    """Classifica intenção (Haiku). Sonnet só se calor alto — Meta captura, ML é o alvo."""
     texto = (texto or "").strip()
     if len(texto) < 2:
         return {
@@ -309,14 +313,14 @@ def classificar_e_responder_lead(
         return fallback
 
     prompt = (
-        f"Canal: {canal}\n"
+        f"Canal de captação: {canal} (Instagram/Facebook/WhatsApp — NÃO é a venda ainda).\n"
+        f"Objetivo: levar a manicure a COMPRAR no Mercado Livre.\n"
         f"Oferta ativa: {oferta_nome}\n"
-        f"Link ML: {link_ml}\n"
-        f"Mensagem da manicure/cliente: {texto}\n\n"
-        "Classifique a intenção e, se valer converter, escreva uma resposta curta "
+        f"Link ML (fechamento): {link_ml}\n"
+        f"Mensagem: {texto}\n\n"
+        "Classifique a intenção e, se valer converter, escreva resposta curta "
         "(max 400 chars) com o link do ML. Se spam/off_topic, converter=false e resposta vazia."
     )
-    # Classificação barata em Haiku
     raw = perguntar_estruturado(
         prompt,
         _SCHEMA_INTENCAO,
@@ -337,16 +341,16 @@ def classificar_e_responder_lead(
         texto=texto,
         intencao=intencao,
         converter=converter,
+        sinal_ads=sinal_ads,
     )
-    # Se escalou, reescreve a resposta com modelo de vendas (mantém intenção Haiku)
     if rota.get("escalou") and converter:
         rewrite = perguntar(
             (
-                f"Canal: {canal}. Oferta: {oferta_nome}. Link ML: {link_ml}.\n"
-                f"Intenção já classificada: {intencao}.\n"
-                f"Mensagem da cliente: {texto}\n\n"
-                "Escreva UMA resposta curta (máx 400 chars) que maximize a chance "
-                "de compra no Mercado Livre. Inclua o link. Tom salão profissional."
+                f"Canal de CAPTAÇÃO: {canal}. A venda fecha no MERCADO LIVRE.\n"
+                f"Oferta: {oferta_nome}. Link ML: {link_ml}.\n"
+                f"Intenção: {intencao}. Mensagem: {texto}\n\n"
+                "Resposta curta (máx 400 chars) empurrando a compra no anúncio ML. "
+                "Tom salão. Inclua o link."
             ),
             max_tokens=280,
             system=_SYSTEM_CONV,
@@ -365,11 +369,18 @@ def classificar_e_responder_lead(
         "motivo": str(raw.get("motivo") or "haiku"),
         "modelo_ia": rota["modelo"] if rota.get("escalou") and converter else MODELO_RAPIDO,
         "escalou_ia": bool(rota.get("escalou") and converter),
+        "analise": rota.get("analise"),
     }
 
 
-def resposta_chat_ml_haiku(pergunta: str, link_ml: str, produto_ctx: str = "") -> str:
-    """Resposta curta para pergunta ML com CTA de compra (escala se intenção de venda)."""
+def resposta_chat_ml_haiku(
+    pergunta: str,
+    link_ml: str,
+    produto_ctx: str = "",
+    *,
+    sinal_ads: dict[str, Any] | None = None,
+) -> str:
+    """Fechamento no ML = termômetro principal; Ads Meta aumenta a pressão/dosagem."""
     if not pergunta_parece_manicure(pergunta):
         return ""
     if ANTHROPIC_API_KEY:
@@ -377,13 +388,17 @@ def resposta_chat_ml_haiku(pergunta: str, link_ml: str, produto_ctx: str = "") -
             proposito="resposta_chat_ml",
             canal="mercadolivre",
             texto=pergunta,
+            sinal_ads=sinal_ads,
         )
+        analise = rota.get("analise") or {}
         out = perguntar(
             (
-                f"Cliente perguntou no Mercado Livre: {pergunta}\n"
+                f"Cliente perguntou no Mercado Livre (FECHAMENTO DA VENDA): {pergunta}\n"
                 f"Contexto produto: {produto_ctx or 'kit esmaltes Impala para manicures'}\n"
-                f"Inclua sutilmente o CTA para concluir a compra. Link: {link_ml}\n"
-                "Resposta máx 300 chars, tom salão profissional."
+                f"Termômetro: {analise.get('resumo') or 'n/d'}\n"
+                f"Captação Meta (se houver): {analise.get('captacao_meta') or {}}\n"
+                f"CTA compra. Link: {link_ml}\n"
+                "Resposta máx 300 chars, precisa e persuasiva, tom salão."
             ),
             max_tokens=220,
             system=_SYSTEM_CONV,
@@ -489,9 +504,17 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
         f"_Oferta: *{oferta.get('campanha_nome') or oferta.get('campanha_id') or 'n/d'}* "
         f"({oferta.get('fonte') or '-'}: {oferta.get('angulo') or '-'})_",
         f"_Link: {oferta.get('link_ml') or 'n/d'}_",
-        "",
-        "*Sustentabilidade Ads × ML*",
     ]
+    if oferta.get("link_valido") is False:
+        aviso = str(oferta.get("aviso_link") or "").strip()
+        msg = (
+            "⚠️ *Link ML inválido* (MLB_PREENCHER / genérico) — "
+            "boost WA/TG/FB/IG bloqueado até você preencher o item_id real."
+        )
+        if aviso:
+            msg = f"{msg} {aviso}"
+        linhas.append(msg)
+    linhas.extend(["", "*Sustentabilidade Ads × ML*"])
     if sust:
         emoji = {
             "sustentavel": "🟢",
@@ -509,10 +532,12 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
         )
         if sust.get("recomendacao"):
             linhas.append(f"_Ação: {sust.get('recomendacao')}_")
-        if envios.get("motivo") and str(envios.get("motivo")).startswith("bloqueado"):
-            linhas.append(f"_Boost ativo bloqueado: {envios.get('motivo')}_")
     else:
         linhas.append("_Monitor Ads×ML desligado ou sem dados nesta rodada._")
+    if envios.get("motivo") and str(envios.get("motivo")).startswith("bloqueado"):
+        linhas.append(f"_Boost ativo bloqueado: {envios.get('motivo')}_")
+    elif payload.get("boost_bloqueado") and payload.get("motivo_boost"):
+        linhas.append(f"_Boost ativo bloqueado: {payload.get('motivo_boost')}_")
 
     linhas.extend(
         [

@@ -78,19 +78,14 @@ def resolver_modelo_vendas(
     sinal_ads: dict[str, Any] | None = None,
     intencao: str | None = None,
     converter: bool | None = None,
+    estoque: int | None = None,
+    analise: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Decide Haiku vs CLAUDE_MODELO_VENDAS.
 
-    Pontos de mudança (escala para Sonnet):
-      1. oferta_conversao — escolha de kit/copy que dispara o funil (se flag)
-      2. chat_ml — intenção de compra / ticket alto / canal ML
-      3. resposta_lead — lead com converter + intenção de preço/atacado/interesse quente
-      4. ads_status critico/alerta na oferta — copy mais cuidadosa
-
-    Sempre fica em Haiku se:
-      - CLAUDE_ESCALONAR_ML=0
-      - restante orçamento < CLAUDE_ESCALONAR_RESTANTE_MIN_USD
+    Preferência: se `analise` (ou análise gerada) estiver em nível **alto**,
+    sobe para o modelo de vendas — desde que orçamento permita.
     """
     c = _cfg()
     rapido = str(getattr(c, "CLAUDE_MODELO_RAPIDO", "claude-haiku-4-5") or "claude-haiku-4-5")
@@ -101,6 +96,7 @@ def resolver_modelo_vendas(
         "motivo": "haiku_padrao",
         "proposito": proposito,
         "forcar_modelo": False,
+        "analise": None,
     }
 
     if not bool(getattr(c, "CLAUDE_ESCALONAR_ML", True)):
@@ -113,21 +109,54 @@ def resolver_modelo_vendas(
         base["motivo"] = f"orcamento_baixo:{resta:.2f}<{piso:.2f}"
         return base
 
-    prop = (proposito or "").strip().lower()
-    motivos: list[str] = []
+    if analise is None:
+        try:
+            from core.claude_analise_vendas import analisar_oportunidade_ml
 
+            analise = analisar_oportunidade_ml(
+                texto=texto,
+                canal=canal,
+                preco_produto=preco_produto,
+                estoque=estoque,
+                proposito=proposito,
+                intencao=intencao,
+                converter=converter,
+                sinal_ads=sinal_ads,
+            )
+        except Exception as exc:
+            logger.warning("analise_oportunidade_ml falhou: %s", exc)
+            analise = None
+    base["analise"] = analise
+
+    motivos: list[str] = []
+    if isinstance(analise, dict) and analise.get("deve_aumentar_ia"):
+        motivos.append(f"analise_alta:{analise.get('score', 0)}")
+
+    prop = (proposito or "").strip().lower()
+
+    # Regras legado (ainda somam motivos se análise não marcou alto)
     if prop in ("oferta_conversao", "oferta", "escolher_oferta"):
-        if bool(getattr(c, "CLAUDE_ESCALONAR_OFERTA", True)):
-            motivos.append("oferta_conversao_ml")
+        so_calor = bool(getattr(c, "CLAUDE_ESCALONAR_OFERTA_SO_CALOR", True))
         status = ""
         if isinstance(sinal_ads, dict):
             sust = sinal_ads.get("sustentabilidade") or sinal_ads
             if isinstance(sust, dict):
                 status = str(sust.get("status") or "").lower()
             else:
-                status = str(sinal_ads.get("status") or "").lower()
+                status = str(sinal_ads.get("status") or sinal_ads.get("status_sustentavel") or "").lower()
         if status in ("alerta", "critico"):
             motivos.append(f"ads_{status}")
+        elif bool(getattr(c, "CLAUDE_ESCALONAR_OFERTA", True)) and not so_calor:
+            # Modo antigo: sempre Sonnet na oferta
+            motivos.append("oferta_conversao_ml")
+        elif (
+            bool(getattr(c, "CLAUDE_ESCALONAR_OFERTA", True))
+            and so_calor
+            and isinstance(analise, dict)
+            and analise.get("deve_aumentar_ia")
+        ):
+            motivos.append("oferta_conversao_calor")
+        # se so_calor e análise não alta e ads ok → fica Haiku (sem motivo extra)
 
     if prop in ("chat_ml", "chat", "responder_chat", "resposta_chat_ml"):
         if bool(getattr(c, "CLAUDE_ESCALONAR_CHAT", True)):
@@ -143,13 +172,24 @@ def resolver_modelo_vendas(
                     motivos.append(f"ticket_alto:{preco:.2f}")
 
     if prop in ("resposta_lead", "lead_conversao"):
-        intents_quentes = {"preco", "atacado", "interesse"}
+        intents_quentes = {"preco", "atacado"}  # interesse sozinho não escala (economiza)
         if converter and (intencao or "").lower() in intents_quentes:
             motivos.append(f"lead_{intencao}")
-        elif texto_indica_venda(texto):
+        elif converter and texto_indica_venda(texto):
             motivos.append("lead_texto_compra")
 
+    # Dedup preservando ordem
+    vistos: set[str] = set()
+    motivos_u: list[str] = []
+    for m in motivos:
+        if m not in vistos:
+            vistos.add(m)
+            motivos_u.append(m)
+    motivos = motivos_u
+
     if not motivos:
+        if isinstance(analise, dict):
+            base["motivo"] = f"haiku:{analise.get('resumo') or analise.get('nivel')}"
         return base
 
     out = {
@@ -157,8 +197,9 @@ def resolver_modelo_vendas(
         "escalou": True,
         "motivo": "+".join(motivos),
         "proposito": proposito,
-        "forcar_modelo": True,  # vale mesmo com CLAUDE_ECONOMICO=1
+        "forcar_modelo": True,
         "restante_usd": resta,
+        "analise": analise,
     }
     logger.info(
         "Claude escalou %s → %s (%s)",
