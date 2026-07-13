@@ -177,6 +177,39 @@ class TestClaudeOrcamento(unittest.TestCase):
         self.assertIn("US$ 1.0000", msg)
         self.assertIn("US$ 0.5000", msg)
 
+    @patch.object(o, "_talvez_alertar")
+    def test_gerar_graficos_consumo_sem_matplotlib(self, _alerta):
+        hist = Path(self.tmp.name) / "hist.json"
+        png_a = Path(self.tmp.name) / "a.png"
+        png_e = Path(self.tmp.name) / "e.png"
+        with (
+            patch.object(o, "HIST_PATH", hist),
+            patch.object(o, "GRAFICO_AGENTES_PATH", png_a),
+            patch.object(o, "GRAFICO_EVOLUCAO_PATH", png_e),
+            patch.object(o, "_cfg") as cfg,
+        ):
+            cfg.return_value.CLAUDE_ORCAMENTO_USD = 8.99
+            cfg.return_value.CLAUDE_ORCAMENTO_ATIVO = True
+            cfg.return_value.CLAUDE_PRECO_HAIKU_IN = 1.0
+            cfg.return_value.CLAUDE_PRECO_HAIKU_OUT = 5.0
+            o.registrar_uso(
+                modelo="claude-haiku-4-5",
+                input_tokens=100_000,
+                output_tokens=0,
+                origem="agentes.alfa",
+            )
+            with patch("core.graficos.disponivel", return_value=False):
+                out = o.gerar_graficos_consumo()
+        self.assertEqual(out["metrica_barras"], "usd")
+        self.assertIsNone(out["por_agente"])
+        self.assertGreaterEqual(out["historico_pontos"], 1)
+        self.assertEqual(out["ranking"][0]["agente"], "agentes.alfa")
+
+    def test_nome_agente_curto(self):
+        curto = o._nome_agente_curto("a" * 50, max_len=10)
+        self.assertEqual(len(curto), 10)
+        self.assertTrue(curto.startswith("…"))
+
 
 if __name__ == "__main__":
     unittest.main()
