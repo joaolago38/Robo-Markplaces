@@ -22,11 +22,18 @@ MODELO = CLAUDE_MODELO
 MODELO_RAPIDO = CLAUDE_MODELO_RAPIDO
 
 
-def _modelo_efetivo(modelo: str | None = None) -> str:
-    """Resolve o modelo da chamada; modo econômico ignora Sonnet e usa o rápido."""
+def _modelo_efetivo(modelo: str | None = None, *, forcar_modelo: bool = False) -> str:
+    """
+    Resolve o modelo da chamada.
+    CLAUDE_ECONOMICO=1 força Haiku — exceto quando forcar_modelo=True
+    (escalonamento de vendas ML via claude_roteador).
+    """
+    escolhido = (modelo or "").strip()
+    if forcar_modelo and escolhido:
+        return escolhido
     if CLAUDE_ECONOMICO:
         return MODELO_RAPIDO
-    return (modelo or MODELO).strip() or MODELO
+    return escolhido or MODELO
 
 
 def _status_http_erro(exc: Exception) -> int | None:
@@ -62,12 +69,14 @@ def _log_erro_claude(exc: Exception, *, contexto: str) -> None:
         extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
     )
 
+
 SYSTEM = """
 Você é o agente de vendas de uma distribuidora de esmaltes para manicures.
 Tom: profissional, próximo, linguagem de salão de beleza.
 Use sempre dados reais do contexto fornecido.
 Nunca invente informações. Nunca prometa o que não pode cumprir.
 """
+
 
 def perguntar(
     prompt: str,
@@ -76,10 +85,12 @@ def perguntar(
     system: str | None = None,
     imagens: list[str] | None = None,
     modelo: str | None = None,
+    *,
+    forcar_modelo: bool = False,
 ) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
-    modelo_efetivo = _modelo_efetivo(modelo)
+    modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso
 
@@ -197,6 +208,7 @@ def perguntar_estruturado(
     contexto: str | None = None,
     system: str | None = None,
     modelo: str | None = None,
+    forcar_modelo: bool = False,
 ) -> dict | None:
     """
     Como `perguntar`, mas força a resposta a seguir `schema` (JSON Schema
@@ -208,7 +220,7 @@ def perguntar_estruturado(
     if not ANTHROPIC_API_KEY:
         logger.warning("perguntar_estruturado sem ANTHROPIC_API_KEY.")
         return None
-    modelo_efetivo = _modelo_efetivo(modelo)
+    modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso
 
@@ -362,10 +374,28 @@ Descrição: {produto.get('descricao','')}
 
 Pergunta do cliente: {pergunta_txt}
 """
-    resposta = perguntar(ctx, max_tokens=300)
+    try:
+        preco = float(produto.get("preco") or 0)
+    except (TypeError, ValueError):
+        preco = 0.0
+    from core.claude_roteador import resolver_modelo_vendas
+
+    rota = resolver_modelo_vendas(
+        proposito="chat_ml",
+        canal=canal,
+        texto=pergunta_txt,
+        preco_produto=preco,
+    )
+    resposta = perguntar(
+        ctx,
+        max_tokens=300,
+        modelo=rota["modelo"],
+        forcar_modelo=bool(rota.get("forcar_modelo")),
+    )
     if resposta.startswith("⚠️"):
         return "Já vou te responder melhor"
     return resposta
+
 
 def gerar_post(produto: dict, canal: str) -> str:
     return perguntar(f"""

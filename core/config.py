@@ -66,6 +66,33 @@ CLAUDE_PRECO_HAIKU_OUT = float(os.getenv("CLAUDE_PRECO_HAIKU_OUT", "5.0"))
 CLAUDE_PRECO_SONNET_IN = float(os.getenv("CLAUDE_PRECO_SONNET_IN", "3.0"))
 CLAUDE_PRECO_SONNET_OUT = float(os.getenv("CLAUDE_PRECO_SONNET_OUT", "15.0"))
 
+# Roteamento Haiku → modelo de vendas (Sonnet) em pontos de alta conversão ML
+CLAUDE_MODELO_VENDAS = (
+    os.getenv("CLAUDE_MODELO_VENDAS", "claude-sonnet-4-5").strip() or "claude-sonnet-4-5"
+)
+CLAUDE_ESCALONAR_ML = os.getenv("CLAUDE_ESCALONAR_ML", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+# Só sobe de modelo se restante do orçamento local >= este piso (US$)
+CLAUDE_ESCALONAR_RESTANTE_MIN_USD = float(os.getenv("CLAUDE_ESCALONAR_RESTANTE_MIN_USD", "1.50"))
+# Preço do anúncio (R$) a partir do qual chat ML vendedor escala
+CLAUDE_ESCALONAR_PRECO_MIN = float(os.getenv("CLAUDE_ESCALONAR_PRECO_MIN", "55.0"))
+CLAUDE_ESCALONAR_OFERTA = os.getenv("CLAUDE_ESCALONAR_OFERTA", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+CLAUDE_ESCALONAR_CHAT = os.getenv("CLAUDE_ESCALONAR_CHAT", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
 # Lojahub
 LOJAHUB_TOKEN           = os.getenv("LOJAHUB_TOKEN", "").strip()
 LOJAHUB_ANALYTICS_TOKEN = os.getenv("LOJAHUB_ANALYTICS_TOKEN", "").strip()

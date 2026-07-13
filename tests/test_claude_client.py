@@ -127,6 +127,19 @@ class TestClaudePerguntar(unittest.TestCase):
 
     @patch.object(claude_client, "request")
     @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    @patch.object(claude_client, "CLAUDE_ECONOMICO", True)
+    @patch.object(claude_client, "MODELO_RAPIDO", "claude-haiku-4-5")
+    def test_economico_permite_sonnet_com_forcar_modelo(self, mock_request, *_):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar(
+            "p",
+            modelo="claude-sonnet-4-5",
+            forcar_modelo=True,
+        )
+        self.assertEqual(mock_request.call_args.kwargs["json"]["model"], "claude-sonnet-4-5")
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
     def test_claude_401_loga_warning(self, mock_request, *_patches):
         import requests
         from unittest.mock import MagicMock

@@ -1,7 +1,7 @@
 """
 integracoes/social/conversao_manicures.py
 Conversão de manicures → compra no Mercado Livre via WhatsApp/IG/FB.
-Usa Claude Haiku (MODELO_RAPIDO) para escolher oferta, copy e intenção.
+Usa Claude (Haiku por padrão; Sonnet no ponto de venda/oferta via claude_roteador).
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json, ler_e_atualizar_json
 from core.claude_client import MODELO_RAPIDO, perguntar, perguntar_estruturado
+from core.claude_roteador import resolver_modelo_vendas
 from core.config import ANTHROPIC_API_KEY, ROOT
 from integracoes.social.promocoes_manicures import (
     carregar_campanhas,
@@ -249,13 +250,19 @@ def escolher_oferta_haiku(
         "Regras: copy_whatsapp sem markdown pesado; facebook/instagram com emoji leve; "
         "inclua o link_ml da campanha escolhida no cta_ml; máximo ~500 caracteres por copy."
     )
+    rota = resolver_modelo_vendas(
+        proposito="oferta_conversao",
+        canal="mercadolivre",
+        sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+    )
     raw = perguntar_estruturado(
         prompt,
         _SCHEMA_OFERTA,
         "oferta_conversao_manicures",
         max_tokens=700,
         system=_SYSTEM_CONV,
-        modelo=MODELO_RAPIDO,
+        modelo=rota["modelo"],
+        forcar_modelo=bool(rota.get("forcar_modelo")),
     )
     if not raw or not raw.get("campanha_id"):
         return _montar_por_id(str(fallback_id))
@@ -264,7 +271,12 @@ def escolher_oferta_haiku(
     ids_ok = {str(c["id"]) for c in campanhas}
     if cid not in ids_ok:
         cid = str(fallback_id)
-    return _montar_por_id(cid, raw)
+    out = _montar_por_id(cid, raw)
+    if isinstance(out, dict):
+        out["modelo_ia"] = rota["modelo"]
+        out["escalou_ia"] = bool(rota.get("escalou"))
+        out["motivo_escalonamento"] = rota.get("motivo")
+    return out
 
 
 def classificar_e_responder_lead(
@@ -274,7 +286,7 @@ def classificar_e_responder_lead(
     link_ml: str,
     oferta_nome: str = "",
 ) -> dict[str, Any]:
-    """Classifica intenção e gera resposta de conversão (Haiku ou fallback)."""
+    """Classifica intenção (Haiku) e, se for converter quente, escala resposta."""
     texto = (texto or "").strip()
     if len(texto) < 2:
         return {
@@ -304,6 +316,7 @@ def classificar_e_responder_lead(
         "Classifique a intenção e, se valer converter, escreva uma resposta curta "
         "(max 400 chars) com o link do ML. Se spam/off_topic, converter=false e resposta vazia."
     )
+    # Classificação barata em Haiku
     raw = perguntar_estruturado(
         prompt,
         _SCHEMA_INTENCAO,
@@ -314,22 +327,57 @@ def classificar_e_responder_lead(
     )
     if not raw:
         return fallback
+
+    intencao = str(raw.get("intencao") or "interesse")
+    converter = bool(raw.get("converter"))
     resp = str(raw.get("resposta") or "").strip()
-    if raw.get("converter") and link_ml and link_ml not in resp:
+    rota = resolver_modelo_vendas(
+        proposito="resposta_lead",
+        canal=canal,
+        texto=texto,
+        intencao=intencao,
+        converter=converter,
+    )
+    # Se escalou, reescreve a resposta com modelo de vendas (mantém intenção Haiku)
+    if rota.get("escalou") and converter:
+        rewrite = perguntar(
+            (
+                f"Canal: {canal}. Oferta: {oferta_nome}. Link ML: {link_ml}.\n"
+                f"Intenção já classificada: {intencao}.\n"
+                f"Mensagem da cliente: {texto}\n\n"
+                "Escreva UMA resposta curta (máx 400 chars) que maximize a chance "
+                "de compra no Mercado Livre. Inclua o link. Tom salão profissional."
+            ),
+            max_tokens=280,
+            system=_SYSTEM_CONV,
+            modelo=rota["modelo"],
+            forcar_modelo=True,
+        )
+        if rewrite and not rewrite.startswith("⚠️"):
+            resp = rewrite.strip()
+
+    if converter and link_ml and link_ml not in resp:
         resp = f"{resp}\n{link_ml}".strip()
     return {
-        "intencao": str(raw.get("intencao") or "interesse"),
-        "converter": bool(raw.get("converter")),
+        "intencao": intencao,
+        "converter": converter,
         "resposta": resp,
         "motivo": str(raw.get("motivo") or "haiku"),
+        "modelo_ia": rota["modelo"] if rota.get("escalou") and converter else MODELO_RAPIDO,
+        "escalou_ia": bool(rota.get("escalou") and converter),
     }
 
 
 def resposta_chat_ml_haiku(pergunta: str, link_ml: str, produto_ctx: str = "") -> str:
-    """Resposta curta para pergunta ML com CTA de compra."""
+    """Resposta curta para pergunta ML com CTA de compra (escala se intenção de venda)."""
     if not pergunta_parece_manicure(pergunta):
         return ""
     if ANTHROPIC_API_KEY:
+        rota = resolver_modelo_vendas(
+            proposito="resposta_chat_ml",
+            canal="mercadolivre",
+            texto=pergunta,
+        )
         out = perguntar(
             (
                 f"Cliente perguntou no Mercado Livre: {pergunta}\n"
@@ -339,7 +387,8 @@ def resposta_chat_ml_haiku(pergunta: str, link_ml: str, produto_ctx: str = "") -
             ),
             max_tokens=220,
             system=_SYSTEM_CONV,
-            modelo=MODELO_RAPIDO,
+            modelo=rota["modelo"],
+            forcar_modelo=bool(rota.get("forcar_modelo")),
         )
         if out and not out.startswith("⚠️"):
             if link_ml and link_ml not in out:
