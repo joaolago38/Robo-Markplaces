@@ -14,6 +14,10 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "fica parado demais tempo (sem heartbeat), avisa no Telegram para você investigar. "
         "Não corrige sozinho — só alerta."
     ),
+    "consumo_claude": (
+        "Mostra orçamento Claude (US$ usado/restante) e a assertividade por agente "
+        "(ok vs falha/fallback/vazio). Alerta limiares e hard stop. Estimativa local por tokens."
+    ),
     "monitor_margem_vendas": (
         "Calcula lucro e margem dos pedidos em ML, Shopee, Magalu e Amazon (custo do "
         "catálogo/Bling). Alerta quando a venda fica abaixo do mínimo configurado e "
@@ -262,6 +266,7 @@ EXPLICACOES_AGENTES: dict[str, str] = {
 # relatorio_estrategia_ml, ads_gatilho, resumo_diario_novamix.
 HORARIOS_AGENTES: dict[str, str] = {
     "vigia_datadog": "A cada 30 min (workflow próprio; fora do orquestrador)",
+    "consumo_claude": "A cada 6h (Actions) + alerta a cada uso Claude",
     "monitor_margem_vendas": "A cada 3h (Actions) e a cada 30 min (orquestrador)",
     "inteligencia_precos": "A cada 30 min (orquestrador)",
     "leilao": "A cada hora (Actions) e a cada 30 min (orquestrador)",
@@ -346,6 +351,9 @@ HORARIOS_AGENTES: dict[str, str] = {
 _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("vigia_datadog", "vigia_datadog"),
     ("vigia:", "vigia_datadog"),
+    ("consumo_claude", "consumo_claude"),
+    ("claude_orcamento", "consumo_claude"),
+    ("orcamento_claude", "consumo_claude"),
     ("margem_vendas", "monitor_margem_vendas"),
     ("margem_baixa", "monitor_margem_vendas"),
     ("precificacao:", "inteligencia_precos"),

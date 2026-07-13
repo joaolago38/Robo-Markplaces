@@ -1,0 +1,175 @@
+{
+  "orcamento_usd": 8.99,
+  "consumido_usd": 0.0,
+  "chamadas": 13,
+  "tokens_in": 0,
+  "tokens_out": 0,
+  "resultados": {
+    "ok": 9,
+    "falha": 3,
+    "fallback": 0,
+    "vazio": 1,
+    "bloqueado": 0
+  },
+  "assertividade_pct": 69.2,
+  "por_origem": {
+    "desconhecido": {
+      "usd": 0.0,
+      "chamadas": 13,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "ok": 9,
+      "falha": 3,
+      "fallback": 0,
+      "vazio": 1,
+      "bloqueado": 0,
+      "assertividade_pct": 69.2
+    }
+  },
+  "por_modelo": {
+    "claude-haiku-4-5": {
+      "usd": 0.0,
+      "chamadas": 13,
+      "ok": 9,
+      "falha": 3,
+      "assertividade_pct": 69.2,
+      "vazio": 1
+    }
+  },
+  "eventos": [
+    {
+      "em": "2026-07-13T22:02:14.405022+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:14.189439+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "estruturado:meu_tool",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:14.182031+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "estruturado:t",
+      "resultado": "vazio",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:13.970103+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:13.754787+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "estruturado:meu_tool",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:13.538241+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "estruturado:meu_tool",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:13.322699+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:13.095141+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:12.878241+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:12.665171+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:12.452145+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:12.239271+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:02:11.224100+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    }
+  ],
+  "alertas_enviados": {},
+  "bloqueado": false,
+  "atualizado_em": "2026-07-13T22:02:14.405032+00:00",
+  "criado_em": "2026-07-13T22:02:11.223800+00:00"
+}
