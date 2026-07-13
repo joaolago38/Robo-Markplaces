@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-07-13T19:24:47.312310+00:00",
+  "diagnostico": {
+    "ativo": true,
+    "fonte": "copart",
+    "leiloes_ok": 0,
+    "leiloes_falha": 1,
+    "lotes_veiculo": 0,
+    "modo_coleta": "ddg",
+    "erro": null,
+    "lotes_com_documento": 0,
+    "lotes_sem_documento": 0,
+    "lance_minimo_brl": 500.0
+  },
+  "lotes": [],
+  "resultado": {
+    "leiloes_encontrados": 1,
+    "leiloes_coletados_ok": 0,
+    "modo_coleta": "ddg",
+    "lotes_veiculo_documento": 0
+  }
+}

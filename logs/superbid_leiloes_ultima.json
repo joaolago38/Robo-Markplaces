@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-07-13T19:24:48.933652+00:00",
+  "diagnostico": {
+    "ativo": true,
+    "fonte": "superbid",
+    "leiloes_ok": 1,
+    "leiloes_falha": 0,
+    "lotes_veiculo": 0,
+    "modo_coleta": "direto",
+    "erro": null,
+    "lotes_com_documento": 0,
+    "lotes_sem_documento": 0,
+    "lance_minimo_brl": 500.0
+  },
+  "lotes": [],
+  "resultado": {
+    "leiloes_encontrados": 1,
+    "leiloes_coletados_ok": 1,
+    "modo_coleta": "direto",
+    "lotes_veiculo_documento": 0
+  }
+}
