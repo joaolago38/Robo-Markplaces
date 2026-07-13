@@ -69,6 +69,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "concorrência) e resume o que precisa de atenção na rodada. Telegram: "
         "resumo de atenção da conta."
     ),
+    "resumo_conta_ml": (
+        "Espelha o painel Resumo do vendedor via API: perguntas, anúncios a "
+        "melhorar (qualidade), sugestões de preço, envios pendentes, claims e "
+        "reputação. Telegram: briefing da conta. Fatura/saldo MP ficam no painel."
+    ),
     "relatorio_manha_ml": (
         "Relatório matinal da operação ML: conta, anúncios, concorrentes e propostas "
         "de preço com margem viável para o dia. Telegram: briefing completo da manhã."
@@ -258,6 +263,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "alibaba_inteligencia": "A cada 2h (Actions Alibaba) e a cada 30 min (orquestrador)",
     "ml_tendencias_importacao": "A cada 2h (Actions Alibaba) e a cada 30 min (orquestrador)",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
     "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "relatorio_estrategia_ml": "Segundas às 08:00 BRT (fora do orquestrador)",
     "monitor_concorrentes": "A cada 30 min (orquestrador); workflow dedicado só manual",
@@ -346,6 +352,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("ml_tendencias", "ml_tendencias_importacao"),
     ("ml:relatorio:manha", "relatorio_manha_ml"),
     ("relatorio_manha", "relatorio_manha_ml"),
+    ("ml:resumo_conta", "resumo_conta_ml"),
+    ("resumo_conta", "resumo_conta_ml"),
     ("estrategia_ml", "relatorio_estrategia_ml"),
     ("estrategia:", "relatorio_estrategia_ml"),
     ("novamix:", "resumo_diario_novamix"),

@@ -190,6 +190,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "resumo_conta_ml",
+        "Resumo conta ML (painel)",
+        "monitor",
+        "agentes.ml.agente_resumo_conta_ml:executar",
+        {"enviar_alerta": True},
+        notas="Espelho do Resumo do vendedor: pendências, reputação, envios → Telegram",
+    ),
+    AgenteRegistrado(
         "resumo_diario_novamix",
         "Resumo diário Novamix",
         "monitor",

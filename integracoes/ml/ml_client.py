@@ -284,19 +284,179 @@ def responder_pergunta(question_id: str, texto: str) -> bool:
         return False
 
 
-def buscar_reputacao_vendedor() -> dict:
+def buscar_perfil_vendedor() -> dict:
+    """
+    Perfil básico do vendedor (nickname, reputação, vendas).
+    Nunca lança exceção.
+    """
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para reputação.")
+        logger.warning("Mercado Livre não configurado para perfil.")
         return {}
     try:
         r = _request_ml("GET", f"{BASE}/users/{ML_SELLER_ID}", timeout=20)
         if status_http(r) != 200:
-            log_http_erro_listagem(logger, "ML buscar_reputacao_vendedor", r)
+            log_http_erro_listagem(logger, "ML buscar_perfil_vendedor", r)
             return {}
-        return r.json().get("seller_reputation", {})
+        body = r.json() or {}
+        rep = body.get("seller_reputation") if isinstance(body.get("seller_reputation"), dict) else {}
+        return {
+            "id": str(body.get("id") or ML_SELLER_ID),
+            "nickname": str(body.get("nickname") or ""),
+            "permalink": str(body.get("permalink") or ""),
+            "seller_reputation": rep,
+            "points": int(body.get("points") or 0),
+        }
     except Exception as exc:
-        logger.error("ML buscar_reputacao_vendedor erro: %s", exc)
+        logger.error("ML buscar_perfil_vendedor erro: %s", exc)
         return {}
+
+
+def buscar_reputacao_vendedor() -> dict:
+    perfil = buscar_perfil_vendedor()
+    rep = perfil.get("seller_reputation")
+    return rep if isinstance(rep, dict) else {}
+
+
+def buscar_performance_item(item_id: str, *, user_product_id: str = "") -> dict:
+    """
+    Qualidade do anúncio (API /performance — item ou user-product).
+    Retorna {} se indisponível. Nunca lança.
+    """
+    item_id = (item_id or "").strip()
+    up_id = (user_product_id or "").strip()
+    if not _enabled() or (not item_id and not up_id):
+        return {}
+
+    urls: list[tuple[str, str]] = []
+    if up_id:
+        urls.append(("user_product", f"{BASE}/user-product/{up_id}/performance"))
+    if item_id:
+        urls.append(("item", f"{BASE}/item/{item_id}/performance"))
+
+    for origem, url in urls:
+        try:
+            r = _request_ml("GET", url, timeout=20)
+            code = status_http(r)
+            if code in (400, 404):
+                logger.debug("ML performance %s %s HTTP %s", origem, item_id or up_id, code)
+                continue
+            if code != 200:
+                log_http_erro_listagem(logger, f"ML buscar_performance_item {origem}", r)
+                continue
+            body = r.json() or {}
+            if not isinstance(body, dict):
+                continue
+            regras_pendentes: list[dict] = []
+            for bucket in body.get("buckets") or []:
+                if not isinstance(bucket, dict):
+                    continue
+                for var in bucket.get("variables") or []:
+                    if not isinstance(var, dict):
+                        continue
+                    for rule in var.get("rules") or []:
+                        if not isinstance(rule, dict):
+                            continue
+                        if str(rule.get("status") or "").upper() != "PENDING":
+                            continue
+                        wordings = rule.get("wordings") if isinstance(rule.get("wordings"), dict) else {}
+                        regras_pendentes.append(
+                            {
+                                "key": str(rule.get("key") or ""),
+                                "mode": str(rule.get("mode") or ""),
+                                "titulo": str(
+                                    wordings.get("label") or wordings.get("title") or rule.get("key") or ""
+                                ),
+                            }
+                        )
+            return {
+                "item_id": item_id,
+                "user_product_id": up_id,
+                "origem": origem,
+                "score": float(body.get("score") or 0),
+                "level": str(body.get("level") or ""),
+                "level_wording": str(body.get("level_wording") or ""),
+                "status": str(body.get("status") or ""),
+                "regras_pendentes": regras_pendentes,
+                "a_melhorar": bool(regras_pendentes)
+                or str(body.get("status") or "").upper() == "PENDING",
+            }
+        except Exception as exc:
+            _log_erro_leitura_item("buscar_performance_item", item_id or up_id, exc)
+    return {}
+
+
+def contar_envios_pendentes() -> dict:
+    """
+    Conta pedidos pagos recentes com envio ainda não despachado (ready_to_ship / pending).
+    Nunca lança.
+    """
+    if not _enabled():
+        return {"ok": False, "total": 0, "motivo": "ml_nao_configurado"}
+    try:
+        tz = timezone(timedelta(hours=-3))
+        agora = datetime.now(tz)
+        inicio = (agora - timedelta(days=7)).strftime("%Y-%m-%dT00:00:00.000-03:00")
+        r = _request_ml(
+            "GET",
+            f"{BASE}/orders/search",
+            params={
+                "seller": ML_SELLER_ID,
+                "order.status": "paid",
+                "order.date_created.from": inicio,
+                "sort": "date_desc",
+                "limit": 50,
+            },
+            timeout=25,
+        )
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "ML contar_envios_pendentes", r)
+            return {"ok": False, "total": 0, "motivo": f"http_{status_http(r)}"}
+        results = (r.json() or {}).get("results") or []
+        pendentes = 0
+        for order in results:
+            if not isinstance(order, dict):
+                continue
+            shipping = order.get("shipping") if isinstance(order.get("shipping"), dict) else {}
+            status = str(shipping.get("status") or "").lower()
+            sub = str(shipping.get("substatus") or "").lower()
+            if status in ("ready_to_ship", "pending", "handling") or sub in (
+                "ready_to_print",
+                "ready_to_pack",
+                "invoice_pending",
+            ):
+                pendentes += 1
+        return {"ok": True, "total": pendentes, "pedidos_inspecionados": len(results)}
+    except Exception as exc:
+        logger.error("ML contar_envios_pendentes erro: %s", exc)
+        return {"ok": False, "total": 0, "motivo": str(exc)}
+
+
+def contar_claims_abertos() -> dict:
+    """Claims/pós-venda abertos do vendedor. Nunca lança."""
+    if not _enabled():
+        return {"ok": False, "total": 0, "motivo": "ml_nao_configurado"}
+    try:
+        r = _request_ml(
+            "GET",
+            f"{BASE}/v1/claims/search",
+            params={"status": "opened", "limit": 50},
+            timeout=20,
+        )
+        if status_http(r) == 404:
+            # Alguns apps não têm escopo de claims
+            return {"ok": False, "total": 0, "motivo": "claims_indisponivel"}
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "ML contar_claims_abertos", r)
+            return {"ok": False, "total": 0, "motivo": f"http_{status_http(r)}"}
+        body = r.json() or {}
+        total = body.get("paging", {}).get("total")
+        if total is None:
+            results = body.get("data") or body.get("results") or []
+            total = len(results) if isinstance(results, list) else 0
+        return {"ok": True, "total": int(total or 0)}
+    except Exception as exc:
+        logger.error("ML contar_claims_abertos erro: %s", exc)
+        return {"ok": False, "total": 0, "motivo": str(exc)}
 
 
 def obter_saude_conta() -> dict:
@@ -816,39 +976,45 @@ def buscar_acos_ads(item_id: str, dias: int = 14) -> float:
         return 0.0
 
 
-def listar_meus_anuncios() -> list[dict]:
+def listar_meus_anuncios(*, statuses: tuple[str, ...] | list[str] | None = None) -> list[dict]:
     """
-    Lista todos os anúncios ativos do vendedor com item_id, título, preço e SKU.
-    Útil para mapear item_ids no catalogo/produtos.json.
+    Lista anúncios do vendedor com item_id, título, preço e SKU.
+    Por padrão só `active`. Passe statuses=('active','paused') para incluir pausados.
     Nunca lança exceção.
     """
     if not _enabled():
         logger.warning("Mercado Livre não configurado para listar anúncios.")
         return []
+    status_list = tuple(statuses) if statuses else ("active",)
     try:
         item_ids: list[str] = []
-        offset = 0
-        while True:
-            r = request(
-                "GET",
-                f"{BASE}/users/{ML_SELLER_ID}/items/search",
-                headers=_h(),
-                params={"status": "active", "limit": 100, "offset": offset},
-                timeout=20,
-            )
-            r.raise_for_status()
-            chunk = r.json().get("results", []) or []
-            if not chunk:
-                break
-            for raw_id in chunk:
-                item_ids.append(str(raw_id))
-            if len(chunk) < 100:
-                break
-            offset += 100
+        seen: set[str] = set()
+        for status in status_list:
+            offset = 0
+            while True:
+                r = request(
+                    "GET",
+                    f"{BASE}/users/{ML_SELLER_ID}/items/search",
+                    headers=_h(),
+                    params={"status": status, "limit": 100, "offset": offset},
+                    timeout=20,
+                )
+                r.raise_for_status()
+                chunk = r.json().get("results", []) or []
+                if not chunk:
+                    break
+                for raw_id in chunk:
+                    sid = str(raw_id)
+                    if sid not in seen:
+                        seen.add(sid)
+                        item_ids.append(sid)
+                if len(chunk) < 100:
+                    break
+                offset += 100
 
         normalized: list[dict] = []
         batch_size = 20
-        attrs = "id,title,price,seller_sku,status,sold_quantity,date_created"
+        attrs = "id,title,price,seller_sku,status,sold_quantity,date_created,user_product_id,family_name"
         for i in range(0, len(item_ids), batch_size):
             batch = item_ids[i : i + batch_size]
             rm = request(
@@ -877,6 +1043,8 @@ def listar_meus_anuncios() -> list[dict]:
                         "status": str(b.get("status", "") or ""),
                         "sold_quantity": int(b.get("sold_quantity", 0) or 0),
                         "date_created": str(b.get("date_created", "") or ""),
+                        "user_product_id": str(b.get("user_product_id", "") or ""),
+                        "family_name": str(b.get("family_name", "") or ""),
                     }
                 )
         return normalized

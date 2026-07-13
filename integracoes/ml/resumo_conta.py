@@ -1,0 +1,295 @@
+"""
+integracoes/ml/resumo_conta.py
+Coleta o espelho do Resumo do vendedor ML (pendências, reputação, envios, preços)
+via API — não abre o painel web.
+"""
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
+from integracoes.ml import ml_client
+
+logger = logging.getLogger("resumo_conta_ml")
+
+_NIVEL_COR = {
+    "5_green": "Verde",
+    "4_light_green": "Verde claro",
+    "3_yellow": "Amarelo",
+    "2_orange": "Laranja",
+    "1_red": "Vermelho",
+    "null": "Sem cor",
+    "none": "Sem cor",
+}
+
+
+def _fmt_brl(valor: float) -> str:
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _data_brt() -> str:
+    brt = timezone(timedelta(hours=-3))
+    return datetime.now(brt).strftime("%d/%m/%Y %H:%M")
+
+
+def _texto_reputacao(rep: dict[str, Any]) -> dict[str, Any]:
+    level_id = rep.get("level_id")
+    if level_id is None or str(level_id).lower() in ("", "null", "none"):
+        cor = "Sem cor ainda"
+        nivel = ""
+    else:
+        key = str(level_id)
+        cor = _NIVEL_COR.get(key, key)
+        nivel = key
+    transactions = rep.get("transactions") if isinstance(rep.get("transactions"), dict) else {}
+    completed = int(transactions.get("completed") or 0)
+    metrics = rep.get("metrics") if isinstance(rep.get("metrics"), dict) else {}
+    claims = metrics.get("claims") if isinstance(metrics.get("claims"), dict) else {}
+    claims_rate = float(claims.get("rate") or 0)
+    power = str(rep.get("power_seller_status") or "") or "—"
+    return {
+        "cor": cor,
+        "level_id": nivel,
+        "vendas_completadas": completed,
+        "claims_rate": claims_rate,
+        "power_seller": power,
+        "sem_cor": completed < 10 or cor.startswith("Sem cor"),
+    }
+
+
+def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any]:
+    """
+    Monta o resumo da conta do seller autenticado.
+    Nunca lança exceção.
+    """
+    try:
+        if not (ML_ACCESS_TOKEN and ML_SELLER_ID):
+            return {"ok": False, "erro": "ml_nao_configurado"}
+
+        perfil = ml_client.buscar_perfil_vendedor()
+        rep = perfil.get("seller_reputation") if isinstance(perfil.get("seller_reputation"), dict) else {}
+        if not rep:
+            rep = ml_client.buscar_reputacao_vendedor()
+        reputacao = _texto_reputacao(rep)
+
+        perguntas = ml_client.listar_perguntas_nao_respondidas()
+        anuncios = ml_client.listar_meus_anuncios(statuses=("active", "paused"))
+        ativos = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "active")
+        pausados = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "paused")
+        sugestoes_preco_ids = ml_client.listar_itens_com_sugestao_preco()
+        envios = ml_client.contar_envios_pendentes()
+        claims = ml_client.contar_claims_abertos()
+
+        a_melhorar: list[dict[str, Any]] = []
+        vistos_up: set[str] = set()
+        amostra = anuncios[: max(1, int(max_anuncios_performance))]
+        for anuncio in amostra:
+            item_id = str(anuncio.get("item_id") or "").strip()
+            if not item_id:
+                continue
+            up_id = str(anuncio.get("user_product_id") or "").strip()
+            if up_id and up_id in vistos_up:
+                continue
+            if up_id:
+                vistos_up.add(up_id)
+            perf = ml_client.buscar_performance_item(item_id, user_product_id=up_id)
+            if perf and perf.get("a_melhorar"):
+                pend = perf.get("regras_pendentes") or []
+                a_melhorar.append(
+                    {
+                        "item_id": item_id,
+                        "titulo": str(anuncio.get("titulo") or anuncio.get("family_name") or "")[:60],
+                        "preco": float(anuncio.get("preco") or 0),
+                        "score": float(perf.get("score") or 0),
+                        "level_wording": str(perf.get("level_wording") or ""),
+                        "acoes": [str(p.get("titulo") or p.get("key") or "") for p in pend[:3]],
+                    }
+                )
+            elif str(anuncio.get("status") or "").lower() == "paused":
+                # Performance UP/item frequentemente indisponível p/ pausados;
+                # painel ainda lista como "a melhorar" / atenção.
+                a_melhorar.append(
+                    {
+                        "item_id": item_id,
+                        "titulo": str(anuncio.get("titulo") or "")[:60],
+                        "preco": float(anuncio.get("preco") or 0),
+                        "score": 0,
+                        "level_wording": "pausado",
+                        "acoes": ["Reativar anúncio"],
+                    }
+                )
+
+        preco_com_sugestao: list[dict[str, Any]] = []
+        anuncios_por_id = {str(a.get("item_id")): a for a in anuncios}
+        for item_id in sugestoes_preco_ids:
+            item_id = str(item_id).strip()
+            if not item_id:
+                continue
+            sug = ml_client.buscar_sugestao_preco(item_id)
+            if not sug or not (sug.get("preco_sugerido") or sug.get("aplicavel")):
+                continue
+            base = anuncios_por_id.get(item_id) or {}
+            preco_com_sugestao.append(
+                {
+                    "item_id": item_id,
+                    "titulo": str(base.get("titulo") or sug.get("item_id") or "")[:50],
+                    "preco_atual": float(sug.get("preco_atual") or base.get("preco") or 0),
+                    "preco_sugerido": float(sug.get("preco_sugerido") or 0),
+                    "percent_difference": float(sug.get("percent_difference") or 0),
+                    "aplicavel": bool(sug.get("aplicavel")),
+                }
+            )
+
+        ads_recomendacoes = 0
+        try:
+            from integracoes.ml import ml_product_ads
+
+            camps = ml_product_ads.listar_campanhas(limit=20) or []
+            for c in camps:
+                if not isinstance(c, dict):
+                    continue
+                status = str(c.get("status") or "").upper()
+                if status in ("IDLE", "HOLD", "PAUSED", ""):
+                    ads_recomendacoes += 1
+        except Exception as exc:
+            logger.warning("resumo_conta ads: %s", exc)
+
+        return {
+            "ok": True,
+            "coletado_em": datetime.now(timezone.utc).isoformat(),
+            "seller_id": str(perfil.get("id") or ""),
+            "nickname": str(perfil.get("nickname") or ""),
+            "permalink": str(perfil.get("permalink") or ""),
+            "perguntas_pendentes": len(perguntas),
+            "anuncios_ativos": ativos,
+            "anuncios_pausados": pausados,
+            "anuncios_total": len(anuncios),
+            "anuncios_a_melhorar": a_melhorar,
+            "anuncios_a_melhorar_total": len(a_melhorar),
+            "precos_pendencias": preco_com_sugestao,
+            "precos_pendencias_total": len(preco_com_sugestao),
+            "publicidade_recomendacoes": ads_recomendacoes,
+            "envios_pendentes": int(envios.get("total") or 0),
+            "envios_ok": bool(envios.get("ok")),
+            "pos_venda_claims": int(claims.get("total") or 0),
+            "pos_venda_ok": bool(claims.get("ok")),
+            "pos_venda_motivo": str(claims.get("motivo") or ""),
+            "reputacao": reputacao,
+            "faturamento_nota": (
+                "Fatura/saldo Mercado Pago não disponíveis só com token ML — "
+                "confira no painel ou configure token MP."
+            ),
+            "anuncios_amostra": [
+                {
+                    "item_id": a.get("item_id"),
+                    "titulo": str(a.get("titulo") or "")[:50],
+                    "preco": float(a.get("preco") or 0),
+                    "vendidos": int(a.get("sold_quantity") or 0),
+                    "status": str(a.get("status") or ""),
+                }
+                for a in anuncios[:8]
+            ],
+        }
+    except Exception as exc:
+        logger.error("coletar_resumo_conta erro: %s", exc)
+        return {"ok": False, "erro": str(exc)}
+
+
+def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
+    """Formata o resumo no estilo do painel Resumo do vendedor."""
+    from core.telegram_explicacao import cabecalho_agente
+
+    if not resumo.get("ok"):
+        return (
+            cabecalho_agente("resumo_conta_ml", "📋 *Resumo conta ML*")
+            + f"\n\n❌ Falha na coleta: `{resumo.get('erro', 'desconhecido')}`"
+        )
+
+    rep = resumo.get("reputacao") if isinstance(resumo.get("reputacao"), dict) else {}
+    nick = resumo.get("nickname") or "—"
+    linhas = [
+        cabecalho_agente("resumo_conta_ml", "📋 *Resumo da conta — Mercado Livre*"),
+        "",
+        f"_Espelho do painel Resumo · {_data_brt()} BRT_",
+        f"*Loja:* `{nick}` (seller `{resumo.get('seller_id') or '—'}`)",
+        "",
+        "*Pendências nos anúncios*",
+        f"  • Perguntas: *{int(resumo.get('perguntas_pendentes') or 0)}*",
+        f"  • Anúncios a melhorar: *{int(resumo.get('anuncios_a_melhorar_total') or 0)}* "
+        f"(de {int(resumo.get('anuncios_total') or resumo.get('anuncios_ativos') or 0)} listados)",
+        f"  • Ativos: *{int(resumo.get('anuncios_ativos') or 0)}* · "
+        f"Pausados: *{int(resumo.get('anuncios_pausados') or 0)}*",
+        f"  • Preços c/ sugestão ML: *{int(resumo.get('precos_pendencias_total') or 0)}*",
+        f"  • Publicidade (campanhas idle/pausadas): *{int(resumo.get('publicidade_recomendacoes') or 0)}*",
+        "",
+        "*Pendências em vendas*",
+        f"  • Envios pendentes: *{int(resumo.get('envios_pendentes') or 0)}*"
+        + ("" if resumo.get("envios_ok") else " _(API parcial)_"),
+        f"  • Pós-venda (claims abertos): *{int(resumo.get('pos_venda_claims') or 0)}*"
+        + (
+            ""
+            if resumo.get("pos_venda_ok")
+            else f" _(API claims indisponivel p/ este app)_"
+        ),
+        "",
+        "*Reputação*",
+        f"  • Cor: *{rep.get('cor', '—')}*",
+        f"  • Vendas completadas: *{int(rep.get('vendas_completadas') or 0)}*",
+        f"  • Claims rate: *{float(rep.get('claims_rate') or 0) * 100:.2f}%*",
+        f"  • Mercado Líder: *{rep.get('power_seller', '—')}*",
+    ]
+    if int(resumo.get("anuncios_pausados") or 0) > 0 and int(resumo.get("anuncios_ativos") or 0) == 0:
+        linhas.append("  ⚠️ *Todos os anúncios estão pausados* — reative para voltar a vender.")
+
+    linhas.extend(
+        [
+            "",
+            "*Faturamento / saldo*",
+            f"  _{resumo.get('faturamento_nota')}_",
+        ]
+    )
+
+    melhorar = resumo.get("anuncios_a_melhorar") or []
+    if melhorar:
+        linhas.append("")
+        linhas.append("*Top anúncios a melhorar*")
+        for row in melhorar[:6]:
+            acoes = ", ".join(a for a in (row.get("acoes") or []) if a) or "ações pendentes"
+            linhas.append(
+                f"  • `{row.get('item_id')}` score {row.get('score', 0):.0f} — "
+                f"{row.get('titulo', '')}\n    _{acoes}_"
+            )
+
+    precos = resumo.get("precos_pendencias") or []
+    aplicaveis = [p for p in precos if p.get("aplicavel") and p.get("preco_sugerido")]
+    if aplicaveis:
+        linhas.append("")
+        linhas.append("*Sugestões de preço*")
+        for p in aplicaveis[:5]:
+            linhas.append(
+                f"  • `{p.get('item_id')}` {_fmt_brl(float(p.get('preco_atual') or 0))} → "
+                f"*{_fmt_brl(float(p.get('preco_sugerido') or 0))}* "
+                f"({float(p.get('percent_difference') or 0):+.1f}%)"
+            )
+
+    amostra = resumo.get("anuncios_amostra") or []
+    if amostra:
+        linhas.append("")
+        linhas.append("*Seus anúncios (amostra)*")
+        for a in amostra[:5]:
+            linhas.append(
+                f"  • `{a.get('item_id')}` [{a.get('status') or '?'}] "
+                f"{_fmt_brl(float(a.get('preco') or 0))} · "
+                f"{int(a.get('vendidos') or 0)} vend. — {a.get('titulo', '')}"
+            )
+
+    linhas.extend(
+        [
+            "",
+            "*Ação:* abra mercadolivre.com.br/resumo para fatura/saldo; "
+            "corrija anúncios a melhorar e responda perguntas.",
+        ]
+    )
+    return "\n".join(linhas).strip()

@@ -1,0 +1,89 @@
+{
+  "ok": true,
+  "coletado_em": "2026-07-13T13:03:44.300732+00:00",
+  "seller_id": "1651424153",
+  "nickname": "COMERCIALLAGOOLIVEIRALTDAS",
+  "permalink": "http://perfil.mercadolivre.com.br/COMERCIALLAGOOLIVEIRALTDAS",
+  "perguntas_pendentes": 0,
+  "anuncios_ativos": 0,
+  "anuncios_pausados": 38,
+  "anuncios_total": 38,
+  "anuncios_a_melhorar": [],
+  "anuncios_a_melhorar_total": 0,
+  "precos_pendencias": [],
+  "precos_pendencias_total": 0,
+  "publicidade_recomendacoes": 0,
+  "envios_pendentes": 0,
+  "envios_ok": true,
+  "pos_venda_claims": 0,
+  "pos_venda_ok": false,
+  "pos_venda_motivo": "claims_indisponivel",
+  "reputacao": {
+    "cor": "Sem cor ainda",
+    "level_id": "",
+    "vendas_completadas": 0,
+    "claims_rate": 0.0,
+    "power_seller": "—",
+    "sem_cor": true
+  },
+  "faturamento_nota": "Fatura/saldo Mercado Pago não disponíveis só com token ML — confira no painel ou configure token MP.",
+  "anuncios_amostra": [
+    {
+      "item_id": "MLB3583532505",
+      "titulo": "Carteira Feminina Couro Legítimo Rg Cartões Mariar",
+      "preco": 60.0,
+      "vendidos": 1,
+      "status": "paused"
+    },
+    {
+      "item_id": "MLB4488545054",
+      "titulo": "Controle Remoto Ppa Tok 433,92 Mhz - Sem Fio - 2 B",
+      "preco": 48.0,
+      "vendidos": 0,
+      "status": "paused"
+    },
+    {
+      "item_id": "MLB4760692507",
+      "titulo": "Bolsa Shopper Couro Mariart 5240 Vermelho Liso",
+      "preco": 231.92,
+      "vendidos": 0,
+      "status": "paused"
+    },
+    {
+      "item_id": "MLB4760692509",
+      "titulo": "Bolsa Shopper Couro Mariart 5240 Havana Liso",
+      "preco": 231.92,
+      "vendidos": 1,
+      "status": "paused"
+    },
+    {
+      "item_id": "MLB3629028315",
+      "titulo": "Bolsa Transversal Couro Mariart Mini Jasmim Femini",
+      "preco": 245.92,
+      "vendidos": 0,
+      "status": "paused"
+    },
+    {
+      "item_id": "MLB4408701904",
+      "titulo": "Mariart K2193237mrt Transversal Adultos Havana",
+      "preco": 247.89,
+      "vendidos": 1,
+      "status": "paused"
+    },
+    {
+      "item_id": "MLB3582980007",
+      "titulo": "Mariart Lagosmrt Transversal Adultos Off White/cam",
+      "preco": 379.99,
+      "vendidos": 1,
+      "status": "paused"
+    },
+    {
+      "item_id": "MLB4412206344",
+      "titulo": "Bolsa Mariart Transversal Feminina De Couro Bovino",
+      "preco": 353.93,
+      "vendidos": 0,
+      "status": "paused"
+    }
+  ],
+  "mensagem": "📋 *Resumo da conta — Mercado Livre*\n\n_O que este agente faz:_\n_Espelha o painel Resumo do vendedor via API: perguntas, anúncios a melhorar (qualidade), sugestões de preço, envios pendentes, claims e reputação. Telegram: briefing da conta. Fatura/saldo MP ficam no painel._\n\n_Quando roda:_\n_Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min_\n\n_Espelho do painel Resumo · 13/07/2026 10:03 BRT_\n*Loja:* `COMERCIALLAGOOLIVEIRALTDAS` (seller `1651424153`)\n\n*Pendências nos anúncios*\n  • Perguntas: *0*\n  • Anúncios a melhorar: *0* (de 38 listados)\n  • Ativos: *0* · Pausados: *38*\n  • Preços c/ sugestão ML: *0*\n  • Publicidade (campanhas idle/pausadas): *0*\n\n*Pendências em vendas*\n  • Envios pendentes: *0*\n  • Pós-venda (claims abertos): *0* _(indisponível: claims_indisponivel)_\n\n*Reputação*\n  • Cor: *Sem cor ainda*\n  • Vendas completadas: *0*\n  • Claims rate: *0.00%*\n  • Mercado Líder: *—*\n  ⚠️ *Todos os anúncios estão pausados* — reative para voltar a vender.\n\n*Faturamento / saldo*\n  _Fatura/saldo Mercado Pago não disponíveis só com token ML — confira no painel ou configure token MP._\n\n*Seus anúncios (amostra)*\n  • `MLB3583532505` [paused] R$ 60,00 · 1 vend. — Carteira Feminina Couro Legítimo Rg Cartões Mariar\n  • `MLB4488545054` [paused] R$ 48,00 · 0 vend. — Controle Remoto Ppa Tok 433,92 Mhz - Sem Fio - 2 B\n  • `MLB4760692507` [paused] R$ 231,92 · 0 vend. — Bolsa Shopper Couro Mariart 5240 Vermelho Liso\n  • `MLB4760692509` [paused] R$ 231,92 · 1 vend. — Bolsa Shopper Couro Mariart 5240 Havana Liso\n  • `MLB3629028315` [paused] R$ 245,92 · 0 vend. — Bolsa Transversal Couro Mariart Mini Jasmim Femini\n\n*Ação:* abra mercadolivre.com.br/resumo para fatura/saldo; corrija anúncios a melhorar e responda perguntas."
+}
