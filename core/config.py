@@ -261,6 +261,18 @@ ESMALTES_KITS_MONITOR_ALERTA_RESUMO = os.getenv("ESMALTES_KITS_MONITOR_ALERTA_RE
 )
 ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG", "21600"))
 
+# Montar kits Impala — planilha NCM × kits mais vendidos no ML
+MONTAR_KITS_IMPALA_PLANILHA = os.getenv(
+    "MONTAR_KITS_IMPALA_PLANILHA", "dados/Cadastro_NCM_Bling_Impala_Cruzeiro.xlsx"
+)
+MONTAR_KITS_IMPALA_ALERTA = os.getenv("MONTAR_KITS_IMPALA_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MONTAR_KITS_IMPALA_COOLDOWN_SEG = int(os.getenv("MONTAR_KITS_IMPALA_COOLDOWN_SEG", "43200"))
+MONTAR_KITS_IMPALA_TOP_KITS = int(os.getenv("MONTAR_KITS_IMPALA_TOP_KITS", "40"))
+
 # Monitor removedores de unha — nomes, fabricantes e ranking por vendas
 REMOVEDORES_UNHA_CATALOGO = os.getenv(
     "REMOVEDORES_UNHA_CATALOGO", "catalogo/removedores_unha_monitor.json"
@@ -611,7 +623,7 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml",
+        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,montar_kits_impala",
     ).split(",")
     if x.strip()
 }

@@ -1,6 +1,28 @@
 {
   "erros": [
     {
+      "fingerprint": "b874a7c2a84c89a83646",
+      "primeira_vez": "2026-07-13T15:04:15.637436+00:00",
+      "ultima_vez": "2026-07-13T15:04:15.637436+00:00",
+      "logger": "amazon_client",
+      "mensagem": "Amazon listar_mensagens_nao_respondidas HTTP 403 — provável falta de ESCOPO/permissão (não apenas token expirado): {   \"errors\": [     {       \"code\": \"Unauthorized\",       \"message\": \"Access to requested resource is denied.\",       \"details\": \"\"     }   ] }",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "7836f9448410f33d3688",
+      "primeira_vez": "2026-07-10T17:39:01.653261+00:00",
+      "ultima_vez": "2026-07-13T15:04:10.733858+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 401 — token inválido ou expirado: {\"message\":\"Unauthorized\",\"slug\":\"unauthorized\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "3bb53833bdab72cbc7e8",
       "primeira_vez": "2026-07-13T13:01:52.781828+00:00",
       "ultima_vez": "2026-07-13T13:05:24.674500+00:00",
@@ -969,17 +991,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "7836f9448410f33d3688",
-      "primeira_vez": "2026-07-10T17:39:01.653261+00:00",
-      "ultima_vez": "2026-07-10T17:39:06.900992+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 401 — token inválido ou expirado: {\"message\":\"Unauthorized\",\"slug\":\"unauthorized\"}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "8f2d1694cbe3bdef6baa",
       "primeira_vez": "2026-07-05T20:46:21.071979+00:00",
       "ultima_vez": "2026-07-10T17:38:53.613256+00:00",
@@ -1638,18 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "b44ca01192073ccd3187",
-      "primeira_vez": "2026-07-05T20:44:31.956194+00:00",
-      "ultima_vez": "2026-07-05T20:46:30.810199+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML buscar_menor_preco_concorrente erro item_id=MLB3: 404 Client Error: Not Found for url: https://api.mercadolibre.com/items/MLB3",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 8
     }
   ],
-  "atualizado_em": "2026-07-13T13:05:24.674500+00:00"
+  "atualizado_em": "2026-07-13T15:04:15.637436+00:00"
 }
