@@ -332,6 +332,13 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="WhatsApp grupo + Telegram — kits esmaltes Impala no ML; roda no workflow promocoes_manicures",
     ),
     AgenteRegistrado(
+        "conversao_manicures",
+        "Conversão manicures WA/IG/FB/ML",
+        "social",
+        "agentes.social.agente_conversao_manicures:executar",
+        notas="Haiku: oferta ativa + inbox Meta/WA + chat ML; workflow conversao_manicures (fora do ciclo 30min)",
+    ),
+    AgenteRegistrado(
         "panorama",
         "Panorama ML/Magalu/Bling",
         "monitor",

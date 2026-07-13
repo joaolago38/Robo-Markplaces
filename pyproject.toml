@@ -38,6 +38,11 @@ omit = [
     "agentes/filamentos/agente_monitor_filamentos_ml.py",
     "agentes/ml/agente_resumo_conta_ml.py",
     "agentes/esmaltes/agente_montar_kits_impala.py",
+    "agentes/social/agente_conversao_manicures.py",
+    # Conversão manicures: I/O Meta/WA/ML; lógica coberta em tests/test_conversao_manicures.py
+    "integracoes/meta/meta_inbox.py",
+    "integracoes/social/conversao_manicures.py",
+    "integracoes/social/sustentabilidade_ads_ml.py",
 ]
 
 [tool.ruff]

@@ -172,6 +172,12 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "manicures (WhatsApp + Telegram manicures — não é o chat do gestor). "
         "Tipicamente 2 envios por dia."
     ),
+    "conversao_manicures": (
+        "Converte manicures para compra no Mercado Livre: Haiku escolhe oferta e copy, "
+        "dispara WhatsApp/Telegram/Facebook/Instagram, lê comentários Meta e grupo WA, "
+        "responde chat ML com CTA. Cruza gasto Ads IG/FB com vendas reais do ML e "
+        "bloqueia boost se a operação estiver insustentável."
+    ),
     "panorama": (
         "Consolida panorama de ML, Magalu e Bling (estoque, vendas, alertas) para "
         "visão geral. No orquestrador o alerta próprio fica off — o consolidado vai "
@@ -297,6 +303,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "meta_metricas": "A cada 30 min (orquestrador)",
     "trafego_manicures": "A cada 30 min (orquestrador)",
     "promocoes_manicures": "Todo dia às 10:00 e 18:00 BRT (fora do orquestrador)",
+    "conversao_manicures": "A cada 4h (Actions); fora do ciclo 30 min",
     "panorama": "Todo dia às 06:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "orquestrador": "A cada 30 min (GitHub Actions)",
     "operacao_24h": (
@@ -390,6 +397,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("meta_ads", "meta_metricas"),
     ("trafego_manicures", "trafego_manicures"),
     ("promocoes_manicures", "promocoes_manicures"),
+    ("conversao_manicures", "conversao_manicures"),
+    ("conversao", "conversao_manicures"),
     ("panorama", "panorama"),
     ("orquestrador", "orquestrador"),
     ("operacao_24h", "operacao_24h"),

@@ -623,7 +623,7 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,montar_kits_impala",
+        "vigia_datadog,promocoes_manicures,conversao_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,montar_kits_impala",
     ).split(",")
     if x.strip()
 }
@@ -794,6 +794,33 @@ PROMOCOES_MANICURES_ATIVO = os.getenv("PROMOCOES_MANICURES_ATIVO", "1").strip().
     "0",
     "false",
     "no",
+)
+
+# Conversão manicures (WA + IG + FB + chat ML) — Claude Haiku
+def _env_bool(nome: str, default: str = "0") -> bool:
+    return os.getenv(nome, default).strip().lower() not in ("0", "false", "no", "")
+
+
+CONVERSAO_MANICURES_ATIVO = _env_bool("CONVERSAO_MANICURES_ATIVO", "1")
+CONVERSAO_MANICURES_ALERTA = _env_bool("CONVERSAO_MANICURES_ALERTA", "1")
+CONVERSAO_MANICURES_COOLDOWN_SEG = int(os.getenv("CONVERSAO_MANICURES_COOLDOWN_SEG", "14400"))  # 4h
+CONVERSAO_MANICURES_PUBLICAR_FB = _env_bool("CONVERSAO_MANICURES_PUBLICAR_FB", "0")
+CONVERSAO_MANICURES_PUBLICAR_IG = _env_bool("CONVERSAO_MANICURES_PUBLICAR_IG", "0")
+CONVERSAO_MANICURES_REPLY_META = _env_bool("CONVERSAO_MANICURES_REPLY_META", "0")
+CONVERSAO_MANICURES_REPLY_WA = _env_bool("CONVERSAO_MANICURES_REPLY_WA", "0")
+CONVERSAO_MANICURES_CHAT_ML = _env_bool("CONVERSAO_MANICURES_CHAT_ML", "1")
+CONVERSAO_MANICURES_IMAGEM_IG_URL = os.getenv("CONVERSAO_MANICURES_IMAGEM_IG_URL", "").strip()
+# Sustentabilidade: cruza gasto Meta Ads × receita real ML
+CONVERSAO_MANICURES_SUSTENTABILIDADE = _env_bool("CONVERSAO_MANICURES_SUSTENTABILIDADE", "1")
+CONVERSAO_MANICURES_ROAS_MIN_REAL = float(
+    os.getenv("CONVERSAO_MANICURES_ROAS_MIN_REAL", str(META_ROAS_MINIMO_MANICURES))
+)
+CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL = _env_bool(
+    "CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL", "1"
+)
+CONVERSAO_MANICURES_SUST_DIAS = int(os.getenv("CONVERSAO_MANICURES_SUST_DIAS", "1"))
+CONVERSAO_MANICURES_GASTO_MIN_AVALIAR = float(
+    os.getenv("CONVERSAO_MANICURES_GASTO_MIN_AVALIAR", "20")
 )
 
 # Regras de negócio
