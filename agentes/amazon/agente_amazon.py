@@ -22,6 +22,7 @@ def processar_mensagens() -> int:
     mensagens = listar_mensagens_nao_respondidas()
     ok = 0
 
+
     for m in mensagens:
         texto = (m.get("message") or m.get("text") or "").strip()
         if not texto:
