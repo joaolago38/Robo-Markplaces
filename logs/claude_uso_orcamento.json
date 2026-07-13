@@ -1,29 +1,29 @@
 {
   "orcamento_usd": 8.99,
   "consumido_usd": 0.0,
-  "chamadas": 40,
+  "chamadas": 51,
   "tokens_in": 0,
   "tokens_out": 0,
   "resultados": {
-    "ok": 24,
-    "falha": 14,
+    "ok": 27,
+    "falha": 21,
     "fallback": 0,
-    "vazio": 2,
+    "vazio": 3,
     "bloqueado": 0
   },
-  "assertividade_pct": 60.0,
+  "assertividade_pct": 52.9,
   "por_origem": {
     "desconhecido": {
       "usd": 0.0,
-      "chamadas": 34,
+      "chamadas": 41,
       "tokens_in": 0,
       "tokens_out": 0,
-      "ok": 24,
-      "falha": 8,
+      "ok": 27,
+      "falha": 11,
       "fallback": 0,
-      "vazio": 2,
+      "vazio": 3,
       "bloqueado": 0,
-      "assertividade_pct": 70.6
+      "assertividade_pct": 65.9
     },
     "ml.agente_otimizador_listing": {
       "usd": 0.0,
@@ -39,11 +39,11 @@
     },
     "operacao_24h": {
       "usd": 0.0,
-      "chamadas": 3,
+      "chamadas": 6,
       "tokens_in": 0,
       "tokens_out": 0,
       "ok": 0,
-      "falha": 3,
+      "falha": 6,
       "fallback": 0,
       "vazio": 0,
       "bloqueado": 0,
@@ -51,11 +51,11 @@
     },
     "panorama.agente_panorama": {
       "usd": 0.0,
-      "chamadas": 1,
+      "chamadas": 2,
       "tokens_in": 0,
       "tokens_out": 0,
       "ok": 0,
-      "falha": 1,
+      "falha": 2,
       "fallback": 0,
       "vazio": 0,
       "bloqueado": 0,
@@ -65,14 +65,124 @@
   "por_modelo": {
     "claude-haiku-4-5": {
       "usd": 0.0,
-      "chamadas": 40,
-      "ok": 24,
-      "falha": 14,
-      "assertividade_pct": 60.0,
-      "vazio": 2
+      "chamadas": 51,
+      "ok": 27,
+      "falha": 21,
+      "assertividade_pct": 52.9,
+      "vazio": 3
     }
   },
   "eventos": [
+    {
+      "em": "2026-07-13T22:35:00.543328+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:34:56.308359+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:34:49.311401+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "estruturado:meu_tool",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:34:48.290175+00:00",
+      "origem": "operacao_24h",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:34:42.440632+00:00",
+      "origem": "panorama.agente_panorama",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:34:33.746109+00:00",
+      "origem": "operacao_24h",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:34:22.125828+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "estruturado:t",
+      "resultado": "vazio",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:34:04.932550+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:33:58.684918+00:00",
+      "origem": "operacao_24h",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:33:57.818718+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "estruturado:meu_tool",
+      "resultado": "falha",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    {
+      "em": "2026-07-13T22:33:56.051114+00:00",
+      "origem": "desconhecido",
+      "modelo": "claude-haiku-4-5",
+      "tipo": "perguntar",
+      "resultado": "ok",
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
     {
       "em": "2026-07-13T22:33:50.610673+00:00",
       "origem": "desconhecido",
@@ -476,6 +586,6 @@
   ],
   "alertas_enviados": {},
   "bloqueado": false,
-  "atualizado_em": "2026-07-13T22:33:50.610698+00:00",
+  "atualizado_em": "2026-07-13T22:35:00.543342+00:00",
   "criado_em": "2026-07-13T22:02:11.223800+00:00"
 }
