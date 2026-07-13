@@ -1,6 +1,7 @@
 """
 agentes/ml/agente_ml.py
-VERSÃO LIMPA E FUNCIONAL
+Chat ML + reputação. Usa contexto da conversão (Ads/oferta) quando existir.
+Não liga Ads nem publica IG/FB — só responde perguntas (já era o comportamento).
 """
 
 import logging
@@ -8,6 +9,7 @@ import time
 
 from core.config import MARGEM_MINIMA
 from core.claude_client import responder_chat
+from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
 from core.notificador import alertar_critico
 from integracoes.bling.bling_client import buscar_produto
 from integracoes.ml.ml_client import (
@@ -24,6 +26,7 @@ logger = logging.getLogger("agente_ml")
 
 def pergunta_valida(texto: str) -> bool:
     return bool(texto and len(texto.strip()) >= 3)
+
 
 def validar_resposta(resposta: str, produto: dict) -> str:
     if not produto:
@@ -65,9 +68,32 @@ def responder(pergunta_id, texto):
     return responder_pergunta(pergunta_id, texto)
 
 
+def _montar_produto_resposta(p: dict, ctx_fechamento: dict) -> dict:
+    """Tenta produto Bling; se vazio, usa dados da oferta ativa (só contexto)."""
+    produto = buscar_produto(p.get("item_id", "")) or {}
+    if produto:
+        return produto
+    oferta = ctx_fechamento.get("oferta") or {}
+    if not oferta:
+        return {}
+    return {
+        "nome": oferta.get("campanha_nome") or "Kit esmaltes Impala",
+        "sku": oferta.get("sku") or "",
+        "preco": float(oferta.get("preco_brl") or 0),
+        # estoque desconhecido: evita early-return "indisponível" sem dado real
+        "estoque": 1,
+        "descricao": "Kit Impala para manicures — oferta ativa na captação Meta→ML",
+        "_fonte": "oferta_conversao_snapshot",
+    }
+
+
 def ciclo_chat():
     perguntas = buscar_perguntas()
     ok = 0
+    ctx_f = carregar_contexto_fechamento_ml()
+    sinal_ads = ctx_f.get("sinal_ads")
+    oferta = ctx_f.get("oferta")
+    link_oferta = str(ctx_f.get("link_ml") or "")
 
     for p in perguntas:
         texto = p.get("text", "").strip()
@@ -75,11 +101,46 @@ def ciclo_chat():
         if not pergunta_valida(texto):
             continue
 
-        produto = buscar_produto(p.get("item_id", "")) or {}
+        produto = _montar_produto_resposta(p, ctx_f)
 
         try:
-            resposta = responder_chat(texto, produto, "mercadolivre")
-            resposta = validar_resposta(resposta, produto)
+            # Perguntas de manicure: CTA alinhado à conversão + pressão Ads
+            from integracoes.social.conversao_manicures import (
+                pergunta_parece_manicure,
+                resposta_chat_ml_haiku,
+            )
+
+            if pergunta_parece_manicure(texto) and (link_oferta or produto):
+                link = link_oferta or "https://www.mercadolivre.com.br"
+                resposta = resposta_chat_ml_haiku(
+                    texto,
+                    link,
+                    produto_ctx=str(
+                        (oferta or {}).get("campanha_nome")
+                        or produto.get("nome")
+                        or "kit Impala"
+                    ),
+                    sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+                )
+                if not resposta:
+                    resposta = responder_chat(
+                        texto,
+                        produto,
+                        "mercadolivre",
+                        sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+                        oferta_ctx=oferta if isinstance(oferta, dict) else None,
+                    )
+            else:
+                resposta = responder_chat(
+                    texto,
+                    produto,
+                    "mercadolivre",
+                    sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+                    oferta_ctx=oferta if isinstance(oferta, dict) else None,
+                )
+            # Só aplica gate de estoque se produto veio do Bling (não do snapshot)
+            if produto.get("_fonte") != "oferta_conversao_snapshot":
+                resposta = validar_resposta(resposta, produto)
 
         except Exception as e:
             logger.error(f"Erro IA: {e}")
@@ -88,7 +149,13 @@ def ciclo_chat():
         if responder(p["id"], resposta):
             ok += 1
 
-        logger.info(f"{texto} -> {resposta}")
+        logger.info(
+            "%s -> %s | contexto_ads=%s oferta=%s",
+            texto,
+            resposta,
+            bool(sinal_ads),
+            (oferta or {}).get("campanha_id"),
+        )
 
         time.sleep(1)
 
@@ -132,6 +199,11 @@ def executar():
     out = {
         "chat": ciclo_chat(),
         "reputacao": verificar_reputacao(),
+        "contexto_fechamento": {
+            "ok": carregar_contexto_fechamento_ml().get("ok"),
+            "link_valido": carregar_contexto_fechamento_ml().get("link_valido"),
+            "sustentabilidade": carregar_contexto_fechamento_ml().get("sustentabilidade"),
+        },
     }
     try:
         from agentes.vendas_notificador import notificar_pedidos_novos_marketplace
@@ -141,6 +213,8 @@ def executar():
         logger.error("Notificação vendas WhatsApp (ML): %s", exc)
         out["vendas_whatsapp"] = {}
     return out
+
+
 if __name__ == "__main__":
     resultado = executar()
     print(resultado)
