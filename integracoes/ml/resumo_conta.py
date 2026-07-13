@@ -231,7 +231,7 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
         + (
             ""
             if resumo.get("pos_venda_ok")
-            else f" _(API claims indisponivel p/ este app)_"
+            else " _(API claims indisponivel p/ este app)_"
         ),
         "",
         "*Reputação*",
@@ -240,6 +240,8 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
         f"  • Claims rate: *{float(rep.get('claims_rate') or 0) * 100:.2f}%*",
         f"  • Mercado Líder: *{rep.get('power_seller', '—')}*",
     ]
+    if rep.get("sem_cor"):
+        linhas.append("  _Ao alcançar 10 vendas você terá cor de reputação._")
     if int(resumo.get("anuncios_pausados") or 0) > 0 and int(resumo.get("anuncios_ativos") or 0) == 0:
         linhas.append("  ⚠️ *Todos os anúncios estão pausados* — reative para voltar a vender.")
 
