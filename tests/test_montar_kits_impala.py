@@ -21,6 +21,12 @@ class TestPlanilhaImpala(unittest.TestCase):
             pl.extrair_nome_cor("ESMALTE IMPALA A COR DA MODA CREMOSO MARIA CEREJA COMERCIAL"),
         )
 
+    def test_extrair_suave_cobertura(self):
+        self.assertIn(
+            "Cigana",
+            pl.extrair_nome_cor("ESMALTE IMPALA A COR DA MODA SUAVE COBERTURA CIGANA COMERCIAL"),
+        )
+
     def test_tokens_cor(self):
         toks = pl.tokens_cor("Maria Cereja", "ESMALTE IMPALA CREMOSO MARIA CEREJA")
         self.assertTrue(any("maria" in t for t in toks))
@@ -49,6 +55,7 @@ class TestCruzamentoKits(unittest.TestCase):
                 "tokens": ["bailarina"],
                 "eh_esmalte": True,
                 "eh_impala": True,
+                "eh_cor_moda": True,
             },
             {
                 "sku": "2",
@@ -60,6 +67,7 @@ class TestCruzamentoKits(unittest.TestCase):
                 "tokens": ["vinho"],
                 "eh_esmalte": True,
                 "eh_impala": True,
+                "eh_cor_moda": True,
             },
             {
                 "sku": "3",
@@ -71,6 +79,7 @@ class TestCruzamentoKits(unittest.TestCase):
                 "tokens": ["zaz"],
                 "eh_esmalte": True,
                 "eh_impala": True,
+                "eh_cor_moda": True,
             },
         ]
         self.kits_ml = [

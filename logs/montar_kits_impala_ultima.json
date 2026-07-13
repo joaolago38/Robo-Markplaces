@@ -1,421 +1,84 @@
 {
   "ok": true,
-  "timestamp": "2026-07-13T18:26:09.720603+00:00",
+  "timestamp": "2026-07-13T18:42:40.250712+00:00",
   "planilha": "C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\dados\\Cadastro_NCM_Bling_Impala_Cruzeiro.xlsx",
   "produtos_planilha": 501,
   "kits_planilha": 14,
   "consolidado_ml": {
-    "total_kits_unicos": 40,
+    "total_kits_unicos": 28,
     "total_vendas": 0,
     "preco_medio": 69.46
   },
   "cruzamento": {
     "ok": true,
-    "total_cores_planilha": 272,
-    "cores_com_demanda": 39,
+    "total_cores_planilha": 168,
+    "cores_com_demanda": 4,
     "top_cores": [
       {
-        "sku": "7896111902707",
-        "ean": "7896111902707",
-        "nome_cor": "Kit Infantil 2 Esmaltes + Lixa + Adesivo De Unha - Stitch",
-        "descricao": "KIT INFANTIL 2 ESMALTES + LIXA + ADESIVO DE UNHA - STITCH",
+        "sku": "7896111913383",
+        "ean": "7896111913383",
+        "nome_cor": "Branco",
+        "descricao": "ESMALTE IMPALA A COR DA MODA CREMOSO BRANCO COMERCIAL",
         "tipo": "Esmalte",
-        "score_demanda": 92.0,
+        "score_demanda": 8.5,
         "vendas_proxy": 0,
-        "kits_mencionam": 30,
+        "kits_mencionam": 1,
         "exemplos_kits": [
           {
             "titulo": "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
             "vendas": 0,
             "preco": 21.84
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
           }
         ]
       },
       {
-        "sku": "7896111972717",
-        "ean": "7896111972717",
-        "nome_cor": "Fortalecedor De Unhas Hipoalergenico Base Endurecedora Casco De Cavalo Impala",
-        "descricao": "FORTALECEDOR DE UNHAS HIPOALERGENICO BASE ENDURECEDORA CASCO DE CAVALO IMPALA COMERCIAL",
+        "sku": "7896111930670",
+        "ean": "7896111930670",
+        "nome_cor": "Paraiso",
+        "descricao": "ESMALTE IMPALA A COR DA MODA PEROLADO PARAISO COMERCIAL",
         "tipo": "Esmalte",
-        "score_demanda": 42.0,
+        "score_demanda": 8.0,
         "vendas_proxy": 0,
-        "kits_mencionam": 14,
+        "kits_mencionam": 1,
         "exemplos_kits": [
           {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+            "titulo": "Kit Esmalte Colorama Chic E Impala Paraíso Manicure",
             "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit Francesinha COLORAMA - 3 Esmaltes para Unhas Perfeitas! - Multi",
-            "vendas": 0,
-            "preco": 0.0
+            "preco": 24.14
           }
         ]
       },
       {
-        "sku": "7896111913802",
-        "ean": "7896111913802",
-        "nome_cor": "Tratamento Base Para Unhas Fracas",
-        "descricao": "ESMALTE IMPALA TRATAMENTO BASE PARA UNHAS FRACAS COMERCIAL",
+        "sku": "7896111985533",
+        "ean": "7896111985533",
+        "nome_cor": "Sorvete De Ceu Azul",
+        "descricao": "ESMALTE IMPALA A COR DA MODA CREMOSO SORVETE DE CEU AZUL COMERCIAL",
         "tipo": "Esmalte",
-        "score_demanda": 42.0,
+        "score_demanda": 2.5,
         "vendas_proxy": 0,
-        "kits_mencionam": 12,
+        "kits_mencionam": 1,
         "exemplos_kits": [
           {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+            "titulo": "Kit 15 Toalhas Manicure E Pedicure 29x45 Atacado Cor Azul Liso",
             "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
+            "preco": 78.0
           }
         ]
       },
       {
-        "sku": "7896111970928",
-        "ean": "7896111970928",
-        "nome_cor": "Fortalecedor De Unhas Base Endurecedora Casco De Cavalo Impala",
-        "descricao": "FORTALECEDOR DE UNHAS BASE ENDURECEDORA CASCO DE CAVALO IMPALA COMERCIAL",
+        "sku": "7896111945810",
+        "ean": "7896111945810",
+        "nome_cor": "Nude Classico",
+        "descricao": "ESMALTE IMPALA A COR DA MODA CREMOSO NUDE CLASSICO COMERCIAL",
         "tipo": "Esmalte",
-        "score_demanda": 30.0,
+        "score_demanda": 2.5,
         "vendas_proxy": 0,
-        "kits_mencionam": 10,
+        "kits_mencionam": 1,
         "exemplos_kits": [
           {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+            "titulo": "Kit Esmalte Impala Nude Manicure Unhas 6 Un",
             "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit Francesinha COLORAMA - 3 Esmaltes para Unhas Perfeitas! - Multi",
-            "vendas": 0,
-            "preco": 0.0
-          }
-        ]
-      },
-      {
-        "sku": "7896111993705",
-        "ean": "7896111993705",
-        "nome_cor": "Cera Hidratante Para Unhas E Cuticulas",
-        "descricao": "IMPALA CERA HIDRATANTE PARA UNHAS E CUTICULAS COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 30.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 10,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit Francesinha COLORAMA - 3 Esmaltes para Unhas Perfeitas! - Multi",
-            "vendas": 0,
-            "preco": 0.0
-          }
-        ]
-      },
-      {
-        "sku": "7896111972038",
-        "ean": "7896111972038",
-        "nome_cor": "Spray Desodorante Secante De Esmalte Para Unhas Com Óleo De Melaleuca Impala - 400Ml/200G",
-        "descricao": "SPRAY DESODORANTE SECANTE DE ESMALTE PARA UNHAS COM ÓLEO DE MELALEUCA IMPALA - 400ml/200g",
-        "tipo": "Esmalte",
-        "score_demanda": 30.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 10,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit Francesinha COLORAMA - 3 Esmaltes para Unhas Perfeitas! - Multi",
-            "vendas": 0,
-            "preco": 0.0
-          }
-        ]
-      },
-      {
-        "sku": "7896111971888",
-        "ean": "7896111971888",
-        "nome_cor": "Spray Desodorante Secante De Esmalte Para Unhas Impala - 400Ml/200G",
-        "descricao": "SPRAY DESODORANTE SECANTE DE ESMALTE PARA UNHAS IMPALA - 400ml/200g",
-        "tipo": "Esmalte",
-        "score_demanda": 30.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 10,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit Francesinha COLORAMA - 3 Esmaltes para Unhas Perfeitas! - Multi",
-            "vendas": 0,
-            "preco": 0.0
-          }
-        ]
-      },
-      {
-        "sku": "7896111913550",
-        "ean": "7896111913550",
-        "nome_cor": "Tratamento Incolor",
-        "descricao": "ESMALTE IMPALA TRATAMENTO INCOLOR COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 24.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
-          }
-        ]
-      },
-      {
-        "sku": "7896111921708",
-        "ean": "7896111921708",
-        "nome_cor": "Tratamento Base Vitaminada",
-        "descricao": "ESMALTE IMPALA TRATAMENTO BASE VITAMINADA COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 24.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
-          }
-        ]
-      },
-      {
-        "sku": "7896111972014",
-        "ean": "7896111972014",
-        "nome_cor": "Incolor Tratamento Linha Profissional 60Ml",
-        "descricao": "ESMALTE IMPALA INCOLOR TRATAMENTO LINHA PROFISSIONAL 60ml COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 18.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
-          }
-        ]
-      },
-      {
-        "sku": "7896111971987",
-        "ean": "7896111971987",
-        "nome_cor": "Tratamento Base Vitaminada Linha Profissional 60Ml",
-        "descricao": "ESMALTE IMPALA TRATAMENTO BASE VITAMINADA LINHA PROFISSIONAL 60ml COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 18.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
-          }
-        ]
-      },
-      {
-        "sku": "7896111913796",
-        "ean": "7896111913796",
-        "nome_cor": "Tratamento Base Seda",
-        "descricao": "ESMALTE IMPALA TRATAMENTO BASE SEDA COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 12.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
-          }
-        ]
-      },
-      {
-        "sku": "7896111913789",
-        "ean": "7896111913789",
-        "nome_cor": "Oleo Secante Impala Tratamento",
-        "descricao": "OLEO SECANTE IMPALA TRATAMENTO COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 12.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
-          }
-        ]
-      },
-      {
-        "sku": "7896111921692",
-        "ean": "7896111921692",
-        "nome_cor": "Tratamento Base Fortalecedora",
-        "descricao": "ESMALTE IMPALA TRATAMENTO BASE FORTALECEDORA COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 12.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
-          }
-        ]
-      },
-      {
-        "sku": "7896111913772",
-        "ean": "7896111913772",
-        "nome_cor": "Comercial",
-        "descricao": "ESMALTE IMPALA TRATAMENTO SUPER BRILHO COMERCIAL",
-        "tipo": "Esmalte",
-        "score_demanda": 12.0,
-        "vendas_proxy": 0,
-        "kits_mencionam": 4,
-        "exemplos_kits": [
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 30.71
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
-            "vendas": 0,
-            "preco": 33.75
-          },
-          {
-            "titulo": "Kit 3 Esmaltes Impala Tratamento Base Vitaminada Manicure",
-            "vendas": 0,
-            "preco": 30.39
+            "preco": 37.99
           }
         ]
       }
@@ -423,155 +86,26 @@
     "kits_sugeridos": [
       {
         "qtd": 3,
-        "nome_sugerido": "Kit 3 Impala — Kit Infantil 2 Esmaltes + Lixa + Adesivo De Unha - Stitch, Fortalecedor De Unhas Hipoalergenico Base Endurecedora Casco De Cavalo Impala, Tratamento Base Para Unhas Fracas",
+        "nome_sugerido": "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
         "cores": [
           {
-            "sku": "7896111902707",
-            "nome_cor": "Kit Infantil 2 Esmaltes + Lixa + Adesivo De Unha - Stitch",
-            "score_demanda": 92.0
+            "sku": "7896111913383",
+            "nome_cor": "Branco",
+            "score_demanda": 8.5
           },
           {
-            "sku": "7896111972717",
-            "nome_cor": "Fortalecedor De Unhas Hipoalergenico Base Endurecedora Casco De Cavalo Impala",
-            "score_demanda": 42.0
+            "sku": "7896111930670",
+            "nome_cor": "Paraiso",
+            "score_demanda": 8.0
           },
           {
-            "sku": "7896111913802",
-            "nome_cor": "Tratamento Base Para Unhas Fracas",
-            "score_demanda": 42.0
+            "sku": "7896111985533",
+            "nome_cor": "Sorvete De Ceu Azul",
+            "score_demanda": 2.5
           }
         ],
-        "score_medio": 58.67,
+        "score_medio": 6.33,
         "preco_sugerido_faixa": "R$ 43–62"
-      },
-      {
-        "qtd": 5,
-        "nome_sugerido": "Kit 5 Impala — Fortalecedor De Unhas Base Endurecedora Casco De Cavalo Impala, Cera Hidratante Para Unhas E Cuticulas, Spray Desodorante Secante De Esmalte Para Unhas Com Óleo De Melaleuca Impala - 400Ml/200G…",
-        "cores": [
-          {
-            "sku": "7896111970928",
-            "nome_cor": "Fortalecedor De Unhas Base Endurecedora Casco De Cavalo Impala",
-            "score_demanda": 30.0
-          },
-          {
-            "sku": "7896111993705",
-            "nome_cor": "Cera Hidratante Para Unhas E Cuticulas",
-            "score_demanda": 30.0
-          },
-          {
-            "sku": "7896111972038",
-            "nome_cor": "Spray Desodorante Secante De Esmalte Para Unhas Com Óleo De Melaleuca Impala - 400Ml/200G",
-            "score_demanda": 30.0
-          },
-          {
-            "sku": "7896111971888",
-            "nome_cor": "Spray Desodorante Secante De Esmalte Para Unhas Impala - 400Ml/200G",
-            "score_demanda": 30.0
-          },
-          {
-            "sku": "7896111913550",
-            "nome_cor": "Tratamento Incolor",
-            "score_demanda": 24.0
-          }
-        ],
-        "score_medio": 28.8,
-        "preco_sugerido_faixa": "R$ 72–104"
-      },
-      {
-        "qtd": 6,
-        "nome_sugerido": "Kit 6 Impala — Tratamento Base Vitaminada, Incolor Tratamento Linha Profissional 60Ml, Tratamento Base Vitaminada Linha Profissional 60Ml…",
-        "cores": [
-          {
-            "sku": "7896111921708",
-            "nome_cor": "Tratamento Base Vitaminada",
-            "score_demanda": 24.0
-          },
-          {
-            "sku": "7896111972014",
-            "nome_cor": "Incolor Tratamento Linha Profissional 60Ml",
-            "score_demanda": 18.0
-          },
-          {
-            "sku": "7896111971987",
-            "nome_cor": "Tratamento Base Vitaminada Linha Profissional 60Ml",
-            "score_demanda": 18.0
-          },
-          {
-            "sku": "7896111913796",
-            "nome_cor": "Tratamento Base Seda",
-            "score_demanda": 12.0
-          },
-          {
-            "sku": "7896111913789",
-            "nome_cor": "Oleo Secante Impala Tratamento",
-            "score_demanda": 12.0
-          },
-          {
-            "sku": "7896111921692",
-            "nome_cor": "Tratamento Base Fortalecedora",
-            "score_demanda": 12.0
-          }
-        ],
-        "score_medio": 16.0,
-        "preco_sugerido_faixa": "R$ 86–125"
-      },
-      {
-        "qtd": 10,
-        "nome_sugerido": "Kit 10 Impala — Comercial, Hipoalergenico Cobertura Espelhada Impala, Base Seda Tratamento Linha Profissional 60Ml…",
-        "cores": [
-          {
-            "sku": "7896111913772",
-            "nome_cor": "Comercial",
-            "score_demanda": 12.0
-          },
-          {
-            "sku": "7896111972670",
-            "nome_cor": "Hipoalergenico Cobertura Espelhada Impala",
-            "score_demanda": 12.0
-          },
-          {
-            "sku": "7896111972007",
-            "nome_cor": "Base Seda Tratamento Linha Profissional 60Ml",
-            "score_demanda": 12.0
-          },
-          {
-            "sku": "7896111971994",
-            "nome_cor": "Oleo Secante Tratamento Linha Profissional 60Ml",
-            "score_demanda": 12.0
-          },
-          {
-            "sku": "7896111900888",
-            "nome_cor": "Kit Impala Revitanail - Base Branco Soft + Solucao Concentrada + Oleo Em Gel Revitalizante",
-            "score_demanda": 9.5
-          },
-          {
-            "sku": "7896111996607",
-            "nome_cor": "Gel Fixador 120G Infantil Hot Wheels Clube Dos Velozes Azul",
-            "score_demanda": 8.5
-          },
-          {
-            "sku": "7896111996614",
-            "nome_cor": "Kit Hot Wheels Clube Dos Velozes - Shampoo 2 Em 1 250Ml + Gel Fixador 120G Azul",
-            "score_demanda": 8.5
-          },
-          {
-            "sku": "7896111998427",
-            "nome_cor": "Oleo Em Gel Revitalizante Impala",
-            "score_demanda": 6.0
-          },
-          {
-            "sku": "7896111900895",
-            "nome_cor": "Kit Impala Revitanail - Base Coral Light + Solucao Concentrada + Oleo Em Gel Revitalizante",
-            "score_demanda": 6.0
-          },
-          {
-            "sku": "7896111900901",
-            "nome_cor": "Kit Impala Revitanail - Base Rosa Sweet + Solucao Concentrada + Oleo Em Gel Revitalizante",
-            "score_demanda": 6.0
-          }
-        ],
-        "score_medio": 9.25,
-        "preco_sugerido_faixa": "R$ 144–208"
       }
     ],
     "kits_cadastrados_avaliados": [
@@ -579,7 +113,7 @@
         "ordem": 3,
         "nome": "Kit 10 Esmaltes Sortidas Atacado Manicure",
         "qtd": 10,
-        "hits_ml": 37,
+        "hits_ml": 26,
         "vendas_proxy": 0,
         "demanda": "alta",
         "exemplos_ml": [
@@ -591,7 +125,7 @@
         "ordem": 6,
         "nome": "Kit 10 Esmaltes Nude e Claro Manicure Profissional",
         "qtd": 10,
-        "hits_ml": 37,
+        "hits_ml": 19,
         "vendas_proxy": 0,
         "demanda": "alta",
         "exemplos_ml": [
@@ -603,104 +137,98 @@
         "ordem": 1,
         "nome": "Kit 30 Esmaltes Atacado Cores Classicas",
         "qtd": 30,
-        "hits_ml": 33,
+        "hits_ml": 14,
         "vendas_proxy": 0,
         "demanda": "alta",
         "exemplos_ml": [
-          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
-          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
-        ]
-      },
-      {
-        "ordem": 2,
-        "nome": "Kit 15 Esmaltes Vermelho e Rosa",
-        "qtd": 15,
-        "hits_ml": 30,
-        "vendas_proxy": 0,
-        "demanda": "alta",
-        "exemplos_ml": [
-          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
-          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
-        ]
-      },
-      {
-        "ordem": 4,
-        "nome": "Kit 4 Esmaltes Perolado Tendencia",
-        "qtd": 4,
-        "hits_ml": 30,
-        "vendas_proxy": 0,
-        "demanda": "alta",
-        "exemplos_ml": [
-          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
-          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
-        ]
-      },
-      {
-        "ordem": 5,
-        "nome": "Kit 5 Esmaltes Bailarina",
-        "qtd": 5,
-        "hits_ml": 30,
-        "vendas_proxy": 0,
-        "demanda": "alta",
-        "exemplos_ml": [
-          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
-          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
-        ]
-      },
-      {
-        "ordem": 7,
-        "nome": "Kit 3 Esmaltes Cremosos Marrom",
-        "qtd": 3,
-        "hits_ml": 30,
-        "vendas_proxy": 0,
-        "demanda": "alta",
-        "exemplos_ml": [
-          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
-          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
-        ]
-      },
-      {
-        "ordem": 9,
-        "nome": "BUNDLE EXCLUSIVO - Alicate Mundial 777 + 5 Esmaltes - ZERO CONCORRENTES",
-        "qtd": 5,
-        "hits_ml": 30,
-        "vendas_proxy": 0,
-        "demanda": "alta",
-        "exemplos_ml": [
-          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
-          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
         ]
       },
       {
         "ordem": 10,
         "nome": "Kit Colecao Maratonando Completo 8 cores",
         "qtd": 8,
-        "hits_ml": 12,
+        "hits_ml": 9,
         "vendas_proxy": 0,
         "demanda": "alta",
         "exemplos_ml": [
-          "Kit 3 Esmaltes K&S Unha Em Gel Seca Cabine Lindas Cores 10ML",
-          "ANITA Kit 3 Esmaltes Coleção Copa Do Mundo 2026 Vai Brasil A"
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
         ]
       },
       {
         "ordem": 11,
         "nome": "Kit Colecao POV Completo 12 cores",
         "qtd": 12,
-        "hits_ml": 12,
+        "hits_ml": 9,
         "vendas_proxy": 0,
         "demanda": "alta",
         "exemplos_ml": [
-          "Kit 3 Esmaltes K&S Unha Em Gel Seca Cabine Lindas Cores 10ML",
-          "ANITA Kit 3 Esmaltes Coleção Copa Do Mundo 2026 Vai Brasil A"
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
         ]
+      },
+      {
+        "ordem": 12,
+        "nome": "Kit Colecao Ju Paes Virando o Jogo 8 cores",
+        "qtd": 8,
+        "hits_ml": 8,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 13,
+        "nome": "Kit Colecao Viva Ame e Brilhe Glitter 3D 9 cores",
+        "qtd": 9,
+        "hits_ml": 8,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 14,
+        "nome": "Kit Colecao Globoplay Acetinado 8 cores",
+        "qtd": 8,
+        "hits_ml": 8,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 2,
+        "nome": "Kit 15 Esmaltes Vermelho e Rosa",
+        "qtd": 15,
+        "hits_ml": 0,
+        "vendas_proxy": 0,
+        "demanda": "baixa",
+        "exemplos_ml": []
+      },
+      {
+        "ordem": 4,
+        "nome": "Kit 4 Esmaltes Perolado Tendencia",
+        "qtd": 4,
+        "hits_ml": 0,
+        "vendas_proxy": 0,
+        "demanda": "baixa",
+        "exemplos_ml": []
       }
     ],
     "tamanhos_quentes_ml": [
       {
         "qtd": 3,
         "vendas": 0,
-        "anuncios": 11
+        "anuncios": 4
       },
       {
         "qtd": 10,
@@ -723,7 +251,7 @@
         "anuncios": 5
       }
     ],
-    "total_kits_ml": 40
+    "total_kits_ml": 28
   },
-  "mensagem": "🧪 *Montar kits Impala — planilha × ML*\n\n_O que este agente faz:_\n_Lê a planilha Impala (cores/SKU), cruza com os kits mais vendidos no Mercado Livre e sugere quais cores montar em kits 3/5/6/10. Telegram: top cores + kits sugeridos._\n\n_Quando roda:_\n_A cada 12h (Actions); fora do ciclo 30 min_\n\n_Cores na planilha: *272* | com sinal no ML: *39* | kits ML analisados: *40*_\n_Preço médio kits ML: R$ 69,46_\n\n*Top cores Impala (demanda nos kits mais vendidos)*\n1. *Kit Infantil 2 Esmaltes + Lixa + Adesivo De Unha - Stitch* — score 92.0 | 30 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS_\n2. *Fortalecedor De Unhas Hipoalergenico Base Endurecedora Casco De Cavalo Impala* — score 42.0 | 14 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n3. *Tratamento Base Para Unhas Fracas* — score 42.0 | 12 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n4. *Fortalecedor De Unhas Base Endurecedora Casco De Cavalo Impala* — score 30.0 | 10 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n5. *Cera Hidratante Para Unhas E Cuticulas* — score 30.0 | 10 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n6. *Spray Desodorante Secante De Esmalte Para Unhas Com Óleo De Melaleuca Impala - 400Ml/200G* — score 30.0 | 10 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n7. *Spray Desodorante Secante De Esmalte Para Unhas Impala - 400Ml/200G* — score 30.0 | 10 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n8. *Tratamento Incolor* — score 24.0 | 4 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n9. *Tratamento Base Vitaminada* — score 24.0 | 4 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n10. *Incolor Tratamento Linha Profissional 60Ml* — score 18.0 | 4 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure_\n\n*Kits sugeridos (cores quentes que você tem)*\n• *Kit 3 Impala — Kit Infantil 2 Esmaltes + Lixa + Adesivo De Unha - Stitch, Fortalecedor De Unhas Hipoalergenico Base Endurecedora Casco De Cavalo Impala, Tratamento Base Para Unhas Fracas* — score médio 58.67 | faixa R$ 43–62\n  Cores: Kit Infantil 2 Esmaltes + Lixa + Adesivo De Unha - Stitch, Fortalecedor De Unhas Hipoalergenico Base Endurecedora Casco De Cavalo Impala, Tratamento Base Para Unhas Fracas\n• *Kit 5 Impala — Fortalecedor De Unhas Base Endurecedora Casco De Cavalo Impala, Cera Hidratante Para Unhas E Cuticulas, Spray Desodorante Secante De Esmalte Para Unhas Com Óleo De Melaleuca Impala - 400Ml/200G…* — score médio 28.8 | faixa R$ 72–104\n  Cores: Fortalecedor De Unhas Base Endurecedora Casco De Cavalo Impala, Cera Hidratante Para Unhas E Cuticulas, Spray Desodorante Secante De Esmalte Para Unhas Com Óleo De Melaleuca Impala - 400Ml/200G, Spray Desodorante Secante De Esmalte Para Unhas Impala - 400Ml/200G, Tratamento Incolor\n• *Kit 6 Impala — Tratamento Base Vitaminada, Incolor Tratamento Linha Profissional 60Ml, Tratamento Base Vitaminada Linha Profissional 60Ml…* — score médio 16.0 | faixa R$ 86–125\n  Cores: Tratamento Base Vitaminada, Incolor Tratamento Linha Profissional 60Ml, Tratamento Base Vitaminada Linha Profissional 60Ml, Tratamento Base Seda, Oleo Secante Impala Tratamento\n• *Kit 10 Impala — Comercial, Hipoalergenico Cobertura Espelhada Impala, Base Seda Tratamento Linha Profissional 60Ml…* — score médio 9.25 | faixa R$ 144–208\n  Cores: Comercial, Hipoalergenico Cobertura Espelhada Impala, Base Seda Tratamento Linha Profissional 60Ml, Oleo Secante Tratamento Linha Profissional 60Ml, Kit Impala Revitanail - Base Branco Soft + Solucao Concentrada + Oleo Em Gel Revitalizante\n\n*Seus kits da planilha × demanda ML*\n🟢 Kit 10 Esmaltes Sortidas Atacado Manicure — alta (37 hits | 0 vendas)\n🟢 Kit 10 Esmaltes Nude e Claro Manicure Profissional — alta (37 hits | 0 vendas)\n🟢 Kit 30 Esmaltes Atacado Cores Classicas — alta (33 hits | 0 vendas)\n🟢 Kit 15 Esmaltes Vermelho e Rosa — alta (30 hits | 0 vendas)\n🟢 Kit 4 Esmaltes Perolado Tendencia — alta (30 hits | 0 vendas)\n🟢 Kit 5 Esmaltes Bailarina — alta (30 hits | 0 vendas)\n\n*Tamanhos quentes no ML:* kit 3 (0 vend.) · kit 10 (0 vend.) · kit 6 (0 vend.) · kit 15 (0 vend.) · kit 30 (0 vend.)\n\n*Próximo passo:* monte/reative no ML os kits sugeridos, cole o `item_id` em `catalogo/produtos.json` e rode o monitor Anita/kits."
+  "mensagem": "🧪 *Montar kits Impala — planilha × ML*\n\n_O que este agente faz:_\n_Lê a planilha Impala (cores/SKU), cruza com os kits mais vendidos no Mercado Livre e sugere quais cores montar em kits 3/5/6/10. Telegram: top cores + kits sugeridos._\n\n_Quando roda:_\n_A cada 12h (Actions); fora do ciclo 30 min_\n\n_Cores na planilha: *168* | com sinal no ML: *4* | kits ML analisados: *28*_\n_Preço médio kits ML: R$ 69,46_\n\n*Top cores Impala (demanda nos kits mais vendidos)*\n1. *Branco* — score 8.5 | 1 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS_\n2. *Paraiso* — score 8.0 | 1 kit(s) | 0 vendas proxy\n    _Kit Esmalte Colorama Chic E Impala Paraíso Manicure_\n3. *Sorvete De Ceu Azul* — score 2.5 | 1 kit(s) | 0 vendas proxy\n    _Kit 15 Toalhas Manicure E Pedicure 29x45 Atacado Cor Az_\n4. *Nude Classico* — score 2.5 | 1 kit(s) | 0 vendas proxy\n    _Kit Esmalte Impala Nude Manicure Unhas 6 Un_\n\n*Kits sugeridos (cores quentes que você tem)*\n• *Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul* — score médio 6.33 | faixa R$ 43–62\n  Cores: Branco, Paraiso, Sorvete De Ceu Azul\n\n*Seus kits da planilha × demanda ML*\n🟢 Kit 10 Esmaltes Sortidas Atacado Manicure — alta (26 hits | 0 vendas)\n🟢 Kit 10 Esmaltes Nude e Claro Manicure Profissional — alta (19 hits | 0 vendas)\n🟢 Kit 30 Esmaltes Atacado Cores Classicas — alta (14 hits | 0 vendas)\n🟢 Kit Colecao Maratonando Completo 8 cores — alta (9 hits | 0 vendas)\n🟢 Kit Colecao POV Completo 12 cores — alta (9 hits | 0 vendas)\n🟢 Kit Colecao Ju Paes Virando o Jogo 8 cores — alta (8 hits | 0 vendas)\n\n*Tamanhos quentes no ML:* kit 3 (0 vend.) · kit 10 (0 vend.) · kit 6 (0 vend.) · kit 15 (0 vend.) · kit 30 (0 vend.)\n\n*Próximo passo:* monte/reative no ML os kits sugeridos, cole o `item_id` em `catalogo/produtos.json` e rode o monitor Anita/kits."
 }

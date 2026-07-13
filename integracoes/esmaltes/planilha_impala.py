@@ -18,6 +18,7 @@ PLANILHA_DEFAULT = ROOT / "dados" / "Cadastro_NCM_Bling_Impala_Cruzeiro.xlsx"
 _STOP = frozenset(
     {
         "esmalte",
+        "esmaltes",
         "impala",
         "comercial",
         "cremoso",
@@ -43,12 +44,51 @@ _STOP = frozenset(
         "e",
         "para",
         "kit",
+        "unhas",
+        "unha",
+        "manicure",
+        "tratamento",
+        "fortalecedor",
+        "endurecedora",
+        "hipoalergenico",
+        "hipoalergênico",
+        "casco",
+        "cavalo",
+        "oleo",
+        "óleo",
+        "secante",
+        "cobertura",
+        "suave",
+        "infantil",
+        "adesivo",
+        "lixa",
+        "spray",
+        "removedor",
+        "verniz",
+        "incolor",
+        "linha",
+        "profissional",
+        "ml",
+        "atacado",
+        "francesinha",
     }
 )
 
 _PAT_COR = re.compile(
     r"(?:CREMOSO|PEROLADO|MET[AÁ]LICO|GLITTER|FOSCO|ACETINADO|TRANSPA(?:RENTE)?|"
-    r"BLINDAGEM|BRILHO|ULTRA\s+SECAGEM)\s+(.+?)(?:\s+COMERCIAL)?\s*$",
+    r"BLINDAGEM|BRILHO|ULTRA\s+SECAGEM|SUAVE\s+COBERTURA)\s+(.+?)(?:\s+COMERCIAL)?\s*$",
+    re.IGNORECASE,
+)
+
+# Produtos tipo "Esmalte" que não são cor de moda (base/tratamento/kit/auxiliar).
+_PAT_NAO_COR = re.compile(
+    r"\b("
+    r"tratamento|fortalecedor|endurecedora|oleo\s+secante|óleo\s+secante|"
+    r"flash\s+secante|removedor|cera\s+hidrat|verniz|regenerador|"
+    r"kit\s+|spray|gel\s+fixador|base\s+(bomba|dos\s+sonhos|forca|força|"
+    r"revitalizante|para\s+unhas)|cobertura\s+extra|"
+    r"acelerador\s+de\s+crescimento"
+    r")\b",
     re.IGNORECASE,
 )
 
@@ -147,6 +187,7 @@ def carregar_produtos_planilha(caminho: str | Path | None = None) -> list[dict[s
             if not sku or not desc:
                 continue
             nome_cor = extrair_nome_cor(desc)
+            eh_cor_moda = bool(_PAT_COR.search(desc)) and not bool(_PAT_NAO_COR.search(desc))
             out.append(
                 {
                     "sku": sku,
@@ -157,9 +198,11 @@ def carregar_produtos_planilha(caminho: str | Path | None = None) -> list[dict[s
                     "tipo": tipo,
                     "ncm": str(row[6] or "").strip(),
                     "nome_cor": nome_cor,
-                    "tokens": tokens_cor(nome_cor, desc),
+                    # Tokens só do nome da cor — evita match genérico com "unhas/tratamento".
+                    "tokens": tokens_cor(nome_cor, ""),
                     "eh_esmalte": _norm(tipo) in ("esmalte", "top coat", "base"),
                     "eh_impala": _norm(marca) == "impala",
+                    "eh_cor_moda": eh_cor_moda,
                 }
             )
         return out
@@ -211,8 +254,9 @@ def cores_impala_disponiveis(
     produtos: list[dict[str, Any]] | None = None,
     *,
     so_esmalte: bool = True,
+    so_cor_moda: bool = True,
 ) -> list[dict[str, Any]]:
-    """Filtra Impala (esmaltes) com nome/tokens de cor."""
+    """Filtra Impala (esmaltes de cor) com nome/tokens utilizáveis no cruzamento ML."""
     itens = produtos if produtos is not None else carregar_produtos_planilha()
     out: list[dict[str, Any]] = []
     for p in itens:
@@ -220,6 +264,14 @@ def cores_impala_disponiveis(
             continue
         if so_esmalte and _norm(str(p.get("tipo") or "")) != "esmalte":
             continue
+        desc = str(p.get("descricao") or "")
+        if so_cor_moda:
+            # Preferir flag da planilha; senão inferir pelo padrão de acabamento.
+            if "eh_cor_moda" in p:
+                if not p.get("eh_cor_moda"):
+                    continue
+            elif not _PAT_COR.search(desc) or _PAT_NAO_COR.search(desc):
+                continue
         if not p.get("nome_cor") and not p.get("tokens"):
             continue
         out.append(p)

@@ -20,22 +20,30 @@ def _titulo_norm(kit: dict[str, Any]) -> str:
 def _score_cor_no_kit(produto: dict[str, Any], titulo_norm: str) -> float:
     """
     Pontua se a cor da planilha aparece no título do kit ML.
-    Match de token longo (>4) vale mais; família genérica (nude/rosa) menos.
+    Exige match do nome da cor (não só família genérica nude/rosa).
     """
-    tokens = [t for t in (produto.get("tokens") or []) if t]
-    if not tokens or not titulo_norm:
+    tokens = [t for t in (produto.get("tokens") or []) if t and len(t) >= 3]
+    nome = _normalizar(str(produto.get("nome_cor") or ""))
+    if (not tokens and not nome) or not titulo_norm:
         return 0.0
     score = 0.0
+    # Nome completo da cor (ex.: "maria cereja") — sinal forte
+    if len(nome) >= 4 and nome in titulo_norm:
+        score += 5.0
     for tok in tokens:
+        if len(tok) < 4:
+            continue
         if len(tok) >= 5 and tok in titulo_norm:
             score += 3.0
-        elif len(tok) >= 3 and re.search(rf"\b{re.escape(tok)}\b", titulo_norm):
+        elif re.search(rf"\b{re.escape(tok)}\b", titulo_norm):
             score += 2.0
-    # família genérica da cor (analise_mercado)
-    nome = _normalizar(str(produto.get("nome_cor") or ""))
-    for familia in extrair_cores_titulo(titulo_norm):
-        if _normalizar(familia) in nome or nome in _normalizar(familia):
-            score += 0.5
+    # Família genérica só reforça se já houve match de token/nome
+    if score > 0:
+        for familia in extrair_cores_titulo(titulo_norm):
+            fam = _normalizar(familia)
+            if fam and (fam in nome or nome in fam):
+                score += 0.5
+                break
     return score
 
 
