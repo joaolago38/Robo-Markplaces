@@ -61,6 +61,14 @@ ML_ACCESS_TOKEN  = os.getenv("ML_ACCESS_TOKEN", "").strip()
 ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "").strip()
 ML_SELLER_ID     = os.getenv("ML_SELLER_ID", "").strip()
 ML_SITE_ID       = (os.getenv("ML_SITE_ID", "MLB").strip() or "MLB")  # MLB = Brasil
+# Resumo da conta (espelho do painel Resumo → Telegram)
+RESUMO_CONTA_ML_ALERTA = os.getenv("RESUMO_CONTA_ML_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+RESUMO_CONTA_ML_COOLDOWN_SEG = int(os.getenv("RESUMO_CONTA_ML_COOLDOWN_SEG", "72000"))
+RESUMO_CONTA_ML_MAX_PERFORMANCE = int(os.getenv("RESUMO_CONTA_ML_MAX_PERFORMANCE", "80"))
 # Fallback quando /sites/search retorna 403 (comum desde ~2025)
 ML_BUSCA_TERMO_FALLBACK_DDG = os.getenv("ML_BUSCA_TERMO_FALLBACK_DDG", "1").strip().lower() not in (
     "0",
@@ -603,7 +611,7 @@ ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix",
+        "vigia_datadog,promocoes_manicures,relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml",
     ).split(",")
     if x.strip()
 }
