@@ -53,6 +53,25 @@ class TestTelegramExplicacao(unittest.TestCase):
     def test_escapar_markdown_legado(self):
         self.assertEqual(te._escapar_markdown_legado("item_id e *preço*"), r"item\_id e \*preço\*")
 
+    def test_sanitizar_preserva_negrito_e_escapa_interior(self):
+        out = te.sanitizar_markdown_legado("*Kit Rosa_Pink*")
+        self.assertEqual(out, r"*Kit Rosa\_Pink*")
+
+    def test_sanitizar_underscore_solto(self):
+        out = te.sanitizar_markdown_legado("SKU item_id ok")
+        self.assertEqual(out, r"SKU item\_id ok")
+
+    def test_sanitizar_url_com_underscore(self):
+        out = te.sanitizar_markdown_legado("veja https://ml.com/item_abc_def e fim")
+        self.assertIn(r"item\_abc\_def", out)
+        self.assertTrue(out.startswith("veja https://"))
+
+    def test_sanitizar_preserva_italico_e_link(self):
+        out = te.sanitizar_markdown_legado("_oi_ e [nome_x](https://a.com/b_c)")
+        self.assertIn("_oi_", out)
+        self.assertIn(r"[nome\_x](", out)
+        self.assertIn(r"b\_c", out)
+
     @patch.object(te, "explicacao_ativa", return_value=True)
     def test_explicacao_com_underscore_escapa(self, _ativa):
         with patch.dict(te.EXPLICACOES_AGENTES, {"leilao": "texto com item_id e mais"}):

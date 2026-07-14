@@ -134,15 +134,18 @@ def _enviar(chat_id: str, msg: str) -> bool:
             logger.info("Telegram: envio suprimido (token inválido ou circuit breaker ativo)")
             return False
     try:
+        from core.telegram_explicacao import sanitizar_markdown_legado
+
         url = f"https://api.telegram.org/bot{token}/sendMessage"
-        texto = (msg or "")[:4096]
+        original = (msg or "")[:4096]
+        texto = sanitizar_markdown_legado(original)
         r = request(
             "POST",
             url,
             json={"chat_id": cid, "text": texto, "parse_mode": "Markdown"},
             timeout=10,
         )
-        # 400 quase sempre = Markdown inválido (_, * em URLs/títulos). Outras msgs ok.
+        # 400 raro após sanitizar — fallback sem formatação (texto original).
         if getattr(r, "status_code", 0) == 400:
             detalhe = _trecho_erro_telegram(r) or "Bad Request"
             logger.warning(
@@ -152,7 +155,7 @@ def _enviar(chat_id: str, msg: str) -> bool:
             r = request(
                 "POST",
                 url,
-                json={"chat_id": cid, "text": texto},
+                json={"chat_id": cid, "text": original},
                 timeout=10,
             )
         r.raise_for_status()
@@ -182,8 +185,11 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
         if not foto_path or not os.path.exists(str(foto_path)):
             logger.warning("Telegram sendPhoto: arquivo inexistente %s", foto_path)
             return False
+        from core.telegram_explicacao import sanitizar_markdown_legado
+
         url = f"https://api.telegram.org/bot{token}/sendPhoto"
-        caption = (legenda or "")[:1024]
+        caption_orig = (legenda or "")[:1024]
+        caption = sanitizar_markdown_legado(caption_orig) if caption_orig else ""
         data = {"chat_id": cid}
         if caption:
             data["caption"] = caption
@@ -196,13 +202,13 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
                 files={"photo": ("grafico.png", fh, "image/png")},
                 timeout=30,
             )
-        if getattr(r, "status_code", 0) == 400 and caption:
+        if getattr(r, "status_code", 0) == 400 and caption_orig:
             detalhe = _trecho_erro_telegram(r) or "Bad Request"
             logger.warning(
                 "Telegram sendPhoto Markdown rejeitado — reenviando sem formatação: %s",
                 detalhe,
             )
-            data_plain = {"chat_id": cid, "caption": caption}
+            data_plain = {"chat_id": cid, "caption": caption_orig}
             with open(str(foto_path), "rb") as fh2:
                 r = request(
                     "POST",
@@ -423,18 +429,21 @@ def perguntar_gestor_e_aguardar(
             return False
     url_base = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
     try:
+        from core.telegram_explicacao import sanitizar_markdown_legado
+
         texto_msg = f"❓ *Confirmação necessária*\n\n{pergunta}"
         if contexto_decisao is not None:
             justificativa = _gerar_justificativa_decisao(contexto_decisao)
             if justificativa:
                 texto_msg += f"\n\n💡 *Contexto:*\n{justificativa}"
         texto_msg += "\n\n_Responda abaixo:_"
+        texto_md = sanitizar_markdown_legado(texto_msg)
         sm = request(
             "POST",
             f"{url_base}/sendMessage",
             json={
                 "chat_id": TELEGRAM_GESTOR_CHAT_ID,
-                "text": texto_msg,
+                "text": texto_md,
                 "parse_mode": "Markdown",
                 "reply_markup": {
                     "inline_keyboard": [[
@@ -445,6 +454,27 @@ def perguntar_gestor_e_aguardar(
             },
             timeout=10,
         )
+        if getattr(sm, "status_code", 0) == 400:
+            detalhe = _trecho_erro_telegram(sm) or "Bad Request"
+            logger.warning(
+                "Telegram Markdown (confirmação) rejeitado — reenviando sem formatação: %s",
+                detalhe,
+            )
+            sm = request(
+                "POST",
+                f"{url_base}/sendMessage",
+                json={
+                    "chat_id": TELEGRAM_GESTOR_CHAT_ID,
+                    "text": texto_msg,
+                    "reply_markup": {
+                        "inline_keyboard": [[
+                            {"text": "✅ SIM", "callback_data": "ads_sim"},
+                            {"text": "❌ NÃO", "callback_data": "ads_nao"},
+                        ]]
+                    },
+                },
+                timeout=10,
+            )
         sm.raise_for_status()
         body = sm.json() or {}
         result = body.get("result") or {}

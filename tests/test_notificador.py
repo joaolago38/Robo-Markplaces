@@ -123,6 +123,18 @@ class TestNotificadorAlertar(unittest.TestCase):
         self.assertEqual(primeiro.get("parse_mode"), "Markdown")
         self.assertNotIn("parse_mode", segundo)
 
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "token")
+    def test_envia_markdown_sanitizado(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp()
+        notificador.alertar("*Oferta Rosa_Pink* SKU item_id")
+        payload = mock_request.call_args[1]["json"]
+        self.assertEqual(payload.get("parse_mode"), "Markdown")
+        self.assertIn(r"Rosa\_Pink", payload["text"])
+        self.assertIn(r"item\_id", payload["text"])
+        self.assertEqual(mock_request.call_count, 1)
+
 
 class TestNotificadorFoto(unittest.TestCase):
     def setUp(self):
