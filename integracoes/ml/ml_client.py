@@ -54,11 +54,58 @@ def _status_http_exc(exc: Exception) -> int | None:
         if isinstance(status, int):
             return status
     texto = str(exc)
-    for code in (404, 403):
+    for code in (404, 403, 400, 401):
         marcador = f"{code} Client Error"
         if marcador in texto or f"HTTP {code}" in texto:
             return code
     return None
+
+
+def _performance_esperada_indisponivel(code: int, corpo: str) -> bool:
+    """
+    API /performance retorna 400 para anúncios que o ML não calcula
+    (suspenso, catalog product, etc.). Não é incidente — silenciar ERROR.
+    """
+    if code in (404,):
+        return True
+    if code != 400:
+        return False
+    t = (corpo or "").lower()
+    return any(
+        trecho in t
+        for trecho in (
+            "entity not calculated",
+            "suspended status is not supported",
+            "product items are not supported",
+            "not supported",
+        )
+    )
+
+
+def _log_erro_leitura_item(acao: str, item_id: str, exc: Exception) -> None:
+    """Leituras por item: 404/403 e performance 400 esperada → warning/debug."""
+    status = _status_http_exc(exc)
+    texto = str(exc)
+    if acao == "buscar_performance_item" and _performance_esperada_indisponivel(
+        status or 0, texto
+    ):
+        logger.debug(
+            "ML %s item_id=%s indisponível (esperado): %s",
+            acao,
+            item_id,
+            texto[:180],
+        )
+        return
+    if status in (404, 403):
+        logger.warning(
+            "ML %s item_id=%s HTTP %s — item inexistente ou sem permissão: %s",
+            acao,
+            item_id,
+            status,
+            exc,
+        )
+    else:
+        logger.error("ML %s erro item_id=%s: %s", acao, item_id, exc)
 
 
 def _http_error_from_response(response: Any) -> Exception:
@@ -70,21 +117,6 @@ def _http_error_from_response(response: Any) -> Exception:
     except HTTPError as exc:
         return exc
     return RuntimeError(f"HTTP {getattr(response, 'status_code', '?')}")
-
-
-def _log_erro_leitura_item(acao: str, item_id: str, exc: Exception) -> None:
-    """Leituras por item: 404/403 são esperados (item inválido/inacessível) → warning."""
-    status = _status_http_exc(exc)
-    if status in (404, 403):
-        logger.warning(
-            "ML %s item_id=%s HTTP %s — item inexistente ou sem permissão: %s",
-            acao,
-            item_id,
-            status,
-            exc,
-        )
-    else:
-        logger.error("ML %s erro item_id=%s: %s", acao, item_id, exc)
 
 
 def _log_erro_leitura_termo(acao: str, termo: str, exc: Exception) -> None:
@@ -321,6 +353,7 @@ def buscar_performance_item(item_id: str, *, user_product_id: str = "") -> dict:
     """
     Qualidade do anúncio (API /performance — item ou user-product).
     Retorna {} se indisponível. Nunca lança.
+    400 "Entity not calculated" (suspenso/catálogo) → silencioso (debug).
     """
     item_id = (item_id or "").strip()
     up_id = (user_product_id or "").strip()
@@ -337,11 +370,28 @@ def buscar_performance_item(item_id: str, *, user_product_id: str = "") -> dict:
         try:
             r = _request_ml("GET", url, timeout=20)
             code = status_http(r)
-            if code in (400, 404):
-                logger.debug("ML performance %s %s HTTP %s", origem, item_id or up_id, code)
+            corpo = getattr(r, "text", "") or ""
+            if code in (400, 404) or _performance_esperada_indisponivel(code, corpo):
+                logger.debug(
+                    "ML performance %s %s HTTP %s (esperado/indisponível)",
+                    origem,
+                    item_id or up_id,
+                    code,
+                )
                 continue
             if code != 200:
-                log_http_erro_listagem(logger, f"ML buscar_performance_item {origem}", r)
+                # Não poluir Vigia com Entity not calculated disfarçado
+                if _performance_esperada_indisponivel(code, corpo):
+                    logger.debug(
+                        "ML buscar_performance_item %s %s HTTP %s silenciado",
+                        origem,
+                        item_id or up_id,
+                        code,
+                    )
+                else:
+                    log_http_erro_listagem(
+                        logger, f"ML buscar_performance_item {origem}", r
+                    )
                 continue
             body = r.json() or {}
             if not isinstance(body, dict):

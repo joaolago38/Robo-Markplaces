@@ -385,6 +385,37 @@ class TestMlAnuncioStatus(unittest.TestCase):
 
     @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML33b_performance_400_suspenso_silencioso(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 400
+        r.text = (
+            '{"message":"Entity not calculated: Suspended status is not supported",'
+            '"error":"bad_request","status":400}'
+        )
+        r.json.return_value = {"message": "Entity not calculated: Suspended status is not supported"}
+        mock_req.return_value = r
+        with patch.object(ml_client.logger, "error") as mock_err:
+            out = ml_client.buscar_performance_item("MLB999")
+        self.assertEqual(out, {})
+        mock_err.assert_not_called()
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML33c_performance_400_product_items_silencioso(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 400
+        r.text = (
+            '{"message":"Entity not calculated: Product items are not supported",'
+            '"error":"bad_request","status":400}'
+        )
+        mock_req.return_value = r
+        with patch.object(ml_client.logger, "error") as mock_err:
+            out = ml_client.buscar_performance_item("MLB888")
+        self.assertEqual(out, {})
+        mock_err.assert_not_called()
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML34_contar_envios_pendentes(self, _en, mock_req):
         mock_req.return_value = _mock_resp(
             {

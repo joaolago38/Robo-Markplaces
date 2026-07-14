@@ -180,11 +180,15 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         # Fail-closed: sem Telegram não efetiva Ads
         self.assertFalse(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
-    def test_perguntar_gestor_sem_contexto_mensagem_inalterada(self, mock_request, mock_time):
+    def test_perguntar_gestor_sem_contexto_mensagem_inalterada(
+        self, mock_request, mock_time, *_patches
+    ):
         mock_time.monotonic.side_effect = [0, 100]
         mock_time.sleep = MagicMock()
         mock_request.return_value = _mock_resp()
@@ -194,13 +198,15 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         self.assertIn("_Responda abaixo:_", texto)
         self.assertNotIn("*Contexto:*", texto)
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "_gerar_justificativa_decisao", return_value="ACOS subiu nas últimas 2 semanas.")
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
     def test_perguntar_gestor_com_contexto_inclui_justificativa(
-        self, mock_request, mock_time, mock_just
+        self, mock_request, mock_time, mock_just, *_patches
     ):
         mock_time.monotonic.side_effect = [0, 100]
         mock_time.sleep = MagicMock()
@@ -211,6 +217,8 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         texto = mock_request.call_args[1]["json"]["text"]
         self.assertIn("ACOS subiu", texto)
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "_gerar_justificativa_decisao", return_value=None)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
@@ -225,16 +233,19 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         self.assertNotIn("*Contexto:*", texto)
         self.assertIn("_Responda abaixo:_", texto)
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
-    def test_perguntar_gestor_sim_via_callback(self, mock_request, mock_time):
+    def test_perguntar_gestor_sim_via_callback(self, mock_request, mock_time, *_):
         mock_time.monotonic.side_effect = [0, 1, 2, 100]
         mock_time.sleep = MagicMock()
         send_resp = _mock_resp()
         poll_resp = MagicMock()
         poll_resp.raise_for_status = MagicMock()
+        poll_resp.status_code = 200
         poll_resp.json.return_value = {
             "result": [
                 {
@@ -250,15 +261,24 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         mock_request.side_effect = [send_resp, poll_resp]
         self.assertTrue(notificador.perguntar_gestor_e_aguardar("ligar ads?", timeout_segundos=30))
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
-    def test_perguntar_gestor_timeout(self, mock_request, mock_time):
+    def test_perguntar_gestor_timeout(self, mock_request, mock_time, *_):
         mock_time.monotonic.side_effect = [0, 100]
         mock_time.sleep = MagicMock()
         mock_request.return_value = _mock_resp()
         self.assertFalse(notificador.perguntar_gestor_e_aguardar("?", timeout_segundos=5))
+
+    @patch.object(notificador, "verificar_token", return_value=False)
+    @patch.object(notificador, "pode_enviar", return_value=False)
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "123:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    def test_perguntar_gestor_token_invalido_negado(self, *_):
+        self.assertFalse(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
 
 
 class TestGestorTelegramConfigurado(unittest.TestCase):

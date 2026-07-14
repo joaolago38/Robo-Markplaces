@@ -90,7 +90,8 @@ def _marcar_invalido(motivo: str) -> None:
         _ultimo_log_bloqueio = agora
         logger.error(
             "Telegram bloqueado por %ss — %s. Regenere token no @BotFather e "
-            "atualize TELEGRAM_TOKEN nos secrets.",
+            "atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. "
+            "Diagnóstico: python scripts/diagnostico_telegram.py",
             TELEGRAM_CIRCUIT_BREAKER_SEG,
             motivo,
         )

@@ -340,15 +340,34 @@ def _responder_callback(callback_query_id: str, texto: str) -> None:
     """Responde ao callback_query para remover indicador de carregamento do botão."""
     if not TELEGRAM_TOKEN or not callback_query_id:
         return
+    if not pode_enviar():
+        logger.debug("Telegram answerCallbackQuery suprimido (circuit breaker/token)")
+        return
     try:
-        request(
+        r = request(
             "POST",
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/answerCallbackQuery",
             json={"callback_query_id": callback_query_id, "text": texto},
             timeout=10,
         )
+        code = getattr(r, "status_code", 0)
+        if code == 404:
+            registrar_falha_envio("answerCallbackQuery HTTP 404")
+            logger.info("Telegram answerCallbackQuery 404 — token inválido (circuit breaker)")
+            return
+        if code >= 400:
+            logger.warning(
+                "Telegram answerCallbackQuery HTTP %s: %s",
+                code,
+                mascarar_url_telegram(_trecho_erro_telegram(r) or ""),
+            )
     except Exception as e:
-        logger.error("Telegram answerCallbackQuery erro: %s", mascarar_url_telegram(str(e)))
+        err = mascarar_url_telegram(str(e))
+        if "404" in err:
+            registrar_falha_envio(err)
+            logger.info("Telegram answerCallbackQuery falhou com 404 — token inválido")
+        else:
+            logger.warning("Telegram answerCallbackQuery erro: %s", err)
 
 
 def _gerar_justificativa_decisao(contexto_decisao: dict) -> str | None:
@@ -393,6 +412,15 @@ def perguntar_gestor_e_aguardar(
             "Telegram não configurado — confirmação NEGADA (não auto-aprova Ads)"
         )
         return False
+    # Token presente mas inválido/revogado → fail-closed sem spam de sendMessage 404
+    if not pode_enviar() or not verificar_token(forcar=False):
+        if not verificar_token(forcar=True):
+            logger.error(
+                "Telegram token inválido (getMe/circuit) — confirmação NEGADA. "
+                "Regenere no @BotFather e atualize TELEGRAM_TOKEN (secrets + .env). "
+                "Rode: python scripts/diagnostico_telegram.py"
+            )
+            return False
     url_base = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
     try:
         texto_msg = f"❓ *Confirmação necessária*\n\n{pergunta}"
