@@ -358,6 +358,13 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Haiku: oferta + inbox Meta/WA; chat ML ficou com agentes.ml (CONVERSAO_MANICURES_CHAT_ML=0). Workflow 4h, fora do ciclo 30min",
     ),
     AgenteRegistrado(
+        "necessidade_manicures",
+        "Necessidade manicures × ML × canais",
+        "social",
+        "agentes.social.agente_necessidade_manicures:executar",
+        notas="Sinais (tendências/busca/Anita/leads) → match catálogo ML → SIM gestor → WA/TG. Fora do ciclo 30min",
+    ),
+    AgenteRegistrado(
         "panorama",
         "Panorama ML/Magalu/Bling",
         "monitor",

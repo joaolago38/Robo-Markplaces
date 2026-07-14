@@ -181,6 +181,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Chat ML de fechamento fica com agentes.ml (evita resposta duplicada). "
         "Bloqueia boost se link MLB_PREENCHER ou ROAS Ads×ML crítico."
     ),
+    "necessidade_manicures": (
+        "Lê necessidade das manicures (tendências, busca kit, Anita, leads), "
+        "valida o que temos no catálogo/ML e oferece condições no WA/Telegram "
+        "somente após SIM do gestor. Não publica FB/IG nem altera Ads."
+    ),
     "panorama": (
         "Consolida panorama de ML, Magalu e Bling (estoque, vendas, alertas) para "
         "visão geral. No orquestrador o alerta próprio fica off — o consolidado vai "
@@ -308,6 +313,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "trafego_manicures": "A cada 30 min (orquestrador)",
     "promocoes_manicures": "Todo dia às 10:00 e 18:00 BRT (fora do orquestrador)",
     "conversao_manicures": "A cada 4h (Actions); fora do ciclo 30 min",
+    "necessidade_manicures": "A cada 6h (Actions); fora do ciclo 30 min",
     "panorama": "Todo dia às 06:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "orquestrador": "A cada 30 min (GitHub Actions)",
     "operacao_24h": (
@@ -406,6 +412,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("promocoes_manicures", "promocoes_manicures"),
     ("conversao_manicures", "conversao_manicures"),
     ("conversao", "conversao_manicures"),
+    ("necessidade_manicures", "necessidade_manicures"),
+    ("necessidade", "necessidade_manicures"),
     ("panorama", "panorama"),
     ("orquestrador", "orquestrador"),
     ("operacao_24h", "operacao_24h"),

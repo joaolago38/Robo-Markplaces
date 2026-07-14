@@ -96,6 +96,8 @@ _LOGGER_META = {
     "agente_montar_kits_impala": ("mercadolivre", "agente"),
     "agente_conversao_manicures": ("social", "agente"),
     "conversao_manicures": ("social", "integracao"),
+    "agente_necessidade_manicures": ("social", "agente"),
+    "necessidade_manicures": ("social", "integracao"),
     "sustentabilidade_ads_ml": ("social", "integracao"),
     "meta_inbox": ("meta", "integracao"),
     "planilha_impala": ("mercadolivre", "integracao"),
