@@ -53,7 +53,11 @@ class TestClaudeOrcamento(unittest.TestCase):
                 output_tokens=0,
                 origem="x",
             )
-            ok, motivo = o.pode_chamar()
+            with patch(
+                "core.claude_toggle.claude_esta_ativo",
+                return_value=(True, ""),
+            ):
+                ok, motivo = o.pode_chamar()
         self.assertFalse(ok)
         self.assertIn("esgotado", motivo)
 

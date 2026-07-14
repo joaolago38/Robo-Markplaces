@@ -8,6 +8,8 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
+  # Suíte de testes precisa do Claude "ligado" (pausa operacional é só produção).
+  CLAUDE_ATIVO: "1"
   # NUNCA passar DD_API_KEY/DD_SITE/DD_LOGS_ENABLED aqui: este job roda
   # `pytest`, e qualquer `logger.error("boom")` usado como mock nos
   # testes seria enviado ao Datadog como erro real de produção se essas

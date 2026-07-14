@@ -58,6 +58,19 @@ def _reset_telegram_gate():
     tg.reset()
 
 
+@pytest.fixture(autouse=True)
+def _claude_ligado_nos_testes(tmp_path_factory):
+    """
+    Pausa operacional (CLAUDE_ATIVO=0 / logs/claude_toggle.json) não deve quebrar CI.
+    Testes do próprio toggle usam patch próprio e sobrescrevem estes caminhos.
+    """
+    toggle = tmp_path_factory.mktemp("claude_toggle") / "claude_toggle.json"
+    with ExitStack() as stack:
+        stack.enter_context(patch("core.config.CLAUDE_ATIVO", True))
+        stack.enter_context(patch("core.claude_toggle.TOGGLE_PATH", toggle))
+        yield
+
+
 @pytest.fixture
 def mock_http():
     """

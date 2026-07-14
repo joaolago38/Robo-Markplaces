@@ -19,6 +19,15 @@ def _mock_resp(body: dict) -> MagicMock:
 
 
 class TestClaudePerguntar(unittest.TestCase):
+    def setUp(self):
+        # Isola pausa operacional (CLAUDE_ATIVO / logs/claude_toggle.json)
+        self._toggle = patch(
+            "core.claude_toggle.claude_esta_ativo",
+            return_value=(True, ""),
+        )
+        self._toggle.start()
+        self.addCleanup(self._toggle.stop)
+
     @patch.object(claude_client, "ANTHROPIC_API_KEY", "")
     def test_CC01_pergunta_sem_api_key(self, *_patches):
         out = claude_client.perguntar("oi")
