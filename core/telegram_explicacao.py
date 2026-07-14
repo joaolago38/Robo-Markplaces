@@ -7,6 +7,8 @@ Horários em Brasília (BRT = UTC−3), conforme crons dos workflows + orquestra
 """
 from __future__ import annotations
 
+import re
+
 # Descrições para o bloco "_O que este agente faz:_" (Markdown itálico no Telegram).
 EXPLICACOES_AGENTES: dict[str, str] = {
     "vigia_datadog": (
@@ -432,12 +434,137 @@ _MARCADOR = "_O que este agente faz:_"
 _MARCADOR_HORARIO = "_Quando roda:_"
 
 
-def _escapar_markdown_legado(texto: str) -> str:
-    """Escapa _, *, ` e [ para parse_mode=Markdown (legado) do Telegram."""
+_URL_RE = re.compile(r"https?://[^\s<>\]]+", re.IGNORECASE)
+
+
+def escapar_markdown_legado(texto: str) -> str:
+    """Escapa _, *, ` e [ para literal em parse_mode=Markdown (legado)."""
     out = (texto or "").replace("\\", "\\\\")
     for ch in ("_", "*", "`", "["):
         out = out.replace(ch, "\\" + ch)
     return out
+
+
+def _escapar_markdown_legado(texto: str) -> str:
+    """Alias interno (compatível com testes/uso legado)."""
+    return escapar_markdown_legado(texto)
+
+
+def sanitizar_markdown_legado(texto: str) -> str:
+    """
+    Torna o texto seguro para parse_mode=Markdown (legado) do Telegram.
+
+    Preserva *negrito*, _itálico_, `código` e [texto](url) quando fechados;
+    escapa marcadores soltos e especiais no interior das entidades.
+    URLs plain-text têm _, * etc. escapados (evitam 'can't parse entities').
+    """
+    s = texto or ""
+    if not s:
+        return ""
+
+    placeholders: list[str] = []
+
+    def _guardar_url(m: re.Match) -> str:
+        url = m.group(0)
+        trail = ""
+        while url and url[-1] in ".,;:!?)":
+            trail = url[-1] + trail
+            url = url[:-1]
+        placeholders.append(escapar_markdown_legado(url))
+        return f"\x00URL{len(placeholders) - 1}\x00{trail}"
+
+    s = _URL_RE.sub(_guardar_url, s)
+    s = _sanitizar_corpo_markdown(s)
+    for idx, esc in enumerate(placeholders):
+        s = s.replace(f"\x00URL{idx}\x00", esc)
+    return s
+
+
+def _sanitizar_corpo_markdown(s: str) -> str:
+    out: list[str] = []
+    i = 0
+    n = len(s)
+
+    def _achar_fecho(inicio: int, marcador: str) -> int:
+        j = inicio
+        while j < n:
+            if s[j] == "\\" and j + 1 < n:
+                j += 2
+                continue
+            if s[j] == marcador:
+                return j
+            j += 1
+        return -1
+
+    while i < n:
+        if s[i] == "\\" and i + 1 < n:
+            out.append(s[i : i + 2])
+            i += 2
+            continue
+
+        ch = s[i]
+
+        if ch == "`":
+            fecha = _achar_fecho(i + 1, "`")
+            if fecha != -1:
+                out.append(s[i : fecha + 1])
+                i = fecha + 1
+            else:
+                out.append("\\`")
+                i += 1
+            continue
+
+        if ch == "[":
+            m = re.match(r"\[([^\]]*)\]\(([^)]*)\)", s[i:])
+            if m:
+                label = m.group(1)
+                label_esc: list[str] = []
+                k = 0
+                while k < len(label):
+                    if label[k] == "\\" and k + 1 < len(label):
+                        label_esc.append(label[k : k + 2])
+                        k += 2
+                        continue
+                    if label[k] in "_*`[":
+                        label_esc.append("\\" + label[k])
+                    else:
+                        label_esc.append(label[k])
+                    k += 1
+                out.append(f"[{''.join(label_esc)}]({m.group(2)})")
+                i += m.end()
+            else:
+                out.append("\\[")
+                i += 1
+            continue
+
+        if ch in "*_":
+            fecha = _achar_fecho(i + 1, ch)
+            if fecha > i + 1:
+                mid = s[i + 1 : fecha]
+                outros = {"*": "_`[", "_": "*`["}[ch]
+                mid_esc: list[str] = []
+                k = 0
+                while k < len(mid):
+                    if mid[k] == "\\" and k + 1 < len(mid):
+                        mid_esc.append(mid[k : k + 2])
+                        k += 2
+                        continue
+                    if mid[k] in outros:
+                        mid_esc.append("\\" + mid[k])
+                    else:
+                        mid_esc.append(mid[k])
+                    k += 1
+                out.append(ch + "".join(mid_esc) + ch)
+                i = fecha + 1
+            else:
+                out.append("\\" + ch)
+                i += 1
+            continue
+
+        out.append(ch)
+        i += 1
+
+    return "".join(out)
 
 
 def explicacao_ativa() -> bool:
