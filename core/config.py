@@ -702,6 +702,7 @@ ORQUESTRADOR_EXCLUIR = {
         "ORQUESTRADOR_EXCLUIR",
         # Rotinas com workflow próprio — não repetir no ciclo 30min
         "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
+        "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
         "montar_kits_impala,leilao,alibaba,licitacoes",
     ).split(",")
@@ -905,6 +906,17 @@ CONVERSAO_MANICURES_SUST_DIAS = int(os.getenv("CONVERSAO_MANICURES_SUST_DIAS", "
 CONVERSAO_MANICURES_GASTO_MIN_AVALIAR = float(
     os.getenv("CONVERSAO_MANICURES_GASTO_MIN_AVALIAR", "20")
 )
+
+# Necessidade manicures × ML × canais (match sinais → oferta com confirmação)
+NECESSIDADE_MANICURES_ATIVO = _env_bool("NECESSIDADE_MANICURES_ATIVO", "1")
+NECESSIDADE_MANICURES_ALERTA = _env_bool("NECESSIDADE_MANICURES_ALERTA", "1")
+NECESSIDADE_MANICURES_PEDIR_CONFIRMACAO = _env_bool(
+    "NECESSIDADE_MANICURES_PEDIR_CONFIRMACAO", "1"
+)
+NECESSIDADE_MANICURES_ENVIAR_CANAIS = _env_bool("NECESSIDADE_MANICURES_ENVIAR_CANAIS", "1")
+NECESSIDADE_MANICURES_COOLDOWN_SEG = int(
+    os.getenv("NECESSIDADE_MANICURES_COOLDOWN_SEG", "21600")
+)  # 6h
 
 # Regras de negócio
 MARGEM_MINIMA  = float(os.getenv("MARGEM_MINIMA",  str(REGRAS.get("margem_minima_pct", 15.0))))

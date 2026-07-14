@@ -1,0 +1,95 @@
+name: Necessidade manicures × ML × canais
+
+# Cruza sinais de necessidade com catálogo ML e oferece WA/TG após SIM do gestor.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 6h UTC
+    - cron: "0 2,8,14,20 * * *"
+
+concurrency:
+  group: robo-markplaces-necessidade-manicures
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  NECESSIDADE_MANICURES_ATIVO: "1"
+  NECESSIDADE_MANICURES_ALERTA: "1"
+  NECESSIDADE_MANICURES_PEDIR_CONFIRMACAO: "1"
+  NECESSIDADE_MANICURES_ENVIAR_CANAIS: "1"
+
+jobs:
+  necessidade:
+    name: Necessidade × ML × canais
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar snapshots / cooldown / historico
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/necessidade_manicures_historico.json
+            logs/necessidade_manicures_ultima.json
+            logs/esmaltes_tendencias_ultima.json
+            logs/esmaltes_busca_kit_ultima.json
+            logs/anita_esmaltes_ultima.json
+            logs/leads_manicures.json
+            logs/conversao_manicures_ultima.json
+            logs/esmaltes_kits_monitor_ultima.json
+            logs/claude_uso_orcamento.json
+          key: necessidade-manicures-${{ github.run_id }}
+          restore-keys: |
+            necessidade-manicures-
+            estado-vendas-ia-
+            conversao-manicures-
+            telegram-cooldown-
+      - name: Rodar agente necessidade manicures
+        run: python -m agentes.social.agente_necessidade_manicures
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WHATSAPP_API_TYPE: evolution
+          WHATSAPP_API_URL: ${{ secrets.WHATSAPP_API_URL }}
+          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
+          WHATSAPP_INSTANCE: ${{ secrets.WHATSAPP_INSTANCE }}
+          WHATSAPP_GRUPO_MANICURES_ID: ${{ secrets.WHATSAPP_GRUPO_MANICURES_ID }}
+          ML_LOJA_URL: ${{ secrets.ML_LOJA_URL }}
+          BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
+          NECESSIDADE_MANICURES_COOLDOWN_SEG: "21600"
+      - name: Publicar snapshot
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/necessidade_manicures_historico.json
+            logs/necessidade_manicures_ultima.json
+            logs/alertas_cooldown.json
+          key: necessidade-manicures-${{ github.run_id }}
+      - name: Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: necessidade-manicures
+          path: |
+            logs/necessidade_manicures_ultima.json
+            logs/necessidade_manicures_historico.json
+          retention-days: 30
+          if-no-files-found: ignore

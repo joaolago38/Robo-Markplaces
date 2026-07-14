@@ -107,7 +107,7 @@ jobs:
       - name: Rodar orquestrador 30min
         run: python -m agentes.orquestrador.agente_orquestrador
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,alibaba,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,conversao_manicures,consumo_claude,montar_kits_impala
+          ORQUESTRADOR_EXCLUIR: leilao,alibaba,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,conversao_manicures,necessidade_manicures,consumo_claude,montar_kits_impala
           CONVERSAO_MANICURES_CHAT_ML: "0"
           AUTO_RESPOSTAS_ML: "0"
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
