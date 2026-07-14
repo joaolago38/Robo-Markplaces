@@ -56,7 +56,13 @@
     "Erro inesperado ao testar conectividade mercadolivre: boom",
     "Claude indisponível",
     "Claude erro (estruturado, tool=avaliacao_parametros",
-    "401 Client Error: Unauthorized for url: https://api.anthropic.com"
+    "401 Client Error: Unauthorized for url: https://api.anthropic.com",
+    "Entity not calculated: Suspended status is not supported",
+    "Entity not calculated: Product items are not supported",
+    "ML performance ",
+    "indisponível (esperado)",
+    "Telegram: envio suprimido",
+    "Telegram answerCallbackQuery"
   ],
   "query_datadog": "service:robo-markplaces status:error (marketplace:mercadolivre OR marketplace:mercadolivre_ads OR marketplace:mercadolivre_e_outros OR @logger.name:token_manager)"
 }

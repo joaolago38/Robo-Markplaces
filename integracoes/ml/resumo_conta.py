@@ -89,6 +89,10 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             item_id = str(anuncio.get("item_id") or "").strip()
             if not item_id:
                 continue
+            status_an = str(anuncio.get("status") or "").lower()
+            # Performance API não calcula suspenso/fechado/under review
+            if status_an in ("closed", "inactive", "under_review", "forbidden"):
+                continue
             up_id = str(anuncio.get("user_product_id") or "").strip()
             if up_id and up_id in vistos_up:
                 continue

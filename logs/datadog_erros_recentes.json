@@ -1,15 +1,70 @@
 {
   "erros": [
     {
+      "fingerprint": "cecaf1fe419184e2b12c",
+      "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
+      "ultima_vez": "2026-07-14T11:47:08.021144+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "932ec7d3ef9c57e06c2d",
+      "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
+      "ultima_vez": "2026-07-14T11:47:07.534646+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "9b96db47ef26d9d95913",
+      "primeira_vez": "2026-07-14T11:46:19.185797+00:00",
+      "ultima_vez": "2026-07-14T11:46:19.185797+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../getMe (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../getMe (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "0b73de2bc1cf19630d64",
+      "primeira_vez": "2026-07-14T11:45:30.528533+00:00",
+      "ultima_vez": "2026-07-14T11:45:30.528533+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — HTTP 404 no getMe — token revogado ou incorreto. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "00741e254c2078712423",
+      "primeira_vez": "2026-07-14T11:45:30.521735+00:00",
+      "ultima_vez": "2026-07-14T11:45:30.521735+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram token inválido (getMe/circuit) — confirmação NEGADA. Regenere no @BotFather e atualize TELEGRAM_TOKEN (secrets + .env). Rode: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
       "fingerprint": "6b85b1f7cafada7d7627",
       "primeira_vez": "2026-07-13T23:45:54.620789+00:00",
-      "ultima_vez": "2026-07-13T23:46:26.771467+00:00",
+      "ultima_vez": "2026-07-14T11:45:30.511208+00:00",
       "logger": "notificador",
       "mensagem": "Telegram não configurado — confirmação NEGADA (não auto-aprova Ads)",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 2
+      "ocorrencias": 3
     },
     {
       "fingerprint": "94db86c08bd0ee571d59",
@@ -1594,62 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "1953bb4d9a3e87b5b1b1",
-      "primeira_vez": "2026-07-05T20:46:21.246915+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.093432+00:00",
-      "logger": "bling",
-      "mensagem": "Bling buscar_produto JSON inválido sku=SKU1 erro=json",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "0fcf93425004fd9a2241",
-      "primeira_vez": "2026-07-05T20:46:21.185600+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.021825+00:00",
-      "logger": "agente_licitacoes",
-      "mensagem": "Agente licitações erro: falha simulada",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "0332e501123099891e0f",
-      "primeira_vez": "2026-07-05T20:46:21.140624+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.914095+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama alertar_gestor: gestor",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "2f6bddb3f930f13d5aa6",
-      "primeira_vez": "2026-07-05T20:46:21.168914+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.894429+00:00",
-      "logger": "agente_panorama",
-      "mensagem": "panorama bling produtos: prod",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "a043aced4298d5edf1dd",
-      "primeira_vez": "2026-07-05T21:19:04.870254+00:00",
-      "ultima_vez": "2026-07-05T21:19:04.870254+00:00",
-      "logger": "agente_alibaba_importacao",
-      "mensagem": "Agente Alibaba importação erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-07-13T23:46:26.771467+00:00"
+  "atualizado_em": "2026-07-14T11:47:08.021144+00:00"
 }
