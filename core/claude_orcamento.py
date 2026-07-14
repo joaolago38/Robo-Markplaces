@@ -198,6 +198,15 @@ def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
 
 
 def pode_chamar() -> tuple[bool, str]:
+    try:
+        from core.claude_toggle import claude_esta_ativo
+
+        ok_t, motivo_t = claude_esta_ativo()
+        if not ok_t:
+            return False, f"Claude desligado: {motivo_t}"
+    except Exception as exc:
+        logger.debug("toggle Claude indisponível: %s", exc)
+
     c = _cfg()
     if not getattr(c, "CLAUDE_ORCAMENTO_ATIVO", True):
         return True, ""
@@ -397,6 +406,23 @@ def montar_mensagem_telegram(
         f"bloqueado {int(res.get('bloqueado') or 0)}",
         "_Score = ok / (ok+falha+fallback+vazio) nos agentes que usam Claude._",
     ]
+    try:
+        from core.claude_toggle import estado_toggle
+
+        tg = estado_toggle()
+        if not tg.get("ativo"):
+            linhas.extend(
+                [
+                    "",
+                    f"⏸ *Claude DESLIGADO* ({tg.get('fonte')}): {tg.get('motivo') or 'pausa'}",
+                    "_Religar: `python scripts/toggle_claude.py on` ou CLAUDE_ATIVO=1_",
+                ]
+            )
+        else:
+            linhas.append("")
+            linhas.append("▶️ Toggle Claude: *ligado* (pronto para operação)")
+    except Exception:
+        pass
     if r.get("bloqueado"):
         linhas.append("")
         linhas.append("🚫 *HARD STOP* — novas chamadas Claude bloqueadas até recarregar orçamento.")

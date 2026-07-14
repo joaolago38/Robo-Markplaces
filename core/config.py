@@ -29,6 +29,14 @@ REGRAS = SPEC.get("regras_negocio", {})
 
 # IA
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+# Toggle mestre: 0 = pausa TODAS as chamadas Claude (sem gastar token/USD)
+# Também existe logs/claude_toggle.json (scripts/toggle_claude.py) para pausa momentânea.
+CLAUDE_ATIVO = os.getenv("CLAUDE_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+    "off",
+)
 # Modelos Claude — Haiku ≈ bem mais barato que Sonnet
 CLAUDE_MODELO = (
     os.getenv("CLAUDE_MODELO", "claude-sonnet-4-5").strip() or "claude-sonnet-4-5"
