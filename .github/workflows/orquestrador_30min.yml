@@ -56,6 +56,7 @@ jobs:
         with:
           path: |
             logs/claude_uso_orcamento.json
+            logs/claude_toggle.json
             logs/conversao_manicures_ultima.json
             logs/chat_perguntas_claimed.json
           key: estado-vendas-ia-${{ github.run_id }}
@@ -113,6 +114,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
@@ -175,6 +177,7 @@ jobs:
         with:
           path: |
             logs/claude_uso_orcamento.json
+            logs/claude_toggle.json
             logs/conversao_manicures_ultima.json
             logs/chat_perguntas_claimed.json
           key: estado-vendas-ia-${{ github.run_id }}

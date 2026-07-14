@@ -49,6 +49,7 @@ jobs:
             logs/conversao_manicures_ultima.json
             logs/esmaltes_kits_monitor_ultima.json
             logs/claude_uso_orcamento.json
+            logs/claude_toggle.json
           key: necessidade-manicures-${{ github.run_id }}
           restore-keys: |
             necessidade-manicures-
@@ -59,6 +60,7 @@ jobs:
         run: python -m agentes.social.agente_necessidade_manicures
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}
