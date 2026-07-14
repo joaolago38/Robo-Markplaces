@@ -18,8 +18,18 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertGreaterEqual(len(agentes), 15)
         ids = {a.id for a in agentes}
         self.assertIn("conectividade", ids)
+        self.assertIn("chat_ml", ids)
+        # Rotinas com workflow próprio ficam em ORQUESTRADOR_EXCLUIR (default)
+        self.assertNotIn("leilao", ids)
+        self.assertNotIn("alibaba", ids)
+        self.assertNotIn("necessidade_manicures", ids)
+
+    @patch("core.config.ORQUESTRADOR_EXCLUIR", set())
+    def test_registro_completo_inclui_rotinas_excluidas(self):
+        ids = {a.id for a in listar_agentes()}
         self.assertIn("leilao", ids)
         self.assertIn("alibaba", ids)
+        self.assertIn("necessidade_manicures", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", {"leilao"})
     def test_excluir_por_env(self):
