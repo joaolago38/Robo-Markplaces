@@ -1,18 +1,55 @@
 [
   {
+    "id": "fil-tpu",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Filamento TPU",
+    "material": "TPU",
+    "termo_busca": "filamento tpu flexivel 1kg impressora 3d",
+    "limite_resultados": 30
+  },
+  {
     "id": "fil-pla-1kg",
     "ativo": true,
     "prioridade": 1,
-    "nome": "Filamento PLA 1kg",
+    "nome": "Filamento PLA",
     "material": "PLA",
     "alibaba_produto_id": "filamento-impressora-3d-pla",
     "termo_busca": "filamento pla 1kg impressora 3d",
+    "limite_resultados": 35
+  },
+  {
+    "id": "fil-petg-1kg",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Filamento PETG",
+    "material": "PETG",
+    "termo_busca": "filamento petg 1kg impressora 3d",
+    "limite_resultados": 30
+  },
+  {
+    "id": "fil-abs-1kg",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Filamento ABS",
+    "material": "ABS",
+    "termo_busca": "filamento abs 1kg impressora 3d",
+    "limite_resultados": 30
+  },
+  {
+    "id": "fil-pla-175",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Filamento PLA 1.75mm",
+    "material": "PLA",
+    "alibaba_produto_id": "filamento-impressora-3d-pla",
+    "termo_busca": "filamento pla 1.75mm 1kg impressora 3d",
     "limite_resultados": 30
   },
   {
     "id": "fil-pla-plus",
-    "ativo": true,
-    "prioridade": 1,
+    "ativo": false,
+    "prioridade": 2,
     "nome": "Filamento PLA+",
     "material": "PLA+",
     "alibaba_produto_id": "filamento-impressora-3d-pla",
@@ -20,35 +57,8 @@
     "limite_resultados": 25
   },
   {
-    "id": "fil-petg-1kg",
-    "ativo": true,
-    "prioridade": 1,
-    "nome": "Filamento PETG 1kg",
-    "material": "PETG",
-    "termo_busca": "filamento petg 1kg impressora 3d",
-    "limite_resultados": 25
-  },
-  {
-    "id": "fil-abs-1kg",
-    "ativo": true,
-    "prioridade": 2,
-    "nome": "Filamento ABS 1kg",
-    "material": "ABS",
-    "termo_busca": "filamento abs 1kg impressora 3d",
-    "limite_resultados": 25
-  },
-  {
-    "id": "fil-tpu",
-    "ativo": true,
-    "prioridade": 2,
-    "nome": "Filamento TPU flexível",
-    "material": "TPU",
-    "termo_busca": "filamento tpu flexivel 1kg impressora 3d",
-    "limite_resultados": 20
-  },
-  {
     "id": "fil-silk",
-    "ativo": true,
+    "ativo": false,
     "prioridade": 3,
     "nome": "Filamento PLA Silk",
     "material": "PLA Silk",

@@ -146,9 +146,9 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Shopee."
     ),
     "monitor_filamentos_ml": (
-        "Varre filamentos 3D no Mercado Livre (PLA, PETG, ABS, TPU…): cores mais vendidas, "
-        "preços e marcas; cruza com o catálogo Alibaba (FOB/landed × preço ML). "
-        "Telegram: ranking de cores + margem de importação."
+        "Varre no Mercado Livre anúncios de filamento TPU, PLA, PETG e ABS: "
+        "preços, cores, marcas e ranking de vendas; cruza com Alibaba quando ativo. "
+        "Telegram: resumo por material + ranking."
     ),
     "monitor_acetona_cruzeiro": (
         "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "

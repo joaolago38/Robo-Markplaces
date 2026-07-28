@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-07-28T17:10:43.731215+00:00",
+    "timestamp": "2026-07-28T18:05:43.973301+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-07-28T17:12:01.418826+00:00",
+    "timestamp": "2026-07-28T18:05:26.782024+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,11 +32,11 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-07-28T17:12:01.370948+00:00",
+    "timestamp": "2026-07-28T18:06:24.658636+00:00",
     "resultados": [
       {
         "item_id": "MLB2",
-        "titulo": "Kit Impala",
+        "titulo": "Kit Impala Concorrente",
         "preco": 35.0,
         "frete_gratis": true,
         "condicao": "new",
@@ -48,7 +48,7 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-07-28T17:12:01.332998+00:00",
+    "timestamp": "2026-07-28T18:05:26.550818+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -64,7 +64,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-07-28T17:12:01.353300+00:00",
+    "timestamp": "2026-07-28T18:05:26.601905+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
