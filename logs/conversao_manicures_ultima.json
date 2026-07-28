@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "timestamp": "2026-07-13T23:45:54.684215+00:00",
+  "timestamp": "2026-07-28T17:10:43.173408+00:00",
   "modelo": "claude-haiku-4-5",
   "diagnostico": {
     "canais": {
@@ -101,5 +101,5 @@
     "respondidas": 0
   },
   "modo": "dry_run",
-  "mensagem": "💅 *Conversão manicures — WA / IG / FB / ML*\n\n_O que este agente faz:_\n_Converte manicures para compra no Mercado Livre: Haiku escolhe oferta e copy, dispara WhatsApp/Telegram/Facebook/Instagram, lê comentários Meta e grupo WA, responde chat ML com CTA. Cruza gasto Ads IG/FB com vendas reais do ML e bloqueia boost se a operação estiver insustentável._\n\n_Quando roda:_\n_A cada 4h (Actions); fora do ciclo 30 min_\n\n_Oferta: *Kit 3* (fallback: atacado)_\n_Link: https://ml/x_\n\n*Sustentabilidade Ads × ML*\n🟢 *sustentavel* — gasto Ads R$ 0.00 | vendas ML R$ 0.00 (0 ped.) | ROAS real 3.00 (pixel 0.00)\n\n*Envios ativos*\n• WhatsApp: —\n• Telegram manicures: —\n• Facebook: — | Instagram: —\n\n*Inbox:* 0 novos · 0 respondidos · 0 na fila\n*Chat ML manicure:* 0 respostas\n\n*Config pendente:* whatsapp, instagram\n  · Token long-lived Meta (META_ACCESS_TOKEN)\n  · META_PAGE_ID + pages_manage_posts / pages_read_engagement\n  · META_INSTAGRAM_ID + instagram_basic / instagram_content_publish\n  · pages_manage_engagement / instagram_manage_comments (para REPLY_META)"
+  "mensagem": "💅 *Conversão manicures — WA / IG / FB / ML*\n\n_O que este agente faz:_\n_Converte manicures (WA/IG/FB) para o ML: Haiku oferta + inbox Meta/WA. Chat ML de fechamento fica com agentes.ml (evita resposta duplicada). Bloqueia boost se link MLB\\_PREENCHER ou ROAS Ads×ML crítico._\n\n_Quando roda:_\n_A cada 4h (Actions); fora do ciclo 30 min_\n\n_Oferta: *Kit 3* (fallback: atacado)_\n_Link: https://ml/x_\n\n*Sustentabilidade Ads × ML*\n🟢 *sustentavel* — gasto Ads R$ 0.00 | vendas ML R$ 0.00 (0 ped.) | ROAS real 3.00 (pixel 0.00)\n\n*Envios ativos*\n• WhatsApp: —\n• Telegram manicures: —\n• Facebook: — | Instagram: —\n\n*Inbox:* 0 novos · 0 respondidos · 0 na fila\n*Chat ML manicure:* 0 respostas\n\n*Config pendente:* whatsapp, instagram\n  · Token long-lived Meta (META_ACCESS_TOKEN)\n  · META_PAGE_ID + pages_manage_posts / pages_read_engagement\n  · META_INSTAGRAM_ID + instagram_basic / instagram_content_publish\n  · pages_manage_engagement / instagram_manage_comments (para REPLY_META)"
 }
