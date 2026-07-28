@@ -8,13 +8,13 @@ from __future__ import annotations
 import logging
 
 from core.config import (
+    WHATSAPP_API_KEY,
     WHATSAPP_API_TYPE,
     WHATSAPP_API_URL,
-    WHATSAPP_API_KEY,
+    WHATSAPP_BUSINESS_TOKEN,
     WHATSAPP_GRUPO_MANICURES_ID,
     WHATSAPP_INSTANCE,
     WHATSAPP_NUMERO_DESTINO,
-    WHATSAPP_BUSINESS_TOKEN,
     WHATSAPP_PHONE_ID,
 )
 from core.horario import formatar_data_hora_br

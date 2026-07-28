@@ -11,7 +11,7 @@ from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
+from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.token_manager import get_token_ml
 
 logger = logging.getLogger("ml_client")

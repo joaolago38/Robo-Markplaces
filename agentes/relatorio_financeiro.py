@@ -43,8 +43,8 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
     """
     logger.info("=== Relatório financeiro semanal ===")
     try:
-        from agentes.repricing.agente_repricing_marketplaces import executar as repricing_executar
         from agentes.ml.agente_monitor_ml import analisar as monitor_analisar
+        from agentes.repricing.agente_repricing_marketplaces import executar as repricing_executar
 
         repricing = repricing_executar(dry_run=True)
         economia = float(repricing.get("economia_estimada_piso_margem") or 0)

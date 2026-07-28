@@ -20,8 +20,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import requests  # noqa: E402
 from pathlib import Path  # noqa: E402
+
+import requests  # noqa: E402
 
 
 def checar_store_em_disco() -> None:

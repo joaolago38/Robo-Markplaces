@@ -15,10 +15,10 @@ from core.config import (
     TELEGRAM_MANICURES_CHAT_ID,
     TELEGRAM_TOKEN,
 )
-from core.http_client import request
 from core.horario import agora_brasil, formatar_data_hora_br
-from core.telegram_gate import pode_enviar, registrar_falha_envio, verificar_token
+from core.http_client import request
 from core.http_errors import mascarar_url_telegram
+from core.telegram_gate import pode_enviar, registrar_falha_envio, verificar_token
 
 logger = logging.getLogger("notificador")
 

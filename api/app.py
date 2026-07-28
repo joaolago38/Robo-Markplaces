@@ -7,47 +7,53 @@ Contratos: spec/spec.yaml > modulos[chat_responder, publicador_social, relatorio
 import hmac
 import logging
 from datetime import datetime
-from flask import Flask, request, jsonify, g
+
+from flask import Flask, g, jsonify, request
 from werkzeug.exceptions import BadRequest
 
-from core.claude_client import responder_chat, gerar_post, perguntar
-from core.notificador import alertar, alertar_critico, alertar_gestor
-from core.request_context import novo_request_id, definir_request_id, obter_request_id
+from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
+from agentes.auto_respostas_visuais import executar as executar_auto_respostas_visuais
+from agentes.conectividade_marketplaces import executar as executar_conectividade_marketplaces
+from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
+from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
+from agentes.ml.agente_monitor_ml import MAX_ITENS_ANALISE
+from agentes.ml.agente_monitor_ml import analisar as analisar_monitor_ml
+from agentes.ml.agente_otimizador_listing import analisar_catalogo, analisar_item
+from agentes.operacao_24h import executar as executar_operacao_24h
+from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
+from agentes.sincronizar_estoque_marketplaces import executar as executar_sincronizar_estoque
+from agentes.social.agente_metricas_meta import executar as executar_metricas_meta
+from agentes.social.agente_trafego_manicures import (
+    executar as executar_trafego_manicures,
+)
+from agentes.social.agente_trafego_manicures import (
+    executar_resumo_madrugada as executar_resumo_madrugada_trafego,
+)
+from core.claude_client import gerar_post, perguntar, responder_chat
 from core.config import (
-    MARGEM_MINIMA,
     ESTOQUE_CRITICO,
-    REPRICING_ABAIXO_CONCORRENTE_PCT,
-    REPRICING_DIFERENCA_MINIMA,
-    TAXA_CANAL_PADRAO_PCT,
     MARGEM_FASE_1_PCT,
     MARGEM_FASE_2_PCT,
     MARGEM_FASE_3_PCT,
+    MARGEM_MINIMA,
+    REPRICING_ABAIXO_CONCORRENTE_PCT,
+    REPRICING_DIFERENCA_MINIMA,
     ROBO_API_KEY,
+    TAXA_CANAL_PADRAO_PCT,
 )
-from agentes.manutencao_marketplaces import executar as executar_manutencao_marketplaces
-from agentes.conectividade_marketplaces import executar as executar_conectividade_marketplaces
-from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
-from agentes.sincronizar_estoque_marketplaces import executar as executar_sincronizar_estoque
-from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
-from agentes.social.agente_metricas_meta import executar as executar_metricas_meta
+from core.notificador import alertar, alertar_critico, alertar_gestor
+from core.request_context import definir_request_id, novo_request_id, obter_request_id
+from integracoes.bling.bling_client import (
+    buscar_produto,
+    estoques_criticos,
+    listar_produtos,
+)
 from integracoes.meta.meta_ads_client import (
     listar_metricas_por_plataforma,
     normalizar_por_plataforma,
+)
+from integracoes.meta.meta_ads_client import (
     validar_conexao as validar_conexao_meta,
-)
-from agentes.social.agente_trafego_manicures import (
-    executar as executar_trafego_manicures,
-    executar_resumo_madrugada as executar_resumo_madrugada_trafego,
-)
-from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
-from agentes.operacao_24h import executar as executar_operacao_24h
-from agentes.auto_respostas_visuais import executar as executar_auto_respostas_visuais
-from agentes.ml.agente_monitor_ml import analisar as analisar_monitor_ml, MAX_ITENS_ANALISE
-from agentes.ml.agente_otimizador_listing import analisar_catalogo, analisar_item
-from integracoes.bling.bling_client import (
-    buscar_produto,
-    listar_produtos,
-    estoques_criticos,
 )
 
 logging.basicConfig(

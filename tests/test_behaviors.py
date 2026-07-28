@@ -9,8 +9,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from api.app import app
 from agentes.social.publicador import selecionar_produto
+from api.app import app
 
 
 class ApiBehaviorTests(unittest.TestCase):

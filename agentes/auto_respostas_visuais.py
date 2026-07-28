@@ -12,11 +12,15 @@ from core.claude_client import perguntar
 from core.config import AUTO_RESPOSTAS_ML, SPEC
 from core.notificador import alertar_gestor
 from core.produto_lookup import buscar_produto_por_ref
-from integracoes.amazon.amazon_client import listar_mensagens_nao_respondidas as listar_amazon, responder_mensagem as responder_amazon
+from integracoes.amazon.amazon_client import listar_mensagens_nao_respondidas as listar_amazon
+from integracoes.amazon.amazon_client import responder_mensagem as responder_amazon
 from integracoes.bling.bling_client import buscar_produto
-from integracoes.magalu.magalu_client import listar_perguntas_nao_respondidas as listar_magalu, responder_pergunta as responder_magalu
-from integracoes.ml.ml_client import listar_perguntas_nao_respondidas, responder_pergunta as responder_ml
-from integracoes.shopee.shopee_client import listar_perguntas_nao_respondidas as listar_shopee, responder_pergunta as responder_shopee
+from integracoes.magalu.magalu_client import listar_perguntas_nao_respondidas as listar_magalu
+from integracoes.magalu.magalu_client import responder_pergunta as responder_magalu
+from integracoes.ml.ml_client import listar_perguntas_nao_respondidas
+from integracoes.ml.ml_client import responder_pergunta as responder_ml
+from integracoes.shopee.shopee_client import listar_perguntas_nao_respondidas as listar_shopee
+from integracoes.shopee.shopee_client import responder_pergunta as responder_shopee
 
 # Marketplaces ativos conforme spec.yaml — evita chamadas desnecessárias
 _CANAIS_ATIVOS: set[str] = {

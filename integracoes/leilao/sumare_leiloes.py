@@ -22,6 +22,8 @@ from core.config import (
 from core.ddg_lite import buscar as ddg_buscar
 from integracoes.leilao.coletores_base import (
     criar_sessao as _criar_sessao_base,
+)
+from integracoes.leilao.coletores_base import (
     request_com_retry,
 )
 

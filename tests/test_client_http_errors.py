@@ -10,12 +10,11 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests.http_fixtures import make_http_response
-
-import integracoes.ml.ml_client as ml
-import integracoes.magalu.magalu_client as mag
 import integracoes.amazon.amazon_client as amz
+import integracoes.magalu.magalu_client as mag
+import integracoes.ml.ml_client as ml
 import integracoes.shopee.shopee_client as shopee
+from tests.http_fixtures import make_http_response
 
 
 @pytest.mark.usefixtures("env_tokens")

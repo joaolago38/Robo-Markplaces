@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from integracoes.ml import ml_client
 from integracoes.magalu import magalu_client as mag
+from integracoes.ml import ml_client
 
 
 def _resp(status: int, body: dict | None = None) -> MagicMock:

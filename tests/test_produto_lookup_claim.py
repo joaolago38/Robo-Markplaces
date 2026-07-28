@@ -6,7 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from core import chat_claim, produto_lookup as pl
+from core import chat_claim
+from core import produto_lookup as pl
 
 
 class TestProdutoLookup(unittest.TestCase):

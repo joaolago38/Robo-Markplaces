@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
+from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
     COPART_LEILOES_CATALOGO,
     DDG_DISABLED,
@@ -37,10 +38,11 @@ from core.config import (
 )
 from core.ddg_lite import (
     buscar as ddg_buscar,
+)
+from core.ddg_lite import (
     circuit_breaker_ativo,
     mensagem_circuit_breaker,
 )
-from core.atomic_io import ler_json, escrever_json_atomico
 from integracoes.leilao.coletores_base import lote_para_achado
 from integracoes.leilao.fontes import DETRAN_POR_ESTADO, LEILOEIROS_PRINCIPAIS, URLS_CADASTRO_POR_DOMINIO
 
@@ -707,12 +709,12 @@ def obter_lotes_sumare() -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
     try:
         from integracoes.leilao.sumare_leiloes import (
+            _criar_sessao,
             buscar_leiloes_detran_ddg,
             coletar_lotes_leilao,
             eh_veiculo_com_documento,
             filtrar_leiloes_por_comitente,
             listar_leiloes_home,
-            _criar_sessao,
         )
 
         sess = _criar_sessao()

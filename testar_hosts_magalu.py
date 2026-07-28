@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import requests  # noqa: E402
+
 from core.token_manager import get_token_magalu  # noqa: E402
 
 

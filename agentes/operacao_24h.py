@@ -9,10 +9,10 @@ import os
 from datetime import datetime, timezone
 
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
-from agentes.ml.agente_ads_gatilho import executar as verificar_gatilho_ads
-from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
-from agentes.repricing.agente_repricing_impala import executar as repricing_impala
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
+from agentes.ml.agente_ads_gatilho import executar as verificar_gatilho_ads
+from agentes.repricing.agente_repricing_impala import executar as repricing_impala
+from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
 from core.alertas_esmaltes import verificar_todos as verificar_alertas_esmaltes
 from core.atomic_io import escrever_json_atomico
 from core.config import ROOT

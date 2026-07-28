@@ -222,3 +222,5 @@ logs/renovar_bling_local.log
 # Estado operacional local (pausa Claude, orçamento) — não versionar
 logs/claude_toggle.json
 logs/claude_uso_orcamento.json
+# Probes / scratch locais
+_tmp_*.py

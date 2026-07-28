@@ -8,9 +8,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests._stdout_utf8 import capturar_stdout_utf8
-
 import scripts.verificar_marketplaces as vm
+from tests._stdout_utf8 import capturar_stdout_utf8
 
 
 class TestTestarUm(unittest.TestCase):

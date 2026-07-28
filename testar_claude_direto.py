@@ -5,8 +5,9 @@ Rode: .venv\Scripts\python.exe testar_claude_direto.py
 """
 import os
 import sys
-import requests
 from pathlib import Path
+
+import requests
 
 # Carrega .env ou .env.exemplo
 for nome in [".env", ".env.exemplo"]:

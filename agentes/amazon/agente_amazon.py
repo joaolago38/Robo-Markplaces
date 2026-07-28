@@ -5,16 +5,13 @@ Agente da Amazon com integração de mensagens de comprador.
 import logging
 import time
 
-
 from core.claude_client import responder_chat
 from core.notificador import alertar
-from integracoes.bling.bling_client import buscar_produto
 from integracoes.amazon.amazon_client import (
     listar_mensagens_nao_respondidas,
     responder_mensagem,
 )
-
-
+from integracoes.bling.bling_client import buscar_produto
 
 logger = logging.getLogger("agente_amazon")
 

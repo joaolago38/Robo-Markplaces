@@ -13,7 +13,6 @@ from agentes.operacao_24h import (
 )
 from core.config import ACOS_MAXIMO
 
-
 _PAYLOAD_MIN = {
     "kpis_24h": {"receita_24h": 100},
     "marketplaces": {"resumo": {"saudavel": 2, "atencao": 1, "critico": 0}, "marketplaces": {}},

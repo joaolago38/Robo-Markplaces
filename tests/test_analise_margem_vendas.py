@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from agentes.vendas import agente_monitor_margem_vendas as ag
 from integracoes.vendas import analise_margem_vendas as margem
 
-
 _PRODUTOS = [
     {
         "sku": "IMP-BAIL-005",

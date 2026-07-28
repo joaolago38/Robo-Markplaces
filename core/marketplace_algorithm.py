@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+
 from core.config import MARKETPLACE_VARIACAO_ALERTA_PCT
 
 ROOT = Path(__file__).parent.parent

@@ -9,25 +9,25 @@ import logging
 
 from core.config import (
     LUCRO_MINIMO_REPRICING_PCT,
-    REPRICING_ABAIXO_CONCORRENTE_PCT,
     MARGEM_FASE_1_PCT,
     MARGEM_FASE_2_PCT,
     MARGEM_FASE_3_PCT,
-    TAXA_CANAL_PADRAO_PCT,
-    REPRICING_DIFERENCA_MINIMA,
     MONITOR_CONCORRENTES_ARQUIVO,
     PRECIFICACAO_COMPORTAMENTO_ATIVO,
+    REPRICING_ABAIXO_CONCORRENTE_PCT,
+    REPRICING_DIFERENCA_MINIMA,
     ROOT,
+    TAXA_CANAL_PADRAO_PCT,
 )
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
 from core.precificacao_comportamento import calcular_preco_ideal
+from integracoes.amazon.amazon_client import atualizar_preco_item as atualizar_preco_amazon
 from integracoes.bling.bling_client import listar_produtos_por_sku
+from integracoes.magalu.magalu_client import atualizar_preco_item as atualizar_preco_magalu
 from integracoes.ml.ml_client import atualizar_preco_item as atualizar_preco_ml
 from integracoes.ml.ml_client import buscar_menor_preco_concorrente
 from integracoes.shopee.shopee_client import atualizar_preco_item as atualizar_preco_shopee
-from integracoes.magalu.magalu_client import atualizar_preco_item as atualizar_preco_magalu
-from integracoes.amazon.amazon_client import atualizar_preco_item as atualizar_preco_amazon
 
 logger = logging.getLogger("agente_repricing_marketplaces")
 

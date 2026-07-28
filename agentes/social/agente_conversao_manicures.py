@@ -57,6 +57,7 @@ from core.whatsapp import (
     enviar_mensagem,
     whatsapp_grupo_manicures_configurado,
 )
+from integracoes.meta.meta_ads_client import listar_metricas_campanhas
 from integracoes.meta.meta_client import publicar_facebook, publicar_instagram
 from integracoes.meta.meta_inbox import coletar_inbox_meta, responder_comentario
 from integracoes.social.conversao_manicures import (
@@ -72,7 +73,6 @@ from integracoes.social.conversao_manicures import (
     resposta_chat_ml_haiku,
 )
 from integracoes.social.sustentabilidade_ads_ml import monitorar_venda_sustentavel
-from integracoes.meta.meta_ads_client import listar_metricas_campanhas
 
 logger = logging.getLogger("agente_conversao_manicures")
 

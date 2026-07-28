@@ -7,9 +7,9 @@ import logging
 from core.config import (
     META_CPC_MAXIMO,
     META_CTR_MINIMO,
-    META_ROAS_MINIMO,
     META_FREQ_MAXIMA,
     META_GASTO_MINIMO_ALERTA,
+    META_ROAS_MINIMO,
 )
 from core.notificador import alertar_gestor
 from integracoes.meta.meta_ads_client import listar_metricas_campanhas, normalizar_metrica_campanha
