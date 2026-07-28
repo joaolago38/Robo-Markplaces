@@ -5,6 +5,7 @@
     "prioridade": 1,
     "nome": "Filamento TPU",
     "material": "TPU",
+    "alibaba_produto_id": "filamento-impressora-3d-tpu",
     "termo_busca": "filamento tpu flexivel 1kg impressora 3d",
     "limite_resultados": 30
   },
@@ -24,6 +25,7 @@
     "prioridade": 1,
     "nome": "Filamento PETG",
     "material": "PETG",
+    "alibaba_produto_id": "filamento-impressora-3d-petg",
     "termo_busca": "filamento petg 1kg impressora 3d",
     "limite_resultados": 30
   },
@@ -33,6 +35,7 @@
     "prioridade": 1,
     "nome": "Filamento ABS",
     "material": "ABS",
+    "alibaba_produto_id": "filamento-impressora-3d-abs",
     "termo_busca": "filamento abs 1kg impressora 3d",
     "limite_resultados": 30
   },

@@ -20,9 +20,35 @@ class CruzamentoFilamentosTests(unittest.TestCase):
                 {"id": "filamento-impressora-3d-pla", "nome": "PLA", "material": "PLA"}
             )
         )
+        self.assertTrue(
+            cruz._eh_produto_filamento(
+                {"id": "filamento-impressora-3d-tpu", "nome": "TPU", "material": "TPU"}
+            )
+        )
+        self.assertTrue(
+            cruz._eh_produto_filamento(
+                {"id": "filamento-impressora-3d-abs", "nome": "ABS", "material": "ABS"}
+            )
+        )
         self.assertFalse(
             cruz._eh_produto_filamento({"id": "abracadeira", "nome": "Abraçadeira nylon"})
         )
+
+    def test_catalogo_alibaba_tem_quatro_materiais(self):
+        from pathlib import Path
+        import json
+
+        root = Path(__file__).resolve().parent.parent
+        data = json.loads(
+            (root / "catalogo" / "alibaba_produtos_importacao.json").read_text(encoding="utf-8")
+        )
+        mats = {
+            str(p.get("material") or "").upper()
+            for p in data
+            if p.get("ativo") and cruz._eh_produto_filamento(p)
+        }
+        for m in ("TPU", "PLA", "PETG", "ABS"):
+            self.assertIn(m, mats)
 
     def test_carregar_produtos_filtro(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -201,7 +227,10 @@ class CruzamentoFilamentosTests(unittest.TestCase):
             fmt_brl=lambda v: f"R$ {v}" if v else "n/d",
         )
         texto = "\n".join(linhas)
-        self.assertIn("Cruzamento Alibaba", texto)
+        self.assertIn("Comparativo ML × Alibaba", texto)
+        self.assertIn("*PLA*", texto)
+        self.assertIn("ML:", texto)
+        self.assertIn("Alibaba:", texto)
         self.assertIn("Preto", texto)
 
     def test_formatar_secao_erro(self):

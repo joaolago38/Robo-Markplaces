@@ -264,7 +264,7 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
         self.assertIn("TPU · PLA · PETG · ABS", msg)
         self.assertIn("Por material (TPU / PLA / PETG / ABS)", msg)
         self.assertIn("eSUN", msg)
-        self.assertIn("Cruzamento Alibaba", msg)
+        self.assertIn("Comparativo ML × Alibaba", msg)
 
 
 if __name__ == "__main__":
