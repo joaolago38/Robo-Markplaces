@@ -62,12 +62,16 @@ def _reset_telegram_gate():
 def _claude_ligado_nos_testes(tmp_path_factory):
     """
     Pausa operacional (CLAUDE_ATIVO=0 / logs/claude_toggle.json) não deve quebrar CI.
-    Testes do próprio toggle usam patch próprio e sobrescrevem estes caminhos.
+    Isola também USO_PATH para mocks Claude não poluírem logs/claude_uso_orcamento.json.
+    Testes do próprio toggle/orçamento usam patch próprio e sobrescrevem estes caminhos.
     """
-    toggle = tmp_path_factory.mktemp("claude_toggle") / "claude_toggle.json"
+    base = tmp_path_factory.mktemp("claude_estado")
+    toggle = base / "claude_toggle.json"
+    uso = base / "claude_uso_orcamento.json"
     with ExitStack() as stack:
         stack.enter_context(patch("core.config.CLAUDE_ATIVO", True))
         stack.enter_context(patch("core.claude_toggle.TOGGLE_PATH", toggle))
+        stack.enter_context(patch("core.claude_orcamento.USO_PATH", uso))
         yield
 
 

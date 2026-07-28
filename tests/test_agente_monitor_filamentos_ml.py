@@ -266,6 +266,46 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
         self.assertIn("eSUN", msg)
         self.assertIn("Comparativo ML × Alibaba", msg)
 
+    @patch.object(agente, "alertar_gestor", return_value=True)
+    @patch.object(agente, "cruzar_filamentos_ml_alibaba")
+    @patch.object(agente.ml_client, "buscar_concorrentes_por_termo", return_value=[])
+    @patch.object(agente, "_carregar_termos")
+    def test_cruzamento_cambio_falhou_alerta(self, mock_termos, _busca, mock_cruzar, mock_alertar):
+        mock_termos.return_value = [
+            {
+                "id": "fil-pla",
+                "ativo": True,
+                "nome": "PLA",
+                "material": "PLA",
+                "termo_busca": "filamento pla",
+                "limite_resultados": 5,
+                "prioridade": 1,
+            }
+        ]
+        mock_cruzar.return_value = {
+            "ok": False,
+            "motivo": "cambio: fallback",
+            "cruzamentos": [],
+            "lucrativos": 0,
+        }
+        with patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
+            agente, "HISTORY_PATH", self.tmp_path / "hist.json"
+        ), patch.object(agente, "SERIES_PATH", self.tmp_path / "series.json"), patch.object(
+            agente, "GRAFICO_PATH", self.tmp_path / "g.png"
+        ), patch.object(agente, "enviar_foto_gestor", return_value=True), patch.object(
+            agente, "gestor_telegram_configurado", return_value=True
+        ), patch.object(agente, "FILAMENTOS_ML_PAUSA_SEG", 0), patch.object(
+            agente, "FILAMENTOS_ML_CRUZAR_ALIBABA", True
+        ), patch.object(agente, "FILAMENTOS_ML_ALERTA_RESUMO", False):
+            out = agente.executar(enviar_alerta=True)
+        self.assertTrue(out["ok"])
+        self.assertTrue(
+            any(
+                "cruzamento_cambio_falhou" in str(c.kwargs.get("chave", ""))
+                for c in mock_alertar.call_args_list
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

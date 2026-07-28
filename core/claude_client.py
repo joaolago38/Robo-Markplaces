@@ -105,8 +105,10 @@ def perguntar(
                 resultado="bloqueado",
             )
             return f"⚠️ Claude pausado: {motivo_orc}"
-    except Exception:
-        pass
+    except Exception as exc:
+        # Fail-closed: sem gate confiável não chama a API (evita gastar USD).
+        logger.warning("Gate Claude falhou — bloqueando: %s", exc)
+        return f"⚠️ Claude pausado: gate_indisponivel ({exc})"
 
     mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
 
@@ -164,12 +166,16 @@ def perguntar(
             from core.claude_orcamento import classificar_resultado_texto as _cls
             from core.claude_orcamento import registrar_uso as _reg
 
+            resultado = _cls(texto)
+            # Resposta sem usage (ex.: mock/teste) não conta como ok real no orçamento
+            if resultado == "ok" and tin <= 0 and tout <= 0:
+                resultado = "vazio"
             _reg(
                 modelo=modelo_efetivo,
                 input_tokens=tin,
                 output_tokens=tout,
                 tipo="perguntar",
-                resultado=_cls(texto),
+                resultado=resultado,
             )
         except Exception:
             pass
@@ -235,8 +241,9 @@ def perguntar_estruturado(
                 resultado="bloqueado",
             )
             return None
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Gate Claude estruturado falhou — bloqueando: %s", exc)
+        return None
     mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
     _tags = [f"modelo:{modelo_efetivo}", f"tool:{tool_name}"]
     inicio = time.monotonic()
@@ -281,7 +288,13 @@ def perguntar_estruturado(
         for bloco in data.get("content", []):
             if bloco.get("type") == "tool_use" and bloco.get("name") == tool_name:
                 payload_out = bloco.get("input") or {}
-                resultado_final = "ok" if payload_out else "vazio"
+                # Sem tokens de usage, não marcar ok (evita assertividade falsa de mocks)
+                if payload_out and (tin > 0 or tout > 0):
+                    resultado_final = "ok"
+                elif payload_out:
+                    resultado_final = "vazio"
+                else:
+                    resultado_final = "vazio"
                 break
         if payload_out is None:
             incrementar("ia.resposta_vazia", tags=_tags)

@@ -32,7 +32,8 @@ REGRAS = SPEC.get("regras_negocio", {})
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
 # Toggle mestre: 0 = pausa TODAS as chamadas Claude (sem gastar token/USD)
 # Também existe logs/claude_toggle.json (scripts/toggle_claude.py) para pausa momentânea.
-CLAUDE_ATIVO = os.getenv("CLAUDE_ATIVO", "1").strip().lower() not in (
+# Default OFF: exige opt-in explícito (CLAUDE_ATIVO=1) para gastar créditos.
+CLAUDE_ATIVO = os.getenv("CLAUDE_ATIVO", "0").strip().lower() not in (
     "0",
     "false",
     "no",
@@ -713,7 +714,8 @@ ORQUESTRADOR_EXCLUIR = {
         "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
         "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
-        "montar_kits_impala,leilao,alibaba,licitacoes",
+        "montar_kits_impala,leilao,alibaba,alibaba_inteligencia,"
+        "ml_tendencias_importacao,monitor_filamentos_ml,licitacoes",
     ).split(",")
     if x.strip()
 }

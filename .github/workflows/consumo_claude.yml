@@ -9,7 +9,8 @@ on:
     - cron: "15 0,6,12,18 * * *"
 
 concurrency:
-  group: robo-markplaces-consumo-claude
+  # Serializa gravações do cache Claude (uso/toggle) entre painéis e agentes de IA
+  group: robo-markplaces-claude-estado
   cancel-in-progress: false
 
 env:

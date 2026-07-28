@@ -17,7 +17,7 @@ from typing import Any
 from core.atomic_io import escrever_json_atomico
 from core.config import ALIBABA_IMPORTACAO_CATALOGO, ROOT
 from integracoes.alibaba.busca import buscar_oportunidades
-from integracoes.cambio.cotacao_usd import obter_cotacao_usd
+from integracoes.cambio.cotacao_usd import cotacao_confiavel_para_margem, obter_cotacao_usd
 from integracoes.importacao.calculo_importacao_aerea import (
     calcular_para_produto_alibaba,
     exportar_csv_resultado,
@@ -28,6 +28,25 @@ logger = logging.getLogger("agente_calculo_importacao_aerea")
 
 LOG_DIR = ROOT / "logs"
 SNAPSHOT_PATH = LOG_DIR / "importacao_aerea_ultima.json"
+
+
+def _cambio_para_calculo(cambio_usd_brl: float | None = None) -> tuple[float, dict[str, Any] | None, str | None]:
+    """
+    Retorna (cambio, cotacao_ou_None, erro_ou_None).
+    Cotação automática só segue se for confiável (não fallback).
+    Câmbio explícito do caller é aceito (override consciente).
+    """
+    if cambio_usd_brl is not None and float(cambio_usd_brl) > 0:
+        return float(cambio_usd_brl), None, None
+    cotacao = obter_cotacao_usd()
+    cambio = float(cotacao.get("usd_brl") or 0)
+    if cambio <= 0:
+        return 0.0, cotacao, "câmbio inválido"
+    if not cotacao_confiavel_para_margem(cotacao):
+        motivo = str(cotacao.get("fonte") or cotacao.get("erro") or "fallback/desatualizada")
+        return 0.0, cotacao, f"câmbio não confiável para margem ({motivo})"
+    return cambio, cotacao, None
+
 
 
 def _carregar_produtos() -> list[dict[str, Any]]:
@@ -53,12 +72,9 @@ def executar_para_oportunidade(
     salvar_csv: bool = True,
 ) -> dict[str, Any]:
     """Calcula custo formal aéreo para um produto + listing Alibaba."""
-    cambio = cambio_usd_brl
-    if cambio is None or cambio <= 0:
-        cotacao = obter_cotacao_usd()
-        cambio = float(cotacao.get("usd_brl") or 0)
-    if cambio <= 0:
-        return {"ok": False, "motivo": "câmbio inválido"}
+    cambio, _cotacao, erro_cambio = _cambio_para_calculo(cambio_usd_brl)
+    if erro_cambio:
+        return {"ok": False, "motivo": erro_cambio, "cotacao": _cotacao}
 
     perfil = obter_perfil_importador()
     resultado = calcular_para_produto_alibaba(produto, oportunidade, cambio_usd_brl=cambio)
@@ -113,8 +129,10 @@ def executar(
     if not produtos:
         return {"ok": False, "motivo": f"produto não encontrado: {produto_id or 'catálogo vazio'}"}
 
-    cotacao = obter_cotacao_usd()
-    cambio = float(cotacao.get("usd_brl") or 0)
+    cambio, cotacao, erro_cambio = _cambio_para_calculo(None)
+    if erro_cambio:
+        return {"ok": False, "motivo": erro_cambio, "cotacao": cotacao}
+    cotacao = cotacao or {"usd_brl": cambio}
     resultados: list[dict[str, Any]] = []
 
     for produto in produtos:

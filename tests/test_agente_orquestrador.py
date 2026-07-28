@@ -22,6 +22,9 @@ class TestRegistroAgentes(unittest.TestCase):
         # Rotinas com workflow próprio ficam em ORQUESTRADOR_EXCLUIR (default)
         self.assertNotIn("leilao", ids)
         self.assertNotIn("alibaba", ids)
+        self.assertNotIn("alibaba_inteligencia", ids)
+        self.assertNotIn("ml_tendencias_importacao", ids)
+        self.assertNotIn("monitor_filamentos_ml", ids)
         self.assertNotIn("necessidade_manicures", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", set())

@@ -61,6 +61,15 @@ class TestClaudeOrcamento(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("esgotado", motivo)
 
+    def test_pode_chamar_fail_closed_toggle_quebra(self):
+        with patch(
+            "core.claude_toggle.claude_esta_ativo",
+            side_effect=RuntimeError("boom"),
+        ):
+            ok, motivo = o.pode_chamar()
+        self.assertFalse(ok)
+        self.assertIn("toggle_indisponivel", motivo)
+
     @patch.object(o, "_talvez_alertar")
     def test_assertividade_por_origem(self, _alerta):
         with patch.object(o, "_cfg") as cfg:
