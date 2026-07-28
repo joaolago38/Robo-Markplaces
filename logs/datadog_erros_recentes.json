@@ -1,26 +1,81 @@
 {
   "erros": [
     {
+      "fingerprint": "8f4e62c3e4fd79e1be9d",
+      "primeira_vez": "2026-07-28T17:02:37.340783+00:00",
+      "ultima_vez": "2026-07-28T17:05:32.322048+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML listar_meus_anuncios erro: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153/items/search?status=active&limit=100&offset=0 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "7428764c08b7ae020eb2",
+      "primeira_vez": "2026-07-28T17:02:36.785126+00:00",
+      "ultima_vez": "2026-07-28T17:05:31.817485+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153/items/search?status=active&limit=100&offset=0 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153/items/search?status=active&limit=100&offset=0 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certifica",
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "9c4d23823377e5494a83",
+      "primeira_vez": "2026-07-28T17:02:29.076270+00:00",
+      "ultima_vez": "2026-07-28T17:05:24.396211+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token ML: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "10b423f688e9d2288334",
+      "primeira_vez": "2026-07-28T17:02:28.112038+00:00",
+      "ultima_vez": "2026-07-28T17:05:23.357287+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 2
+    },
+    {
       "fingerprint": "cecaf1fe419184e2b12c",
       "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
-      "ultima_vez": "2026-07-14T15:25:37.968535+00:00",
+      "ultima_vez": "2026-07-28T17:03:29.193571+00:00",
       "logger": "notificador",
       "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 15
+      "ocorrencias": 17
     },
     {
       "fingerprint": "932ec7d3ef9c57e06c2d",
       "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
-      "ultima_vez": "2026-07-14T15:25:37.961698+00:00",
+      "ultima_vez": "2026-07-28T17:03:28.710054+00:00",
       "logger": "http_client",
       "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "status": "error",
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 15
+      "ocorrencias": 17
+    },
+    {
+      "fingerprint": "9b96db47ef26d9d95913",
+      "primeira_vez": "2026-07-14T11:46:19.185797+00:00",
+      "ultima_vez": "2026-07-28T17:03:09.597895+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../getMe (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../getMe (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 2
     },
     {
       "fingerprint": "ee9e1449eb1e2b213968",
@@ -43,17 +98,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 4
-    },
-    {
-      "fingerprint": "9b96db47ef26d9d95913",
-      "primeira_vez": "2026-07-14T11:46:19.185797+00:00",
-      "ultima_vez": "2026-07-14T11:46:19.185797+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP GET api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../getMe (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": "SSLError",
-      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../getMe (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 1
     },
     {
       "fingerprint": "0b73de2bc1cf19630d64",
@@ -1605,51 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "fd8ca71830b54e70ca86",
-      "primeira_vez": "2026-07-05T20:46:22.326389+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.314529+00:00",
-      "logger": "agente_otimizador_listing",
-      "mensagem": "analisar_item erro item_id=MLB-ERR: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "bf49c60623fc0b8993d6",
-      "primeira_vez": "2026-07-05T20:46:22.319782+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.307951+00:00",
-      "logger": "claude",
-      "mensagem": "Claude erro (estruturado, tool=registrar_sugestoes_titulo): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "status": "error",
-      "error_kind": "HTTPError",
-      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "7a3878bf35a0848bd342",
-      "primeira_vez": "2026-07-05T20:46:21.700908+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.955866+00:00",
-      "logger": "lojahub",
-      "mensagem": "Lojahub listar_resumo_vendas_24h erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "5bc70292bb9cc208eea8",
-      "primeira_vez": "2026-07-05T20:46:21.674889+00:00",
-      "ultima_vez": "2026-07-05T21:19:05.922782+00:00",
-      "logger": "lojahub",
-      "mensagem": "Lojahub listar_pedidos_pendentes erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     }
   ],
-  "atualizado_em": "2026-07-14T15:25:37.968535+00:00"
+  "atualizado_em": "2026-07-28T17:05:32.322048+00:00"
 }
