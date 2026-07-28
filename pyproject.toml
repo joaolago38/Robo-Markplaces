@@ -41,10 +41,11 @@ omit = [
     "agentes/social/agente_conversao_manicures.py",
     "agentes/social/agente_necessidade_manicures.py",
     "agentes/infra/agente_consumo_claude.py",
-    # Conversão manicures: I/O Meta/WA/ML; lógica coberta em tests/test_conversao_manicures.py
+    # Conversão / necessidade manicures: I/O Meta/WA/ML; lógica em tests dedicados
     "integracoes/meta/meta_inbox.py",
     "integracoes/social/conversao_manicures.py",
     "integracoes/social/sustentabilidade_ads_ml.py",
+    "integracoes/social/necessidade_manicures.py",
 ]
 
 [tool.ruff]

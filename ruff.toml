@@ -1,4 +1,13 @@
 # Configuração do ruff — alinhada ao CI: ruff check .
+line-length = 120
 
 [lint]
-per-file-ignores = { "tests/**" = ["E402"], "scripts/**" = ["E402"] }
+# Regras padrão (E4/E7/E9/F) + isort. BLE001 ignorado de propósito:
+# agentes/integrações engolem Exception para fail-soft em I/O de marketplace.
+select = ["E4", "E7", "E9", "F", "I"]
+ignore = ["BLE001"]
+
+[lint.per-file-ignores]
+"tests/**" = ["E402"]
+"scripts/**" = ["E402"]
+"_tmp_*.py" = ["ALL"]
