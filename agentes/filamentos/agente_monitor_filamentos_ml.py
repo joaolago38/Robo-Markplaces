@@ -260,6 +260,20 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 max_cores=FILAMENTOS_ML_ALIBABA_MAX_CORES,
                 pausa_seg=FILAMENTOS_ML_ALIBABA_PAUSA_SEG,
             )
+            if not cruzamento.get("ok"):
+                logger.warning(
+                    "Cruzamento filamentos ML×Alibaba falhou: %s",
+                    cruzamento.get("motivo"),
+                )
+                if enviar_alerta and gestor_telegram_configurado():
+                    alertar_gestor(
+                        "⚠️ *Filamentos ML × Alibaba*\n"
+                        f"Cruzamento sem margem confiável: `{cruzamento.get('motivo', '?')}`\n"
+                        "_Câmbio fallback ou catálogo — não use estes números para decisão._",
+                        chave="filamentos:cruzamento_cambio_falhou",
+                        cooldown_segundos=max(FILAMENTOS_ML_ALERTA_COOLDOWN_SEG, 6 * 3600),
+                        agente_id="monitor_filamentos_ml",
+                    )
             gauge(
                 "filamentos.ml.alibaba_ofertas",
                 float(

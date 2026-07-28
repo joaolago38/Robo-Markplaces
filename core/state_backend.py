@@ -174,6 +174,7 @@ class DynamoDBStateBackend(StateBackend):
             Item={
                 "chave": chave,
                 "dados": json.dumps(dados, ensure_ascii=False, default=_json_default),
+                "version": 1,
             }
         )
 
@@ -183,17 +184,95 @@ class DynamoDBStateBackend(StateBackend):
         funcao_atualizar: Callable[[Any], Any],
         default: Any = None,
     ) -> Any:
+        """Atualização otimista com version — evita last-write-wins entre runners."""
+        from botocore.exceptions import ClientError
+
         chave = self._chave(caminho)
-        with self.lock_exclusivo(chave):
-            dados = self.ler_json(caminho, default)
+        for tentativa in range(8):
+            try:
+                resp = self._table.get_item(Key={"chave": chave})
+            except Exception as exc:
+                logger.error("DynamoDB ler_e_atualizar get falhou chave=%s: %s", chave, exc)
+                raise
+            item = resp.get("Item") or {}
+            version = int(item.get("version") or 0)
+            dados = self._item_para_dados(item if item else None, default)
             dados_novos = funcao_atualizar(dados)
-            self.escrever_json_atomico(caminho, dados_novos)
-            return dados_novos
+            novo_item = {
+                "chave": chave,
+                "dados": json.dumps(dados_novos, ensure_ascii=False, default=_json_default),
+                "version": version + 1,
+            }
+            try:
+                if not item:
+                    self._table.put_item(
+                        Item=novo_item,
+                        ConditionExpression="attribute_not_exists(chave)",
+                    )
+                else:
+                    self._table.put_item(
+                        Item=novo_item,
+                        ConditionExpression="version = :v OR attribute_not_exists(version)",
+                        ExpressionAttributeValues={":v": version},
+                    )
+                return dados_novos
+            except ClientError as exc:
+                if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+                    raise
+                logger.warning(
+                    "DynamoDB conflito otimista chave=%s tentativa=%s",
+                    chave,
+                    tentativa + 1,
+                )
+        raise RuntimeError(f"DynamoDB ler_e_atualizar esgotou retries chave={chave}")
 
     @contextmanager
     def lock_exclusivo(self, caminho_lock: Path | str) -> Iterator[None]:
-        # DynamoDB serializa por item; lock de arquivo não se aplica.
-        yield
+        """Lock distribuído via item dedicado com TTL curto (evita no-op entre runners)."""
+        import time
+
+        from botocore.exceptions import ClientError
+
+        # Quando chamado de fora, caminho_lock pode ser Path; de ler_e_atualizar legado era chave.
+        try:
+            lock_id = self._chave(caminho_lock)
+        except Exception:
+            lock_id = str(caminho_lock)
+        lock_chave = f"__lock__:{lock_id}"
+        ttl_seg = 120
+        adquirido = False
+        for _ in range(30):
+            agora = int(time.time())
+            try:
+                self._table.put_item(
+                    Item={
+                        "chave": lock_chave,
+                        "owner": os.getpid(),
+                        "expires_at": agora + ttl_seg,
+                        "ttl": agora + ttl_seg,
+                    },
+                    ConditionExpression=(
+                        "attribute_not_exists(chave) OR expires_at < :agora"
+                    ),
+                    ExpressionAttributeValues={":agora": agora},
+                )
+                adquirido = True
+                break
+            except ClientError as exc:
+                if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+                    logger.warning("DynamoDB lock falhou (%s) — seguindo sem lock", exc)
+                    yield
+                    return
+                time.sleep(0.2)
+        if not adquirido:
+            raise RuntimeError(f"DynamoDB lock timeout: {lock_chave}")
+        try:
+            yield
+        finally:
+            try:
+                self._table.delete_item(Key={"chave": lock_chave})
+            except Exception as exc:
+                logger.debug("DynamoDB unlock: %s", exc)
 
 
 _backend: StateBackend | None = None

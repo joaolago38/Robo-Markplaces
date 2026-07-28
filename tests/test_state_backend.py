@@ -88,6 +88,13 @@ class TestDynamoDBStateBackend(unittest.TestCase):
         out = self.backend.ler_e_atualizar_json(caminho, _inc, default={})
         self.assertEqual(out["n"], 2)
 
+    def test_lock_exclusivo_adquire_e_libera(self):
+        with self.backend.lock_exclusivo("dados/lock_teste.json"):
+            pass
+        # Segundo acquire após release deve funcionar
+        with self.backend.lock_exclusivo("dados/lock_teste.json"):
+            pass
+
     def test_idempotente_sobrescreve(self):
         caminho = "catalogo/produtos.json"
         self.backend.escrever_json_atomico(caminho, {"v": 1})

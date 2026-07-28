@@ -47,6 +47,21 @@ class AgenteCalculoImportacaoAereaTests(unittest.TestCase):
             )
         self.assertFalse(out["ok"])
 
+    def test_executar_para_oportunidade_cambio_fallback_bloqueia(self):
+        with patch(
+            "agentes.importacao.agente_calculo_importacao_aerea.obter_cotacao_usd",
+            return_value={"usd_brl": 5.5, "fonte": "fallback"},
+        ), patch(
+            "agentes.importacao.agente_calculo_importacao_aerea.cotacao_confiavel_para_margem",
+            return_value=False,
+        ):
+            out = agente.executar_para_oportunidade(
+                self.PRODUTO,
+                {"preco_usd": 4.0, "moq": 1},
+            )
+        self.assertFalse(out["ok"])
+        self.assertIn("não confiável", out.get("motivo", ""))
+
     @patch("agentes.importacao.agente_calculo_importacao_aerea.executar_para_oportunidade")
     @patch("agentes.importacao.agente_calculo_importacao_aerea.buscar_oportunidades")
     def test_executar_para_produto_sem_alibaba(self, mock_busca, mock_exec):
@@ -56,12 +71,13 @@ class AgenteCalculoImportacaoAereaTests(unittest.TestCase):
         self.assertTrue(out["ok"])
 
     @patch("agentes.importacao.agente_calculo_importacao_aerea.executar_para_produto")
+    @patch("agentes.importacao.agente_calculo_importacao_aerea.cotacao_confiavel_para_margem", return_value=True)
     @patch("agentes.importacao.agente_calculo_importacao_aerea.obter_cotacao_usd")
     @patch("agentes.importacao.agente_calculo_importacao_aerea._carregar_produtos")
     @patch("agentes.importacao.agente_calculo_importacao_aerea.escrever_json_atomico")
-    def test_executar_catalogo(self, mock_json, mock_prod, mock_cambio, mock_exec):
+    def test_executar_catalogo(self, mock_json, mock_prod, mock_cambio, _confiavel, mock_exec):
         mock_prod.return_value = [self.PRODUTO]
-        mock_cambio.return_value = {"usd_brl": 5.5}
+        mock_cambio.return_value = {"usd_brl": 5.5, "fonte": "awesomeapi"}
         mock_exec.return_value = {"ok": True, "custo_unitario_brl": 12.0, "custo_total_brl": 120.0}
         out = agente.executar(buscar_alibaba=False)
         self.assertTrue(out["ok"])

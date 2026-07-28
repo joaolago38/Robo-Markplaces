@@ -275,14 +275,14 @@ HORARIOS_AGENTES: dict[str, str] = {
     "consumo_claude": "A cada 6h (Actions) + alerta a cada uso Claude",
     "monitor_margem_vendas": "A cada 3h (Actions) e a cada 30 min (orquestrador)",
     "inteligencia_precos": "A cada 30 min (orquestrador)",
-    "leilao": "A cada hora (Actions) e a cada 30 min (orquestrador)",
+    "leilao": "A cada hora (Actions); fora do orquestrador 30 min",
     "sumare_leiloes": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
     "lojas_veiculos": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
     "carros_batidos": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
-    "licitacoes": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
-    "alibaba": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
-    "alibaba_inteligencia": "A cada 2h (Actions Alibaba) e a cada 30 min (orquestrador)",
-    "ml_tendencias_importacao": "A cada 2h (Actions Alibaba) e a cada 30 min (orquestrador)",
+    "licitacoes": "A cada 4h (Actions); fora do orquestrador 30 min",
+    "alibaba": "A cada 2h (Actions); fora do orquestrador 30 min",
+    "alibaba_inteligencia": "A cada 2h (Actions Alibaba); fora do orquestrador 30 min",
+    "ml_tendencias_importacao": "A cada 2h (Actions Alibaba); fora do orquestrador 30 min",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
     "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions) e a cada 30 min (orquestrador)",
@@ -305,7 +305,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "comparativo_ml_shopee": (
         "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
-    "monitor_filamentos_ml": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_filamentos_ml": "A cada 6h (Actions); fora do orquestrador 30 min",
     "monitor_acetona_cruzeiro": (
         "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),

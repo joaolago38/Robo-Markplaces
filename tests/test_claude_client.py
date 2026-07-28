@@ -27,6 +27,19 @@ class TestClaudePerguntar(unittest.TestCase):
         )
         self._toggle.start()
         self.addCleanup(self._toggle.stop)
+        # Isola orçamento real mesmo fora do pytest (unittest direto)
+        import tempfile
+        from pathlib import Path
+
+        from core import claude_orcamento as _orc
+
+        self._tmp_uso = tempfile.TemporaryDirectory()
+        self._uso = patch.object(
+            _orc, "USO_PATH", Path(self._tmp_uso.name) / "uso.json"
+        )
+        self._uso.start()
+        self.addCleanup(self._uso.stop)
+        self.addCleanup(self._tmp_uso.cleanup)
 
     @patch.object(claude_client, "ANTHROPIC_API_KEY", "")
     def test_CC01_pergunta_sem_api_key(self, *_patches):

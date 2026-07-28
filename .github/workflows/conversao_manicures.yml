@@ -10,7 +10,8 @@ on:
     - cron: "0 1,5,9,13,17,21 * * *"
 
 concurrency:
-  group: robo-markplaces-conversao-manicures
+  # Inclui Claude estado: conversão grava uso/toggle no mesmo cache Actions
+  group: robo-markplaces-claude-estado
   cancel-in-progress: false
 
 env:

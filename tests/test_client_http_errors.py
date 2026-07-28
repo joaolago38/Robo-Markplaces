@@ -56,5 +56,15 @@ class TestClientHttpErrors(unittest.TestCase):
             self.assertFalse(ok)
 
 
+class TestMascararSegredosHttp(unittest.TestCase):
+    def test_redige_access_token_em_url(self):
+        from core.http_errors import mascarar_segredos_http
+
+        bruto = "GET https://partner.shopeemobile.com/api?access_token=segredo123&shop_id=1"
+        out = mascarar_segredos_http(bruto)
+        self.assertNotIn("segredo123", out)
+        self.assertIn("access_token=***", out)
+
+
 if __name__ == "__main__":
     unittest.main()

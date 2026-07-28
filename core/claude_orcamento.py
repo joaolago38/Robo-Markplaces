@@ -198,6 +198,7 @@ def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
 
 
 def pode_chamar() -> tuple[bool, str]:
+    """Fail-closed: qualquer erro no toggle/orçamento bloqueia a chamada."""
     try:
         from core.claude_toggle import claude_esta_ativo
 
@@ -205,18 +206,23 @@ def pode_chamar() -> tuple[bool, str]:
         if not ok_t:
             return False, f"Claude desligado: {motivo_t}"
     except Exception as exc:
-        logger.debug("toggle Claude indisponível: %s", exc)
+        logger.warning("toggle Claude indisponível — bloqueando chamadas: %s", exc)
+        return False, f"Claude desligado: toggle_indisponivel ({exc})"
 
-    c = _cfg()
-    if not getattr(c, "CLAUDE_ORCAMENTO_ATIVO", True):
+    try:
+        c = _cfg()
+        if not getattr(c, "CLAUDE_ORCAMENTO_ATIVO", True):
+            return True, ""
+        r = resumo()
+        if r["bloqueado"] or r["restante_usd"] <= 0:
+            return False, (
+                f"orçamento Claude esgotado "
+                f"(US$ {r['consumido_usd']:.4f} / {r['orcamento_usd']:.2f})"
+            )
         return True, ""
-    r = resumo()
-    if r["bloqueado"] or r["restante_usd"] <= 0:
-        return False, (
-            f"orçamento Claude esgotado "
-            f"(US$ {r['consumido_usd']:.4f} / {r['orcamento_usd']:.2f})"
-        )
-    return True, ""
+    except Exception as exc:
+        logger.warning("orçamento Claude indisponível — bloqueando chamadas: %s", exc)
+        return False, f"Claude desligado: orcamento_indisponivel ({exc})"
 
 
 def _limiares_cruzados(antes_pct: float, depois_pct: float) -> list[int]:

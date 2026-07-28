@@ -17,7 +17,7 @@ from core.config import (
 )
 from core.datadog_metrics import incrementar
 from core.http_client import request
-from core.http_errors import log_http_erro_listagem, status_http
+from core.http_errors import log_http_erro_listagem, mascarar_segredos_http, status_http
 from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.token_manager import get_token_shopee
 
@@ -111,8 +111,9 @@ def probe_conexao() -> dict:
             return {"ok": False, "status": 403, "msg": "sem permissão — verifique escopos do app Shopee"}
         return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
     except Exception as exc:
-        logger.error("Shopee probe_conexao erro: %s", exc)
-        return {"ok": False, "status": 0, "msg": str(exc)}
+        err = mascarar_segredos_http(str(exc))
+        logger.error("Shopee probe_conexao erro: %s", err)
+        return {"ok": False, "status": 0, "msg": err}
 
 
 def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: int = 3) -> tuple[list[dict], bool]:
@@ -165,7 +166,7 @@ def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: 
         return comentarios, True
     except Exception as exc:
         incrementar("dados.degradado", tags=["contexto:Shopee_listar_perguntas_nao_respondidas", "motivo:excecao"])
-        logger.error("Shopee listar_perguntas_nao_respondidas erro: %s", exc)
+        logger.error("Shopee listar_perguntas_nao_respondidas erro: %s", mascarar_segredos_http(str(exc)))
         return comentarios, False
 
 
@@ -195,7 +196,7 @@ def responder_pergunta(item_id: int, comment_id: int, texto: str) -> bool:
         body = r.json()
         return not _tem_erro_api(body)
     except Exception as exc:
-        logger.error("Shopee responder_pergunta erro item=%s comment=%s: %s", item_id, comment_id, exc)
+        logger.error("Shopee responder_pergunta erro item=%s comment=%s: %s", item_id, comment_id, mascarar_segredos_http(str(exc)))
         return False
 
 
@@ -238,7 +239,7 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
                 "alerta": sem_acesso_atual >= limite_dias_sem_acesso,
             }
         except Exception as exc:
-            logger.error("Shopee manter_conta_ativa erro: %s", exc)
+            logger.error("Shopee manter_conta_ativa erro: %s", mascarar_segredos_http(str(exc)))
             sem_acesso_atual = dias_sem_acesso("shopee")
             return {
                 "ok": False,
@@ -300,7 +301,7 @@ def atualizar_preco_item(item_id: int, novo_preco: float, model_id: int | None =
         body = r.json()
         return not _tem_erro_api(body)
     except Exception as exc:
-        logger.error("Shopee atualizar_preco_item erro item_id=%s: %s", item_id, exc)
+        logger.error("Shopee atualizar_preco_item erro item_id=%s: %s", item_id, mascarar_segredos_http(str(exc)))
         return False
 
 
@@ -330,7 +331,7 @@ def atualizar_estoque_item(item_id: int, novo_estoque: int, model_id: int | None
         body = r.json()
         return not _tem_erro_api(body)
     except Exception as exc:
-        logger.error("Shopee atualizar_estoque_item erro item_id=%s: %s", item_id, exc)
+        logger.error("Shopee atualizar_estoque_item erro item_id=%s: %s", item_id, mascarar_segredos_http(str(exc)))
         return False
 
 
@@ -476,7 +477,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
         return out, True
     except Exception as exc:
         incrementar("dados.degradado", tags=["contexto:Shopee_listar_pedidos", "motivo:excecao"])
-        logger.error("Shopee listar_pedidos erro: %s", exc)
+        logger.error("Shopee listar_pedidos erro: %s", mascarar_segredos_http(str(exc)))
         return [], False
 
 
