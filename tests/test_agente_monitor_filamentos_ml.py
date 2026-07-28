@@ -1,6 +1,7 @@
 """
 tests/test_agente_monitor_filamentos_ml.py
 """
+import json
 import os
 import sys
 import tempfile
@@ -21,29 +22,134 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_materiais_monitorados(self):
+        self.assertEqual(agente.MATERIAIS_MONITORADOS, ("TPU", "PLA", "PETG", "ABS"))
+
+    def test_catalogo_ativo_tem_tpu_pla_petg_abs(self):
+        root = Path(__file__).resolve().parent.parent
+        data = json.loads((root / "catalogo" / "filamentos_3d_monitor.json").read_text(encoding="utf-8"))
+        ativos = {str(t.get("material") or "").upper() for t in data if t.get("ativo")}
+        for mat in ("TPU", "PLA", "PETG", "ABS"):
+            self.assertIn(mat, ativos)
+
+    def test_resumo_por_material(self):
+        linhas = agente._resumo_por_material(
+            [
+                {
+                    "ok": True,
+                    "material": "TPU",
+                    "total_filamentos": 3,
+                    "preco_medio": 120.0,
+                    "preco_min": 100.0,
+                    "preco_max": 140.0,
+                },
+                {
+                    "ok": True,
+                    "material": "PLA",
+                    "total_filamentos": 10,
+                    "preco_medio": 80.0,
+                    "preco_min": 60.0,
+                    "preco_max": 100.0,
+                },
+                {
+                    "ok": True,
+                    "material": "PLA",
+                    "total_filamentos": 5,
+                    "preco_medio": 85.0,
+                    "preco_min": 70.0,
+                    "preco_max": 95.0,
+                },
+            ]
+        )
+        texto = "\n".join(linhas)
+        self.assertIn("*TPU*", texto)
+        self.assertIn("*PLA*", texto)
+        self.assertIn("*PETG*: sem anúncios", texto)
+        self.assertIn("*ABS*: sem anúncios", texto)
+        self.assertIn("15 anúncio(s)", texto)  # 10+5 PLA
+
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente.ml_client, "buscar_concorrentes_por_termo")
     @patch.object(agente, "_carregar_termos")
     def test_executar_envia_telegram(self, mock_termos, mock_busca, mock_alertar):
         mock_termos.return_value = [
             {
-                "id": "fil-pla",
+                "id": "fil-tpu",
                 "ativo": True,
-                "nome": "PLA 1kg",
-                "material": "PLA",
-                "termo_busca": "filamento pla 1kg",
+                "nome": "TPU",
+                "material": "TPU",
+                "termo_busca": "filamento tpu",
                 "limite_resultados": 10,
                 "prioridade": 1,
-            }
-        ]
-        mock_busca.return_value = [
+            },
             {
-                "item_id": "MLB1",
-                "titulo": "Printalot Filamento PLA preto 1kg",
-                "preco": 79.9,
-                "quantidade_vendida": 200,
-            }
+                "id": "fil-pla",
+                "ativo": True,
+                "nome": "PLA",
+                "material": "PLA",
+                "termo_busca": "filamento pla",
+                "limite_resultados": 10,
+                "prioridade": 1,
+            },
+            {
+                "id": "fil-petg",
+                "ativo": True,
+                "nome": "PETG",
+                "material": "PETG",
+                "termo_busca": "filamento petg",
+                "limite_resultados": 10,
+                "prioridade": 1,
+            },
+            {
+                "id": "fil-abs",
+                "ativo": True,
+                "nome": "ABS",
+                "material": "ABS",
+                "termo_busca": "filamento abs",
+                "limite_resultados": 10,
+                "prioridade": 1,
+            },
         ]
+
+        def _busca(termo, limite=10):
+            t = (termo or "").lower()
+            if "tpu" in t:
+                return [
+                    {
+                        "item_id": "MLB-TPU",
+                        "titulo": "Filamento TPU flexivel preto 1kg",
+                        "preco": 129.9,
+                        "quantidade_vendida": 40,
+                    }
+                ]
+            if "petg" in t:
+                return [
+                    {
+                        "item_id": "MLB-PETG",
+                        "titulo": "eSUN Filamento PETG branco 1kg",
+                        "preco": 99.0,
+                        "quantidade_vendida": 80,
+                    }
+                ]
+            if "abs" in t:
+                return [
+                    {
+                        "item_id": "MLB-ABS",
+                        "titulo": "Creality Filamento ABS cinza 1kg",
+                        "preco": 89.0,
+                        "quantidade_vendida": 30,
+                    }
+                ]
+            return [
+                {
+                    "item_id": "MLB-PLA",
+                    "titulo": "Printalot Filamento PLA preto 1kg",
+                    "preco": 79.9,
+                    "quantidade_vendida": 200,
+                }
+            ]
+
+        mock_busca.side_effect = _busca
 
         with patch.object(agente, "SNAPSHOT_PATH", self.tmp_path / "snap.json"), patch.object(
             agente, "HISTORY_PATH", self.tmp_path / "hist.json"
@@ -53,16 +159,20 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             agente, "gestor_telegram_configurado", return_value=True
         ), patch.object(agente, "FILAMENTOS_ML_PAUSA_SEG", 0), patch.object(
             agente, "FILAMENTOS_ML_CRUZAR_ALIBABA", False
-        ):
+        ), patch.object(agente, "FILAMENTOS_ML_ALERTA_RESUMO", True):
             out = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out["ok"])
-        self.assertEqual(out["consolidado"]["total_filamentos_unicos"], 1)
-        self.assertEqual(out["consolidado"]["ranking_cores"][0]["cor"], "Preto")
+        self.assertEqual(out["total_termos"], 4)
+        self.assertGreaterEqual(out["consolidado"]["total_filamentos_unicos"], 4)
         mock_alertar.assert_called_once()
         msg = mock_alertar.call_args[0][0]
-        self.assertIn("Cores mais vendidas", msg)
-        self.assertIn("Marcas que mais vendem", msg)
+        self.assertIn("Materiais monitorados", msg)
+        self.assertIn("TPU", msg)
+        self.assertIn("PLA", msg)
+        self.assertIn("PETG", msg)
+        self.assertIn("ABS", msg)
+        self.assertIn("Por material", msg)
 
     def test_montar_mensagem(self):
         msg = agente.montar_mensagem_telegram(
@@ -72,7 +182,7 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
                 "preco_min": 59.0,
                 "preco_max": 149.0,
                 "preco_medio": 89.0,
-                "termos_varridos": 2,
+                "termos_varridos": 4,
                 "ranking_cores": [
                     {"cor": "Preto", "vendidos": 400, "anuncios": 5, "preco_medio": 85.0}
                 ],
@@ -97,19 +207,51 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
                         "quantidade_vendida": 400,
                         "marca": "eSUN",
                         "cor": "Preto",
+                        "material": "PLA",
                     }
                 ],
             },
             [
                 {
                     "ok": True,
-                    "nome": "PLA 1kg",
+                    "nome": "TPU",
+                    "material": "TPU",
+                    "preco_min": 100,
+                    "preco_max": 140,
+                    "preco_medio": 120,
+                    "total_filamentos": 3,
+                    "total_bruto": 5,
+                },
+                {
+                    "ok": True,
+                    "nome": "PLA",
+                    "material": "PLA",
                     "preco_min": 59,
                     "preco_max": 120,
                     "preco_medio": 85,
                     "total_filamentos": 8,
                     "total_bruto": 10,
-                }
+                },
+                {
+                    "ok": True,
+                    "nome": "PETG",
+                    "material": "PETG",
+                    "preco_min": 70,
+                    "preco_max": 110,
+                    "preco_medio": 90,
+                    "total_filamentos": 4,
+                    "total_bruto": 6,
+                },
+                {
+                    "ok": True,
+                    "nome": "ABS",
+                    "material": "ABS",
+                    "preco_min": 65,
+                    "preco_max": 100,
+                    "preco_medio": 80,
+                    "total_filamentos": 2,
+                    "total_bruto": 4,
+                },
             ],
             cruzamento={
                 "ok": True,
@@ -118,8 +260,10 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
                 "cruzamentos": [],
             },
         )
+        self.assertIn("Materiais monitorados", msg)
+        self.assertIn("TPU · PLA · PETG · ABS", msg)
+        self.assertIn("Por material (TPU / PLA / PETG / ABS)", msg)
         self.assertIn("eSUN", msg)
-        self.assertIn("Cores mais vendidas", msg)
         self.assertIn("Cruzamento Alibaba", msg)
 
 

@@ -15,6 +15,7 @@ env:
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE }}
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  # Catálogo ativo: TPU, PLA, PETG, ABS
   FILAMENTOS_ML_ALERTA_RESUMO: "1"
   FILAMENTOS_ML_PAUSA_SEG: "1.5"
   FILAMENTOS_ML_CRUZAR_ALIBABA: "1"

@@ -38,6 +38,9 @@ from integracoes.ml import ml_client
 
 logger = logging.getLogger("agente_monitor_filamentos_ml")
 
+# Materiais alvo do monitor (Telegram + catálogo ativo)
+MATERIAIS_MONITORADOS = ("TPU", "PLA", "PETG", "ABS")
+
 SNAPSHOT_PATH = ROOT / "logs" / "filamentos_ml_ultima.json"
 HISTORY_PATH = ROOT / "logs" / "filamentos_ml_history.json"
 SERIES_PATH = ROOT / "logs" / "filamentos_ml_series.json"
@@ -75,6 +78,44 @@ def _fmt_brl(valor: Any) -> str:
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _resumo_por_material(resultados: list[dict[str, Any]]) -> list[str]:
+    """Uma linha por material alvo (TPU/PLA/PETG/ABS), agregando termos do mesmo material."""
+    por_mat: dict[str, dict[str, Any]] = {}
+    for r in resultados:
+        if not r.get("ok"):
+            continue
+        mat = str(r.get("material") or "").strip().upper() or "?"
+        if mat == "PLA+":
+            mat = "PLA"
+        bucket = por_mat.setdefault(
+            mat,
+            {"anuncios": 0, "precos": [], "termos": 0},
+        )
+        bucket["termos"] += 1
+        bucket["anuncios"] += int(r.get("total_filamentos") or 0)
+        for chave in ("preco_min", "preco_max", "preco_medio"):
+            try:
+                v = float(r.get(chave) or 0)
+            except (TypeError, ValueError):
+                v = 0.0
+            if v > 0:
+                bucket["precos"].append(v)
+
+    linhas: list[str] = []
+    for mat in MATERIAIS_MONITORADOS:
+        b = por_mat.get(mat)
+        if not b:
+            linhas.append(f"• *{mat}*: sem anúncios nesta rodada")
+            continue
+        precos = b["precos"]
+        media = round(sum(precos) / len(precos), 2) if precos else None
+        linhas.append(
+            f"• *{mat}*: {b['anuncios']} anúncio(s) | "
+            f"média {_fmt_brl(media)} | {b['termos']} busca(s)"
+        )
+    return linhas
+
+
 def montar_mensagem_telegram(
     consolidado: dict[str, Any],
     resultados: list[dict[str, Any]],
@@ -84,17 +125,22 @@ def montar_mensagem_telegram(
 ) -> str:
     from core.telegram_explicacao import cabecalho_agente
 
+    mats = " · ".join(MATERIAIS_MONITORADOS)
     linhas = [
         cabecalho_agente(
             "monitor_filamentos_ml",
-            "🧵 *Filamentos 3D — ML × Alibaba*",
+            "🧵 *Filamentos 3D — Mercado Livre*",
         ),
         "",
+        f"*Materiais monitorados:* {mats}",
         f"Anúncios únicos: *{consolidado.get('total_filamentos_unicos', 0)}* | "
         f"Vendas (proxy): *{consolidado.get('total_vendas', 0):,}*".replace(",", "."),
         f"Preços: {_fmt_brl(consolidado.get('preco_min'))} – "
         f"{_fmt_brl(consolidado.get('preco_max'))} | média {_fmt_brl(consolidado.get('preco_medio'))}",
         f"Termos varridos: {consolidado.get('termos_varridos', 0)}",
+        "",
+        "*Por material (TPU / PLA / PETG / ABS)*",
+        *_resumo_por_material(resultados),
     ]
     if serie:
         comp = formatar_comparativo(
@@ -130,15 +176,6 @@ def montar_mensagem_telegram(
     else:
         linhas.append("_Nenhuma marca com vendas nesta rodada._")
 
-    mats = consolidado.get("ranking_materiais") or []
-    if mats:
-        linhas.extend(["", "*Por material*"])
-        for item in mats[:6]:
-            linhas.append(
-                f"• {item.get('material', '?')}: {item.get('anuncios', 0)} anúncio(s) | "
-                f"{item.get('vendidos', 0)} vendas | média {_fmt_brl(item.get('preco_medio'))}"
-            )
-
     baratos = consolidado.get("top_baratos") or []
     if baratos:
         linhas.extend(["", "*Mais baratos (1kg proxy)*"])
@@ -157,18 +194,19 @@ def montar_mensagem_telegram(
             linhas.append(
                 f"{i}. {titulo} — {_fmt_brl(an.get('preco'))} | "
                 f"{int(an.get('quantidade_vendida') or 0)} vendas | "
-                f"{an.get('marca', '?')} | {an.get('cor', '?')}"
+                f"{an.get('marca', '?')} | {an.get('cor', '?')} | {an.get('material', '?')}"
             )
 
     if cruzamento is not None:
         linhas.extend(formatar_secao_cruzamento(cruzamento, fmt_brl=_fmt_brl))
 
-    linhas.extend(["", "*Por termo*"])
+    linhas.extend(["", "*Por termo de busca*"])
     for r in resultados:
         if not r.get("ok"):
             continue
         linhas.append(
-            f"• {r.get('nome', '?')}: {_fmt_brl(r.get('preco_min'))}–{_fmt_brl(r.get('preco_max'))} "
+            f"• {r.get('nome', '?')} ({r.get('material', '?')}): "
+            f"{_fmt_brl(r.get('preco_min'))}–{_fmt_brl(r.get('preco_max'))} "
             f"(média {_fmt_brl(r.get('preco_medio'))}) | "
             f"{r.get('total_filamentos', 0)} de {r.get('total_bruto', 0)} anúncio(s)"
         )

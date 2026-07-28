@@ -14,7 +14,16 @@ class AnaliseFilamentosMlTests(unittest.TestCase):
     def test_detectar_marca_e_material(self):
         self.assertEqual(af.detectar_marca("eSUN Filamento PLA 1kg 1.75mm"), "eSUN")
         self.assertEqual(af.detectar_material("Filamento PETG preto 1kg"), "PETG")
+        self.assertEqual(af.detectar_material("Filamento TPU flexivel 1kg"), "TPU")
+        self.assertEqual(af.detectar_material("Filamento ABS Creality 1kg"), "ABS")
         self.assertEqual(af.detectar_peso_kg("Filamento PLA 1kg"), 1.0)
+
+    def test_filtra_por_material_esperado(self):
+        self.assertTrue(af.eh_listing_filamento("Filamento PLA preto 1kg", "PLA"))
+        self.assertFalse(af.eh_listing_filamento("Filamento ABS preto 1kg", "PLA"))
+        self.assertTrue(af.eh_listing_filamento("Filamento TPU flexivel 1kg", "TPU"))
+        self.assertTrue(af.eh_listing_filamento("Filamento PETG 1kg", "PETG"))
+        self.assertTrue(af.eh_listing_filamento("Filamento ABS 1kg", "ABS"))
 
     def test_detectar_cores(self):
         self.assertEqual(af.detectar_cor_principal("Filamento PLA preto 1kg"), "Preto")
