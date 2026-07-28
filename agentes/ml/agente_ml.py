@@ -8,19 +8,19 @@ import logging
 import time
 
 from core.chat_claim import tentar_claim
-from core.config import MARGEM_MINIMA
 from core.claude_client import responder_chat
+from core.config import MARGEM_MINIMA
 from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
 from core.notificador import alertar_critico
 from core.produto_lookup import buscar_produto_por_ref
 from integracoes.bling.bling_client import buscar_produto
 from integracoes.ml.ml_client import (
-    listar_perguntas_nao_respondidas,
-    responder_pergunta,
-    buscar_reputacao_vendedor,
-    pausar_anuncio,
     ativar_anuncio,
+    buscar_reputacao_vendedor,
     encerrar_anuncio,
+    listar_perguntas_nao_respondidas,
+    pausar_anuncio,
+    responder_pergunta,
 )
 
 logger = logging.getLogger("agente_ml")

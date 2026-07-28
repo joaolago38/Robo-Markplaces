@@ -22,7 +22,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from core.config import DYNAMODB_TABLE_NAME, ROOT as PROJECT_ROOT  # noqa: E402
+from core.config import DYNAMODB_TABLE_NAME  # noqa: E402
+from core.config import ROOT as PROJECT_ROOT
 from core.state_backend import DynamoDBStateBackend, caminho_para_chave  # noqa: E402
 
 

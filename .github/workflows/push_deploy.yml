@@ -65,6 +65,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '0' }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}

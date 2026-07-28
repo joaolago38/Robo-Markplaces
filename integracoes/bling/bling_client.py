@@ -6,10 +6,11 @@ Erros de auth/API silenciados no Datadog por padrão (empresa inativa / token).
 Religar: LOG_ERROS_BLING=1
 """
 import logging
+
+from core import token_manager
 from core.config import BLING_ACCESS_TOKEN
 from core.http_client import request
 from core.log_opcional import erro_opcional, log_erros_bling_ativos
-from core import token_manager
 
 logger = logging.getLogger("bling")
 BASE = "https://www.bling.com.br/Api/v3"

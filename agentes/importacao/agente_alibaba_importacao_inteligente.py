@@ -15,8 +15,8 @@ from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
-    ALIBABA_IMPORTACAO_CATALOGO,
     ALIBABA_IA_AVALIAR_PARAMETROS,
+    ALIBABA_IMPORTACAO_CATALOGO,
     ALIBABA_INTELIGENCIA_ALERTA_RESUMO,
     ALIBABA_INTELIGENCIA_COOLDOWN_SEG,
     ALIBABA_MARGEM_ALERTA_COOLDOWN_SEG,
@@ -37,7 +37,10 @@ from integracoes.importacao.avaliacao_ia_parametros import (
     avaliar_parametros_alibaba_inteligencia,
     formatar_secao_ia,
 )
-from integracoes.importacao.calculo_importacao_aerea import exportar_csv_resultado, formatar_breakdown_viracopos_telegram
+from integracoes.importacao.calculo_importacao_aerea import (
+    exportar_csv_resultado,
+    formatar_breakdown_viracopos_telegram,
+)
 
 logger = logging.getLogger("agente_alibaba_importacao_inteligente")
 

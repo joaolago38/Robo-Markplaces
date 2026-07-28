@@ -14,12 +14,12 @@ from typing import Any, Callable
 
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
+    ML_BUSCA_TERMO_CACHE_TTL_SEG,
     ML_BUSCA_TERMO_FALLBACK_BRAVE,
     ML_BUSCA_TERMO_FALLBACK_CACHE,
     ML_BUSCA_TERMO_FALLBACK_CATALOGO,
     ML_BUSCA_TERMO_FALLBACK_DDG,
     ML_BUSCA_TERMO_FALLBACK_PRODUCTS,
-    ML_BUSCA_TERMO_CACHE_TTL_SEG,
     ML_BUSCA_TERMO_MAX_PRODUCTS,
     ML_BUSCA_TERMO_MAX_REFS_CATALOGO,
     ML_SITE_ID,

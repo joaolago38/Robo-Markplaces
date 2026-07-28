@@ -11,14 +11,14 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from core.atomic_io import escrever_json_atomico, ler_json, ler_e_atualizar_json
+from core.atomic_io import escrever_json_atomico, ler_e_atualizar_json, ler_json
 from core.claude_client import MODELO_RAPIDO, perguntar, perguntar_estruturado
 from core.claude_roteador import resolver_modelo_vendas
 from core.config import ANTHROPIC_API_KEY, ROOT
 from integracoes.social.promocoes_manicures import (
+    _para_whatsapp,
     carregar_campanhas,
     montar_mensagem_campanha,
-    _para_whatsapp,
 )
 
 logger = logging.getLogger("conversao_manicures")

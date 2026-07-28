@@ -8,18 +8,18 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
-from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
 from core.config import (
-    AVALIACOES_PARA_ADS,
-    NOTA_MINIMA_PARA_ADS,
-    AVALIACOES_PARA_ESCALAR,
     ACOS_MAXIMO,
-    ML_ADS_ACOS_DIAS_LIMITE,
-    BUDGET_FASE_INICIO,
+    AVALIACOES_PARA_ADS,
+    AVALIACOES_PARA_ESCALAR,
     BUDGET_FASE_CRESCIMENTO,
     BUDGET_FASE_ESCALA,
+    BUDGET_FASE_INICIO,
+    ML_ADS_ACOS_DIAS_LIMITE,
+    NOTA_MINIMA_PARA_ADS,
 )
-from integracoes.ml.ml_client import buscar_reputacao_vendedor, buscar_acos_ads
+from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
+from integracoes.ml.ml_client import buscar_acos_ads, buscar_reputacao_vendedor
 from integracoes.ml.ml_product_ads import (
     aplicar_decisao_campanhas,
     campanhas_acos_acima_limite,

@@ -150,8 +150,9 @@ class TestClaudePerguntar(unittest.TestCase):
     @patch.object(claude_client, "request")
     @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
     def test_claude_401_loga_warning(self, mock_request, *_patches):
-        import requests
         from unittest.mock import MagicMock
+
+        import requests
 
         resp = MagicMock()
         resp.status_code = 401

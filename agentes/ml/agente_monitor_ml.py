@@ -12,6 +12,8 @@ from typing import Any
 from core.config import (
     ACOS_MAXIMO,
     ML_ADS_ORCAMENTO_MAXIMO,
+)
+from core.config import (
     ML_MAX_ITENS_ANALISE as MAX_ITENS_ANALISE,
 )
 from core.notificador import alertar_gestor

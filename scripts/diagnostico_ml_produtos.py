@@ -25,7 +25,7 @@ try:
 except Exception:
     pass
 
-from integracoes.ml.ml_client import listar_meus_anuncios, pausar_anuncio, obter_status_anuncio
+from integracoes.ml.ml_client import listar_meus_anuncios, obter_status_anuncio, pausar_anuncio
 from integracoes.ml.ml_product_ads import listar_campanhas, obter_advertiser
 
 

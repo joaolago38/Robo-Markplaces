@@ -10,7 +10,7 @@ import traceback
 from datetime import datetime, timezone
 from typing import Any
 
-from core.atomic_io import escrever_json_atomico, ler_json, ler_e_atualizar_json
+from core.atomic_io import escrever_json_atomico, ler_e_atualizar_json, ler_json
 from core.config import ROOT
 
 logger = logging.getLogger("claude_orcamento")

@@ -3,11 +3,12 @@ agentes/social/publicador.py
 Publica promoções no Instagram e Facebook.
 """
 import logging
-from integracoes.bling.bling_client import listar_produtos
-from integracoes.meta.meta_client import publicar_facebook, publicar_instagram
+
 from core.claude_client import gerar_post
 from core.config import ESTOQUE_CRITICO
 from core.notificador import alertar
+from integracoes.bling.bling_client import listar_produtos
+from integracoes.meta.meta_client import publicar_facebook, publicar_instagram
 
 logger = logging.getLogger("publicador")
 

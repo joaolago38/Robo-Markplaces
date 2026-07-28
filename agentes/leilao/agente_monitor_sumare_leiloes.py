@@ -19,10 +19,10 @@ from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import (
+    LEILAO_IA_AVALIAR_PARAMETROS,
     ROOT,
     SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
     SUMARE_LEILOES_CATALOGO,
-    LEILAO_IA_AVALIAR_PARAMETROS,
     SUMARE_LEILOES_LANCE_MIN_BRL,
     SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG,
 )

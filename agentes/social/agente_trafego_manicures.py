@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 
-from core.config import META_ROAS_MINIMO_MANICURES, META_CTR_MINIMO_MANICURES, META_CPC_MAXIMO
+from core.config import META_CPC_MAXIMO, META_CTR_MINIMO_MANICURES, META_ROAS_MINIMO_MANICURES
 from core.notificador import alertar_gestor
 from integracoes.meta.meta_ads_client import listar_metricas_campanhas, normalizar_metrica_campanha
 

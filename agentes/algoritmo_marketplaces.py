@@ -7,10 +7,10 @@ import logging
 from core.config import SPEC
 from core.marketplace_algorithm import avaliar_marketplace
 from core.notificador import alertar_gestor
+from integracoes.amazon.amazon_client import obter_saude_conta as saude_amazon
+from integracoes.magalu.magalu_client import obter_saude_conta as saude_magalu
 from integracoes.ml.ml_client import obter_saude_conta as saude_ml
 from integracoes.shopee.shopee_client import obter_saude_conta as saude_shopee
-from integracoes.magalu.magalu_client import obter_saude_conta as saude_magalu
-from integracoes.amazon.amazon_client import obter_saude_conta as saude_amazon
 
 logger = logging.getLogger("algoritmo_marketplaces")
 

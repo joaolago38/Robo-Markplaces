@@ -7,16 +7,15 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
-
-from core.fiscal_mapper import resolver_ncm_item
 from core.config import (
-    NFE_NATUREZA_OPERACAO,
     NFE_CFOP_PADRAO,
-    NFE_CST_PADRAO,
     NFE_CSOSN_PADRAO,
+    NFE_CST_PADRAO,
+    NFE_NATUREZA_OPERACAO,
     NFE_ORIGEM_PADRAO,
     NFE_SERIE_PADRAO,
 )
+from core.fiscal_mapper import resolver_ncm_item
 from core.notificador import alertar_critico
 from integracoes.bling.bling_client import (
     NfeVerificacaoIndisponivel,

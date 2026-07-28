@@ -3,6 +3,7 @@ integracoes/lojahub/lojahub_client.py
 Cliente da API Lojahub. A preencher com endpoints reais.
 """
 import logging
+
 from core.config import LOJAHUB_TOKEN
 from core.http_client import request
 

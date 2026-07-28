@@ -9,15 +9,15 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core import config, guardrails
-from integracoes.bling import bling_client
-from integracoes.ml import ml_client, ml_product_ads
-from integracoes.magalu import magalu_client
-from integracoes.shopee import shopee_client
+from agentes import operacao_24h
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
 from agentes.repricing.agente_repricing_marketplaces import executar as repricing_executar
 from agentes.sincronizar_estoque_marketplaces import executar as estoque_executar
-from agentes import operacao_24h
+from core import config, guardrails
+from integracoes.bling import bling_client
+from integracoes.magalu import magalu_client
+from integracoes.ml import ml_client, ml_product_ads
+from integracoes.shopee import shopee_client
 
 
 class TestBloqueioEscritaGlobal(unittest.TestCase):

@@ -10,9 +10,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests.http_fixtures import make_http_response
-
 from integracoes.ml import busca_termo_ml, ml_client
+from tests.http_fixtures import make_http_response
 
 
 def _mock_resp(body: dict, status: int = 200) -> MagicMock:

@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from agentes.vendas_notificador import _notificar_novos_pedidos, executar
 
-
 PEDIDOS_MOCK_ML = [
     {
         "order_id": "1001",

@@ -8,9 +8,8 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from core import claude_client, http_client
 from core import log_opcional as lo
-from core import http_client
-from core import claude_client
 
 
 class TestLogOpcional(unittest.TestCase):

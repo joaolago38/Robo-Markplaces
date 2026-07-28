@@ -60,7 +60,7 @@ jobs:
         run: python -m agentes.social.agente_necessidade_manicures
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '0' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}

@@ -15,11 +15,11 @@ from core.config import (
     SHOPEE_REFRESH_TOKEN,
     SHOPEE_SHOP_ID,
 )
+from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
-from core.datadog_metrics import incrementar
+from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.token_manager import get_token_shopee
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
 logger = logging.getLogger("shopee_client")
 BASE = "https://partner.shopeemobile.com"
