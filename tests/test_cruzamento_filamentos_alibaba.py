@@ -35,8 +35,8 @@ class CruzamentoFilamentosTests(unittest.TestCase):
         )
 
     def test_catalogo_alibaba_tem_quatro_materiais(self):
-        from pathlib import Path
         import json
+        from pathlib import Path
 
         root = Path(__file__).resolve().parent.parent
         data = json.loads(
