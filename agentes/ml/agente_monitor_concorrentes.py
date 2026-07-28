@@ -309,14 +309,179 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _monitorar_item_watchlist(
+    entrada: dict,
+    historico: dict[str, Any],
+    *,
+    enriquecer_metricas: bool = True,
+) -> dict[str, Any]:
+    """
+    Watchlist de alta confiança: MLB fixo do concorrente via GET /items/{id}.
+    Alertas: variação de preço, mudança de status (active/paused/closed).
+    """
+    eid = str(entrada.get("id") or "").strip()
+    nome = str(entrada.get("nome") or eid)
+    # item_id_concorrente = anúncio rival; item_id = nosso (opcional, para gap)
+    watch_id = str(
+        entrada.get("item_id_concorrente")
+        or entrada.get("watch_item_id")
+        or entrada.get("mlb_concorrente")
+        or ""
+    ).strip()
+    meu_preco, origem_preco = _resolver_preco_referencia(entrada)
+    rotulo = _rotulo_preco_referencia(origem_preco)
+
+    if not _item_id_ml_valido(watch_id):
+        return {
+            "id": eid,
+            "ok": False,
+            "tipo": "item",
+            "erro": "item_id_concorrente inválido ou MLB_PREENCHER",
+            "alertas": [],
+        }
+
+    pub = ml_client.buscar_item_publico(watch_id)
+    if not pub:
+        return {
+            "id": eid,
+            "ok": False,
+            "tipo": "item",
+            "nome": nome,
+            "item_id_concorrente": watch_id,
+            "erro": "falha ao ler item na API ML",
+            "alertas": [],
+        }
+
+    preco = float(pub.get("preco") or 0)
+    status = str(pub.get("status") or "").strip().lower()
+    titulo = str(pub.get("titulo") or nome)[:60]
+    sold = int(pub.get("sold_quantity") or 0)
+
+    avaliacoes = None
+    nota = None
+    if enriquecer_metricas:
+        try:
+            from integracoes.ml.analise_anuncio_concorrente import enriquecer_anuncio
+
+            row = enriquecer_anuncio(
+                {
+                    "item_id": watch_id,
+                    "preco": preco,
+                    "quantidade_vendida": sold,
+                    "titulo": titulo,
+                    "seller_id": pub.get("seller_id"),
+                },
+                buscar_reviews=True,
+                buscar_catalogo=False,
+                buscar_visitas=False,
+            )
+            avaliacoes = row.get("avaliacoes")
+            nota = row.get("nota")
+            if int(row.get("quantidade_vendida") or 0) > sold:
+                sold = int(row["quantidade_vendida"])
+        except Exception as exc:
+            logger.debug("enrich watchlist %s: %s", watch_id, exc)
+
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    preco_ant = float(anterior.get("preco") or 0)
+    status_ant = str(anterior.get("status") or "").strip().lower()
+
+    alertas: list[str] = []
+    if preco_ant > 0 and preco > 0:
+        var = _pct_variacao(preco_ant, preco)
+        if var >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            direcao = "caiu" if preco < preco_ant else "subiu"
+            alertas.append(
+                f"[watchlist] {nome}: preço {direcao} de R$ {preco_ant:.2f} "
+                f"para R$ {preco:.2f} ({var:.1f}%) — `{watch_id}`"
+            )
+
+    if status_ant and status and status_ant != status:
+        alertas.append(
+            f"[watchlist] {nome}: status `{status_ant}` → `{status}` — `{watch_id}`"
+        )
+
+    if (
+        _pode_alertar_gap_preco(origem_preco)
+        and meu_preco > 0
+        and preco > 0
+        and meu_preco > preco
+    ):
+        diff = (meu_preco - preco) / preco * 100.0
+        if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            alertas.append(
+                f"[watchlist] {nome}: {rotulo} R$ {meu_preco:.2f} está {diff:.1f}% acima "
+                f"do rival R$ {preco:.2f} (`{watch_id}`)"
+            )
+
+    leituras_ant = _leituras_recentes(anterior, limite=4)
+    leituras_ant.append({"preco": preco, "status": status, "ts": datetime.now(timezone.utc).isoformat()})
+    # Compatível com _leituras_recentes (menor_preco) para classificação futura
+    for L in leituras_ant:
+        if "menor_preco" not in L and L.get("preco") is not None:
+            L["menor_preco"] = L["preco"]
+
+    historico[eid] = {
+        "tipo": "item",
+        "item_id_concorrente": watch_id,
+        "preco": preco,
+        "menor_preco": preco,
+        "status": status,
+        "titulo": titulo,
+        "sold_quantity": sold,
+        "avaliacoes": avaliacoes,
+        "nota": nota,
+        "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
+        "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        "leituras": leituras_ant[-5:],
+    }
+
+    _tags = [
+        f"produto:{eid}",
+        f"watch:{watch_id}",
+        "tipo:item",
+        f"origem_preco:{origem_preco}",
+    ]
+    if preco > 0:
+        gauge("mercado.menor_preco_concorrente", preco, tags=_tags)
+    gauge("mercado.total_concorrentes", 1.0, tags=_tags)
+    if alertas:
+        incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
+
+    return {
+        "id": eid,
+        "ok": True,
+        "tipo": "item",
+        "nome": nome,
+        "item_id_concorrente": watch_id,
+        "titulo": titulo,
+        "preco": preco,
+        "menor_preco": preco,
+        "status": status,
+        "sold_quantity": sold,
+        "avaliacoes": avaliacoes,
+        "nota": nota,
+        "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
+        "alertas": alertas,
+        "permalink": pub.get("permalink"),
+    }
+
+
 def _monitorar_entrada(
     entrada: dict,
     historico: dict[str, Any],
     *,
     enriquecer_metricas: bool = True,
 ) -> dict[str, Any]:
-    if str(entrada.get("tipo") or "").lower() == "loja":
+    tipo = str(entrada.get("tipo") or "").lower()
+    if tipo == "loja":
         return _monitorar_loja(entrada, historico)
+    if tipo == "item":
+        return _monitorar_item_watchlist(
+            entrada, historico, enriquecer_metricas=enriquecer_metricas
+        )
 
     eid = str(entrada.get("id") or "").strip()
     nome = str(entrada.get("nome") or eid)
@@ -450,11 +615,20 @@ def executar(
         if enviar_alerta and alertas_todos:
             from core.telegram_explicacao import cabecalho_agente
 
-            msg = (
-                cabecalho_agente("monitor_concorrentes", "🔎 *Monitor concorrentes ML*")
-                + "\n\n"
-                + "\n".join(f"• {a}" for a in alertas_todos)
-            )
+            watch = [a for a in alertas_todos if "[watchlist]" in a]
+            demais = [a for a in alertas_todos if "[watchlist]" not in a]
+            blocos = [
+                cabecalho_agente("monitor_concorrentes", "🔎 *Monitor concorrentes ML*"),
+                "",
+            ]
+            if watch:
+                blocos.append("*Watchlist MLB (alta confiança — preço/status)*")
+                blocos.extend(f"• {a}" for a in watch)
+                blocos.append("")
+            if demais:
+                blocos.append("*Radar por termo / loja*")
+                blocos.extend(f"• {a}" for a in demais)
+            msg = "\n".join(blocos).strip()
             enviado = bool(alertar_gestor(msg, agente_id="monitor_concorrentes"))
 
         payload = {

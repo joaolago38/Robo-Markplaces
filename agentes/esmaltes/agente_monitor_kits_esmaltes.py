@@ -1,6 +1,6 @@
 """
 agentes/esmaltes/agente_monitor_kits_esmaltes.py
-Monitora todos os anúncios de kits de esmaltes no ML: vendas, valores e marcas líderes.
+Monitora anúncios de kits de esmaltes no ML (radar de mercado): preços, marcas e proxy de vendas.
 
 Catálogo: catalogo/esmaltes_kits_monitor.json
 
@@ -22,6 +22,7 @@ from core.config import (
     ESMALTES_KITS_MONITOR_ALERTA_RESUMO,
     ESMALTES_KITS_MONITOR_CATALOGO,
     ESMALTES_KITS_MONITOR_PAUSA_SEG,
+    MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT,
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
@@ -29,7 +30,15 @@ from core.graficos import grafico_evolucao
 from core.notificador import alertar_gestor, chave_resumo_periodo, enviar_foto_gestor
 from core.prontidao import pode_alertar_esmaltes
 from core.series_historica import formatar_comparativo, registrar_ponto
-from integracoes.esmaltes.analise_kits_esmaltes import consolidar_varredura, processar_termo
+from integracoes.esmaltes.analise_kits_esmaltes import (
+    consolidar_varredura,
+    deltas_preco_itens,
+    enriquecer_top_kits,
+    fmt_vendas_proxy,
+    processar_termo,
+    snapshot_itens_preco,
+    vendas_tem_dado,
+)
 from integracoes.marketplaces.busca_multi_marketplace import (
     formatar_secao_por_marketplace,
     resolver_fn_busca_esmaltes,
@@ -71,42 +80,89 @@ def _fmt_brl(valor: Any) -> str:
         return "n/d"
 
 
+def _fmt_vendas_marca(item: dict[str, Any]) -> str:
+    return fmt_vendas_proxy(item.get("vendidos"))
+
+
+def _linha_top_anuncio(an: dict[str, Any], idx: int) -> str:
+    titulo = str(an.get("titulo") or "?")[:55]
+    vendas = fmt_vendas_proxy(an.get("quantidade_vendida"))
+    pedacos = [
+        f"{idx}. {titulo} — {_fmt_brl(an.get('preco'))}",
+        vendas if vendas != "n/d" else "vendas n/d",
+        str(an.get("marca") or "?"),
+    ]
+    if not vendas_tem_dado(an):
+        aval = an.get("avaliacoes")
+        nota = an.get("nota")
+        if aval:
+            if nota is not None:
+                pedacos.append(f"★{nota} ({aval} aval.)")
+            else:
+                pedacos.append(f"{aval} aval.")
+    return " | ".join(pedacos)
+
+
 def montar_mensagem_telegram(
     consolidado: dict[str, Any],
     resultados: list[dict[str, Any]],
     *,
     serie: list[dict[str, Any]] | None = None,
+    deltas: list[str] | None = None,
 ) -> str:
     from core.telegram_explicacao import cabecalho_agente
+
+    total_vendas = int(consolidado.get("total_vendas") or 0)
+    com_dado = int(consolidado.get("kits_com_vendas_api") or 0)
+    if consolidado.get("vendas_proxy_confiavel") and total_vendas > 0:
+        linha_vendas = (
+            f"Vendas (proxy, {com_dado} anúncio(s) com dado API): "
+            f"*{total_vendas:,}*".replace(",", ".")
+        )
+    else:
+        linha_vendas = "Vendas (proxy): *n/d* — API sem `sold_quantity` nesta amostra"
 
     linhas = [
         cabecalho_agente(
             "monitor_kits_esmaltes",
-            "🎨 *Kits esmaltes — vendas e marcas (ML + Magalu + Shopee + Amazon)*",
+            "🎨 *Kits esmaltes — radar de mercado (amostra)*",
         ),
+        "_Busca por termo · não é painel da sua conta nem vendas reais do rival._",
         "",
-        f"Kits únicos: *{consolidado.get('total_kits_unicos', 0)}* | "
-        f"Vendas (proxy ML): *{consolidado.get('total_vendas', 0):,}*".replace(",", "."),
+        f"Kits únicos: *{consolidado.get('total_kits_unicos', 0)}* | {linha_vendas}",
         f"Preços: {_fmt_brl(consolidado.get('preco_min'))} – "
         f"{_fmt_brl(consolidado.get('preco_max'))} | média {_fmt_brl(consolidado.get('preco_medio'))}",
-        f"Termos varridos: {consolidado.get('termos_varridos', 0)}",
+        f"Termos varridos: {consolidado.get('termos_varridos', 0)}"
+        + (
+            f" | enriquecidos: {consolidado.get('enriquecidos', 0)}"
+            if consolidado.get("enriquecidos")
+            else ""
+        ),
     ]
     if serie:
-        comp = formatar_comparativo(serie, [("total_kits", "Kits"), ("total_vendas", "Vendas"), ("preco_medio", "Preço médio", 2)])
+        comp = formatar_comparativo(
+            serie, [("total_kits", "Kits"), ("total_vendas", "Vendas"), ("preco_medio", "Preço médio", 2)]
+        )
         if comp:
             linhas.extend(["", comp])
     linhas.append(formatar_secao_por_marketplace(consolidado, fmt_brl=_fmt_brl))
-    linhas.extend(["", "*Marcas que mais vendem*"])
+
+    if deltas:
+        linhas.extend(["", "*Mudanças vs rodada anterior (preço/presença)*"])
+        for d in deltas:
+            linhas.append(f"• {d}")
+
+    linhas.extend(["", "*Marcas (presença na amostra)*"])
 
     ranking = consolidado.get("ranking_marcas") or []
     if ranking:
         for item in ranking[:8]:
             linhas.append(
-                f"• {item.get('marca', '?')}: {item.get('vendidos', 0)} vendas | "
+                f"• {item.get('marca', '?')}: {_fmt_vendas_marca(item)} | "
                 f"{item.get('anuncios', 0)} anúncio(s) | média {_fmt_brl(item.get('preco_medio'))}"
             )
     else:
-        linhas.append("_Nenhuma marca com vendas registradas nesta rodada._")
+        linhas.append("_Nenhuma marca nesta rodada._")
 
     padroes = consolidado.get("padroes_tamanho") or []
     if padroes:
@@ -114,18 +170,14 @@ def montar_mensagem_telegram(
         for p in padroes[:6]:
             linhas.append(
                 f"• Kit {p.get('qtd')}: {p.get('anuncios', 0)} anúncio(s) | "
-                f"{p.get('vendidos', 0)} vendas | média {_fmt_brl(p.get('preco_medio'))}"
+                f"{fmt_vendas_proxy(p.get('vendidos'))} | média {_fmt_brl(p.get('preco_medio'))}"
             )
 
     top = consolidado.get("top_vendas") or []
     if top:
-        linhas.extend(["", "*Top anúncios (vendas)*"])
+        linhas.extend(["", "*Top anúncios (amostra)*"])
         for i, an in enumerate(top[:10], 1):
-            titulo = str(an.get("titulo") or "?")[:55]
-            linhas.append(
-                f"{i}. {titulo} — {_fmt_brl(an.get('preco'))} | "
-                f"{int(an.get('quantidade_vendida') or 0)} vendas | {an.get('marca', '?')}"
-            )
+            linhas.append(_linha_top_anuncio(an, i))
 
     linhas.extend(["", "*Varredura por termo*"])
     for r in resultados:
@@ -136,6 +188,14 @@ def montar_mensagem_telegram(
             f"{r.get('total_kits', 0)} kit(s) de {r.get('total_bruto', 0)} anúncio(s)"
         )
 
+    linhas.extend(
+        [
+            "",
+            "_Legenda: `n/d` = API não informou vendas. Avaliações = proxy fraco. "
+            "Para certeza alta de preço/status do rival, use a watchlist MLB "
+            "(monitor concorrentes tipo `item`)._",
+        ]
+    )
     return "\n".join(linhas).strip()
 
 
@@ -176,10 +236,31 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 time.sleep(ESMALTES_KITS_MONITOR_PAUSA_SEG)
 
         consolidado = consolidar_varredura(resultados)
+        try:
+            consolidado = enriquecer_top_kits(consolidado)
+        except Exception as exc:
+            logger.warning("enrich top kits falhou: %s", exc)
+
+        historico = ler_json(HISTORY_PATH, default={})
+        if not isinstance(historico, dict):
+            historico = {}
+        snap_itens = snapshot_itens_preco(
+            consolidado.get("kits_unicos") or consolidado.get("top_vendas") or []
+        )
+        deltas = deltas_preco_itens(
+            snap_itens,
+            historico.get("itens") if isinstance(historico.get("itens"), dict) else {},
+            variacao_alerta_pct=MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT,
+        )
 
         escrever_json_atomico(
             SNAPSHOT_PATH,
-            {"timestamp": agora, "consolidado": consolidado, "resultados": resultados},
+            {
+                "timestamp": agora,
+                "consolidado": consolidado,
+                "resultados": resultados,
+                "deltas": deltas,
+            },
         )
 
         serie = registrar_ponto(
@@ -192,18 +273,20 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             },
         )
 
-        historico = ler_json(HISTORY_PATH, default={})
-        if not isinstance(historico, dict):
-            historico = {}
         historico["ultima_varredura"] = agora
         historico["total_kits_unicos"] = consolidado.get("total_kits_unicos")
         historico["total_vendas"] = consolidado.get("total_vendas")
+        historico["kits_com_vendas_api"] = consolidado.get("kits_com_vendas_api")
         historico["lider_marca"] = (consolidado.get("ranking_marcas") or [{}])[0].get("marca")
+        historico["itens"] = snap_itens
+        historico["deltas_ultima"] = deltas
         escrever_json_atomico(HISTORY_PATH, historico)
 
         alerta_enviado = False
         if enviar_alerta and ESMALTES_KITS_MONITOR_ALERTA_RESUMO and pode_alertar:
-            msg = montar_mensagem_telegram(consolidado, resultados, serie=serie)
+            msg = montar_mensagem_telegram(
+                consolidado, resultados, serie=serie, deltas=deltas
+            )
             chave = chave_resumo_periodo("esmaltes:kits_monitor", horas_por_bucket=6)
             alerta_enviado = bool(
                 alertar_gestor(
@@ -232,6 +315,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "ok": True,
             "total_termos": len(resultados),
             "consolidado": consolidado,
+            "deltas": deltas,
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
         }
@@ -242,7 +326,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Monitor kits esmaltes ML — vendas e marcas")
+    parser = argparse.ArgumentParser(description="Monitor kits esmaltes ML — radar de mercado")
     parser.add_argument("--sem-alerta", action="store_true")
     args = parser.parse_args(argv)
 
@@ -253,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     c = out.get("consolidado") or {}
     logger.info(
-        "Concluído: %s termo(s), %s kit(s) únicos, %s vendas, alerta=%s",
+        "Concluído: %s termo(s), %s kit(s) únicos, vendas_proxy=%s, alerta=%s",
         out.get("total_termos"),
         c.get("total_kits_unicos"),
         c.get("total_vendas"),
