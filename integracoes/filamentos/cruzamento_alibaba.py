@@ -18,7 +18,19 @@ def _eh_produto_filamento(produto: dict[str, Any]) -> bool:
         str(produto.get(k) or "")
         for k in ("id", "nome", "material", "termo_busca", "termo_busca_pt", "termo_marketplace")
     ).lower()
-    return any(x in blob for x in ("filamento", "filament", "pla", "petg", "impressora 3d", "3d printer"))
+    return any(
+        x in blob
+        for x in (
+            "filamento",
+            "filament",
+            "pla",
+            "petg",
+            "tpu",
+            "abs",
+            "impressora 3d",
+            "3d printer",
+        )
+    )
 
 
 def carregar_produtos_filamento_alibaba() -> list[dict[str, Any]]:
@@ -241,8 +253,8 @@ def cruzar_filamentos_ml_alibaba(
 
 
 def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[str]:
-    """Linhas Markdown para o Telegram."""
-    linhas = ["", "🔗 *Cruzamento Alibaba × ML*"]
+    """Linhas Markdown para o Telegram — comparação ML × Alibaba por material."""
+    linhas = ["", "🔗 *Comparativo ML × Alibaba (mesmo tipo)*"]
     if not cruzamento.get("ok"):
         linhas.append(f"_Cruzamento indisponível: {cruzamento.get('motivo') or 'erro'}_")
         return linhas
@@ -259,13 +271,25 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
         linhas.append("_Nenhum produto filamento no catálogo Alibaba para cruzar._")
         return linhas
 
-    for item in itens:
+    # Ordem preferencial TPU / PLA / PETG / ABS
+    ordem = {"TPU": 0, "PLA": 1, "PETG": 2, "ABS": 3}
+    itens_ord = sorted(
+        itens,
+        key=lambda x: ordem.get(str(x.get("material") or "").upper(), 99),
+    )
+
+    for item in itens_ord:
         ml = item.get("precos_ml") or {}
+        mat = str(item.get("material") or "?").upper()
+        linhas.append("")
+        linhas.append(f"*{mat}* — {item.get('produto', item.get('id'))}")
         linhas.append(
-            f"• *{item.get('produto', item.get('id'))}* ({item.get('material', '?')}): "
-            f"ML {fmt_brl(ml.get('preco_min_brl'))}–{fmt_brl(ml.get('preco_max_brl'))} "
+            f"  ML: {fmt_brl(ml.get('preco_min_brl'))}–{fmt_brl(ml.get('preco_max_brl'))} "
             f"(méd {fmt_brl(ml.get('preco_medio_brl'))}) | "
-            f"Alibaba {item.get('total_oportunidades_alibaba', 0)} oferta(s)"
+            f"{ml.get('total_anuncios') or 0} anúncio(s)"
+        )
+        linhas.append(
+            f"  Alibaba: {item.get('total_oportunidades_alibaba', 0)} oferta(s) encontradas"
         )
         melhor = item.get("melhor_analise") or {}
         if melhor.get("ok"):
@@ -275,14 +299,25 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
             modo = melhor.get("melhor_frete")
             if modo and isinstance(cen.get(modo), dict):
                 custo = cen[modo].get("custo_landed_brl")
+            fob = melhor.get("preco_usd")
+            fob_brl = None
+            try:
+                if fob is not None and cambio:
+                    fob_brl = float(fob) * float(cambio)
+            except (TypeError, ValueError):
+                fob_brl = None
             flag = "✅ margem ok" if item.get("lucrativa") else "⚠️ margem justa/apertada"
             linhas.append(
-                f"  → melhor FOB US$ {melhor.get('preco_usd')} | "
-                f"landed {fmt_brl(custo)} | "
-                f"margem {fmt_brl(margem.get('margem_brl'))} "
-                f"({margem.get('margem_pct') or 'n/d'}%) {flag} "
-                f"[cor: {melhor.get('cor_foco', 'geral')}]"
+                f"  → melhor FOB US$ {fob}"
+                + (f" (~{fmt_brl(fob_brl)})" if fob_brl else "")
+                + f" | landed {fmt_brl(custo)} | "
+                f"vs ML méd: margem {fmt_brl(margem.get('margem_brl'))} "
+                f"({margem.get('margem_pct') or 'n/d'}%) {flag}"
             )
+            if melhor.get("cor_foco"):
+                linhas.append(f"  · cor foco: {melhor.get('cor_foco')}")
+        elif int(item.get("total_oportunidades_alibaba") or 0) == 0:
+            linhas.append("  → _sem oferta Alibaba nesta rodada (ajuste termo/MOQ)_")
         for pc in (item.get("por_cor") or [])[:4]:
             if int(pc.get("total_oportunidades") or 0) <= 0:
                 continue

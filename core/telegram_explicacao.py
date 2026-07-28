@@ -147,8 +147,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     ),
     "monitor_filamentos_ml": (
         "Varre no Mercado Livre anúncios de filamento TPU, PLA, PETG e ABS: "
-        "preços, cores, marcas e ranking de vendas; cruza com Alibaba quando ativo. "
-        "Telegram: resumo por material + ranking."
+        "preços, cores, marcas e ranking de vendas; compara com as mesmas linhas "
+        "no Alibaba (FOB/landed × preço ML) e envia o comparativo no Telegram."
     ),
     "monitor_acetona_cruzeiro": (
         "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
