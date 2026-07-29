@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "332aafa665eacd427749",
+      "primeira_vez": "2026-07-29T18:49:41.311346+00:00",
+      "ultima_vez": "2026-07-29T18:49:41.311346+00:00",
+      "logger": "alibaba_busca",
+      "mensagem": "Alibaba direto falhou: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
       "fingerprint": "49a87ac61d174e7c6fef",
       "primeira_vez": "2026-07-29T17:51:10.677927+00:00",
       "ultima_vez": "2026-07-29T17:51:10.677927+00:00",
@@ -1638,18 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "d66a5836663e93097b0a",
-      "primeira_vez": "2026-07-05T20:44:28.361048+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.881823+00:00",
-      "logger": "meta_ads_client",
-      "mensagem": "Meta Ads listar_metricas_por_plataforma erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-07-29T17:51:10.677927+00:00"
+  "atualizado_em": "2026-07-29T18:49:41.311346+00:00"
 }

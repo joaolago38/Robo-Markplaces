@@ -117,9 +117,20 @@ class TestAlibabaBuscaHelpers(unittest.TestCase):
 
 class TestDetectarBloqueioAlibaba(unittest.TestCase):
     def test_captcha_sem_produto(self):
-        html = "<html><body>" + ("x" * 900) + " captcha punish deny </body></html>"
+        html = "<html><body>" + ("x" * 900) + " captcha punish </body></html>"
         self.assertIsNotNone(busca.detectar_bloqueio_html_alibaba(html))
         self.assertIn("anti_bot", busca.detectar_bloqueio_html_alibaba(html) or "")
+
+    def test_deny_sozinho_nao_bloqueia(self):
+        html = "<html><body>" + ("x" * 900) + " cookie policy deny tracking </body></html>"
+        self.assertIsNone(busca.detectar_bloqueio_html_alibaba(html))
+
+    def test_html_vazio_nao_e_anti_bot(self):
+        self.assertIsNone(busca.detectar_bloqueio_html_alibaba(""))
+        self.assertFalse(busca.motivo_e_anti_bot("html_vazio"))
+        self.assertFalse(busca.motivo_e_anti_bot("http_403"))
+        self.assertFalse(busca.motivo_e_anti_bot("excecao:Timeout"))
+        self.assertTrue(busca.motivo_e_anti_bot("anti_bot:captcha"))
 
     def test_pagina_com_produto_nao_bloqueia(self):
         html = (
@@ -129,9 +140,6 @@ class TestDetectarBloqueioAlibaba(unittest.TestCase):
             + "</body></html>"
         )
         self.assertIsNone(busca.detectar_bloqueio_html_alibaba(html))
-
-    def test_html_vazio(self):
-        self.assertEqual(busca.detectar_bloqueio_html_alibaba(""), "html_vazio")
 
 
 class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
@@ -171,6 +179,37 @@ class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
         self.assertEqual(det["itens"], [])
         self.assertIn("anti_bot", det.get("motivo") or "")
         self.assertEqual(mock_request.call_count, 1)
+
+    @patch.object(busca, "request")
+    def test_html_curto_sem_captcha_nao_bloqueia(self, mock_request):
+        html = "<html><body>no results found for query</body></html>"
+        mock_request.return_value = MagicMock(status_code=200, text=html)
+        with patch("core.config.ALIBABA_BUSCA_MAX_RESULTADOS", 10), patch(
+            "core.config.ALIBABA_BUSCA_PAGINAS", 1
+        ):
+            det = busca.buscar_alibaba_direto_detalhado("PLA", max_resultados=10, paginas=1)
+        self.assertFalse(det["bloqueado"])
+        self.assertEqual(det["itens"], [])
+
+    @patch.object(busca, "request")
+    def test_http_erro_nao_e_anti_bot(self, mock_request):
+        mock_request.return_value = MagicMock(status_code=403, text="Forbidden")
+        with patch("core.config.ALIBABA_BUSCA_MAX_RESULTADOS", 10), patch(
+            "core.config.ALIBABA_BUSCA_PAGINAS", 1
+        ):
+            det = busca.buscar_alibaba_direto_detalhado("PLA", max_resultados=10, paginas=1)
+        self.assertFalse(det["bloqueado"])
+        self.assertEqual(det.get("motivo"), "http_403")
+
+    @patch.object(busca, "request")
+    def test_excecao_nao_e_anti_bot(self, mock_request):
+        mock_request.side_effect = TimeoutError("timeout")
+        with patch("core.config.ALIBABA_BUSCA_MAX_RESULTADOS", 10), patch(
+            "core.config.ALIBABA_BUSCA_PAGINAS", 1
+        ):
+            det = busca.buscar_alibaba_direto_detalhado("PLA", max_resultados=10, paginas=1)
+        self.assertFalse(det["bloqueado"])
+        self.assertIn("excecao:", det.get("motivo") or "")
 
 
 class TestBuscarOportunidades(unittest.TestCase):

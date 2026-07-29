@@ -114,6 +114,19 @@ class TendenciasMlImportacaoTests(unittest.TestCase):
         self.assertIsNotNone(diag)
         self.assertTrue(diag["alibaba_bloqueado"])
 
+    def test_coleta_vazia_nao_duplica_com_bloqueio(self):
+        resultados = [
+            {
+                "ok": True,
+                "sinais_ml": {"total_anuncios": 0},
+                "total_oportunidades_alibaba": 0,
+                "coleta_alibaba": {"bloqueado": True, "motivo": "anti_bot:captcha"},
+                "veredito": {"codigo": "alibaba_bloqueado"},
+            }
+        ]
+        self.assertIsNone(tmi.diagnosticar_coleta_vazia(resultados))
+        self.assertIsNotNone(tmi.diagnosticar_bloqueio_alibaba(resultados))
+
 
 if __name__ == "__main__":
     unittest.main()

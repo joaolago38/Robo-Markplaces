@@ -132,7 +132,8 @@ def classificar_veredito(
     bloqueado = bool((coleta_alibaba or {}).get("bloqueado"))
 
     if not tem_ml and not tem_alibaba:
-        codigo = "alibaba_bloqueado" if bloqueado else "sem_dados"
+        # Bloqueio Alibaba não esconde falha de ML — ambos ausentes = sem_dados
+        codigo = "sem_dados"
     elif not tem_ml:
         codigo = "sem_ml"
     elif not tem_alibaba:
@@ -235,6 +236,13 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
 def diagnosticar_coleta_vazia(resultados: list[dict[str, Any]]) -> dict[str, Any] | None:
     ok = [r for r in resultados if r.get("ok")]
     if not ok:
+        return None
+    # Preferir banner de anti-bot Alibaba — evita aviso duplicado
+    if any(
+        (r.get("coleta_alibaba") or {}).get("bloqueado")
+        or (r.get("veredito") or {}).get("codigo") == "alibaba_bloqueado"
+        for r in ok
+    ):
         return None
     sem_ml = sum(1 for r in ok if int((r.get("sinais_ml") or {}).get("total_anuncios") or 0) == 0)
     sem_ali = sum(1 for r in ok if int(r.get("total_oportunidades_alibaba") or 0) == 0)
