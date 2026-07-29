@@ -14,6 +14,7 @@ from agentes.orquestrador.registro_agentes import AgenteRegistrado, executar_reg
 from core.config import ORQUESTRADOR_COOLDOWN_RESUMO_SEG, ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, gestor_telegram_configurado
+from core.request_context import definir_request_id, novo_request_id
 
 logger = logging.getLogger("agente_orquestrador")
 
@@ -128,7 +129,9 @@ def _enviar_metricas_ciclo(ciclo: dict[str, Any], *, prefixo: str) -> None:
     gauge(f"{prefixo}.ciclo.agentes_ok", ciclo["ok"])
     gauge(f"{prefixo}.ciclo.agentes_falha", ciclo["falhas"])
     gauge(f"{prefixo}.ciclo.agentes_total", ciclo["total"])
-    incrementar(f"{prefixo}.ciclo", tags=[f"falhas:{ciclo['falhas']}"])
+    incrementar(f"{prefixo}.ciclo")
+    if ciclo["falhas"]:
+        incrementar(f"{prefixo}.ciclo.com_falha")
 
 
 def executar_ciclo(
@@ -148,6 +151,8 @@ def executar_ciclo(
     pausa = ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG if pausa_entre_agentes_seg is None else pausa_entre_agentes_seg
     inicio_ciclo = time.monotonic()
     resultados: list[dict[str, Any]] = []
+    run_id = novo_request_id()
+    definir_request_id(run_id)
 
     if enviar_resumo_telegram:
         from core.telegram_gate import verificar_token
@@ -163,7 +168,7 @@ def executar_ciclo(
                 log_prefix,
             )
 
-    logger.info("%s: iniciando ciclo com %s agente(s)", log_prefix, len(agentes))
+    logger.info("%s: iniciando ciclo run_id=%s com %s agente(s)", log_prefix, run_id, len(agentes))
 
     for registro in agentes:
         resultados.append(_executar_agente(registro))
@@ -176,6 +181,7 @@ def executar_ciclo(
 
     ciclo = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "run_id": run_id,
         "total": len(resultados),
         "ok": ok_count,
         "falhas": falhas,

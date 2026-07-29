@@ -1005,6 +1005,8 @@ DD_API_KEY = os.getenv("DD_API_KEY", "").strip()
 DD_APPLICATION_KEY = os.getenv("DD_APPLICATION_KEY", "").strip()
 DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
 DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
+# Métricas independentes dos logs: dá para cortar volume de log sem cegar o Datadog.
+DD_METRICS_ENABLED = os.getenv("DD_METRICS_ENABLED", "true").lower() in {"1", "true", "yes"}
 # Ambiente exibido na tag `env:` no Datadog (production/staging/dev). Antes era fixo em "production".
 DD_ENV = os.getenv("DD_ENV", "production").strip() or "production"
 

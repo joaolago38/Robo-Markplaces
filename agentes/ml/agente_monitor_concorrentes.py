@@ -559,7 +559,7 @@ def _monitorar_entrada(
     # ── Datadog ──────────────────────────────────────────────────────────
     # tag `produto` usa o `id` do JSON (ex.: "kit3-mimo-carmed") para
     # aparecer como facet no Metrics Explorer e facilitar filtrar por SKU.
-    _tags = [f"produto:{eid}", f"termo:{termo[:40]}", f"origem_preco:{origem_preco}"]
+    _tags = [f"produto:{eid}", f"origem_preco:{origem_preco}"]
     if meu_preco > 0:
         gauge("mercado.meu_preco", meu_preco, tags=_tags)
     if menor > 0:

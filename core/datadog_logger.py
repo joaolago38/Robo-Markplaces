@@ -192,6 +192,7 @@ _LOGGER_META = {
 
     # --- Diagnóstico interno deste módulo ---
     "datadog_logger": ("infra", "core"),
+    "datadog_metrics": ("infra", "core"),
     "series_historica": ("infra", "core"),
     "graficos": ("infra", "core"),
     "prontidao": ("infra", "core"),
@@ -208,6 +209,25 @@ _DEFAULT_META = ("geral", "outros")
 # Evita inundar o Datadog com o mesmo aviso de "logger não mapeado" a cada
 # linha de log — avisa uma única vez por nome de logger, por processo.
 _avisados_sem_mapeamento: set[str] = set()
+_falhas_envio_logs = 0
+_ultimo_aviso_falha_log_ts = 0.0
+
+
+def _avisar_falha_envio_log(motivo: str) -> None:
+    global _falhas_envio_logs, _ultimo_aviso_falha_log_ts
+    import time
+
+    _falhas_envio_logs += 1
+    agora = time.monotonic()
+    if agora - _ultimo_aviso_falha_log_ts < 60:
+        return
+    _ultimo_aviso_falha_log_ts = agora
+    # Logger próprio — se o handler DD falhar, o console ainda vê o aviso.
+    logging.getLogger("datadog_logger").warning(
+        "Datadog logs envio falhou (%s): %s",
+        _falhas_envio_logs,
+        motivo,
+    )
 
 
 def _resolver_meta(nome_logger: str) -> tuple[str, str]:
@@ -265,7 +285,11 @@ class DatadogLogHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         if record.levelno < logging.INFO:
             return
+        # Evita recursão se o aviso de falha de envio voltar para este handler
+        if record.name in ("datadog_logger", "datadog_metrics"):
+            return
         from core.config import DD_API_KEY, DD_ENV, DD_LOGS_ENABLED
+        from core.http_errors import mascarar_segredos_http
 
         if not DD_LOGS_ENABLED or not DD_API_KEY:
             return
@@ -280,8 +304,11 @@ class DatadogLogHandler(logging.Handler):
             if request_id:
                 ddtags += f",request_id:{request_id}"
 
+            mensagem_bruta = self.format(record) if self.formatter else record.getMessage()
+            mensagem = mascarar_segredos_http(mensagem_bruta)
+
             payload_entry: dict = {
-                "message": self.format(record),
+                "message": mensagem,
                 "ddsource": "python",
                 "service": "robo-markplaces",
                 # `status` é um standard attribute do Datadog: além de
@@ -306,21 +333,27 @@ class DatadogLogHandler(logging.Handler):
                 if error_kind:
                     error_attrs["kind"] = error_kind
                 if error_message:
-                    error_attrs["message"] = error_message
+                    error_attrs["message"] = mascarar_segredos_http(str(error_message))
                 if record.exc_info:
-                    error_attrs["stack"] = logging.Formatter().formatException(record.exc_info)
+                    error_attrs["stack"] = mascarar_segredos_http(
+                        logging.Formatter().formatException(record.exc_info)
+                    )
                 if error_attrs:
                     payload_entry["error"] = error_attrs
 
             payload = [payload_entry]
-            requests.post(
+            resp = requests.post(
                 self._url,
                 headers={"DD-API-KEY": DD_API_KEY, "Content-Type": "application/json"},
                 data=json.dumps(payload),
                 timeout=3,
             )
-        except Exception:
-            pass
+            if getattr(resp, "status_code", None) is not None:
+                status = resp.status_code
+                if isinstance(status, int) and status >= 300:
+                    _avisar_falha_envio_log(f"HTTP {status}")
+        except Exception as exc:
+            _avisar_falha_envio_log(str(exc)[:160])
 
 
 def configurar_logging_datadog() -> None:

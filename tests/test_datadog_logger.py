@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -40,6 +40,7 @@ class TestDatadogLogHandler(unittest.TestCase):
     @patch("core.config.DD_SITE", "datadoghq.com")
     @patch("core.config.DD_ENV", "production")
     def test_emit_bling_tag_marketplace(self, mock_post, *_):
+        mock_post.return_value = MagicMock(status_code=202)
         handler = DatadogLogHandler()
         handler.setFormatter(logging.Formatter("%(message)s"))
         handler.emit(_make_record(name="bling", msg="NF-e ok"))
@@ -58,6 +59,24 @@ class TestDatadogLogHandler(unittest.TestCase):
         self.assertIn("componente:integracao", payload[0]["ddtags"])
         self.assertIn("logger:bling", payload[0]["ddtags"])
         self.assertIn("level:info", payload[0]["ddtags"])
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    @patch("core.config.DD_SITE", "datadoghq.com")
+    def test_emit_mascara_access_token(self, mock_post, *_):
+        mock_post.return_value = MagicMock(status_code=202)
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.emit(
+            _make_record(
+                name="shopee_client",
+                msg="erro GET https://x.com?access_token=segredo123&shop_id=1",
+            )
+        )
+        payload = json.loads(mock_post.call_args.kwargs["data"])
+        self.assertNotIn("segredo123", payload[0]["message"])
+        self.assertIn("access_token=***", payload[0]["message"])
 
     @patch("core.datadog_logger.requests.post")
     @patch("core.config.DD_API_KEY", "dd-key-test")

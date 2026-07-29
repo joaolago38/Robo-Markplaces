@@ -59,11 +59,25 @@ def mascarar_url_telegram(texto: str) -> str:
 
 
 def mascarar_segredos_http(texto: str) -> str:
-    """Redige tokens em query strings / URLs de logs de erro HTTP."""
+    """Redige tokens em query strings / URLs / headers de logs de erro HTTP."""
     if not texto:
         return texto
     t = mascarar_url_telegram(str(texto))
     t = re.sub(r"(access_token=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
     t = re.sub(r"(refresh_token=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
     t = re.sub(r"(partner_key=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
+    t = re.sub(r"(api[_-]?key=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
+    t = re.sub(
+        r"(Authorization:\s*Bearer\s+)[^\s\"']+",
+        r"\1***",
+        t,
+        flags=re.IGNORECASE,
+    )
+    t = re.sub(
+        r"(x-api-key[\"']?\s*[:=]\s*[\"']?)[^\"'\s,]+",
+        r"\1***",
+        t,
+        flags=re.IGNORECASE,
+    )
+    t = re.sub(r"(sk-ant-[A-Za-z0-9_-]+)", "sk-ant-***", t)
     return t

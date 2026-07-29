@@ -50,7 +50,7 @@ class TestRepricingDistingueFalhaDeSucesso(unittest.TestCase):
         self.assertIn("FALHARAM", mock_alertar_critico.call_args.args[0])
 
         # Métrica de falha foi enviada ao Datadog.
-        mock_incrementar.assert_any_call("repricing.falha_aplicacao", tags=["canal:mercadolivre", "sku:SKU1"])
+        mock_incrementar.assert_any_call("repricing.falha_aplicacao", tags=["canal:mercadolivre"])
 
         # O alerta normal ao gestor reflete o resultado real (0/1), não "1 aplicado".
         mensagem_gestor = mock_alertar_gestor.call_args.args[0]
@@ -132,7 +132,7 @@ class TestEstoqueDistingueFalhaDeSucesso(unittest.TestCase):
 
         mock_alertar_critico.assert_called_once()
         self.assertIn("FALHARAM", mock_alertar_critico.call_args.args[0])
-        mock_incrementar.assert_any_call("estoque.falha_aplicacao", tags=["canal:mercadolivre", "sku:SKU1"])
+        mock_incrementar.assert_any_call("estoque.falha_aplicacao", tags=["canal:mercadolivre"])
 
         mensagem_gestor = mock_alertar_gestor.call_args.args[0]
         self.assertIn("0/1", mensagem_gestor)
