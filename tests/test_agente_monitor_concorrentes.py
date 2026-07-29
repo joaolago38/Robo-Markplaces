@@ -229,5 +229,75 @@ class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
         self.assertTrue(any("produto:kit1" in t for t in todas_tags))
 
 
+class TestWatchlistItem(unittest.TestCase):
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
+    @patch.object(mon, "alertar_gestor", return_value=True)
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(
+        mon,
+        "_carregar_historico",
+        return_value={"watch1": {"preco": 50.0, "status": "active", "menor_preco": 50.0}},
+    )
+    @patch.object(
+        mon,
+        "_carregar_lista",
+        return_value=[
+            {
+                "id": "watch1",
+                "ativo": True,
+                "tipo": "item",
+                "nome": "Rival Kit 10",
+                "item_id_concorrente": "MLB999888777",
+                "meu_preco": 69.9,
+            }
+        ],
+    )
+    @patch.object(
+        mon.ml_client,
+        "buscar_item_publico",
+        return_value={
+            "item_id": "MLB999888777",
+            "titulo": "Kit 10 Rival",
+            "preco": 40.0,
+            "status": "active",
+            "sold_quantity": 12,
+            "seller_id": "1",
+            "permalink": "https://mlb",
+        },
+    )
+    def test_watchlist_alerta_preco_e_secao_telegram(self, *_):
+        out = mon.executar(enviar_alerta=True, enriquecer_metricas=False)
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["resultados"][0]["tipo"], "item")
+        self.assertGreaterEqual(out["total_alertas"], 1)
+        texto = " ".join(out.get("alertas") or [])
+        self.assertIn("[watchlist]", texto)
+        mon.alertar_gestor.assert_called_once()
+        msg = mon.alertar_gestor.call_args[0][0]
+        self.assertIn("Watchlist MLB", msg)
+
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(
+        mon,
+        "_carregar_lista",
+        return_value=[
+            {
+                "id": "watch-bad",
+                "ativo": True,
+                "tipo": "item",
+                "nome": "Sem MLB",
+                "item_id_concorrente": "MLB_PREENCHER",
+                "meu_preco": 40.0,
+            }
+        ],
+    )
+    def test_watchlist_ignora_mlb_preencher(self, *_):
+        out = mon.executar(enviar_alerta=False)
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["resultados"][0]["ok"])
+        self.assertIn("PREENCHER", out["resultados"][0].get("erro", "").upper())
+
+
 if __name__ == "__main__":
     unittest.main()

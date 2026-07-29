@@ -25,6 +25,7 @@ class TestHttpClientMetricas(unittest.TestCase):
         tags = mock_gauge.call_args.kwargs.get("tags") or mock_gauge.call_args.args[-1]
         self.assertIn("host:api.bling.com.br", tags)
         self.assertIn("status:2xx", tags)
+        self.assertIn("origem:api", tags)
         mock_incrementar.assert_not_called()
 
     @patch("core.http_client.incrementar")
@@ -48,6 +49,18 @@ class TestHttpClientMetricas(unittest.TestCase):
 
         mock_incrementar.assert_called_once()
         self.assertEqual(mock_incrementar.call_args.args[0], "http.exception")
+
+    @patch("core.http_client.incrementar")
+    @patch("core.http_client.gauge")
+    @patch("core.http_client.log_erros_veiculos_ativos", return_value=False)
+    @patch("core.http_client._SESSION.request", side_effect=RuntimeError("timeout"))
+    def test_scraper_silenciado_nao_emite_metricas(
+        self, _mock_request, _log, mock_gauge, mock_incrementar
+    ):
+        with self.assertRaises(RuntimeError):
+            http_client.request("GET", "https://www.leopardoveiculos.com.br/x")
+        mock_gauge.assert_not_called()
+        mock_incrementar.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -356,7 +356,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     resultado_aplicacao = fn(ref, novo_preco)
                     if not resultado_aplicacao:
                         falhou_aplicacao = True
-                        incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}"])
+                        incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}"])
                         logger.error(
                             "Repricing: falha ao aplicar novo preço sku=%s canal=%s ref=%s novo_preco=%.2f",
                             sku, canal, ref, novo_preco,
@@ -366,7 +366,10 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     # "sem ajuste necessário", é uma falha de configuração que precisa ser
                     # visível, não silenciosamente contada como sucesso.
                     falhou_aplicacao = True
-                    incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}", "motivo:sem_ref_ou_updater"])
+                    incrementar(
+                        "repricing.falha_aplicacao",
+                        tags=[f"canal:{canal}", "motivo:sem_ref_ou_updater"],
+                    )
                     logger.error(
                         "Repricing: sem updater/ref válido para aplicar preço sku=%s canal=%s ref=%s",
                         sku, canal, ref,

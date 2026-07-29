@@ -344,7 +344,8 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 )
             )
 
-        incrementar("carros_batidos.rodadas", tags=[f"novos:{len(todos_novos)}"])
+        incrementar("carros_batidos.rodadas")
+        gauge("carros_batidos.novos_total", float(len(todos_novos)))
 
         return {
             "ok": True,

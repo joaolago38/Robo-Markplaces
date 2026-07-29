@@ -175,7 +175,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
                             pausar_anuncio(str(ref), dry_run=False, confirmar=True)
                 else:
                     falhou_aplicacao = True
-                    incrementar("estoque.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}"])
+                    incrementar("estoque.falha_aplicacao", tags=[f"canal:{canal}"])
                     logger.error(
                         "Sincronizar estoque: falha ao aplicar sku=%s canal=%s ref=%s estoque_bling=%s",
                         sku, canal, ref, estoque_bling,

@@ -681,9 +681,9 @@ def buscar_metricas_item(item_id: str) -> dict:
         return {}
     try:
         item_id = item_id.strip()
-        r_item = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
-        r_item.raise_for_status()
-        item = r_item.json() or {}
+        basico = buscar_item_publico(item_id)
+        if not basico:
+            return {}
 
         r7 = _request_ml(
             "GET",
@@ -703,25 +703,52 @@ def buscar_metricas_item(item_id: str) -> dict:
         r30.raise_for_status()
         v30 = int((r30.json() or {}).get("total_visits", 0) or 0)
 
+        return {
+            **basico,
+            "visitas_7d": v7,
+            "visitas_30d": v30,
+        }
+    except Exception as exc:
+        _log_erro_leitura_item("buscar_metricas_item", item_id, exc)
+        # Visitas falham em anúncio alheio — ainda devolve preço/status se possível
+        try:
+            return buscar_item_publico(item_id)
+        except Exception:
+            return {}
+
+
+def buscar_item_publico(item_id: str) -> dict:
+    """
+    GET /items/{id} — preço, status, sold_quantity, estoque.
+    Serve para watchlist de concorrentes (sem visitas, que só existem nos seus).
+    Nunca lança exceção.
+    """
+    if not _enabled() or not (item_id or "").strip():
+        return {}
+    try:
+        iid = item_id.strip()
+        r_item = _request_ml("GET", f"{BASE}/items/{iid}", timeout=20)
+        r_item.raise_for_status()
+        item = r_item.json() or {}
         estoque_raw = item.get("available_quantity", 0)
         try:
             estoque_int = int(estoque_raw)
         except (TypeError, ValueError):
             estoque_int = int(float(estoque_raw or 0))
-
         return {
-            "item_id": item_id,
+            "item_id": iid,
             "titulo": str(item.get("title", "") or ""),
             "status": str(item.get("status", "") or ""),
             "preco": float(item.get("price", 0) or 0),
             "estoque": estoque_int,
-            "visitas_7d": v7,
-            "visitas_30d": v30,
             "sold_quantity": int(item.get("sold_quantity", 0) or 0),
             "sku": str(item.get("seller_sku", "") or ""),
+            "listing_type_id": str(item.get("listing_type_id", "") or ""),
+            "seller_id": str((item.get("seller_id") or "")).strip(),
+            "permalink": str(item.get("permalink", "") or ""),
         }
     except Exception as exc:
-        _log_erro_leitura_item("buscar_metricas_item", item_id, exc)
+        _log_erro_leitura_item("buscar_item_publico", item_id, exc)
         return {}
 
 

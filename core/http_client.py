@@ -51,6 +51,32 @@ def _host_simplificado(url: str) -> str:
         return "desconhecido"
 
 
+def _origem_http(host: str) -> str:
+    """Classifica origem para facet de latência (api vs scraper vs ia)."""
+    h = (host or "").lower()
+    if host_scraper_veiculos(host):
+        return "scraper"
+    if "anthropic.com" in h:
+        return "ia"
+    if "telegram.org" in h or "api.telegram" in h:
+        return "telegram"
+    if "datadoghq" in h:
+        return "datadog"
+    return "api"
+
+
+def _emitir_metricas_http(host: str, metodo: str, *, duracao_ms: float, status_tag: str) -> None:
+    """
+    Scrapers com log silenciado não entram na média de latência (evita
+    inflar robo.http.latencia_ms com timeouts de HTML).
+    """
+    origem = _origem_http(host)
+    if origem == "scraper" and not log_erros_veiculos_ativos():
+        return
+    tags_base = [f"host:{host}", f"method:{metodo}", f"origem:{origem}"]
+    gauge("http.latencia_ms", duracao_ms, tags=[*tags_base, f"status:{status_tag}"])
+
+
 def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests.Response:
     """
     Executa request com sessão compartilhada + política de retry.
@@ -59,14 +85,16 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
     """
     metodo = method.upper()
     host = _host_simplificado(url)
-    tags_base = [f"host:{host}", f"method:{metodo}"]
+    origem = _origem_http(host)
+    tags_base = [f"host:{host}", f"method:{metodo}", f"origem:{origem}"]
     inicio = time.monotonic()
     try:
         response = _SESSION.request(method=method, url=url, timeout=timeout, **kwargs)
     except Exception as exc:
         duracao_ms = (time.monotonic() - inicio) * 1000
-        gauge("http.latencia_ms", duracao_ms, tags=[*tags_base, "status:exception"])
-        incrementar("http.exception", tags=tags_base)
+        _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag="exception")
+        if not (origem == "scraper" and not log_erros_veiculos_ativos()):
+            incrementar("http.exception", tags=tags_base)
         # Scrapers de lojas (Leopardo etc.) falham com frequência por timeout/bloqueio —
         # não poluir Datadog enquanto LOG_ERROS_VEICULOS_SCRAPERS=0.
         if host_scraper_veiculos(host) and not log_erros_veiculos_ativos():
@@ -92,10 +120,11 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
 
     duracao_ms = (time.monotonic() - inicio) * 1000
     faixa_status = f"{response.status_code // 100}xx"
-    gauge("http.latencia_ms", duracao_ms, tags=[*tags_base, f"status:{faixa_status}"])
+    _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag=faixa_status)
     if response.status_code >= 400:
-        incrementar(
-            "http.erro",
-            tags=[*tags_base, f"status_code:{response.status_code}"],
-        )
+        if not (origem == "scraper" and not log_erros_veiculos_ativos()):
+            incrementar(
+                "http.erro",
+                tags=[*tags_base, f"status_code:{response.status_code}"],
+            )
     return response
