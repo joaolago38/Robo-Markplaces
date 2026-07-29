@@ -51,7 +51,7 @@ jobs:
         run: python -m agentes.infra.agente_consumo_claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '0' }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
           CLAUDE_ECONOMICO: "1"
           CLAUDE_MODELO: claude-haiku-4-5
           CLAUDE_MODELO_RAPIDO: claude-haiku-4-5

@@ -125,7 +125,7 @@ def cruzar_filamentos_ml_alibaba(
     - busca ofertas Alibaba (base + top cores do ML)
     - calcula margem landed vs preço médio ML
     """
-    from integracoes.alibaba.busca import buscar_oportunidades
+    from integracoes.alibaba.busca import buscar_oportunidades_detalhado
     from integracoes.cambio.cotacao_usd import cotacao_confiavel_para_margem, obter_cotacao_usd
     from integracoes.importacao.analise_margem import analisar_produto_catalogo
 
@@ -176,11 +176,26 @@ def cruzar_filamentos_ml_alibaba(
         melhor_analise = None
         todas_ops: list[dict[str, Any]] = []
         por_cor: list[dict[str, Any]] = []
+        coleta_agg: dict[str, Any] = {
+            "bloqueado": False,
+            "motivo": None,
+            "direto": 0,
+            "ddg": 0,
+            "candidatos": 0,
+        }
 
         for cor in variantes:
             prod_q = _produto_com_cor(produto, cor)
             try:
-                ops = buscar_oportunidades(prod_q, pausa_seg=pausa_seg)
+                busca = buscar_oportunidades_detalhado(prod_q, pausa_seg=pausa_seg)
+                ops = busca.get("oportunidades") or []
+                col = busca.get("coleta") or {}
+                coleta_agg["direto"] += int(col.get("direto") or 0)
+                coleta_agg["ddg"] += int(col.get("ddg") or 0)
+                coleta_agg["candidatos"] += int(col.get("candidatos") or 0)
+                if col.get("bloqueado") and not ops:
+                    coleta_agg["bloqueado"] = True
+                    coleta_agg["motivo"] = coleta_agg.get("motivo") or col.get("motivo")
             except Exception as exc:
                 logger.warning("Alibaba filamento falhou produto=%s cor=%s: %s", produto.get("id"), cor, exc)
                 ops = []
@@ -224,6 +239,10 @@ def cruzar_filamentos_ml_alibaba(
             vistos.add(u)
             ops_unicas.append(op)
 
+        if ops_unicas:
+            coleta_agg["bloqueado"] = False
+            coleta_agg["motivo"] = None
+
         cruzamentos.append(
             {
                 "id": produto.get("id"),
@@ -232,6 +251,7 @@ def cruzar_filamentos_ml_alibaba(
                 "termo_marketplace": produto.get("termo_marketplace"),
                 "precos_ml": precos_ml,
                 "total_oportunidades_alibaba": len(ops_unicas),
+                "coleta_alibaba": coleta_agg,
                 "por_cor": por_cor,
                 "melhor_analise": melhor_analise,
                 "lucrativa": bool(melhor_analise and melhor_analise.get("lucro_razoavel")),
@@ -241,6 +261,9 @@ def cruzar_filamentos_ml_alibaba(
             time.sleep(pausa_seg)
 
     lucrativos = [c for c in cruzamentos if c.get("lucrativa")]
+    alibaba_bloqueado = any(
+        (c.get("coleta_alibaba") or {}).get("bloqueado") for c in cruzamentos
+    )
     return {
         "ok": True,
         "produtos_catalogo": len(produtos),
@@ -249,6 +272,7 @@ def cruzar_filamentos_ml_alibaba(
         "cores_usadas": [c.get("cor") for c in cores_top],
         "cambio_usd_brl": cambio,
         "cambio_confiavel": True,
+        "alibaba_bloqueado": alibaba_bloqueado,
     }
 
 
@@ -258,6 +282,11 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
     if not cruzamento.get("ok"):
         linhas.append(f"_Cruzamento indisponível: {cruzamento.get('motivo') or 'erro'}_")
         return linhas
+
+    if cruzamento.get("alibaba_bloqueado"):
+        linhas.append(
+            "🚫 _Alibaba coleta bloqueada (captcha/anti-bot) — zeros ≠ sem oferta no mercado._"
+        )
 
     cores = cruzamento.get("cores_usadas") or []
     if cores:
@@ -281,6 +310,7 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
     for item in itens_ord:
         ml = item.get("precos_ml") or {}
         mat = str(item.get("material") or "?").upper()
+        coleta = item.get("coleta_alibaba") or {}
         linhas.append("")
         linhas.append(f"*{mat}* — {item.get('produto', item.get('id'))}")
         linhas.append(
@@ -288,9 +318,14 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
             f"(méd {fmt_brl(ml.get('preco_medio_brl'))}) | "
             f"{ml.get('total_anuncios') or 0} anúncio(s)"
         )
-        linhas.append(
-            f"  Alibaba: {item.get('total_oportunidades_alibaba', 0)} oferta(s) encontradas"
-        )
+        if coleta.get("bloqueado") and int(item.get("total_oportunidades_alibaba") or 0) == 0:
+            linhas.append(
+                f"  Alibaba: bloqueado ({coleta.get('motivo') or 'anti-bot'}) — sem cotação nesta rodada"
+            )
+        else:
+            linhas.append(
+                f"  Alibaba: {item.get('total_oportunidades_alibaba', 0)} oferta(s) encontradas"
+            )
         melhor = item.get("melhor_analise") or {}
         if melhor.get("ok"):
             margem = melhor.get("margem_melhor") or {}

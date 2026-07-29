@@ -159,16 +159,25 @@ class CruzamentoFilamentosTests(unittest.TestCase):
         ), patch(
             "integracoes.cambio.cotacao_usd.cotacao_confiavel_para_margem", return_value=True
         ), patch(
-            "integracoes.alibaba.busca.buscar_oportunidades",
-            return_value=[
-                {
-                    "titulo": "PLA black 1kg",
-                    "url": "https://www.alibaba.com/product-detail/1.html",
-                    "preco_usd": 4.5,
-                    "moq": 50,
-                    "hash": "h1",
-                }
-            ],
+            "integracoes.alibaba.busca.buscar_oportunidades_detalhado",
+            return_value={
+                "oportunidades": [
+                    {
+                        "titulo": "PLA black 1kg",
+                        "url": "https://www.alibaba.com/product-detail/1.html",
+                        "preco_usd": 4.5,
+                        "moq": 50,
+                        "hash": "h1",
+                    }
+                ],
+                "coleta": {
+                    "bloqueado": False,
+                    "motivo": None,
+                    "direto": 1,
+                    "ddg": 0,
+                    "candidatos": 1,
+                },
+            },
         ), patch(
             "integracoes.importacao.analise_margem.analisar_produto_catalogo",
             return_value={
@@ -232,6 +241,29 @@ class CruzamentoFilamentosTests(unittest.TestCase):
         self.assertIn("ML:", texto)
         self.assertIn("Alibaba:", texto)
         self.assertIn("Preto", texto)
+
+    def test_formatar_secao_bloqueado(self):
+        linhas = cruz.formatar_secao_cruzamento(
+            {
+                "ok": True,
+                "alibaba_bloqueado": True,
+                "cambio_usd_brl": 5.5,
+                "cruzamentos": [
+                    {
+                        "produto": "Filamento PLA",
+                        "material": "PLA",
+                        "precos_ml": {"preco_min_brl": 70, "preco_medio_brl": 90, "preco_max_brl": 110},
+                        "total_oportunidades_alibaba": 0,
+                        "coleta_alibaba": {"bloqueado": True, "motivo": "anti_bot:captcha"},
+                        "melhor_analise": None,
+                    }
+                ],
+            },
+            fmt_brl=lambda v: f"R$ {v}" if v else "n/d",
+        )
+        texto = "\n".join(linhas)
+        self.assertIn("bloqueada", texto.lower())
+        self.assertIn("anti-bot", texto.lower())
 
     def test_formatar_secao_erro(self):
         linhas = cruz.formatar_secao_cruzamento(

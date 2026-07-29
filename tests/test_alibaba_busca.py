@@ -115,6 +115,25 @@ class TestAlibabaBuscaHelpers(unittest.TestCase):
             self.assertTrue(busca._e_oportunidade({}, {"preco_usd": 0.2, "moq": 50, "url": "http://x"}))
 
 
+class TestDetectarBloqueioAlibaba(unittest.TestCase):
+    def test_captcha_sem_produto(self):
+        html = "<html><body>" + ("x" * 900) + " captcha punish deny </body></html>"
+        self.assertIsNotNone(busca.detectar_bloqueio_html_alibaba(html))
+        self.assertIn("anti_bot", busca.detectar_bloqueio_html_alibaba(html) or "")
+
+    def test_pagina_com_produto_nao_bloqueia(self):
+        html = (
+            "<html><body>"
+            + ("x" * 900)
+            + ' href="https://www.alibaba.com/product-detail/a_1.html" captcha'
+            + "</body></html>"
+        )
+        self.assertIsNone(busca.detectar_bloqueio_html_alibaba(html))
+
+    def test_html_vazio(self):
+        self.assertEqual(busca.detectar_bloqueio_html_alibaba(""), "html_vazio")
+
+
 class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
     @patch.object(busca, "request")
     def test_pagina_multipla(self, mock_request):
@@ -140,21 +159,40 @@ class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
         self.assertIn("page=1", mock_request.call_args_list[0].args[1])
         self.assertIn("page=2", mock_request.call_args_list[1].args[1])
 
+    @patch.object(busca, "request")
+    def test_detalhado_marca_bloqueio_captcha(self, mock_request):
+        html = "<html><head></head><body>" + ("z" * 1200) + " captcha punish </body></html>"
+        mock_request.return_value = MagicMock(status_code=200, text=html)
+        with patch("core.config.ALIBABA_BUSCA_MAX_RESULTADOS", 10), patch(
+            "core.config.ALIBABA_BUSCA_PAGINAS", 2
+        ):
+            det = busca.buscar_alibaba_direto_detalhado("PLA", max_resultados=10, paginas=2)
+        self.assertTrue(det["bloqueado"])
+        self.assertEqual(det["itens"], [])
+        self.assertIn("anti_bot", det.get("motivo") or "")
+        self.assertEqual(mock_request.call_count, 1)
+
 
 class TestBuscarOportunidades(unittest.TestCase):
     @patch.object(busca, "buscar_duckduckgo", return_value=[])
-    @patch.object(busca, "buscar_alibaba_direto")
+    @patch.object(busca, "buscar_alibaba_direto_detalhado")
     def test_retorna_novos_itens(self, mock_direto, _ddg):
-        mock_direto.return_value = [
-            {
-                "url": "https://www.alibaba.com/product-detail/123.html",
-                "titulo": "nail polish bottle wholesale",
-                "snippet": "Trade Assurance MOQ 100",
-                "preco_usd": 0.25,
-                "moq": 100,
-                "fonte": "alibaba_search",
-            }
-        ]
+        mock_direto.return_value = {
+            "itens": [
+                {
+                    "url": "https://www.alibaba.com/product-detail/123.html",
+                    "titulo": "nail polish bottle wholesale",
+                    "snippet": "Trade Assurance MOQ 100",
+                    "preco_usd": 0.25,
+                    "moq": 100,
+                    "fonte": "alibaba_search",
+                }
+            ],
+            "bloqueado": False,
+            "motivo": None,
+            "paginas_ok": 1,
+            "status_http": 200,
+        }
         produto = {
             "termo_busca": "nail polish bottle",
             "preco_max_usd": 0.5,
@@ -165,29 +203,41 @@ class TestBuscarOportunidades(unittest.TestCase):
         self.assertIn("alibaba.com", out[0]["url"])
 
     @patch.object(busca, "buscar_duckduckgo", return_value=[])
-    @patch.object(busca, "buscar_alibaba_direto")
+    @patch.object(busca, "buscar_alibaba_direto_detalhado")
     def test_busca_termo_secundario(self, mock_direto, _ddg):
         mock_direto.side_effect = [
-            [
-                {
-                    "url": "https://www.alibaba.com/product-detail/en_1.html",
-                    "titulo": "PLA filament wholesale",
-                    "snippet": "factory",
-                    "preco_usd": 3.0,
-                    "moq": 50,
-                    "fonte": "alibaba_search",
-                }
-            ],
-            [
-                {
-                    "url": "https://www.alibaba.com/product-detail/pt_2.html",
-                    "titulo": "filamento PLA atacado",
-                    "snippet": "wholesale",
-                    "preco_usd": 4.0,
-                    "moq": 80,
-                    "fonte": "alibaba_search",
-                }
-            ],
+            {
+                "itens": [
+                    {
+                        "url": "https://www.alibaba.com/product-detail/en_1.html",
+                        "titulo": "PLA filament wholesale",
+                        "snippet": "factory",
+                        "preco_usd": 3.0,
+                        "moq": 50,
+                        "fonte": "alibaba_search",
+                    }
+                ],
+                "bloqueado": False,
+                "motivo": None,
+                "paginas_ok": 1,
+                "status_http": 200,
+            },
+            {
+                "itens": [
+                    {
+                        "url": "https://www.alibaba.com/product-detail/pt_2.html",
+                        "titulo": "filamento PLA atacado",
+                        "snippet": "wholesale",
+                        "preco_usd": 4.0,
+                        "moq": 80,
+                        "fonte": "alibaba_search",
+                    }
+                ],
+                "bloqueado": False,
+                "motivo": None,
+                "paginas_ok": 1,
+                "status_http": 200,
+            },
         ]
         produto = {
             "termo_busca": "PLA filament wholesale",
@@ -205,18 +255,24 @@ class TestBuscarOportunidades(unittest.TestCase):
         self.assertEqual(len(out), 2)
 
     @patch.object(busca, "buscar_duckduckgo")
-    @patch.object(busca, "buscar_alibaba_direto")
+    @patch.object(busca, "buscar_alibaba_direto_detalhado")
     def test_ddg_nao_pula_com_poucos_diretos(self, mock_direto, mock_ddg):
-        mock_direto.return_value = [
-            {
-                "url": "https://www.alibaba.com/product-detail/few_1.html",
-                "titulo": "PLA filament wholesale",
-                "snippet": "factory",
-                "preco_usd": 3.0,
-                "moq": 10,
-                "fonte": "alibaba_search",
-            }
-        ]
+        mock_direto.return_value = {
+            "itens": [
+                {
+                    "url": "https://www.alibaba.com/product-detail/few_1.html",
+                    "titulo": "PLA filament wholesale",
+                    "snippet": "factory",
+                    "preco_usd": 3.0,
+                    "moq": 10,
+                    "fonte": "alibaba_search",
+                }
+            ],
+            "bloqueado": False,
+            "motivo": None,
+            "paginas_ok": 1,
+            "status_http": 200,
+        }
         mock_ddg.return_value = []
         produto = {"termo_busca": "PLA filament wholesale", "preco_max_usd": 10}
         with patch("core.config.DDG_ALIBABA_SKIP_SE_DIRETO", True), patch(
@@ -226,6 +282,23 @@ class TestBuscarOportunidades(unittest.TestCase):
         ), patch("core.config.ALIBABA_BUSCA_PAGINAS", 1):
             busca.buscar_oportunidades(produto, pausa_seg=0)
         mock_ddg.assert_called()
+
+    @patch.object(busca, "buscar_duckduckgo", return_value=[])
+    @patch.object(busca, "buscar_alibaba_direto_detalhado")
+    def test_detalhado_propaga_bloqueio(self, mock_direto, _ddg):
+        mock_direto.return_value = {
+            "itens": [],
+            "bloqueado": True,
+            "motivo": "anti_bot:captcha+punish",
+            "paginas_ok": 0,
+            "status_http": 200,
+        }
+        out = busca.buscar_oportunidades_detalhado(
+            {"termo_busca": "PLA filament"}, pausa_seg=0
+        )
+        self.assertEqual(out["oportunidades"], [])
+        self.assertTrue(out["coleta"]["bloqueado"])
+        self.assertIn("captcha", out["coleta"]["motivo"] or "")
 
 
 if __name__ == "__main__":
