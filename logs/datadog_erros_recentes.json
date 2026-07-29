@@ -1,6 +1,28 @@
 {
   "erros": [
     {
+      "fingerprint": "49a87ac61d174e7c6fef",
+      "primeira_vez": "2026-07-29T17:51:10.677927+00:00",
+      "ultima_vez": "2026-07-29T17:51:10.677927+00:00",
+      "logger": "ddg_lite",
+      "mensagem": "DDG falhou [alibaba]: HTTPSConnectionPool(host='lite.duckduckgo.com', port=443): Max retries exceeded with url: /lite/?q=site%3Aalibaba.com+wholesale+filamento+impressora+3D+PLA+1%2C75mm+1kg+atacado&kl=br-pt (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)'))) — circuit breaker aberto",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "9bf93f342c4f180ebb9c",
+      "primeira_vez": "2026-07-29T17:51:01.144835+00:00",
+      "ultima_vez": "2026-07-29T17:51:01.144835+00:00",
+      "logger": "ddg_lite",
+      "mensagem": "DDG falhou [alibaba]: HTTPSConnectionPool(host='lite.duckduckgo.com', port=443): Max retries exceeded with url: /lite/?q=site%3Aalibaba.com+wholesale+3D+printer+filament+PLA+wholesale&kl=br-pt (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
       "fingerprint": "8f4e62c3e4fd79e1be9d",
       "primeira_vez": "2026-07-28T17:02:37.340783+00:00",
       "ultima_vez": "2026-07-28T17:05:32.322048+00:00",
@@ -1627,29 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "39b172e43c640cc98f5c",
-      "primeira_vez": "2026-07-05T21:19:06.558416+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.558416+00:00",
-      "logger": "amazon_client",
-      "mensagem": "Amazon listar_mensagens_nao_respondidas erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "4ba42279b3596fc39c35",
-      "primeira_vez": "2026-07-05T20:44:28.944000+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.528287+00:00",
-      "logger": "bling",
-      "mensagem": "Bling listar_produtos erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-07-28T17:05:32.322048+00:00"
+  "atualizado_em": "2026-07-29T17:51:10.677927+00:00"
 }

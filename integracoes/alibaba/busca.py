@@ -21,8 +21,10 @@ logger = logging.getLogger("alibaba_busca")
 
 _ALIBABA_SEARCH = "https://www.alibaba.com/trade/search"
 _DDG_HTML = "https://html.duckduckgo.com/html/"
+# UA de browser real — o bot string antigo dispara captcha/punish com frequência
 _USER_AGENT = (
-    "Mozilla/5.0 (compatible; RoboMarkplaces-ImportBot/1.0; +https://github.com/joaolago38/Robo-Markplaces)"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 _DOMINIOS_ALIBABA = ("alibaba.com", "alibaba.cn")
 
@@ -342,17 +344,63 @@ def _itens_da_pagina_html(html: str, termo: str, vistos: set[str]) -> list[dict[
     return itens
 
 
-def buscar_alibaba_direto(
+def detectar_bloqueio_html_alibaba(html: str) -> str | None:
+    """
+    Detecta página anti-bot (captcha/punish) disfarçada de HTTP 200.
+    Retorna motivo curto ou None se o HTML parecer listagem normal.
+    """
+    if not html:
+        return "html_vazio"
+    low = html.lower()
+    tem_produto = ("product-detail" in low) or ("/offer/" in low) or ("p-detail" in low)
+    if tem_produto:
+        return None
+    if len(html) < 800:
+        return "html_muito_curto"
+    sinais: list[str] = []
+    for chave in ("captcha", "punish", "slideverify", "nc_wrapper", "baxia-dialog", "deny"):
+        if chave in low:
+            sinais.append(chave)
+    # Página de challenge Alibaba costuma ser SPA curta sem ofertas
+    if sinais:
+        return "anti_bot:" + "+".join(sinais[:4])
+    if "trade/search" in low and "searchtext" not in low.replace(" ", ""):
+        # shell sem resultados embutidos
+        if "flexible.js" in low or "aplus-xplug" in low:
+            return "anti_bot:shell_sem_ofertas"
+    return None
+
+
+def _headers_busca() -> dict[str, str]:
+    return {
+        "User-Agent": _USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,pt-BR;q=0.8",
+        "Cache-Control": "no-cache",
+    }
+
+
+def buscar_alibaba_direto_detalhado(
     termo: str,
     *,
     max_resultados: int | None = None,
     paginas: int | None = None,
-) -> list[dict[str, Any]]:
-    """GET na página de busca pública do Alibaba (com paginação). Nunca lança exceção."""
+) -> dict[str, Any]:
+    """
+    GET na busca pública do Alibaba com metadados de coleta.
+    Nunca lança: retorna itens + flags de bloqueio anti-bot.
+    """
     from core.config import ALIBABA_BUSCA_MAX_RESULTADOS, ALIBABA_BUSCA_PAGINAS
 
+    vazio: dict[str, Any] = {
+        "itens": [],
+        "bloqueado": False,
+        "motivo": None,
+        "paginas_ok": 0,
+        "status_http": None,
+    }
     if not termo.strip():
-        return []
+        return {**vazio, "motivo": "termo_vazio"}
     if max_resultados is None:
         max_resultados = ALIBABA_BUSCA_MAX_RESULTADOS
     if paginas is None:
@@ -360,10 +408,10 @@ def buscar_alibaba_direto(
 
     vistos: set[str] = set()
     itens: list[dict[str, Any]] = []
-    headers = {
-        "User-Agent": _USER_AGENT,
-        "Accept-Language": "en-US,en;q=0.9,pt-BR;q=0.8",
-    }
+    headers = _headers_busca()
+    status_http: int | None = None
+    paginas_ok = 0
+    motivo_bloqueio: str | None = None
 
     try:
         for pagina in range(1, paginas + 1):
@@ -374,6 +422,7 @@ def buscar_alibaba_direto(
                 f"&SearchText={quote_plus(termo)}&page={pagina}"
             )
             r = request("GET", url, headers=headers, timeout=25)
+            status_http = int(r.status_code)
             if r.status_code >= 400:
                 logger.warning(
                     "Alibaba search HTTP %s termo=%r page=%s",
@@ -381,20 +430,61 @@ def buscar_alibaba_direto(
                     termo[:60],
                     pagina,
                 )
+                if not itens:
+                    motivo_bloqueio = f"http_{r.status_code}"
                 break
             html = r.text or ""
-            antes = len(itens)
-            novos = _itens_da_pagina_html(html, termo, vistos)
-            itens.extend(novos)
-            if not novos or len(itens) == antes:
+            bloqueio = detectar_bloqueio_html_alibaba(html)
+            if bloqueio and not itens:
+                motivo_bloqueio = bloqueio
+                logger.warning(
+                    "Alibaba coleta bloqueada motivo=%s termo=%r page=%s",
+                    bloqueio,
+                    termo[:60],
+                    pagina,
+                )
                 break
+            novos = _itens_da_pagina_html(html, termo, vistos)
+            if not novos:
+                if not itens and not motivo_bloqueio:
+                    # HTTP 200 sem produtos e sem sinal clássico — ainda pode ser shell anti-bot
+                    if detectar_bloqueio_html_alibaba(html) or len(html) < 5000:
+                        motivo_bloqueio = detectar_bloqueio_html_alibaba(html) or "sem_ofertas_na_pagina"
+                break
+            paginas_ok += 1
+            itens.extend(novos)
             if pagina < paginas and len(itens) < max_resultados:
                 time.sleep(0.4)
 
-        return itens[:max_resultados]
+        bloqueado = bool(motivo_bloqueio) and not itens
+        return {
+            "itens": itens[:max_resultados],
+            "bloqueado": bloqueado,
+            "motivo": motivo_bloqueio if bloqueado else None,
+            "paginas_ok": paginas_ok,
+            "status_http": status_http,
+        }
     except Exception as exc:
         logger.error("Alibaba direto falhou: %s", exc)
-        return itens[:max_resultados]
+        return {
+            "itens": itens[:max_resultados],
+            "bloqueado": not itens,
+            "motivo": f"excecao:{type(exc).__name__}" if not itens else None,
+            "paginas_ok": paginas_ok,
+            "status_http": status_http,
+        }
+
+
+def buscar_alibaba_direto(
+    termo: str,
+    *,
+    max_resultados: int | None = None,
+    paginas: int | None = None,
+) -> list[dict[str, Any]]:
+    """GET na página de busca pública do Alibaba (com paginação). Nunca lança exceção."""
+    return buscar_alibaba_direto_detalhado(
+        termo, max_resultados=max_resultados, paginas=paginas
+    )["itens"]
 
 
 def _termo_relevante(termo: str, blob: str) -> bool:
@@ -449,14 +539,14 @@ def _e_oportunidade(produto_cfg: dict[str, Any], item: dict[str, Any]) -> bool:
     return preco is not None or moq is not None or "product-detail" in (item.get("url") or "")
 
 
-def buscar_oportunidades(
+def buscar_oportunidades_detalhado(
     produto: dict[str, Any],
     *,
     pausa_seg: float = 1.0,
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """
-    Busca no Alibaba (direto + site:alibaba.com via DDG).
-    Retorna itens marcados como oportunidade. Nunca lança exceção.
+    Busca no Alibaba (direto + site:alibaba.com via DDG) com meta de coleta.
+    `bloqueado=True` quando a busca direta foi barrada por anti-bot e não há ofertas.
     """
     from core.config import (
         ALIBABA_BUSCA_MAX_RESULTADOS,
@@ -465,20 +555,36 @@ def buscar_oportunidades(
         DDG_ALIBABA_SKIP_SE_DIRETO,
     )
 
+    coleta: dict[str, Any] = {
+        "bloqueado": False,
+        "motivo": None,
+        "direto": 0,
+        "ddg": 0,
+        "candidatos": 0,
+        "status_http": None,
+    }
     termos = termos_busca_produto(produto)
     if not termos:
-        return []
+        return {"oportunidades": [], "coleta": {**coleta, "motivo": "termo_vazio"}}
     termo_principal = termos[0]
 
     vistos: set[str] = set()
     candidatos: list[dict[str, Any]] = []
+    motivos_bloqueio: list[str] = []
+    direto_total = 0
 
     for i, termo in enumerate(termos):
-        for item in buscar_alibaba_direto(
+        det = buscar_alibaba_direto_detalhado(
             termo,
             max_resultados=ALIBABA_BUSCA_MAX_RESULTADOS,
             paginas=ALIBABA_BUSCA_PAGINAS,
-        ):
+        )
+        if det.get("status_http") is not None:
+            coleta["status_http"] = det["status_http"]
+        if det.get("bloqueado") and det.get("motivo"):
+            motivos_bloqueio.append(str(det["motivo"]))
+        for item in det.get("itens") or []:
+            direto_total += 1
             h = _hash_url(item.get("url", ""))
             if h in vistos:
                 continue
@@ -488,6 +594,8 @@ def buscar_oportunidades(
         if i < len(termos) - 1 and pausa_seg > 0:
             time.sleep(pausa_seg)
 
+    coleta["direto"] = direto_total
+
     if pausa_seg > 0:
         time.sleep(pausa_seg)
 
@@ -495,6 +603,7 @@ def buscar_oportunidades(
         DDG_ALIBABA_SKIP_SE_DIRETO
         and len(candidatos) >= DDG_ALIBABA_MIN_DIRETO_PARA_PULAR
     )
+    ddg_total = 0
     if pular_ddg:
         logger.debug(
             "Alibaba: pulando DDG — %s itens da busca direta (mín=%s) termo=%r",
@@ -512,6 +621,7 @@ def buscar_oportunidades(
                 if h in vistos:
                     continue
                 vistos.add(h)
+                ddg_total += 1
                 blob = f"{raw.get('titulo', '')} {raw.get('snippet', '')}"
                 item = _aplicar_url_item(
                     {
@@ -529,6 +639,9 @@ def buscar_oportunidades(
             if len(termos) > 1 and pausa_seg > 0:
                 time.sleep(min(pausa_seg, 0.5))
 
+    coleta["ddg"] = ddg_total
+    coleta["candidatos"] = len(candidatos)
+
     oportunidades: list[dict[str, Any]] = []
     for item in candidatos:
         if not _relevante(produto, item):
@@ -538,4 +651,27 @@ def buscar_oportunidades(
         item["termo_busca"] = item.get("termo_busca") or termo_principal
         oportunidades.append(item)
 
-    return oportunidades
+    # Bloqueio só conta se não sobrou nenhuma oferta (direto nem DDG)
+    if not oportunidades and not candidatos and motivos_bloqueio:
+        coleta["bloqueado"] = True
+        coleta["motivo"] = motivos_bloqueio[0]
+        try:
+            from core.datadog_metrics import incrementar
+
+            incrementar("alibaba.coleta_bloqueada")
+        except Exception:
+            pass
+
+    return {"oportunidades": oportunidades, "coleta": coleta}
+
+
+def buscar_oportunidades(
+    produto: dict[str, Any],
+    *,
+    pausa_seg: float = 1.0,
+) -> list[dict[str, Any]]:
+    """
+    Busca no Alibaba (direto + site:alibaba.com via DDG).
+    Retorna itens marcados como oportunidade. Nunca lança exceção.
+    """
+    return buscar_oportunidades_detalhado(produto, pausa_seg=pausa_seg)["oportunidades"]

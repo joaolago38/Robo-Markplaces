@@ -32,6 +32,7 @@ from integracoes.importacao.calculo_importacao_aerea import formatar_breakdown_v
 from integracoes.importacao.tendencias_ml_importacao import (
     analisar_produto_ml_vs_alibaba,
     consolidar_varredura,
+    diagnosticar_bloqueio_alibaba,
     diagnosticar_coleta_vazia,
 )
 
@@ -125,6 +126,7 @@ def montar_mensagem_telegram(
     *,
     cotacao: dict[str, Any],
     diag_coleta: dict[str, Any] | None = None,
+    diag_alibaba: dict[str, Any] | None = None,
 ) -> str:
     cambio = float(cotacao.get("usd_brl") or 0)
     from core.telegram_explicacao import cabecalho_agente
@@ -147,6 +149,23 @@ def montar_mensagem_telegram(
             "",
         ]
     )
+
+    if diag_alibaba and diag_alibaba.get("alibaba_bloqueado"):
+        linhas.extend(
+            [
+                "🚫 *Alibaba coleta bloqueada (captcha/anti-bot)*",
+                f"*{diag_alibaba.get('produtos', 0)}* produto(s) sem cotação por bloqueio — "
+                "não é mercado sem oferta.",
+                "",
+                "*Verificar:*",
+            ]
+        )
+        for dica in diag_alibaba.get("dicas") or []:
+            linhas.append(f"• {dica}")
+        motivos = diag_alibaba.get("motivos") or []
+        if motivos:
+            linhas.append(f"_Motivo técnico: {', '.join(motivos[:3])}_")
+        linhas.append("")
 
     if diag_coleta and diag_coleta.get("coleta_vazia"):
         linhas.extend(
@@ -179,17 +198,23 @@ def montar_mensagem_telegram(
         r
         for r in resultados
         if r.get("ok")
-        and (r.get("veredito") or {}).get("codigo") in ("nao_vale", "sem_ml", "sem_alibaba", "sem_dados")
+        and (r.get("veredito") or {}).get("codigo")
+        in ("nao_vale", "sem_ml", "sem_alibaba", "sem_dados", "alibaba_bloqueado")
     ]
     if outros and not diag_coleta:
         linhas.append("*Outros produtos*")
         for r in outros[:5]:
             ver = r.get("veredito") or {}
             ml = r.get("sinais_ml") or {}
+            coleta = r.get("coleta_alibaba") or {}
+            if coleta.get("bloqueado") or ver.get("codigo") == "alibaba_bloqueado":
+                ali_txt = f"Alibaba bloqueado ({coleta.get('motivo') or 'anti-bot'})"
+            else:
+                ali_txt = f"Alibaba {r.get('total_oportunidades_alibaba', 0)} cotações"
             linhas.append(
                 f"• {r.get('produto', '?')}: {ver.get('label', '?')} | "
                 f"ML {ml.get('total_anuncios', 0)} anúncios | "
-                f"Alibaba {r.get('total_oportunidades_alibaba', 0)} cotações"
+                f"{ali_txt}"
             )
 
     return "\n".join(linhas).strip()
@@ -243,7 +268,16 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 time.sleep(ML_TENDENCIAS_IMPORTACAO_PAUSA_SEG)
 
         consolidado = consolidar_varredura(resultados)
+        diag_alibaba = diagnosticar_bloqueio_alibaba(resultados)
         diag_coleta = diagnosticar_coleta_vazia(resultados)
+        if diag_alibaba:
+            logger.warning(
+                "ML×Alibaba: coleta Alibaba bloqueada em %s produto(s) motivos=%s",
+                diag_alibaba.get("produtos"),
+                diag_alibaba.get("motivos"),
+            )
+            consolidado["alibaba_bloqueado"] = True
+            incrementar("ml_tendencias_importacao.alibaba_bloqueado")
         if diag_coleta:
             logger.warning(
                 "ML×Alibaba: coleta vazia em %s produto(s)",
@@ -258,6 +292,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 "cotacao": cotacao,
                 "consolidado": consolidado,
                 "diag_coleta": diag_coleta,
+                "diag_alibaba": diag_alibaba,
                 "resultados": resultados,
             },
         )
@@ -281,6 +316,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 resultados,
                 cotacao=cotacao,
                 diag_coleta=diag_coleta,
+                diag_alibaba=diag_alibaba,
             )
             alerta_enviado = bool(
                 alertar_gestor(
@@ -300,6 +336,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "total_produtos": len(resultados),
             "consolidado": consolidado,
             "coleta_vazia": bool(diag_coleta),
+            "alibaba_bloqueado": bool(diag_alibaba),
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
         }

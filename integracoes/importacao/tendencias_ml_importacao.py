@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from integracoes.alibaba.busca import buscar_oportunidades
+from integracoes.alibaba.busca import buscar_oportunidades_detalhado
 from integracoes.importacao.analise_margem import analisar_produto_catalogo, consultar_precos_marketplace
 
 logger = logging.getLogger("tendencias_ml_importacao")
@@ -18,6 +18,7 @@ _VEREDITO_LABEL = {
     "nao_vale": "❌ Não vale importar",
     "sem_ml": "⚠️ Sem dados ML",
     "sem_alibaba": "⚠️ Sem cotação Alibaba",
+    "alibaba_bloqueado": "🚫 Alibaba bloqueado (anti-bot)",
     "sem_dados": "⚠️ Sem dados",
 }
 
@@ -116,6 +117,8 @@ def coletar_sinais_ml(produto: dict[str, Any], *, limite: int = 20) -> dict[str,
 def classificar_veredito(
     sinais_ml: dict[str, Any],
     analise: dict[str, Any],
+    *,
+    coleta_alibaba: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Combina tendência ML + margem de importação."""
     melhor = analise.get("melhor_analise") or {}
@@ -126,13 +129,14 @@ def classificar_veredito(
     tem_alibaba = bool(analise.get("total_oportunidades"))
     tem_ml = bool(sinais_ml.get("ok") and int(sinais_ml.get("total_anuncios") or 0) > 0)
     demanda_alta = bool(sinais_ml.get("demanda_alta"))
+    bloqueado = bool((coleta_alibaba or {}).get("bloqueado"))
 
     if not tem_ml and not tem_alibaba:
-        codigo = "sem_dados"
+        codigo = "alibaba_bloqueado" if bloqueado else "sem_dados"
     elif not tem_ml:
         codigo = "sem_ml"
     elif not tem_alibaba:
-        codigo = "sem_alibaba"
+        codigo = "alibaba_bloqueado" if bloqueado else "sem_alibaba"
     elif lucro and demanda_alta:
         codigo = "importar"
     elif lucro or (demanda_alta and margem_pct >= 10):
@@ -148,6 +152,7 @@ def classificar_veredito(
         "margem_pct": margem_pct,
         "margem_brl": margem_brl,
         "score_demanda": sinais_ml.get("score_demanda"),
+        "alibaba_bloqueado": bloqueado,
     }
 
 
@@ -159,7 +164,9 @@ def analisar_produto_ml_vs_alibaba(
 ) -> dict[str, Any]:
     """Pipeline completo: ML (demanda) → Alibaba (cotação) → custo importação → veredito."""
     sinais_ml = coletar_sinais_ml(produto)
-    oportunidades = buscar_oportunidades(produto, pausa_seg=pausa_alibaba_seg)
+    busca = buscar_oportunidades_detalhado(produto, pausa_seg=pausa_alibaba_seg)
+    oportunidades = busca.get("oportunidades") or []
+    coleta_alibaba = busca.get("coleta") or {}
     precos_mk = sinais_ml.get("precos_marketplace") or {}
 
     analise = analisar_produto_catalogo(
@@ -173,7 +180,7 @@ def analisar_produto_ml_vs_alibaba(
     else:
         analise["sinais_ml"] = sinais_ml
 
-    veredito = classificar_veredito(sinais_ml, analise)
+    veredito = classificar_veredito(sinais_ml, analise, coleta_alibaba=coleta_alibaba)
     melhor = analise.get("melhor_analise") or {}
 
     return {
@@ -183,6 +190,7 @@ def analisar_produto_ml_vs_alibaba(
         "termo_marketplace": termo_marketplace(produto),
         "sinais_ml": sinais_ml,
         "total_oportunidades_alibaba": len(oportunidades),
+        "coleta_alibaba": coleta_alibaba,
         "analise_importacao": analise,
         "melhor_analise": melhor,
         "veredito": veredito,
@@ -205,7 +213,12 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         ),
     )
     avaliar = por_veredito.get("avaliar", [])
-    sem_dados = [r for r in ok if (r.get("veredito") or {}).get("codigo") in ("sem_ml", "sem_alibaba", "sem_dados")]
+    sem_dados = [
+        r
+        for r in ok
+        if (r.get("veredito") or {}).get("codigo")
+        in ("sem_ml", "sem_alibaba", "sem_dados", "alibaba_bloqueado")
+    ]
 
     return {
         "produtos_varridos": len(ok),
@@ -244,3 +257,34 @@ def diagnosticar_coleta_vazia(resultados: list[dict[str, Any]]) -> dict[str, Any
     dicas.append("Alibaba: scrape/DDG pode falhar em IP de datacenter (GitHub Actions)")
 
     return {"coleta_vazia": True, "produtos": len(ok), "dicas": dicas}
+
+
+def diagnosticar_bloqueio_alibaba(resultados: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Quando Alibaba devolve captcha/punish — não confundir com mercado sem cotação."""
+    ok = [r for r in resultados if r.get("ok")]
+    if not ok:
+        return None
+    bloqueados = [
+        r
+        for r in ok
+        if (r.get("coleta_alibaba") or {}).get("bloqueado")
+        or (r.get("veredito") or {}).get("codigo") == "alibaba_bloqueado"
+    ]
+    if not bloqueados:
+        return None
+    motivos = sorted(
+        {
+            str((r.get("coleta_alibaba") or {}).get("motivo") or "anti_bot")
+            for r in bloqueados
+        }
+    )
+    return {
+        "alibaba_bloqueado": True,
+        "produtos": len(bloqueados),
+        "motivos": motivos,
+        "dicas": [
+            "Alibaba respondeu captcha/anti-bot (HTTP 200 sem ofertas) — zeros ≠ mercado vazio",
+            "IP de datacenter (ex.: GitHub Actions) costuma ser bloqueado; rode local ou use proxy residencial",
+            "Confira FOB manual no catálogo ou reexecute depois / de outra rede",
+        ],
+    }

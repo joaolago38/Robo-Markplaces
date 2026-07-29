@@ -79,6 +79,34 @@ class AgenteMlTendenciasImportacaoTests(unittest.TestCase):
         )
         self.assertIn("Mercado Livre × Alibaba", msg)
 
+    def test_montar_mensagem_alibaba_bloqueado(self):
+        msg = agente.montar_mensagem_telegram(
+            {"produtos_varridos": 1, "vale_importar": 0, "avaliar": 0, "top_importar": []},
+            [
+                {
+                    "ok": True,
+                    "produto": "Filamento PLA",
+                    "sinais_ml": {"total_anuncios": 12, "score_demanda": 60},
+                    "veredito": {
+                        "codigo": "alibaba_bloqueado",
+                        "label": "🚫 Alibaba bloqueado (anti-bot)",
+                    },
+                    "total_oportunidades_alibaba": 0,
+                    "coleta_alibaba": {"bloqueado": True, "motivo": "anti_bot:captcha+punish"},
+                }
+            ],
+            cotacao={"usd_brl": 5.5, "fonte": "teste"},
+            diag_alibaba={
+                "alibaba_bloqueado": True,
+                "produtos": 1,
+                "motivos": ["anti_bot:captcha+punish"],
+                "dicas": ["Alibaba respondeu captcha/anti-bot"],
+            },
+        )
+        self.assertIn("coleta bloqueada", msg.lower())
+        self.assertIn("Alibaba bloqueado", msg)
+        self.assertNotIn("0 cotações", msg)
+
 
 if __name__ == "__main__":
     unittest.main()

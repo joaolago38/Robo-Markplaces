@@ -61,7 +61,7 @@ class TendenciasMlImportacaoTests(unittest.TestCase):
         self.assertEqual(ver["codigo"], "sem_dados")
 
     @patch("integracoes.importacao.tendencias_ml_importacao.analisar_produto_catalogo")
-    @patch("integracoes.importacao.tendencias_ml_importacao.buscar_oportunidades")
+    @patch("integracoes.importacao.tendencias_ml_importacao.buscar_oportunidades_detalhado")
     @patch("integracoes.importacao.tendencias_ml_importacao.coletar_sinais_ml")
     def test_analisar_produto_pipeline(self, mock_ml, mock_ali, mock_analise):
         mock_ml.return_value = {
@@ -73,7 +73,10 @@ class TendenciasMlImportacaoTests(unittest.TestCase):
             "preco_mediana_brl": 28.0,
             "precos_marketplace": {"ok": True, "preco_mediana_brl": 28.0},
         }
-        mock_ali.return_value = [{"preco_usd": 0.9, "moq": 5000, "titulo": "Tie", "url": "http://x"}]
+        mock_ali.return_value = {
+            "oportunidades": [{"preco_usd": 0.9, "moq": 5000, "titulo": "Tie", "url": "http://x"}],
+            "coleta": {"bloqueado": False, "motivo": None, "direto": 1, "ddg": 0, "candidatos": 1},
+        }
         mock_analise.return_value = {
             "ok": True,
             "total_oportunidades": 1,
@@ -89,6 +92,27 @@ class TendenciasMlImportacaoTests(unittest.TestCase):
         )
         self.assertTrue(out["ok"])
         self.assertEqual(out["veredito"]["codigo"], "importar")
+
+    def test_classificar_alibaba_bloqueado(self):
+        ver = tmi.classificar_veredito(
+            {"ok": True, "total_anuncios": 5, "demanda_alta": True},
+            {"total_oportunidades": 0, "melhor_analise": {}},
+            coleta_alibaba={"bloqueado": True, "motivo": "anti_bot:captcha"},
+        )
+        self.assertEqual(ver["codigo"], "alibaba_bloqueado")
+
+    def test_diagnosticar_bloqueio_alibaba(self):
+        diag = tmi.diagnosticar_bloqueio_alibaba(
+            [
+                {
+                    "ok": True,
+                    "coleta_alibaba": {"bloqueado": True, "motivo": "anti_bot:captcha"},
+                    "veredito": {"codigo": "alibaba_bloqueado"},
+                }
+            ]
+        )
+        self.assertIsNotNone(diag)
+        self.assertTrue(diag["alibaba_bloqueado"])
 
 
 if __name__ == "__main__":
