@@ -347,28 +347,29 @@ def _itens_da_pagina_html(html: str, termo: str, vistos: set[str]) -> list[dict[
 def detectar_bloqueio_html_alibaba(html: str) -> str | None:
     """
     Detecta página anti-bot (captcha/punish) disfarçada de HTTP 200.
-    Retorna motivo curto ou None se o HTML parecer listagem normal.
+    Retorna motivo `anti_bot:…` ou None. Não classifica busca vazia/HTTP/rede.
     """
     if not html:
-        return "html_vazio"
+        return None
     low = html.lower()
     tem_produto = ("product-detail" in low) or ("/offer/" in low) or ("p-detail" in low)
     if tem_produto:
         return None
-    if len(html) < 800:
-        return "html_muito_curto"
+    # Sinais específicos — evita substring genérica ("deny" em cookies/privacy)
     sinais: list[str] = []
-    for chave in ("captcha", "punish", "slideverify", "nc_wrapper", "baxia-dialog", "deny"):
+    for chave in ("captcha", "punish", "slideverify", "nc_wrapper", "baxia-dialog"):
         if chave in low:
             sinais.append(chave)
-    # Página de challenge Alibaba costuma ser SPA curta sem ofertas
     if sinais:
         return "anti_bot:" + "+".join(sinais[:4])
     if "trade/search" in low and "searchtext" not in low.replace(" ", ""):
-        # shell sem resultados embutidos
         if "flexible.js" in low or "aplus-xplug" in low:
             return "anti_bot:shell_sem_ofertas"
     return None
+
+
+def motivo_e_anti_bot(motivo: str | None) -> bool:
+    return bool(motivo and str(motivo).startswith("anti_bot:"))
 
 
 def _headers_busca() -> dict[str, str]:
@@ -389,6 +390,8 @@ def buscar_alibaba_direto_detalhado(
     """
     GET na busca pública do Alibaba com metadados de coleta.
     Nunca lança: retorna itens + flags de bloqueio anti-bot.
+    `bloqueado=True` apenas com sinal anti-bot (captcha/punish/…), nunca por
+    busca vazia, HTTP 4xx ou falha de rede.
     """
     from core.config import ALIBABA_BUSCA_MAX_RESULTADOS, ALIBABA_BUSCA_PAGINAS
 
@@ -411,7 +414,7 @@ def buscar_alibaba_direto_detalhado(
     headers = _headers_busca()
     status_http: int | None = None
     paginas_ok = 0
-    motivo_bloqueio: str | None = None
+    motivo: str | None = None
 
     try:
         for pagina in range(1, paginas + 1):
@@ -431,12 +434,12 @@ def buscar_alibaba_direto_detalhado(
                     pagina,
                 )
                 if not itens:
-                    motivo_bloqueio = f"http_{r.status_code}"
+                    motivo = f"http_{r.status_code}"
                 break
             html = r.text or ""
             bloqueio = detectar_bloqueio_html_alibaba(html)
             if bloqueio and not itens:
-                motivo_bloqueio = bloqueio
+                motivo = bloqueio
                 logger.warning(
                     "Alibaba coleta bloqueada motivo=%s termo=%r page=%s",
                     bloqueio,
@@ -446,21 +449,17 @@ def buscar_alibaba_direto_detalhado(
                 break
             novos = _itens_da_pagina_html(html, termo, vistos)
             if not novos:
-                if not itens and not motivo_bloqueio:
-                    # HTTP 200 sem produtos e sem sinal clássico — ainda pode ser shell anti-bot
-                    if detectar_bloqueio_html_alibaba(html) or len(html) < 5000:
-                        motivo_bloqueio = detectar_bloqueio_html_alibaba(html) or "sem_ofertas_na_pagina"
                 break
             paginas_ok += 1
             itens.extend(novos)
             if pagina < paginas and len(itens) < max_resultados:
                 time.sleep(0.4)
 
-        bloqueado = bool(motivo_bloqueio) and not itens
+        bloqueado = motivo_e_anti_bot(motivo) and not itens
         return {
             "itens": itens[:max_resultados],
             "bloqueado": bloqueado,
-            "motivo": motivo_bloqueio if bloqueado else None,
+            "motivo": motivo if (bloqueado or (motivo and not itens)) else None,
             "paginas_ok": paginas_ok,
             "status_http": status_http,
         }
@@ -468,7 +467,7 @@ def buscar_alibaba_direto_detalhado(
         logger.error("Alibaba direto falhou: %s", exc)
         return {
             "itens": itens[:max_resultados],
-            "bloqueado": not itens,
+            "bloqueado": False,
             "motivo": f"excecao:{type(exc).__name__}" if not itens else None,
             "paginas_ok": paginas_ok,
             "status_http": status_http,
@@ -581,7 +580,7 @@ def buscar_oportunidades_detalhado(
         )
         if det.get("status_http") is not None:
             coleta["status_http"] = det["status_http"]
-        if det.get("bloqueado") and det.get("motivo"):
+        if det.get("motivo") and not (det.get("itens") or []):
             motivos_bloqueio.append(str(det["motivo"]))
         for item in det.get("itens") or []:
             direto_total += 1
@@ -651,16 +650,20 @@ def buscar_oportunidades_detalhado(
         item["termo_busca"] = item.get("termo_busca") or termo_principal
         oportunidades.append(item)
 
-    # Bloqueio só conta se não sobrou nenhuma oferta (direto nem DDG)
-    if not oportunidades and not candidatos and motivos_bloqueio:
+    # Anti-bot só conta se não sobrou nenhuma oferta (direto nem DDG)
+    motivos_anti = [m for m in motivos_bloqueio if motivo_e_anti_bot(m)]
+    if not oportunidades and not candidatos and motivos_anti:
         coleta["bloqueado"] = True
-        coleta["motivo"] = motivos_bloqueio[0]
+        coleta["motivo"] = motivos_anti[0]
         try:
             from core.datadog_metrics import incrementar
 
             incrementar("alibaba.coleta_bloqueada")
         except Exception:
             pass
+    elif not oportunidades and not candidatos and motivos_bloqueio:
+        # HTTP/rede/vazio — registra motivo sem alarmar anti-bot
+        coleta["motivo"] = motivos_bloqueio[0]
 
     return {"oportunidades": oportunidades, "coleta": coleta}
 
