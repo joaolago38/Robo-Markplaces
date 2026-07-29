@@ -77,7 +77,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '0' }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
       - name: Salvar historico de achados (backup)
         uses: actions/upload-artifact@v4
         with:
