@@ -253,12 +253,29 @@ def _montar_resumo_telegram(resultados: list[dict]) -> str:
 def analisar_catalogo(limite_itens: int = 10) -> dict:
     """
     Analisa até `limite_itens` anúncios ML ativos no catálogo e envia resumo ao gestor.
+    Prioriza item_ids liberados pelo contrato de impulso (SKUs guerra).
     Nunca lança exceção.
     """
     limite = max(1, int(limite_itens or 10))
     try:
         catalogo = _carregar_catalogo()
-        itens_ml = _listar_itens_ml_ativos(catalogo)[:limite]
+        itens_ml = _listar_itens_ml_ativos(catalogo)
+
+        # Prioriza guerra liberados
+        try:
+            from integracoes.ml.contrato_impulso_ml import listar_item_ids_para_otimizacao, montar_contrato
+
+            montar_contrato()
+            prioridade = {i.upper() for i in listar_item_ids_para_otimizacao()}
+            if prioridade:
+                itens_ml = sorted(
+                    itens_ml,
+                    key=lambda e: (0 if str(e.get("item_id") or "").upper() in prioridade else 1),
+                )
+        except Exception as exc:
+            logger.warning("contrato impulso listing: %s", exc)
+
+        itens_ml = itens_ml[:limite]
         resultados: list[dict] = []
 
         for entrada in itens_ml:
@@ -268,15 +285,48 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
             resultado["nome"] = entrada.get("nome", "")
             resultados.append(resultado)
 
-        from core.notificador import alertar_gestor
+        from core.config import OTIMIZADOR_LISTING_APLICAR
+        from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
+
+        aplicados = []
+        if OTIMIZADOR_LISTING_APLICAR:
+            for r in resultados:
+                if not r.get("ok"):
+                    continue
+                sug = (r.get("sugestoes_estruturadas") or [])
+                if not sug or not isinstance(sug[0], dict):
+                    continue
+                novo = str(sug[0].get("titulo") or "").strip()[:60]
+                item_id = str(r.get("item_id") or "")
+                if not novo or not item_id:
+                    continue
+                ok_g = perguntar_gestor_e_aguardar(
+                    f"Aplicar novo título no ML?\n\n"
+                    f"Item: `{item_id}`\n"
+                    f"Atual: {r.get('titulo_atual')}\n"
+                    f"Novo: {novo}\n\n"
+                    f"Motivo: {sug[0].get('motivo')}",
+                    timeout_segundos=300,
+                    contexto_decisao={
+                        "decisao": "aplicar_titulo_listing",
+                        "item_id": item_id,
+                        "titulo_novo": novo,
+                    },
+                )
+                if ok_g and ml_client.atualizar_titulo_item(item_id, novo):
+                    aplicados.append(item_id)
+                    r["titulo_aplicado"] = novo
 
         msg = _montar_resumo_telegram(resultados)
-        alerta_enviado = bool(alertar_gestor(msg))
+        if aplicados:
+            msg += f"\n\n✅ Títulos aplicados: {', '.join(aplicados)}"
+        alerta_enviado = bool(alertar_gestor(msg, agente_id="otimizador_listing"))
 
         return {
             "ok": True,
             "total_analisados": len(resultados),
             "limite_itens": limite,
+            "titulos_aplicados": aplicados,
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
         }
@@ -287,14 +337,15 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
 
 def executar(limite_itens: int = 10) -> bool:
     """Entrada para cron/workflow — analisa catálogo e notifica gestor."""
-    logger.info("=== Otimizador de listing ML (somente sugestão) ===")
+    logger.info("=== Otimizador de listing ML ===")
     resultado = analisar_catalogo(limite_itens=limite_itens)
     if not resultado.get("ok"):
         logger.error("Otimizador listing falhou: %s", resultado.get("erro"))
         return False
     logger.info(
-        "Otimizador listing: %s itens analisados, alerta=%s",
+        "Otimizador listing: %s itens analisados, aplicados=%s, alerta=%s",
         resultado.get("total_analisados"),
+        len(resultado.get("titulos_aplicados") or []),
         resultado.get("alerta_enviado"),
     )
     return True

@@ -409,6 +409,25 @@ DECISAO_DIA_ESMALTES_GUERRA_CATALOGO = os.getenv(
     "DECISAO_DIA_ESMALTES_GUERRA_CATALOGO", "catalogo/skus_guerra_impala.json"
 )
 
+# Contrato impulso ML (ads/promo só com SKU guerra + MLB)
+CONTRATO_IMPULSO_ML_ATIVO = os.getenv("CONTRATO_IMPULSO_ML_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Eventos tipados do algoritmo → chat / congelar preço / listing
+ALGORITMO_EVENTOS_ATIVO = os.getenv("ALGORITMO_EVENTOS_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Otimizador listing: aplicar título após SIM do gestor (default off)
+OTIMIZADOR_LISTING_APLICAR = os.getenv("OTIMIZADOR_LISTING_APLICAR", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 # Monitor removedores de unha — nomes, fabricantes e ranking por vendas
 REMOVEDORES_UNHA_CATALOGO = os.getenv(
     "REMOVEDORES_UNHA_CATALOGO", "catalogo/removedores_unha_monitor.json"

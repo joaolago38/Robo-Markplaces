@@ -11,7 +11,7 @@ from core.chat_claim import tentar_claim
 from core.claude_client import responder_chat
 from core.config import MARGEM_MINIMA
 from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
-from core.notificador import alertar_critico
+from core.notificador import alertar_critico, alertar_gestor
 from core.produto_lookup import buscar_produto_por_ref
 from integracoes.bling.bling_client import buscar_produto
 from integracoes.ml.ml_client import (
@@ -94,6 +94,18 @@ def _montar_produto_resposta(p: dict, ctx_fechamento: dict) -> dict:
 
 
 def ciclo_chat():
+    from core.algoritmo_eventos import deve_priorizar_chat
+
+    priorizar, motivo_prio = deve_priorizar_chat("mercadolivre")
+    if priorizar:
+        logger.warning("Chat ML em modo prioridade (algoritmo): %s", motivo_prio)
+        alertar_gestor(
+            f"⚡ *Chat ML priorizado*\n_{motivo_prio}_\nEsvaziando fila de perguntas.",
+            chave="chat_ml:priorizar",
+            cooldown_segundos=1800,
+            agente_id="chat_ml",
+        )
+
     perguntas = buscar_perguntas()
     ok = 0
     ctx_f = carregar_contexto_fechamento_ml()
@@ -102,6 +114,7 @@ def ciclo_chat():
     link_oferta = str(ctx_f.get("link_ml") or "")
     link_ok = bool(ctx_f.get("link_valido"))
 
+    # Em prioridade, processa a fila completa sem cortar cedo
     for p in perguntas:
         texto = p.get("text", "").strip()
         pid = str(p.get("id") or "")

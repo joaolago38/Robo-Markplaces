@@ -1,0 +1,81 @@
+{
+  "ok": true,
+  "ativo": true,
+  "timestamp": "2026-08-01T19:59:40.213363+00:00",
+  "fonte_decisao": true,
+  "fazer": {
+    "veredito": "fazer",
+    "codigo": "preencher_mlb_guerra",
+    "titulo": "Publicar/preencher MLB de `IMP-MIMO-003` (entrada)",
+    "detalhe": "Kit 3 Mimo + Carmed — diferencial: kit compacto + Carmed (anexo no combo). Sem MLB não há ads nem promoção.",
+    "sku": "IMP-MIMO-003"
+  },
+  "nao_fazer": {
+    "veredito": "nao_fazer",
+    "codigo": "nao_impulsionar_sem_condicao",
+    "titulo": "Não impulsionar `IMP-MIMO-003` hoje",
+    "detalhe": "Bloqueios: sem_mlb, estoque_zero",
+    "sku": "IMP-MIMO-003"
+  },
+  "liberados": [],
+  "bloqueados": [
+    {
+      "sku": "IMP-MIMO-003",
+      "papel": "entrada",
+      "nome": "Kit 3 Mimo + Carmed",
+      "diferencial": "kit compacto + Carmed (anexo no combo)",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "preco": 44.9,
+      "custo": 27.15,
+      "margem_estimada_pct": 21.5,
+      "margem_ok": true,
+      "pode_impulsionar": false,
+      "bloqueios": [
+        "sem_mlb",
+        "estoque_zero"
+      ]
+    },
+    {
+      "sku": "IMP-BAIL-005",
+      "papel": "giro",
+      "nome": "Kit 5 Bailarina",
+      "diferencial": "5 cores Bailarina — mix salão",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "preco": 52.9,
+      "custo": 35.23,
+      "margem_estimada_pct": 15.4,
+      "margem_ok": true,
+      "pode_impulsionar": false,
+      "bloqueios": [
+        "sem_mlb",
+        "estoque_zero"
+      ]
+    },
+    {
+      "sku": "IMP-ATAC-010",
+      "papel": "atacado",
+      "nome": "Kit 10 Atacado Manicure",
+      "diferencial": "volume B2B / reposição manicure",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "preco": 79.9,
+      "custo": 52.94,
+      "margem_estimada_pct": 15.7,
+      "margem_ok": true,
+      "pode_impulsionar": false,
+      "bloqueios": [
+        "sem_mlb",
+        "estoque_zero"
+      ]
+    }
+  ],
+  "skus_liberados": [],
+  "item_ids_liberados": [],
+  "regras": [
+    "Só SKUs de guerra com MLB + margem + diferencial",
+    "Sem MLB → fail-closed (sem ads/promo)",
+    "Fora da lista de guerra → sem impulso pago"
+  ]
+}

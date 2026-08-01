@@ -553,6 +553,35 @@ def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
         return False
 
 
+def atualizar_titulo_item(item_id: str, novo_titulo: str) -> bool:
+    """Atualiza título do anúncio (máx. 60 chars no ML). Respeita kill switch."""
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        logger.warning("ML atualizar_titulo_item bloqueado: %s", bloqueio["erro"])
+        return False
+    if not _enabled():
+        logger.warning("Mercado Livre não configurado para atualização de título.")
+        return False
+    titulo = (novo_titulo or "").strip()[:60]
+    if len(titulo) < 10:
+        logger.warning("ML atualizar_titulo_item título inválido item_id=%s", item_id)
+        return False
+    try:
+        r = _request_ml(
+            "PUT",
+            f"{BASE}/items/{item_id}",
+            json={"title": titulo},
+            timeout=30,
+        )
+        r.raise_for_status()
+        logger.info("ML título atualizado item_id=%s titulo=%s", item_id, titulo)
+        return True
+    except Exception as exc:
+        logger.error("ML atualizar_titulo_item erro item_id=%s: %s", item_id, exc)
+        return False
+
+
 def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
     from core.guardrails import bloqueio_escrita_global
 

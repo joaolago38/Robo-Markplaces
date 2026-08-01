@@ -65,6 +65,13 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         payload = {**dec, "mensagem": msg}
         escrever_json_atomico(SNAPSHOT_PATH, payload)
 
+        try:
+            from integracoes.ml.contrato_impulso_ml import montar_contrato
+
+            montar_contrato(forcar_recalculo=False)
+        except Exception as exc:
+            logger.warning("contrato impulso após decisão: %s", exc)
+
         hist = ler_json(HISTORY_PATH, default={"rodadas": []})
         if not isinstance(hist, dict):
             hist = {"rodadas": []}
