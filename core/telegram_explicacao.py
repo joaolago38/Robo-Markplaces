@@ -127,6 +127,10 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Lê a planilha Impala (cores/SKU), cruza com os kits mais vendidos no Mercado Livre "
         "e sugere quais cores montar em kits 3/5/6/10. Telegram: top cores + kits sugeridos."
     ),
+    "ecossistema_esmaltes": (
+        "Consolida monitores de esmaltes/manicures num plano de ecossistema: "
+        "cor atrai; kit, anexos e B2B pagam. Telegram: ações 7/30/90 dias por camada."
+    ),
     "monitor_removedores_unha": (
         "Monitora removedores de unha no ML: fabricantes, nomes e ranking por vendas, "
         "para ver líderes e oportunidades. Telegram: ranking (+ gráfico quando houver)."
@@ -295,6 +299,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_busca_kit_esmaltes": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
     "monitor_kits_esmaltes": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
     "montar_kits_impala": "A cada 12h (Actions); fora do ciclo 30 min",
+    "ecossistema_esmaltes": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
     "monitor_removedores_unha": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
     "monitor_tendencias_esmaltes": (
         "2x ao dia às 05:15 e 17:15 BRT (Actions) e a cada 30 min (orquestrador)"
@@ -396,6 +401,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("esmaltes:kits", "monitor_kits_esmaltes"),
     ("montar_kits_impala", "montar_kits_impala"),
     ("montar_kits", "montar_kits_impala"),
+    ("ecossistema_esmaltes", "ecossistema_esmaltes"),
+    ("ecossistema", "ecossistema_esmaltes"),
     ("removedores", "monitor_removedores_unha"),
     ("tendencias_esmaltes", "monitor_tendencias_esmaltes"),
     ("esmaltes:tendencias", "monitor_tendencias_esmaltes"),

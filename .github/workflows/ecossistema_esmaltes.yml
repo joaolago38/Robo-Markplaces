@@ -1,0 +1,94 @@
+name: Ecossistema esmaltes (plano consolidado)
+
+# Lê snapshots (kits, Anita, removedores, manicures…) e monta plano 7/30/90d → Telegram.
+# Tese: cor atrai; kit + anexos + B2B pagam.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 09:00 BRT = 12:00 UTC
+    - cron: "0 12 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  ECOSSISTEMA_ESMALTES_ATIVO: "1"
+  ECOSSISTEMA_ESMALTES_ALERTA: "1"
+
+jobs:
+  ecossistema:
+    name: Plano ecossistema → Telegram
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar snapshots / cooldown
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/ecossistema_esmaltes_ultima.json
+            logs/ecossistema_esmaltes_historico.json
+            logs/esmaltes_tendencias_ultima.json
+            logs/esmaltes_busca_kit_ultima.json
+            logs/anita_esmaltes_ultima.json
+            logs/esmaltes_kits_monitor_ultima.json
+            logs/montar_kits_impala_ultima.json
+            logs/removedores_unha_ultima.json
+            logs/acetona_cruzeiro_ultima.json
+            logs/necessidade_manicures_ultima.json
+            logs/conversao_manicures_ultima.json
+            logs/esmaltes_mercado_ultima.json
+          key: ecossistema-esmaltes-${{ github.run_id }}
+          restore-keys: |
+            ecossistema-esmaltes-
+            montar-kits-impala-
+            necessidade-manicures-
+            conversao-manicures-
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar agente ecossistema esmaltes
+        run: python -m agentes.esmaltes.agente_ecossistema_esmaltes
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ECOSSISTEMA_ESMALTES_ATIVO: "1"
+          ECOSSISTEMA_ESMALTES_ALERTA: "1"
+          ECOSSISTEMA_ESMALTES_COOLDOWN_SEG: "43200"
+      - name: Publicar snapshot
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/ecossistema_esmaltes_ultima.json
+            logs/ecossistema_esmaltes_historico.json
+            logs/alertas_cooldown.json
+          key: ecossistema-esmaltes-${{ github.run_id }}
+      - name: Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecossistema-esmaltes
+          path: |
+            logs/ecossistema_esmaltes_ultima.json
+            logs/ecossistema_esmaltes_historico.json
+          retention-days: 30
+          if-no-files-found: ignore

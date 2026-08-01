@@ -6,6 +6,8 @@ API e agentes para operação de vendas em marketplaces, com automações de:
 - publicação social,
 - relatório diário e alertas.
 
+Esquema de arquitetura (camadas, orquestrador, integrações, fluxos e desenho): [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
+
 ## Requisitos
 
 - Python 3.11+ (recomendado)
