@@ -1,0 +1,15 @@
+{
+  "rodadas": [
+    {
+      "timestamp": "2026-08-01T17:13:34.325520+00:00",
+      "score_ecossistema": 68.9,
+      "cobertura_fontes_pct": 40.0,
+      "top_titulos": [
+        "Cores âncora (planilha × demanda kits ML)",
+        "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
+        "Posição Impala vs Anita (kits monitorados)"
+      ]
+    }
+  ],
+  "ultima": "2026-08-01T17:13:34.325520+00:00"
+}

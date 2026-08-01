@@ -360,6 +360,19 @@ MONTAR_KITS_IMPALA_ALERTA = os.getenv("MONTAR_KITS_IMPALA_ALERTA", "1").strip().
 MONTAR_KITS_IMPALA_COOLDOWN_SEG = int(os.getenv("MONTAR_KITS_IMPALA_COOLDOWN_SEG", "43200"))
 MONTAR_KITS_IMPALA_TOP_KITS = int(os.getenv("MONTAR_KITS_IMPALA_TOP_KITS", "40"))
 
+# Ecossistema esmaltes — plano consolidado (cor → kit → anexos → B2B)
+ECOSSISTEMA_ESMALTES_ATIVO = os.getenv("ECOSSISTEMA_ESMALTES_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ECOSSISTEMA_ESMALTES_ALERTA = os.getenv("ECOSSISTEMA_ESMALTES_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ECOSSISTEMA_ESMALTES_COOLDOWN_SEG = int(os.getenv("ECOSSISTEMA_ESMALTES_COOLDOWN_SEG", "43200"))
+
 # Monitor removedores de unha — nomes, fabricantes e ranking por vendas
 REMOVEDORES_UNHA_CATALOGO = os.getenv(
     "REMOVEDORES_UNHA_CATALOGO", "catalogo/removedores_unha_monitor.json"
@@ -714,7 +727,7 @@ ORQUESTRADOR_EXCLUIR = {
         "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
         "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
-        "montar_kits_impala,leilao,alibaba,alibaba_inteligencia,"
+        "montar_kits_impala,ecossistema_esmaltes,leilao,alibaba,alibaba_inteligencia,"
         "ml_tendencias_importacao,monitor_filamentos_ml,licitacoes",
     ).split(",")
     if x.strip()

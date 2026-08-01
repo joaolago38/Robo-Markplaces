@@ -273,14 +273,22 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Cruza cores Impala da planilha com kits mais vendidos no ML e sugere montagem",
     ),
     AgenteRegistrado(
+        "ecossistema_esmaltes",
+        "Ecossistema esmaltes (plano consolidado)",
+        "monitor",
+        "agentes.esmaltes.agente_ecossistema_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="Cor atrai → kit+anexos+B2B pagam. Lê snapshots e monta plano 7/30/90d. Fora do ciclo 30min",
+    ),
+    AgenteRegistrado(
         "monitor_removedores_unha",
         "Monitor removedores de unha — ranking",
         "monitor",
         "agentes.esmaltes.agente_monitor_removedores_unha:executar",
         {"enviar_alerta": True},
-        notas="Removedores de unha no ML: nomes, fabricantes e ranking por vendas",
+        notas="Removedores de unha no ML: nomes, fabricnking por vendas",
     ),
-    AgenteRegistrado(
+    antes e ra    AgenteRegistrado(
         "monitor_tendencias_esmaltes",
         "Tendências esmaltes — web × marketplaces",
         "monitor",
