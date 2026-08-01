@@ -9,6 +9,7 @@ from importlib import import_module
 from typing import Any, Callable
 
 
+
 @dataclass(frozen=True)
 class AgenteRegistrado:
     id: str
