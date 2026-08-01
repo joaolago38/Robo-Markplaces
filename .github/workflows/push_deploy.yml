@@ -62,7 +62,7 @@ jobs:
             --mensagem "${{ inputs.mensagem_commit }}" \
             $ARGS
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,alibaba,alibaba_inteligencia,ml_tendencias_importacao,monitor_filamentos_ml,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,ecossistema_esmaltes,montar_kits_impala
+          ORQUESTRADOR_EXCLUIR: leilao,alibaba,alibaba_inteligencia,ml_tendencias_importacao,monitor_filamentos_ml,licitacoes,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,ecossistema_esmaltes,montar_kits_impala,crescimento_esmaltes
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
