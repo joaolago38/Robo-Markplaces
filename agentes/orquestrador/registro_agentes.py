@@ -281,6 +281,22 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Cor atrai → kit+anexos+B2B pagam. Lê snapshots e monta plano 7/30/90d. Fora do ciclo 30min",
     ),
     AgenteRegistrado(
+        "crescimento_esmaltes",
+        "Crescimento esmaltes (KPI + kits sem MLB)",
+        "monitor",
+        "agentes.esmaltes.agente_crescimento_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="KPI kits% receita + margem; alerta kits sem MLB; checklist. Fora do ciclo 30min",
+    ),
+    AgenteRegistrado(
+        "decisao_dia_esmaltes",
+        "Decisão do dia Impala ML",
+        "monitor",
+        "agentes.esmaltes.agente_decisao_dia_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="Um card: FAZER / NÃO FAZER / CUSTO. 3 SKUs guerra + piso margem. Fora do ciclo 30min",
+    ),
+    AgenteRegistrado(
         "monitor_removedores_unha",
         "Monitor removedores de unha — ranking",
         "monitor",

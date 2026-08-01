@@ -373,6 +373,61 @@ ECOSSISTEMA_ESMALTES_ALERTA = os.getenv("ECOSSISTEMA_ESMALTES_ALERTA", "1").stri
 )
 ECOSSISTEMA_ESMALTES_COOLDOWN_SEG = int(os.getenv("ECOSSISTEMA_ESMALTES_COOLDOWN_SEG", "43200"))
 
+# Crescimento esmaltes — KPI + kits sem MLB + checklist
+CRESCIMENTO_ESMALTES_ATIVO = os.getenv("CRESCIMENTO_ESMALTES_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CRESCIMENTO_ESMALTES_ALERTA = os.getenv("CRESCIMENTO_ESMALTES_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CRESCIMENTO_ESMALTES_COOLDOWN_SEG = int(os.getenv("CRESCIMENTO_ESMALTES_COOLDOWN_SEG", "86400"))
+CRESCIMENTO_ESMALTES_META_KITS_PCT = float(os.getenv("CRESCIMENTO_ESMALTES_META_KITS_PCT", "40"))
+CRESCIMENTO_ESMALTES_META_MARGEM_PCT = float(os.getenv("CRESCIMENTO_ESMALTES_META_MARGEM_PCT", "15"))
+CRESCIMENTO_ESMALTES_COMBO_ANEXO = os.getenv("CRESCIMENTO_ESMALTES_COMBO_ANEXO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+
+# Decisão do dia — um veredito FAZER / NÃO FAZER / CUSTO
+DECISAO_DIA_ESMALTES_ATIVO = os.getenv("DECISAO_DIA_ESMALTES_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+DECISAO_DIA_ESMALTES_ALERTA = os.getenv("DECISAO_DIA_ESMALTES_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+DECISAO_DIA_ESMALTES_COOLDOWN_SEG = int(os.getenv("DECISAO_DIA_ESMALTES_COOLDOWN_SEG", "86400"))
+DECISAO_DIA_ESMALTES_GUERRA_CATALOGO = os.getenv(
+    "DECISAO_DIA_ESMALTES_GUERRA_CATALOGO", "catalogo/skus_guerra_impala.json"
+)
+
+# Contrato impulso ML (ads/promo só com SKU guerra + MLB)
+CONTRATO_IMPULSO_ML_ATIVO = os.getenv("CONTRATO_IMPULSO_ML_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Eventos tipados do algoritmo → chat / congelar preço / listing
+ALGORITMO_EVENTOS_ATIVO = os.getenv("ALGORITMO_EVENTOS_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Otimizador listing: aplicar título após SIM do gestor (default off)
+OTIMIZADOR_LISTING_APLICAR = os.getenv("OTIMIZADOR_LISTING_APLICAR", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 # Monitor removedores de unha — nomes, fabricantes e ranking por vendas
 REMOVEDORES_UNHA_CATALOGO = os.getenv(
     "REMOVEDORES_UNHA_CATALOGO", "catalogo/removedores_unha_monitor.json"
@@ -727,7 +782,8 @@ ORQUESTRADOR_EXCLUIR = {
         "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
         "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
-        "montar_kits_impala,ecossistema_esmaltes,leilao,alibaba,alibaba_inteligencia,"
+        "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,decisao_dia_esmaltes,"
+        "leilao,alibaba,alibaba_inteligencia,"
         "ml_tendencias_importacao,monitor_filamentos_ml,licitacoes",
     ).split(",")
     if x.strip()

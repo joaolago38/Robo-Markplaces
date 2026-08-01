@@ -96,8 +96,24 @@ def _montar_com_fallback(
     for campanha in fila:
         out = montar_mensagem_campanha(campanha)
         tentativas.append({"id": campanha.get("id"), "ok": out.get("ok"), "motivo": out.get("motivo")})
-        if out.get("ok"):
-            return out
+        if not out.get("ok"):
+            continue
+        from integracoes.ml.contrato_impulso_ml import campanha_pode_enviar, carregar_contrato
+
+        contrato = carregar_contrato()
+        pode, motivo_c = campanha_pode_enviar(
+            str(out.get("sku") or ""),
+            link_valido=bool(out.get("link_valido")),
+            contrato=contrato,
+        )
+        if not pode:
+            tentativas.append(
+                {"id": campanha.get("id"), "ok": False, "motivo": f"contrato:{motivo_c}"}
+            )
+            logger.info("Campanha %s bloqueada pelo contrato: %s", campanha.get("id"), motivo_c)
+            continue
+        out["contrato_motivo"] = motivo_c
+        return out
 
     return {
         "ok": False,

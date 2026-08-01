@@ -1,0 +1,146 @@
+{
+  "ok": true,
+  "timestamp": "2026-08-01T19:16:53.627242+00:00",
+  "fazer": {
+    "veredito": "fazer",
+    "codigo": "preencher_mlb_guerra",
+    "titulo": "Publicar/preencher MLB de `IMP-MIMO-003` (entrada)",
+    "detalhe": "Kit 3 Mimo + Carmed — diferencial: kit compacto + Carmed (anexo no combo). Sem MLB não há ads nem promoção.",
+    "sku": "IMP-MIMO-003"
+  },
+  "nao_fazer": {
+    "veredito": "nao_fazer",
+    "codigo": "nao_impulsionar_sem_condicao",
+    "titulo": "Não impulsionar `IMP-MIMO-003` hoje",
+    "detalhe": "Bloqueios: sem_mlb, estoque_zero",
+    "sku": "IMP-MIMO-003"
+  },
+  "custo_nao_fazer": {
+    "veredito": "custo",
+    "titulo": "Sem MLB: zero promoção válida e share parado vs Anita",
+    "detalhe": "Cada dia sem anúncio = manicure compra kit da concorrência."
+  },
+  "skus_guerra": [
+    {
+      "sku": "IMP-MIMO-003",
+      "papel": "entrada",
+      "nome": "Kit 3 Mimo + Carmed",
+      "diferencial": "kit compacto + Carmed (anexo no combo)",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "preco": 44.9,
+      "custo": 27.15,
+      "margem_estimada_pct": 21.5,
+      "margem_ok": true,
+      "pode_impulsionar": false,
+      "bloqueios": [
+        "sem_mlb",
+        "estoque_zero"
+      ]
+    },
+    {
+      "sku": "IMP-BAIL-005",
+      "papel": "giro",
+      "nome": "Kit 5 Bailarina",
+      "diferencial": "5 cores Bailarina — mix salão",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "preco": 52.9,
+      "custo": 35.23,
+      "margem_estimada_pct": 15.4,
+      "margem_ok": true,
+      "pode_impulsionar": false,
+      "bloqueios": [
+        "sem_mlb",
+        "estoque_zero"
+      ]
+    },
+    {
+      "sku": "IMP-ATAC-010",
+      "papel": "atacado",
+      "nome": "Kit 10 Atacado Manicure",
+      "diferencial": "volume B2B / reposição manicure",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "preco": 79.9,
+      "custo": 52.94,
+      "margem_estimada_pct": 15.7,
+      "margem_ok": true,
+      "pode_impulsionar": false,
+      "bloqueios": [
+        "sem_mlb",
+        "estoque_zero"
+      ]
+    }
+  ],
+  "liberados": 0,
+  "bloqueados": 3,
+  "regras": [
+    "Só 3 SKUs de guerra recebem ads/promo",
+    "Margem estimada ≥ 15.0% senão não impulsiona",
+    "Sem MLB real → não promove",
+    "Todo impulso leva combo anexo (removedor/base+top)",
+    "Diferença = kit/anexo/B2B, não unitário mais barato"
+  ],
+  "kpis": {
+    "receita_bruta": 0,
+    "receita_kits": 0.0,
+    "kits_pct_receita": null,
+    "margem_media_pct": 0.0,
+    "meta_kits_pct": 40.0,
+    "meta_margem_pct": 15.0,
+    "kits_meta_ok": false,
+    "margem_meta_ok": false,
+    "itens_analisados": 0,
+    "sem_vendas_periodo": true
+  },
+  "evolucao": {
+    "atual": {
+      "timestamp": "2026-08-01T19:16:53.626922+00:00",
+      "kits_pct": null,
+      "margem_pct": 0.0,
+      "receita": 0
+    },
+    "anterior": {
+      "timestamp": "2026-08-01T19:15:00.398900+00:00",
+      "kits_pct": null,
+      "margem_pct": 0.0,
+      "receita": 0
+    },
+    "delta": {
+      "margem_pct": 0.0
+    }
+  },
+  "comparativo": {
+    "disponivel": false
+  },
+  "estrategia_top": {
+    "tipo": "diferenciar_ou_sair",
+    "titulo": "Não competir só em preço: IMP-MIMO-003",
+    "detalhe": "Gap 101.3% (seu R$ 44,90 vs mercado R$ 22,30). Líquida est. no preço do líder: R$ 18,29 vs custo R$ 27,15. Diferencie kit/fotos/frete, pause ads agressivos ou empurre no canal próprio.",
+    "sku": "IMP-MIMO-003",
+    "prioridade": "alta",
+    "score": 151.35,
+    "dados": {
+      "gap_pct": 101.3,
+      "meu_preco": 44.9,
+      "menor_mercado": 22.3,
+      "receita_liquida_mercado": 18.29,
+      "custo": 27.15,
+      "origem": "monitor_termo"
+    }
+  },
+  "canais": {
+    "pendentes": [
+      "whatsapp",
+      "instagram"
+    ],
+    "whatsapp_ok": false,
+    "instagram_ok": false,
+    "telegram_manicures_ok": true
+  },
+  "score_ecossistema": 68.9,
+  "margem_piso_pct": 15.0,
+  "meta_kits_pct": 40.0,
+  "mensagem": "🎯 *Decisão do dia — Impala ML*\n\n_O que este agente faz:_\n_Um veredito por dia para Impala no ML: FAZER, NÃO FAZER e CUSTO DE NÃO FAZER, com foco nos 3 SKUs de guerra e piso de margem._\n\n_Quando roda:_\n_Todo dia às 08:00 BRT (Actions); fora do ciclo 30 min_\n\n✅ *FAZER:* Publicar/preencher MLB de `IMP-MIMO-003` (entrada)\n   _Kit 3 Mimo + Carmed — diferencial: kit compacto + Carmed (anexo no combo). Sem MLB não há ads nem promoção._\n\n🛑 *NÃO FAZER:* Não impulsionar `IMP-MIMO-003` hoje\n   _Bloqueios: sem_mlb, estoque_zero_\n\n💸 *CUSTO DE NÃO FAZER:* Sem MLB: zero promoção válida e share parado vs Anita\n   _Cada dia sem anúncio = manicure compra kit da concorrência._\n\nSKUs guerra: *0* liberado(s) / *3* bloqueado(s) | piso margem *15.0%*\n🔴 `IMP-MIMO-003` (entrada) sem_mlb/estoque_zero\n🔴 `IMP-BAIL-005` (giro) sem_mlb/estoque_zero\n🔴 `IMP-ATAC-010` (atacado) sem_mlb/estoque_zero\n\n_Estratégia ML:_ Não competir só em preço: IMP-MIMO-003\n\n*Regras:* Só 3 SKUs de guerra recebem ads/promo · Margem estimada ≥ 15.0% senão não impulsiona · Sem MLB real → não promove\n\n_Uma decisão. Execute só o FAZER de hoje._"
+}

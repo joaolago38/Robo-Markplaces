@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-08-01T19:09:40.290505+00:00",
+  "checklist": [
+    {
+      "id": "publicar_kits_mlb",
+      "prioridade": 1,
+      "titulo": "Preencher MLB real em 10 kit(s) do catálogo",
+      "detalhe": "IMP-MIMO-003, IMP-BAIL-005, IMP-SORT-006, IMP-ATAC-010, KIT-10-VERM-ROSA",
+      "tipo": "ops"
+    },
+    {
+      "id": "criar_kits_sugeridos",
+      "prioridade": 1,
+      "titulo": "Criar/publicar 1 kit(s) sugeridos sem anúncio",
+      "detalhe": "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
+      "tipo": "ops"
+    },
+    {
+      "id": "config_whatsapp",
+      "prioridade": 1,
+      "titulo": "Configurar WhatsApp grupo manicures",
+      "detalhe": "WHATSAPP_* + WHATSAPP_GRUPO_MANICURES_ID",
+      "tipo": "config"
+    },
+    {
+      "id": "config_instagram",
+      "prioridade": 2,
+      "titulo": "Configurar Instagram conversão manicures",
+      "detalhe": "META_INSTAGRAM_ID + imagem IG + PUBLICAR_IG=1",
+      "tipo": "config"
+    },
+    {
+      "id": "gerar_venda_kit",
+      "prioridade": 2,
+      "titulo": "Sem vendas no período — impulsionar kit com MLB válido",
+      "detalhe": "Rode promoções/necessidade após preencher MLB",
+      "tipo": "ops"
+    }
+  ],
+  "resumo": {
+    "kits_sem_mlb": 10,
+    "kits_sugeridos_pendentes": 1,
+    "checklist": 5,
+    "whatsapp_ok": false
+  }
+}

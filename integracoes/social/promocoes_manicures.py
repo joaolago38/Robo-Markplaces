@@ -10,7 +10,13 @@ from typing import Any
 
 from core.atomic_io import ler_json
 from core.catalogo_produtos import carregar_produtos_catalogo
-from core.config import ML_LOJA_URL, PROMOCOES_MANICURES_CATALOGO, PROMOCOES_MANICURES_RODAPE, ROOT
+from core.config import (
+    CRESCIMENTO_ESMALTES_COMBO_ANEXO,
+    ML_LOJA_URL,
+    PROMOCOES_MANICURES_CATALOGO,
+    PROMOCOES_MANICURES_RODAPE,
+    ROOT,
+)
 
 logger = logging.getLogger("promocoes_manicures")
 
@@ -132,6 +138,13 @@ def montar_mensagem_campanha(campanha: dict[str, Any]) -> dict[str, Any]:
         return str(ctx.get(chave, match.group(0)))
 
     texto = _PLACEHOLDER_RE.sub(_sub, template)
+    texto_tg = texto
+    texto_wa = texto
+    if CRESCIMENTO_ESMALTES_COMBO_ANEXO:
+        from integracoes.esmaltes.crescimento_esmaltes import anexar_combo_oferta
+
+        texto_tg = anexar_combo_oferta(texto, whatsapp=False)
+        texto_wa = anexar_combo_oferta(texto, whatsapp=True)
 
     out = {
         "ok": True,
@@ -142,9 +155,10 @@ def montar_mensagem_campanha(campanha: dict[str, Any]) -> dict[str, Any]:
         "link_ml": ctx["link"],
         "link_valido": valido,
         "item_id": item_id or None,
-        "texto": texto,
-        "texto_telegram": texto,
-        "texto_whatsapp": _para_whatsapp(texto),
+        "texto": texto_tg,
+        "texto_telegram": texto_tg,
+        "texto_whatsapp": _para_whatsapp(texto_wa),
+        "combo_anexo": bool(CRESCIMENTO_ESMALTES_COMBO_ANEXO),
     }
     if not valido:
         out["aviso_link"] = (

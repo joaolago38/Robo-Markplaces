@@ -109,6 +109,21 @@ def avaliar_momento_ads(
         motivos.append("Avaliações suficientes para iniciar Product Ads")
         motivos.append(f"Budget: R$ {BUDGET_FASE_INICIO}/dia — campanha automática por 2 semanas")
 
+    # Contrato impulso: sem SKU guerra+MLB liberado, não liga/escala
+    if decisao in ("ligar", "escalar"):
+        try:
+            from integracoes.ml.contrato_impulso_ml import ads_pode_ligar, montar_contrato
+
+            montar_contrato()
+            pode_ads, motivo_contrato = ads_pode_ligar()
+            if not pode_ads:
+                motivos.append(f"Contrato impulso ML: {motivo_contrato}")
+                motivos.append("Publique/preencha MLB dos SKUs de guerra antes de ads")
+                decisao = "aguardar"
+                budget_sugerido = 0.0
+        except Exception as exc:
+            logger.warning("Contrato impulso ads: %s", exc)
+
     resultado = {
         "decisao": decisao,
         "budget_sugerido_dia": budget_sugerido,

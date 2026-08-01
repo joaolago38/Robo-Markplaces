@@ -1,0 +1,19 @@
+{
+  "rodadas": [
+    {
+      "timestamp": "2026-08-01T19:15:00.399412+00:00",
+      "fazer": "preencher_mlb_guerra",
+      "nao_fazer": "nao_impulsionar_sem_condicao",
+      "liberados": 0,
+      "bloqueados": 3
+    },
+    {
+      "timestamp": "2026-08-01T19:16:53.627242+00:00",
+      "fazer": "preencher_mlb_guerra",
+      "nao_fazer": "nao_impulsionar_sem_condicao",
+      "liberados": 0,
+      "bloqueados": 3
+    }
+  ],
+  "ultima": "2026-08-01T19:16:53.627242+00:00"
+}

@@ -21,7 +21,7 @@
     "peso_gramas": 350,
     "caixa_caixasnet": "S20-16x11x10",
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure Profissional", "categoria_ml": "MLB1430", "preco": 44.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure Profissional", "categoria_ml": "MLB1430", "preco": 44.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -36,18 +36,18 @@
     "custo_total_sem_frete": 24.23,
     "frete_estimado": 11.00,
     "custo_total": 35.23,
-    "fase_atual": 1,
+    "fase_atual": 2,
     "precos_por_fase": {
       "fase1": 48.90,
       "fase2": 52.90,
       "fase3": 57.90
     },
-    "preco": 48.90,
+    "preco": 52.90,
     "estoque_total": 0,
     "peso_gramas": 530,
     "caixa_caixasnet": "S20-16x11x10",
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 5 Esmaltes Impala Bailarina Manicure Cores Sortidas", "categoria_ml": "MLB1430", "preco": 48.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 5 Esmaltes Impala Bailarina Manicure Cores Sortidas", "categoria_ml": "MLB1430", "preco": 52.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },
@@ -88,18 +88,18 @@
     "custo_total_sem_frete": 38.44,
     "frete_estimado": 14.50,
     "custo_total": 52.94,
-    "fase_atual": 1,
+    "fase_atual": 3,
     "precos_por_fase": {
       "fase1": 69.90,
       "fase2": 74.90,
       "fase3": 79.90
     },
-    "preco": 69.90,
+    "preco": 79.90,
     "estoque_total": 0,
     "peso_gramas": 1000,
     "caixa_caixasnet": "S03-31x20x11.5",
     "canais": {
-      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 10 Esmaltes Impala Atacado Manicure Profissional", "categoria_ml": "MLB1430", "preco": 69.90, "preco_concorrente": 0.0, "estoque": 0},
+      "mercadolivre": {"ativo": true, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 10 Esmaltes Impala Atacado Manicure Profissional", "categoria_ml": "MLB1430", "preco": 79.90, "preco_concorrente": 0.0, "estoque": 0, "taxa_canal_pct": 18.0},
       "shopee": {"ativo": false, "preco": 0, "estoque": 0}
     }
   },

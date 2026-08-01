@@ -256,6 +256,28 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                 "ajustes": [],
             }
 
+        from core.algoritmo_eventos import deve_congelar_repricing
+
+        cong, motivo_cong = deve_congelar_repricing("mercadolivre")
+        if cong:
+            alertar_gestor(
+                f"⏸ Repricing marketplaces *congelado* (algoritmo ML)\n_{motivo_cong}_",
+                chave="repricing:congelado_algoritmo",
+                cooldown_segundos=3600,
+                agente_id="repricing",
+            )
+            return {
+                "ok": True,
+                "dry_run": False,
+                "congelado": True,
+                "motivo_congelamento": motivo_cong,
+                "lucro_minimo_pct": float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT),
+                "total_itens": 0,
+                "total_ajustes": 0,
+                "economia_estimada_piso_margem": 0.0,
+                "ajustes": [],
+            }
+
     lucro_minimo = float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT)
     if produtos is not None:
         produtos_base = produtos

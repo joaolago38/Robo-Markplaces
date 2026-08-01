@@ -267,7 +267,7 @@ flowchart TB
 |---------|---------------------|-------------------------|
 | Chat & atendimento | `agente_ml`, Shopee, Magalu, Amazon, auto_respostas | ML/Shopee/Magalu/Amazon, Bling, Claude |
 | Preço & estoque | repricing, sync estoque, inteligência preços | Bling + canais |
-| Esmaltes / manicures | Anita, kits, Impala, acetona, Meta, ecossistema | ML, Meta, planilhas |
+| Esmaltes / manicures | Anita, kits, Impala, acetona, Meta, ecossistema, crescimento, decisão do dia, contrato impulso | ML, Meta, planilhas |
 | Filamentos 3D | monitor filamentos + cruzamento Alibaba | ML, Alibaba, câmbio |
 | Importação | Alibaba, ML×Alibaba, cálculo aéreo | Alibaba, ML, câmbio |
 | Veículos / leilões | Sumaré, FIPE, carros batidos | scrapers / sites |
