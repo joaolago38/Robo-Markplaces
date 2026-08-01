@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "6bd386e0e78d2a0affac",
+      "primeira_vez": "2026-08-01T19:21:48.172963+00:00",
+      "ultima_vez": "2026-08-01T19:21:48.172963+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
+    },
+    {
       "fingerprint": "332aafa665eacd427749",
       "primeira_vez": "2026-07-29T18:49:41.311346+00:00",
       "ultima_vez": "2026-07-29T18:49:41.311346+00:00",
@@ -1638,18 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "28a97f22e09b9abab1bb",
-      "primeira_vez": "2026-07-05T20:44:29.360097+00:00",
-      "ultima_vez": "2026-07-05T21:19:06.922702+00:00",
-      "logger": "meta",
-      "mensagem": "Meta publicar_facebook erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-07-29T18:49:41.311346+00:00"
+  "atualizado_em": "2026-08-01T19:21:48.172963+00:00"
 }
