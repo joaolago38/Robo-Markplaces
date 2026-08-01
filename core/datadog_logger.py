@@ -95,6 +95,8 @@ _LOGGER_META = {
     "agente_monitor_busca_kit_esmaltes": ("mercadolivre", "agente"),
     "agente_monitor_kits_esmaltes": ("mercadolivre", "agente"),
     "agente_montar_kits_impala": ("mercadolivre", "agente"),
+    "agente_ecossistema_esmaltes": ("mercadolivre", "agente"),
+    "ecossistema_esmaltes": ("mercadolivre", "integracao"),
     "agente_conversao_manicures": ("social", "agente"),
     "conversao_manicures": ("social", "integracao"),
     "agente_necessidade_manicures": ("social", "agente"),
