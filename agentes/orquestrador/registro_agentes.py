@@ -9,7 +9,6 @@ from importlib import import_module
 from typing import Any, Callable
 
 
-
 @dataclass(frozen=True)
 class AgenteRegistrado:
     id: str
@@ -287,9 +286,9 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.esmaltes.agente_monitor_removedores_unha:executar",
         {"enviar_alerta": True},
-        notas="Removedores de unha no ML: nomes, fabricnking por vendas",
+        notas="Removedores de unha no ML: nomes, fabricantes e ranking por vendas",
     ),
-    antes e ra    AgenteRegistrado(
+    AgenteRegistrado(
         "monitor_tendencias_esmaltes",
         "Tendências esmaltes — web × marketplaces",
         "monitor",

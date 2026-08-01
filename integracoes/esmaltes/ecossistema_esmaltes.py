@@ -146,7 +146,7 @@ def _acoes_anexos(fontes: dict[str, Any]) -> list[dict[str, Any]]:
                 camada="anexos",
                 titulo="Removedor — anexo de margem no funil",
                 detalhe=(
-                    f"Ofereça combo esmalte + removedor"
+                    "Ofereça combo esmalte + removedor"
                     + (f" (líder: {nome[:40]})" if nome else "")
                     + ". Anexo paga o negócio; cor só atrai."
                 ),
