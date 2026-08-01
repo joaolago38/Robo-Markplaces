@@ -135,6 +135,10 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Fecha o loop do crescimento: KPI kits na receita + margem, lista kits sem MLB, "
         "checklist do que falta (WA/IG/publicar) e alerta o gestor."
     ),
+    "decisao_dia_esmaltes": (
+        "Um veredito por dia para Impala no ML: FAZER, NÃO FAZER e CUSTO DE NÃO FAZER, "
+        "com foco nos 3 SKUs de guerra e piso de margem."
+    ),
     "monitor_removedores_unha": (
         "Monitora removedores de unha no ML: fabricantes, nomes e ranking por vendas, "
         "para ver líderes e oportunidades. Telegram: ranking (+ gráfico quando houver)."
@@ -305,6 +309,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "montar_kits_impala": "A cada 12h (Actions); fora do ciclo 30 min",
     "ecossistema_esmaltes": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
     "crescimento_esmaltes": "Todo dia às 09:30 BRT (Actions); fora do ciclo 30 min",
+    "decisao_dia_esmaltes": "Todo dia às 08:00 BRT (Actions); fora do ciclo 30 min",
     "monitor_removedores_unha": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
     "monitor_tendencias_esmaltes": (
         "2x ao dia às 05:15 e 17:15 BRT (Actions) e a cada 30 min (orquestrador)"
@@ -410,6 +415,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("ecossistema", "ecossistema_esmaltes"),
     ("crescimento_esmaltes", "crescimento_esmaltes"),
     ("crescimento", "crescimento_esmaltes"),
+    ("decisao_dia_esmaltes", "decisao_dia_esmaltes"),
+    ("decisao_dia", "decisao_dia_esmaltes"),
     ("removedores", "monitor_removedores_unha"),
     ("tendencias_esmaltes", "monitor_tendencias_esmaltes"),
     ("esmaltes:tendencias", "monitor_tendencias_esmaltes"),

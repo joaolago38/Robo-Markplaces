@@ -1,0 +1,20 @@
+[
+  {
+    "sku": "IMP-MIMO-003",
+    "papel": "entrada",
+    "nome": "Kit 3 Mimo + Carmed",
+    "diferencial_obrigatorio": "kit compacto + Carmed (anexo no combo)"
+  },
+  {
+    "sku": "IMP-BAIL-005",
+    "papel": "giro",
+    "nome": "Kit 5 Bailarina",
+    "diferencial_obrigatorio": "5 cores Bailarina — mix salão"
+  },
+  {
+    "sku": "IMP-ATAC-010",
+    "papel": "atacado",
+    "nome": "Kit 10 Atacado Manicure",
+    "diferencial_obrigatorio": "volume B2B / reposição manicure"
+  }
+]

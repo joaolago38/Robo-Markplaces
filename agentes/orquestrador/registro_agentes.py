@@ -289,6 +289,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="KPI kits% receita + margem; alerta kits sem MLB; checklist. Fora do ciclo 30min",
     ),
     AgenteRegistrado(
+        "decisao_dia_esmaltes",
+        "Decisão do dia Impala ML",
+        "monitor",
+        "agentes.esmaltes.agente_decisao_dia_esmaltes:executar",
+        {"enviar_alerta": True},
+        notas="Um card: FAZER / NÃO FAZER / CUSTO. 3 SKUs guerra + piso margem. Fora do ciclo 30min",
+    ),
+    AgenteRegistrado(
         "monitor_removedores_unha",
         "Monitor removedores de unha — ranking",
         "monitor",

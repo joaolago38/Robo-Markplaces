@@ -1,0 +1,91 @@
+name: Decisão do dia Impala ML
+
+# Um card: FAZER · NÃO FAZER · CUSTO. 3 SKUs de guerra + piso de margem.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 08:00 BRT = 11:00 UTC
+    - cron: "0 11 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  DECISAO_DIA_ESMALTES_ATIVO: "1"
+  DECISAO_DIA_ESMALTES_ALERTA: "1"
+
+jobs:
+  decisao:
+    name: Veredito do dia → Telegram
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar snapshots / cooldown
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/decisao_dia_esmaltes_ultima.json
+            logs/decisao_dia_esmaltes_historico.json
+            logs/decisao_dia_esmaltes_kpis.json
+            logs/crescimento_esmaltes_ultima.json
+            logs/ecossistema_esmaltes_ultima.json
+            logs/montar_kits_impala_ultima.json
+            logs/margem_vendas_ultima.json
+            logs/conversao_manicures_ultima.json
+            logs/anita_impala_comparativo_ultima.json
+            logs/relatorio_estrategia_ml_ultima.json
+          key: decisao-dia-esmaltes-${{ github.run_id }}
+          restore-keys: |
+            decisao-dia-esmaltes-
+            crescimento-esmaltes-
+            ecossistema-esmaltes-
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar decisão do dia
+        run: python -m agentes.esmaltes.agente_decisao_dia_esmaltes
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          DECISAO_DIA_ESMALTES_ATIVO: "1"
+          DECISAO_DIA_ESMALTES_ALERTA: "1"
+          DECISAO_DIA_ESMALTES_COOLDOWN_SEG: "86400"
+          CRESCIMENTO_ESMALTES_META_KITS_PCT: "40"
+          CRESCIMENTO_ESMALTES_META_MARGEM_PCT: "15"
+      - name: Publicar snapshot
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/decisao_dia_esmaltes_ultima.json
+            logs/decisao_dia_esmaltes_historico.json
+            logs/decisao_dia_esmaltes_kpis.json
+            logs/alertas_cooldown.json
+          key: decisao-dia-esmaltes-${{ github.run_id }}
+      - name: Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: decisao-dia-esmaltes
+          path: logs/decisao_dia_esmaltes_ultima.json
+          retention-days: 30
+          if-no-files-found: ignore

@@ -393,6 +393,22 @@ CRESCIMENTO_ESMALTES_COMBO_ANEXO = os.getenv("CRESCIMENTO_ESMALTES_COMBO_ANEXO",
     "no",
 )
 
+# Decisão do dia — um veredito FAZER / NÃO FAZER / CUSTO
+DECISAO_DIA_ESMALTES_ATIVO = os.getenv("DECISAO_DIA_ESMALTES_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+DECISAO_DIA_ESMALTES_ALERTA = os.getenv("DECISAO_DIA_ESMALTES_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+DECISAO_DIA_ESMALTES_COOLDOWN_SEG = int(os.getenv("DECISAO_DIA_ESMALTES_COOLDOWN_SEG", "86400"))
+DECISAO_DIA_ESMALTES_GUERRA_CATALOGO = os.getenv(
+    "DECISAO_DIA_ESMALTES_GUERRA_CATALOGO", "catalogo/skus_guerra_impala.json"
+)
+
 # Monitor removedores de unha — nomes, fabricantes e ranking por vendas
 REMOVEDORES_UNHA_CATALOGO = os.getenv(
     "REMOVEDORES_UNHA_CATALOGO", "catalogo/removedores_unha_monitor.json"
@@ -747,7 +763,8 @@ ORQUESTRADOR_EXCLUIR = {
         "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
         "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
-        "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,leilao,alibaba,alibaba_inteligencia,"
+        "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,decisao_dia_esmaltes,"
+        "leilao,alibaba,alibaba_inteligencia,"
         "ml_tendencias_importacao,monitor_filamentos_ml,licitacoes",
     ).split(",")
     if x.strip()
