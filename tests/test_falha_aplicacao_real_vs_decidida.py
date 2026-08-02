@@ -20,13 +20,14 @@ from agentes.sincronizar_estoque_marketplaces import executar as executar_estoqu
 
 
 class TestRepricingDistingueFalhaDeSucesso(unittest.TestCase):
+    @patch("core.algoritmo_eventos.deve_congelar_repricing", return_value=(False, ""))
     @patch("agentes.repricing.agente_repricing_marketplaces.incrementar")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_critico")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
     @patch("agentes.repricing.agente_repricing_marketplaces.atualizar_preco_ml", return_value=False)
     @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
     def test_falha_na_api_nao_conta_como_aplicado(
-        self, mock_listar_bling, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico, mock_incrementar
+        self, mock_listar_bling, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico, mock_incrementar, _cong
     ):
         mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "custo": 9.5}}
         produtos = [
@@ -56,12 +57,13 @@ class TestRepricingDistingueFalhaDeSucesso(unittest.TestCase):
         mensagem_gestor = mock_alertar_gestor.call_args.args[0]
         self.assertIn("0/1", mensagem_gestor)
 
+    @patch("core.algoritmo_eventos.deve_congelar_repricing", return_value=(False, ""))
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_critico")
     @patch("agentes.repricing.agente_repricing_marketplaces.alertar_gestor")
     @patch("agentes.repricing.agente_repricing_marketplaces.atualizar_preco_ml", return_value=True)
     @patch("agentes.repricing.agente_repricing_marketplaces.listar_produtos_por_sku")
     def test_sucesso_real_conta_corretamente_e_nao_alerta_falha(
-        self, mock_listar_bling, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico
+        self, mock_listar_bling, _mock_atualizar, mock_alertar_gestor, mock_alertar_critico, _cong
     ):
         mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "custo": 9.5}}
         produtos = [

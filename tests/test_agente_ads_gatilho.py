@@ -85,10 +85,13 @@ class TestContextoDecisaoAds(unittest.TestCase):
     @patch.object(gatilho, "perguntar_gestor_e_aguardar", return_value=False)
     @patch.object(gatilho, "alertar_gestor")
     @patch("agentes.ml.agente_ads_gatilho.datetime")
-    def test_escalar_passa_contexto_decisao(self, mock_dt, *_mocks):
+    @patch("integracoes.ml.contrato_impulso_ml.ads_pode_ligar", return_value=(True, "teste"))
+    @patch("integracoes.ml.contrato_impulso_ml.montar_contrato", return_value={"ok": True})
+    def test_escalar_passa_contexto_decisao(self, _montar, _ads, mock_dt, mock_alerta, mock_pergunta, _probe):
         mock_dt.now.return_value = datetime(2026, 11, 15)
         gatilho.avaliar_momento_ads(avaliacoes=30, nota_media=4.9, acos_atual=0.1, full_ativo=True)
-        kwargs = gatilho.perguntar_gestor_e_aguardar.call_args.kwargs
+        self.assertTrue(mock_pergunta.called)
+        kwargs = mock_pergunta.call_args.kwargs
         self.assertIn("contexto_decisao", kwargs)
         self.assertTrue(kwargs["contexto_decisao"].get("sazonalidade_out_dez"))
 

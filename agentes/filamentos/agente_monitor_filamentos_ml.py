@@ -26,6 +26,7 @@ from core.config import (
     FILAMENTOS_ML_CATALOGO,
     FILAMENTOS_ML_CRUZAR_ALIBABA,
     FILAMENTOS_ML_PAUSA_SEG,
+    FILAMENTOS_SOURCING_ATIVO,
     ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
@@ -34,6 +35,7 @@ from core.notificador import alertar_gestor, chave_resumo_periodo, enviar_foto_g
 from core.series_historica import formatar_comparativo, registrar_ponto
 from integracoes.filamentos.analise_filamentos_ml import consolidar_varredura, processar_termo
 from integracoes.filamentos.cruzamento_alibaba import cruzar_filamentos_ml_alibaba, formatar_secao_cruzamento
+from integracoes.filamentos.sourcing_filamentos import analisar_sourcing, formatar_secao_sourcing
 from integracoes.ml import ml_client
 
 logger = logging.getLogger("agente_monitor_filamentos_ml")
@@ -122,6 +124,7 @@ def montar_mensagem_telegram(
     *,
     serie: list[dict[str, Any]] | None = None,
     cruzamento: dict[str, Any] | None = None,
+    sourcing: dict[str, Any] | None = None,
 ) -> str:
     from core.telegram_explicacao import cabecalho_agente
 
@@ -199,6 +202,9 @@ def montar_mensagem_telegram(
 
     if cruzamento is not None:
         linhas.extend(formatar_secao_cruzamento(cruzamento, fmt_brl=_fmt_brl))
+
+    if sourcing is not None:
+        linhas.extend(formatar_secao_sourcing(sourcing, fmt_brl=_fmt_brl))
 
     linhas.extend(["", "*Por termo de busca*"])
     for r in resultados:
@@ -285,6 +291,25 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             )
             gauge("filamentos.ml.alibaba_lucrativos", float(cruzamento.get("lucrativos") or 0))
 
+        sourcing: dict[str, Any] | None = None
+        if FILAMENTOS_SOURCING_ATIVO:
+            cambio_src = None
+            if cruzamento and cruzamento.get("cambio_usd_brl"):
+                try:
+                    cambio_src = float(cruzamento["cambio_usd_brl"])
+                except (TypeError, ValueError):
+                    cambio_src = None
+            sourcing = analisar_sourcing(
+                consolidado,
+                resultados,
+                cruzamento=cruzamento,
+                cambio_usd_brl=cambio_src,
+            )
+            resumo_v = sourcing.get("resumo_vereditos") or {}
+            gauge("filamentos.sourcing.comprar_br", float(resumo_v.get("COMPRAR_BR") or 0))
+            gauge("filamentos.sourcing.importar_china", float(resumo_v.get("IMPORTAR_CHINA") or 0))
+            gauge("filamentos.sourcing.nao_compensa", float(resumo_v.get("NAO_COMPENSA") or 0))
+
         escrever_json_atomico(
             SNAPSHOT_PATH,
             {
@@ -292,6 +317,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 "consolidado": consolidado,
                 "resultados": resultados,
                 "cruzamento_alibaba": cruzamento,
+                "sourcing": sourcing,
             },
         )
 
@@ -315,12 +341,18 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         historico["lider_cor"] = (consolidado.get("ranking_cores") or [{}])[0].get("cor")
         if cruzamento:
             historico["alibaba_lucrativos"] = cruzamento.get("lucrativos")
+        if sourcing:
+            historico["sourcing_resumo"] = sourcing.get("resumo_vereditos")
         escrever_json_atomico(HISTORY_PATH, historico)
 
         alerta_enviado = False
         if enviar_alerta and FILAMENTOS_ML_ALERTA_RESUMO and gestor_telegram_configurado():
             msg = montar_mensagem_telegram(
-                consolidado, resultados, serie=serie, cruzamento=cruzamento
+                consolidado,
+                resultados,
+                serie=serie,
+                cruzamento=cruzamento,
+                sourcing=sourcing,
             )
             chave = chave_resumo_periodo("filamentos:ml_monitor", horas_por_bucket=6)
             alerta_enviado = bool(
@@ -351,6 +383,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "total_termos": len(resultados),
             "consolidado": consolidado,
             "cruzamento_alibaba": cruzamento,
+            "sourcing": sourcing,
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
         }
@@ -372,12 +405,15 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     c = out.get("consolidado") or {}
     cruz = out.get("cruzamento_alibaba") or {}
+    src = out.get("sourcing") or {}
     logger.info(
-        "Concluído: %s termo(s), %s anúncio(s), cor líder=%s, alibaba lucrativos=%s, alerta=%s",
+        "Concluído: %s termo(s), %s anúncio(s), cor líder=%s, alibaba lucrativos=%s, "
+        "sourcing=%s, alerta=%s",
         out.get("total_termos"),
         c.get("total_filamentos_unicos"),
         (c.get("ranking_cores") or [{}])[0].get("cor"),
         cruz.get("lucrativos"),
+        src.get("resumo_vereditos"),
         out.get("alerta_enviado"),
     )
     return 0
