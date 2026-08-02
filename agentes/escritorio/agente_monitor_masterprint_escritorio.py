@@ -67,28 +67,40 @@ def _fmt_brl(valor: Any) -> str:
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def _linha_anuncio(p: dict[str, Any], *, com_delta: bool = False) -> str:
+def _linha_anuncio(
+    p: dict[str, Any],
+    *,
+    modo: str = "rentavel",
+    com_delta: bool = False,
+) -> str:
     titulo = str(p.get("titulo") or "?")[:55]
     tipo = str(p.get("tipo") or "").replace("_", " ")
-    margem = p.get("margem_brl")
-    custo = p.get("custo_unitario_brl")
     prefix = f"[{tipo}] " if tipo else ""
-    if margem is not None and custo is not None:
+    preco = _fmt_brl(p.get("preco"))
+    if modo == "vendas":
         base = (
-            f"• {prefix}{_fmt_brl(p.get('preco'))} | custo {_fmt_brl(custo)} | "
-            f"margem {_fmt_brl(margem)} ({p.get('margem_pct', '?')}%) | "
-            f"{int(p.get('quantidade_vendida') or 0)} vendas | "
-            f"lucro {_fmt_brl(p.get('lucro_proxy'))} — {titulo}"
-        )
-    else:
-        base = (
-            f"• {prefix}{_fmt_brl(p.get('preco'))} | {int(p.get('quantidade_vendida') or 0)} vendas | "
+            f"• {prefix}{preco} | {int(p.get('quantidade_vendida') or 0)} vendas | "
             f"rec. {_fmt_brl(p.get('receita_proxy'))} — {titulo}"
         )
+    elif modo == "ganho":
+        base = f"• {prefix}{preco} | {int(p.get('quantidade_vendida') or 0)} vendas — {titulo}"
+    else:
+        margem = p.get("margem_brl")
+        custo = p.get("custo_unitario_brl")
+        if margem is not None and custo is not None:
+            base = (
+                f"• {prefix}{preco} | custo {_fmt_brl(custo)} | "
+                f"margem {_fmt_brl(margem)} ({p.get('margem_pct', '?')}%) | "
+                f"lucro {_fmt_brl(p.get('lucro_proxy'))} — {titulo}"
+            )
+        else:
+            base = (
+                f"• {prefix}{preco} | {int(p.get('quantidade_vendida') or 0)} vendas | "
+                f"rec. {_fmt_brl(p.get('receita_proxy'))} — {titulo}"
+            )
     if com_delta:
         dv = int(p.get("delta_vendas") or 0)
-        dr = p.get("delta_receita")
-        base += f" | Δvendas +{dv} Δrec {_fmt_brl(dr)}"
+        base += f" | Δvendas +{dv}"
     iid = str(p.get("item_id") or "").strip()
     if iid:
         base += f"\n  `{iid}`"
@@ -107,55 +119,60 @@ def montar_mensagem_telegram(
     por = consolidado.get("por_tipo") or {}
     por_txt = ", ".join(f"{k.replace('_', ' ')}: {v}" for k, v in sorted(por.items())) or "n/d"
     ref = consolidado.get("custos_referencia") or {}
+    rent = consolidado.get("mais_rentaveis") or []
+    ganhos = consolidado.get("maior_ganho") or []
+    sem_historico = bool(ganhos and ganhos[0].get("ganho_fonte") == "sem_historico_usa_vendas")
 
     linhas = [
         cabecalho_agente(
             "monitor_masterprint_escritorio",
-            "✏️ *Masterprint — pincéis recarregáveis & apagadores*",
+            "✏️ *Masterprint escritório — decisão ML*",
         ),
         linha_identidade_telegram(),
         "",
-        f"Anúncios ativos: *{consolidado.get('total_anuncios_ativos', 0)}* _( {por_txt} )_",
-        f"Preços: {_fmt_brl(consolidado.get('preco_min'))} – "
-        f"{_fmt_brl(consolidado.get('preco_max'))} | média {_fmt_brl(consolidado.get('preco_medio'))}",
-        f"Custo tabela: permanente cx12 {_fmt_brl(ref.get('pincel_permanente_recarregavel_caixa12_brl'))} | "
-        f"quadro cx12 {_fmt_brl(ref.get('pincel_quadro_branco_recarregavel_caixa12_brl'))} | "
-        f"apagador {_fmt_brl(ref.get('apagador_quadro_ima_brl'))}",
-        f"_(válida {consolidado.get('tabela_valida_em') or 'n/d'})_",
-        f"Margem média: {_fmt_brl(consolidado.get('margem_media_brl'))} | "
-        f"Lucro proxy: {_fmt_brl(consolidado.get('lucro_proxy_total'))}",
-        f"Vendas (proxy): *{consolidado.get('vendas_totais', 0)}* | "
-        f"Receita proxy: {_fmt_brl(consolidado.get('receita_proxy_total'))}",
-        f"Termos varridos: {consolidado.get('termos_varridos', 0)}",
+        (
+            f"Panorama: *{consolidado.get('total_anuncios_ativos', 0)}* anúncios _( {por_txt} )_ | "
+            f"margem méd. {_fmt_brl(consolidado.get('margem_media_brl'))} | "
+            f"vendas *{consolidado.get('vendas_totais', 0)}*"
+        ),
+        (
+            f"Custo: perm. cx12 {_fmt_brl(ref.get('pincel_permanente_recarregavel_caixa12_brl'))} · "
+            f"quadro cx12 {_fmt_brl(ref.get('pincel_quadro_branco_recarregavel_caixa12_brl'))} · "
+            f"apagador {_fmt_brl(ref.get('apagador_quadro_ima_brl'))}"
+        ),
         "",
-        "*Mais rentáveis* _(margem real = líquido ML − custo tabela)_",
+        "*1) AGIR — priorize margem*",
     ]
-    rent = consolidado.get("mais_rentaveis") or []
     if rent:
-        for p in rent[:8]:
-            linhas.append(_linha_anuncio(p))
+        for p in rent[:5]:
+            linhas.append(_linha_anuncio(p, modo="rentavel"))
     else:
-        linhas.append("_Nenhum anúncio encontrado nesta rodada._")
+        linhas.append("_Nenhum anúncio nesta rodada._")
 
-    linhas.extend(["", "*Maior ganho* _(Δ vendas vs rodada anterior)_"])
-    ganhos = consolidado.get("maior_ganho") or []
+    linhas.extend(["", "*2) ATENÇÃO — movimento de vendas*"])
     if ganhos:
-        fonte = ganhos[0].get("ganho_fonte")
-        if fonte == "sem_historico_usa_vendas":
-            linhas.append("_Sem histórico ainda — ranking por vendas atuais._")
-        for p in ganhos[:8]:
-            linhas.append(_linha_anuncio(p, com_delta=True))
+        if sem_historico:
+            linhas.append("_Sem histórico Δ — ranking por vendas atuais._")
+        for p in ganhos[:4]:
+            linhas.append(_linha_anuncio(p, modo="ganho", com_delta=not sem_historico))
     else:
-        linhas.append("_Sem ganho detectado vs rodada anterior._")
+        linhas.append("_Sem ganho vs rodada anterior._")
 
-    linhas.extend(["", "*Mais vendidos*"])
-    for p in (consolidado.get("mais_vendidos") or [])[:5]:
-        linhas.append(_linha_anuncio(p))
+    if not sem_historico and (consolidado.get("mais_vendidos") or []):
+        linhas.extend(["", "*Volume* _(complemento)_"])
+        for p in (consolidado.get("mais_vendidos") or [])[:3]:
+            linhas.append(_linha_anuncio(p, modo="vendas"))
 
-    secao_ia = formatar_secao_ia_masterprint(avaliacao_ia)
+    secao_ia = formatar_secao_ia_masterprint(avaliacao_ia, com_tagline_ramo=False)
     if secao_ia:
         linhas.append(secao_ia)
 
+    linhas.extend(
+        [
+            "",
+            "_Decisão:_ priorize caixa/unidade com *melhor margem*; Δ vendas só define urgência._",
+        ]
+    )
     return "\n".join(linhas).strip()
 
 

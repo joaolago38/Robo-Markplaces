@@ -114,7 +114,7 @@ class TestAvaliacaoIaMasterprint(unittest.TestCase):
 
 
 class TestTelegramMantemFormato(unittest.TestCase):
-    def test_petg_mostra_ramo_e_secoes(self):
+    def test_petg_sem_historico_nao_duplica_mais_vendidos(self):
         from agentes.filamentos.agente_monitor_masterprint_petg import montar_mensagem_telegram
 
         msg = montar_mensagem_telegram(
@@ -130,15 +130,43 @@ class TestTelegramMantemFormato(unittest.TestCase):
                 "vendas_totais": 10,
                 "receita_proxy_total": 850,
                 "termos_varridos": 1,
-                "mais_rentaveis": [],
-                "maior_ganho": [],
-                "mais_vendidos": [],
+                "mais_rentaveis": [
+                    {
+                        "titulo": "PETG Preto",
+                        "preco": 90,
+                        "custo_unitario_brl": 45.96,
+                        "margem_brl": 30,
+                        "margem_pct": 33,
+                        "lucro_proxy": 300,
+                        "quantidade_vendida": 10,
+                        "item_id": "MLB1",
+                    }
+                ],
+                "maior_ganho": [
+                    {
+                        "titulo": "PETG Preto",
+                        "preco": 90,
+                        "quantidade_vendida": 10,
+                        "ganho_fonte": "sem_historico_usa_vendas",
+                        "delta_vendas": 10,
+                        "item_id": "MLB1",
+                    }
+                ],
+                "mais_vendidos": [
+                    {
+                        "titulo": "PETG Preto",
+                        "preco": 90,
+                        "quantidade_vendida": 10,
+                        "receita_proxy": 900,
+                        "item_id": "MLB1",
+                    }
+                ],
             }
         )
-        self.assertIn("Ramo:", msg)
-        self.assertIn("Mais rentáveis", msg)
-        self.assertIn("Maior ganho", msg)
-        self.assertIn("Mais vendidos", msg)
+        self.assertIn("AGIR — priorize margem", msg)
+        self.assertIn("ATENÇÃO", msg)
+        self.assertIn("Sem histórico Δ", msg)
+        self.assertNotIn("*Volume*", msg)
 
     def test_petg_com_ia_anexa_no_final(self):
         from agentes.filamentos.agente_monitor_masterprint_petg import montar_mensagem_telegram
@@ -167,10 +195,12 @@ class TestTelegramMantemFormato(unittest.TestCase):
                 "_fonte": "cache_diario",
             },
         )
-        self.assertIn("Mais vendidos", msg)
+        self.assertIn("AGIR — priorize margem", msg)
         self.assertIn("Claude — ecossistema ML Masterprint", msg)
+        # com ganho vazio, Volume pode aparecer vazio - maior_ganho [] => sem_historico False
+        # mais_vendidos [] => sem seção Volume
         self.assertLess(
-            msg.index("Mais vendidos"),
+            msg.index("AGIR — priorize margem"),
             msg.index("Claude — ecossistema ML Masterprint"),
         )
 

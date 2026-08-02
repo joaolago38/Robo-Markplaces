@@ -148,6 +148,14 @@ ML_ACCESS_TOKEN  = os.getenv("ML_ACCESS_TOKEN", "").strip()
 ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "").strip()
 ML_SELLER_ID     = os.getenv("ML_SELLER_ID", "").strip()
 ML_SITE_ID       = (os.getenv("ML_SITE_ID", "MLB").strip() or "MLB")  # MLB = Brasil
+# Empresas por CNPJ + CNAE (complementa configs atuais; não as substitui)
+EMPRESAS_CNAE_CNPJ_CATALOGO = os.getenv(
+    "EMPRESAS_CNAE_CNPJ_CATALOGO", "catalogo/empresas_cnae_cnpj.json"
+)
+EMPRESA_ATIVA_ID = os.getenv("EMPRESA_ATIVA_ID", "").strip()
+EMPRESA_ATIVA_CNPJ = os.getenv("EMPRESA_ATIVA_CNPJ", "").strip()
+# Foco de análise por enquanto: Mercado Livre (Shopee/Magalu permanecem configurados)
+MARKETPLACE_FOCO_PRINCIPAL = os.getenv("MARKETPLACE_FOCO_PRINCIPAL", "mercadolivre").strip().lower() or "mercadolivre"
 # Resumo da conta (espelho do painel Resumo → Telegram)
 RESUMO_CONTA_ML_ALERTA = os.getenv("RESUMO_CONTA_ML_ALERTA", "1").strip().lower() not in (
     "0",

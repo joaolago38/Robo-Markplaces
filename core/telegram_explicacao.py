@@ -486,6 +486,49 @@ _MARCADOR = "_O que este agente faz:_"
 _MARCADOR_HORARIO = "_Quando roda:_"
 
 
+def corpo_sem_cabecalho(mensagem: str) -> str:
+    """
+    Remove título + blocos 'O que este agente faz' / 'Quando roda'.
+
+    Usado ao embutir mensagens de agentes-filho num consolidado (ex.: esmaltes_operacao),
+    evitando 3–4 cabeçalhos/explicações iguais na mesma mensagem do Telegram.
+    """
+    msg = (mensagem or "").strip()
+    if not msg:
+        return ""
+    lines = msg.split("\n")
+    i = 0
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    if i >= len(lines):
+        return ""
+    # Descarta a 1ª linha (título do agente-filho)
+    i += 1
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    while i < len(lines):
+        s = lines[i].strip()
+        if s.startswith(_MARCADOR):
+            i += 1
+            while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith(
+                _MARCADOR_HORARIO
+            ):
+                i += 1
+            while i < len(lines) and not lines[i].strip():
+                i += 1
+            continue
+        if s.startswith(_MARCADOR_HORARIO):
+            i += 1
+            while i < len(lines) and lines[i].strip():
+                i += 1
+            while i < len(lines) and not lines[i].strip():
+                i += 1
+            continue
+        break
+    corpo = "\n".join(lines[i:]).strip()
+    return corpo if corpo else msg
+
+
 _URL_RE = re.compile(r"https?://[^\s<>\]]+", re.IGNORECASE)
 
 

@@ -185,12 +185,11 @@ class TestAgenteMasterprintPetg(unittest.TestCase):
                 "mais_vendidos": [],
             }
         )
-        self.assertIn("Anúncios ativos: *3*", msg)
-        self.assertIn("Mais rentáveis", msg)
-        self.assertIn("margem real", msg)
-        self.assertIn("Maior ganho", msg)
+        self.assertIn("Panorama: *3* anúncios", msg)
+        self.assertIn("AGIR — priorize margem", msg)
+        self.assertIn("ATENÇÃO", msg)
         self.assertIn("Masterprint PETG Preto", msg)
-        self.assertIn("Custo tabela 1kg", msg)
+        self.assertIn("custo 1kg", msg)
 
 
 if __name__ == "__main__":

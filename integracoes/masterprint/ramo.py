@@ -1,6 +1,9 @@
 """
 integracoes/masterprint/ramo.py
 Identidade do ramo Masterprint (CNPJ / conta ML / Telegram) — separado dos esmaltes.
+
+Complementa (não substitui) catalogo/masterprint_ramo.json e env MASTERPRINT_*.
+Quando vazios, tenta preencher via catalogo/empresas_cnae_cnpj.json (empresa masterprint).
 """
 from __future__ import annotations
 
@@ -38,6 +41,16 @@ def formatar_cnpj(cnpj: str) -> str:
     return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
 
 
+def _empresa_masterprint() -> dict[str, Any]:
+    try:
+        from core.empresa_contexto import empresa_por_id, empresa_por_ramo
+
+        return empresa_por_id("masterprint") or empresa_por_ramo("masterprint") or {}
+    except Exception as exc:
+        logger.debug("empresa_contexto indisponível para Masterprint: %s", exc)
+        return {}
+
+
 @lru_cache(maxsize=1)
 def carregar_ramo(caminho: str | None = None) -> dict[str, Any]:
     path = ROOT / (caminho or MASTERPRINT_RAMO_CATALOGO)
@@ -53,30 +66,48 @@ def carregar_ramo(caminho: str | None = None) -> dict[str, Any]:
     if not isinstance(data, dict):
         data = {}
 
-    cnpj = (MASTERPRINT_CNPJ or data.get("cnpj") or "").strip()
-    seller = (MASTERPRINT_ML_SELLER_ID or data.get("ml_seller_id") or "").strip()
-    nick = (MASTERPRINT_ML_NICKNAME or data.get("ml_nickname") or "").strip()
-    razao = (MASTERPRINT_RAZAO_SOCIAL or data.get("razao_social") or "").strip()
+    emp = _empresa_masterprint()
+    ml_emp = emp.get("ml") if isinstance(emp.get("ml"), dict) else {}
+
+    # Prioridade: env MASTERPRINT_* → masterprint_ramo.json → empresas_cnae_cnpj.json
+    cnpj = (MASTERPRINT_CNPJ or data.get("cnpj") or emp.get("cnpj") or "").strip()
+    seller = (
+        MASTERPRINT_ML_SELLER_ID or data.get("ml_seller_id") or ml_emp.get("seller_id") or ""
+    ).strip()
+    nick = (
+        MASTERPRINT_ML_NICKNAME or data.get("ml_nickname") or ml_emp.get("nickname") or ""
+    ).strip()
+    razao = (
+        MASTERPRINT_RAZAO_SOCIAL or data.get("razao_social") or emp.get("razao_social") or ""
+    ).strip()
     fantasia = (
         MASTERPRINT_NOME_FANTASIA
         or data.get("nome_fantasia")
+        or emp.get("nome_fantasia")
         or "Masterprint"
     ).strip()
     chat = (
         MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID
         or data.get("telegram_gestor_chat_id")
+        or emp.get("telegram_gestor_chat_id")
         or ""
     ).strip()
     chat_esmaltes = (TELEGRAM_GESTOR_CHAT_ID or "").strip()
     chat_efetivo = chat or chat_esmaltes
     conta_separada = bool(seller or cnpj or (chat and chat != chat_esmaltes))
+    cnaes = list(emp.get("cnaes") or [])
+    cnae_principal = emp.get("cnae_principal")
+    foco_ml = bool(emp.get("prioriza_mercadolivre", True))
 
     return {
-        "ramo_id": str(data.get("ramo_id") or "masterprint"),
+        "ramo_id": str(data.get("ramo_id") or emp.get("id") or "masterprint"),
+        "empresa_id": emp.get("id") or "masterprint",
         "nome_fantasia": fantasia,
         "razao_social": razao,
         "cnpj": _so_digitos(cnpj),
         "cnpj_formatado": formatar_cnpj(cnpj),
+        "cnaes": cnaes,
+        "cnae_principal": cnae_principal,
         "ml_seller_id": seller,
         "ml_nickname": nick,
         "telegram_gestor_chat_id": chat_efetivo,
@@ -86,7 +117,10 @@ def carregar_ramo(caminho: str | None = None) -> dict[str, Any]:
         )
         or conta_separada,
         "conta_separada": conta_separada,
-        "notas": data.get("notas") or "",
+        "foco_marketplace": "mercadolivre" if foco_ml else str(
+            (emp.get("marketplaces") or {}).get("foco_principal") or "mercadolivre"
+        ),
+        "notas": data.get("notas") or emp.get("notas") or "",
         "fonte": str(path),
     }
 
@@ -103,10 +137,15 @@ def linha_identidade_telegram(ramo: dict[str, Any] | None = None) -> str:
         partes.append(f"CNPJ `{r['cnpj_formatado']}`")
     elif r.get("cnpj"):
         partes.append(f"CNPJ `{r['cnpj']}`")
+    cnae = r.get("cnae_principal") or {}
+    if cnae.get("codigo"):
+        partes.append(f"CNAE `{cnae['codigo']}`")
     if r.get("ml_nickname"):
         partes.append(f"ML @{r['ml_nickname']}")
     elif r.get("ml_seller_id"):
         partes.append(f"seller `{r['ml_seller_id']}`")
+    if r.get("foco_marketplace") == "mercadolivre":
+        partes.append("foco *ML*")
     if r.get("conta_separada"):
         partes.append("_conta/CNPJ ≠ esmaltes_")
     else:

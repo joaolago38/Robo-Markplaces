@@ -154,6 +154,12 @@ def _pode_chamar_novo(escopo: str) -> tuple[bool, str]:
 
 def _contexto_compacto(escopo: str, consolidado: dict[str, Any]) -> dict[str, Any]:
     ramo = carregar_ramo()
+    try:
+        from core.empresa_contexto import contexto_analise
+
+        ctx_emp = contexto_analise(ramo="masterprint", empresa_id="masterprint")
+    except Exception:
+        ctx_emp = {}
 
     def _mini(p: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -171,12 +177,20 @@ def _contexto_compacto(escopo: str, consolidado: dict[str, Any]) -> dict[str, An
     return {
         "escopo": escopo,
         "frequencia": "1x_por_dia",
+        "foco_marketplace": "mercadolivre",
+        "empresa_cnae_cnpj": {
+            "cnpj": ctx_emp.get("cnpj") or ramo.get("cnpj_formatado") or ramo.get("cnpj"),
+            "cnae_principal": (ctx_emp.get("cnae_principal") or ramo.get("cnae_principal")),
+            "cnaes": ctx_emp.get("cnaes") or ramo.get("cnaes") or [],
+            "prioriza_mercadolivre": True,
+        },
         "ramo": {
             "nome_fantasia": ramo.get("nome_fantasia"),
             "cnpj": ramo.get("cnpj_formatado") or ramo.get("cnpj") or None,
             "ml_seller_id": ramo.get("ml_seller_id") or None,
             "ml_nickname": ramo.get("ml_nickname") or None,
             "conta_separada_esmaltes": ramo.get("conta_separada"),
+            "cnae_principal": (ramo.get("cnae_principal") or {}).get("codigo"),
         },
         "totais": {
             "anuncios": consolidado.get("total_anuncios_ativos"),
@@ -241,7 +255,11 @@ def avaliar_masterprint_secundario(
         return None
 
 
-def formatar_secao_ia_masterprint(ia: dict[str, Any] | None) -> str:
+def formatar_secao_ia_masterprint(
+    ia: dict[str, Any] | None,
+    *,
+    com_tagline_ramo: bool = True,
+) -> str:
     if not ia:
         return ""
     fonte = ia.get("_fonte") or ""
@@ -249,9 +267,10 @@ def formatar_secao_ia_masterprint(ia: dict[str, Any] | None) -> str:
     linhas = [
         "",
         f"🤖 *Claude — ecossistema ML Masterprint*{tag_fonte}",
-        "_Ramo secundário · orçamento IA prioriza esmaltes_",
-        "",
     ]
+    if com_tagline_ramo:
+        linhas.append("_Ramo secundário · orçamento IA prioriza esmaltes_")
+    linhas.append("")
     eco = ia.get("ecosistema_ml") or ia.get("resumo")
     if eco:
         linhas.extend([f"*O que está acontecendo:* {eco}", ""])

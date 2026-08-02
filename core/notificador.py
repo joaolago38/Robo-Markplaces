@@ -25,9 +25,10 @@ logger = logging.getLogger("notificador")
 _COOLDOWN_PATH = ROOT / "logs" / "alertas_cooldown.json"
 
 
-def gestor_telegram_configurado() -> bool:
-    """True se token e chat do gestor estão definidos."""
-    return bool((TELEGRAM_TOKEN or "").strip() and (TELEGRAM_GESTOR_CHAT_ID or "").strip())
+def gestor_telegram_configurado(chat_id: str | None = None) -> bool:
+    """True se token e chat do gestor estão definidos (chat opcional override)."""
+    cid = (chat_id or TELEGRAM_GESTOR_CHAT_ID or "").strip()
+    return bool((TELEGRAM_TOKEN or "").strip() and cid)
 
 
 def manicures_telegram_configurado() -> bool:
@@ -258,6 +259,7 @@ def alertar_gestor(
     chave: str | None = None,
     cooldown_segundos: int | None = None,
     agente_id: str | None = None,
+    chat_id: str | None = None,
     _ignorar_cooldown: bool = False,
 ) -> bool:
     from core.telegram_explicacao import inserir_explicacao
@@ -268,8 +270,9 @@ def alertar_gestor(
     if not _ignorar_cooldown and _deve_suprimir(chave_final, cooldown):
         logger.info("Alerta gestor suprimido (cooldown %ss): %s", cooldown, chave_final)
         return False
+    destino = (chat_id or TELEGRAM_GESTOR_CHAT_ID or "").strip()
     ok = _enviar(
-        TELEGRAM_GESTOR_CHAT_ID,
+        destino,
         f"📊 *Gestor* {formatar_data_hora_br()}\n\n{msg}",
     )
     if ok and not _ignorar_cooldown:

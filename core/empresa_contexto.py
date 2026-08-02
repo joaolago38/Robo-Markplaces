@@ -15,14 +15,21 @@ from typing import Any
 
 from core.atomic_io import ler_json
 from core.config import (
-    EMPRESA_ATIVA_CNPJ,
-    EMPRESA_ATIVA_ID,
-    EMPRESAS_CNAE_CNPJ_CATALOGO,
-    MARKETPLACE_FOCO_PRINCIPAL,
     ML_SELLER_ID,
     ML_SITE_ID,
     ROOT,
     TELEGRAM_GESTOR_CHAT_ID,
+)
+import core.config as _cfg
+
+# Fail-soft se config antigo no CI sem as novas chaves
+EMPRESAS_CNAE_CNPJ_CATALOGO = getattr(
+    _cfg, "EMPRESAS_CNAE_CNPJ_CATALOGO", "catalogo/empresas_cnae_cnpj.json"
+)
+EMPRESA_ATIVA_ID = getattr(_cfg, "EMPRESA_ATIVA_ID", "") or ""
+EMPRESA_ATIVA_CNPJ = getattr(_cfg, "EMPRESA_ATIVA_CNPJ", "") or ""
+MARKETPLACE_FOCO_PRINCIPAL = (
+    getattr(_cfg, "MARKETPLACE_FOCO_PRINCIPAL", "mercadolivre") or "mercadolivre"
 )
 
 logger = logging.getLogger("empresa_contexto")

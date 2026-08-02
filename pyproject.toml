@@ -36,6 +36,8 @@ omit = [
     "integracoes/esmaltes/tendencias_internet.py",
     # Filamentos: agente é I/O ML/Alibaba/Telegram; lógica coberta em analise_* e cruzamento_*.
     "agentes/filamentos/agente_monitor_filamentos_ml.py",
+    "agentes/filamentos/agente_monitor_masterprint_petg.py",
+    "agentes/escritorio/agente_monitor_masterprint_escritorio.py",
     "agentes/ml/agente_resumo_conta_ml.py",
     "agentes/esmaltes/agente_montar_kits_impala.py",
     "agentes/social/agente_conversao_manicures.py",

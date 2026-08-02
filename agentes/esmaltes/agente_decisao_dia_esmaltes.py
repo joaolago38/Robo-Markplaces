@@ -104,13 +104,24 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             )
 
         incrementar("decisao_dia_esmaltes.ok")
+        fazer = dec.get("fazer") or {}
+        nao = dec.get("nao_fazer") or {}
+        custo = dec.get("custo_nao_fazer") or {}
         return {
             "ok": True,
             "alerta_enviado": enviado,
-            "fazer": (dec.get("fazer") or {}).get("codigo"),
-            "nao_fazer": (dec.get("nao_fazer") or {}).get("codigo"),
+            "fazer": fazer.get("codigo"),
+            "nao_fazer": nao.get("codigo"),
+            "fazer_titulo": fazer.get("titulo"),
+            "fazer_detalhe": fazer.get("detalhe"),
+            "nao_fazer_titulo": nao.get("titulo"),
+            "nao_fazer_detalhe": nao.get("detalhe"),
+            "custo_titulo": custo.get("titulo"),
+            "custo_detalhe": custo.get("detalhe"),
             "liberados": dec.get("liberados"),
             "bloqueados": dec.get("bloqueados"),
+            "kpis": dec.get("kpis"),
+            "skus_guerra": (dec.get("skus_guerra") or [])[:3],
             "mensagem": msg,
         }
     except Exception as exc:

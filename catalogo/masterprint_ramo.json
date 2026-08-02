@@ -7,5 +7,6 @@
   "ml_nickname": "",
   "telegram_gestor_chat_id": "",
   "diferente_do_ramo_esmaltes": true,
-  "notas": "Preencha CNPJ/seller/Telegram desta conta para separar do ramo esmaltes/Impala. Env MASTERPRINT_* sobrescreve este arquivo."
+  "empresa_catalogo_id": "masterprint",
+  "notas": "CNPJ/CNAE/foco ML também em catalogo/empresas_cnae_cnpj.json. Env MASTERPRINT_* e este arquivo têm prioridade sobre o catálogo de empresas."
 }

@@ -41,6 +41,17 @@ class TestTelegramExplicacao(unittest.TestCase):
         self.assertEqual(out2, msg)
 
     @patch.object(te, "explicacao_ativa", return_value=True)
+    def test_corpo_sem_cabecalho_remove_explicacao(self, _ativa):
+        full = te.cabecalho_agente("leilao", "🏛️ *Leilão*")
+        full = f"{full}\n\n*Corpo útil*\nItem A"
+        corpo = te.corpo_sem_cabecalho(full)
+        self.assertIn("Corpo útil", corpo)
+        self.assertIn("Item A", corpo)
+        self.assertNotIn("O que este agente faz", corpo)
+        self.assertNotIn("Quando roda", corpo)
+        self.assertNotIn("*Leilão*", corpo)
+
+    @patch.object(te, "explicacao_ativa", return_value=True)
     def test_horario_novamix_diario(self, _ativa):
         out = te.inserir_explicacao("Título", "resumo_diario_novamix")
         self.assertIn("08:00 BRT", out)

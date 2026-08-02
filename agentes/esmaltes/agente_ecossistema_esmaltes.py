@@ -107,8 +107,9 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             "alerta_enviado": enviado,
             "score_ecossistema": plano.get("score_ecossistema"),
             "cobertura_fontes_pct": plano.get("cobertura_fontes_pct"),
-            "acoes": len(plano.get("acoes") or []),
-            "top_7d": len(plano.get("top_7d") or []),
+            "acoes": plano.get("acoes") or [],
+            "top_7d": plano.get("top_7d") or [],
+            "tese": plano.get("tese"),
             "mensagem": msg,
         }
     except Exception as exc:

@@ -157,10 +157,10 @@ class TestAgenteEscritorio(unittest.TestCase):
                 "mais_vendidos": [],
             }
         )
-        self.assertIn("Anúncios ativos: *2*", msg)
-        self.assertIn("Mais rentáveis", msg)
+        self.assertIn("Panorama: *2* anúncios", msg)
+        self.assertIn("AGIR — priorize margem", msg)
         self.assertIn("Apagador Masterprint", msg)
-        self.assertIn("Custo tabela", msg)
+        self.assertIn("Custo:", msg)
 
 
 if __name__ == "__main__":
