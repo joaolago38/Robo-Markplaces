@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "gerado_em": "2026-08-02T15:53:47.901762-03:00",
+  "gerado_em": "2026-08-02T15:55:44.217386-03:00",
   "modal": "terrestre",
   "referencia": "alibaba_ou_mercadoria_brl",
   "paraguai_endereco_comercial": {
@@ -47,13 +47,13 @@
       "frete_km_brl": 4158.0,
       "fixo_fronteira_brl": 350.0,
       "pedagios_brl": 420.0,
-      "seguro_brl": 27.06,
-      "custo_total_brl": 4955.06,
-      "custo_unitario_brl": 24.78,
+      "seguro_brl": 0.75,
+      "custo_total_brl": 4928.75,
+      "custo_unitario_brl": 492.88,
       "dias_transito_estim": 3,
-      "valor_mercadoria_brl": 9020.0,
-      "custo_operacao_total_brl": 13975.06,
-      "custo_operacao_unitario_brl": 69.88
+      "valor_mercadoria_brl": 250.0,
+      "custo_operacao_total_brl": 5178.75,
+      "custo_operacao_unitario_brl": 517.88
     },
     {
       "ok": true,
@@ -67,13 +67,13 @@
       "frete_km_brl": 4452.0,
       "fixo_fronteira_brl": 350.0,
       "pedagios_brl": 450.0,
-      "seguro_brl": 27.06,
-      "custo_total_brl": 5279.06,
-      "custo_unitario_brl": 26.4,
+      "seguro_brl": 0.75,
+      "custo_total_brl": 5252.75,
+      "custo_unitario_brl": 525.27,
       "dias_transito_estim": 3,
-      "valor_mercadoria_brl": 9020.0,
-      "custo_operacao_total_brl": 14299.06,
-      "custo_operacao_unitario_brl": 71.5
+      "valor_mercadoria_brl": 250.0,
+      "custo_operacao_total_brl": 5502.75,
+      "custo_operacao_unitario_brl": 550.27
     }
   ],
   "melhor_corredor": {
@@ -88,13 +88,13 @@
     "frete_km_brl": 4158.0,
     "fixo_fronteira_brl": 350.0,
     "pedagios_brl": 420.0,
-    "seguro_brl": 27.06,
-    "custo_total_brl": 4955.06,
-    "custo_unitario_brl": 24.78,
+    "seguro_brl": 0.75,
+    "custo_total_brl": 4928.75,
+    "custo_unitario_brl": 492.88,
     "dias_transito_estim": 3,
-    "valor_mercadoria_brl": 9020.0,
-    "custo_operacao_total_brl": 13975.06,
-    "custo_operacao_unitario_brl": 69.88
+    "valor_mercadoria_brl": 250.0,
+    "custo_operacao_total_brl": 5178.75,
+    "custo_operacao_unitario_brl": 517.88
   },
   "aviso": "Transporte terrestre PY→BR (Mercosul). Não substitui assessoria fiscal/aduaneira na fronteira. Endereço PY padrão em Ciudad del Este — altere com IMPORTACAO_PY_ENDERECO / IMPORTACAO_PY_CIDADE."
 }
