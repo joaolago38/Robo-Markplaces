@@ -36,6 +36,8 @@ def executar(
     enviar_alerta: bool = False,
 ) -> dict[str, Any]:
     if not HUB_PARAGUAI_ATIVO:
+        incrementar("trib_py_br.inativo")
+        logger.warning("trib_py_br agente: HUB_PARAGUAI_ATIVO=0 — avaliação ignorada")
         return {"ok": False, "motivo": "HUB_PARAGUAI_ATIVO=0"}
 
     if fob_usd is not None:
@@ -102,6 +104,13 @@ def executar(
             logger.warning("telegram trib py br: %s", exc)
             incrementar("trib_py_br.telegram_erro")
 
+    logger.info(
+        "trib_py_br agente: ok=%s produtos=%s recomendam_origem=%s lucro_ok=%s",
+        out.get("ok"),
+        out.get("total_produtos"),
+        out.get("recomendam_origem_mercosul"),
+        out.get("atingem_lucro_alvo"),
+    )
     return out
 
 

@@ -648,12 +648,24 @@ def verificar_hub_lucro_20_marketplace(
             "Custos hub PY + terrestre validados por fórmula; impostos Mercosul BR pendentes."
         ),
     }
-    gauge("hub_py.lucro20_ok", float(len(ok_oh)))
-    gauge("hub_py.lucro20_total", float(len(verificacoes)))
+    liquidada = sum(1 for v in verificacoes if v.get("pendencia_fiscal_br_liquidada"))
+    tags = ["hub:py", "fluxo:lucro20"]
+    gauge("hub_py.lucro20_ok", float(len(ok_oh)), tags)
+    gauge("hub_py.lucro20_total", float(len(verificacoes)), tags)
+    gauge("hub_py.pendencia_fiscal_liquidada", float(liquidada), tags)
+    logger.info(
+        "hub_py lucro20: produtos=%s ok_overhead=%s ok_sem_overhead=%s "
+        "fiscal_liquidada=%s lucro_alvo=%s%%",
+        len(verificacoes),
+        len(ok_oh),
+        len(ok_20),
+        liquidada,
+        lucro_alvo_pct,
+    )
     try:
         escrever_json_atomico(ROOT / "logs" / "hub_paraguai_lucro20_ultima.json", out)
     except OSError as exc:
-        logger.debug("snapshot lucro20: %s", exc)
+        logger.warning("snapshot lucro20: %s", exc)
     return out
 
 
@@ -879,11 +891,27 @@ def avaliar_hub_multi_cliente(
     gauge("hub_py.produtos", float(len(analises)), tags)
     gauge("hub_py.lucrativos_ml", float(lucrativos_ml), tags)
     gauge("hub_py.receita_servico_brl", float(lucro_servico), tags)
+    gauge("hub_py.mais_barato_que_direta", float(hub_mais_barato), tags)
+    gauge(
+        "hub_py.lucro20_com_overhead",
+        float(out["atingem_lucro_20_com_overhead"]),
+        tags,
+    )
     incrementar("hub_py.avaliacao_ok", tags=tags)
+    logger.info(
+        "hub_py avaliacao: status=%s produtos=%s lucrativos_ml=%s "
+        "lucro20_overhead=%s hub_vs_direta=%s receita_servico_brl=%.2f",
+        out.get("status_hub"),
+        len(analises),
+        lucrativos_ml,
+        out["atingem_lucro_20_com_overhead"],
+        hub_mais_barato,
+        lucro_servico,
+    )
     try:
         escrever_json_atomico(SNAPSHOT_PATH, out)
     except OSError as exc:
-        logger.debug("snapshot hub: %s", exc)
+        logger.warning("snapshot hub: %s", exc)
     return out
 
 

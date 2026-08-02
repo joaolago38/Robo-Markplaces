@@ -42,6 +42,8 @@ def executar(
     regime_maquila: bool = False,
 ) -> dict[str, Any]:
     if not HUB_PARAGUAI_ATIVO:
+        incrementar("hub_py.inativo")
+        logger.warning("hub_py agente: HUB_PARAGUAI_ATIVO=0 — avaliação ignorada")
         return {"ok": False, "motivo": "HUB_PARAGUAI_ATIVO=0"}
 
     if cruzar_tributacao and fob_usd is None:
@@ -58,8 +60,16 @@ def executar(
                     cooldown_segundos=86400,
                     agente_id="tributacao_py_br",
                 )
+                incrementar("trib_py_br.telegram_ok")
             except Exception as exc:
                 logger.warning("telegram trib: %s", exc)
+                incrementar("trib_py_br.telegram_erro")
+        logger.info(
+            "hub_py agente trib: ok=%s produtos=%s lucro_ok=%s",
+            trib.get("ok"),
+            trib.get("total_produtos"),
+            trib.get("atingem_lucro_alvo"),
+        )
         return trib
 
     produtos = None
@@ -119,6 +129,14 @@ def executar(
             logger.warning("telegram hub py: %s", exc)
             incrementar("hub_py.telegram_erro")
 
+    logger.info(
+        "hub_py agente: ok=%s produtos=%s lucrativos=%s lucro20_oh=%s trib=%s",
+        out.get("ok"),
+        out.get("total_produtos"),
+        out.get("lucrativos_marketplace_hub"),
+        out.get("atingem_lucro_20_com_overhead"),
+        bool(out.get("tributacao_py_br")),
+    )
     return out
 
 

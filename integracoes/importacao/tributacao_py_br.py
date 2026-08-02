@@ -536,15 +536,34 @@ def avaliar_tributacao_produtos_marketplace(
             "Cruzamento tributário PY×BR estimativo. II=0% só com origem Mercosul válida."
         ),
     }
-    gauge("trib_py_br.produtos", float(len(analises)))
-    gauge("trib_py_br.origem_mercosul", float(preferem_origem))
-    gauge("trib_py_br.origem_vs_china", float(origem_vs_china))
-    gauge("trib_py_br.lucro_ok", float(com_lucro))
-    incrementar("trib_py_br.ok")
+    decisao_sem = sum(1 for a in analises if a.get("cenario_decisao_py") == "py_sem_origem")
+    decisao_com = sum(
+        1 for a in analises if a.get("cenario_decisao_py") == "py_origem_mercosul"
+    )
+    tags = ["fluxo:trib_py_br", f"maquila:{int(bool(regime_maquila))}"]
+    gauge("trib_py_br.produtos", float(len(analises)), tags)
+    gauge("trib_py_br.origem_mercosul", float(preferem_origem), tags)
+    gauge("trib_py_br.origem_vs_sem", float(origem_vs_sem), tags)
+    gauge("trib_py_br.origem_vs_china", float(origem_vs_china), tags)
+    gauge("trib_py_br.lucro_ok", float(com_lucro), tags)
+    gauge("trib_py_br.decisao_sem_origem", float(decisao_sem), tags)
+    gauge("trib_py_br.decisao_com_origem", float(decisao_com), tags)
+    incrementar("trib_py_br.ok", tags=tags)
+    logger.info(
+        "trib_py_br: produtos=%s recomendam_origem=%s decisao_sem=%s decisao_com=%s "
+        "origem_vs_china=%s lucro_ok=%s lucro_alvo=%s%%",
+        len(analises),
+        preferem_origem,
+        decisao_sem,
+        decisao_com,
+        origem_vs_china,
+        com_lucro,
+        lucro_alvo_pct,
+    )
     try:
         escrever_json_atomico(SNAPSHOT_PATH, out)
     except OSError as exc:
-        logger.debug("snapshot trib py br: %s", exc)
+        logger.warning("snapshot trib py br: %s", exc)
     return out
 
 
