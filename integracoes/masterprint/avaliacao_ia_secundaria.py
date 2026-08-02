@@ -4,6 +4,8 @@ Claude 1×/dia por agente Masterprint — análise concisa do ecossistema ML.
 
 Política:
   - Recursos Claude limitados a UMA chamada/dia (BRT) por escopo (petg | escritorio).
+  - Nova chamada preferencialmente na janela noturna BRT (20–23h); manhã/tarde
+    reutilizam cache se já existir.
   - Rodadas seguintes no mesmo dia reutilizam o cache da análise.
   - Reserva orçamento para esmaltes (piso de restante USD).
   - Falha/bloqueio NÃO impede o Telegram determinístico.
@@ -19,7 +21,10 @@ from core.atomic_io import escrever_json_atomico, ler_json
 from core.claude_client import MODELO_RAPIDO, perguntar_estruturado
 from core.config import (
     MASTERPRINT_CLAUDE_DIARIO,
+    MASTERPRINT_CLAUDE_NOITE_HORA_FIM,
+    MASTERPRINT_CLAUDE_NOITE_HORA_INI,
     MASTERPRINT_CLAUDE_RESTANTE_MIN_USD,
+    MASTERPRINT_CLAUDE_SO_NOITE,
     ROOT,
 )
 from core.horario import agora_brasil
@@ -75,9 +80,12 @@ _SYSTEM = (
     "(filamentos PETG e/ou material de escritório: pincéis recarregáveis e apagadores). "
     "O negócio de esmaltes/manicures é outro ramo (pode ser outro CNPJ/conta) e tem "
     "prioridade no orçamento de IA — esta análise é diária, curta e operacional. "
-    "Com base APENAS no JSON: descreva o que esses produtos estão vivendo no ML "
-    "(volume aparente, margem vs tabela, Δ vendas, pressão competitiva). "
-    "Máximo 3 ações. NÃO invente custos, preços, vendas ou URLs. "
+    "Com base APENAS no JSON: cruze a situação dos produtos com estado_ml "
+    "(como a conta/ecossistema ML está agora). "
+    "Descreva o que esses produtos estão vivendo no ML "
+    "(volume aparente, margem vs tabela, Δ vendas, pressão competitiva) "
+    "e dose o detalhe conforme dosagem_analise. "
+    "Máximo 3 ações orientadas a decisão. NÃO invente custos, preços, vendas ou URLs. "
     "NÃO proponha campanhas que desviem foco/orçamento do ramo esmaltes."
 )
 
@@ -128,11 +136,30 @@ def _marcar_uso_e_cache(escopo: str, ia: dict[str, Any]) -> None:
     escrever_json_atomico(_CACHE_PATH, cache)
 
 
+def _na_janela_claude_nova() -> bool:
+    """Nova chamada Claude só à noite (BRT), salvo se MASTERPRINT_CLAUDE_SO_NOITE=0."""
+    if not MASTERPRINT_CLAUDE_SO_NOITE:
+        return True
+    h = agora_brasil().hour
+    ini = int(MASTERPRINT_CLAUDE_NOITE_HORA_INI)
+    fim = int(MASTERPRINT_CLAUDE_NOITE_HORA_FIM)
+    if ini <= fim:
+        return ini <= h <= fim
+    # janela atravessando meia-noite
+    return h >= ini or h <= fim
+
+
 def _pode_chamar_novo(escopo: str) -> tuple[bool, str]:
     if not MASTERPRINT_CLAUDE_DIARIO:
         return False, "MASTERPRINT_CLAUDE_DIARIO=0"
     if ja_usou_claude_hoje(escopo):
         return False, f"já usado hoje ({escopo})"
+    if not _na_janela_claude_nova():
+        return (
+            False,
+            f"fora da janela noturna BRT "
+            f"({MASTERPRINT_CLAUDE_NOITE_HORA_INI}–{MASTERPRINT_CLAUDE_NOITE_HORA_FIM}h)",
+        )
     try:
         from core.claude_orcamento import pode_chamar, resumo
 
@@ -152,7 +179,7 @@ def _pode_chamar_novo(escopo: str) -> tuple[bool, str]:
         return False, f"gate Claude falhou: {exc}"
 
 
-def _contexto_compacto(escopo: str, consolidado: dict[str, Any]) -> dict[str, Any]:
+def _contexto_compacto(escopo: str, consolidado: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     ramo = carregar_ramo()
     try:
         from core.empresa_contexto import contexto_analise
@@ -174,7 +201,7 @@ def _contexto_compacto(escopo: str, consolidado: dict[str, Any]) -> dict[str, An
             "tipo": p.get("tipo") or p.get("material"),
         }
 
-    return {
+    ctx = {
         "escopo": escopo,
         "frequencia": "1x_por_dia",
         "foco_marketplace": "mercadolivre",
@@ -208,6 +235,13 @@ def _contexto_compacto(escopo: str, consolidado: dict[str, Any]) -> dict[str, An
         "maior_ganho": [_mini(p) for p in (consolidado.get("maior_ganho") or [])[:5]],
         "mais_vendidos": [_mini(p) for p in (consolidado.get("mais_vendidos") or [])[:3]],
     }
+    from core.claude_contexto_ml import enriquecer_contexto_claude
+
+    return enriquecer_contexto_claude(
+        ctx,
+        consolidado=consolidado,
+        proposito=f"masterprint_{escopo}",
+    )
 
 
 def avaliar_masterprint_secundario(
@@ -232,22 +266,44 @@ def avaliar_masterprint_secundario(
         return None
 
     try:
-        ctx = _contexto_compacto(escopo, consolidado)
+        from core.claude_contexto_ml import max_tokens_dosados, system_com_decisao
+
+        ctx, dosagem = _contexto_compacto(escopo, consolidado)
         ia = perguntar_estruturado(
             (
-                f"Análise diária concisa do ecossistema ML para Masterprint ({escopo}). "
-                "O que estes produtos estão vivendo agora no Mercado Livre?"
+                f"Análise do ecossistema ML para Masterprint ({escopo}). "
+                "Cruze a situação dos produtos com estado_ml. "
+                f"Profundidade={dosagem.get('profundidade')}. "
+                "Responda com ações que favoreçam decisão agora "
+                f"({', '.join((dosagem.get('foco_decisao') or [])[:4])})."
             ),
             _SCHEMA,
             f"masterprint_diario_{escopo}",
-            max_tokens=650,
+            max_tokens=max_tokens_dosados(650, dosagem),
             contexto=json.dumps(ctx, ensure_ascii=False, indent=2),
-            system=_SYSTEM,
+            system=system_com_decisao(_SYSTEM, dosagem),
             modelo=MODELO_RAPIDO,
         )
         if isinstance(ia, dict) and ia:
-            ia = {**ia, "_fonte": "nova_chamada_diaria", "_data": _hoje_brt()}
-            _marcar_uso_e_cache(escopo, {k: v for k, v in ia.items() if not str(k).startswith("_")})
+            profundidade = dosagem.get("profundidade")
+            nivel_ml = (ctx.get("estado_ml") or {}).get("nivel")
+            ia = {
+                **ia,
+                "_fonte": "nova_chamada_diaria",
+                "_data": _hoje_brt(),
+                "_dosagem": profundidade,
+                "_nivel_ml": nivel_ml,
+                "dosagem_analise": profundidade,
+                "nivel_ml": nivel_ml,
+            }
+            _marcar_uso_e_cache(
+                escopo,
+                {
+                    k: v
+                    for k, v in ia.items()
+                    if not str(k).startswith("_")
+                },
+            )
             return ia
         return None
     except Exception as exc:
@@ -264,12 +320,21 @@ def formatar_secao_ia_masterprint(
         return ""
     fonte = ia.get("_fonte") or ""
     tag_fonte = " _(cache do dia)_" if fonte == "cache_diario" else " _(1×/dia)_"
+    dosagem = ia.get("_dosagem") or ia.get("dosagem_analise")
+    nivel_ml = ia.get("_nivel_ml") or ia.get("nivel_ml")
     linhas = [
         "",
         f"🤖 *Claude — ecossistema ML Masterprint*{tag_fonte}",
     ]
     if com_tagline_ramo:
         linhas.append("_Ramo secundário · orçamento IA prioriza esmaltes_")
+    if dosagem or nivel_ml:
+        bits = []
+        if nivel_ml:
+            bits.append(f"ML={nivel_ml}")
+        if dosagem:
+            bits.append(f"análise={dosagem}")
+        linhas.append("_" + " · ".join(bits) + "_")
     linhas.append("")
     eco = ia.get("ecosistema_ml") or ia.get("resumo")
     if eco:

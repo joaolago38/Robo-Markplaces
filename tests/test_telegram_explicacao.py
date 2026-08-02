@@ -28,7 +28,7 @@ class TestTelegramExplicacao(unittest.TestCase):
         self.assertIn("Anita e Impala", out)
         self.assertIn("frequência", out.lower())
         self.assertIn("Quando roda", out)
-        self.assertIn("A cada 4h", out)
+        self.assertIn("3x/dia", out)
         self.assertIn("Data: 2026-07-12", out)
         self.assertTrue(out.startswith("🔍 *Busca kit"))
 

@@ -175,17 +175,37 @@ def analisar_item(item_id: str) -> dict:
 
         descricao_atual = ml_client.buscar_descricao_item(item_id)
         concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
-        contexto = _montar_contexto(metricas, concorrentes, descricao_atual)
+        contexto_txt = _montar_contexto(metricas, concorrentes, descricao_atual)
 
         from core.claude_client import perguntar_estruturado
+        from core.claude_contexto_ml import (
+            enriquecer_contexto_claude,
+            max_tokens_dosados,
+            system_com_decisao,
+        )
+
+        ctx, dosagem = enriquecer_contexto_claude(
+            {"anuncio_e_concorrentes": contexto_txt},
+            produto={
+                "titulo": metricas.get("titulo"),
+                "preco": metricas.get("preco"),
+                "quantidade_vendida": metricas.get("quantidade_vendida"),
+            },
+            proposito="otimizar_listing",
+        )
+        contexto = json.dumps(ctx, ensure_ascii=False, indent=2)
 
         sugestoes_estruturadas = perguntar_estruturado(
-            _PROMPT_SUGESTOES,
+            (
+                f"{_PROMPT_SUGESTOES}\n"
+                f"Considere estado_ml (nivel={dosagem.get('nivel_ml')}) e "
+                f"profundidade={dosagem.get('profundidade')}."
+            ),
             _SCHEMA_SUGESTOES_TITULO,
             tool_name="registrar_sugestoes_titulo",
-            max_tokens=600,
+            max_tokens=max_tokens_dosados(600, dosagem),
             contexto=contexto,
-            system=SYSTEM_OTIMIZADOR,
+            system=system_com_decisao(SYSTEM_OTIMIZADOR, dosagem),
         )
         lista_sugestoes = (sugestoes_estruturadas or {}).get("sugestoes") or []
         sugestoes_titulo = "\n".join(
@@ -194,10 +214,13 @@ def analisar_item(item_id: str) -> dict:
             if isinstance(s, dict) and s.get("titulo")
         )
         sugestao_descricao = perguntar(
-            _PROMPT_DESCRICAO,
-            max_tokens=900,
+            (
+                f"{_PROMPT_DESCRICAO}\n"
+                f"ML={dosagem.get('nivel_ml')}; foque decisão de listing."
+            ),
+            max_tokens=max_tokens_dosados(900, dosagem),
             contexto=contexto,
-            system=SYSTEM_DESCRICAO,
+            system=system_com_decisao(SYSTEM_DESCRICAO, dosagem),
         )
 
         resultado: dict[str, Any] = {

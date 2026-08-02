@@ -147,7 +147,7 @@ def linha_identidade_telegram(ramo: dict[str, Any] | None = None) -> str:
     if r.get("foco_marketplace") == "mercadolivre":
         partes.append("foco *ML*")
     if r.get("conta_separada"):
-        partes.append("_conta/CNPJ ≠ esmaltes_")
+        partes.append("_CNPJ demais produtos ≠ esmaltes_")
     else:
         partes.append("_preencha CNPJ/seller para separar do ramo esmaltes_")
     return " · ".join(partes)

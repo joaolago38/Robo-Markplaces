@@ -28,6 +28,44 @@ class TestEmpresaContexto(unittest.TestCase):
         self.assertIsNotNone(emp)
         self.assertEqual(emp["id"], "esmaltes_impala")
         self.assertEqual(emp["marketplaces"]["foco_principal"], "mercadolivre")
+        self.assertEqual(emp["cnpj"], "52668583000127")
+        self.assertIn("52.668.583/0001-27", emp["cnpj_formatado"])
+
+    def test_dono_produtos_hoje_esmaltes_alvo_masterprint(self):
+        sit = ec.situacao_dono_produtos()
+        self.assertEqual(sit["cnpj_efetivo"], "52668583000127")
+        self.assertEqual(sit["cnpj_alvo"], "23811261000197")
+        self.assertTrue(sit["migracao_pendente"])
+        self.assertFalse(sit["usando_alvo"])
+        emp = ec.empresa_dono_produtos()
+        self.assertEqual(emp["id"], "esmaltes_impala")
+        mapa = ec.mapa_dois_cnpjs()
+        self.assertEqual(mapa["esmaltes"]["cnpj"], "52668583000127")
+        self.assertEqual(mapa["demais_produtos"]["cnpj"], "23811261000197")
+        self.assertEqual(mapa["dono_produtos"]["cnpj_efetivo"], "52668583000127")
+
+    @patch("core.empresa_contexto.CNPJ_DONO_PRODUTOS_USAR_ALVO", True)
+    def test_dono_produtos_troca_para_alvo(self):
+        ec.limpar_cache_empresas()
+        sit = ec.situacao_dono_produtos()
+        self.assertEqual(sit["cnpj_efetivo"], "23811261000197")
+        self.assertTrue(sit["usando_alvo"])
+        emp = ec.empresa_dono_produtos()
+        self.assertEqual(emp["id"], "masterprint")
+
+    def test_empresa_para_proposito_roteia_cnpj(self):
+        self.assertEqual(
+            ec.empresa_para_proposito("masterprint_petg")["cnpj"],
+            "23811261000197",
+        )
+        self.assertEqual(
+            ec.empresa_para_proposito("acetona_cruzeiro")["cnpj"],
+            "52668583000127",
+        )
+        self.assertEqual(
+            ec.empresa_para_proposito("esmaltes_operacao")["cnpj"],
+            "52668583000127",
+        )
 
     def test_masterprint_por_cnae(self):
         lista = ec.empresas_por_cnae("4751-2/01")
@@ -98,6 +136,7 @@ class TestEmpresaContexto(unittest.TestCase):
         self.assertIn("Empresa:", txt)
         self.assertIn("Mercado Livre", txt)
         self.assertIn("CNAE", txt)
+        self.assertIn("52.668.583/0001-27", txt)
         self.assertIn("Empresa:", ec.linha_empresa_telegram(None))
 
     @patch("core.empresa_contexto.ML_SELLER_ID", "111")
@@ -121,11 +160,15 @@ class TestRamoUsaEmpresaSemQuebrarEnv(unittest.TestCase):
 
         r = carregar_ramo()
         self.assertEqual(r.get("empresa_id"), "masterprint")
+        self.assertEqual(r.get("cnpj"), "23811261000197")
         self.assertIsNotNone(r.get("cnae_principal"))
         self.assertEqual(r["foco_marketplace"], "mercadolivre")
+        self.assertTrue(r.get("conta_separada"))
         linha = linha_identidade_telegram(r)
         self.assertIn("CNAE", linha)
+        self.assertIn("23.811.261/0001-97", linha)
         self.assertIn("foco *ML*", linha)
+        self.assertIn("≠ esmaltes", linha)
 
     @patch("integracoes.masterprint.ramo.MASTERPRINT_CNPJ", "11222333000181")
     def test_env_masterprint_cnpj_tem_prioridade(self):

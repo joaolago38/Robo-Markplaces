@@ -56,9 +56,34 @@ def montar_mensagem_consolidada(
             "esmaltes_operacao",
             "🎯 *Impala — operação do dia*",
         ),
-        "",
-        "*1) AGIR AGORA*",
     ]
+    try:
+        from core.empresa_contexto import (
+            empresa_por_id,
+            formatar_cnpj,
+            linha_empresa_telegram,
+            situacao_dono_produtos,
+        )
+
+        linhas.append(linha_empresa_telegram(empresa_por_id("esmaltes_impala")))
+        dono = situacao_dono_produtos()
+        alvo_fmt = formatar_cnpj(str(dono.get("cnpj_alvo") or ""))
+        if dono.get("migracao_pendente"):
+            linhas.append(
+                f"_Produtos no CNPJ `{dono.get('cnpj_formatado')}` "
+                f"(alvo `{alvo_fmt}`)_"
+            )
+        else:
+            linhas.append(f"_Produtos no CNPJ `{dono.get('cnpj_formatado')}`_")
+    except Exception:
+        linhas.append("CNPJ `52.668.583/0001-27` · foco *Mercado Livre*")
+        linhas.append("_Produtos neste CNPJ (migração p/ 23.811.261/0001-97 preparada)_")
+    linhas.extend(
+        [
+            "",
+            "*1) AGIR AGORA*",
+        ]
+    )
 
     if _ok(decisao):
         fazer_t = decisao.get("fazer_titulo") or decisao.get("fazer") or "—"

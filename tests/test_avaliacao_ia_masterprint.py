@@ -91,6 +91,7 @@ class TestAvaliacaoIaMasterprint(unittest.TestCase):
             mock_p.assert_not_called()
 
     @patch("integracoes.masterprint.avaliacao_ia_secundaria.MASTERPRINT_CLAUDE_DIARIO", True)
+    @patch("integracoes.masterprint.avaliacao_ia_secundaria.MASTERPRINT_CLAUDE_SO_NOITE", True)
     @patch("integracoes.masterprint.avaliacao_ia_secundaria.MASTERPRINT_CLAUDE_RESTANTE_MIN_USD", 2.5)
     def test_reserva_esmaltes_bloqueia_nova_chamada(self):
         with patch(
@@ -99,6 +100,9 @@ class TestAvaliacaoIaMasterprint(unittest.TestCase):
         ), patch(
             "integracoes.masterprint.avaliacao_ia_secundaria.ja_usou_claude_hoje",
             return_value=False,
+        ), patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria._na_janela_claude_nova",
+            return_value=True,
         ), patch("core.claude_orcamento.pode_chamar", return_value=(True, "ok")), patch(
             "core.claude_orcamento.resumo",
             return_value={"restante_usd": 1.0},
@@ -111,6 +115,48 @@ class TestAvaliacaoIaMasterprint(unittest.TestCase):
             )
             self.assertIsNone(out)
             mock_p.assert_not_called()
+
+    @patch("integracoes.masterprint.avaliacao_ia_secundaria.MASTERPRINT_CLAUDE_DIARIO", True)
+    @patch("integracoes.masterprint.avaliacao_ia_secundaria.MASTERPRINT_CLAUDE_SO_NOITE", True)
+    def test_manha_nao_chama_claude_nova(self):
+        with patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria.cache_claude_hoje",
+            return_value=None,
+        ), patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria.ja_usou_claude_hoje",
+            return_value=False,
+        ), patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria._na_janela_claude_nova",
+            return_value=False,
+        ), patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria.perguntar_estruturado"
+        ) as mock_p:
+            out = ia.avaliar_masterprint_secundario(
+                escopo="petg",
+                consolidado={"total_anuncios_ativos": 1},
+            )
+            self.assertIsNone(out)
+            mock_p.assert_not_called()
+
+    def test_janela_noite_brt(self):
+        from types import SimpleNamespace
+
+        with patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria.MASTERPRINT_CLAUDE_SO_NOITE",
+            True,
+        ), patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria.agora_brasil",
+            return_value=SimpleNamespace(hour=21),
+        ):
+            self.assertTrue(ia._na_janela_claude_nova())
+        with patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria.MASTERPRINT_CLAUDE_SO_NOITE",
+            True,
+        ), patch(
+            "integracoes.masterprint.avaliacao_ia_secundaria.agora_brasil",
+            return_value=SimpleNamespace(hour=14),
+        ):
+            self.assertFalse(ia._na_janela_claude_nova())
 
 
 class TestTelegramMantemFormato(unittest.TestCase):

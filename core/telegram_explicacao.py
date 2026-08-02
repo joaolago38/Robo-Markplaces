@@ -302,7 +302,7 @@ EXPLICACOES_AGENTES: dict[str, str] = {
 HORARIOS_AGENTES: dict[str, str] = {
     "vigia_datadog": "A cada 30 min (workflow próprio; fora do orquestrador)",
     "consumo_claude": "A cada 6h (Actions) + alerta a cada uso Claude",
-    "monitor_margem_vendas": "A cada 3h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_margem_vendas": "3x/dia às 08:05, 14:05 e 21:05 BRT (Actions) e a cada 30 min (orquestrador)",
     "inteligencia_precos": "A cada 30 min (orquestrador)",
     "leilao": "A cada hora (Actions); fora do orquestrador 30 min",
     "sumare_leiloes": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
@@ -322,16 +322,16 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_sem_venda_ml": "A cada 30 min (orquestrador)",
     "monitor_anita": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "monitor_mercado_esmaltes": "A cada 30 min (orquestrador); workflow dedicado só manual",
-    "monitor_busca_kit_esmaltes": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
-    "monitor_kits_esmaltes": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
-    "montar_kits_impala": "A cada 12h (Actions); fora do ciclo 30 min",
-    "ecossistema_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
-    "crescimento_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
-    "decisao_dia_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
-    "esmaltes_operacao": "Todo dia às 08:00 BRT (Actions); fora do ciclo 30 min",
-    "monitor_removedores_unha": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_busca_kit_esmaltes": "3x/dia às 08:10, 14:10 e 21:10 BRT (Actions) e a cada 30 min (orquestrador)",
+    "monitor_kits_esmaltes": "3x/dia às 08:20, 14:20 e 21:20 BRT (Actions) e a cada 30 min (orquestrador)",
+    "montar_kits_impala": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
+    "ecossistema_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
+    "crescimento_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
+    "decisao_dia_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
+    "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
+    "monitor_removedores_unha": "3x/dia às 08:40, 14:40 e 21:40 BRT (Actions) e a cada 30 min (orquestrador)",
     "monitor_tendencias_esmaltes": (
-        "2x ao dia às 05:15 e 17:15 BRT (Actions) e a cada 30 min (orquestrador)"
+        "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
     "comparativo_anita_impala": (
         "Segundas e quintas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)"
@@ -339,9 +339,13 @@ HORARIOS_AGENTES: dict[str, str] = {
     "comparativo_ml_shopee": (
         "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
-    "monitor_filamentos_ml": "A cada 6h (Actions); fora do orquestrador 30 min",
-    "monitor_masterprint_petg": "A cada 6h (Actions); fora do orquestrador 30 min",
-    "monitor_masterprint_escritorio": "A cada 6h (Actions); fora do orquestrador 30 min",
+    "monitor_filamentos_ml": "3x/dia às 08:30, 14:30 e 21:30 BRT (Actions); fora do orquestrador 30 min",
+    "monitor_masterprint_petg": (
+        "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+    ),
+    "monitor_masterprint_escritorio": (
+        "3x/dia às 08:45, 14:45 e 21:45 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+    ),
     "monitor_acetona_cruzeiro": (
         "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
@@ -350,8 +354,8 @@ HORARIOS_AGENTES: dict[str, str] = {
     "meta_metricas": "A cada 30 min (orquestrador)",
     "trafego_manicures": "A cada 30 min (orquestrador)",
     "promocoes_manicures": "Todo dia às 10:00 e 18:00 BRT (fora do orquestrador)",
-    "conversao_manicures": "A cada 4h (Actions); fora do ciclo 30 min",
-    "necessidade_manicures": "A cada 6h (Actions); fora do ciclo 30 min",
+    "conversao_manicures": "3x/dia às 08:25, 14:25 e 21:25 BRT (Actions); fora do ciclo 30 min",
+    "necessidade_manicures": "3x/dia às 08:35, 14:35 e 21:35 BRT (Actions); fora do ciclo 30 min",
     "panorama": "Todo dia às 06:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "orquestrador": "A cada 30 min (GitHub Actions)",
     "operacao_24h": (

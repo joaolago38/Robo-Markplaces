@@ -3,8 +3,10 @@ name: Monitor Busca Kit Esmaltes
 on:
   workflow_dispatch:
   schedule:
-    # 6x ao dia (UTC) — contabiliza frequência de buscas Anita/Impala
-    - cron: "0 */4 * * *"
+    # 3x/dia BRT 08:10 / 14:10 / 21:10 (= 11:10 / 17:10 / 00:10 UTC)
+    - cron: "10 11 * * *"
+    - cron: "10 17 * * *"
+    - cron: "10 0 * * *"
 
 env:
   PYTHON_VERSION: "3.11"

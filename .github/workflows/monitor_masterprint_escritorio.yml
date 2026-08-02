@@ -3,8 +3,10 @@ name: Monitor Masterprint escritório ML
 on:
   workflow_dispatch:
   schedule:
-    # A cada 6 horas (offset +30 min vs PETG)
-    - cron: "45 */6 * * *"
+    # 3x/dia BRT 08:45 / 14:45 / 21:45 (= 11:45 / 17:45 / 00:45 UTC)
+    - cron: "45 11 * * *"
+    - cron: "45 17 * * *"
+    - cron: "45 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal

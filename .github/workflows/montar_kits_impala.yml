@@ -5,8 +5,10 @@ name: Montar Kits Impala (planilha x ML)
 on:
   workflow_dispatch:
   schedule:
-    # 08:00 e 20:00 BRT = 11:00 e 23:00 UTC
-    - cron: "0 11,23 * * *"
+    # 3x/dia BRT 08:00 / 14:00 / 21:00 (= 11:00 / 17:00 / 00:00 UTC)
+    - cron: "0 11 * * *"
+    - cron: "0 17 * * *"
+    - cron: "0 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal

@@ -39,6 +39,7 @@ class TestEsmaltesOperacao(unittest.TestCase):
             },
         )
         self.assertIn("AGIR AGORA", msg)
+        self.assertIn("52.668.583/0001-27", msg)
         self.assertIn("FAZER:* Publicar MLB", msg)
         self.assertIn("NÃO FAZER", msg)
         self.assertIn("PANORAMA", msg)

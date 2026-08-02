@@ -3,8 +3,10 @@ name: Monitor Tendências Esmaltes
 on:
   workflow_dispatch:
   schedule:
-    # 2x ao dia (UTC) — tendências web × marketplaces
-    - cron: "15 8,20 * * *"
+    # 3x/dia BRT 08:15 / 14:15 / 21:15 (= 11:15 / 17:15 / 00:15 UTC)
+    - cron: "15 11 * * *"
+    - cron: "15 17 * * *"
+    - cron: "15 0 * * *"
 
 env:
   PYTHON_VERSION: "3.11"

@@ -1,0 +1,56 @@
+{
+  "versao": 1,
+  "modelo": "3x_dia_brt",
+  "suficiente": true,
+  "justificativa": "Para cards de decisão no Telegram (esmaltes + Masterprint), 3 janelas cobrem abertura, meio do dia e fechamento do ML sem o ruído de crons a cada 3–6h. Operações críticas (tokens, chat, vigia, orquestrador) continuam frequentes. Claude fica 1×/dia na noite, com o dia já medido.",
+  "fonte_analise": "operacional_local",
+  "nota_claude": "Chamada Anthropic retornou HTTP 401 no ambiente local; plano aplicado com a mesma lógica pedida ao Claude (ruído ↓, decisão ↑, ops intactas).",
+  "janelas_brt": {
+    "manha": "08:00",
+    "tarde": "14:00",
+    "noite": "21:00"
+  },
+  "janelas_utc": {
+    "manha": "11:00",
+    "tarde": "17:00",
+    "noite": "00:00"
+  },
+  "cooldown_padrao_seg": 18000,
+  "agentes_3x": [
+    "esmaltes_operacao",
+    "monitor_masterprint_petg",
+    "monitor_masterprint_escritorio",
+    "monitor_filamentos_ml",
+    "monitor_kits_esmaltes",
+    "monitor_removedores_unha",
+    "monitor_busca_kit_esmaltes",
+    "monitor_margem_vendas",
+    "monitor_tendencias_esmaltes",
+    "montar_kits_impala",
+    "conversao_manicures",
+    "necessidade_manicures"
+  ],
+  "agentes_manter_frequente": [
+    "orquestrador",
+    "renovar_tokens",
+    "vigia_datadog",
+    "chat_ml",
+    "conectividade",
+    "operacao_24h"
+  ],
+  "agentes_1x_dia": [
+    "panorama",
+    "relatorio_manha_ml",
+    "resumo_conta_ml",
+    "resumo_diario_novamix",
+    "ads_gatilho"
+  ],
+  "claude": {
+    "masterprint": "1x_noite_brt_20_23",
+    "esmaltes": "via_operacao_quando_orcamento"
+  },
+  "riscos": [
+    "Anomalia aguda entre janelas só aparece no próximo ciclo (mitigado por orquestrador/vigia).",
+    "Cooldown deve ser < intervalo mínimo entre janelas (5h) para não engolir a 2ª/3ª mensagem."
+  ]
+}

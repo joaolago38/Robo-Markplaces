@@ -28,6 +28,17 @@ EMPRESAS_CNAE_CNPJ_CATALOGO = getattr(
 )
 EMPRESA_ATIVA_ID = getattr(_cfg, "EMPRESA_ATIVA_ID", "") or ""
 EMPRESA_ATIVA_CNPJ = getattr(_cfg, "EMPRESA_ATIVA_CNPJ", "") or ""
+ESMALTES_CNPJ = getattr(_cfg, "ESMALTES_CNPJ", "52668583000127") or "52668583000127"
+DEMAIS_PRODUTOS_CNPJ = (
+    getattr(_cfg, "DEMAIS_PRODUTOS_CNPJ", "23811261000197") or "23811261000197"
+)
+CNPJ_DONO_PRODUTOS = (
+    getattr(_cfg, "CNPJ_DONO_PRODUTOS", ESMALTES_CNPJ) or ESMALTES_CNPJ
+)
+CNPJ_DONO_PRODUTOS_ALVO = (
+    getattr(_cfg, "CNPJ_DONO_PRODUTOS_ALVO", DEMAIS_PRODUTOS_CNPJ) or DEMAIS_PRODUTOS_CNPJ
+)
+CNPJ_DONO_PRODUTOS_USAR_ALVO = bool(getattr(_cfg, "CNPJ_DONO_PRODUTOS_USAR_ALVO", False))
 MARKETPLACE_FOCO_PRINCIPAL = (
     getattr(_cfg, "MARKETPLACE_FOCO_PRINCIPAL", "mercadolivre") or "mercadolivre"
 )
@@ -100,6 +111,9 @@ def carregar_catalogo(caminho: str | None = None) -> dict[str, Any]:
         "empresa_ativa_id": str(
             EMPRESA_ATIVA_ID or data.get("empresa_ativa_id") or ""
         ).strip(),
+        "dono_produtos": data.get("dono_produtos")
+        if isinstance(data.get("dono_produtos"), dict)
+        else {},
         "empresas": empresas,
         "fonte": str(path),
     }
@@ -121,8 +135,13 @@ def listar_empresas(*, apenas_ativas: bool = True) -> list[dict[str, Any]]:
 
 def _enriquecer_empresa(raw: dict[str, Any], cat: dict[str, Any] | None = None) -> dict[str, Any]:
     cat = cat or carregar_catalogo()
+    eid = str(raw.get("id") or "").strip()
     cnpj = _digitos(str(raw.get("cnpj") or ""))
-    # Env CNPJ da empresa ativa só aplica se for a empresa selecionada
+    # Defaults operacionais dos dois CNPJs se o JSON vier sem dígitos
+    if not cnpj and eid == "esmaltes_impala":
+        cnpj = _digitos(ESMALTES_CNPJ)
+    if not cnpj and eid == "masterprint":
+        cnpj = _digitos(DEMAIS_PRODUTOS_CNPJ)
     cnaes = []
     for c in raw.get("cnaes") or []:
         if not isinstance(c, dict):
@@ -254,17 +273,153 @@ def _aplicar_overrides_env(empresa: dict[str, Any]) -> dict[str, Any]:
     """Mantém configs atuais: se ML_SELLER_ID / Telegram global existirem e a empresa for a ativa de esmaltes, espelha."""
     out = dict(empresa)
     ml = dict(out.get("ml") or {})
-    # Não força seller do Masterprint no global — só preenche lacunas da empresa ativa esmaltes
-    if out.get("id") == "esmaltes_impala":
+    eid = out.get("id")
+    if eid == "esmaltes_impala":
         if ML_SELLER_ID and not ml.get("seller_id"):
             ml["seller_id"] = ML_SELLER_ID
         if TELEGRAM_GESTOR_CHAT_ID and not out.get("telegram_gestor_chat_id"):
             out["telegram_gestor_chat_id"] = TELEGRAM_GESTOR_CHAT_ID
-        if EMPRESA_ATIVA_CNPJ and not out.get("cnpj"):
-            out["cnpj"] = _digitos(EMPRESA_ATIVA_CNPJ)
-            out["cnpj_formatado"] = formatar_cnpj(EMPRESA_ATIVA_CNPJ)
+        cnpj_env = _digitos(EMPRESA_ATIVA_CNPJ or ESMALTES_CNPJ)
+        if cnpj_env and (not out.get("cnpj") or _digitos(ESMALTES_CNPJ) == cnpj_env):
+            # Preferência: ESMALTES_CNPJ operacional; EMPRESA_ATIVA_CNPJ se for o de esmaltes
+            prefer = _digitos(ESMALTES_CNPJ) or cnpj_env
+            if prefer:
+                out["cnpj"] = prefer
+                out["cnpj_formatado"] = formatar_cnpj(prefer)
+    elif eid == "masterprint":
+        prefer = _digitos(
+            getattr(_cfg, "MASTERPRINT_CNPJ", "") or DEMAIS_PRODUTOS_CNPJ
+        )
+        if prefer and not out.get("cnpj"):
+            out["cnpj"] = prefer
+            out["cnpj_formatado"] = formatar_cnpj(prefer)
+        elif prefer:
+            # Garante o CNPJ operacional dos demais produtos
+            out["cnpj"] = prefer
+            out["cnpj_formatado"] = formatar_cnpj(prefer)
     out["ml"] = ml
     return out
+
+
+def empresa_para_proposito(proposito: str | None) -> dict[str, Any] | None:
+    """Roteia análise Claude/agente para o CNPJ certo conforme o propósito."""
+    p = str(proposito or "").strip().lower()
+    demais = (
+        "masterprint",
+        "filamento",
+        "escritorio",
+        "petg",
+        "demais",
+        "apagador",
+        "pincel",
+    )
+    esmaltes = (
+        "esmalte",
+        "acetona",
+        "removedor",
+        "manicure",
+        "impala",
+        "anita",
+        "kit",
+        "operacao",
+        "crescimento",
+        "decisao",
+        "ecossistema",
+        "listing",
+        "sintese_ml",
+    )
+    emp = None
+    if any(k in p for k in demais):
+        emp = empresa_por_id("masterprint")
+    elif any(k in p for k in esmaltes):
+        emp = empresa_por_id("esmaltes_impala")
+    else:
+        return empresa_ativa()
+    return _aplicar_overrides_env(emp) if emp else None
+
+
+def mapa_dois_cnpjs() -> dict[str, Any]:
+    """Resumo fixo dos dois CNPJs para prompts Claude / Telegram."""
+    esm = empresa_por_id("esmaltes_impala") or {}
+    dem = empresa_por_id("masterprint") or {}
+    dono = situacao_dono_produtos()
+    return {
+        "esmaltes": {
+            "empresa_id": "esmaltes_impala",
+            "cnpj": esm.get("cnpj") or _digitos(ESMALTES_CNPJ),
+            "cnpj_formatado": esm.get("cnpj_formatado") or formatar_cnpj(ESMALTES_CNPJ),
+            "nome": esm.get("nome_fantasia") or "Impala / esmaltes",
+        },
+        "demais_produtos": {
+            "empresa_id": "masterprint",
+            "cnpj": dem.get("cnpj") or _digitos(DEMAIS_PRODUTOS_CNPJ),
+            "cnpj_formatado": dem.get("cnpj_formatado")
+            or formatar_cnpj(DEMAIS_PRODUTOS_CNPJ),
+            "nome": dem.get("nome_fantasia") or "Masterprint / demais produtos",
+        },
+        "dono_produtos": dono,
+    }
+
+
+def cnpj_dono_produtos_efetivo() -> str:
+    """
+    CNPJ dono dos dados de produtos agora.
+    Default: 52668583000127. Com CNPJ_DONO_PRODUTOS_USAR_ALVO=1 → alvo (238…).
+    """
+    cat = carregar_catalogo()
+    bloco = cat.get("dono_produtos") if isinstance(cat.get("dono_produtos"), dict) else {}
+    usar_alvo = CNPJ_DONO_PRODUTOS_USAR_ALVO or bool(bloco.get("usar_alvo"))
+    if usar_alvo:
+        return _digitos(
+            CNPJ_DONO_PRODUTOS_ALVO
+            or bloco.get("cnpj_alvo")
+            or DEMAIS_PRODUTOS_CNPJ
+        )
+    return _digitos(
+        CNPJ_DONO_PRODUTOS
+        or bloco.get("cnpj_atual")
+        or ESMALTES_CNPJ
+    )
+
+
+def situacao_dono_produtos() -> dict[str, Any]:
+    """Estado da migração: produtos hoje no CNPJ atual, alvo pronto para troca."""
+    cat = carregar_catalogo()
+    bloco = cat.get("dono_produtos") if isinstance(cat.get("dono_produtos"), dict) else {}
+    atual = _digitos(bloco.get("cnpj_atual") or CNPJ_DONO_PRODUTOS or ESMALTES_CNPJ)
+    alvo = _digitos(
+        bloco.get("cnpj_alvo") or CNPJ_DONO_PRODUTOS_ALVO or DEMAIS_PRODUTOS_CNPJ
+    )
+    efetivo = cnpj_dono_produtos_efetivo()
+    usando_alvo = efetivo == alvo and alvo != ""
+    emp = empresa_por_cnpj(efetivo) or (
+        empresa_por_id("masterprint") if usando_alvo else empresa_por_id("esmaltes_impala")
+    )
+    return {
+        "cnpj_efetivo": efetivo,
+        "cnpj_formatado": formatar_cnpj(efetivo),
+        "cnpj_atual_configurado": atual,
+        "cnpj_alvo": alvo,
+        "usando_alvo": usando_alvo,
+        "migracao_pendente": (not usando_alvo) and atual != alvo,
+        "empresa_id": (emp or {}).get("id"),
+        "nome_fantasia": (emp or {}).get("nome_fantasia"),
+        "como_trocar": (
+            "Defina CNPJ_DONO_PRODUTOS_USAR_ALVO=1 (ou dono_produtos.usar_alvo=true "
+            "em catalogo/empresas_cnae_cnpj.json) para passar os dados de produtos "
+            f"de {formatar_cnpj(atual)} para {formatar_cnpj(alvo)}."
+        ),
+        "notas": bloco.get("notas") or "",
+    }
+
+
+def empresa_dono_produtos() -> dict[str, Any] | None:
+    """Empresa dona dos catálogos de produtos no momento."""
+    sit = situacao_dono_produtos()
+    emp = empresa_por_cnpj(sit["cnpj_efetivo"])
+    if emp:
+        return _aplicar_overrides_env(emp)
+    return empresa_por_id(sit.get("empresa_id") or "esmaltes_impala")
 
 
 def marketplace_foco(empresa: dict[str, Any] | None = None) -> str:
@@ -297,6 +452,8 @@ def contexto_analise(
 
     cat = carregar_catalogo()
     foco = marketplace_foco(emp)
+    mapa = mapa_dois_cnpjs()
+    dono = situacao_dono_produtos()
     return {
         "ok": emp is not None,
         "foco_marketplace_padrao": cat.get("foco_marketplace_padrao"),
@@ -308,9 +465,16 @@ def contexto_analise(
         "cnae_principal": (emp or {}).get("cnae_principal"),
         "ramos": (emp or {}).get("ramos") or [],
         "agentes_prioritarios": (emp or {}).get("agentes_prioritarios") or [],
+        "dois_cnpjs": mapa,
+        "dono_produtos": dono,
         "nota": (
-            "Mercado Livre é o foco principal das análises por enquanto. "
-            "Configs ML_*/MASTERPRINT_*/Telegram existentes não foram removidas."
+            f"Dados de produtos no CNPJ {dono.get('cnpj_formatado')}. "
+            + (
+                "Já no CNPJ alvo."
+                if dono.get("usando_alvo")
+                else f"Migração preparada para {formatar_cnpj(dono.get('cnpj_alvo') or '')}."
+            )
+            + " Mercado Livre é o foco. Use CNPJ_DONO_PRODUTOS_USAR_ALVO=1 para trocar."
         ),
     }
 

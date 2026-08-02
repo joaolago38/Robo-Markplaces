@@ -3,8 +3,10 @@ name: Monitor Removedores de Unha ML
 on:
   workflow_dispatch:
   schedule:
-    # A cada 6 horas
-    - cron: "45 */6 * * *"
+    # 3x/dia BRT 08:40 / 14:40 / 21:40 (= 11:40 / 17:40 / 00:40 UTC)
+    - cron: "40 11 * * *"
+    - cron: "40 17 * * *"
+    - cron: "40 0 * * *"
 
 env:
   PYTHON_VERSION: "3.11"

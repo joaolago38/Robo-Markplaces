@@ -50,6 +50,7 @@ _LOGGER_META = {
     "notificador": ("infra", "core"),
     "claude": ("infra", "core"),
     "claude_roteador": ("infra", "core"),
+    "claude_contexto_ml": ("mercadolivre", "core"),
     "claude_orcamento": ("infra", "core"),
     "claude_toggle": ("infra", "core"),
     "chat_claim": ("mercadolivre", "core"),

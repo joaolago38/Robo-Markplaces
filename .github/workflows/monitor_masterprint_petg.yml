@@ -3,8 +3,10 @@ name: Monitor Masterprint PETG ML
 on:
   workflow_dispatch:
   schedule:
-    # A cada 6 horas (offset dos filamentos gerais)
-    - cron: "15 */6 * * *"
+    # 3x/dia BRT 08:15 / 14:15 / 21:15 (= 11:15 / 17:15 / 00:15 UTC)
+    - cron: "15 11 * * *"
+    - cron: "15 17 * * *"
+    - cron: "15 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal

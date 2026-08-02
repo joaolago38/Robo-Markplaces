@@ -36,15 +36,48 @@ def sintetizar_claude(
     *,
     max_tokens: int = 500,
     modelo: str | None = None,
+    enriquecer_ml: bool | None = None,
+    consolidado: dict[str, Any] | None = None,
 ) -> str:
     """
     Chama Claude com guardrail obrigatório. Nunca propaga exceção — retorna fallback.
+    Se o prompt/contexto fala de Mercado Livre, injeta estado_ml e dosa profundidade.
     """
     if not (cfg.ANTHROPIC_API_KEY or "").strip():
         return fallback
 
     try:
-        ctx_str = _contexto_json(contexto)
+        ctx_obj: dict[str, Any] | str = contexto
+        dosagem = None
+        usar_ml = enriquecer_ml
+        if usar_ml is None:
+            blob = f"{prompt} {contexto if isinstance(contexto, str) else json.dumps(contexto, ensure_ascii=False)}"
+            usar_ml = "mercadolivre" in blob.lower() or "mercado livre" in blob.lower() or " ml " in f" {blob.lower()} "
+        if usar_ml:
+            try:
+                from core.claude_contexto_ml import (
+                    enriquecer_contexto_claude,
+                    max_tokens_dosados,
+                    system_com_decisao,
+                )
+
+                ctx_obj, dosagem = enriquecer_contexto_claude(
+                    contexto if isinstance(contexto, dict) else {"contexto_texto": contexto},
+                    consolidado=consolidado,
+                    proposito="sintese_ml",
+                )
+                max_tokens = max_tokens_dosados(max_tokens, dosagem)
+                prompt = (
+                    f"{prompt}\n\nUse estado_ml e situacao_produto. "
+                    f"Profundidade={dosagem.get('profundidade')}. "
+                    "Priorize decisão (FAZER/NÃO FAZER/OBSERVAR)."
+                )
+                # system via perguntar: embute no prompt com guardrail
+                prompt = f"{system_com_decisao('', dosagem)}\n\n{prompt}"
+            except Exception as exc:
+                logger.warning("enriquecer_ml falhou: %s", exc)
+
+        ctx_str = _contexto_json(ctx_obj)
         prompt_completo = f"{GUARDRAIL}\n\n{prompt}\n\n{GUARDRAIL}"
         resposta = perguntar(prompt_completo, max_tokens=max_tokens, contexto=ctx_str, modelo=modelo)
         if not resposta or resposta.startswith("⚠️") or "API" in resposta:
