@@ -69,7 +69,13 @@ def _pct_sobre_total(valor: float, total: float) -> float:
 
 
 def carregar_defaults_operacao() -> dict[str, Any]:
-    return ler_json(ROOT / IMPORTACAO_OPERACAO_FIXA_CATALOGO, default={})
+    """Defaults da operação formal com CEP/aeroporto sobrescritíveis via env."""
+    try:
+        from integracoes.importacao.operacao_destino import carregar_operacao_destino
+
+        return carregar_operacao_destino()
+    except Exception:
+        return ler_json(ROOT / IMPORTACAO_OPERACAO_FIXA_CATALOGO, default={})
 
 
 def montar_entradas_de_produto(
@@ -222,11 +228,19 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     }
 
     fixa = carregar_defaults_operacao()
+    aero = fixa.get("aeroporto_desembaraco") or {}
+    dest = fixa.get("destino_entrega") or {}
+    codigo = str(aero.get("codigo") or "VCP")
+    nome = str(aero.get("nome") or "Viracopos")
     return {
         "ok": True,
         "modal": "aereo_formal_cnpj",
-        "aeroporto": "VCP — Viracopos",
-        "destino_cep": (fixa.get("destino_entrega") or {}).get("cep", "13467-694"),
+        "aeroporto": f"{codigo} — {nome}",
+        "aeroporto_codigo": codigo,
+        "destino_cep": dest.get("cep") or "13467-694",
+        "destino_cidade": dest.get("cidade") or "Americana",
+        "destino_uf": str(dest.get("uf") or "SP").upper(),
+        "distancia_km_viracopos": dest.get("distancia_km_viracopos"),
         "entradas": {
             **entradas,
             "peso_taxavel_total_kg": round(peso_taxavel_total, 3),
@@ -269,7 +283,13 @@ def formatar_breakdown_viracopos_telegram(
     entradas = resultado.get("entradas") or {}
     cambio = cambio_usd_brl or entradas.get("cambio_usd_brl")
     linhas = [
-        "  ✈️ *Formal VCP (Campinas)*",
+        f"  ✈️ *Formal {resultado.get('aeroporto') or 'VCP — Viracopos'}*",
+        f"  Destino CEP `{resultado.get('destino_cep') or '13467-694'}`"
+        + (
+            f" ({resultado.get('destino_cidade')}/{resultado.get('destino_uf')})"
+            if resultado.get("destino_cidade")
+            else ""
+        ),
         f"  CIF aduaneiro: {_brl(resultado.get('valor_aduaneiro_cif_brl'))}",
         f"  II: {_brl(resultado.get('ii_brl'))} | IPI: {_brl(resultado.get('ipi_brl'))}",
         f"  PIS/COFINS: {_brl(resultado.get('pis_cofins_brl'))} | ICMS: {_brl(resultado.get('icms_brl'))}",

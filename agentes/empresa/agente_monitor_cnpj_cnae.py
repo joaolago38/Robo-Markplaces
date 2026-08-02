@@ -93,6 +93,9 @@ def montar_mensagem(resultado: dict[str, Any]) -> str:
             linhas.append(f"  ⛔ {n}")
         for c in (acoes.get("custo") or [])[:2]:
             linhas.append(f"  💰 {c}")
+        dl = sub.get("decision_limits") or {}
+        if dl.get("resumo"):
+            linhas.append(f"  _Limites: {dl['resumo']}_")
 
     # --- 2) PANORAMA ---
     linhas.extend(["", "*2) PANORAMA ML × CNPJ*"])
@@ -168,6 +171,10 @@ def montar_mensagem(resultado: dict[str, Any]) -> str:
                 f"Preço ML `{item.get('item_id')}`: "
                 f"{item.get('preco_atual')} → sugerido {item.get('preco_sugerido')}"
             )
+        for b in (sub.get("decision_limits") or {}).get("bloqueios") or []:
+            if b.get("acao") == "bloquear":
+                passos.append(f"Bloqueado `{b.get('tema')}`: {b.get('motivo')}")
+                break
     if not passos:
         passos.append(f"Próxima varredura completa em até {intervalo} dias (ou na próxima alteração)")
     for p in passos[:6]:
@@ -176,8 +183,8 @@ def montar_mensagem(resultado: dict[str, Any]) -> str:
     linhas.extend(
         [
             "",
-            "_Subsídio: alteração de CNPJ ou ciclo 10d ⇒ coleta ML (anúncios, perguntas, "
-            "claims, preços) + ações FAZER/NÃO FAZER para decisão._",
+            "_Subsídio: Alibaba + USD + vendas + saúde do produto → limites Datadog "
+            "por CNAE/CNPJ; ecossistema não repete o mesmo tema na janela._",
         ]
     )
     return "\n".join(linhas)

@@ -135,6 +135,22 @@ def coletar_subsidio_ml(
     prods = vinculo.get("produtos") or {}
     mk = vinculo.get("marketplaces") or {}
     acoes = _acoes_decisao(vinculo, resumo, estado)
+    limites = None
+    try:
+        from integracoes.empresa.decision_limits import (
+            aplicar_limites_nas_acoes,
+            computar_e_emitir,
+        )
+
+        limites = computar_e_emitir(
+            vinculo=vinculo,
+            resumo_ml=resumo if isinstance(resumo, dict) else None,
+            cambio_ao_vivo=False,
+        )
+        acoes = aplicar_limites_nas_acoes(acoes, limites, registrar=True)
+    except Exception as exc:
+        logger.warning("decision_limits no subsidio: %s", exc)
+
     out.update(
         {
             "ok": bool(resumo.get("ok") or estado),
@@ -170,6 +186,14 @@ def coletar_subsidio_ml(
                 "marketplaces_abertos": mk.get("abertos_para_expansao") or [],
             },
             "acoes": acoes,
+            "decision_limits": {
+                "resumo": (limites or {}).get("resumo_humano"),
+                "bloqueios": (limites or {}).get("bloqueios") or [],
+                "max_fazer": ((limites or {}).get("limites") or {}).get("max_acoes_fazer"),
+                "permitidos": ((limites or {}).get("limites") or {}).get("permitidos"),
+            }
+            if limites
+            else None,
         }
     )
     return out

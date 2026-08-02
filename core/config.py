@@ -208,6 +208,16 @@ MONITOR_CNPJ_CNAE_COOLDOWN_SEG = int(
         str(MONITOR_CNPJ_CNAE_INTERVALO_DIAS * 24 * 3600),
     )
 )
+# Limites de decisão do ecossistema (Alibaba + USD + vendas + saúde ML × CNAE/CNPJ)
+DECISION_LIMITS_ATIVO = os.getenv("DECISION_LIMITS_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+DECISION_LIMITS_MAX_FAZER = int(os.getenv("DECISION_LIMITS_MAX_FAZER", "3"))
+DECISION_LIMITS_MAX_IMPORTAR = int(os.getenv("DECISION_LIMITS_MAX_IMPORTAR", "1"))
+DECISION_LIMITS_MAX_ADS = int(os.getenv("DECISION_LIMITS_MAX_ADS", "1"))
+DECISION_LIMITS_JANELA_HORAS = int(os.getenv("DECISION_LIMITS_JANELA_HORAS", "12"))
 # Foco de análise por enquanto: Mercado Livre (Shopee/Magalu permanecem configurados)
 MARKETPLACE_FOCO_PRINCIPAL = os.getenv("MARKETPLACE_FOCO_PRINCIPAL", "mercadolivre").strip().lower() or "mercadolivre"
 # Resumo da conta (espelho do painel Resumo → Telegram)
@@ -835,6 +845,15 @@ IMPORTACAO_FRETE_NACIONAL_BRL = float(os.getenv("IMPORTACAO_FRETE_NACIONAL_BRL",
 IMPORTACAO_OPERACAO_FIXA_CATALOGO = os.getenv(
     "IMPORTACAO_OPERACAO_FIXA_CATALOGO", "catalogo/importacao_operacao_fixa.json"
 )
+# Destino da operação formal (default Americana/SP CEP 13467-694) — sobrescreve o JSON
+IMPORTACAO_AEROPORTO_CODIGO = os.getenv("IMPORTACAO_AEROPORTO_CODIGO", "").strip().upper()
+IMPORTACAO_AEROPORTO_NOME = os.getenv("IMPORTACAO_AEROPORTO_NOME", "").strip()
+IMPORTACAO_AEROPORTO_CIDADE = os.getenv("IMPORTACAO_AEROPORTO_CIDADE", "").strip()
+IMPORTACAO_AEROPORTO_UF = os.getenv("IMPORTACAO_AEROPORTO_UF", "").strip().upper()
+IMPORTACAO_DESTINO_CEP = os.getenv("IMPORTACAO_DESTINO_CEP", "").strip()
+IMPORTACAO_DESTINO_CIDADE = os.getenv("IMPORTACAO_DESTINO_CIDADE", "").strip()
+IMPORTACAO_DESTINO_UF = os.getenv("IMPORTACAO_DESTINO_UF", "").strip().upper()
+IMPORTACAO_DESTINO_KM_VIRACOPOS = os.getenv("IMPORTACAO_DESTINO_KM_VIRACOPOS", "").strip()
 # Importação formal aérea CNPJ (Viracopos) — substitui landed simplificado no modo aéreo
 IMPORTACAO_AEREO_FORMAL = os.getenv("IMPORTACAO_AEREO_FORMAL", "1").strip().lower() not in (
     "0",

@@ -14,7 +14,8 @@
     "cep": "13467-694",
     "cidade": "Americana",
     "uf": "SP",
-    "distancia_km_viracopos": 120
+    "distancia_km_viracopos": 120,
+    "nota": "CEP padrão da operação. Sobrescreva com IMPORTACAO_DESTINO_CEP (e cidade/UF/km) sem editar este arquivo."
   },
   "icms_uf_padrao_pct": 18.0,
   "pis_cofins_importacao_pct": 11.75,

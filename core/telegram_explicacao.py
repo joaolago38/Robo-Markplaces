@@ -183,7 +183,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "A cada ~10 dias (dias 1/11/21): pelo CNAE resolve o CNPJ, lista produtos e, "
         "se houver alteração (ou ciclo vencido), inicia monitoramento Mercado Livre "
         "com card de decisão no Telegram (AGIR / PANORAMA ML / PRÓXIMOS PASSOS). "
-        "Demais marketplaces ficam abertos no perfil."
+        "Limites Datadog (Alibaba + USD + vendas + saúde do produto) evitam o "
+        "ecossistema repetir o mesmo tema. Demais marketplaces ficam abertos no perfil."
     ),
     "monitor_acetona_cruzeiro": (
         "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
