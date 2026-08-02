@@ -72,7 +72,7 @@ class TestClaudeContextoMl(unittest.TestCase):
         self.assertEqual(out2.count("À LUZ de estado_ml"), 1)
 
     def test_carregar_estado_sem_arquivos(self):
-        with patch.object(ccm, "_snapshot", return_value={}):
+        with patch("core.claude_ml.estado._snapshot", return_value={}):
             est = ccm.carregar_estado_ml(ao_vivo=False)
         self.assertEqual(est["marketplace"], "mercadolivre")
         self.assertIn(est["nivel"], ("ok", "atencao", "critico", "desconhecido"))

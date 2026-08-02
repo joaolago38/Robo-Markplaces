@@ -179,6 +179,35 @@ CNPJ_DONO_PRODUTOS_ALVO = os.getenv(
 CNPJ_DONO_PRODUTOS_USAR_ALVO = os.getenv(
     "CNPJ_DONO_PRODUTOS_USAR_ALVO", "0"
 ).strip().lower() in ("1", "true", "yes", "on")
+# Monitor CNAE → CNPJ → produtos (alteração ativa monitoramento)
+MONITOR_CNPJ_CNAE_ATIVO = os.getenv("MONITOR_CNPJ_CNAE_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MONITOR_CNPJ_CNAE_ALERTA = os.getenv("MONITOR_CNPJ_CNAE_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Alerta no ciclo 10d mesmo sem alteração (False) ou só quando fingerprint muda (True)
+MONITOR_CNPJ_CNAE_ALERTA_SO_ALTERACAO = os.getenv(
+    "MONITOR_CNPJ_CNAE_ALERTA_SO_ALTERACAO", "0"
+).strip().lower() not in ("0", "false", "no")
+# Ciclo de monitoramento ML após alteração / refresh periódico
+MONITOR_CNPJ_CNAE_INTERVALO_DIAS = int(os.getenv("MONITOR_CNPJ_CNAE_INTERVALO_DIAS", "10"))
+MONITOR_CNPJ_CNAE_ML_AO_VIVO = os.getenv("MONITOR_CNPJ_CNAE_ML_AO_VIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Cooldown Telegram ≈ intervalo (10d); override via env se necessário
+MONITOR_CNPJ_CNAE_COOLDOWN_SEG = int(
+    os.getenv(
+        "MONITOR_CNPJ_CNAE_COOLDOWN_SEG",
+        str(MONITOR_CNPJ_CNAE_INTERVALO_DIAS * 24 * 3600),
+    )
+)
 # Foco de análise por enquanto: Mercado Livre (Shopee/Magalu permanecem configurados)
 MARKETPLACE_FOCO_PRINCIPAL = os.getenv("MARKETPLACE_FOCO_PRINCIPAL", "mercadolivre").strip().lower() or "mercadolivre"
 # Resumo da conta (espelho do painel Resumo → Telegram)
@@ -922,7 +951,7 @@ ORQUESTRADOR_EXCLUIR = {
         "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,decisao_dia_esmaltes,"
         "esmaltes_operacao,"
         "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,licitacoes",
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,licitacoes",
     ).split(",")
     if x.strip()
 }

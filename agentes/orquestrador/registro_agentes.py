@@ -370,6 +370,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Pincéis recarregáveis e apagadores Masterprint: margem real vs tabela",
     ),
     AgenteRegistrado(
+        "monitor_cnpj_cnae",
+        "Monitor CNPJ × CNAE × ML (ciclo 10d)",
+        "monitor",
+        "agentes.empresa.agente_monitor_cnpj_cnae:executar",
+        {"enviar_alerta": True},
+        notas="A cada ~10d ou na alteração: inicia ML e Telegram de decisão (AGIR/PANORAMA/PASSOS)",
+    ),
+    AgenteRegistrado(
         "monitor_acetona_cruzeiro",
         "Monitor Acetona Cruzeiro ML",
         "monitor",

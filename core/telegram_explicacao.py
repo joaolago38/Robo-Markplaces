@@ -179,6 +179,12 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Monitora pincéis recarregáveis e apagadores Masterprint (margem real). "
         "Claude 1×/dia no ecossistema ML. Ramo/conta separados dos esmaltes quando configurado."
     ),
+    "monitor_cnpj_cnae": (
+        "A cada ~10 dias (dias 1/11/21): pelo CNAE resolve o CNPJ, lista produtos e, "
+        "se houver alteração (ou ciclo vencido), inicia monitoramento Mercado Livre "
+        "com card de decisão no Telegram (AGIR / PANORAMA ML / PRÓXIMOS PASSOS). "
+        "Demais marketplaces ficam abertos no perfil."
+    ),
     "monitor_acetona_cruzeiro": (
         "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
         "ideias de estratégia (Claude + Impala). Telegram: relatório completo da "
@@ -346,6 +352,10 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_masterprint_escritorio": (
         "3x/dia às 08:45, 14:45 e 21:45 BRT (Actions); Claude 1×/noite; fora do orquestrador"
     ),
+    "monitor_cnpj_cnae": (
+        "A cada ~10 dias (1, 11 e 21 do mês, 09:00 BRT via Actions); "
+        "alteração de CNPJ dispara ML + Telegram de decisão; fora do orquestrador 30 min"
+    ),
     "monitor_acetona_cruzeiro": (
         "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
@@ -460,6 +470,9 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("masterprint_escritorio", "monitor_masterprint_escritorio"),
     ("pinceis_masterprint", "monitor_masterprint_escritorio"),
     ("apagador_masterprint", "monitor_masterprint_escritorio"),
+    ("cnpj_cnae", "monitor_cnpj_cnae"),
+    ("monitor_cnpj", "monitor_cnpj_cnae"),
+    ("vinculo_cnae", "monitor_cnpj_cnae"),
     ("acetona", "monitor_acetona_cruzeiro"),
     ("descoberta", "descoberta_produtos"),
     ("ads_ml", "ads_gatilho"),
