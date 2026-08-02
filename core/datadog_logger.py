@@ -118,6 +118,7 @@ _LOGGER_META = {
     "agente_monitor_filamentos_ml": ("mercadolivre", "agente"),
     "analise_filamentos_ml": ("mercadolivre", "integracao"),
     "filamentos_cruzamento_alibaba": ("multi", "integracao"),
+    "sourcing_filamentos": ("multi", "integracao"),
     "agente_monitor_acetona_cruzeiro": ("mercadolivre", "agente"),
     "comparativo_anita_impala": ("mercadolivre", "integracao"),
     "ml_shopee_categorias": ("multi", "integracao"),

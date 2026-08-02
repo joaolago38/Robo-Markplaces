@@ -27,6 +27,8 @@ _MONTADO = {
     "texto_telegram": "Kit R$ 44,90",
     "texto_whatsapp": "Kit R$ 44,90",
     "link_ml": "https://produto.mercadolivre.com.br/MLB123",
+    "link_valido": True,
+    "item_id": "MLB123456789",
 }
 
 
@@ -41,6 +43,11 @@ class AgentePromocoesManicuresTests(unittest.TestCase):
     @patch.object(agente, "montar_mensagem_campanha", return_value=_MONTADO)
     @patch.object(agente, "carregar_campanhas", return_value=[_CAMPANHA])
     @patch.object(agente, "pode_divulgar_promocoes_manicures", return_value=(True, "ok"))
+    @patch(
+        "integracoes.ml.contrato_impulso_ml.campanha_pode_enviar",
+        return_value=(True, "liberado_guerra"),
+    )
+    @patch("integracoes.ml.contrato_impulso_ml.carregar_contrato", return_value={"ok": True, "ativo": True})
     def test_dry_run_monta_sem_enviar(self, *_mocks):
         out = agente.executar(enviar=False)
         self.assertTrue(out["ok"])
@@ -71,6 +78,11 @@ class AgentePromocoesManicuresTests(unittest.TestCase):
     @patch.object(agente, "montar_mensagem_campanha", return_value=_MONTADO)
     @patch.object(agente, "carregar_campanhas", return_value=[_CAMPANHA])
     @patch.object(agente, "pode_divulgar_promocoes_manicures", return_value=(True, "ok"))
+    @patch(
+        "integracoes.ml.contrato_impulso_ml.campanha_pode_enviar",
+        return_value=(True, "liberado_guerra"),
+    )
+    @patch("integracoes.ml.contrato_impulso_ml.carregar_contrato", return_value={"ok": True, "ativo": True})
     def test_envia_wa_e_telegram(self, *_mocks):
         out = agente.executar(enviar=True)
         self.assertTrue(out["ok"])

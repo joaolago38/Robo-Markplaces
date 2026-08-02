@@ -334,7 +334,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.filamentos.agente_monitor_filamentos_ml:executar",
         {"enviar_alerta": True},
-        notas="PLA/PETG/ABS/TPU no ML: cores mais vendidas + cruzamento Alibaba (FOB×ML)",
+        notas="PLA/PETG/ABS/TPU no ML: cores + Alibaba + sourcing BR×China",
     ),
     AgenteRegistrado(
         "monitor_acetona_cruzeiro",
