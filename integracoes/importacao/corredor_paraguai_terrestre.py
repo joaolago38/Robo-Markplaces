@@ -89,10 +89,18 @@ def montar_cenario_py_terrestre_br(
         gauge("py_terrestre.custo_total_brl", float(melhor.get("custo_total_brl") or 0), tags)
         gauge("py_terrestre.km_total", float(melhor.get("km_total") or 0), tags)
     incrementar("py_terrestre.cenario_ok" if out["ok"] else "py_terrestre.cenario_erro", tags=tags)
+    logger.info(
+        "py_terrestre: ok=%s corredor=%s custo_total_brl=%s km=%s cobertura_costa_pct=%s",
+        out["ok"],
+        (melhor or {}).get("corredor_id"),
+        (melhor or {}).get("custo_total_brl"),
+        (melhor or {}).get("km_total"),
+        costa.get("cobertura_pct"),
+    )
     try:
         escrever_json_atomico(SNAPSHOT_PATH, out)
     except OSError as exc:
-        logger.debug("snapshot py terrestre: %s", exc)
+        logger.warning("snapshot py terrestre: %s", exc)
     return out
 
 
