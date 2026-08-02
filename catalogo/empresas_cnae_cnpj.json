@@ -1,0 +1,91 @@
+{
+  "versao": 1,
+  "descricao": "Empresas por CNPJ + CNAEs. Direciona análises; Mercado Livre é o foco principal por enquanto. Configs ML_*/MASTERPRINT_*/esmaltes atuais continuam válidas e têm prioridade sobre este arquivo quando preenchidas via env.",
+  "foco_marketplace_padrao": "mercadolivre",
+  "empresa_ativa_id": "esmaltes_impala",
+  "empresas": [
+    {
+      "id": "esmaltes_impala",
+      "ativo": true,
+      "nome_fantasia": "Impala / esmaltes e manicures",
+      "razao_social": "",
+      "cnpj": "",
+      "cnaes": [
+        {
+          "codigo": "4772-5/00",
+          "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+          "principal": true
+        },
+        {
+          "codigo": "4646-0/01",
+          "descricao": "Comércio atacadista de cosméticos e produtos de perfumaria",
+          "principal": false
+        }
+      ],
+      "marketplaces": {
+        "foco_principal": "mercadolivre",
+        "ativos": ["mercadolivre"],
+        "secundarios": ["shopee", "magalu"],
+        "notas": "ML é o canal principal das análises neste momento; Shopee/Magalu permanecem configurados mas secundários."
+      },
+      "ml": {
+        "seller_id": "",
+        "nickname": "",
+        "site_id": "MLB"
+      },
+      "telegram_gestor_chat_id": "",
+      "ramos": ["esmaltes", "manicures", "acetona", "removedores"],
+      "agentes_prioritarios": [
+        "esmaltes_operacao",
+        "monitor_mercado_esmaltes",
+        "monitor_kits_esmaltes",
+        "comparativo_anita_impala",
+        "monitor_acetona_cruzeiro"
+      ],
+      "notas": "Ramo principal do negócio. Preencha CNPJ/seller quando disponível. Env ML_SELLER_ID / TELEGRAM_GESTOR_CHAT_ID continuam valendo."
+    },
+    {
+      "id": "masterprint",
+      "ativo": true,
+      "nome_fantasia": "Masterprint (filamentos e escritório)",
+      "razao_social": "",
+      "cnpj": "",
+      "cnaes": [
+        {
+          "codigo": "4751-2/01",
+          "descricao": "Comércio varejista especializado de equipamentos e suprimentos de informática",
+          "principal": true
+        },
+        {
+          "codigo": "4689-3/02",
+          "descricao": "Comércio atacadista de resinas e elastômeros",
+          "principal": false
+        },
+        {
+          "codigo": "4761-0/03",
+          "descricao": "Comércio varejista de artigos de papelaria",
+          "principal": false
+        }
+      ],
+      "marketplaces": {
+        "foco_principal": "mercadolivre",
+        "ativos": ["mercadolivre"],
+        "secundarios": [],
+        "notas": "Análises Masterprint direcionadas ao ML (PETG, pincéis, apagadores)."
+      },
+      "ml": {
+        "seller_id": "",
+        "nickname": "",
+        "site_id": "MLB"
+      },
+      "telegram_gestor_chat_id": "",
+      "ramos": ["filamentos", "escritorio", "masterprint"],
+      "agentes_prioritarios": [
+        "monitor_masterprint_petg",
+        "monitor_masterprint_escritorio",
+        "monitor_filamentos_ml"
+      ],
+      "notas": "Pode ser outro CNPJ/conta. Env MASTERPRINT_CNPJ / MASTERPRINT_ML_SELLER_ID / MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID sobrescrevem."
+    }
+  ]
+}
