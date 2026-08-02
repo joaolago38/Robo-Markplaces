@@ -85,6 +85,69 @@ class TestCompararPortos(unittest.TestCase):
         self.assertEqual(cen["modal"], "aereo")
         self.assertGreater(cen["custo_unitario_brl"], 0)
         self.assertGreater(cen["score_atratividade"], 0)
+        self.assertTrue(cen["custos_considerados"])
+        self.assertTrue(cen["detalhe_custos"]["completo"])
+        self.assertIn("frete_internacional_brl", cen["detalhe_custos"]["blocos"])
+        self.assertIn("impostos_brl", cen["detalhe_custos"]["blocos"])
+        self.assertIn("custos_locais_brl", cen["detalhe_custos"]["blocos"])
+        self.assertIsNotNone(cen["assertividade_pct"])
+
+    def test_abaixo_90_exige_custo(self):
+        """Assertividade < 90% → não entra em atrativos de alta confiança sem custo completo."""
+        g = pb.gateway_por_codigo("BRMAO")
+        assert g is not None
+        prod = cmp.normalizar_produto_alibaba(
+            {"preco_fob_usd": 0.5, "peso_kg": 5.0, "moq": 10, "termo_busca": "x", "ii_pct": 20}
+        )
+        cen = cmp.calcular_landed_no_gateway(
+            prod, g, cambio_usd_brl=5.5, cep_destino="13467-694", uf_destino="SP"
+        )
+        self.assertTrue(cen["ok"])
+        self.assertTrue(cen["custos_considerados"])
+        # Se assertividade < 90, exige_revisao_custo e não é atrativa "alta"
+        if cen["assertividade_pct"] < 90:
+            self.assertTrue(cen["exige_revisao_custo"])
+            self.assertFalse(cmp.eh_condicao_atrativa(cen))
+            self.assertTrue(cmp.eh_condicao_atrativa_condicional(cen) or cen["score_atratividade"] < 55)
+
+    def test_sem_detalhe_custo_cap_assertividade(self):
+        score = cmp._score_atratividade(
+            landed_unit=20.0,
+            fob_usd=5.0,
+            cambio=5.0,
+            atratividade_cat=98.0,
+            modal="maritimo",
+            detalhe_custos={"completo": False, "coerente": False},
+        )
+        self.assertLess(score, 90.0)
+
+    def test_comparar_expone_condicionais(self):
+        with patch(
+            "integracoes.cambio.cotacao_usd.obter_cotacao_usd",
+            return_value={"ok": True, "usd_brl": 5.5, "fonte": "teste", "confiavel": True},
+        ), patch(
+            "integracoes.cambio.cotacao_usd.cotacao_confiavel_para_margem",
+            return_value=True,
+        ), patch("integracoes.importacao.comparar_portos_alibaba.escrever_json_atomico"), patch(
+            "integracoes.importacao.comparar_portos_alibaba.gauge"
+        ), patch("integracoes.importacao.comparar_portos_alibaba.incrementar"):
+            out = cmp.comparar_portos_para_produto_alibaba(
+                {
+                    "nome": "Item teste",
+                    "preco_fob_usd": 2.0,
+                    "peso_kg": 1.0,
+                    "moq": 100,
+                    "termo_busca": "x",
+                },
+                cambio_usd_brl=5.5,
+                cep_destino="13467-694",
+            )
+        self.assertEqual(out["assertividade_alvo_pct"], 90.0)
+        self.assertIn("total_condicionais_custo", out)
+        melhor = out.get("melhor_geral") or {}
+        if melhor:
+            self.assertIn("assertividade_pct", melhor)
+            self.assertTrue(melhor.get("custos_considerados"))
 
 
 if __name__ == "__main__":
