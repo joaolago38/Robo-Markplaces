@@ -196,6 +196,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Estrutura futura: endereço PY, custos validados, multi-cliente e lucro ML",
     ),
     AgenteRegistrado(
+        "tributacao_py_br",
+        "Tributação PY × BR (Mercosul)",
+        "monitor",
+        "agentes.importacao.agente_tributacao_py_br:executar",
+        {"enviar_alerta": False},
+        notas="Cruza II=0 com origem Mercosul vs sem origem vs China direta × lucro ML",
+    ),
+    AgenteRegistrado(
         "ml_tendencias_importacao",
         "ML tendências × Alibaba",
         "monitor",

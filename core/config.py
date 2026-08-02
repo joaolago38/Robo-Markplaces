@@ -900,6 +900,10 @@ IMPORTACAO_PY_CODIGO_POSTAL = os.getenv("IMPORTACAO_PY_CODIGO_POSTAL", "").strip
 HUB_PARAGUAI_CATALOGO = os.getenv("HUB_PARAGUAI_CATALOGO", "catalogo/hub_paraguai_clientes.json")
 HUB_PARAGUAI_ATIVO = os.getenv("HUB_PARAGUAI_ATIVO", "1").strip().lower() not in ("0", "false", "no")
 HUB_PY_FRETE_CHINA_USD_KG = float(os.getenv("HUB_PY_FRETE_CHINA_USD_KG", "1.2"))
+# Tributação PY × BR (Mercosul / origem) — estimativas de planejamento
+HUB_PY_IVA_PCT = float(os.getenv("HUB_PY_IVA_PCT", "10.0"))
+HUB_PY_MAQUILA_PCT = float(os.getenv("HUB_PY_MAQUILA_PCT", "1.0"))
+HUB_PY_CERTIFICADO_ORIGEM_BRL = float(os.getenv("HUB_PY_CERTIFICADO_ORIGEM_BRL", "180.0"))
 # China marítimo: Santos no SE, portos NE no Nordeste, comparar tributação com Sul
 IMPORTACAO_CHINA_ROTA_REGIONAL = os.getenv("IMPORTACAO_CHINA_ROTA_REGIONAL", "1").strip().lower() not in (
     "0",

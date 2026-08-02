@@ -29,13 +29,15 @@
   },
   "custos_operacionais_brl": {
     "armazenagem_dia_m3": 8.0,
-    "handling_por_volume_brl": 25.0,
+    "handling_por_unidade_brl": 3.5,
+    "handling_por_volume_brl": 3.5,
     "handling_minimo_embarque_brl": 80.0,
-    "dias_armazenagem_padrao": 7,
+    "dias_armazenagem_padrao": 5,
     "volume_m3_padrao_por_unidade": 0.004,
     "seguro_hub_pct_sobre_carga": 0.2,
     "overhead_mensal_hub_brl": 2500.0,
-    "capacidade_m3_estimada": 40.0
+    "capacidade_m3_estimada": 40.0,
+    "nota": "Handling por unidade calibrado para filamento 1kg (margem trabalho 20% no ML)."
   },
   "taxa_servico_multi_cliente": {
     "pct_sobre_custo_operacao": 12.0,
@@ -103,8 +105,8 @@
       "fob_usd": 4.5,
       "peso_kg": 1.0,
       "volume_m3": 0.004,
-      "quantidade": 50,
-      "preco_venda_ml_brl": 89.9,
+      "quantidade": 300,
+      "preco_venda_ml_brl": 93.9,
       "ativo": true
     },
     {
@@ -117,7 +119,7 @@
       "fob_usd": 5.0,
       "peso_kg": 1.0,
       "volume_m3": 0.004,
-      "quantidade": 50,
+      "quantidade": 300,
       "preco_venda_ml_brl": 99.9,
       "ativo": true
     },
@@ -131,8 +133,8 @@
       "fob_usd": 5.0,
       "peso_kg": 1.0,
       "volume_m3": 0.004,
-      "quantidade": 50,
-      "preco_venda_ml_brl": 94.9,
+      "quantidade": 300,
+      "preco_venda_ml_brl": 97.9,
       "ativo": true
     },
     {
@@ -145,8 +147,8 @@
       "fob_usd": 7.0,
       "peso_kg": 1.0,
       "volume_m3": 0.004,
-      "quantidade": 30,
-      "preco_venda_ml_brl": 119.9,
+      "quantidade": 200,
+      "preco_venda_ml_brl": 129.9,
       "ativo": true
     }
   ]

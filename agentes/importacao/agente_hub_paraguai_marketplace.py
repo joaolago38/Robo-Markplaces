@@ -5,6 +5,7 @@ Avalia hub comercial PY (planejado): custos, multi-cliente e lucro em marketplac
 Uso:
   python -m agentes.importacao.agente_hub_paraguai_marketplace
   python -m agentes.importacao.agente_hub_paraguai_marketplace --alerta
+  python -m agentes.importacao.agente_hub_paraguai_marketplace --tributacao
   python -m agentes.importacao.agente_hub_paraguai_marketplace --fob 4.5 --venda 95 --qty 50
 """
 from __future__ import annotations
@@ -14,13 +15,17 @@ import json
 import logging
 from typing import Any
 
-from core.config import HUB_PARAGUAI_ATIVO, ROOT
+from core.config import HUB_PARAGUAI_ATIVO
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
 from integracoes.importacao.hub_paraguai_marketplace import (
     avaliar_hub_multi_cliente,
     formatar_hub_py_telegram,
     verificar_hub_lucro_20_marketplace,
+)
+from integracoes.importacao.tributacao_py_br import (
+    avaliar_tributacao_produtos_marketplace,
+    formatar_tributacao_py_br_telegram,
 )
 
 logger = logging.getLogger("agente_hub_paraguai_marketplace")
@@ -33,9 +38,29 @@ def executar(
     quantidade: int = 50,
     lucro_alvo_pct: float = 20.0,
     enviar_alerta: bool = False,
+    cruzar_tributacao: bool = False,
+    regime_maquila: bool = False,
 ) -> dict[str, Any]:
     if not HUB_PARAGUAI_ATIVO:
         return {"ok": False, "motivo": "HUB_PARAGUAI_ATIVO=0"}
+
+    if cruzar_tributacao and fob_usd is None:
+        trib = avaliar_tributacao_produtos_marketplace(
+            lucro_alvo_pct=lucro_alvo_pct,
+            regime_maquila=regime_maquila,
+        )
+        trib["mensagem"] = formatar_tributacao_py_br_telegram(trib)
+        if enviar_alerta and trib.get("ok") and gestor_telegram_configurado():
+            try:
+                alertar_gestor(
+                    trib["mensagem"],
+                    chave=chave_resumo_periodo("trib_py_br", horas_por_bucket=24),
+                    cooldown_segundos=86400,
+                    agente_id="tributacao_py_br",
+                )
+            except Exception as exc:
+                logger.warning("telegram trib: %s", exc)
+        return trib
 
     produtos = None
     if fob_usd is not None:
@@ -51,6 +76,7 @@ def executar(
                 "cliente_id": "cliente_proprio_masterprint",
                 "tipo_cliente": "proprio",
                 "fonte_marketplace": "mercadolivre",
+                "regime_maquila": regime_maquila,
             }
         ]
 
@@ -67,7 +93,17 @@ def executar(
     else:
         out = avaliar_hub_multi_cliente(produtos=produtos, lucro_alvo_pct=lucro_alvo_pct)
 
+    if cruzar_tributacao:
+        trib = avaliar_tributacao_produtos_marketplace(
+            produtos=produtos,
+            lucro_alvo_pct=lucro_alvo_pct,
+            regime_maquila=regime_maquila,
+        )
+        out["tributacao_py_br"] = trib
+
     msg = formatar_hub_py_telegram(out)
+    if cruzar_tributacao and out.get("tributacao_py_br"):
+        msg = msg + "\n\n" + formatar_tributacao_py_br_telegram(out["tributacao_py_br"])
     out["mensagem"] = msg
 
     if enviar_alerta and out.get("ok") and gestor_telegram_configurado():
@@ -93,6 +129,12 @@ def main() -> None:
     p.add_argument("--venda", type=float, default=None, help="Preço venda ML BRL")
     p.add_argument("--qty", type=int, default=50)
     p.add_argument("--lucro", type=float, default=20.0, help="Lucro alvo %% sobre venda ML")
+    p.add_argument(
+        "--tributacao",
+        action="store_true",
+        help="Cruzar tributação PY×BR (Mercosul II=0 vs China)",
+    )
+    p.add_argument("--maquila", action="store_true", help="Incluir regime Maquila PY na simulação")
     p.add_argument("--alerta", action="store_true")
     p.add_argument("--json", action="store_true")
     args = p.parse_args()
@@ -102,6 +144,8 @@ def main() -> None:
         quantidade=args.qty,
         lucro_alvo_pct=args.lucro,
         enviar_alerta=args.alerta,
+        cruzar_tributacao=args.tributacao,
+        regime_maquila=args.maquila,
     )
     if args.json:
         print(json.dumps(out, ensure_ascii=False, indent=2, default=str))

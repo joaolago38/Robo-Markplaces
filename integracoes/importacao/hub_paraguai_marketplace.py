@@ -94,9 +94,10 @@ def custos_operacao_hub(
     vol_total = vol_u * qty
 
     armazenagem = vol_total * _f(op.get("armazenagem_dia_m3"), 8.0) * dias
+    por_un = _f(op.get("handling_por_unidade_brl"), _f(op.get("handling_por_volume_brl"), 3.5))
     handling = max(
         _f(op.get("handling_minimo_embarque_brl"), 80.0),
-        qty * _f(op.get("handling_por_volume_brl"), 25.0),
+        qty * por_un,
     )
 
     seguro = valor_carga_brl * (_f(op.get("seguro_hub_pct_sobre_carga"), 0.2) / 100.0)
@@ -449,12 +450,23 @@ def verificar_custos_operacionais_lucro(
     terr_u = _f(terrestre.get("custo_total_brl")) / qty if qty else 0
     operacional_u = round(frete_china_u + hub_u + terr_u, 2)
 
-    # Overhead mensal diluído: se vender N unidades/mês
+    # Overhead mensal diluído no volume do hub (não só neste lote)
     overhead = _f((cat.get("custos_operacionais_brl") or {}).get("overhead_mensal_hub_brl"))
-    vol_mes = max(qty, 100)  # hipótese de trabalho: pelo menos 100 un/mês no hub
-    overhead_u = round(overhead / vol_mes, 2)
+    vol_mes_hub = max(500, qty * 3)  # hipótese: hub gira ≥500 un/mês (multi-SKU)
+    overhead_u = round(overhead / vol_mes_hub, 2)
     custo_com_overhead = round(custo_u + overhead_u, 2)
     atinge_20_com_overhead = custo_com_overhead <= custo_max if custo_max > 0 else False
+
+    # Quantidade mínima para atingir lucro alvo (dilui frete terrestre + handling mínimo)
+    qty_min = None
+    if venda > 0:
+        qty_min = _buscar_qty_minima_lucro(
+            produto,
+            cambio_usd_brl=cambio_usd_brl,
+            lucro_alvo_pct=lucro_alvo,
+            taxa=taxa,
+            catalogo=cat,
+        )
 
     return {
         "ok": bool(aval.get("ok")),
@@ -478,6 +490,8 @@ def verificar_custos_operacionais_lucro(
         },
         "teto_custo_para_lucro_alvo": teto,
         "preco_minimo_venda_para_lucro_alvo": piso_venda,
+        "quantidade_atual": qty,
+        "quantidade_minima_lucro_alvo": qty_min,
         "folga_custo_brl": folga_custo,
         "margem_atual": margem,
         "atinge_lucro_alvo": atinge_20,
@@ -489,6 +503,41 @@ def verificar_custos_operacionais_lucro(
         ),
         "avaliacao_completa": aval,
     }
+
+
+def _buscar_qty_minima_lucro(
+    produto: dict[str, Any],
+    *,
+    cambio_usd_brl: float,
+    lucro_alvo_pct: float,
+    taxa: float,
+    catalogo: dict[str, Any],
+    qty_max: int = 2000,
+) -> int | None:
+    """Busca menor quantidade em que custo hub unitário cabe no teto do lucro alvo."""
+    venda = _f(produto.get("preco_venda_ml_brl") or produto.get("preco_venda_brl"))
+    teto = _f(
+        custo_maximo_para_lucro_pct(
+            venda, taxa_marketplace_pct=taxa, lucro_alvo_pct=lucro_alvo_pct
+        ).get("custo_unitario_maximo_brl")
+    )
+    if teto <= 0:
+        return None
+    for q in (50, 100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000):
+        if q > qty_max:
+            break
+        hub = custo_rota_hub_py(
+            fob_usd=_f(produto.get("fob_usd")),
+            cambio_usd_brl=cambio_usd_brl,
+            quantidade=q,
+            peso_kg_unit=_f(produto.get("peso_kg"), 1.0),
+            volume_m3_unit=_f(produto.get("volume_m3")) if produto.get("volume_m3") is not None else None,
+            cep_destino=produto.get("cep_destino"),
+            catalogo=catalogo,
+        )
+        if hub.get("ok") and _f(hub.get("custo_unitario_brl")) <= teto:
+            return q
+    return None
 
 
 def verificar_hub_lucro_20_marketplace(
@@ -543,7 +592,10 @@ def verificar_hub_lucro_20_marketplace(
     }
     gauge("hub_py.lucro20_ok", float(len(ok_oh)))
     gauge("hub_py.lucro20_total", float(len(verificacoes)))
-    escrever_json_atomico(ROOT / "logs" / "hub_paraguai_lucro20_ultima.json", out)
+    try:
+        escrever_json_atomico(ROOT / "logs" / "hub_paraguai_lucro20_ultima.json", out)
+    except OSError as exc:
+        logger.debug("snapshot lucro20: %s", exc)
     return out
 
 
@@ -624,6 +676,38 @@ def avaliar_produto_hub_vs_marketplace(
         base_op = _f(hub.get("custo_total_brl")) - _f(hub.get("mercadoria_brl"))
         servico = taxa_servico_cliente(max(0.0, base_op), catalogo=cat)
 
+    # Cruzamento tributário PY × BR (Mercosul II=0 vs sem origem vs China)
+    trib_cruz = None
+    try:
+        from integracoes.importacao.tributacao_py_br import cruzar_tributacao_py_br_produto
+
+        frete_cn = _f(hub.get("frete_china_py_brl"))
+        hub_tot = _f((hub.get("hub_custos") or {}).get("custo_hub_total_brl"))
+        terr_tot = _f((hub.get("terrestre_py_br") or {}).get("custo_total_brl"))
+        log_u = (hub_tot + terr_tot) / qty if qty > 0 else 0.0
+        trib_cruz = cruzar_tributacao_py_br_produto(
+            fob_usd=fob,
+            cambio_usd_brl=cambio_usd_brl,
+            quantidade=qty,
+            peso_kg_unit=peso,
+            frete_internacional_brl=frete_cn,
+            ii_pct_china=_f(produto.get("ii_pct"), 12.6),
+            ipi_pct=_f(produto.get("ipi_pct"), 0.0),
+            icms_pct=_f(produto.get("icms_pct"), 18.0),
+            preco_venda_ml_brl=venda if venda > 0 else None,
+            taxa_marketplace_pct=taxa_mk,
+            lucro_alvo_pct=margem_min,
+            custos_logistica_py_br_unit=log_u,
+            regime_maquila=bool(produto.get("regime_maquila")),
+        )
+        rec = (trib_cruz or {}).get("recomendacao") or {}
+        if rec.get("cenario_sugerido") == "py_origem_mercosul" and atinge_lucro:
+            veredito = "HUB_PY_ORIGEM_MERCOSUL_LUCRO"
+        elif rec.get("cenario_sugerido") == "py_origem_mercosul":
+            veredito = "HUB_PY_ORIGEM_MERCOSUL_PREFERIVEL"
+    except Exception as exc:
+        logger.debug("cruzamento trib PY×BR: %s", exc)
+
     return {
         "ok": bool(hub.get("ok")),
         "produto_id": produto.get("id"),
@@ -639,6 +723,7 @@ def avaliar_produto_hub_vs_marketplace(
         "economia_hub_vs_direta_unit_brl": economia_hub_vs_direta,
         "margem_marketplace_hub": margem_hub,
         "margem_marketplace_direta": margem_dir,
+        "tributacao_py_br": trib_cruz,
         "taxa_servico_terceiro": servico,
         "veredito": veredito,
         "possibilidades": list(cat.get("possibilidades") or []),
@@ -731,7 +816,10 @@ def avaliar_hub_multi_cliente(
     gauge("hub_py.lucrativos_ml", float(lucrativos_ml), tags)
     gauge("hub_py.receita_servico_brl", float(lucro_servico), tags)
     incrementar("hub_py.avaliacao_ok", tags=tags)
-    escrever_json_atomico(SNAPSHOT_PATH, out)
+    try:
+        escrever_json_atomico(SNAPSHOT_PATH, out)
+    except OSError as exc:
+        logger.debug("snapshot hub: %s", exc)
     return out
 
 
@@ -768,6 +856,11 @@ def formatar_hub_py_telegram(resultado: dict[str, Any], *, max_itens: int = 6) -
                 f"terr R$ {q.get('terrestre_py_br')} · margem {m.get('margem_pct')}%\n"
                 f"  Preço mín p/ {lucro_alvo:.0f}%: R$ "
                 f"{(v.get('preco_minimo_venda_para_lucro_alvo') or {}).get('preco_venda_minimo_brl')}"
+                + (
+                    f" · qty mín {v.get('quantidade_minima_lucro_alvo')}"
+                    if v.get("quantidade_minima_lucro_alvo")
+                    else ""
+                )
             )
         else:
             hub_c = (v.get("rota_hub_py") or {}).get("custo_unitario_brl")
