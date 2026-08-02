@@ -101,6 +101,8 @@ _LOGGER_META = {
     "crescimento_esmaltes": ("mercadolivre", "integracao"),
     "agente_decisao_dia_esmaltes": ("mercadolivre", "agente"),
     "decisao_dia_esmaltes": ("mercadolivre", "integracao"),
+    "agente_esmaltes_operacao": ("mercadolivre", "agente"),
+    "agente_alibaba_sourcing": ("multi", "agente"),
     "contrato_impulso_ml": ("mercadolivre", "integracao"),
     "algoritmo_eventos": ("multi", "core"),
     "agente_conversao_manicures": ("social", "agente"),

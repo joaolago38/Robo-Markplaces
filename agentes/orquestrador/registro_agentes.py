@@ -161,6 +161,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.importacao.agente_alibaba_importacao:executar",
         {"enviar_alerta": True},
+        notas="Busca catálogo. Preferir alibaba_sourcing no cron",
     ),
     AgenteRegistrado(
         "alibaba_inteligencia",
@@ -168,7 +169,15 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.importacao.agente_alibaba_importacao_inteligente:executar",
         {"enviar_alerta": True},
-        notas="Dólar + custo landed + preços ML + alerta de lucro",
+        notas="Dólar + custo landed + preços ML. Preferir alibaba_sourcing no cron",
+    ),
+    AgenteRegistrado(
+        "alibaba_sourcing",
+        "Alibaba sourcing consolidado",
+        "monitor",
+        "agentes.importacao.agente_alibaba_sourcing:executar",
+        {"enviar_alerta": True},
+        notas="Busca catálogo + inteligência margem em 1 run. Fora do ciclo 30min",
     ),
     AgenteRegistrado(
         "ml_tendencias_importacao",
@@ -278,7 +287,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.esmaltes.agente_ecossistema_esmaltes:executar",
         {"enviar_alerta": True},
-        notas="Cor atrai → kit+anexos+B2B pagam. Lê snapshots e monta plano 7/30/90d. Fora do ciclo 30min",
+        notas="Cor atrai → kit+anexos+B2B. Preferir esmaltes_operacao no cron diário",
     ),
     AgenteRegistrado(
         "crescimento_esmaltes",
@@ -286,7 +295,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.esmaltes.agente_crescimento_esmaltes:executar",
         {"enviar_alerta": True},
-        notas="KPI kits% receita + margem; alerta kits sem MLB; checklist. Fora do ciclo 30min",
+        notas="KPI kits% + checklist. Preferir esmaltes_operacao no cron diário",
     ),
     AgenteRegistrado(
         "decisao_dia_esmaltes",
@@ -294,7 +303,15 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.esmaltes.agente_decisao_dia_esmaltes:executar",
         {"enviar_alerta": True},
-        notas="Um card: FAZER / NÃO FAZER / CUSTO. 3 SKUs guerra + piso margem. Fora do ciclo 30min",
+        notas="Um card: FAZER / NÃO FAZER / CUSTO. Preferir esmaltes_operacao no cron diário",
+    ),
+    AgenteRegistrado(
+        "esmaltes_operacao",
+        "Operação esmaltes consolidada",
+        "monitor",
+        "agentes.esmaltes.agente_esmaltes_operacao:executar",
+        {"enviar_alerta": True},
+        notas="Crescimento+decisão+ecossistema em 1 Telegram. Fora do ciclo 30min",
     ),
     AgenteRegistrado(
         "monitor_removedores_unha",

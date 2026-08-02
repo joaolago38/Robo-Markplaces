@@ -23,6 +23,8 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("leilao", ids)
         self.assertNotIn("alibaba", ids)
         self.assertNotIn("alibaba_inteligencia", ids)
+        self.assertNotIn("alibaba_sourcing", ids)
+        self.assertNotIn("esmaltes_operacao", ids)
         self.assertNotIn("ml_tendencias_importacao", ids)
         self.assertNotIn("monitor_filamentos_ml", ids)
         self.assertNotIn("necessidade_manicures", ids)
@@ -32,6 +34,8 @@ class TestRegistroAgentes(unittest.TestCase):
         ids = {a.id for a in listar_agentes()}
         self.assertIn("leilao", ids)
         self.assertIn("alibaba", ids)
+        self.assertIn("alibaba_sourcing", ids)
+        self.assertIn("esmaltes_operacao", ids)
         self.assertIn("necessidade_manicures", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", {"leilao"})

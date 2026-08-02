@@ -1,13 +1,9 @@
 name: Ecossistema esmaltes (plano consolidado)
 
-# Lê snapshots (kits, Anita, removedores, manicures…) e monta plano 7/30/90d → Telegram.
-# Tese: cor atrai; kit + anexos + B2B pagam.
+# Manual — cron diário migrou para esmaltes_operacao.yml
 
 on:
   workflow_dispatch:
-  schedule:
-    # 09:00 BRT = 12:00 UTC
-    - cron: "0 12 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal

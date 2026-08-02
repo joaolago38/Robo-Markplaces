@@ -1,9 +1,13 @@
-name: Decisão do dia Impala ML
+name: Operação esmaltes consolidada
 
-# Manual — cron diário migrou para esmaltes_operacao.yml
+# Crescimento + decisão do dia + ecossistema → 1 Telegram.
+# Substitui os crons separados (workflows individuais ficam só manuais).
 
 on:
   workflow_dispatch:
+  schedule:
+    # 08:00 BRT = 11:00 UTC
+    - cron: "0 11 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -16,14 +20,21 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  ESMALTES_OPERACAO_ATIVO: "1"
+  ESMALTES_OPERACAO_ALERTA: "1"
+  CRESCIMENTO_ESMALTES_ATIVO: "1"
+  CRESCIMENTO_ESMALTES_ALERTA: "0"
   DECISAO_DIA_ESMALTES_ATIVO: "1"
-  DECISAO_DIA_ESMALTES_ALERTA: "1"
+  DECISAO_DIA_ESMALTES_ALERTA: "0"
+  ECOSSISTEMA_ESMALTES_ATIVO: "1"
+  ECOSSISTEMA_ESMALTES_ALERTA: "0"
+  CRESCIMENTO_ESMALTES_COMBO_ANEXO: "1"
 
 jobs:
-  decisao:
-    name: Veredito do dia → Telegram
+  operacao:
+    name: Operação Impala → Telegram
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,18 +48,31 @@ jobs:
         with:
           path: |
             logs/alertas_cooldown.json
+            logs/esmaltes_operacao_ultima.json
             logs/decisao_dia_esmaltes_ultima.json
             logs/decisao_dia_esmaltes_historico.json
             logs/decisao_dia_esmaltes_kpis.json
             logs/crescimento_esmaltes_ultima.json
+            logs/crescimento_esmaltes_historico.json
+            logs/crescimento_esmaltes_checklist.json
             logs/ecossistema_esmaltes_ultima.json
+            logs/ecossistema_esmaltes_historico.json
             logs/montar_kits_impala_ultima.json
             logs/margem_vendas_ultima.json
             logs/conversao_manicures_ultima.json
             logs/anita_impala_comparativo_ultima.json
             logs/relatorio_estrategia_ml_ultima.json
-          key: decisao-dia-esmaltes-${{ github.run_id }}
+            logs/esmaltes_tendencias_ultima.json
+            logs/esmaltes_busca_kit_ultima.json
+            logs/anita_esmaltes_ultima.json
+            logs/esmaltes_kits_monitor_ultima.json
+            logs/removedores_unha_ultima.json
+            logs/acetona_cruzeiro_ultima.json
+            logs/necessidade_manicures_ultima.json
+            logs/esmaltes_mercado_ultima.json
+          key: esmaltes-operacao-${{ github.run_id }}
           restore-keys: |
+            esmaltes-operacao-
             decisao-dia-esmaltes-
             crescimento-esmaltes-
             ecossistema-esmaltes-
@@ -58,14 +82,14 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Rodar decisão do dia
-        run: python -m agentes.esmaltes.agente_decisao_dia_esmaltes
+      - name: Rodar operação esmaltes consolidada
+        run: python -m agentes.esmaltes.agente_esmaltes_operacao
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-          DECISAO_DIA_ESMALTES_ATIVO: "1"
-          DECISAO_DIA_ESMALTES_ALERTA: "1"
-          DECISAO_DIA_ESMALTES_COOLDOWN_SEG: "86400"
+          ESMALTES_OPERACAO_ATIVO: "1"
+          ESMALTES_OPERACAO_ALERTA: "1"
+          ESMALTES_OPERACAO_COOLDOWN_SEG: "86400"
           CRESCIMENTO_ESMALTES_META_KITS_PCT: "40"
           CRESCIMENTO_ESMALTES_META_MARGEM_PCT: "15"
       - name: Publicar snapshot
@@ -74,15 +98,25 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
+            logs/esmaltes_operacao_ultima.json
             logs/decisao_dia_esmaltes_ultima.json
             logs/decisao_dia_esmaltes_historico.json
             logs/decisao_dia_esmaltes_kpis.json
+            logs/crescimento_esmaltes_ultima.json
+            logs/crescimento_esmaltes_historico.json
+            logs/crescimento_esmaltes_checklist.json
+            logs/ecossistema_esmaltes_ultima.json
+            logs/ecossistema_esmaltes_historico.json
             logs/alertas_cooldown.json
-          key: decisao-dia-esmaltes-${{ github.run_id }}
+          key: esmaltes-operacao-${{ github.run_id }}
       - name: Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: decisao-dia-esmaltes
-          path: logs/decisao_dia_esmaltes_ultima.json
+          name: esmaltes-operacao
+          path: |
+            logs/esmaltes_operacao_ultima.json
+            logs/decisao_dia_esmaltes_ultima.json
+            logs/crescimento_esmaltes_ultima.json
+            logs/ecossistema_esmaltes_ultima.json
           retention-days: 30
           if-no-files-found: ignore

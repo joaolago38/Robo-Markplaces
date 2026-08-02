@@ -65,6 +65,10 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "lucro importar. Também alerta queda/alta forte do câmbio. Telegram: "
         "oportunidades com lucro razoável e alerta de variação USD."
     ),
+    "alibaba_sourcing": (
+        "Consolida busca Alibaba (catálogo) + inteligência de margem/câmbio num "
+        "único run — evita Telegram duplicado. Preferir este no cron."
+    ),
     "ml_tendencias_importacao": (
         "Detecta o que está em alta no Mercado Livre e cruza com preços Alibaba para "
         "indicar se vale importar aquele item agora. Telegram: tendências + veredito "
@@ -138,6 +142,10 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     "decisao_dia_esmaltes": (
         "Um veredito por dia para Impala no ML: FAZER, NÃO FAZER e CUSTO DE NÃO FAZER, "
         "com foco nos 3 SKUs de guerra e piso de margem."
+    ),
+    "esmaltes_operacao": (
+        "Roda crescimento + decisão do dia + ecossistema sem alertas individuais e "
+        "envia um único Telegram consolidado da operação Impala."
     ),
     "monitor_removedores_unha": (
         "Monitora removedores de unha no ML: fabricantes, nomes e ranking por vendas, "
@@ -293,8 +301,9 @@ HORARIOS_AGENTES: dict[str, str] = {
     "lojas_veiculos": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
     "carros_batidos": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
     "licitacoes": "A cada 4h (Actions); fora do orquestrador 30 min",
-    "alibaba": "A cada 2h (Actions); fora do orquestrador 30 min",
-    "alibaba_inteligencia": "A cada 2h (Actions Alibaba); fora do orquestrador 30 min",
+    "alibaba": "Manual / via alibaba_sourcing (cron 2h)",
+    "alibaba_inteligencia": "Manual / via alibaba_sourcing (cron 2h)",
+    "alibaba_sourcing": "A cada 2h (Actions); fora do orquestrador 30 min",
     "ml_tendencias_importacao": "A cada 2h (Actions Alibaba); fora do orquestrador 30 min",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
@@ -308,9 +317,10 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_busca_kit_esmaltes": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
     "monitor_kits_esmaltes": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
     "montar_kits_impala": "A cada 12h (Actions); fora do ciclo 30 min",
-    "ecossistema_esmaltes": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
-    "crescimento_esmaltes": "Todo dia às 09:30 BRT (Actions); fora do ciclo 30 min",
-    "decisao_dia_esmaltes": "Todo dia às 08:00 BRT (Actions); fora do ciclo 30 min",
+    "ecossistema_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
+    "crescimento_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
+    "decisao_dia_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
+    "esmaltes_operacao": "Todo dia às 08:00 BRT (Actions); fora do ciclo 30 min",
     "monitor_removedores_unha": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
     "monitor_tendencias_esmaltes": (
         "2x ao dia às 05:15 e 17:15 BRT (Actions) e a cada 30 min (orquestrador)"
@@ -390,6 +400,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("cambio:usd", "alibaba_inteligencia"),
     ("alibaba:inteligencia", "alibaba_inteligencia"),
     ("alibaba_intel", "alibaba_inteligencia"),
+    ("alibaba_sourcing", "alibaba_sourcing"),
+    ("alibaba:sourcing", "alibaba_sourcing"),
     ("alibaba:", "alibaba"),
     ("importacao:ml_tendencias", "ml_tendencias_importacao"),
     ("ml_tendencias", "ml_tendencias_importacao"),
@@ -418,6 +430,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("crescimento", "crescimento_esmaltes"),
     ("decisao_dia_esmaltes", "decisao_dia_esmaltes"),
     ("decisao_dia", "decisao_dia_esmaltes"),
+    ("esmaltes_operacao", "esmaltes_operacao"),
+    ("operacao_esmaltes", "esmaltes_operacao"),
     ("removedores", "monitor_removedores_unha"),
     ("tendencias_esmaltes", "monitor_tendencias_esmaltes"),
     ("esmaltes:tendencias", "monitor_tendencias_esmaltes"),

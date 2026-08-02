@@ -1,12 +1,9 @@
 name: Crescimento esmaltes (KPI + kits sem MLB)
 
-# Checklist: kits sem MLB, canais pendentes, KPI kits% receita e margem → Telegram.
+# Manual — cron diário migrou para esmaltes_operacao.yml
 
 on:
   workflow_dispatch:
-  schedule:
-    # 09:30 BRT = 12:30 UTC
-    - cron: "30 12 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
