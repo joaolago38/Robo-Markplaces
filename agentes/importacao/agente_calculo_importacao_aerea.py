@@ -22,6 +22,10 @@ from integracoes.importacao.calculo_importacao_aerea import (
     calcular_para_produto_alibaba,
     exportar_csv_resultado,
 )
+from integracoes.importacao.contexto_importacao_cnpj import (
+    anexar_contexto_ao_resultado,
+    formatar_bloco_telegram_contexto,
+)
 from integracoes.importacao.perfil_empresa_importacao import obter_perfil_importador
 
 logger = logging.getLogger("agente_calculo_importacao_aerea")
@@ -92,7 +96,7 @@ def executar_para_oportunidade(
         csv_path.write_text(exportar_csv_resultado(resultado), encoding="utf-8")
         resultado["csv_path"] = str(csv_path)
 
-    return resultado
+    return anexar_contexto_ao_resultado(resultado, calculo=resultado)
 
 
 def executar_para_produto(
@@ -182,6 +186,12 @@ def formatar_resumo_telegram(resultado: dict[str, Any]) -> str:
     ]
     if resultado.get("listing_url"):
         linhas.append(f"🔗 {resultado['listing_url']}")
+    bloco = resultado.get("bloco_telegram_importacao_cnpj")
+    if not bloco:
+        ctx = resultado.get("contexto_importacao_cnpj")
+        bloco = formatar_bloco_telegram_contexto(ctx) if ctx else ""
+    if bloco:
+        linhas.extend(["", bloco])
     return "\n".join(linhas)
 
 

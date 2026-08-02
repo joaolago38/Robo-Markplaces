@@ -318,6 +318,14 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 diag_coleta=diag_coleta,
                 diag_alibaba=diag_alibaba,
             )
+            from integracoes.importacao.contexto_importacao_cnpj import (
+                formatar_bloco_telegram_contexto,
+                montar_contexto_importacao_cnpj,
+            )
+
+            bloco_ctx = formatar_bloco_telegram_contexto(montar_contexto_importacao_cnpj())
+            if bloco_ctx:
+                msg = f"{msg}\n\n{bloco_ctx}"
             alerta_enviado = bool(
                 alertar_gestor(
                     msg,
@@ -330,16 +338,20 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("ml_tendencias_importacao.vale_importar", float(consolidado.get("vale_importar") or 0))
         incrementar("ml_tendencias_importacao.rodadas")
 
-        return {
-            "ok": True,
-            "cotacao": cotacao,
-            "total_produtos": len(resultados),
-            "consolidado": consolidado,
-            "coleta_vazia": bool(diag_coleta),
-            "alibaba_bloqueado": bool(diag_alibaba),
-            "alerta_enviado": alerta_enviado,
-            "resultados": resultados,
-        }
+        from integracoes.importacao.contexto_importacao_cnpj import anexar_contexto_ao_resultado
+
+        return anexar_contexto_ao_resultado(
+            {
+                "ok": True,
+                "cotacao": cotacao,
+                "total_produtos": len(resultados),
+                "consolidado": consolidado,
+                "coleta_vazia": bool(diag_coleta),
+                "alibaba_bloqueado": bool(diag_alibaba),
+                "alerta_enviado": alerta_enviado,
+                "resultados": resultados,
+            }
+        )
     except Exception as exc:
         logger.error("Agente ML tendências importação erro: %s", exc)
         incrementar("ml_tendencias_importacao.erro")

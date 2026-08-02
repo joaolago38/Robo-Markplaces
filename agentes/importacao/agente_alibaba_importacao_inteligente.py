@@ -311,6 +311,23 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
             if ALIBABA_INTELIGENCIA_ALERTA_RESUMO:
                 painel = _montar_painel_produtos(resultados, cotacao, ia_parametros)
+                from integracoes.importacao.contexto_importacao_cnpj import (
+                    formatar_bloco_telegram_contexto,
+                    montar_contexto_importacao_cnpj,
+                )
+
+                calc_ref = None
+                for r in resultados:
+                    melhor = r.get("melhor_analise") or {}
+                    formal = melhor.get("calculo_aereo_formal") if isinstance(melhor, dict) else None
+                    if isinstance(formal, dict) and formal.get("ok"):
+                        calc_ref = formal
+                        break
+                bloco_ctx = formatar_bloco_telegram_contexto(
+                    montar_contexto_importacao_cnpj(calculo=calc_ref)
+                )
+                if bloco_ctx:
+                    painel = f"{painel}\n\n{bloco_ctx}"
                 alerta_painel = bool(
                     alertar_gestor(
                         painel,
@@ -340,7 +357,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 )
 
         total_lucrativas = sum(int(r.get("lucrativas") or 0) for r in resultados)
-        return {
+        payload = {
             "ok": True,
             "cotacao": cotacao,
             "variacao_cambio": variacao,
@@ -352,6 +369,16 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "avaliacao_ia_parametros": ia_parametros,
             "resultados": resultados,
         }
+        calc_ref = None
+        for r in resultados:
+            melhor = r.get("melhor_analise") or {}
+            formal = melhor.get("calculo_aereo_formal") if isinstance(melhor, dict) else None
+            if isinstance(formal, dict) and formal.get("ok"):
+                calc_ref = formal
+                break
+        from integracoes.importacao.contexto_importacao_cnpj import anexar_contexto_ao_resultado
+
+        return anexar_contexto_ao_resultado(payload, calculo=calc_ref)
     except Exception as exc:
         logger.error("Agente Alibaba inteligência erro: %s", exc)
         return {"ok": False, "erro": str(exc), "resultados": []}

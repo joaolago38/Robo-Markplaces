@@ -4,7 +4,77 @@
   "referencia": "alibaba",
   "aviso_legal": "Valores estimados (THC, armazenagem, desembaraço, frete interno). Não substituem cotação formal. ICMS varia por UF de destino.",
   "destino_padrao_cep": "13467-694",
-  "modais": ["aereo", "maritimo"],
+  "modais": ["aereo", "maritimo", "terrestre"],
+  "cobertura_costa_referencia": {
+    "descricao": "Hubs comerciais de referência na costa (e litoral útil) do Brasil para medir % de cobertura do catálogo",
+    "codigos": [
+      "BRSTM", "BRVDC", "BRIOA", "BRPEC", "BRFOR", "BRNAT", "BRCDO",
+      "BRSUA", "BRSSB", "BRARB", "BRIOS", "BRVIX", "BRRIO", "BRSSZ",
+      "BRSSO", "BRPNG", "BRITJ", "BRNVT", "BRIGI", "BRITP", "BRRIG"
+    ]
+  },
+  "paraguai": {
+    "ativo": true,
+    "nota": "Endereço comercial PY + corredor terrestre até destino BR (Mercosul). Sobrescreva via IMPORTACAO_PY_*.",
+    "endereco_comercial_padrao": {
+      "pais": "PY",
+      "cidade": "Ciudad del Este",
+      "departamento": "Alto Paraná",
+      "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+      "codigo_postal": "7000",
+      "lat": -25.5097,
+      "lng": -54.6112,
+      "uso": "referencia_comercial_importacao"
+    },
+    "enderecos_alternativos": [
+      {
+        "id": "asuncion_centro",
+        "cidade": "Asunción",
+        "endereco": "Av. España — zona comercial",
+        "codigo_postal": "1000"
+      },
+      {
+        "id": "encarnacion",
+        "cidade": "Encarnación",
+        "endereco": "Zona comercial fronteira Posadas",
+        "codigo_postal": "6000"
+      }
+    ],
+    "corredores_terrestres": [
+      {
+        "id": "cde_foz_americana",
+        "origem": "Ciudad del Este",
+        "fronteira_br": "Foz do Iguaçu",
+        "uf_entrada": "PR",
+        "destino_cep_padrao": "13467-694",
+        "km_origem_fronteira": 10,
+        "km_fronteira_destino": 980,
+        "km_total_aprox": 990,
+        "custo_terrestre_brl_por_km": 4.2,
+        "custo_fixo_fronteira_brl": 350,
+        "pedagios_estim_brl": 420,
+        "seguro_carga_pct": 0.3,
+        "dias_transito_estim": 3,
+        "ativo": true
+      },
+      {
+        "id": "cde_foz_campinas",
+        "origem": "Ciudad del Este",
+        "fronteira_br": "Foz do Iguaçu",
+        "uf_entrada": "PR",
+        "destino_cep_padrao": "13010-050",
+        "km_origem_fronteira": 10,
+        "km_fronteira_destino": 1050,
+        "km_total_aprox": 1060,
+        "custo_terrestre_brl_por_km": 4.2,
+        "custo_fixo_fronteira_brl": 350,
+        "pedagios_estim_brl": 450,
+        "seguro_carga_pct": 0.3,
+        "dias_transito_estim": 3,
+        "ativo": true
+      }
+    ]
+  },
   "aeroportos": [
     {
       "codigo": "VCP",
@@ -19,7 +89,7 @@
         "armazenagem": 450,
         "desembaraco": 1200,
         "thc_manuseio": 380,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 100
       },
       "frete_interno_brl_por_km": 5.5,
@@ -38,7 +108,7 @@
         "armazenagem": 520,
         "desembaraco": 1300,
         "thc_manuseio": 420,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 120
       },
       "frete_interno_brl_por_km": 6.0,
@@ -57,7 +127,7 @@
         "armazenagem": 480,
         "desembaraco": 1250,
         "thc_manuseio": 400,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 110
       },
       "frete_interno_brl_por_km": 5.8,
@@ -76,7 +146,7 @@
         "armazenagem": 420,
         "desembaraco": 1100,
         "thc_manuseio": 360,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 90
       },
       "frete_interno_brl_por_km": 5.2
@@ -94,7 +164,7 @@
         "armazenagem": 400,
         "desembaraco": 1050,
         "thc_manuseio": 350,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 90
       },
       "frete_interno_brl_por_km": 5.0
@@ -112,7 +182,7 @@
         "armazenagem": 410,
         "desembaraco": 1080,
         "thc_manuseio": 355,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 95
       },
       "frete_interno_brl_por_km": 5.3
@@ -130,7 +200,7 @@
         "armazenagem": 430,
         "desembaraco": 1150,
         "thc_manuseio": 370,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 100
       },
       "frete_interno_brl_por_km": 5.5
@@ -148,7 +218,7 @@
         "armazenagem": 400,
         "desembaraco": 1000,
         "thc_manuseio": 340,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 85
       },
       "frete_interno_brl_por_km": 5.0
@@ -166,7 +236,7 @@
         "armazenagem": 390,
         "desembaraco": 980,
         "thc_manuseio": 330,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 80
       },
       "frete_interno_brl_por_km": 4.8
@@ -184,7 +254,7 @@
         "armazenagem": 395,
         "desembaraco": 990,
         "thc_manuseio": 335,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 85
       },
       "frete_interno_brl_por_km": 4.9
@@ -202,7 +272,7 @@
         "armazenagem": 380,
         "desembaraco": 950,
         "thc_manuseio": 320,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 80
       },
       "frete_interno_brl_por_km": 6.5,
@@ -221,7 +291,7 @@
         "armazenagem": 385,
         "desembaraco": 960,
         "thc_manuseio": 325,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 80
       },
       "frete_interno_brl_por_km": 5.5
@@ -241,7 +311,7 @@
         "armazenagem": 600,
         "desembaraco": 1500,
         "thc_manuseio": 900,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 200
       },
       "frete_interno_brl_por_km": 4.5,
@@ -260,7 +330,7 @@
         "armazenagem": 550,
         "desembaraco": 1400,
         "thc_manuseio": 850,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 180
       },
       "frete_interno_brl_por_km": 4.3
@@ -278,7 +348,7 @@
         "armazenagem": 520,
         "desembaraco": 1350,
         "thc_manuseio": 820,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 170
       },
       "frete_interno_brl_por_km": 4.2
@@ -296,7 +366,7 @@
         "armazenagem": 510,
         "desembaraco": 1320,
         "thc_manuseio": 800,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 165
       },
       "frete_interno_brl_por_km": 4.2
@@ -314,7 +384,7 @@
         "armazenagem": 580,
         "desembaraco": 1450,
         "thc_manuseio": 880,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 190
       },
       "frete_interno_brl_por_km": 4.6,
@@ -333,7 +403,7 @@
         "armazenagem": 500,
         "desembaraco": 1300,
         "thc_manuseio": 780,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 160
       },
       "frete_interno_brl_por_km": 4.4
@@ -351,7 +421,7 @@
         "armazenagem": 490,
         "desembaraco": 1280,
         "thc_manuseio": 760,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 155
       },
       "frete_interno_brl_por_km": 4.3
@@ -369,7 +439,7 @@
         "armazenagem": 505,
         "desembaraco": 1310,
         "thc_manuseio": 770,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 160
       },
       "frete_interno_brl_por_km": 4.4
@@ -387,7 +457,7 @@
         "armazenagem": 530,
         "desembaraco": 1360,
         "thc_manuseio": 800,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 170
       },
       "frete_interno_brl_por_km": 4.5
@@ -405,7 +475,7 @@
         "armazenagem": 500,
         "desembaraco": 1290,
         "thc_manuseio": 790,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 160
       },
       "frete_interno_brl_por_km": 4.3
@@ -423,7 +493,7 @@
         "armazenagem": 480,
         "desembaraco": 1250,
         "thc_manuseio": 750,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 150
       },
       "frete_interno_brl_por_km": 4.8
@@ -441,7 +511,7 @@
         "armazenagem": 450,
         "desembaraco": 1100,
         "thc_manuseio": 700,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 140
       },
       "frete_interno_brl_por_km": 6.0,
@@ -460,7 +530,7 @@
         "armazenagem": 540,
         "desembaraco": 1380,
         "thc_manuseio": 830,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 175
       },
       "frete_interno_brl_por_km": 4.4
@@ -473,15 +543,168 @@
       "tipo": "maritimo",
       "ativo": true,
       "atratividade": 71,
+      "costa": true,
       "frete_internacional_usd_kg": 0.98,
       "custos_locais_brl": {
         "armazenagem": 510,
         "desembaraco": 1320,
         "thc_manuseio": 780,
-        "siscomex": 214.5,
+        "siscomex": 154.23,
         "outros": 160
       },
       "frete_interno_brl_por_km": 4.5
+    },
+    {
+      "codigo": "BRSTM",
+      "nome": "Santana",
+      "cidade": "Santana",
+      "uf": "AP",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 54,
+      "frete_internacional_usd_kg": 1.2,
+      "custos_locais_brl": {
+        "armazenagem": 420,
+        "desembaraco": 1050,
+        "thc_manuseio": 680,
+        "siscomex": 154.23,
+        "outros": 130
+      },
+      "frete_interno_brl_por_km": 5.5
+    },
+    {
+      "codigo": "BRVDC",
+      "nome": "Vila do Conde / Belém",
+      "cidade": "Barcarena",
+      "uf": "PA",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 64,
+      "frete_internacional_usd_kg": 1.1,
+      "custos_locais_brl": {
+        "armazenagem": 460,
+        "desembaraco": 1150,
+        "thc_manuseio": 720,
+        "siscomex": 154.23,
+        "outros": 140
+      },
+      "frete_interno_brl_por_km": 5.2
+    },
+    {
+      "codigo": "BRFOR",
+      "nome": "Mucuripe / Fortaleza",
+      "cidade": "Fortaleza",
+      "uf": "CE",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 73,
+      "frete_internacional_usd_kg": 0.97,
+      "custos_locais_brl": {
+        "armazenagem": 495,
+        "desembaraco": 1270,
+        "thc_manuseio": 755,
+        "siscomex": 154.23,
+        "outros": 155
+      },
+      "frete_interno_brl_por_km": 4.4
+    },
+    {
+      "codigo": "BRNAT",
+      "nome": "Natal",
+      "cidade": "Natal",
+      "uf": "RN",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 60,
+      "frete_internacional_usd_kg": 1.05,
+      "custos_locais_brl": {
+        "armazenagem": 470,
+        "desembaraco": 1180,
+        "thc_manuseio": 730,
+        "siscomex": 154.23,
+        "outros": 145
+      },
+      "frete_interno_brl_por_km": 4.6
+    },
+    {
+      "codigo": "BRCDO",
+      "nome": "Cabedelo",
+      "cidade": "Cabedelo",
+      "uf": "PB",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 58,
+      "frete_internacional_usd_kg": 1.05,
+      "custos_locais_brl": {
+        "armazenagem": 465,
+        "desembaraco": 1160,
+        "thc_manuseio": 725,
+        "siscomex": 154.23,
+        "outros": 140
+      },
+      "frete_interno_brl_por_km": 4.6
+    },
+    {
+      "codigo": "BRIOS",
+      "nome": "Ilhéus",
+      "cidade": "Ilhéus",
+      "uf": "BA",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 56,
+      "frete_internacional_usd_kg": 1.08,
+      "custos_locais_brl": {
+        "armazenagem": 455,
+        "desembaraco": 1140,
+        "thc_manuseio": 710,
+        "siscomex": 154.23,
+        "outros": 140
+      },
+      "frete_interno_brl_por_km": 4.7
+    },
+    {
+      "codigo": "BRSSO",
+      "nome": "São Sebastião",
+      "cidade": "São Sebastião",
+      "uf": "SP",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 77,
+      "frete_internacional_usd_kg": 0.9,
+      "custos_locais_brl": {
+        "armazenagem": 560,
+        "desembaraco": 1420,
+        "thc_manuseio": 860,
+        "siscomex": 154.23,
+        "outros": 180
+      },
+      "frete_interno_brl_por_km": 4.6
+    },
+    {
+      "codigo": "BRITP",
+      "nome": "Itapoá",
+      "cidade": "Itapoá",
+      "uf": "SC",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 82,
+      "frete_internacional_usd_kg": 0.89,
+      "custos_locais_brl": {
+        "armazenagem": 515,
+        "desembaraco": 1330,
+        "thc_manuseio": 805,
+        "siscomex": 154.23,
+        "outros": 165
+      },
+      "frete_interno_brl_por_km": 4.2
     }
   ],
   "distancias_km_aproximadas": {
@@ -511,7 +734,16 @@
       "BRIOA": 3000,
       "BRMAO": 3200,
       "BRRIG": 1200,
-      "BRARB": 1720
+      "BRARB": 1720,
+      "BRSTM": 3400,
+      "BRVDC": 2950,
+      "BRFOR": 2800,
+      "BRNAT": 2700,
+      "BRCDO": 2600,
+      "BRIOS": 1900,
+      "BRSSO": 280,
+      "BRITP": 720,
+      "PY_CDE_FOZ": 990
     }
   }
 }

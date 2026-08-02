@@ -36,12 +36,17 @@ def _eh_produto_filamento(produto: dict[str, Any]) -> bool:
 def carregar_produtos_filamento_alibaba() -> list[dict[str, Any]]:
     from core.atomic_io import ler_json
     from core.config import ALIBABA_IMPORTACAO_CATALOGO, ROOT
+    from integracoes.filamentos.contexto_importacao_filamento import enriquecer_produto_filamento_alibaba
 
     caminho = ROOT / ALIBABA_IMPORTACAO_CATALOGO
     data = ler_json(caminho, default=[])
     if not isinstance(data, list):
         return []
-    return [p for p in data if isinstance(p, dict) and p.get("ativo") and _eh_produto_filamento(p)]
+    return [
+        enriquecer_produto_filamento_alibaba(p)
+        for p in data
+        if isinstance(p, dict) and p.get("ativo") and _eh_produto_filamento(p)
+    ]
 
 
 def _material_compatível(mat_ml: str, produto: dict[str, Any]) -> bool:
@@ -264,16 +269,33 @@ def cruzar_filamentos_ml_alibaba(
     alibaba_bloqueado = any(
         (c.get("coleta_alibaba") or {}).get("bloqueado") for c in cruzamentos
     )
-    return {
-        "ok": True,
-        "produtos_catalogo": len(produtos),
-        "cruzamentos": cruzamentos,
-        "lucrativos": len(lucrativos),
-        "cores_usadas": [c.get("cor") for c in cores_top],
-        "cambio_usd_brl": cambio,
-        "cambio_confiavel": True,
-        "alibaba_bloqueado": alibaba_bloqueado,
-    }
+    from integracoes.filamentos.contexto_importacao_filamento import anexar_contexto_filamento
+
+    calc_ref = None
+    for c in cruzamentos:
+        melhor = c.get("melhor_analise") or {}
+        formal = melhor.get("calculo_aereo_formal") if isinstance(melhor, dict) else None
+        if isinstance(formal, dict) and formal.get("ok"):
+            calc_ref = formal
+            break
+        cen = (melhor.get("cenarios_frete") or {}).get("maritimo") if isinstance(melhor, dict) else None
+        if isinstance(cen, dict) and cen.get("ok"):
+            calc_ref = cen
+            break
+
+    return anexar_contexto_filamento(
+        {
+            "ok": True,
+            "produtos_catalogo": len(produtos),
+            "cruzamentos": cruzamentos,
+            "lucrativos": len(lucrativos),
+            "cores_usadas": [c.get("cor") for c in cores_top],
+            "cambio_usd_brl": cambio,
+            "cambio_confiavel": True,
+            "alibaba_bloqueado": alibaba_bloqueado,
+        },
+        calculo=calc_ref,
+    )
 
 
 def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[str]:
@@ -333,7 +355,7 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
             cen = melhor.get("cenarios_frete") or {}
             modo = melhor.get("melhor_frete")
             if modo and isinstance(cen.get(modo), dict):
-                custo = cen[modo].get("custo_landed_brl")
+                custo = cen[modo].get("custo_unitario_brl") or cen[modo].get("custo_landed_brl")
             fob = melhor.get("preco_usd")
             fob_brl = None
             try:
@@ -349,6 +371,13 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
                 f"vs ML méd: margem {fmt_brl(margem.get('margem_brl'))} "
                 f"({margem.get('margem_pct') or 'n/d'}%) {flag}"
             )
+            landed_m = cen.get("maritimo") if isinstance(cen.get("maritimo"), dict) else {}
+            if landed_m.get("siscomex_brl") is not None:
+                linhas.append(
+                    f"  · Siscomex {fmt_brl(landed_m.get('siscomex_brl'))} · "
+                    f"AFRMM {fmt_brl(landed_m.get('afrmm_brl'))} · "
+                    f"impostos {fmt_brl(landed_m.get('impostos_total_brl'))}"
+                )
             if melhor.get("cor_foco"):
                 linhas.append(f"  · cor foco: {melhor.get('cor_foco')}")
         elif int(item.get("total_oportunidades_alibaba") or 0) == 0:
@@ -360,4 +389,7 @@ def formatar_secao_cruzamento(cruzamento: dict[str, Any], *, fmt_brl) -> list[st
                 f"  · {pc.get('cor')}: {pc.get('total_oportunidades')} oferta(s), "
                 f"{pc.get('lucrativas', 0)} lucrativa(s)"
             )
+    bloco = cruzamento.get("bloco_telegram_importacao_cnpj")
+    if bloco:
+        linhas.extend(["", bloco])
     return linhas

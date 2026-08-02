@@ -22,6 +22,10 @@ from core.config import (
     ROOT,
 )
 from integracoes.importacao.custo_landed import calcular_cenarios_frete, calcular_margem_revenda
+from integracoes.filamentos.contexto_importacao_filamento import (
+    anexar_contexto_filamento,
+    params_landed_filamento,
+)
 
 logger = logging.getLogger("sourcing_filamentos")
 
@@ -254,15 +258,22 @@ def analisar_material(
     landed = None
     custo_china = None
     margens_china = None
+    params_imp = params_landed_filamento(fornecedor_br)
     if fob > 0 and cambio_usd_brl > 0:
         landed = calcular_cenarios_frete(
             fob,
             cambio_usd_brl=cambio_usd_brl,
             peso_kg_unit=_f((fornecedor_br or {}).get("peso_kg"), 1.0) or 1.0,
             quantidade=qty,
-            ii_pct=FILAMENTOS_SOURCING_II_PCT,
-            ipi_pct=FILAMENTOS_SOURCING_IPI_PCT,
-            icms_pct=FILAMENTOS_SOURCING_ICMS_PCT,
+            ii_pct=params_imp["ii_pct"],
+            ipi_pct=params_imp["ipi_pct"],
+            pis_pct=params_imp["pis_pct"],
+            cofins_pct=params_imp["cofins_pct"],
+            icms_pct=params_imp["icms_pct"],
+            siscomex_brl=params_imp["siscomex_brl"],
+            siscomex_adicoes=params_imp["siscomex_adicoes"],
+            desembaraco_brl=params_imp["desembaraco_brl"],
+            afrmm_pct=params_imp["afrmm_pct"],
         )
         mar = landed.get("maritimo") or {}
         if mar.get("ok"):
@@ -278,10 +289,15 @@ def analisar_material(
         margem_min_pct=margem_min,
     )
 
+    mar_landed = (landed or {}).get("maritimo") or {}
+    aer_landed = (landed or {}).get("aereo") or {}
+
     return {
         "ok": True,
         "material": mat,
-        "ncm": FILAMENTOS_SOURCING_NCM,
+        "ncm": params_imp.get("ncm") or FILAMENTOS_SOURCING_NCM,
+        "cnpj_importador": params_imp.get("cnpj_importador"),
+        "cep_destino": params_imp.get("cep_destino"),
         "preco_venda_brl": round(venda, 2) if venda > 0 else None,
         "precos_ml": precos_ml,
         "fornecedor_br": {
@@ -297,8 +313,23 @@ def analisar_material(
             "moq": qty,
             "cambio_usd_brl": round(cambio_usd_brl, 4),
             "custo_unitario_maritimo_brl": custo_china,
-            "custo_unitario_aereo_brl": _f((landed or {}).get("aereo", {}).get("custo_unitario_brl")) or None,
+            "custo_unitario_aereo_brl": _f(aer_landed.get("custo_unitario_brl")) or None,
             "melhor_frete": (landed or {}).get("melhor_frete"),
+            "siscomex_brl": params_imp.get("siscomex_brl"),
+            "siscomex_adicoes": params_imp.get("siscomex_adicoes"),
+            "afrmm_brl": mar_landed.get("afrmm_brl"),
+            "despesas_aduaneiras_inclusas": True,
+            "impostos_maritimo": {
+                "ii_brl": mar_landed.get("ii_brl"),
+                "ipi_brl": mar_landed.get("ipi_brl"),
+                "pis_cofins_brl": mar_landed.get("pis_cofins_brl"),
+                "icms_brl": mar_landed.get("icms_brl"),
+                "siscomex_brl": mar_landed.get("siscomex_brl"),
+                "afrmm_brl": mar_landed.get("afrmm_brl"),
+                "impostos_total_brl": mar_landed.get("impostos_total_brl"),
+            }
+            if mar_landed.get("ok")
+            else None,
         },
         "margens_br": margens_br,
         "margens_china_maritimo": margens_china,
@@ -361,7 +392,26 @@ def analisar_sourcing(
         "NAO_COMPENSA": sum(1 for a in analises if a.get("veredito") == "NAO_COMPENSA"),
     }
 
-    return {
+    # Cálculo de referência (melhor marítimo entre análises) para breakdown Siscomex/aduaneiro
+    calc_ref = None
+    for a in analises:
+        imp = (a.get("china") or {}).get("impostos_maritimo")
+        if imp and imp.get("impostos_total_brl"):
+            calc_ref = {
+                "ok": True,
+                "ii_brl": imp.get("ii_brl"),
+                "ipi_brl": imp.get("ipi_brl"),
+                "pis_cofins_brl": imp.get("pis_cofins_brl"),
+                "icms_brl": imp.get("icms_brl"),
+                "siscomex_brl": (a.get("china") or {}).get("siscomex_brl"),
+                "afrmm_brl": imp.get("afrmm_brl"),
+                "custo_total_brl": (a.get("china") or {}).get("custo_unitario_maritimo_brl"),
+                "custo_unitario_brl": (a.get("china") or {}).get("custo_unitario_maritimo_brl"),
+                "impostos_total_brl": imp.get("impostos_total_brl"),
+            }
+            break
+
+    payload = {
         "ok": True,
         "cambio_usd_brl": round(float(cambio_usd_brl), 4),
         "ncm": FILAMENTOS_SOURCING_NCM,
@@ -370,6 +420,7 @@ def analisar_sourcing(
         "analises": analises,
         "resumo_vereditos": resumo,
     }
+    return anexar_contexto_filamento(payload, calculo=calc_ref)
 
 
 def formatar_secao_sourcing(sourcing: dict[str, Any] | None, *, fmt_brl) -> list[str]:
@@ -381,6 +432,16 @@ def formatar_secao_sourcing(sourcing: dict[str, Any] | None, *, fmt_brl) -> list
         f"_NCM {sourcing.get('ncm')} · MOQ China {sourcing.get('moq_china_padrao')} kg · "
         f"câmbio R$ {sourcing.get('cambio_usd_brl')}_",
     ]
+    ctx = sourcing.get("contexto_importacao_cnpj") or {}
+    cnpj = (ctx.get("cnpj") or {}).get("cnpj_formatado") or (ctx.get("cnpj") or {}).get("cnpj")
+    cep = (ctx.get("cep") or {}).get("destino_cep")
+    if cnpj or cep:
+        linhas.append(
+            f"_Importação CNPJ `{cnpj or '?'}` · CEP `{cep or '13467-694'}` · "
+            f"Siscomex vigente (DI+adições)_"
+        )
+    bloco = sourcing.get("bloco_telegram_importacao_cnpj")
+    # bloco completo no fim da seção (após vereditos)
     analises = sourcing.get("analises") or []
     if not analises:
         linhas.append("_Sem materiais com custo BR ou preço ML para decidir._")
@@ -407,4 +468,6 @@ def formatar_secao_sourcing(sourcing: dict[str, Any] | None, *, fmt_brl) -> list
         f"China {resumo.get('IMPORTAR_CHINA', 0)} · "
         f"não compensa {resumo.get('NAO_COMPENSA', 0)}_"
     )
+    if bloco:
+        linhas.extend(["", bloco])
     return linhas

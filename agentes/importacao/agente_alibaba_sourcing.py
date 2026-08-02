@@ -62,12 +62,21 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("alibaba_sourcing.intel_ok", 1.0 if out_intel.get("ok") else 0.0)
         incrementar("alibaba_sourcing.ok" if ok else "alibaba_sourcing.erro")
 
-        return {
+        from integracoes.importacao.contexto_importacao_cnpj import anexar_contexto_ao_resultado
+
+        payload = {
             "ok": ok,
             "alerta_enviado": bool(out_intel.get("alerta_enviado")),
             "busca": out_busca,
             "inteligencia": out_intel,
         }
+        if out_intel.get("contexto_importacao_cnpj"):
+            payload["contexto_importacao_cnpj"] = out_intel["contexto_importacao_cnpj"]
+            payload["bloco_telegram_importacao_cnpj"] = out_intel.get(
+                "bloco_telegram_importacao_cnpj"
+            )
+            return payload
+        return anexar_contexto_ao_resultado(payload)
     except Exception as exc:
         logger.error("agente_alibaba_sourcing erro: %s", exc)
         incrementar("alibaba_sourcing.erro")

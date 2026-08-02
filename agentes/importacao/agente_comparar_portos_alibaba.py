@@ -22,6 +22,10 @@ from integracoes.importacao.comparar_portos_alibaba import (
     comparar_portos_para_produto_alibaba,
     formatar_comparacao_telegram,
 )
+from integracoes.importacao.contexto_importacao_cnpj import (
+    CEP_TESTE_PADRAO,
+    anexar_contexto_ao_resultado,
+)
 
 logger = logging.getLogger("agente_comparar_portos_alibaba")
 
@@ -58,13 +62,16 @@ def executar(
         prod.setdefault("moq_referencia", int(quantidade))
     prod.setdefault("fonte", "alibaba")
 
+    cep_efetivo = cep or CEP_TESTE_PADRAO
     out = comparar_portos_para_produto_alibaba(
         prod,
-        cep_destino=cep,
+        cep_destino=cep_efetivo,
         modal=modal,
     )
     msg = formatar_comparacao_telegram(out)
     out["mensagem"] = msg
+    out = anexar_contexto_ao_resultado(out, calculo=out)
+    msg = out.get("mensagem") or msg
 
     if enviar_alerta and out.get("ok") and gestor_telegram_configurado():
         try:
@@ -90,7 +97,7 @@ def main() -> None:
     p.add_argument("--peso", type=float, default=1.0)
     p.add_argument("--qty", type=int, default=100)
     p.add_argument("--modal", choices=["todos", "aereo", "maritimo"], default="todos")
-    p.add_argument("--cep", default="", help="CEP destino (default 13467-694)")
+    p.add_argument("--cep", default=CEP_TESTE_PADRAO, help="CEP destino (teste: 13467-694)")
     p.add_argument("--alerta", action="store_true")
     p.add_argument("--json", action="store_true")
     args = p.parse_args()
@@ -100,7 +107,7 @@ def main() -> None:
         peso_kg=args.peso,
         quantidade=args.qty,
         modal=args.modal,
-        cep=args.cep or None,
+        cep=args.cep or CEP_TESTE_PADRAO,
         enviar_alerta=args.alerta,
     )
     if args.json:

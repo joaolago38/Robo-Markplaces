@@ -13,7 +13,7 @@ from core.config import ROOT
 
 logger = logging.getLogger("portos_brasil")
 
-TipoModal = Literal["aereo", "maritimo", "todos"]
+TipoModal = Literal["aereo", "maritimo", "terrestre", "todos"]
 
 _CATALOGO_DEFAULT = "catalogo/portos_aeroportos_brasil.json"
 _ICMS_UF = {
@@ -93,12 +93,19 @@ def distancia_km_para_cep(codigo_gateway: str, cep: str | None = None) -> float:
 
 
 def icms_gateway(gateway: dict[str, Any], uf_destino: str | None = None) -> float:
+    """
+    ICMS para o cálculo.
+    Se uf_destino informado, usa a alíquota do destino (comparação justa entre portos).
+    Senão, cai no icms_uf_pct do gateway ou UF do porto.
+    """
+    if uf_destino:
+        return float(_ICMS_UF.get(str(uf_destino).upper(), 18.0))
     if gateway.get("icms_uf_pct") is not None:
         try:
             return float(gateway["icms_uf_pct"])
         except (TypeError, ValueError):
             pass
-    uf = (uf_destino or gateway.get("uf") or "SP").upper()
+    uf = (gateway.get("uf") or "SP").upper()
     return float(_ICMS_UF.get(uf, 18.0))
 
 
@@ -119,4 +126,124 @@ def resumo_estrutura_gateway(gateway: dict[str, Any]) -> dict[str, Any]:
         "custos_locais_brl": custos,
         "frete_interno_brl_por_km": gateway.get("frete_interno_brl_por_km"),
         "notas": gateway.get("notas") or "",
+    }
+
+
+def cobertura_costa_brasil() -> dict[str, Any]:
+    """
+    % dos hubs de referência da costa brasileira presentes e ativos no catálogo.
+    """
+    cat = carregar_catalogo_portos()
+    ref = (cat.get("cobertura_costa_referencia") or {}).get("codigos") or []
+    ref_set = {str(c).upper() for c in ref}
+    ativos = {
+        str(g.get("codigo") or "").upper()
+        for g in listar_gateways(modal="maritimo", apenas_ativos=True)
+    }
+    cobertos = sorted(ref_set & ativos)
+    faltando = sorted(ref_set - ativos)
+    total_ref = len(ref_set) or 1
+    pct = round(100.0 * len(cobertos) / total_ref, 1)
+    return {
+        "ok": True,
+        "referencia_total": len(ref_set),
+        "cobertos": cobertos,
+        "faltando": faltando,
+        "cobertura_pct": pct,
+        "portos_maritimos_ativos": len(ativos),
+        "ufs_costa": sorted(
+            {
+                str(g.get("uf") or "")
+                for g in listar_gateways(modal="maritimo", apenas_ativos=True)
+                if g.get("uf") and g.get("codigo") in cobertos
+            }
+        ),
+    }
+
+
+def endereco_comercial_paraguai() -> dict[str, Any]:
+    """Endereço comercial PY (default Ciudad del Este) — sobrescritível por env."""
+    from core import config as cfg
+
+    cat = carregar_catalogo_portos()
+    py = cat.get("paraguai") if isinstance(cat.get("paraguai"), dict) else {}
+    base = dict(py.get("endereco_comercial_padrao") or {})
+
+    if getattr(cfg, "IMPORTACAO_PY_ENDERECO", ""):
+        base["endereco"] = cfg.IMPORTACAO_PY_ENDERECO
+    if getattr(cfg, "IMPORTACAO_PY_CIDADE", ""):
+        base["cidade"] = cfg.IMPORTACAO_PY_CIDADE
+    if getattr(cfg, "IMPORTACAO_PY_DEPARTAMENTO", ""):
+        base["departamento"] = cfg.IMPORTACAO_PY_DEPARTAMENTO
+    if getattr(cfg, "IMPORTACAO_PY_CODIGO_POSTAL", ""):
+        base["codigo_postal"] = cfg.IMPORTACAO_PY_CODIGO_POSTAL
+
+    return {
+        "ok": bool(py.get("ativo", True) and base),
+        "ativo": bool(py.get("ativo", True)),
+        "endereco": base,
+        "alternativos": list(py.get("enderecos_alternativos") or []),
+        "via_env": bool(getattr(cfg, "IMPORTACAO_PY_ENDERECO", "") or getattr(cfg, "IMPORTACAO_PY_CIDADE", "")),
+    }
+
+
+def corredores_terrestres_py_br(*, cep_destino: str | None = None) -> list[dict[str, Any]]:
+    from integracoes.importacao.operacao_destino import normalizar_cep
+
+    cat = carregar_catalogo_portos()
+    py = cat.get("paraguai") if isinstance(cat.get("paraguai"), dict) else {}
+    cep = normalizar_cep(cep_destino or cat.get("destino_padrao_cep") or "13467-694")
+    out = []
+    for c in py.get("corredores_terrestres") or []:
+        if not isinstance(c, dict) or not c.get("ativo", True):
+            continue
+        item = dict(c)
+        # Se o corredor tem CEP padrão diferente e o usuário pediu outro, ajusta km via tabela se houver
+        dest_padrao = normalizar_cep(str(item.get("destino_cep_padrao") or ""))
+        if cep != dest_padrao:
+            item["destino_cep"] = cep
+            item["km_ajustado"] = True
+        else:
+            item["destino_cep"] = cep
+            item["km_ajustado"] = False
+        out.append(item)
+    return out
+
+
+def calcular_frete_terrestre_py_br(
+    corredor: dict[str, Any],
+    *,
+    valor_carga_brl: float = 0.0,
+    quantidade: int = 1,
+) -> dict[str, Any]:
+    """Custo terrestre PY → fronteira BR → CEP destino (estrutura no Brasil)."""
+    km = float(corredor.get("km_total_aprox") or 0)
+    if km <= 0:
+        km = float(corredor.get("km_origem_fronteira") or 0) + float(
+            corredor.get("km_fronteira_destino") or 0
+        )
+    por_km = float(corredor.get("custo_terrestre_brl_por_km") or 4.2)
+    fixo = float(corredor.get("custo_fixo_fronteira_brl") or 0)
+    pedagios = float(corredor.get("pedagios_estim_brl") or 0)
+    seguro_pct = float(corredor.get("seguro_carga_pct") or 0)
+    frete = km * por_km
+    seguro = valor_carga_brl * (seguro_pct / 100.0)
+    total = frete + fixo + pedagios + seguro
+    qty = max(1, int(quantidade))
+    return {
+        "ok": True,
+        "modal": "terrestre",
+        "corredor_id": corredor.get("id"),
+        "origem": corredor.get("origem"),
+        "fronteira_br": corredor.get("fronteira_br"),
+        "uf_entrada": corredor.get("uf_entrada"),
+        "destino_cep": corredor.get("destino_cep"),
+        "km_total": round(km, 1),
+        "frete_km_brl": round(frete, 2),
+        "fixo_fronteira_brl": round(fixo, 2),
+        "pedagios_brl": round(pedagios, 2),
+        "seguro_brl": round(seguro, 2),
+        "custo_total_brl": round(total, 2),
+        "custo_unitario_brl": round(total / qty, 2),
+        "dias_transito_estim": corredor.get("dias_transito_estim"),
     }

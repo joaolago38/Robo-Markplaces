@@ -2,6 +2,13 @@
 integracoes/importacao/calculo_importacao_aerea.py
 Cálculo formal de importação aérea CNPJ — Viracopos (VCP) → Americana-SP.
 Função pura testável: calcular_custo_importacao_aerea_formal().
+
+Cascata com despesas aduaneiras (legislação BR — estimativa):
+  CIF (valor aduaneiro) → II → IPI → PIS/COFINS-Importação →
+  despesas locais (armazenagem, desembaraço, THC, Siscomex, frete rod.) →
+  ICMS por dentro.
+
+Refs: Decreto 6.759/2009 · TEC/TIPI · Lei 10.865/2004 · Siscomex · ICMS estadual.
 """
 from __future__ import annotations
 
@@ -41,6 +48,17 @@ _ICMS_UF_PCT: dict[str, float] = {
     "SP": 18.0,
     "SE": 18.0,
     "TO": 18.0,
+}
+
+REFERENCIA_LEGISLACAO_BR_AEREO = {
+    "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+    "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+    "ipi": "IPI — TIPI (base CIF+II)",
+    "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação (padrão 11,75%)",
+    "siscomex": "Taxa de utilização do Siscomex (DI)",
+    "despesas_locais": "Armazenagem/THC/desembaraço — despesas até o desembaraço",
+    "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+    "aviso": "Estimativa; confirme NCM/alíquotas com despachante. AFRMM não se aplica ao aéreo.",
 }
 
 
@@ -112,6 +130,29 @@ def montar_entradas_de_produto(
 
     uf = str(dest.get("uf") or "SP").upper()
 
+    # Siscomex: Portaria ME 4.131/2021 — DI + adições (não usar legado 214,50)
+    from integracoes.importacao.siscomex import calcular_taxa_siscomex, taxa_siscomex_brl
+
+    try:
+        from core import config as cfg
+
+        adicoes_cfg = int(getattr(cfg, "IMPORTACAO_SISCOMEX_ADICOES", 1) or 1)
+    except Exception:
+        adicoes_cfg = 1
+    adicoes = max(1, _i(produto.get("siscomex_adicoes") or custos.get("siscomex_adicoes") or adicoes_cfg, 1))
+    # Se catálogo/env fixou valor explícito e válido pós-2021, respeita; senão calcula
+    siscomex_fixo = custos.get("siscomex")
+    if siscomex_fixo is not None and abs(_f(siscomex_fixo) - 214.5) < 0.01:
+        siscomex_brl = taxa_siscomex_brl(adicoes=adicoes)
+        siscomex_calc = calcular_taxa_siscomex(adicoes=adicoes)
+    elif siscomex_fixo is not None and _f(siscomex_fixo) > 0:
+        siscomex_brl = _f(siscomex_fixo)
+        siscomex_calc = calcular_taxa_siscomex(adicoes=adicoes)
+        siscomex_calc = {**siscomex_calc, "total_brl": siscomex_brl, "origem": "catalogo_fixo"}
+    else:
+        siscomex_calc = calcular_taxa_siscomex(adicoes=adicoes)
+        siscomex_brl = float(siscomex_calc["total_brl"])
+
     return {
         "fob_usd": fob_usd,
         "fob_usd_listing": fob_usd_bruto,
@@ -133,7 +174,9 @@ def montar_entradas_de_produto(
         "armazenagem_brl": _f(custos.get("armazenagem_aeroportuaria"), 450.0),
         "desembaraco_brl": _f(custos.get("desembaraco_despachante"), 1200.0),
         "thc_brl": _f(custos.get("thc_manuseio_aereo"), 380.0),
-        "siscomex_brl": _f(custos.get("siscomex"), 214.5),
+        "siscomex_brl": siscomex_brl,
+        "siscomex_adicoes": adicoes,
+        "siscomex_detalhe": siscomex_calc,
         "frete_rodoviario_brl": _f(frete_rod),
     }
 
@@ -213,7 +256,7 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     _add("armazenagem", "Armazenagem Viracopos", armazenagem, "despesas_locais")
     _add("desembaraco", "Desembaraço aduaneiro", desembaraco, "despesas_locais")
     _add("thc", "THC / manuseio aéreo", thc, "despesas_locais")
-    _add("siscomex", "SISCOMEX", siscomex, "despesas_locais")
+    _add("siscomex", "Taxa Siscomex (DI+adições)", siscomex, "despesas_locais")
     _add("frete_rod", "Frete rodoviário VCP → destino", frete_rod, "despesas_locais")
 
     for item in itens:
@@ -253,12 +296,18 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
         "ipi_brl": round(ipi_brl, 2),
         "pis_cofins_brl": round(pis_cofins_brl, 2),
         "icms_brl": round(icms_brl, 2),
+        "siscomex_brl": round(siscomex, 2),
+        "desembaraco_brl": round(desembaraco, 2),
         "despesas_locais_brl": round(despesas_locais, 2),
+        "despesas_aduaneiras_inclusas": True,
+        "siscomex_adicoes": entradas.get("siscomex_adicoes"),
+        "siscomex_detalhe": entradas.get("siscomex_detalhe"),
         "custo_total_brl": round(custo_total_brl, 2),
         "custo_unitario_brl": custo_unitario_brl,
         "quantidade": qty,
         "itens": itens,
         "composicao_grafico": composicao,
+        "referencia_legislacao_br": REFERENCIA_LEGISLACAO_BR_AEREO,
         "aviso_legal": fixa.get("aviso_legal")
         or "Estimativa para planejamento — confirme NCM e alíquotas com despachante.",
     }

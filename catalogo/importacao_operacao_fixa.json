@@ -3,6 +3,13 @@
   "razao_social": "",
   "endereco": "",
   "regime_tributario": "lucro_presumido",
+  "responsavel": {
+    "nome": "Responsável Importação",
+    "cargo": "Despacho / acompanhamento aduaneiro",
+    "contato": "",
+    "documento": "",
+    "nota": "Sobrescreva com IMPORTACAO_RESPONSAVEL_NOME / _CARGO / _CONTATO"
+  },
   "modal_transporte": "aereo",
   "aeroporto_desembaraco": {
     "codigo": "VCP",
@@ -15,7 +22,7 @@
     "cidade": "Americana",
     "uf": "SP",
     "distancia_km_viracopos": 120,
-    "nota": "CEP padrão da operação. Sobrescreva com IMPORTACAO_DESTINO_CEP (e cidade/UF/km) sem editar este arquivo."
+    "nota": "CEP de teste/padrão da operação. Sobrescreva com IMPORTACAO_DESTINO_CEP (e cidade/UF/km) sem editar este arquivo."
   },
   "icms_uf_padrao_pct": 18.0,
   "pis_cofins_importacao_pct": 11.75,
@@ -25,7 +32,9 @@
     "armazenagem_aeroportuaria": 450.0,
     "desembaraco_despachante": 1200.0,
     "thc_manuseio_aereo": 380.0,
-    "siscomex": 214.5,
+    "siscomex": 154.23,
+    "siscomex_adicoes": 1,
+    "siscomex_nota": "Portaria ME 4.131/2021: DI R$115,67 + 1ª adição R$38,56 = R$154,23 (legado 214,50 não usar)",
     "frete_rodoviario_viracopos_destino": 650.0,
     "frete_rodoviario_por_km": 5.5
   },

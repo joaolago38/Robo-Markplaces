@@ -107,7 +107,7 @@ class TestAnalisarSourcing(unittest.TestCase):
     def test_formatar_secao(self):
         sourcing = {
             "ok": True,
-            "ncm": "3916.90.10",
+            "ncm": "39169090",
             "moq_china_padrao": 20,
             "cambio_usd_brl": 5.55,
             "resumo_vereditos": {"COMPRAR_BR": 1, "IMPORTAR_CHINA": 0, "NAO_COMPENSA": 0},

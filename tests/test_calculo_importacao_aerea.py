@@ -37,7 +37,7 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
             "armazenagem_brl": 450.0,
             "desembaraco_brl": 1200.0,
             "thc_brl": 380.0,
-            "siscomex_brl": 214.5,
+            "siscomex_brl": 154.23,
             "frete_rodoviario_brl": 650.0,
         }
         out = calcular_custo_importacao_aerea_formal(entradas)
@@ -48,6 +48,10 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
         self.assertGreater(out["custo_total_brl"], out["valor_aduaneiro_cif_brl"])
         self.assertEqual(out["custo_unitario_brl"], round(out["custo_total_brl"] / 10, 2))
         self.assertEqual(len(out["itens"]), 12)
+        self.assertTrue(out["despesas_aduaneiras_inclusas"])
+        self.assertIn("referencia_legislacao_br", out)
+        self.assertGreater(out["siscomex_brl"], 0)
+        self.assertGreater(out["desembaraco_brl"], 0)
 
     def test_icms_por_dentro(self):
         entradas = {
@@ -121,7 +125,7 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
                 "armazenagem_brl": 450.0,
                 "desembaraco_brl": 1200.0,
                 "thc_brl": 380.0,
-                "siscomex_brl": 214.5,
+                "siscomex_brl": 154.23,
                 "frete_rodoviario_brl": 650.0,
             }
         )

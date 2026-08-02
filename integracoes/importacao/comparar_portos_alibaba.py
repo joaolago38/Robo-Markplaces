@@ -98,22 +98,38 @@ def calcular_landed_no_gateway(
 
     km = distancia_km_para_cep(str(gateway.get("codigo") or ""), cep_destino)
     custos = gateway.get("custos_locais_brl") or {}
-    locais = sum(
+    from integracoes.importacao.siscomex import calcular_taxa_siscomex
+
+    try:
+        adicoes = int(getattr(_cfg(), "IMPORTACAO_SISCOMEX_ADICOES", 1) or 1)
+    except (TypeError, ValueError):
+        adicoes = 1
+    adicoes = max(1, adicoes)
+    siscomex_detalhe = calcular_taxa_siscomex(adicoes=adicoes)
+    # Catálogo pode ter legado 214.50 — ignora e usa regra vigente
+    siscomex_cat = _f(custos.get("siscomex"))
+    if siscomex_cat > 0 and abs(siscomex_cat - 214.5) >= 0.01 and abs(siscomex_cat - 154.23) >= 0.01:
+        # valor customizado explícito (não legado nem default 1 adição)
+        siscomex_brl = siscomex_cat
+    else:
+        siscomex_brl = float(siscomex_detalhe["total_brl"])
+
+    locais_sem_siscomex = sum(
         _f(custos.get(k))
-        for k in ("armazenagem", "desembaraco", "thc_manuseio", "siscomex", "outros")
+        for k in ("armazenagem", "desembaraco", "thc_manuseio", "outros")
     )
+    locais = locais_sem_siscomex + siscomex_brl
     frete_interno_unit = (km * _f(gateway.get("frete_interno_brl_por_km"), 5.0)) / max(
         1, _i(produto_norm.get("quantidade"))
     )
-    # Rateia custos locais fixos na quantidade
     qty = _i(produto_norm.get("quantidade"))
-    desembaraco_eq = locais  # passa como desembaraco+siscomex agregados no landed
 
     icms = _f(produto_norm.get("icms_pct"))
     if icms <= 0:
         icms = icms_gateway(gateway, uf_destino)
 
     frete_usd_kg = _f(gateway.get("frete_internacional_usd_kg"), 0.85 if modal == "maritimo" else 5.5)
+    afrmm_pct = float(getattr(_cfg(), "IMPORTACAO_AFRMM_PCT", 8.0)) if modal == "maritimo" else 0.0
 
     landed = calcular_custo_landed(
         produto_norm["preco_fob_usd"],
@@ -123,17 +139,25 @@ def calcular_landed_no_gateway(
         modo_frete=modal,  # type: ignore[arg-type]
         ii_pct=_f(produto_norm.get("ii_pct"), 16.0),
         ipi_pct=_f(produto_norm.get("ipi_pct"), 0.0),
+        pis_pct=float(getattr(_cfg(), "IMPORTACAO_PIS_PCT", 2.1)),
+        cofins_pct=float(getattr(_cfg(), "IMPORTACAO_COFINS_PCT", 9.65)),
         icms_pct=icms,
         frete_maritimo_usd_kg=frete_usd_kg if modal == "maritimo" else 0.85,
         frete_aereo_usd_kg=frete_usd_kg if modal == "aereo" else 5.5,
-        siscomex_brl=0.0,  # já no agregados locais
-        desembaraco_brl=desembaraco_eq,
+        siscomex_brl=siscomex_brl,
+        siscomex_adicoes=adicoes,
+        desembaraco_brl=locais_sem_siscomex,
         frete_nacional_brl_unit=frete_interno_unit,
+        afrmm_pct=afrmm_pct,
     )
     if not landed.get("ok"):
         return {**landed, "gateway": resumo_estrutura_gateway(gateway)}
 
-    detalhe_custos = _detalhar_custos(landed, locais=locais, frete_interno_total=frete_interno_unit * qty)
+    detalhe_custos = _detalhar_custos(
+        landed,
+        locais=locais,
+        frete_interno_total=frete_interno_unit * qty,
+    )
     score_atrativo = _score_atratividade(
         landed_unit=_f(landed.get("custo_unitario_brl")),
         fob_usd=_f(produto_norm.get("preco_fob_usd")),
@@ -156,8 +180,27 @@ def calcular_landed_no_gateway(
         "custo_unitario_brl": landed.get("custo_unitario_brl"),
         "custo_total_brl": landed.get("custo_total_brl"),
         "cif_brl": landed.get("cif_brl"),
+        "valor_aduaneiro_cif_brl": landed.get("valor_aduaneiro_cif_brl") or landed.get("cif_brl"),
         "impostos_total_brl": landed.get("impostos_total_brl"),
         "frete_internacional_brl": landed.get("frete_internacional_brl"),
+        "despesas_aduaneiras_inclusas": True,
+        "despesas_aduaneiras": {
+            "ii_brl": landed.get("ii_brl"),
+            "ipi_brl": landed.get("ipi_brl"),
+            "pis_brl": landed.get("pis_brl"),
+            "cofins_brl": landed.get("cofins_brl"),
+            "pis_cofins_brl": landed.get("pis_cofins_brl"),
+            "icms_brl": landed.get("icms_brl"),
+            "siscomex_brl": siscomex_brl,
+            "siscomex_adicoes": adicoes,
+            "siscomex_detalhe": siscomex_detalhe,
+            "armazenagem_thc_desembaraco_brl": round(locais_sem_siscomex, 2),
+            "afrmm_brl": landed.get("afrmm_brl"),
+            "afrmm_pct": landed.get("afrmm_pct"),
+            "total_impostos_brl": landed.get("impostos_total_brl"),
+            "total_despesas_aduaneiras_brl": landed.get("despesas_aduaneiras_brl"),
+        },
+        "referencia_legislacao_br": landed.get("referencia_legislacao_br"),
         "detalhe_custos": detalhe_custos,
         "custos_considerados": bool(detalhe_custos.get("completo")),
         "score_atratividade": score_atrativo,
@@ -193,6 +236,7 @@ def _detalhar_custos(
         "frete_internacional_brl": round(frete_int, 2),
         "seguro_brl": round(seguro, 2),
         "impostos_brl": round(impostos, 2),
+        "afrmm_brl": round(_f(landed.get("afrmm_brl")), 2),
         "custos_locais_brl": round(locais, 2),
         "frete_nacional_brl": round(frete_nac, 2),
     }
@@ -345,16 +389,26 @@ def comparar_portos_para_produto_alibaba(
     modal: str = "todos",
     codigos: list[str] | None = None,
     top_n: int = 8,
+    rota_china_regional: bool | None = None,
 ) -> dict[str, Any]:
     """
-    Ranqueia todos (ou filtrados) portos/aeroportos do BR para o produto Alibaba.
-    Retorna melhores condições aéreo e marítimo + lista atrativas.
+    Ranqueia portos/aeroportos do BR para o produto Alibaba.
+
+    Marítimo China (padrão):
+      - Sudeste/Centro-Oeste → Santos
+      - Nordeste → portos NE
+      - Compara tributação com portos do Sul
     """
     from integracoes.cambio.cotacao_usd import (
         cotacao_confiavel_para_margem,
         obter_cotacao_usd,
     )
     from integracoes.importacao.operacao_destino import normalizar_cep, resumo_destino
+    from integracoes.importacao.rotas_regionais_china import (
+        codigos_para_avaliacao_china,
+        comparar_tributacao_regional,
+        portos_preferidos_china,
+    )
 
     prod = normalizar_produto_alibaba(produto)
     if prod["preco_fob_usd"] <= 0:
@@ -363,6 +417,13 @@ def comparar_portos_para_produto_alibaba(
     dest = resumo_destino()
     cep = normalizar_cep(cep_destino or dest.get("destino_cep") or "13467-694")
     uf = (uf_destino or dest.get("destino_uf") or "SP").upper()
+
+    cfg = _cfg()
+    usar_rota = (
+        bool(getattr(cfg, "IMPORTACAO_CHINA_ROTA_REGIONAL", True))
+        if rota_china_regional is None
+        else bool(rota_china_regional)
+    )
 
     if cambio_usd_brl is None:
         cot = obter_cotacao_usd(usar_cache=True)
@@ -379,15 +440,35 @@ def comparar_portos_para_produto_alibaba(
         cambio = float(cambio_usd_brl)
         cambio_meta = {"ok": True, "usd_brl": cambio, "fonte": "parametro"}
 
+    gateways: list[dict[str, Any]] = []
     if codigos:
-        gateways = []
         for c in codigos:
             g = gateway_por_codigo(c)
             if g and g.get("ativo", True):
                 gateways.append(g)
     else:
         modal_f = modal if modal in ("aereo", "maritimo", "todos") else "todos"
-        gateways = listar_gateways(modal=modal_f)  # type: ignore[arg-type]
+        if modal_f in ("maritimo", "todos") and usar_rota:
+            # Marítimo China: só hubs regionais + Sul (tributação)
+            for c in codigos_para_avaliacao_china(uf, incluir_sul_comparativo=True):
+                g = gateway_por_codigo(c)
+                if g and g.get("ativo", True):
+                    gateways.append(g)
+            if modal_f == "todos":
+                for g in listar_gateways(modal="aereo"):
+                    gateways.append(g)
+        else:
+            gateways = listar_gateways(modal=modal_f)  # type: ignore[arg-type]
+
+    # Dedup por código
+    vistos: set[str] = set()
+    uniq: list[dict[str, Any]] = []
+    for g in gateways:
+        cod = str(g.get("codigo") or "").upper()
+        if cod and cod not in vistos:
+            vistos.add(cod)
+            uniq.append(g)
+    gateways = uniq
 
     cenarios: list[dict[str, Any]] = []
     for g in gateways:
@@ -417,11 +498,59 @@ def comparar_portos_para_produto_alibaba(
         if eh_condicao_atrativa_condicional(c) and not eh_condicao_atrativa(c)
     ]
     melhor_aereo = next((c for c in ok_list if c.get("modal") == "aereo"), None)
-    melhor_maritimo = next((c for c in ok_list if c.get("modal") == "maritimo"), None)
-    # Melhor geral: preferir assertividade ≥90%; senão menor custo com custos completos
+
+    trib_china = comparar_tributacao_regional(ok_list, uf_destino=uf) if usar_rota else {"ok": False}
+    rota_pref = portos_preferidos_china(uf)
+
+    # Marítimo: prioriza hub regional (Santos no SE / NE ports) se existir
+    melhor_maritimo = None
+    if trib_china.get("ok") and trib_china.get("melhor_regiao"):
+        cod_reg = str((trib_china["melhor_regiao"] or {}).get("codigo") or "")
+        melhor_maritimo = next(
+            (
+                c for c in ok_list
+                if c.get("modal") == "maritimo"
+                and str((c.get("gateway") or {}).get("codigo") or "").upper() == cod_reg
+            ),
+            None,
+        )
+    if melhor_maritimo is None:
+        melhor_maritimo = next((c for c in ok_list if c.get("modal") == "maritimo"), None)
+
     melhor_geral = atrativas[0] if atrativas else next(
         (c for c in ok_list if c.get("custos_considerados")), None
     )
+    # Se marítimo regional for o foco China e assertividade ok, prefira-o no geral quando modal marítimo
+    if usar_rota and modal in ("maritimo", "todos") and melhor_maritimo and melhor_maritimo.get("custos_considerados"):
+        if not melhor_geral or melhor_geral.get("modal") != "maritimo":
+            melhor_geral = melhor_maritimo
+
+    from integracoes.importacao.portos_brasil import cobertura_costa_brasil
+
+    costa = cobertura_costa_brasil()
+
+    # Corredor Paraguai terrestre (se ativo)
+    py_terrestre: dict[str, Any] = {"ok": False}
+    try:
+        from core import config as cfg
+
+        if bool(getattr(cfg, "IMPORTACAO_PY_ATIVO", True)):
+            from integracoes.importacao.corredor_paraguai_terrestre import (
+                montar_cenario_py_terrestre_br,
+            )
+
+            fob = _f(prod.get("preco_fob_usd"))
+            qty = _i(prod.get("quantidade"))
+            py_terrestre = montar_cenario_py_terrestre_br(
+                valor_mercadoria_brl=fob * qty * cambio,
+                quantidade=qty,
+                cep_destino=cep,
+                fob_usd=fob,
+                cambio_usd_brl=cambio,
+            )
+    except Exception as exc:
+        logger.debug("py terrestre: %s", exc)
+        py_terrestre = {"ok": False, "erro": str(exc)}
 
     out = {
         "ok": bool(ok_list),
@@ -429,6 +558,16 @@ def comparar_portos_para_produto_alibaba(
         "referencia": "alibaba",
         "territorio": "BR",
         "assertividade_alvo_pct": _assertividade_alvo(),
+        "cobertura_costa_brasil": costa,
+        "rota_china_regional": {
+            "ativa": usar_rota,
+            "regiao": rota_pref.get("regiao"),
+            "porto_principal": rota_pref.get("porto_principal"),
+            "motivo": rota_pref.get("motivo"),
+            "portos_preferidos": rota_pref.get("portos_preferidos"),
+            "portos_sul_comparativo": rota_pref.get("portos_sul_comparativo_tributacao"),
+        },
+        "tributacao_regiao_vs_sul": trib_china,
         "produto": prod,
         "cambio": {"usd_brl": cambio, **{k: cambio_meta.get(k) for k in ("fonte", "confiavel", "ok")}},
         "destino": {"cep": cep, "uf": uf},
@@ -441,11 +580,20 @@ def comparar_portos_para_produto_alibaba(
         "top_atrativos": [_resumo_cenario(c) for c in atrativas[:top_n]],
         "top_condicionais": [_resumo_cenario(c) for c in condicionais[:top_n]],
         "ranking": [_resumo_cenario(c) for c in ok_list[: max(top_n, 12)]],
+        "paraguai_terrestre": {
+            "ok": bool(py_terrestre.get("ok")),
+            "endereco": ((py_terrestre.get("paraguai_endereco_comercial") or {}).get("endereco")),
+            "melhor_corredor": py_terrestre.get("melhor_corredor"),
+            "cobertura_costa_pct": py_terrestre.get("cobertura_costa_brasil_pct"),
+        },
         "aviso": (
             "Custos estimados por porto/aeroporto BR · referência FOB Alibaba. "
+            f"Costa BR coberta: {costa.get('cobertura_pct')}% dos hubs de referência. "
             f"Assertividade ≥{_assertividade_alvo():.0f}% = alta confiança; "
-            "abaixo disso a decisão exige detalhe de custo (frete/impostos/locais). "
-            "Confirme frete real e NCM com despachante."
+            "abaixo disso a decisão exige detalhe de custo. "
+            "Corredor PY terrestre disponível (Ciudad del Este → Foz → CEP BR). "
+            f"Rota China: {rota_pref.get('motivo')} · "
+            f"tributação vs Sul: {trib_china.get('veredito') or 'n/d'}."
         ),
     }
 
@@ -506,6 +654,9 @@ def _emitir_metricas(out: dict[str, Any]) -> None:
         float(out.get("assertividade_alvo_pct") or 90),
         tags,
     )
+    costa = out.get("cobertura_costa_brasil") or {}
+    if costa.get("cobertura_pct") is not None:
+        gauge("portos_alibaba.cobertura_costa_pct", float(costa["cobertura_pct"]), tags)
     incrementar("portos_alibaba.comparacao_ok" if out.get("ok") else "portos_alibaba.comparacao_erro", tags=tags)
 
 
@@ -521,6 +672,7 @@ def formatar_comparacao_telegram(resultado: dict[str, Any], *, max_linhas: int =
         f"USD R$ {(resultado.get('cambio') or {}).get('usd_brl')} · "
         f"CEP `{(resultado.get('destino') or {}).get('cep')}`",
         f"Avaliados: *{resultado.get('total_gateways_avaliados')}* · "
+        f"Costa BR: *{(resultado.get('cobertura_costa_brasil') or {}).get('cobertura_pct')}%* · "
         f"Atrativos (≥{resultado.get('assertividade_alvo_pct') or 90}%): "
         f"*{resultado.get('total_atrativos')}* · "
         f"Condicionais: *{resultado.get('total_condicionais_custo')}*",
@@ -553,6 +705,24 @@ def formatar_comparacao_telegram(resultado: dict[str, Any], *, max_linhas: int =
             f"🚢 Marítimo: `{mm.get('codigo')}` R$ {mm.get('custo_unitario_brl')}/un "
             f"(assert. {mm.get('assertividade_pct')}%)"
         )
+    rota = resultado.get("rota_china_regional") or {}
+    trib = resultado.get("tributacao_regiao_vs_sul") or {}
+    if rota.get("ativa"):
+        linhas.append(
+            f"🇨🇳 Rota: *{rota.get('regiao')}* → hub `{rota.get('porto_principal')}` "
+            f"— _{rota.get('motivo')}_"
+        )
+    if trib.get("ok"):
+        hub = trib.get("hub_principal") or trib.get("melhor_regiao") or {}
+        sul = trib.get("melhor_sul_tributacao") or {}
+        linhas.append(
+            f"📊 Tributação: hub R$ {hub.get('custo_unitario_brl')}/un "
+            f"(impostos {hub.get('impostos_total_brl')}) vs Sul "
+            f"`{sul.get('codigo')}` R$ {sul.get('custo_unitario_brl')}/un "
+            f"(impostos {sul.get('impostos_total_brl')}) · "
+            f"Δ custo {trib.get('delta_custo_unit_sul_menos_regiao_brl')} · "
+            f"*{trib.get('veredito')}*"
+        )
     if resultado.get("top_atrativos"):
         linhas.append("*Top atrativos (≥90%)*")
         for c in (resultado.get("top_atrativos") or [])[:max_linhas]:
@@ -561,12 +731,25 @@ def formatar_comparacao_telegram(resultado: dict[str, Any], *, max_linhas: int =
                 f"R$ {c.get('custo_unitario_brl')} · assert. {c.get('assertividade_pct')}%"
             )
     elif resultado.get("top_condicionais"):
-        linhas.append("*Condicionais (&lt;90% — custo manda)*")
+        linhas.append("*Condicionais (<90% — custo manda)*")
         for c in (resultado.get("top_condicionais") or [])[:max_linhas]:
             linhas.append(
                 f"• `{c.get('codigo')}` {c.get('modal')} · "
                 f"R$ {c.get('custo_unitario_brl')} · assert. {c.get('assertividade_pct')}% · "
                 f"markup {c.get('markup_sobre_fob')}"
             )
+    py = resultado.get("paraguai_terrestre") or {}
+    if py.get("ok") and py.get("melhor_corredor"):
+        end = py.get("endereco") or {}
+        mc = py.get("melhor_corredor") or {}
+        linhas.extend(
+            [
+                "",
+                "🇵🇾 *Endereço comercial Paraguai + terrestre BR*",
+                f"  {end.get('cidade')}: {end.get('endereco')}",
+                f"  Corredor `{mc.get('corredor_id')}` · ~{mc.get('km_total')} km · "
+                f"terrestre R$ {mc.get('custo_total_brl')}",
+            ]
+        )
     linhas.append(f"_{resultado.get('aviso')}_")
     return "\n".join(linhas)
