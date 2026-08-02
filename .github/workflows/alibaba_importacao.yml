@@ -53,10 +53,9 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-      - name: Rodar monitor Alibaba
+      - name: Rodar Alibaba sourcing + tendências ML
         run: |
-          python -m agentes.importacao.agente_alibaba_importacao
-          python -m agentes.importacao.agente_alibaba_importacao_inteligente
+          python -m agentes.importacao.agente_alibaba_sourcing
           python -m agentes.importacao.agente_ml_tendencias_importacao
         env:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
@@ -68,6 +67,7 @@ jobs:
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ALIBABA_SOURCING_ATIVO: "1"
       - name: Salvar historico (backup)
         uses: actions/upload-artifact@v4
         with:

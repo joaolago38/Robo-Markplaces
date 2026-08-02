@@ -424,6 +424,24 @@ DECISAO_DIA_ESMALTES_COOLDOWN_SEG = int(os.getenv("DECISAO_DIA_ESMALTES_COOLDOWN
 DECISAO_DIA_ESMALTES_GUERRA_CATALOGO = os.getenv(
     "DECISAO_DIA_ESMALTES_GUERRA_CATALOGO", "catalogo/skus_guerra_impala.json"
 )
+# Operação consolidada (crescimento + decisão + ecossistema → 1 Telegram)
+ESMALTES_OPERACAO_ATIVO = os.getenv("ESMALTES_OPERACAO_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ESMALTES_OPERACAO_ALERTA = os.getenv("ESMALTES_OPERACAO_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ESMALTES_OPERACAO_COOLDOWN_SEG = int(os.getenv("ESMALTES_OPERACAO_COOLDOWN_SEG", "86400"))
+# Alibaba busca + inteligência em um run
+ALIBABA_SOURCING_ATIVO = os.getenv("ALIBABA_SOURCING_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Contrato impulso ML (ads/promo só com SKU guerra + MLB)
 CONTRATO_IMPULSO_ML_ATIVO = os.getenv("CONTRATO_IMPULSO_ML_ATIVO", "1").strip().lower() not in (
@@ -799,7 +817,8 @@ ORQUESTRADOR_EXCLUIR = {
         "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
         "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,decisao_dia_esmaltes,"
-        "leilao,alibaba,alibaba_inteligencia,"
+        "esmaltes_operacao,"
+        "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,"
         "ml_tendencias_importacao,monitor_filamentos_ml,licitacoes",
     ).split(",")
     if x.strip()
