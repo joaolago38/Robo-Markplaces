@@ -12,20 +12,17 @@ from typing import Any
 from core.atomic_io import ler_json
 from core.config import (
     FILAMENTOS_SOURCING_CATALOGO_BR,
-    FILAMENTOS_SOURCING_ICMS_PCT,
-    FILAMENTOS_SOURCING_II_PCT,
-    FILAMENTOS_SOURCING_IPI_PCT,
     FILAMENTOS_SOURCING_MARGEM_MIN_PCT,
     FILAMENTOS_SOURCING_MOQ_CHINA,
     FILAMENTOS_SOURCING_NCM,
     FILAMENTOS_SOURCING_TAXA_ML_PCT,
     ROOT,
 )
-from integracoes.importacao.custo_landed import calcular_cenarios_frete, calcular_margem_revenda
 from integracoes.filamentos.contexto_importacao_filamento import (
     anexar_contexto_filamento,
     params_landed_filamento,
 )
+from integracoes.importacao.custo_landed import calcular_cenarios_frete, calcular_margem_revenda
 
 logger = logging.getLogger("sourcing_filamentos")
 

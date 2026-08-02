@@ -36,7 +36,6 @@ class TestPortosBrasil(unittest.TestCase):
 
     def test_rota_sudeste_santos(self):
         from integracoes.importacao.rotas_regionais_china import (
-            comparar_tributacao_regional,
             portos_preferidos_china,
             regiao_por_uf,
         )

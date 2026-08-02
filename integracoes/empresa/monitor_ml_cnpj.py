@@ -113,9 +113,8 @@ def coletar_subsidio_ml(
 
     if ao_vivo:
         try:
-            from integracoes.ml.resumo_conta import coletar_resumo_conta
-
             from core import config as cfg
+            from integracoes.ml.resumo_conta import coletar_resumo_conta
 
             max_perf = int(getattr(cfg, "RESUMO_CONTA_ML_MAX_PERFORMANCE", 40))
             # Amostra menor neste ciclo 10d para não estourar timeout do workflow

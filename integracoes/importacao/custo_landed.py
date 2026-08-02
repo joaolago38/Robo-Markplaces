@@ -70,7 +70,7 @@ def calcular_custo_landed(
     if preco_usd <= 0 or cambio <= 0:
         return {"ok": False, "motivo": "preço ou câmbio inválido"}
 
-    from integracoes.importacao.siscomex import calcular_taxa_siscomex, taxa_siscomex_brl
+    from integracoes.importacao.siscomex import calcular_taxa_siscomex
 
     # Siscomex: se None ou legado 214.50 → calcula pela regra vigente
     if siscomex_brl is None or abs(float(siscomex_brl) - 214.50) < 0.01:

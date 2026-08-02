@@ -7,12 +7,10 @@ from typing import Any
 
 from core.empresa.catalogo import (
     carregar_catalogo,
-    empresa_por_cnpj,
     empresa_por_id,
     empresa_por_ramo,
     listar_empresas,
 )
-from core.empresa.flags import flag
 from core.empresa.overrides import aplicar_overrides_env
 
 # Strategy table: palavras-chave → empresa_id

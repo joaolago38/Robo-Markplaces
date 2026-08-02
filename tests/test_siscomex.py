@@ -1,13 +1,13 @@
 """Testes Taxa de Utilização do Siscomex (Portaria ME 4.131/2021)."""
 from __future__ import annotations
 
+from integracoes.importacao.custo_landed import calcular_custo_landed
 from integracoes.importacao.siscomex import (
     SISCOMEX_DI_BRL,
     SISCOMEX_LEGADO_DI_1_ADICAO_BRL,
     calcular_taxa_siscomex,
     taxa_siscomex_brl,
 )
-from integracoes.importacao.custo_landed import calcular_custo_landed
 
 
 def test_di_uma_adicao_valor_vigente():
