@@ -83,3 +83,81 @@ def test_avaliar_catalogo_multi_cliente():
     assert out["lucro_alvo_pct"] == 20.0
     assert any(p.get("id") == "servico_logistico_terceiros" for p in out["possibilidades"])
     assert len(out.get("verificacao_custos_operacionais") or []) >= 1
+
+
+def test_formatar_hub_py_telegram():
+    from integracoes.importacao.hub_paraguai_marketplace import (
+        formatar_hub_py_telegram,
+        verificar_hub_lucro_20_marketplace,
+    )
+
+    assert "falhou" in formatar_hub_py_telegram({"ok": False, "motivo": "x"})
+    out = verificar_hub_lucro_20_marketplace(cambio_usd_brl=5.5, lucro_alvo_pct=20.0)
+    multi = avaliar_hub_multi_cliente(cambio_usd_brl=5.5, lucro_alvo_pct=20.0)
+    multi["verificacao_custos_operacionais"] = out["verificacoes"]
+    multi["lucrativos_marketplace_hub"] = out["atingem_lucro_alvo"]
+    multi["atingem_lucro_20_com_overhead"] = out["atingem_lucro_alvo_com_overhead"]
+    msg = formatar_hub_py_telegram(multi)
+    assert "Hub Paraguai" in msg
+    assert "CEP BR" in msg
+    msg2 = formatar_hub_py_telegram({**multi, "verificacao_custos_operacionais": []})
+    assert "Hub Paraguai" in msg2
+
+
+def test_preco_minimo_venda_lucro():
+    from integracoes.importacao.hub_paraguai_marketplace import (
+        custo_maximo_para_lucro_pct,
+        preco_minimo_venda_para_lucro_pct,
+    )
+
+    # custo 64, taxa 16%, lucro 20% => venda = 64 / 0.64 = 100
+    p = preco_minimo_venda_para_lucro_pct(64.0, taxa_marketplace_pct=16.0, lucro_alvo_pct=20.0)
+    assert p["ok"] is True
+    assert p["preco_venda_minimo_brl"] == 100.0
+    assert custo_maximo_para_lucro_pct(0)["ok"] is False
+    assert preco_minimo_venda_para_lucro_pct(-1)["ok"] is False
+    assert custo_maximo_para_lucro_pct(100, taxa_marketplace_pct=50, lucro_alvo_pct=60)["ok"] is False
+
+
+def test_produto_terceiro_taxa_servico():
+    out = avaliar_produto_hub_vs_marketplace(
+        {
+            "id": "svc",
+            "nome": "Lote terceiro",
+            "fob_usd": 4.0,
+            "peso_kg": 1.0,
+            "quantidade": 100,
+            "preco_venda_ml_brl": 90.0,
+            "tipo_cliente": "terceiro",
+        },
+        cambio_usd_brl=5.5,
+    )
+    assert out["ok"] is True
+    assert out.get("taxa_servico_terceiro")
+
+
+def test_corredor_py_terrestre_e_telegram():
+    from integracoes.importacao.corredor_paraguai_terrestre import (
+        formatar_py_terrestre_telegram,
+        montar_cenario_py_terrestre_br,
+    )
+
+    out = montar_cenario_py_terrestre_br(
+        valor_mercadoria_brl=5000.0,
+        fob_usd=4.5,
+        cambio_usd_brl=5.5,
+        cep_destino="13467-694",
+    )
+    assert out["ok"] is True
+    assert out.get("melhor_corredor")
+    msg = formatar_py_terrestre_telegram(out)
+    assert "Paraguai terrestre" in msg
+    assert "indisponível" in formatar_py_terrestre_telegram({"ok": False})
+    out2 = montar_cenario_py_terrestre_br(
+        valor_mercadoria_brl=0,
+        fob_usd=5.0,
+        cambio_usd_brl=5.0,
+        quantidade=10,
+        cep_destino="13467-694",
+    )
+    assert out2["ok"] is True

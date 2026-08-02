@@ -69,3 +69,47 @@ def test_avaliar_catalogo_filamentos_trib():
     assert out["origem_melhor_que_sem_certificado"] == out["total_produtos"]
     for a in out["analises"]:
         assert a["origem_melhor_que_sem_certificado"] is True
+
+
+def test_iva_venda_interna_py():
+    t = tributos_lado_paraguai(1000.0, exportacao_para_br=False, iva_pct=10.0)
+    assert t["iva_brl"] == 100.0
+
+
+def test_cruzar_preco_invalido():
+    out = cruzar_tributacao_py_br_produto(fob_usd=0, preco_origem_py_brl=0)
+    assert out["ok"] is False
+
+
+def test_formatar_trib_telegram():
+    from integracoes.importacao.tributacao_py_br import (
+        avaliar_tributacao_produtos_marketplace,
+        formatar_tributacao_py_br_telegram,
+    )
+
+    assert "x" in formatar_tributacao_py_br_telegram({"ok": False, "motivo": "x"})
+    out = avaliar_tributacao_produtos_marketplace(cambio_usd_brl=5.5, lucro_alvo_pct=20.0)
+    msg = formatar_tributacao_py_br_telegram(out)
+    assert "Tributação Paraguai" in msg
+    assert "origem > sem cert." in msg
+
+
+def test_cruzar_preco_origem_py_brl():
+    out = cruzar_tributacao_py_br_produto(
+        preco_origem_py_brl=25.0,
+        quantidade=100,
+        frete_internacional_brl=200.0,
+        ii_pct_china=12.6,
+        preco_venda_ml_brl=80.0,
+        custos_logistica_py_br_unit=2.0,
+        regime_maquila=True,
+    )
+    assert out["ok"] is True
+    assert out["fonte_preco"] == "preco_py_brl"
+
+
+def test_origem_bate_sem_vazio():
+    from integracoes.importacao.tributacao_py_br import _origem_bate_sem
+
+    assert _origem_bate_sem({}) is False
+    assert _origem_bate_sem({"cenarios": [{"cenario": "py_origem_mercosul", "custo_unitario_brl": 10}]}) is False
