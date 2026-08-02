@@ -27,6 +27,8 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("esmaltes_operacao", ids)
         self.assertNotIn("ml_tendencias_importacao", ids)
         self.assertNotIn("monitor_filamentos_ml", ids)
+        self.assertNotIn("monitor_masterprint_petg", ids)
+        self.assertNotIn("monitor_masterprint_escritorio", ids)
         self.assertNotIn("necessidade_manicures", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", set())

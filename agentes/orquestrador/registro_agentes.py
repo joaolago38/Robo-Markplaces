@@ -354,6 +354,22 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="PLA/PETG/ABS/TPU no ML: cores + Alibaba + sourcing BR×China",
     ),
     AgenteRegistrado(
+        "monitor_masterprint_petg",
+        "Monitor Masterprint PETG ML",
+        "monitor",
+        "agentes.filamentos.agente_monitor_masterprint_petg:executar",
+        {"enviar_alerta": True},
+        notas="Anúncios Masterprint PETG: total ativos, mais rentáveis e maior ganho",
+    ),
+    AgenteRegistrado(
+        "monitor_masterprint_escritorio",
+        "Monitor Masterprint pincéis/apagadores ML",
+        "monitor",
+        "agentes.escritorio.agente_monitor_masterprint_escritorio:executar",
+        {"enviar_alerta": True},
+        notas="Pincéis recarregáveis e apagadores Masterprint: margem real vs tabela",
+    ),
+    AgenteRegistrado(
         "monitor_acetona_cruzeiro",
         "Monitor Acetona Cruzeiro ML",
         "monitor",

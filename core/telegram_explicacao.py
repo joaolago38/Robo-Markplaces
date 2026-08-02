@@ -171,6 +171,14 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "(FOB/landed × preço ML) e decide sourcing COMPRAR_BR vs IMPORTAR_CHINA "
         "vs NAO_COMPENSA com o catálogo de fornecedor nacional."
     ),
+    "monitor_masterprint_petg": (
+        "Monitora PETG Masterprint no ML (margem real + Δ). Claude 1×/dia: análise "
+        "concisa do ecossistema ML. Pode usar CNPJ/conta/Telegram próprios (≠ esmaltes)."
+    ),
+    "monitor_masterprint_escritorio": (
+        "Monitora pincéis recarregáveis e apagadores Masterprint (margem real). "
+        "Claude 1×/dia no ecossistema ML. Ramo/conta separados dos esmaltes quando configurado."
+    ),
     "monitor_acetona_cruzeiro": (
         "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
         "ideias de estratégia (Claude + Impala). Telegram: relatório completo da "
@@ -332,6 +340,8 @@ HORARIOS_AGENTES: dict[str, str] = {
         "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
     "monitor_filamentos_ml": "A cada 6h (Actions); fora do orquestrador 30 min",
+    "monitor_masterprint_petg": "A cada 6h (Actions); fora do orquestrador 30 min",
+    "monitor_masterprint_escritorio": "A cada 6h (Actions); fora do orquestrador 30 min",
     "monitor_acetona_cruzeiro": (
         "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
@@ -440,6 +450,12 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("ml_shopee", "comparativo_ml_shopee"),
     ("filamentos", "monitor_filamentos_ml"),
     ("filamentos:ml", "monitor_filamentos_ml"),
+    ("masterprint", "monitor_masterprint_petg"),
+    ("masterprint_petg", "monitor_masterprint_petg"),
+    ("petg_masterprint", "monitor_masterprint_petg"),
+    ("masterprint_escritorio", "monitor_masterprint_escritorio"),
+    ("pinceis_masterprint", "monitor_masterprint_escritorio"),
+    ("apagador_masterprint", "monitor_masterprint_escritorio"),
     ("acetona", "monitor_acetona_cruzeiro"),
     ("descoberta", "descoberta_produtos"),
     ("ads_ml", "ads_gatilho"),

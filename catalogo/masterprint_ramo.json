@@ -1,0 +1,11 @@
+{
+  "ramo_id": "masterprint",
+  "nome_fantasia": "Masterprint (filamentos e escritório)",
+  "razao_social": "",
+  "cnpj": "",
+  "ml_seller_id": "",
+  "ml_nickname": "",
+  "telegram_gestor_chat_id": "",
+  "diferente_do_ramo_esmaltes": true,
+  "notas": "Preencha CNPJ/seller/Telegram desta conta para separar do ramo esmaltes/Impala. Env MASTERPRINT_* sobrescreve este arquivo."
+}

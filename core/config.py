@@ -337,6 +337,67 @@ FILAMENTOS_SOURCING_ICMS_PCT = float(os.getenv("FILAMENTOS_SOURCING_ICMS_PCT", "
 FILAMENTOS_SOURCING_MOQ_CHINA = int(os.getenv("FILAMENTOS_SOURCING_MOQ_CHINA", "20"))
 FILAMENTOS_SOURCING_TAXA_ML_PCT = float(os.getenv("FILAMENTOS_SOURCING_TAXA_ML_PCT", "16.0"))
 FILAMENTOS_SOURCING_MARGEM_MIN_PCT = float(os.getenv("FILAMENTOS_SOURCING_MARGEM_MIN_PCT", "15.0"))
+# Monitor Masterprint PETG no ML
+MASTERPRINT_PETG_CATALOGO = os.getenv(
+    "MASTERPRINT_PETG_CATALOGO", "catalogo/masterprint_petg_monitor.json"
+)
+MASTERPRINT_PETG_CUSTOS = os.getenv(
+    "MASTERPRINT_PETG_CUSTOS", "catalogo/masterprint_petg_custos.json"
+)
+MASTERPRINT_PETG_PAUSA_SEG = float(os.getenv("MASTERPRINT_PETG_PAUSA_SEG", "1.5"))
+MASTERPRINT_PETG_ALERTA_RESUMO = os.getenv("MASTERPRINT_PETG_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MASTERPRINT_PETG_ALERTA_COOLDOWN_SEG = int(os.getenv("MASTERPRINT_PETG_ALERTA_COOLDOWN_SEG", "21600"))
+MASTERPRINT_PETG_TOP_N = int(os.getenv("MASTERPRINT_PETG_TOP_N", "10"))
+# Monitor Masterprint pincéis recarregáveis + apagadores
+MASTERPRINT_ESCRITORIO_CATALOGO = os.getenv(
+    "MASTERPRINT_ESCRITORIO_CATALOGO", "catalogo/masterprint_escritorio_monitor.json"
+)
+MASTERPRINT_ESCRITORIO_CUSTOS = os.getenv(
+    "MASTERPRINT_ESCRITORIO_CUSTOS", "catalogo/masterprint_escritorio_custos.json"
+)
+MASTERPRINT_ESCRITORIO_PAUSA_SEG = float(os.getenv("MASTERPRINT_ESCRITORIO_PAUSA_SEG", "1.5"))
+MASTERPRINT_ESCRITORIO_ALERTA_RESUMO = os.getenv(
+    "MASTERPRINT_ESCRITORIO_ALERTA_RESUMO", "1"
+).strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MASTERPRINT_ESCRITORIO_ALERTA_COOLDOWN_SEG = int(
+    os.getenv("MASTERPRINT_ESCRITORIO_ALERTA_COOLDOWN_SEG", "21600")
+)
+MASTERPRINT_ESCRITORIO_TOP_N = int(os.getenv("MASTERPRINT_ESCRITORIO_TOP_N", "10"))
+# Claude em Masterprint: 1×/dia por agente (default ON). Reserva orçamento para esmaltes.
+MASTERPRINT_CLAUDE_DIARIO = os.getenv("MASTERPRINT_CLAUDE_DIARIO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Alias legado
+MASTERPRINT_CLAUDE_SECUNDARIO = os.getenv(
+    "MASTERPRINT_CLAUDE_SECUNDARIO",
+    "1" if MASTERPRINT_CLAUDE_DIARIO else "0",
+).strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MASTERPRINT_CLAUDE_RESTANTE_MIN_USD = float(os.getenv("MASTERPRINT_CLAUDE_RESTANTE_MIN_USD", "2.50"))
+# Ramo / conta / CNPJ separados do esmaltes (opcional)
+MASTERPRINT_RAMO_CATALOGO = os.getenv(
+    "MASTERPRINT_RAMO_CATALOGO", "catalogo/masterprint_ramo.json"
+)
+MASTERPRINT_CNPJ = os.getenv("MASTERPRINT_CNPJ", "").strip()
+MASTERPRINT_RAZAO_SOCIAL = os.getenv("MASTERPRINT_RAZAO_SOCIAL", "").strip()
+MASTERPRINT_NOME_FANTASIA = os.getenv("MASTERPRINT_NOME_FANTASIA", "").strip()
+MASTERPRINT_ML_SELLER_ID = os.getenv("MASTERPRINT_ML_SELLER_ID", "").strip()
+MASTERPRINT_ML_NICKNAME = os.getenv("MASTERPRINT_ML_NICKNAME", "").strip()
+# Se vazio, usa TELEGRAM_GESTOR_CHAT_ID (mesmo chat dos esmaltes)
+MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID = os.getenv("MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID", "").strip()
 
 # Busca kit esmaltes Anita/Impala — frequência diária + cores
 ESMALTES_BUSCA_KIT_CATALOGO = os.getenv(
@@ -819,7 +880,7 @@ ORQUESTRADOR_EXCLUIR = {
         "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,decisao_dia_esmaltes,"
         "esmaltes_operacao,"
         "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,licitacoes",
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,licitacoes",
     ).split(",")
     if x.strip()
 }
