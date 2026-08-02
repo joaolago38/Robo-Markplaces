@@ -860,6 +860,17 @@ IMPORTACAO_AEREO_FORMAL = os.getenv("IMPORTACAO_AEREO_FORMAL", "1").strip().lowe
     "false",
     "no",
 )
+# Portos/aeroportos BR — comparação multi-gateway referenciada em Alibaba
+IMPORTACAO_PORTOS_BRASIL_CATALOGO = os.getenv(
+    "IMPORTACAO_PORTOS_BRASIL_CATALOGO", "catalogo/portos_aeroportos_brasil.json"
+)
+IMPORTACAO_PORTOS_SCORE_MIN_ATRATIVA = float(os.getenv("IMPORTACAO_PORTOS_SCORE_MIN_ATRATIVA", "55.0"))
+IMPORTACAO_PORTOS_MARKUP_MAX_ATRATIVA = float(os.getenv("IMPORTACAO_PORTOS_MARKUP_MAX_ATRATIVA", "2.2"))
+IMPORTACAO_PORTOS_COMPARAR_ATIVO = os.getenv("IMPORTACAO_PORTOS_COMPARAR_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Alibaba inteligência (câmbio + landed + margem)
 ALIBABA_MARGEM_MIN_PCT = float(os.getenv("ALIBABA_MARGEM_MIN_PCT", "18.0"))
@@ -969,7 +980,7 @@ ORQUESTRADOR_EXCLUIR = {
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
         "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,decisao_dia_esmaltes,"
         "esmaltes_operacao,"
-        "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,"
+        "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,comparar_portos_alibaba,"
         "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,licitacoes",
     ).split(",")
     if x.strip()

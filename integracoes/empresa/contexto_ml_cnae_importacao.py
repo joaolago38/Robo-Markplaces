@@ -319,6 +319,42 @@ def montar_quadro_importacao_cnae(
             f"(CEP {destino.get('destino_cep')})"
         )
 
+    # Comparação multi-porto BR (aéreo + marítimo) — referência Alibaba
+    comparacao_portos: dict[str, Any] = {"ok": False}
+    try:
+        from core import config as cfg
+
+        if bool(getattr(cfg, "IMPORTACAO_PORTOS_COMPARAR_ATIVO", True)) and (
+            oportunidade_alibaba or prod_calc.get("preco_fob_usd") or prod_calc.get("peso_kg")
+        ):
+            from integracoes.importacao.comparar_portos_alibaba import (
+                comparar_portos_para_produto_alibaba,
+            )
+
+            prod_cmp = {
+                **prod_calc,
+                **(oportunidade_alibaba or {}),
+                "preco_fob_usd": (oportunidade_alibaba or {}).get("preco_usd")
+                or prod_calc.get("preco_fob_usd"),
+                "fonte": "alibaba",
+            }
+            comparacao_portos = comparar_portos_para_produto_alibaba(
+                prod_cmp,
+                cambio_usd_brl=usd if usd > 0 else None,
+                cep_destino=str(destino.get("destino_cep") or ""),
+                uf_destino=str(destino.get("destino_uf") or "SP"),
+            )
+            if comparacao_portos.get("ok"):
+                mg = comparacao_portos.get("melhor_geral") or {}
+                recomendacoes.append(
+                    f"Melhor gateway BR: `{mg.get('codigo')}` ({mg.get('modal')}) "
+                    f"R$ {mg.get('custo_unitario_brl')}/un · "
+                    f"{comparacao_portos.get('total_atrativos')} condições atrativas"
+                )
+    except Exception as exc:
+        logger.debug("comparacao portos: %s", exc)
+        comparacao_portos = {"ok": False, "erro": str(exc)}
+
     out = {
         "ok": True,
         "gerado_em": agora_brasil().isoformat(),
@@ -341,6 +377,15 @@ def montar_quadro_importacao_cnae(
             "aeroporto": calc.get("aeroporto") or destino.get("aeroporto_label"),
             "quantidade": calc.get("quantidade"),
             "motivo": calc.get("motivo"),
+        },
+        "comparacao_portos_br": {
+            "ok": bool(comparacao_portos.get("ok")),
+            "total_gateways": comparacao_portos.get("total_gateways_avaliados"),
+            "total_atrativos": comparacao_portos.get("total_atrativos"),
+            "melhor_geral": comparacao_portos.get("melhor_geral"),
+            "melhor_aereo": comparacao_portos.get("melhor_aereo"),
+            "melhor_maritimo": comparacao_portos.get("melhor_maritimo"),
+            "top_atrativos": (comparacao_portos.get("top_atrativos") or [])[:5],
         },
         "recomendacoes": recomendacoes,
         "bloqueios": bloqueios,

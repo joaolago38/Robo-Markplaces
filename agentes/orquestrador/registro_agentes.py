@@ -180,6 +180,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Busca catálogo + inteligência margem em 1 run. Fora do ciclo 30min",
     ),
     AgenteRegistrado(
+        "comparar_portos_alibaba",
+        "Portos BR × Alibaba (aéreo/marítimo)",
+        "monitor",
+        "agentes.importacao.agente_comparar_portos_alibaba:executar",
+        {"enviar_alerta": False},
+        notas="Compara qualquer produto Alibaba em portos/aeroportos do Brasil; condições atrativas",
+    ),
+    AgenteRegistrado(
         "ml_tendencias_importacao",
         "ML tendências × Alibaba",
         "monitor",

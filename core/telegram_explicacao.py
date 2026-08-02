@@ -69,6 +69,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Consolida busca Alibaba (catálogo) + inteligência de margem/câmbio num "
         "único run — evita Telegram duplicado. Preferir este no cron."
     ),
+    "comparar_portos_alibaba": (
+        "Compara importação com referência Alibaba (FOB) em qualquer porto ou "
+        "aeroporto do Brasil — aéreo e marítimo — e ranqueia condições atrativas "
+        "por custo landed e atratividade do hub."
+    ),
     "ml_tendencias_importacao": (
         "Detecta o que está em alta no Mercado Livre e cruza com preços Alibaba para "
         "indicar se vale importar aquele item agora. Telegram: tendências + veredito "
@@ -319,6 +324,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "alibaba": "Manual / via alibaba_sourcing (cron 2h)",
     "alibaba_inteligencia": "Manual / via alibaba_sourcing (cron 2h)",
     "alibaba_sourcing": "A cada 2h (Actions); fora do orquestrador 30 min",
+    "comparar_portos_alibaba": "Sob demanda / CLI; fora do orquestrador 30 min",
     "ml_tendencias_importacao": "A cada 2h (Actions Alibaba); fora do orquestrador 30 min",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
@@ -427,6 +433,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("alibaba_intel", "alibaba_inteligencia"),
     ("alibaba_sourcing", "alibaba_sourcing"),
     ("alibaba:sourcing", "alibaba_sourcing"),
+    ("portos_alibaba", "comparar_portos_alibaba"),
+    ("portos_br", "comparar_portos_alibaba"),
     ("alibaba:", "alibaba"),
     ("importacao:ml_tendencias", "ml_tendencias_importacao"),
     ("ml_tendencias", "ml_tendencias_importacao"),
