@@ -105,26 +105,29 @@ def tributos_lado_paraguai(
 def tributos_entrada_brasil_desde_py(
     valor_aduaneiro_cif_brl: float,
     *,
-    com_certificado_origem_mercosul: bool = True,
+    com_certificado_origem_mercosul: bool = False,
     ii_pct_sem_origem: float = 16.0,
     ipi_pct: float = 0.0,
     pis_pct: float | None = None,
     cofins_pct: float | None = None,
     icms_pct: float = 18.0,
     siscomex_brl: float | None = None,
-    despesas_locais_brl: float = 0.0,
+    despesas_locais_brl: float | None = None,
     afrmm_brl: float = 0.0,
 ) -> dict[str, Any]:
     """
     Cascata BR na entrada formal desde o Paraguai.
-    Com origem Mercosul: II = 0%. Sem origem: II cheio (como terceiros).
-    PIS/COFINS + ICMS + Siscomex permanecem na estimativa padrão.
+    II=0% só com certificado/declaração E origem qualificável (chame com
+    com_certificado_origem_mercosul=True). Default = II cheio (trânsito/revenda).
+    PIS/COFINS + ICMS + Siscomex + desembaraço permanecem.
     """
     cfg = _cfg()
     cif = max(0.0, _f(valor_aduaneiro_cif_brl))
     pis = _f(pis_pct, float(getattr(cfg, "IMPORTACAO_PIS_PCT", 2.1)))
     cofins = _f(cofins_pct, float(getattr(cfg, "IMPORTACAO_COFINS_PCT", 9.65)))
     sis = _f(siscomex_brl, taxa_siscomex_brl(adicoes=1))
+    if despesas_locais_brl is None:
+        despesas_locais_brl = float(getattr(cfg, "IMPORTACAO_DESEMBARACO_BRL", 800.0))
     locais = max(0.0, _f(despesas_locais_brl)) + max(0.0, _f(afrmm_brl))
 
     ii_pct = 0.0 if com_certificado_origem_mercosul else _f(ii_pct_sem_origem, 16.0)
@@ -165,7 +168,7 @@ def tributos_entrada_brasil_desde_py(
         else 0.0,
         "aviso": (
             "II zerado exige origem qualificável + certificado/declaração Mercosul. "
-            "PIS/COFINS e ICMS normalmente permanecem. Confirme NCM e ROM com despachante."
+            "Trânsito China→PY→BR sem ROM: II cheio. PIS/COFINS/ICMS/desembaraço permanecem."
         ),
     }
 
@@ -188,11 +191,15 @@ def cruzar_tributacao_py_br_produto(
     custos_logistica_py_br_unit: float = 0.0,
     regime_maquila: bool = False,
     certificado_origem_brl: float | None = None,
+    origem_qualificada_mercosul: bool = False,
 ) -> dict[str, Any]:
     """
     Cruza 3 caminhos e aponta o de melhor lucro no marketplace.
     preco_origem_py_brl = preço da mercadoria já no PY (BRL).
     Se só houver FOB USD (China via hub), usa FOB*câmbio como base PY.
+
+    origem_qualificada_mercosul=False (default): CN→PY→BR como trânsito —
+    py_origem_mercosul fica hipotético (não elegível para decisão).
     """
     qty = _i(quantidade)
     cambio = _f(cambio_usd_brl, 5.5)
@@ -277,6 +284,12 @@ def cruzar_tributacao_py_br_produto(
                 "tributos_br": br_origem,
                 "tributos_py": trib_py,
                 "certificado_origem_unit_brl": round(cert_unit, 2),
+                "elegivel_decisao": bool(origem_qualificada_mercosul),
+                "nota": (
+                    None
+                    if origem_qualificada_mercosul
+                    else "Hipotético: exige ROM/certificado — não use sem origem qualificável"
+                ),
             },
         ),
         (
@@ -288,6 +301,8 @@ def cruzar_tributacao_py_br_produto(
                 "tributos_br": br_sem,
                 "tributos_py": trib_py,
                 "certificado_origem_unit_brl": 0.0,
+                "elegivel_decisao": True,
+                "nota": "Trânsito/revenda sem origem Mercosul — II cheio",
             },
         ),
         (
@@ -299,6 +314,8 @@ def cruzar_tributacao_py_br_produto(
                 "tributos_br": china,
                 "tributos_py": None,
                 "certificado_origem_unit_brl": 0.0,
+                "elegivel_decisao": True,
+                "nota": None,
             },
         ),
     ):
@@ -324,22 +341,28 @@ def cruzar_tributacao_py_br_produto(
             }
         )
 
-    cenarios.sort(key=lambda c: _f(c.get("custo_unitario_brl"), 1e9))
-    melhor = cenarios[0] if cenarios else {}
+    elegiveis = [c for c in cenarios if c.get("elegivel_decisao")]
+    pool = elegiveis if elegiveis else list(cenarios)
+    pool.sort(key=lambda c: _f(c.get("custo_unitario_brl"), 1e9))
+    melhor = pool[0] if pool else {}
     melhor_lucro = None
-    for c in cenarios:
+    for c in pool:
         if c.get("atinge_lucro_alvo"):
             melhor_lucro = c
             break
     if melhor_lucro is None:
-        # maior margem_pct
-        com_m = [c for c in cenarios if (c.get("margem_marketplace") or {}).get("ok")]
+        com_m = [c for c in pool if (c.get("margem_marketplace") or {}).get("ok")]
         if com_m:
-            melhor_lucro = max(com_m, key=lambda x: _f((x.get("margem_marketplace") or {}).get("margem_pct")))
+            melhor_lucro = max(
+                com_m, key=lambda x: _f((x.get("margem_marketplace") or {}).get("margem_pct"))
+            )
 
     economia_origem_vs_china = None
     if custo_china_unit > 0 and custo_origem_unit > 0:
         economia_origem_vs_china = round(custo_china_unit - custo_origem_unit, 2)
+
+    cenario_decisao_py = "py_origem_mercosul" if origem_qualificada_mercosul else "py_sem_origem"
+    custo_decisao_py = custo_origem_unit if origem_qualificada_mercosul else custo_sem_unit
 
     out = {
         "ok": True,
@@ -351,13 +374,17 @@ def cruzar_tributacao_py_br_produto(
         "preco_venda_ml_brl": round(venda, 2) if venda > 0 else None,
         "lucro_alvo_pct": lucro_alvo_pct,
         "taxa_marketplace_pct": taxa_marketplace_pct,
+        "origem_qualificada_mercosul": bool(origem_qualificada_mercosul),
+        "cenario_decisao_py": cenario_decisao_py,
+        "custo_decisao_py_unit_brl": round(custo_decisao_py, 2),
         "cenarios": cenarios,
         "melhor_custo": melhor.get("cenario"),
         "melhor_lucro_marketplace": (melhor_lucro or {}).get("cenario"),
         "economia_origem_mercosul_vs_china_unit_brl": economia_origem_vs_china,
         "recomendacao": _recomendar(melhor, melhor_lucro, economia_origem_vs_china),
         "aviso_legal": (
-            "Estimativa. II=0% exige origem qualificável Mercosul. "
+            "Estimativa. II=0% só com origem qualificável Mercosul. "
+            "Default decisório CN→PY→BR: sem origem (II cheio). "
             "Não substitui assessoria fiscal/aduaneira PY e BR."
         ),
     }
@@ -454,7 +481,10 @@ def avaliar_tributacao_produtos_marketplace(
             taxa_marketplace_pct=_f(p.get("taxa_marketplace_pct"), 16.0),
             lucro_alvo_pct=lucro_alvo_pct,
             custos_logistica_py_br_unit=log_unit,
-            regime_maquila=regime_maquila,
+            regime_maquila=regime_maquila or bool(p.get("regime_maquila")),
+            origem_qualificada_mercosul=bool(
+                p.get("origem_qualificada_mercosul") or p.get("origem_qualificada")
+            ),
         )
         analises.append(
             {
@@ -464,15 +494,15 @@ def avaliar_tributacao_produtos_marketplace(
                 "quantidade": qty,
                 "cruzamento": cruz,
                 "recomendacao": (cruz.get("recomendacao") or {}).get("cenario_sugerido"),
+                "cenario_decisao_py": cruz.get("cenario_decisao_py"),
                 "origem_melhor_que_sem_certificado": _origem_bate_sem(cruz),
                 "origem_melhor_que_china": (
                     (cruz.get("melhor_custo") == "py_origem_mercosul")
-                    or (
-                        _f(cruz.get("economia_origem_mercosul_vs_china_unit_brl")) > 0
-                    )
+                    or (_f(cruz.get("economia_origem_mercosul_vs_china_unit_brl")) > 0)
                 ),
                 "atinge_lucro_alvo": any(
-                    c.get("atinge_lucro_alvo") for c in (cruz.get("cenarios") or [])
+                    c.get("atinge_lucro_alvo") and c.get("elegivel_decisao", True)
+                    for c in (cruz.get("cenarios") or [])
                 ),
             }
         )

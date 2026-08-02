@@ -36,9 +36,17 @@ def test_ii_zero_com_origem_mercosul():
     assert sem["ii_brl"] == 160.0
     assert com["custo_apos_tributos_brl"] < sem["custo_apos_tributos_brl"]
     assert com["economia_ii_vs_cheia_brl"] == 160.0
-    # PIS/COFINS e ICMS permanecem
+    # PIS/COFINS e ICMS permanecem; desembaraço default embutido
     assert com["pis_cofins_brl"] > 0
     assert com["icms_brl"] > 0
+    assert com["despesas_locais_brl"] > 0
+
+
+def test_default_entrada_py_sem_origem():
+    """Default = II cheio (trânsito CN→PY não zera II)."""
+    d = tributos_entrada_brasil_desde_py(1000.0, ii_pct_sem_origem=12.6)
+    assert d["com_certificado_origem_mercosul"] is False
+    assert d["ii_brl"] == 126.0
 
 
 def test_cruzar_origem_mais_barata_que_sem_origem():
@@ -51,12 +59,31 @@ def test_cruzar_origem_mais_barata_que_sem_origem():
         preco_venda_ml_brl=95.0,
         lucro_alvo_pct=20.0,
         custos_logistica_py_br_unit=3.0,
+        origem_qualificada_mercosul=False,
     )
     assert out["ok"] is True
     by = {c["cenario"]: c for c in out["cenarios"]}
     assert by["py_origem_mercosul"]["custo_unitario_brl"] < by["py_sem_origem"]["custo_unitario_brl"]
-    assert out["melhor_custo"] in ("py_origem_mercosul", "china_direto_br")
+    assert by["py_origem_mercosul"]["elegivel_decisao"] is False
+    assert by["py_sem_origem"]["elegivel_decisao"] is True
+    assert out["cenario_decisao_py"] == "py_sem_origem"
+    assert out["melhor_custo"] in ("py_sem_origem", "china_direto_br")
     assert out["recomendacao"]["cenario_sugerido"]
+
+
+def test_cruzar_com_origem_qualificada_elegivel():
+    out = cruzar_tributacao_py_br_produto(
+        fob_usd=4.5,
+        cambio_usd_brl=5.5,
+        quantidade=200,
+        frete_internacional_brl=500.0,
+        ii_pct_china=12.6,
+        preco_venda_ml_brl=95.0,
+        origem_qualificada_mercosul=True,
+    )
+    assert out["cenario_decisao_py"] == "py_origem_mercosul"
+    by = {c["cenario"]: c for c in out["cenarios"]}
+    assert by["py_origem_mercosul"]["elegivel_decisao"] is True
 
 
 def test_avaliar_catalogo_filamentos_trib():

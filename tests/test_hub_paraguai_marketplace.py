@@ -73,6 +73,11 @@ def test_verificar_lucro_20_filamentos_marketplace():
         assert "teto_custo_para_lucro_alvo" in v
         assert "quebra_custo_unitario_brl" in v
         assert v["quebra_custo_unitario_brl"]["hub_operacional"] >= 0
+        # Lucro 20% agora embute tributos BR (default sem origem Mercosul)
+        assert v.get("pendencia_fiscal_br_liquidada") is True
+        assert v.get("cenario_tributario_decisao") == "py_sem_origem"
+        assert "tributos_entrada_br" in v["quebra_custo_unitario_brl"]
+        assert v["custo_hub_unitario_brl"] >= v.get("custo_hub_logistico_unitario_brl", 0)
 
 
 def test_avaliar_catalogo_multi_cliente():

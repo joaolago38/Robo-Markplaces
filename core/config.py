@@ -846,7 +846,7 @@ IMPORTACAO_SISCOMEX_BRL = float(os.getenv("IMPORTACAO_SISCOMEX_BRL", "154.23"))
 # 1 adição → R$ 115,67 + R$ 38,56 = R$ 154,23 (não usar mais o legado 214,50)
 IMPORTACAO_SISCOMEX_ADICOES = int(os.getenv("IMPORTACAO_SISCOMEX_ADICOES", "1") or "1")
 IMPORTACAO_DESEMBARACO_BRL = float(os.getenv("IMPORTACAO_DESEMBARACO_BRL", "800.0"))
-# AFRMM (Lei 10.893/2004) — % sobre frete marítimo internacional; 0 no aéreo
+# AFRMM (Lei 10.893/2004 art. 6º c/ Lei 14.301/2022) — 8% frete longo curso; 0 no aéreo
 IMPORTACAO_AFRMM_PCT = float(os.getenv("IMPORTACAO_AFRMM_PCT", "8.0"))
 IMPORTACAO_FRETE_MARITIMO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_MARITIMO_USD_KG", "0.85"))
 IMPORTACAO_FRETE_AEREO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_AEREO_USD_KG", "5.5"))

@@ -212,7 +212,9 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     thc = _f(entradas.get("thc_brl"))
     siscomex = _f(entradas.get("siscomex_brl"))
     frete_rod = _f(entradas.get("frete_rodoviario_brl"))
-    despesas_locais = armazenagem + desembaraco + thc + siscomex + frete_rod
+    # Frete rodoviário pós-desembaraço: fora da base do ICMS (alinhado a custo_landed)
+    despesas_aduaneiras = armazenagem + desembaraco + thc + siscomex
+    despesas_locais = despesas_aduaneiras + frete_rod
 
     fob_brl = fob_usd * qty * cambio
     frete_brl = frete_usd * cambio
@@ -223,11 +225,11 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     ipi_brl = (cif_brl + ii_brl) * (ipi_pct / 100.0)
     pis_cofins_brl = cif_brl * (pis_cofins_pct / 100.0)
 
-    base_icms = cif_brl + ii_brl + ipi_brl + pis_cofins_brl + despesas_locais
+    base_icms = cif_brl + ii_brl + ipi_brl + pis_cofins_brl + despesas_aduaneiras
     aliq_icms = icms_pct / 100.0
     icms_brl = (aliq_icms * base_icms) / (1.0 - aliq_icms) if 0 < aliq_icms < 1 else 0.0
 
-    custo_total_brl = base_icms + icms_brl
+    custo_total_brl = base_icms + icms_brl + frete_rod
     custo_unitario_brl = round(custo_total_brl / qty, 2)
 
     impostos_federais = ii_brl + ipi_brl + pis_cofins_brl

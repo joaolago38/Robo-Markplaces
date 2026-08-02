@@ -228,8 +228,9 @@ def custo_rota_hub_py(
         "custo_total_brl": round(total, 2),
         "custo_unitario_brl": round(unit, 2),
         "pendencia_fiscal_br": (
-            "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com "
-            "despachante — não embutidos nesta estimativa de hub."
+            "Custos de decisão usam cascata BR (II/PIS/COFINS/ICMS/Siscomex/desembaraço) "
+            "via tributacao_py_br. Default CN→PY: sem origem Mercosul (II cheio). "
+            "Marque origem_qualificada_mercosul=true só com ROM/certificado válido."
         ),
         "despesas_validadas": {
             "mercadoria_e_frete_china_py": True,
@@ -247,15 +248,27 @@ def custo_rota_import_direta_br(
     quantidade: int = 1,
     peso_kg_unit: float = 1.0,
     modo_frete: str = "maritimo",
+    ii_pct: float | None = None,
+    ipi_pct: float | None = None,
+    icms_pct: float | None = None,
+    afrmm_pct: float | None = None,
 ) -> dict[str, Any]:
     """Baseline: China → porto/aeroporto BR (landed completo com tributos)."""
-    landed = calcular_custo_landed(
-        fob_usd,
-        cambio_usd_brl=cambio_usd_brl,
-        peso_kg_unit=peso_kg_unit,
-        quantidade=quantidade,
-        modo_frete=modo_frete if modo_frete in ("maritimo", "aereo") else "maritimo",  # type: ignore[arg-type]
-    )
+    kwargs: dict[str, Any] = {
+        "cambio_usd_brl": cambio_usd_brl,
+        "peso_kg_unit": peso_kg_unit,
+        "quantidade": quantidade,
+        "modo_frete": modo_frete if modo_frete in ("maritimo", "aereo") else "maritimo",
+    }
+    if ii_pct is not None:
+        kwargs["ii_pct"] = ii_pct
+    if ipi_pct is not None:
+        kwargs["ipi_pct"] = ipi_pct
+    if icms_pct is not None:
+        kwargs["icms_pct"] = icms_pct
+    if afrmm_pct is not None:
+        kwargs["afrmm_pct"] = afrmm_pct
+    landed = calcular_custo_landed(fob_usd, **kwargs)
     return {
         "ok": bool(landed.get("ok")),
         "rota": f"china_direto_{modo_frete}_br",
@@ -425,7 +438,15 @@ def verificar_custos_operacionais_lucro(
         produto, cambio_usd_brl=cambio_usd_brl, catalogo=cat
     )
     hub = aval.get("rota_hub_py") or {}
-    custo_u = _f(hub.get("custo_unitario_brl"))
+    # Decisão de lucro: custo COM tributos BR (cenário elegível), não só hub logístico
+    trib = aval.get("tributacao_py_br") or {}
+    custo_trib_u = _f(trib.get("custo_decisao_py_unit_brl"))
+    if custo_trib_u <= 0:
+        by = {c.get("cenario"): c for c in (trib.get("cenarios") or [])}
+        chave = trib.get("cenario_decisao_py") or "py_sem_origem"
+        custo_trib_u = _f((by.get(chave) or {}).get("custo_unitario_brl"))
+    custo_hub_logistico_u = _f(hub.get("custo_unitario_brl"))
+    custo_u = custo_trib_u if custo_trib_u > 0 else custo_hub_logistico_u
     hub_op = hub.get("hub_custos") or {}
     terrestre = hub.get("terrestre_py_br") or {}
 
@@ -442,13 +463,14 @@ def verificar_custos_operacionais_lucro(
     folga_custo = round(custo_max - custo_u, 2) if custo_max > 0 and custo_u > 0 else None
     atinge_20 = bool(margem.get("ok") and _f(margem.get("margem_pct")) >= lucro_alvo)
 
-    # Quebra: quanto do custo é operacional (hub+terrestre+frete china) vs mercadoria
+    # Quebra: quanto do custo é operacional (hub+terrestre+frete china) vs mercadoria vs trib
     qty = _i(hub.get("quantidade") or produto.get("quantidade") or 1)
     merc_u = _f(hub.get("mercadoria_brl")) / qty if qty else 0
     frete_china_u = _f(hub.get("frete_china_py_brl")) / qty if qty else 0
     hub_u = _f(hub_op.get("custo_hub_unitario_brl"))
     terr_u = _f(terrestre.get("custo_total_brl")) / qty if qty else 0
     operacional_u = round(frete_china_u + hub_u + terr_u, 2)
+    trib_u = round(max(0.0, custo_u - custo_hub_logistico_u), 2) if custo_hub_logistico_u > 0 else 0.0
 
     # Overhead mensal diluído no volume do hub (não só neste lote)
     overhead = _f((cat.get("custos_operacionais_brl") or {}).get("overhead_mensal_hub_brl"))
@@ -479,12 +501,19 @@ def verificar_custos_operacionais_lucro(
         "lucro_alvo_pct": lucro_alvo,
         "taxa_marketplace_pct": taxa,
         "custo_hub_unitario_brl": round(custo_u, 2),
+        "custo_hub_logistico_unitario_brl": round(custo_hub_logistico_u, 2),
+        "custo_com_tributos_br_unitario_brl": round(custo_trib_u, 2) if custo_trib_u > 0 else None,
+        "cenario_tributario_decisao": trib.get("cenario_decisao_py") or "py_sem_origem",
+        "origem_qualificada_mercosul": bool(
+            produto.get("origem_qualificada_mercosul") or produto.get("origem_qualificada")
+        ),
         "custo_com_overhead_unitario_brl": custo_com_overhead,
         "quebra_custo_unitario_brl": {
             "mercadoria": round(merc_u, 2),
             "frete_china_py": round(frete_china_u, 2),
             "hub_operacional": hub_u,
             "terrestre_py_br": round(terr_u, 2),
+            "tributos_entrada_br": trib_u,
             "overhead_mensal_diluido": overhead_u,
             "operacional_sem_mercadoria": operacional_u,
         },
@@ -501,6 +530,7 @@ def verificar_custos_operacionais_lucro(
             if atinge_20_com_overhead
             else ("OK_20PCT_SEM_OVERHEAD" if atinge_20 else "AJUSTAR_CUSTO_OU_PRECO")
         ),
+        "pendencia_fiscal_br_liquidada": custo_trib_u > 0,
         "avaliacao_completa": aval,
     }
 
@@ -514,7 +544,9 @@ def _buscar_qty_minima_lucro(
     catalogo: dict[str, Any],
     qty_max: int = 2000,
 ) -> int | None:
-    """Busca menor quantidade em que custo hub unitário cabe no teto do lucro alvo."""
+    """Busca menor quantidade em que custo hub+tributos BR cabe no teto do lucro alvo."""
+    from integracoes.importacao.tributacao_py_br import cruzar_tributacao_py_br_produto
+
     venda = _f(produto.get("preco_venda_ml_brl") or produto.get("preco_venda_brl"))
     teto = _f(
         custo_maximo_para_lucro_pct(
@@ -523,6 +555,9 @@ def _buscar_qty_minima_lucro(
     )
     if teto <= 0:
         return None
+    origem_ok = bool(
+        produto.get("origem_qualificada_mercosul") or produto.get("origem_qualificada")
+    )
     for q in (50, 100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000):
         if q > qty_max:
             break
@@ -535,7 +570,30 @@ def _buscar_qty_minima_lucro(
             cep_destino=produto.get("cep_destino"),
             catalogo=catalogo,
         )
-        if hub.get("ok") and _f(hub.get("custo_unitario_brl")) <= teto:
+        if not hub.get("ok"):
+            continue
+        qty = max(1, q)
+        frete_cn = _f(hub.get("frete_china_py_brl"))
+        hub_tot = _f((hub.get("hub_custos") or {}).get("custo_hub_total_brl"))
+        terr_tot = _f((hub.get("terrestre_py_br") or {}).get("custo_total_brl"))
+        log_u = (hub_tot + terr_tot) / qty
+        cruz = cruzar_tributacao_py_br_produto(
+            fob_usd=_f(produto.get("fob_usd")),
+            cambio_usd_brl=cambio_usd_brl,
+            quantidade=qty,
+            peso_kg_unit=_f(produto.get("peso_kg"), 1.0),
+            frete_internacional_brl=frete_cn,
+            ii_pct_china=_f(produto.get("ii_pct"), 12.6),
+            ipi_pct=_f(produto.get("ipi_pct"), 0.0),
+            icms_pct=_f(produto.get("icms_pct"), 18.0),
+            preco_venda_ml_brl=venda if venda > 0 else None,
+            taxa_marketplace_pct=taxa,
+            lucro_alvo_pct=lucro_alvo_pct,
+            custos_logistica_py_br_unit=log_u,
+            origem_qualificada_mercosul=origem_ok,
+        )
+        custo_u = _f(cruz.get("custo_decisao_py_unit_brl"))
+        if custo_u > 0 and custo_u <= teto:
             return q
     return None
 
@@ -633,6 +691,9 @@ def avaliar_produto_hub_vs_marketplace(
         quantidade=qty,
         peso_kg_unit=peso,
         modo_frete=str(produto.get("frete_preferido") or "maritimo"),
+        ii_pct=_f(produto.get("ii_pct"), 12.6),
+        ipi_pct=_f(produto.get("ipi_pct"), 0.0),
+        icms_pct=_f(produto.get("icms_pct"), 18.0),
     )
 
     custo_hub_u = _f(hub.get("custo_unitario_brl"))
@@ -699,6 +760,9 @@ def avaliar_produto_hub_vs_marketplace(
             lucro_alvo_pct=margem_min,
             custos_logistica_py_br_unit=log_u,
             regime_maquila=bool(produto.get("regime_maquila")),
+            origem_qualificada_mercosul=bool(
+                produto.get("origem_qualificada_mercosul") or produto.get("origem_qualificada")
+            ),
         )
         rec = (trib_cruz or {}).get("recomendacao") or {}
         if rec.get("cenario_sugerido") == "py_origem_mercosul" and atinge_lucro:

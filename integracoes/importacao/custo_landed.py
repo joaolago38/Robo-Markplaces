@@ -12,7 +12,7 @@ Referências (não substituem despachante):
   - II (TEC) · IPI (TIPI)
   - PIS/COFINS-Importação (Lei 10.865/2004) — alíquotas padrão 2,1% + 9,65%
   - Taxa de utilização do Siscomex
-  - AFRMM (Lei 10.893/2004) — marítimo, sobre frete internacional
+  - AFRMM (Lei 10.893/2004 art. 6º, redação Lei 14.301/2022 — 8% longo curso)
   - ICMS importação (base e cálculo “por dentro” — legislação estadual / Convênios ICMS)
 """
 from __future__ import annotations
@@ -28,7 +28,7 @@ REFERENCIA_LEGISLACAO_BR = {
     "ipi": "IPI — TIPI (base CIF+II)",
     "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
     "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
-    "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+    "afrmm": "Lei 10.893/2004 art. 6º (Lei 14.301/2022) — AFRMM 8% frete longo curso",
     "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
     "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante.",
 }
@@ -81,9 +81,18 @@ def calcular_custo_landed(
         siscomex_detalhe = calcular_taxa_siscomex(adicoes=max(1, int(siscomex_adicoes or 1)))
         siscomex_detalhe = {**siscomex_detalhe, "total_brl": round(siscomex_brl, 2), "origem": "override"}
 
-    # AFRMM: padrão 8% só no marítimo (Lei 10.893/2004). Override via afrmm_pct.
+    # AFRMM: 8% longo curso (Lei 10.893/2004 art. 6º c/ redação Lei 14.301/2022).
+    # Override via afrmm_pct; se None, usa IMPORTACAO_AFRMM_PCT (marítimo) ou 0 (aéreo).
     if afrmm_pct is None:
-        afrmm_pct = 8.0 if modo_frete == "maritimo" else 0.0
+        if modo_frete == "maritimo":
+            try:
+                from core.config import IMPORTACAO_AFRMM_PCT
+
+                afrmm_pct = float(IMPORTACAO_AFRMM_PCT)
+            except Exception:
+                afrmm_pct = 8.0
+        else:
+            afrmm_pct = 0.0
     else:
         afrmm_pct = float(afrmm_pct)
 
