@@ -188,6 +188,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Compara qualquer produto Alibaba em portos/aeroportos do Brasil; condições atrativas",
     ),
     AgenteRegistrado(
+        "hub_paraguai_marketplace",
+        "Hub PY × marketplaces (planejado)",
+        "monitor",
+        "agentes.importacao.agente_hub_paraguai_marketplace:executar",
+        {"enviar_alerta": False},
+        notas="Estrutura futura: endereço PY, custos validados, multi-cliente e lucro ML",
+    ),
+    AgenteRegistrado(
         "ml_tendencias_importacao",
         "ML tendências × Alibaba",
         "monitor",

@@ -1,0 +1,1938 @@
+{
+  "ok": true,
+  "gerado_em": "2026-08-02T15:28:59.327825-03:00",
+  "status_hub": "planejado",
+  "hub": {
+    "ok": true,
+    "status_hub": "planejado",
+    "hub_id": "hub_py_cde",
+    "endereco": {
+      "pais": "PY",
+      "cidade": "Ciudad del Este",
+      "departamento": "Alto Paraná",
+      "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+      "codigo_postal": "7000",
+      "lat": -25.5097,
+      "lng": -54.6112,
+      "uso": "referencia_comercial_importacao"
+    },
+    "usos": [
+      "recebimento_china",
+      "armazenagem",
+      "handling_multi_cliente",
+      "despacho_terrestre_br",
+      "ponto_consolidacao"
+    ],
+    "cep_destino_br_padrao": "13467-694",
+    "via_env": false,
+    "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+  },
+  "cambio_usd_brl": 5.5,
+  "lucro_alvo_pct": 20,
+  "total_produtos": 4,
+  "lucrativos_marketplace_hub": 0,
+  "atingem_lucro_20_com_overhead": 0,
+  "hub_mais_barato_que_direta": 0,
+  "receita_servico_terceiros_brl": 0.0,
+  "analises": [
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-pla",
+      "nome": "Filamento PLA 1kg",
+      "cliente_id": "cliente_proprio_masterprint",
+      "tipo_cliente": "proprio",
+      "preco_venda_ml_brl": 89.9,
+      "lucro_alvo_pct": 20.0,
+      "custo_maximo_para_lucro_alvo_brl": 57.54,
+      "atinge_lucro_alvo": false,
+      "rota_hub_py": {
+        "ok": true,
+        "rota": "china_hub_py_terrestre_br",
+        "hub": {
+          "ok": true,
+          "status_hub": "planejado",
+          "hub_id": "hub_py_cde",
+          "endereco": {
+            "pais": "PY",
+            "cidade": "Ciudad del Este",
+            "departamento": "Alto Paraná",
+            "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+            "codigo_postal": "7000",
+            "lat": -25.5097,
+            "lng": -54.6112,
+            "uso": "referencia_comercial_importacao"
+          },
+          "usos": [
+            "recebimento_china",
+            "armazenagem",
+            "handling_multi_cliente",
+            "despacho_terrestre_br",
+            "ponto_consolidacao"
+          ],
+          "cep_destino_br_padrao": "13467-694",
+          "via_env": false,
+          "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+        },
+        "fob_usd_unit": 4.5,
+        "cambio_usd_brl": 5.5,
+        "quantidade": 50,
+        "cep_destino_br": "13467-694",
+        "mercadoria_brl": 1237.5,
+        "frete_china_py_brl": 330.0,
+        "frete_china_py_usd_kg": 1.2,
+        "hub_custos": {
+          "ok": true,
+          "quantidade": 50,
+          "volume_m3_total": 0.2,
+          "dias_armazenagem": 7,
+          "armazenagem_brl": 11.2,
+          "handling_brl": 1250.0,
+          "seguro_hub_brl": 3.14,
+          "custo_hub_total_brl": 1264.34,
+          "custo_hub_unitario_brl": 25.29,
+          "ocupacao_capacidade_pct": 0.5,
+          "overhead_mensal_hub_brl": 2500.0,
+          "validacao": {
+            "volume_positivo": true,
+            "dentro_capacidade": true,
+            "handling_minimo_aplicado": true
+          }
+        },
+        "terrestre_py_br": {
+          "ok": true,
+          "corredor_id": "cde_foz_americana",
+          "custo_total_brl": 4932.7,
+          "km_total": 990.0,
+          "dias_transito_estim": 3
+        },
+        "custo_total_brl": 7764.54,
+        "custo_unitario_brl": 155.29,
+        "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+        "despesas_validadas": {
+          "mercadoria_e_frete_china_py": true,
+          "hub_armazenagem_handling": true,
+          "terrestre_py_br": true,
+          "siscomex_referencia_di_br_se_formal": 154.23
+        }
+      },
+      "rota_import_direta_br": {
+        "ok": true,
+        "rota": "china_direto_maritimo_br",
+        "custo_unitario_brl": 81.8,
+        "custo_total_brl": 4090.06,
+        "impostos_total_brl": 1038.52,
+        "siscomex_brl": 154.23,
+        "afrmm_brl": 18.7,
+        "landed": {
+          "ok": true,
+          "modo_frete": "maritimo",
+          "quantidade": 50,
+          "peso_kg_unit": 1.0,
+          "peso_total_kg": 50.0,
+          "cambio_usd_brl": 5.5,
+          "fob_usd_unit": 4.5,
+          "fob_brl_total": 1237.5,
+          "frete_internacional_usd": 42.5,
+          "frete_internacional_brl": 233.75,
+          "seguro_brl": 7.36,
+          "cif_brl": 1478.61,
+          "valor_aduaneiro_cif_brl": 1478.61,
+          "ii_pct": 16.0,
+          "ii_brl": 236.58,
+          "ipi_pct": 0.0,
+          "ipi_brl": 0.0,
+          "pis_pct": 2.1,
+          "pis_brl": 31.05,
+          "cofins_pct": 9.65,
+          "cofins_brl": 142.69,
+          "pis_cofins_brl": 173.74,
+          "icms_pct": 18.0,
+          "icms_brl": 628.21,
+          "siscomex_brl": 154.23,
+          "siscomex_adicoes": 1,
+          "siscomex_detalhe": {
+            "ok": true,
+            "adicoes": 1,
+            "di_brl": 115.67,
+            "adicoes_brl": 38.56,
+            "total_brl": 154.23,
+            "detalhe_adicoes": [
+              {
+                "adicao": 1,
+                "brl": 38.56
+              }
+            ],
+            "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+            "referencia": {
+              "lei": "Lei 9.716/1998 art. 3º",
+              "ra": "Decreto 6.759/2009 art. 306",
+              "portaria": "Portaria ME nº 4.131/2021",
+              "in_rfb": "IN RFB nº 2.024/2021",
+              "vigencia": "desde 01/06/2021"
+            },
+            "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+            "legado_nao_usar_brl": 214.5
+          },
+          "desembaraco_brl": 800.0,
+          "afrmm_pct": 8.0,
+          "afrmm_brl": 18.7,
+          "despesas_aduaneiras_brl": 972.93,
+          "frete_nacional_brl": 600.0,
+          "impostos_federais_brl": 410.31,
+          "impostos_total_brl": 1038.52,
+          "custo_total_brl": 4090.06,
+          "custo_unitario_brl": 81.8,
+          "referencia_legislacao_br": {
+            "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+            "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+            "ipi": "IPI — TIPI (base CIF+II)",
+            "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+            "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+            "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+            "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+            "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+          },
+          "despesas_aduaneiras_inclusas": true
+        }
+      },
+      "economia_hub_vs_direta_unit_brl": -73.49,
+      "margem_marketplace_hub": {
+        "ok": true,
+        "preco_venda_brl": 89.9,
+        "custo_unitario_brl": 155.29,
+        "liquido_apos_taxa_brl": 75.52,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -79.77,
+        "margem_pct": -88.7,
+        "lucro_razoavel": false
+      },
+      "margem_marketplace_direta": {
+        "ok": true,
+        "preco_venda_brl": 89.9,
+        "custo_unitario_brl": 81.8,
+        "liquido_apos_taxa_brl": 75.52,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -6.28,
+        "margem_pct": -7.0,
+        "lucro_razoavel": false
+      },
+      "taxa_servico_terceiro": null,
+      "veredito": "REVISAR_PRECO_OU_CUSTO",
+      "possibilidades": [
+        {
+          "id": "proprio_revenda_ml",
+          "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+          "ativo": true
+        },
+        {
+          "id": "servico_logistico_terceiros",
+          "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+          "ativo": true
+        },
+        {
+          "id": "consolidacao_multi_sku",
+          "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+          "ativo": true
+        },
+        {
+          "id": "comparar_vs_import_direta_br",
+          "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+          "ativo": true
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-petg",
+      "nome": "Filamento PETG 1kg",
+      "cliente_id": "cliente_proprio_masterprint",
+      "tipo_cliente": "proprio",
+      "preco_venda_ml_brl": 99.9,
+      "lucro_alvo_pct": 20.0,
+      "custo_maximo_para_lucro_alvo_brl": 63.94,
+      "atinge_lucro_alvo": false,
+      "rota_hub_py": {
+        "ok": true,
+        "rota": "china_hub_py_terrestre_br",
+        "hub": {
+          "ok": true,
+          "status_hub": "planejado",
+          "hub_id": "hub_py_cde",
+          "endereco": {
+            "pais": "PY",
+            "cidade": "Ciudad del Este",
+            "departamento": "Alto Paraná",
+            "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+            "codigo_postal": "7000",
+            "lat": -25.5097,
+            "lng": -54.6112,
+            "uso": "referencia_comercial_importacao"
+          },
+          "usos": [
+            "recebimento_china",
+            "armazenagem",
+            "handling_multi_cliente",
+            "despacho_terrestre_br",
+            "ponto_consolidacao"
+          ],
+          "cep_destino_br_padrao": "13467-694",
+          "via_env": false,
+          "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+        },
+        "fob_usd_unit": 5.0,
+        "cambio_usd_brl": 5.5,
+        "quantidade": 50,
+        "cep_destino_br": "13467-694",
+        "mercadoria_brl": 1375.0,
+        "frete_china_py_brl": 330.0,
+        "frete_china_py_usd_kg": 1.2,
+        "hub_custos": {
+          "ok": true,
+          "quantidade": 50,
+          "volume_m3_total": 0.2,
+          "dias_armazenagem": 7,
+          "armazenagem_brl": 11.2,
+          "handling_brl": 1250.0,
+          "seguro_hub_brl": 3.41,
+          "custo_hub_total_brl": 1264.61,
+          "custo_hub_unitario_brl": 25.29,
+          "ocupacao_capacidade_pct": 0.5,
+          "overhead_mensal_hub_brl": 2500.0,
+          "validacao": {
+            "volume_positivo": true,
+            "dentro_capacidade": true,
+            "handling_minimo_aplicado": true
+          }
+        },
+        "terrestre_py_br": {
+          "ok": true,
+          "corredor_id": "cde_foz_americana",
+          "custo_total_brl": 4933.11,
+          "km_total": 990.0,
+          "dias_transito_estim": 3
+        },
+        "custo_total_brl": 7902.72,
+        "custo_unitario_brl": 158.05,
+        "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+        "despesas_validadas": {
+          "mercadoria_e_frete_china_py": true,
+          "hub_armazenagem_handling": true,
+          "terrestre_py_br": true,
+          "siscomex_referencia_di_br_se_formal": 154.23
+        }
+      },
+      "rota_import_direta_br": {
+        "ok": true,
+        "rota": "china_direto_maritimo_br",
+        "custo_unitario_brl": 86.11,
+        "custo_total_brl": 4305.35,
+        "impostos_total_brl": 1115.62,
+        "siscomex_brl": 154.23,
+        "afrmm_brl": 18.7,
+        "landed": {
+          "ok": true,
+          "modo_frete": "maritimo",
+          "quantidade": 50,
+          "peso_kg_unit": 1.0,
+          "peso_total_kg": 50.0,
+          "cambio_usd_brl": 5.5,
+          "fob_usd_unit": 5.0,
+          "fob_brl_total": 1375.0,
+          "frete_internacional_usd": 42.5,
+          "frete_internacional_brl": 233.75,
+          "seguro_brl": 8.04,
+          "cif_brl": 1616.79,
+          "valor_aduaneiro_cif_brl": 1616.79,
+          "ii_pct": 16.0,
+          "ii_brl": 258.69,
+          "ipi_pct": 0.0,
+          "ipi_brl": 0.0,
+          "pis_pct": 2.1,
+          "pis_brl": 33.95,
+          "cofins_pct": 9.65,
+          "cofins_brl": 156.02,
+          "pis_cofins_brl": 189.97,
+          "icms_pct": 18.0,
+          "icms_brl": 666.96,
+          "siscomex_brl": 154.23,
+          "siscomex_adicoes": 1,
+          "siscomex_detalhe": {
+            "ok": true,
+            "adicoes": 1,
+            "di_brl": 115.67,
+            "adicoes_brl": 38.56,
+            "total_brl": 154.23,
+            "detalhe_adicoes": [
+              {
+                "adicao": 1,
+                "brl": 38.56
+              }
+            ],
+            "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+            "referencia": {
+              "lei": "Lei 9.716/1998 art. 3º",
+              "ra": "Decreto 6.759/2009 art. 306",
+              "portaria": "Portaria ME nº 4.131/2021",
+              "in_rfb": "IN RFB nº 2.024/2021",
+              "vigencia": "desde 01/06/2021"
+            },
+            "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+            "legado_nao_usar_brl": 214.5
+          },
+          "desembaraco_brl": 800.0,
+          "afrmm_pct": 8.0,
+          "afrmm_brl": 18.7,
+          "despesas_aduaneiras_brl": 972.93,
+          "frete_nacional_brl": 600.0,
+          "impostos_federais_brl": 448.66,
+          "impostos_total_brl": 1115.62,
+          "custo_total_brl": 4305.35,
+          "custo_unitario_brl": 86.11,
+          "referencia_legislacao_br": {
+            "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+            "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+            "ipi": "IPI — TIPI (base CIF+II)",
+            "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+            "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+            "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+            "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+            "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+          },
+          "despesas_aduaneiras_inclusas": true
+        }
+      },
+      "economia_hub_vs_direta_unit_brl": -71.94,
+      "margem_marketplace_hub": {
+        "ok": true,
+        "preco_venda_brl": 99.9,
+        "custo_unitario_brl": 158.05,
+        "liquido_apos_taxa_brl": 83.92,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -74.13,
+        "margem_pct": -74.2,
+        "lucro_razoavel": false
+      },
+      "margem_marketplace_direta": {
+        "ok": true,
+        "preco_venda_brl": 99.9,
+        "custo_unitario_brl": 86.11,
+        "liquido_apos_taxa_brl": 83.92,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -2.19,
+        "margem_pct": -2.2,
+        "lucro_razoavel": false
+      },
+      "taxa_servico_terceiro": null,
+      "veredito": "REVISAR_PRECO_OU_CUSTO",
+      "possibilidades": [
+        {
+          "id": "proprio_revenda_ml",
+          "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+          "ativo": true
+        },
+        {
+          "id": "servico_logistico_terceiros",
+          "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+          "ativo": true
+        },
+        {
+          "id": "consolidacao_multi_sku",
+          "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+          "ativo": true
+        },
+        {
+          "id": "comparar_vs_import_direta_br",
+          "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+          "ativo": true
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-abs",
+      "nome": "Filamento ABS 1kg",
+      "cliente_id": "cliente_proprio_masterprint",
+      "tipo_cliente": "proprio",
+      "preco_venda_ml_brl": 94.9,
+      "lucro_alvo_pct": 20.0,
+      "custo_maximo_para_lucro_alvo_brl": 60.74,
+      "atinge_lucro_alvo": false,
+      "rota_hub_py": {
+        "ok": true,
+        "rota": "china_hub_py_terrestre_br",
+        "hub": {
+          "ok": true,
+          "status_hub": "planejado",
+          "hub_id": "hub_py_cde",
+          "endereco": {
+            "pais": "PY",
+            "cidade": "Ciudad del Este",
+            "departamento": "Alto Paraná",
+            "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+            "codigo_postal": "7000",
+            "lat": -25.5097,
+            "lng": -54.6112,
+            "uso": "referencia_comercial_importacao"
+          },
+          "usos": [
+            "recebimento_china",
+            "armazenagem",
+            "handling_multi_cliente",
+            "despacho_terrestre_br",
+            "ponto_consolidacao"
+          ],
+          "cep_destino_br_padrao": "13467-694",
+          "via_env": false,
+          "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+        },
+        "fob_usd_unit": 5.0,
+        "cambio_usd_brl": 5.5,
+        "quantidade": 50,
+        "cep_destino_br": "13467-694",
+        "mercadoria_brl": 1375.0,
+        "frete_china_py_brl": 330.0,
+        "frete_china_py_usd_kg": 1.2,
+        "hub_custos": {
+          "ok": true,
+          "quantidade": 50,
+          "volume_m3_total": 0.2,
+          "dias_armazenagem": 7,
+          "armazenagem_brl": 11.2,
+          "handling_brl": 1250.0,
+          "seguro_hub_brl": 3.41,
+          "custo_hub_total_brl": 1264.61,
+          "custo_hub_unitario_brl": 25.29,
+          "ocupacao_capacidade_pct": 0.5,
+          "overhead_mensal_hub_brl": 2500.0,
+          "validacao": {
+            "volume_positivo": true,
+            "dentro_capacidade": true,
+            "handling_minimo_aplicado": true
+          }
+        },
+        "terrestre_py_br": {
+          "ok": true,
+          "corredor_id": "cde_foz_americana",
+          "custo_total_brl": 4933.11,
+          "km_total": 990.0,
+          "dias_transito_estim": 3
+        },
+        "custo_total_brl": 7902.72,
+        "custo_unitario_brl": 158.05,
+        "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+        "despesas_validadas": {
+          "mercadoria_e_frete_china_py": true,
+          "hub_armazenagem_handling": true,
+          "terrestre_py_br": true,
+          "siscomex_referencia_di_br_se_formal": 154.23
+        }
+      },
+      "rota_import_direta_br": {
+        "ok": true,
+        "rota": "china_direto_maritimo_br",
+        "custo_unitario_brl": 86.11,
+        "custo_total_brl": 4305.35,
+        "impostos_total_brl": 1115.62,
+        "siscomex_brl": 154.23,
+        "afrmm_brl": 18.7,
+        "landed": {
+          "ok": true,
+          "modo_frete": "maritimo",
+          "quantidade": 50,
+          "peso_kg_unit": 1.0,
+          "peso_total_kg": 50.0,
+          "cambio_usd_brl": 5.5,
+          "fob_usd_unit": 5.0,
+          "fob_brl_total": 1375.0,
+          "frete_internacional_usd": 42.5,
+          "frete_internacional_brl": 233.75,
+          "seguro_brl": 8.04,
+          "cif_brl": 1616.79,
+          "valor_aduaneiro_cif_brl": 1616.79,
+          "ii_pct": 16.0,
+          "ii_brl": 258.69,
+          "ipi_pct": 0.0,
+          "ipi_brl": 0.0,
+          "pis_pct": 2.1,
+          "pis_brl": 33.95,
+          "cofins_pct": 9.65,
+          "cofins_brl": 156.02,
+          "pis_cofins_brl": 189.97,
+          "icms_pct": 18.0,
+          "icms_brl": 666.96,
+          "siscomex_brl": 154.23,
+          "siscomex_adicoes": 1,
+          "siscomex_detalhe": {
+            "ok": true,
+            "adicoes": 1,
+            "di_brl": 115.67,
+            "adicoes_brl": 38.56,
+            "total_brl": 154.23,
+            "detalhe_adicoes": [
+              {
+                "adicao": 1,
+                "brl": 38.56
+              }
+            ],
+            "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+            "referencia": {
+              "lei": "Lei 9.716/1998 art. 3º",
+              "ra": "Decreto 6.759/2009 art. 306",
+              "portaria": "Portaria ME nº 4.131/2021",
+              "in_rfb": "IN RFB nº 2.024/2021",
+              "vigencia": "desde 01/06/2021"
+            },
+            "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+            "legado_nao_usar_brl": 214.5
+          },
+          "desembaraco_brl": 800.0,
+          "afrmm_pct": 8.0,
+          "afrmm_brl": 18.7,
+          "despesas_aduaneiras_brl": 972.93,
+          "frete_nacional_brl": 600.0,
+          "impostos_federais_brl": 448.66,
+          "impostos_total_brl": 1115.62,
+          "custo_total_brl": 4305.35,
+          "custo_unitario_brl": 86.11,
+          "referencia_legislacao_br": {
+            "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+            "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+            "ipi": "IPI — TIPI (base CIF+II)",
+            "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+            "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+            "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+            "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+            "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+          },
+          "despesas_aduaneiras_inclusas": true
+        }
+      },
+      "economia_hub_vs_direta_unit_brl": -71.94,
+      "margem_marketplace_hub": {
+        "ok": true,
+        "preco_venda_brl": 94.9,
+        "custo_unitario_brl": 158.05,
+        "liquido_apos_taxa_brl": 79.72,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -78.33,
+        "margem_pct": -82.5,
+        "lucro_razoavel": false
+      },
+      "margem_marketplace_direta": {
+        "ok": true,
+        "preco_venda_brl": 94.9,
+        "custo_unitario_brl": 86.11,
+        "liquido_apos_taxa_brl": 79.72,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -6.39,
+        "margem_pct": -6.7,
+        "lucro_razoavel": false
+      },
+      "taxa_servico_terceiro": null,
+      "veredito": "REVISAR_PRECO_OU_CUSTO",
+      "possibilidades": [
+        {
+          "id": "proprio_revenda_ml",
+          "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+          "ativo": true
+        },
+        {
+          "id": "servico_logistico_terceiros",
+          "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+          "ativo": true
+        },
+        {
+          "id": "consolidacao_multi_sku",
+          "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+          "ativo": true
+        },
+        {
+          "id": "comparar_vs_import_direta_br",
+          "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+          "ativo": true
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-tpu",
+      "nome": "Filamento TPU 1kg",
+      "cliente_id": "cliente_proprio_masterprint",
+      "tipo_cliente": "proprio",
+      "preco_venda_ml_brl": 119.9,
+      "lucro_alvo_pct": 20.0,
+      "custo_maximo_para_lucro_alvo_brl": 76.74,
+      "atinge_lucro_alvo": false,
+      "rota_hub_py": {
+        "ok": true,
+        "rota": "china_hub_py_terrestre_br",
+        "hub": {
+          "ok": true,
+          "status_hub": "planejado",
+          "hub_id": "hub_py_cde",
+          "endereco": {
+            "pais": "PY",
+            "cidade": "Ciudad del Este",
+            "departamento": "Alto Paraná",
+            "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+            "codigo_postal": "7000",
+            "lat": -25.5097,
+            "lng": -54.6112,
+            "uso": "referencia_comercial_importacao"
+          },
+          "usos": [
+            "recebimento_china",
+            "armazenagem",
+            "handling_multi_cliente",
+            "despacho_terrestre_br",
+            "ponto_consolidacao"
+          ],
+          "cep_destino_br_padrao": "13467-694",
+          "via_env": false,
+          "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+        },
+        "fob_usd_unit": 7.0,
+        "cambio_usd_brl": 5.5,
+        "quantidade": 30,
+        "cep_destino_br": "13467-694",
+        "mercadoria_brl": 1155.0,
+        "frete_china_py_brl": 198.0,
+        "frete_china_py_usd_kg": 1.2,
+        "hub_custos": {
+          "ok": true,
+          "quantidade": 30,
+          "volume_m3_total": 0.12,
+          "dias_armazenagem": 7,
+          "armazenagem_brl": 6.72,
+          "handling_brl": 750.0,
+          "seguro_hub_brl": 2.71,
+          "custo_hub_total_brl": 759.43,
+          "custo_hub_unitario_brl": 25.31,
+          "ocupacao_capacidade_pct": 0.3,
+          "overhead_mensal_hub_brl": 2500.0,
+          "validacao": {
+            "volume_positivo": true,
+            "dentro_capacidade": true,
+            "handling_minimo_aplicado": true
+          }
+        },
+        "terrestre_py_br": {
+          "ok": true,
+          "corredor_id": "cde_foz_americana",
+          "custo_total_brl": 4932.06,
+          "km_total": 990.0,
+          "dias_transito_estim": 3
+        },
+        "custo_total_brl": 7044.49,
+        "custo_unitario_brl": 234.82,
+        "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+        "despesas_validadas": {
+          "mercadoria_e_frete_china_py": true,
+          "hub_armazenagem_handling": true,
+          "terrestre_py_br": true,
+          "siscomex_referencia_di_br_se_formal": 154.23
+        }
+      },
+      "rota_import_direta_br": {
+        "ok": true,
+        "rota": "china_direto_maritimo_br",
+        "custo_unitario_brl": 118.85,
+        "custo_total_brl": 3565.37,
+        "impostos_total_brl": 938.2,
+        "siscomex_brl": 154.23,
+        "afrmm_brl": 11.22,
+        "landed": {
+          "ok": true,
+          "modo_frete": "maritimo",
+          "quantidade": 30,
+          "peso_kg_unit": 1.0,
+          "peso_total_kg": 30.0,
+          "cambio_usd_brl": 5.5,
+          "fob_usd_unit": 7.0,
+          "fob_brl_total": 1155.0,
+          "frete_internacional_usd": 25.5,
+          "frete_internacional_brl": 140.25,
+          "seguro_brl": 6.48,
+          "cif_brl": 1301.73,
+          "valor_aduaneiro_cif_brl": 1301.73,
+          "ii_pct": 16.0,
+          "ii_brl": 208.28,
+          "ipi_pct": 0.0,
+          "ipi_brl": 0.0,
+          "pis_pct": 2.1,
+          "pis_brl": 27.34,
+          "cofins_pct": 9.65,
+          "cofins_brl": 125.62,
+          "pis_cofins_brl": 152.95,
+          "icms_pct": 18.0,
+          "icms_brl": 576.97,
+          "siscomex_brl": 154.23,
+          "siscomex_adicoes": 1,
+          "siscomex_detalhe": {
+            "ok": true,
+            "adicoes": 1,
+            "di_brl": 115.67,
+            "adicoes_brl": 38.56,
+            "total_brl": 154.23,
+            "detalhe_adicoes": [
+              {
+                "adicao": 1,
+                "brl": 38.56
+              }
+            ],
+            "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+            "referencia": {
+              "lei": "Lei 9.716/1998 art. 3º",
+              "ra": "Decreto 6.759/2009 art. 306",
+              "portaria": "Portaria ME nº 4.131/2021",
+              "in_rfb": "IN RFB nº 2.024/2021",
+              "vigencia": "desde 01/06/2021"
+            },
+            "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+            "legado_nao_usar_brl": 214.5
+          },
+          "desembaraco_brl": 800.0,
+          "afrmm_pct": 8.0,
+          "afrmm_brl": 11.22,
+          "despesas_aduaneiras_brl": 965.45,
+          "frete_nacional_brl": 360.0,
+          "impostos_federais_brl": 361.23,
+          "impostos_total_brl": 938.2,
+          "custo_total_brl": 3565.37,
+          "custo_unitario_brl": 118.85,
+          "referencia_legislacao_br": {
+            "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+            "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+            "ipi": "IPI — TIPI (base CIF+II)",
+            "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+            "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+            "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+            "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+            "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+          },
+          "despesas_aduaneiras_inclusas": true
+        }
+      },
+      "economia_hub_vs_direta_unit_brl": -115.97,
+      "margem_marketplace_hub": {
+        "ok": true,
+        "preco_venda_brl": 119.9,
+        "custo_unitario_brl": 234.82,
+        "liquido_apos_taxa_brl": 100.72,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -134.1,
+        "margem_pct": -111.8,
+        "lucro_razoavel": false
+      },
+      "margem_marketplace_direta": {
+        "ok": true,
+        "preco_venda_brl": 119.9,
+        "custo_unitario_brl": 118.85,
+        "liquido_apos_taxa_brl": 100.72,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -18.13,
+        "margem_pct": -15.1,
+        "lucro_razoavel": false
+      },
+      "taxa_servico_terceiro": null,
+      "veredito": "REVISAR_PRECO_OU_CUSTO",
+      "possibilidades": [
+        {
+          "id": "proprio_revenda_ml",
+          "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+          "ativo": true
+        },
+        {
+          "id": "servico_logistico_terceiros",
+          "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+          "ativo": true
+        },
+        {
+          "id": "consolidacao_multi_sku",
+          "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+          "ativo": true
+        },
+        {
+          "id": "comparar_vs_import_direta_br",
+          "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+          "ativo": true
+        }
+      ]
+    }
+  ],
+  "verificacao_custos_operacionais": [
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-pla",
+      "nome": "Filamento PLA 1kg",
+      "material": "PLA",
+      "fonte_marketplace": "mercadolivre",
+      "preco_venda_ml_brl": 89.9,
+      "preco_ml_fonte": "catalogo_hub",
+      "lucro_alvo_pct": 20.0,
+      "taxa_marketplace_pct": 16.0,
+      "custo_hub_unitario_brl": 155.29,
+      "custo_com_overhead_unitario_brl": 180.29,
+      "quebra_custo_unitario_brl": {
+        "mercadoria": 24.75,
+        "frete_china_py": 6.6,
+        "hub_operacional": 25.29,
+        "terrestre_py_br": 98.65,
+        "overhead_mensal_diluido": 25.0,
+        "operacional_sem_mercadoria": 130.54
+      },
+      "teto_custo_para_lucro_alvo": {
+        "ok": true,
+        "preco_venda_brl": 89.9,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "liquido_apos_taxa_brl": 75.52,
+        "lucro_alvo_brl": 17.98,
+        "custo_unitario_maximo_brl": 57.54
+      },
+      "preco_minimo_venda_para_lucro_alvo": {
+        "ok": true,
+        "custo_unitario_brl": 155.29,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "preco_venda_minimo_brl": 242.64
+      },
+      "folga_custo_brl": -97.75,
+      "margem_atual": {
+        "ok": true,
+        "preco_venda_brl": 89.9,
+        "custo_unitario_brl": 155.29,
+        "liquido_apos_taxa_brl": 75.52,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -79.77,
+        "margem_pct": -88.7,
+        "lucro_razoavel": false
+      },
+      "atinge_lucro_alvo": false,
+      "atinge_lucro_alvo_com_overhead": false,
+      "veredito_operacional": "AJUSTAR_CUSTO_OU_PRECO",
+      "avaliacao_completa": {
+        "ok": true,
+        "produto_id": "filamento-impressora-3d-pla",
+        "nome": "Filamento PLA 1kg",
+        "cliente_id": "cliente_proprio_masterprint",
+        "tipo_cliente": "proprio",
+        "preco_venda_ml_brl": 89.9,
+        "lucro_alvo_pct": 20.0,
+        "custo_maximo_para_lucro_alvo_brl": 57.54,
+        "atinge_lucro_alvo": false,
+        "rota_hub_py": {
+          "ok": true,
+          "rota": "china_hub_py_terrestre_br",
+          "hub": {
+            "ok": true,
+            "status_hub": "planejado",
+            "hub_id": "hub_py_cde",
+            "endereco": {
+              "pais": "PY",
+              "cidade": "Ciudad del Este",
+              "departamento": "Alto Paraná",
+              "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+              "codigo_postal": "7000",
+              "lat": -25.5097,
+              "lng": -54.6112,
+              "uso": "referencia_comercial_importacao"
+            },
+            "usos": [
+              "recebimento_china",
+              "armazenagem",
+              "handling_multi_cliente",
+              "despacho_terrestre_br",
+              "ponto_consolidacao"
+            ],
+            "cep_destino_br_padrao": "13467-694",
+            "via_env": false,
+            "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+          },
+          "fob_usd_unit": 4.5,
+          "cambio_usd_brl": 5.5,
+          "quantidade": 50,
+          "cep_destino_br": "13467-694",
+          "mercadoria_brl": 1237.5,
+          "frete_china_py_brl": 330.0,
+          "frete_china_py_usd_kg": 1.2,
+          "hub_custos": {
+            "ok": true,
+            "quantidade": 50,
+            "volume_m3_total": 0.2,
+            "dias_armazenagem": 7,
+            "armazenagem_brl": 11.2,
+            "handling_brl": 1250.0,
+            "seguro_hub_brl": 3.14,
+            "custo_hub_total_brl": 1264.34,
+            "custo_hub_unitario_brl": 25.29,
+            "ocupacao_capacidade_pct": 0.5,
+            "overhead_mensal_hub_brl": 2500.0,
+            "validacao": {
+              "volume_positivo": true,
+              "dentro_capacidade": true,
+              "handling_minimo_aplicado": true
+            }
+          },
+          "terrestre_py_br": {
+            "ok": true,
+            "corredor_id": "cde_foz_americana",
+            "custo_total_brl": 4932.7,
+            "km_total": 990.0,
+            "dias_transito_estim": 3
+          },
+          "custo_total_brl": 7764.54,
+          "custo_unitario_brl": 155.29,
+          "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+          "despesas_validadas": {
+            "mercadoria_e_frete_china_py": true,
+            "hub_armazenagem_handling": true,
+            "terrestre_py_br": true,
+            "siscomex_referencia_di_br_se_formal": 154.23
+          }
+        },
+        "rota_import_direta_br": {
+          "ok": true,
+          "rota": "china_direto_maritimo_br",
+          "custo_unitario_brl": 81.8,
+          "custo_total_brl": 4090.06,
+          "impostos_total_brl": 1038.52,
+          "siscomex_brl": 154.23,
+          "afrmm_brl": 18.7,
+          "landed": {
+            "ok": true,
+            "modo_frete": "maritimo",
+            "quantidade": 50,
+            "peso_kg_unit": 1.0,
+            "peso_total_kg": 50.0,
+            "cambio_usd_brl": 5.5,
+            "fob_usd_unit": 4.5,
+            "fob_brl_total": 1237.5,
+            "frete_internacional_usd": 42.5,
+            "frete_internacional_brl": 233.75,
+            "seguro_brl": 7.36,
+            "cif_brl": 1478.61,
+            "valor_aduaneiro_cif_brl": 1478.61,
+            "ii_pct": 16.0,
+            "ii_brl": 236.58,
+            "ipi_pct": 0.0,
+            "ipi_brl": 0.0,
+            "pis_pct": 2.1,
+            "pis_brl": 31.05,
+            "cofins_pct": 9.65,
+            "cofins_brl": 142.69,
+            "pis_cofins_brl": 173.74,
+            "icms_pct": 18.0,
+            "icms_brl": 628.21,
+            "siscomex_brl": 154.23,
+            "siscomex_adicoes": 1,
+            "siscomex_detalhe": {
+              "ok": true,
+              "adicoes": 1,
+              "di_brl": 115.67,
+              "adicoes_brl": 38.56,
+              "total_brl": 154.23,
+              "detalhe_adicoes": [
+                {
+                  "adicao": 1,
+                  "brl": 38.56
+                }
+              ],
+              "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+              "referencia": {
+                "lei": "Lei 9.716/1998 art. 3º",
+                "ra": "Decreto 6.759/2009 art. 306",
+                "portaria": "Portaria ME nº 4.131/2021",
+                "in_rfb": "IN RFB nº 2.024/2021",
+                "vigencia": "desde 01/06/2021"
+              },
+              "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+              "legado_nao_usar_brl": 214.5
+            },
+            "desembaraco_brl": 800.0,
+            "afrmm_pct": 8.0,
+            "afrmm_brl": 18.7,
+            "despesas_aduaneiras_brl": 972.93,
+            "frete_nacional_brl": 600.0,
+            "impostos_federais_brl": 410.31,
+            "impostos_total_brl": 1038.52,
+            "custo_total_brl": 4090.06,
+            "custo_unitario_brl": 81.8,
+            "referencia_legislacao_br": {
+              "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+              "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+              "ipi": "IPI — TIPI (base CIF+II)",
+              "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+              "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+              "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+              "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+              "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+            },
+            "despesas_aduaneiras_inclusas": true
+          }
+        },
+        "economia_hub_vs_direta_unit_brl": -73.49,
+        "margem_marketplace_hub": {
+          "ok": true,
+          "preco_venda_brl": 89.9,
+          "custo_unitario_brl": 155.29,
+          "liquido_apos_taxa_brl": 75.52,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -79.77,
+          "margem_pct": -88.7,
+          "lucro_razoavel": false
+        },
+        "margem_marketplace_direta": {
+          "ok": true,
+          "preco_venda_brl": 89.9,
+          "custo_unitario_brl": 81.8,
+          "liquido_apos_taxa_brl": 75.52,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -6.28,
+          "margem_pct": -7.0,
+          "lucro_razoavel": false
+        },
+        "taxa_servico_terceiro": null,
+        "veredito": "REVISAR_PRECO_OU_CUSTO",
+        "possibilidades": [
+          {
+            "id": "proprio_revenda_ml",
+            "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+            "ativo": true
+          },
+          {
+            "id": "servico_logistico_terceiros",
+            "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+            "ativo": true
+          },
+          {
+            "id": "consolidacao_multi_sku",
+            "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+            "ativo": true
+          },
+          {
+            "id": "comparar_vs_import_direta_br",
+            "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+            "ativo": true
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-petg",
+      "nome": "Filamento PETG 1kg",
+      "material": "PETG",
+      "fonte_marketplace": "mercadolivre",
+      "preco_venda_ml_brl": 99.9,
+      "preco_ml_fonte": "catalogo_hub",
+      "lucro_alvo_pct": 20.0,
+      "taxa_marketplace_pct": 16.0,
+      "custo_hub_unitario_brl": 158.05,
+      "custo_com_overhead_unitario_brl": 183.05,
+      "quebra_custo_unitario_brl": {
+        "mercadoria": 27.5,
+        "frete_china_py": 6.6,
+        "hub_operacional": 25.29,
+        "terrestre_py_br": 98.66,
+        "overhead_mensal_diluido": 25.0,
+        "operacional_sem_mercadoria": 130.55
+      },
+      "teto_custo_para_lucro_alvo": {
+        "ok": true,
+        "preco_venda_brl": 99.9,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "liquido_apos_taxa_brl": 83.92,
+        "lucro_alvo_brl": 19.98,
+        "custo_unitario_maximo_brl": 63.94
+      },
+      "preco_minimo_venda_para_lucro_alvo": {
+        "ok": true,
+        "custo_unitario_brl": 158.05,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "preco_venda_minimo_brl": 246.95
+      },
+      "folga_custo_brl": -94.11,
+      "margem_atual": {
+        "ok": true,
+        "preco_venda_brl": 99.9,
+        "custo_unitario_brl": 158.05,
+        "liquido_apos_taxa_brl": 83.92,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -74.13,
+        "margem_pct": -74.2,
+        "lucro_razoavel": false
+      },
+      "atinge_lucro_alvo": false,
+      "atinge_lucro_alvo_com_overhead": false,
+      "veredito_operacional": "AJUSTAR_CUSTO_OU_PRECO",
+      "avaliacao_completa": {
+        "ok": true,
+        "produto_id": "filamento-impressora-3d-petg",
+        "nome": "Filamento PETG 1kg",
+        "cliente_id": "cliente_proprio_masterprint",
+        "tipo_cliente": "proprio",
+        "preco_venda_ml_brl": 99.9,
+        "lucro_alvo_pct": 20.0,
+        "custo_maximo_para_lucro_alvo_brl": 63.94,
+        "atinge_lucro_alvo": false,
+        "rota_hub_py": {
+          "ok": true,
+          "rota": "china_hub_py_terrestre_br",
+          "hub": {
+            "ok": true,
+            "status_hub": "planejado",
+            "hub_id": "hub_py_cde",
+            "endereco": {
+              "pais": "PY",
+              "cidade": "Ciudad del Este",
+              "departamento": "Alto Paraná",
+              "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+              "codigo_postal": "7000",
+              "lat": -25.5097,
+              "lng": -54.6112,
+              "uso": "referencia_comercial_importacao"
+            },
+            "usos": [
+              "recebimento_china",
+              "armazenagem",
+              "handling_multi_cliente",
+              "despacho_terrestre_br",
+              "ponto_consolidacao"
+            ],
+            "cep_destino_br_padrao": "13467-694",
+            "via_env": false,
+            "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+          },
+          "fob_usd_unit": 5.0,
+          "cambio_usd_brl": 5.5,
+          "quantidade": 50,
+          "cep_destino_br": "13467-694",
+          "mercadoria_brl": 1375.0,
+          "frete_china_py_brl": 330.0,
+          "frete_china_py_usd_kg": 1.2,
+          "hub_custos": {
+            "ok": true,
+            "quantidade": 50,
+            "volume_m3_total": 0.2,
+            "dias_armazenagem": 7,
+            "armazenagem_brl": 11.2,
+            "handling_brl": 1250.0,
+            "seguro_hub_brl": 3.41,
+            "custo_hub_total_brl": 1264.61,
+            "custo_hub_unitario_brl": 25.29,
+            "ocupacao_capacidade_pct": 0.5,
+            "overhead_mensal_hub_brl": 2500.0,
+            "validacao": {
+              "volume_positivo": true,
+              "dentro_capacidade": true,
+              "handling_minimo_aplicado": true
+            }
+          },
+          "terrestre_py_br": {
+            "ok": true,
+            "corredor_id": "cde_foz_americana",
+            "custo_total_brl": 4933.11,
+            "km_total": 990.0,
+            "dias_transito_estim": 3
+          },
+          "custo_total_brl": 7902.72,
+          "custo_unitario_brl": 158.05,
+          "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+          "despesas_validadas": {
+            "mercadoria_e_frete_china_py": true,
+            "hub_armazenagem_handling": true,
+            "terrestre_py_br": true,
+            "siscomex_referencia_di_br_se_formal": 154.23
+          }
+        },
+        "rota_import_direta_br": {
+          "ok": true,
+          "rota": "china_direto_maritimo_br",
+          "custo_unitario_brl": 86.11,
+          "custo_total_brl": 4305.35,
+          "impostos_total_brl": 1115.62,
+          "siscomex_brl": 154.23,
+          "afrmm_brl": 18.7,
+          "landed": {
+            "ok": true,
+            "modo_frete": "maritimo",
+            "quantidade": 50,
+            "peso_kg_unit": 1.0,
+            "peso_total_kg": 50.0,
+            "cambio_usd_brl": 5.5,
+            "fob_usd_unit": 5.0,
+            "fob_brl_total": 1375.0,
+            "frete_internacional_usd": 42.5,
+            "frete_internacional_brl": 233.75,
+            "seguro_brl": 8.04,
+            "cif_brl": 1616.79,
+            "valor_aduaneiro_cif_brl": 1616.79,
+            "ii_pct": 16.0,
+            "ii_brl": 258.69,
+            "ipi_pct": 0.0,
+            "ipi_brl": 0.0,
+            "pis_pct": 2.1,
+            "pis_brl": 33.95,
+            "cofins_pct": 9.65,
+            "cofins_brl": 156.02,
+            "pis_cofins_brl": 189.97,
+            "icms_pct": 18.0,
+            "icms_brl": 666.96,
+            "siscomex_brl": 154.23,
+            "siscomex_adicoes": 1,
+            "siscomex_detalhe": {
+              "ok": true,
+              "adicoes": 1,
+              "di_brl": 115.67,
+              "adicoes_brl": 38.56,
+              "total_brl": 154.23,
+              "detalhe_adicoes": [
+                {
+                  "adicao": 1,
+                  "brl": 38.56
+                }
+              ],
+              "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+              "referencia": {
+                "lei": "Lei 9.716/1998 art. 3º",
+                "ra": "Decreto 6.759/2009 art. 306",
+                "portaria": "Portaria ME nº 4.131/2021",
+                "in_rfb": "IN RFB nº 2.024/2021",
+                "vigencia": "desde 01/06/2021"
+              },
+              "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+              "legado_nao_usar_brl": 214.5
+            },
+            "desembaraco_brl": 800.0,
+            "afrmm_pct": 8.0,
+            "afrmm_brl": 18.7,
+            "despesas_aduaneiras_brl": 972.93,
+            "frete_nacional_brl": 600.0,
+            "impostos_federais_brl": 448.66,
+            "impostos_total_brl": 1115.62,
+            "custo_total_brl": 4305.35,
+            "custo_unitario_brl": 86.11,
+            "referencia_legislacao_br": {
+              "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+              "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+              "ipi": "IPI — TIPI (base CIF+II)",
+              "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+              "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+              "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+              "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+              "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+            },
+            "despesas_aduaneiras_inclusas": true
+          }
+        },
+        "economia_hub_vs_direta_unit_brl": -71.94,
+        "margem_marketplace_hub": {
+          "ok": true,
+          "preco_venda_brl": 99.9,
+          "custo_unitario_brl": 158.05,
+          "liquido_apos_taxa_brl": 83.92,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -74.13,
+          "margem_pct": -74.2,
+          "lucro_razoavel": false
+        },
+        "margem_marketplace_direta": {
+          "ok": true,
+          "preco_venda_brl": 99.9,
+          "custo_unitario_brl": 86.11,
+          "liquido_apos_taxa_brl": 83.92,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -2.19,
+          "margem_pct": -2.2,
+          "lucro_razoavel": false
+        },
+        "taxa_servico_terceiro": null,
+        "veredito": "REVISAR_PRECO_OU_CUSTO",
+        "possibilidades": [
+          {
+            "id": "proprio_revenda_ml",
+            "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+            "ativo": true
+          },
+          {
+            "id": "servico_logistico_terceiros",
+            "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+            "ativo": true
+          },
+          {
+            "id": "consolidacao_multi_sku",
+            "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+            "ativo": true
+          },
+          {
+            "id": "comparar_vs_import_direta_br",
+            "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+            "ativo": true
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-abs",
+      "nome": "Filamento ABS 1kg",
+      "material": "ABS",
+      "fonte_marketplace": "mercadolivre",
+      "preco_venda_ml_brl": 94.9,
+      "preco_ml_fonte": "catalogo_hub",
+      "lucro_alvo_pct": 20.0,
+      "taxa_marketplace_pct": 16.0,
+      "custo_hub_unitario_brl": 158.05,
+      "custo_com_overhead_unitario_brl": 183.05,
+      "quebra_custo_unitario_brl": {
+        "mercadoria": 27.5,
+        "frete_china_py": 6.6,
+        "hub_operacional": 25.29,
+        "terrestre_py_br": 98.66,
+        "overhead_mensal_diluido": 25.0,
+        "operacional_sem_mercadoria": 130.55
+      },
+      "teto_custo_para_lucro_alvo": {
+        "ok": true,
+        "preco_venda_brl": 94.9,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "liquido_apos_taxa_brl": 79.72,
+        "lucro_alvo_brl": 18.98,
+        "custo_unitario_maximo_brl": 60.74
+      },
+      "preco_minimo_venda_para_lucro_alvo": {
+        "ok": true,
+        "custo_unitario_brl": 158.05,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "preco_venda_minimo_brl": 246.95
+      },
+      "folga_custo_brl": -97.31,
+      "margem_atual": {
+        "ok": true,
+        "preco_venda_brl": 94.9,
+        "custo_unitario_brl": 158.05,
+        "liquido_apos_taxa_brl": 79.72,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -78.33,
+        "margem_pct": -82.5,
+        "lucro_razoavel": false
+      },
+      "atinge_lucro_alvo": false,
+      "atinge_lucro_alvo_com_overhead": false,
+      "veredito_operacional": "AJUSTAR_CUSTO_OU_PRECO",
+      "avaliacao_completa": {
+        "ok": true,
+        "produto_id": "filamento-impressora-3d-abs",
+        "nome": "Filamento ABS 1kg",
+        "cliente_id": "cliente_proprio_masterprint",
+        "tipo_cliente": "proprio",
+        "preco_venda_ml_brl": 94.9,
+        "lucro_alvo_pct": 20.0,
+        "custo_maximo_para_lucro_alvo_brl": 60.74,
+        "atinge_lucro_alvo": false,
+        "rota_hub_py": {
+          "ok": true,
+          "rota": "china_hub_py_terrestre_br",
+          "hub": {
+            "ok": true,
+            "status_hub": "planejado",
+            "hub_id": "hub_py_cde",
+            "endereco": {
+              "pais": "PY",
+              "cidade": "Ciudad del Este",
+              "departamento": "Alto Paraná",
+              "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+              "codigo_postal": "7000",
+              "lat": -25.5097,
+              "lng": -54.6112,
+              "uso": "referencia_comercial_importacao"
+            },
+            "usos": [
+              "recebimento_china",
+              "armazenagem",
+              "handling_multi_cliente",
+              "despacho_terrestre_br",
+              "ponto_consolidacao"
+            ],
+            "cep_destino_br_padrao": "13467-694",
+            "via_env": false,
+            "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+          },
+          "fob_usd_unit": 5.0,
+          "cambio_usd_brl": 5.5,
+          "quantidade": 50,
+          "cep_destino_br": "13467-694",
+          "mercadoria_brl": 1375.0,
+          "frete_china_py_brl": 330.0,
+          "frete_china_py_usd_kg": 1.2,
+          "hub_custos": {
+            "ok": true,
+            "quantidade": 50,
+            "volume_m3_total": 0.2,
+            "dias_armazenagem": 7,
+            "armazenagem_brl": 11.2,
+            "handling_brl": 1250.0,
+            "seguro_hub_brl": 3.41,
+            "custo_hub_total_brl": 1264.61,
+            "custo_hub_unitario_brl": 25.29,
+            "ocupacao_capacidade_pct": 0.5,
+            "overhead_mensal_hub_brl": 2500.0,
+            "validacao": {
+              "volume_positivo": true,
+              "dentro_capacidade": true,
+              "handling_minimo_aplicado": true
+            }
+          },
+          "terrestre_py_br": {
+            "ok": true,
+            "corredor_id": "cde_foz_americana",
+            "custo_total_brl": 4933.11,
+            "km_total": 990.0,
+            "dias_transito_estim": 3
+          },
+          "custo_total_brl": 7902.72,
+          "custo_unitario_brl": 158.05,
+          "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+          "despesas_validadas": {
+            "mercadoria_e_frete_china_py": true,
+            "hub_armazenagem_handling": true,
+            "terrestre_py_br": true,
+            "siscomex_referencia_di_br_se_formal": 154.23
+          }
+        },
+        "rota_import_direta_br": {
+          "ok": true,
+          "rota": "china_direto_maritimo_br",
+          "custo_unitario_brl": 86.11,
+          "custo_total_brl": 4305.35,
+          "impostos_total_brl": 1115.62,
+          "siscomex_brl": 154.23,
+          "afrmm_brl": 18.7,
+          "landed": {
+            "ok": true,
+            "modo_frete": "maritimo",
+            "quantidade": 50,
+            "peso_kg_unit": 1.0,
+            "peso_total_kg": 50.0,
+            "cambio_usd_brl": 5.5,
+            "fob_usd_unit": 5.0,
+            "fob_brl_total": 1375.0,
+            "frete_internacional_usd": 42.5,
+            "frete_internacional_brl": 233.75,
+            "seguro_brl": 8.04,
+            "cif_brl": 1616.79,
+            "valor_aduaneiro_cif_brl": 1616.79,
+            "ii_pct": 16.0,
+            "ii_brl": 258.69,
+            "ipi_pct": 0.0,
+            "ipi_brl": 0.0,
+            "pis_pct": 2.1,
+            "pis_brl": 33.95,
+            "cofins_pct": 9.65,
+            "cofins_brl": 156.02,
+            "pis_cofins_brl": 189.97,
+            "icms_pct": 18.0,
+            "icms_brl": 666.96,
+            "siscomex_brl": 154.23,
+            "siscomex_adicoes": 1,
+            "siscomex_detalhe": {
+              "ok": true,
+              "adicoes": 1,
+              "di_brl": 115.67,
+              "adicoes_brl": 38.56,
+              "total_brl": 154.23,
+              "detalhe_adicoes": [
+                {
+                  "adicao": 1,
+                  "brl": 38.56
+                }
+              ],
+              "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+              "referencia": {
+                "lei": "Lei 9.716/1998 art. 3º",
+                "ra": "Decreto 6.759/2009 art. 306",
+                "portaria": "Portaria ME nº 4.131/2021",
+                "in_rfb": "IN RFB nº 2.024/2021",
+                "vigencia": "desde 01/06/2021"
+              },
+              "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+              "legado_nao_usar_brl": 214.5
+            },
+            "desembaraco_brl": 800.0,
+            "afrmm_pct": 8.0,
+            "afrmm_brl": 18.7,
+            "despesas_aduaneiras_brl": 972.93,
+            "frete_nacional_brl": 600.0,
+            "impostos_federais_brl": 448.66,
+            "impostos_total_brl": 1115.62,
+            "custo_total_brl": 4305.35,
+            "custo_unitario_brl": 86.11,
+            "referencia_legislacao_br": {
+              "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+              "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+              "ipi": "IPI — TIPI (base CIF+II)",
+              "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+              "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+              "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+              "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+              "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+            },
+            "despesas_aduaneiras_inclusas": true
+          }
+        },
+        "economia_hub_vs_direta_unit_brl": -71.94,
+        "margem_marketplace_hub": {
+          "ok": true,
+          "preco_venda_brl": 94.9,
+          "custo_unitario_brl": 158.05,
+          "liquido_apos_taxa_brl": 79.72,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -78.33,
+          "margem_pct": -82.5,
+          "lucro_razoavel": false
+        },
+        "margem_marketplace_direta": {
+          "ok": true,
+          "preco_venda_brl": 94.9,
+          "custo_unitario_brl": 86.11,
+          "liquido_apos_taxa_brl": 79.72,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -6.39,
+          "margem_pct": -6.7,
+          "lucro_razoavel": false
+        },
+        "taxa_servico_terceiro": null,
+        "veredito": "REVISAR_PRECO_OU_CUSTO",
+        "possibilidades": [
+          {
+            "id": "proprio_revenda_ml",
+            "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+            "ativo": true
+          },
+          {
+            "id": "servico_logistico_terceiros",
+            "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+            "ativo": true
+          },
+          {
+            "id": "consolidacao_multi_sku",
+            "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+            "ativo": true
+          },
+          {
+            "id": "comparar_vs_import_direta_br",
+            "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+            "ativo": true
+          }
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "produto_id": "filamento-impressora-3d-tpu",
+      "nome": "Filamento TPU 1kg",
+      "material": "TPU",
+      "fonte_marketplace": "mercadolivre",
+      "preco_venda_ml_brl": 119.9,
+      "preco_ml_fonte": "catalogo_hub",
+      "lucro_alvo_pct": 20.0,
+      "taxa_marketplace_pct": 16.0,
+      "custo_hub_unitario_brl": 234.82,
+      "custo_com_overhead_unitario_brl": 259.82,
+      "quebra_custo_unitario_brl": {
+        "mercadoria": 38.5,
+        "frete_china_py": 6.6,
+        "hub_operacional": 25.31,
+        "terrestre_py_br": 164.4,
+        "overhead_mensal_diluido": 25.0,
+        "operacional_sem_mercadoria": 196.31
+      },
+      "teto_custo_para_lucro_alvo": {
+        "ok": true,
+        "preco_venda_brl": 119.9,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "liquido_apos_taxa_brl": 100.72,
+        "lucro_alvo_brl": 23.98,
+        "custo_unitario_maximo_brl": 76.74
+      },
+      "preco_minimo_venda_para_lucro_alvo": {
+        "ok": true,
+        "custo_unitario_brl": 234.82,
+        "taxa_marketplace_pct": 16.0,
+        "lucro_alvo_pct": 20.0,
+        "preco_venda_minimo_brl": 366.91
+      },
+      "folga_custo_brl": -158.08,
+      "margem_atual": {
+        "ok": true,
+        "preco_venda_brl": 119.9,
+        "custo_unitario_brl": 234.82,
+        "liquido_apos_taxa_brl": 100.72,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": -134.1,
+        "margem_pct": -111.8,
+        "lucro_razoavel": false
+      },
+      "atinge_lucro_alvo": false,
+      "atinge_lucro_alvo_com_overhead": false,
+      "veredito_operacional": "AJUSTAR_CUSTO_OU_PRECO",
+      "avaliacao_completa": {
+        "ok": true,
+        "produto_id": "filamento-impressora-3d-tpu",
+        "nome": "Filamento TPU 1kg",
+        "cliente_id": "cliente_proprio_masterprint",
+        "tipo_cliente": "proprio",
+        "preco_venda_ml_brl": 119.9,
+        "lucro_alvo_pct": 20.0,
+        "custo_maximo_para_lucro_alvo_brl": 76.74,
+        "atinge_lucro_alvo": false,
+        "rota_hub_py": {
+          "ok": true,
+          "rota": "china_hub_py_terrestre_br",
+          "hub": {
+            "ok": true,
+            "status_hub": "planejado",
+            "hub_id": "hub_py_cde",
+            "endereco": {
+              "pais": "PY",
+              "cidade": "Ciudad del Este",
+              "departamento": "Alto Paraná",
+              "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+              "codigo_postal": "7000",
+              "lat": -25.5097,
+              "lng": -54.6112,
+              "uso": "referencia_comercial_importacao"
+            },
+            "usos": [
+              "recebimento_china",
+              "armazenagem",
+              "handling_multi_cliente",
+              "despacho_terrestre_br",
+              "ponto_consolidacao"
+            ],
+            "cep_destino_br_padrao": "13467-694",
+            "via_env": false,
+            "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+          },
+          "fob_usd_unit": 7.0,
+          "cambio_usd_brl": 5.5,
+          "quantidade": 30,
+          "cep_destino_br": "13467-694",
+          "mercadoria_brl": 1155.0,
+          "frete_china_py_brl": 198.0,
+          "frete_china_py_usd_kg": 1.2,
+          "hub_custos": {
+            "ok": true,
+            "quantidade": 30,
+            "volume_m3_total": 0.12,
+            "dias_armazenagem": 7,
+            "armazenagem_brl": 6.72,
+            "handling_brl": 750.0,
+            "seguro_hub_brl": 2.71,
+            "custo_hub_total_brl": 759.43,
+            "custo_hub_unitario_brl": 25.31,
+            "ocupacao_capacidade_pct": 0.3,
+            "overhead_mensal_hub_brl": 2500.0,
+            "validacao": {
+              "volume_positivo": true,
+              "dentro_capacidade": true,
+              "handling_minimo_aplicado": true
+            }
+          },
+          "terrestre_py_br": {
+            "ok": true,
+            "corredor_id": "cde_foz_americana",
+            "custo_total_brl": 4932.06,
+            "km_total": 990.0,
+            "dias_transito_estim": 3
+          },
+          "custo_total_brl": 7044.49,
+          "custo_unitario_brl": 234.82,
+          "pendencia_fiscal_br": "Impostos/ICMS/DI na entrada BR via Mercosul devem ser confirmados com despachante — não embutidos nesta estimativa de hub.",
+          "despesas_validadas": {
+            "mercadoria_e_frete_china_py": true,
+            "hub_armazenagem_handling": true,
+            "terrestre_py_br": true,
+            "siscomex_referencia_di_br_se_formal": 154.23
+          }
+        },
+        "rota_import_direta_br": {
+          "ok": true,
+          "rota": "china_direto_maritimo_br",
+          "custo_unitario_brl": 118.85,
+          "custo_total_brl": 3565.37,
+          "impostos_total_brl": 938.2,
+          "siscomex_brl": 154.23,
+          "afrmm_brl": 11.22,
+          "landed": {
+            "ok": true,
+            "modo_frete": "maritimo",
+            "quantidade": 30,
+            "peso_kg_unit": 1.0,
+            "peso_total_kg": 30.0,
+            "cambio_usd_brl": 5.5,
+            "fob_usd_unit": 7.0,
+            "fob_brl_total": 1155.0,
+            "frete_internacional_usd": 25.5,
+            "frete_internacional_brl": 140.25,
+            "seguro_brl": 6.48,
+            "cif_brl": 1301.73,
+            "valor_aduaneiro_cif_brl": 1301.73,
+            "ii_pct": 16.0,
+            "ii_brl": 208.28,
+            "ipi_pct": 0.0,
+            "ipi_brl": 0.0,
+            "pis_pct": 2.1,
+            "pis_brl": 27.34,
+            "cofins_pct": 9.65,
+            "cofins_brl": 125.62,
+            "pis_cofins_brl": 152.95,
+            "icms_pct": 18.0,
+            "icms_brl": 576.97,
+            "siscomex_brl": 154.23,
+            "siscomex_adicoes": 1,
+            "siscomex_detalhe": {
+              "ok": true,
+              "adicoes": 1,
+              "di_brl": 115.67,
+              "adicoes_brl": 38.56,
+              "total_brl": 154.23,
+              "detalhe_adicoes": [
+                {
+                  "adicao": 1,
+                  "brl": 38.56
+                }
+              ],
+              "formula": "DI + soma(adições por faixa IN RFB 2.024/2021)",
+              "referencia": {
+                "lei": "Lei 9.716/1998 art. 3º",
+                "ra": "Decreto 6.759/2009 art. 306",
+                "portaria": "Portaria ME nº 4.131/2021",
+                "in_rfb": "IN RFB nº 2.024/2021",
+                "vigencia": "desde 01/06/2021"
+              },
+              "aviso": "Taxa fixa por registro de DI/DUIMP + adições; não proporcional ao FOB. Entra na base do ICMS de importação. Confirme nº de adições com o despachante.",
+              "legado_nao_usar_brl": 214.5
+            },
+            "desembaraco_brl": 800.0,
+            "afrmm_pct": 8.0,
+            "afrmm_brl": 11.22,
+            "despesas_aduaneiras_brl": 965.45,
+            "frete_nacional_brl": 360.0,
+            "impostos_federais_brl": 361.23,
+            "impostos_total_brl": 938.2,
+            "custo_total_brl": 3565.37,
+            "custo_unitario_brl": 118.85,
+            "referencia_legislacao_br": {
+              "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+              "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+              "ipi": "IPI — TIPI (base CIF+II)",
+              "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+              "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+              "afrmm": "Lei 10.893/2004 — AFRMM sobre frete marítimo internacional",
+              "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+              "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante."
+            },
+            "despesas_aduaneiras_inclusas": true
+          }
+        },
+        "economia_hub_vs_direta_unit_brl": -115.97,
+        "margem_marketplace_hub": {
+          "ok": true,
+          "preco_venda_brl": 119.9,
+          "custo_unitario_brl": 234.82,
+          "liquido_apos_taxa_brl": 100.72,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -134.1,
+          "margem_pct": -111.8,
+          "lucro_razoavel": false
+        },
+        "margem_marketplace_direta": {
+          "ok": true,
+          "preco_venda_brl": 119.9,
+          "custo_unitario_brl": 118.85,
+          "liquido_apos_taxa_brl": 100.72,
+          "taxa_marketplace_pct": 16.0,
+          "margem_brl": -18.13,
+          "margem_pct": -15.1,
+          "lucro_razoavel": false
+        },
+        "taxa_servico_terceiro": null,
+        "veredito": "REVISAR_PRECO_OU_CUSTO",
+        "possibilidades": [
+          {
+            "id": "proprio_revenda_ml",
+            "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+            "ativo": true
+          },
+          {
+            "id": "servico_logistico_terceiros",
+            "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+            "ativo": true
+          },
+          {
+            "id": "consolidacao_multi_sku",
+            "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+            "ativo": true
+          },
+          {
+            "id": "comparar_vs_import_direta_br",
+            "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+            "ativo": true
+          }
+        ]
+      }
+    }
+  ],
+  "clientes": [
+    {
+      "id": "cliente_proprio_masterprint",
+      "nome": "Masterprint / operação própria",
+      "cnpj_br": "23811261000197",
+      "tipo": "proprio",
+      "ativo": true,
+      "ramos": [
+        "filamentos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "cliente_slot_externo_1",
+      "nome": "Cliente externo (slot futuro)",
+      "cnpj_br": "",
+      "tipo": "terceiro",
+      "ativo": false,
+      "ramos": [],
+      "nota": "Ativar quando houver contrato de serviço logístico."
+    }
+  ],
+  "possibilidades": [
+    {
+      "id": "proprio_revenda_ml",
+      "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+      "ativo": true
+    },
+    {
+      "id": "servico_logistico_terceiros",
+      "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+      "ativo": true
+    },
+    {
+      "id": "consolidacao_multi_sku",
+      "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+      "ativo": true
+    },
+    {
+      "id": "comparar_vs_import_direta_br",
+      "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+      "ativo": true
+    }
+  ],
+  "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial."
+}

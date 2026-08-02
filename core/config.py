@@ -896,6 +896,10 @@ IMPORTACAO_PY_ENDERECO = os.getenv("IMPORTACAO_PY_ENDERECO", "").strip()
 IMPORTACAO_PY_CIDADE = os.getenv("IMPORTACAO_PY_CIDADE", "").strip()
 IMPORTACAO_PY_DEPARTAMENTO = os.getenv("IMPORTACAO_PY_DEPARTAMENTO", "").strip()
 IMPORTACAO_PY_CODIGO_POSTAL = os.getenv("IMPORTACAO_PY_CODIGO_POSTAL", "").strip()
+# Hub PY multi-cliente / marketplaces (estrutura futura — catalogo/hub_paraguai_clientes.json)
+HUB_PARAGUAI_CATALOGO = os.getenv("HUB_PARAGUAI_CATALOGO", "catalogo/hub_paraguai_clientes.json")
+HUB_PARAGUAI_ATIVO = os.getenv("HUB_PARAGUAI_ATIVO", "1").strip().lower() not in ("0", "false", "no")
+HUB_PY_FRETE_CHINA_USD_KG = float(os.getenv("HUB_PY_FRETE_CHINA_USD_KG", "1.2"))
 # China marítimo: Santos no SE, portos NE no Nordeste, comparar tributação com Sul
 IMPORTACAO_CHINA_ROTA_REGIONAL = os.getenv("IMPORTACAO_CHINA_ROTA_REGIONAL", "1").strip().lower() not in (
     "0",

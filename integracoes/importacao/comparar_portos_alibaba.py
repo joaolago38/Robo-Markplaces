@@ -552,6 +552,32 @@ def comparar_portos_para_produto_alibaba(
         logger.debug("py terrestre: %s", exc)
         py_terrestre = {"ok": False, "erro": str(exc)}
 
+    hub_py: dict[str, Any] = {"ok": False}
+    try:
+        from core import config as cfg
+
+        if bool(getattr(cfg, "HUB_PARAGUAI_ATIVO", True)):
+            from integracoes.importacao.hub_paraguai_marketplace import (
+                avaliar_produto_hub_vs_marketplace,
+            )
+
+            hub_py = avaliar_produto_hub_vs_marketplace(
+                {
+                    "id": prod.get("id"),
+                    "nome": prod.get("nome"),
+                    "fob_usd": prod.get("preco_fob_usd"),
+                    "peso_kg": prod.get("peso_kg"),
+                    "quantidade": prod.get("quantidade"),
+                    "cep_destino": cep,
+                    "frete_preferido": "maritimo",
+                    "tipo_cliente": "proprio",
+                },
+                cambio_usd_brl=cambio,
+            )
+    except Exception as exc:
+        logger.debug("hub py marketplace: %s", exc)
+        hub_py = {"ok": False, "erro": str(exc)}
+
     out = {
         "ok": bool(ok_list),
         "gerado_em": agora_brasil().isoformat(),
@@ -586,12 +612,22 @@ def comparar_portos_para_produto_alibaba(
             "melhor_corredor": py_terrestre.get("melhor_corredor"),
             "cobertura_costa_pct": py_terrestre.get("cobertura_costa_brasil_pct"),
         },
+        "hub_paraguai_marketplace": {
+            "ok": bool(hub_py.get("ok")),
+            "status": ((hub_py.get("rota_hub_py") or {}).get("hub") or {}).get("status_hub"),
+            "veredito": hub_py.get("veredito"),
+            "custo_unitario_hub_brl": ((hub_py.get("rota_hub_py") or {}).get("custo_unitario_brl")),
+            "custo_unitario_direta_brl": (
+                (hub_py.get("rota_import_direta_br") or {}).get("custo_unitario_brl")
+            ),
+            "economia_hub_vs_direta_unit_brl": hub_py.get("economia_hub_vs_direta_unit_brl"),
+        },
         "aviso": (
             "Custos estimados por porto/aeroporto BR · referência FOB Alibaba. "
             f"Costa BR coberta: {costa.get('cobertura_pct')}% dos hubs de referência. "
             f"Assertividade ≥{_assertividade_alvo():.0f}% = alta confiança; "
             "abaixo disso a decisão exige detalhe de custo. "
-            "Corredor PY terrestre disponível (Ciudad del Este → Foz → CEP BR). "
+            "Corredor PY terrestre + hub multi-cliente (planejado) disponíveis. "
             f"Rota China: {rota_pref.get('motivo')} · "
             f"tributação vs Sul: {trib_china.get('veredito') or 'n/d'}."
         ),
