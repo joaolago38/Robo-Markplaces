@@ -135,18 +135,34 @@ def _gerar_estrategias_claude(
     manicures: dict[str, Any],
     impala: list[dict[str, Any]],
 ) -> dict[str, Any] | None:
+    from core.claude_contexto_ml import (
+        enriquecer_contexto_claude,
+        max_tokens_dosados,
+        system_com_decisao,
+    )
+
     contexto = {
         "mercado_acetona_cruzeiro": consolidado,
         "manicures_brasil": manicures,
         "catalogo_impala_ativo": impala,
     }
+    ctx, dosagem = enriquecer_contexto_claude(
+        contexto,
+        consolidado=consolidado,
+        proposito="acetona_cruzeiro",
+    )
     return perguntar_estruturado(
-        "Analise o mercado de acetona Cruzeiro no ML e proponha estratégias integradas com esmaltes Impala.",
+        (
+            "Analise acetona Cruzeiro no ML cruzando produto × estado_ml. "
+            f"Profundidade={dosagem.get('profundidade')}. "
+            "Proponha estratégias Impala com foco em decisão "
+            f"({', '.join((dosagem.get('foco_decisao') or [])[:3])})."
+        ),
         _SCHEMA_ESTRATEGIA,
         "estrategia_acetona_impala",
-        max_tokens=900,
-        contexto=json.dumps(contexto, ensure_ascii=False, indent=2),
-        system=_SYSTEM_ESTRATEGIA,
+        max_tokens=max_tokens_dosados(900, dosagem),
+        contexto=json.dumps(ctx, ensure_ascii=False, indent=2),
+        system=system_com_decisao(_SYSTEM_ESTRATEGIA, dosagem),
         modelo=MODELO_RAPIDO,
     )
 

@@ -36,11 +36,19 @@ omit = [
     "integracoes/esmaltes/tendencias_internet.py",
     # Filamentos: agente é I/O ML/Alibaba/Telegram; lógica coberta em analise_* e cruzamento_*.
     "agentes/filamentos/agente_monitor_filamentos_ml.py",
+    "agentes/filamentos/agente_monitor_masterprint_petg.py",
+    "agentes/empresa/agente_monitor_cnpj_cnae.py",
+    "agentes/importacao/agente_comparar_portos_alibaba.py",
+    "agentes/importacao/agente_hub_paraguai_marketplace.py",
+    "agentes/importacao/agente_tributacao_py_br.py",
+    "agentes/escritorio/agente_monitor_masterprint_escritorio.py",
     "agentes/ml/agente_resumo_conta_ml.py",
     "agentes/esmaltes/agente_montar_kits_impala.py",
     "agentes/social/agente_conversao_manicures.py",
     "agentes/social/agente_necessidade_manicures.py",
     "agentes/infra/agente_consumo_claude.py",
+    # IA secundária Masterprint: I/O Claude; lógica de ramo coberta em tests dedicados
+    "integracoes/masterprint/avaliacao_ia_secundaria.py",
     # Conversão / necessidade manicures: I/O Meta/WA/ML; lógica em tests dedicados
     "integracoes/meta/meta_inbox.py",
     "integracoes/social/conversao_manicures.py",

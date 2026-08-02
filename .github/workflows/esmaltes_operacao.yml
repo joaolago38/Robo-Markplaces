@@ -6,8 +6,10 @@ name: Operação esmaltes consolidada
 on:
   workflow_dispatch:
   schedule:
-    # 08:00 BRT = 11:00 UTC
+    # 3x/dia BRT: 08:00 / 14:00 / 21:00 (= 11:00 / 17:00 / 00:00 UTC)
     - cron: "0 11 * * *"
+    - cron: "0 17 * * *"
+    - cron: "0 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -89,7 +91,7 @@ jobs:
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           ESMALTES_OPERACAO_ATIVO: "1"
           ESMALTES_OPERACAO_ALERTA: "1"
-          ESMALTES_OPERACAO_COOLDOWN_SEG: "86400"
+          ESMALTES_OPERACAO_COOLDOWN_SEG: "18000"
           CRESCIMENTO_ESMALTES_META_KITS_PCT: "40"
           CRESCIMENTO_ESMALTES_META_MARGEM_PCT: "15"
       - name: Publicar snapshot

@@ -87,6 +87,12 @@ def avaliar_busca_removedores(
     consolidado: dict[str, Any],
     resultados: list[dict[str, Any]],
 ) -> dict[str, Any] | None:
+    from core.claude_contexto_ml import (
+        enriquecer_contexto_claude,
+        max_tokens_dosados,
+        system_com_decisao,
+    )
+
     contexto = {
         "catalogo": [_resumir_segmento_catalogo(s) for s in catalogo],
         "consolidado": {
@@ -111,13 +117,22 @@ def avaliar_busca_removedores(
             for p in (r.get("produtos") or [])[:2]
         ][:12],
     }
+    ctx, dosagem = enriquecer_contexto_claude(
+        contexto,
+        consolidado=consolidado,
+        proposito="removedores_unha",
+    )
     return perguntar_estruturado(
-        "Avalie a busca de removedores de unha no ML e sugira termos mais precisos.",
+        (
+            "Avalie a busca de removedores de unha no ML cruzando com estado_ml. "
+            f"Profundidade={dosagem.get('profundidade')}. "
+            "Sugira termos que favoreçam decisão de monitoramento."
+        ),
         _SCHEMA,
         "avaliacao_busca_removedores",
-        max_tokens=800,
-        contexto=json.dumps(contexto, ensure_ascii=False, indent=2),
-        system=_SYSTEM,
+        max_tokens=max_tokens_dosados(800, dosagem),
+        contexto=json.dumps(ctx, ensure_ascii=False, indent=2),
+        system=system_com_decisao(_SYSTEM, dosagem),
         modelo=MODELO_RAPIDO,
     )
 

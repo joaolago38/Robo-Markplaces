@@ -1,6 +1,9 @@
 """
 core/catalogo_produtos.py
 Carrega catalogo/produtos.json e mescla custo/estoque do Bling quando disponível.
+
+Dono fiscal dos dados: CNPJ 52668583000127 (hoje). Migração preparada para
+23811261000197 via CNPJ_DONO_PRODUTOS_USAR_ALVO=1 — ver core.empresa_contexto.
 """
 from __future__ import annotations
 
@@ -13,6 +16,23 @@ from core.config import ROOT
 logger = logging.getLogger("catalogo_produtos")
 
 CATALOGO_PATH = ROOT / "catalogo" / "produtos.json"
+
+
+def meta_dono_produtos() -> dict[str, Any]:
+    """Metadados do CNPJ dono dos produtos (atual × alvo)."""
+    try:
+        from core.empresa_contexto import situacao_dono_produtos
+
+        return situacao_dono_produtos()
+    except Exception as exc:
+        logger.debug("meta_dono_produtos: %s", exc)
+        return {
+            "cnpj_efetivo": "52668583000127",
+            "cnpj_formatado": "52.668.583/0001-27",
+            "cnpj_alvo": "23811261000197",
+            "usando_alvo": False,
+            "migracao_pendente": True,
+        }
 
 
 def carregar_produtos_catalogo() -> list[dict[str, Any]]:
@@ -43,15 +63,25 @@ def _custo_do_produto(produto: dict[str, Any], bling: dict[str, Any] | None) -> 
     return 0.0
 
 
+def _carimbar_dono(produto: dict[str, Any], dono: dict[str, Any]) -> dict[str, Any]:
+    out = dict(produto)
+    out["cnpj_dono"] = dono.get("cnpj_efetivo")
+    out["cnpj_dono_formatado"] = dono.get("cnpj_formatado")
+    out["cnpj_dono_alvo"] = dono.get("cnpj_alvo")
+    out["dono_produtos_usando_alvo"] = bool(dono.get("usando_alvo"))
+    return out
+
+
 def carregar_produtos_para_operacao(*, merge_bling: bool = True) -> list[dict[str, Any]]:
     """
     Lista de produtos com canais do catálogo + custo atualizado do Bling.
-    Usado por repricing, inteligência de preços e sincronização.
+    Cada item carrega cnpj_dono (hoje 526…; alvo 238… quando a flag ligar).
     """
     catalogo = carregar_produtos_catalogo()
     if not catalogo:
         return []
 
+    dono = meta_dono_produtos()
     bling_por_sku: dict[str, dict[str, Any]] = {}
     if merge_bling:
         try:
@@ -70,7 +100,7 @@ def carregar_produtos_para_operacao(*, merge_bling: bool = True) -> list[dict[st
             continue
         bling = bling_por_sku.get(sku)
         custo = _custo_do_produto(produto, bling)
-        merged = dict(produto)
+        merged = _carimbar_dono(dict(produto), dono)
         merged["sku"] = sku
         merged["custo"] = custo
         if bling:

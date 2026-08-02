@@ -5,8 +5,10 @@ name: Necessidade manicures × ML × canais
 on:
   workflow_dispatch:
   schedule:
-    # A cada 6h UTC
-    - cron: "0 2,8,14,20 * * *"
+    # 3x/dia BRT 08:35 / 14:35 / 21:35 (= 11:35 / 17:35 / 00:35 UTC)
+    - cron: "35 11 * * *"
+    - cron: "35 17 * * *"
+    - cron: "35 0 * * *"
 
 concurrency:
   # Inclui Claude estado: necessidade grava uso/toggle no mesmo cache Actions
@@ -78,7 +80,7 @@ jobs:
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
           BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
-          NECESSIDADE_MANICURES_COOLDOWN_SEG: "21600"
+          NECESSIDADE_MANICURES_COOLDOWN_SEG: "18000"
       - name: Publicar snapshot
         if: always()
         continue-on-error: true

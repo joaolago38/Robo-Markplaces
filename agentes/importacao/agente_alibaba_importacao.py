@@ -348,16 +348,20 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             if not alerta_resumo_enviado:
                 logger.info("Alibaba: resumo não enviado (cooldown ou Telegram indisponível)")
 
-        return {
-            "ok": True,
-            "total_produtos": len(resultados),
-            "com_novos": len(com_novos),
-            "alerta_enviado": alerta_novos_enviado or alerta_resumo_enviado,
-            "alerta_novos_enviado": alerta_novos_enviado,
-            "alerta_resumo_enviado": alerta_resumo_enviado,
-            "avaliacao_ia_parametros": ia_parametros,
-            "resultados": resultados,
-        }
+        from integracoes.importacao.contexto_importacao_cnpj import anexar_contexto_ao_resultado
+
+        return anexar_contexto_ao_resultado(
+            {
+                "ok": True,
+                "total_produtos": len(resultados),
+                "com_novos": len(com_novos),
+                "alerta_enviado": alerta_novos_enviado or alerta_resumo_enviado,
+                "alerta_novos_enviado": alerta_novos_enviado,
+                "alerta_resumo_enviado": alerta_resumo_enviado,
+                "avaliacao_ia_parametros": ia_parametros,
+                "resultados": resultados,
+            }
+        )
     except Exception as exc:
         logger.error("Agente Alibaba importação erro: %s", exc)
         return {"ok": False, "erro": str(exc), "resultados": []}

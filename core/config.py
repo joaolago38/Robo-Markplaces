@@ -130,6 +130,18 @@ CLAUDE_ANALISE_FURA_TEMPLATE = os.getenv("CLAUDE_ANALISE_FURA_TEMPLATE", "1").st
     "yes",
     "on",
 )
+# Injeta estado_ml + situação do produto nas análises Claude de marketplace
+CLAUDE_ML_CONTEXTO_ATIVO = os.getenv("CLAUDE_ML_CONTEXTO_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Dosagem minima/padrao/ampliada conforme saúde ML × stress do produto
+CLAUDE_ML_DOSAGEM_ATIVA = os.getenv("CLAUDE_ML_DOSAGEM_ATIVA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Lojahub
 LOJAHUB_TOKEN           = os.getenv("LOJAHUB_TOKEN", "").strip()
@@ -148,6 +160,66 @@ ML_ACCESS_TOKEN  = os.getenv("ML_ACCESS_TOKEN", "").strip()
 ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "").strip()
 ML_SELLER_ID     = os.getenv("ML_SELLER_ID", "").strip()
 ML_SITE_ID       = (os.getenv("ML_SITE_ID", "MLB").strip() or "MLB")  # MLB = Brasil
+# Empresas por CNPJ + CNAE (complementa configs atuais; não as substitui)
+EMPRESAS_CNAE_CNPJ_CATALOGO = os.getenv(
+    "EMPRESAS_CNAE_CNPJ_CATALOGO", "catalogo/empresas_cnae_cnpj.json"
+)
+EMPRESA_ATIVA_ID = os.getenv("EMPRESA_ATIVA_ID", "").strip()
+EMPRESA_ATIVA_CNPJ = os.getenv("EMPRESA_ATIVA_CNPJ", "").strip()
+# Dois CNPJs: esmaltes × demais produtos (Masterprint/filamentos/escritório)
+ESMALTES_CNPJ = os.getenv("ESMALTES_CNPJ", "52668583000127").strip()
+DEMAIS_PRODUTOS_CNPJ = os.getenv("DEMAIS_PRODUTOS_CNPJ", "23811261000197").strip()
+# Dono fiscal/operacional dos dados de produtos (catalogo/produtos.json etc.).
+# Hoje: esmaltes (526…). Alvo da migração: demais (238…). Para trocar sem
+# reescrever catálogos: CNPJ_DONO_PRODUTOS_USAR_ALVO=1
+CNPJ_DONO_PRODUTOS = os.getenv("CNPJ_DONO_PRODUTOS", ESMALTES_CNPJ or "52668583000127").strip()
+CNPJ_DONO_PRODUTOS_ALVO = os.getenv(
+    "CNPJ_DONO_PRODUTOS_ALVO", DEMAIS_PRODUTOS_CNPJ or "23811261000197"
+).strip()
+CNPJ_DONO_PRODUTOS_USAR_ALVO = os.getenv(
+    "CNPJ_DONO_PRODUTOS_USAR_ALVO", "0"
+).strip().lower() in ("1", "true", "yes", "on")
+# Monitor CNAE → CNPJ → produtos (alteração ativa monitoramento)
+MONITOR_CNPJ_CNAE_ATIVO = os.getenv("MONITOR_CNPJ_CNAE_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MONITOR_CNPJ_CNAE_ALERTA = os.getenv("MONITOR_CNPJ_CNAE_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Alerta no ciclo 10d mesmo sem alteração (False) ou só quando fingerprint muda (True)
+MONITOR_CNPJ_CNAE_ALERTA_SO_ALTERACAO = os.getenv(
+    "MONITOR_CNPJ_CNAE_ALERTA_SO_ALTERACAO", "0"
+).strip().lower() not in ("0", "false", "no")
+# Ciclo de monitoramento ML após alteração / refresh periódico
+MONITOR_CNPJ_CNAE_INTERVALO_DIAS = int(os.getenv("MONITOR_CNPJ_CNAE_INTERVALO_DIAS", "10"))
+MONITOR_CNPJ_CNAE_ML_AO_VIVO = os.getenv("MONITOR_CNPJ_CNAE_ML_AO_VIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Cooldown Telegram ≈ intervalo (10d); override via env se necessário
+MONITOR_CNPJ_CNAE_COOLDOWN_SEG = int(
+    os.getenv(
+        "MONITOR_CNPJ_CNAE_COOLDOWN_SEG",
+        str(MONITOR_CNPJ_CNAE_INTERVALO_DIAS * 24 * 3600),
+    )
+)
+# Limites de decisão do ecossistema (Alibaba + USD + vendas + saúde ML × CNAE/CNPJ)
+DECISION_LIMITS_ATIVO = os.getenv("DECISION_LIMITS_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+DECISION_LIMITS_MAX_FAZER = int(os.getenv("DECISION_LIMITS_MAX_FAZER", "3"))
+DECISION_LIMITS_MAX_IMPORTAR = int(os.getenv("DECISION_LIMITS_MAX_IMPORTAR", "1"))
+DECISION_LIMITS_MAX_ADS = int(os.getenv("DECISION_LIMITS_MAX_ADS", "1"))
+DECISION_LIMITS_JANELA_HORAS = int(os.getenv("DECISION_LIMITS_JANELA_HORAS", "12"))
+# Foco de análise por enquanto: Mercado Livre (Shopee/Magalu permanecem configurados)
+MARKETPLACE_FOCO_PRINCIPAL = os.getenv("MARKETPLACE_FOCO_PRINCIPAL", "mercadolivre").strip().lower() or "mercadolivre"
 # Resumo da conta (espelho do painel Resumo → Telegram)
 RESUMO_CONTA_ML_ALERTA = os.getenv("RESUMO_CONTA_ML_ALERTA", "1").strip().lower() not in (
     "0",
@@ -313,7 +385,8 @@ FILAMENTOS_ML_ALERTA_RESUMO = os.getenv("FILAMENTOS_ML_ALERTA_RESUMO", "1").stri
     "false",
     "no",
 )
-FILAMENTOS_ML_ALERTA_COOLDOWN_SEG = int(os.getenv("FILAMENTOS_ML_ALERTA_COOLDOWN_SEG", "21600"))
+# 5h — permite 3 janelas/dia (08/14/21 BRT) sem engolir a 2ª/3ª mensagem
+FILAMENTOS_ML_ALERTA_COOLDOWN_SEG = int(os.getenv("FILAMENTOS_ML_ALERTA_COOLDOWN_SEG", "18000"))
 FILAMENTOS_ML_CRUZAR_ALIBABA = os.getenv("FILAMENTOS_ML_CRUZAR_ALIBABA", "1").strip().lower() not in (
     "0",
     "false",
@@ -330,13 +403,86 @@ FILAMENTOS_SOURCING_ATIVO = os.getenv("FILAMENTOS_SOURCING_ATIVO", "1").strip().
 FILAMENTOS_SOURCING_CATALOGO_BR = os.getenv(
     "FILAMENTOS_SOURCING_CATALOGO_BR", "catalogo/filamentos_fornecedores_br.json"
 )
-FILAMENTOS_SOURCING_NCM = os.getenv("FILAMENTOS_SOURCING_NCM", "3916.90.10")
-FILAMENTOS_SOURCING_II_PCT = float(os.getenv("FILAMENTOS_SOURCING_II_PCT", "14.4"))
-FILAMENTOS_SOURCING_IPI_PCT = float(os.getenv("FILAMENTOS_SOURCING_IPI_PCT", "6.5"))
+FILAMENTOS_SOURCING_NCM = os.getenv("FILAMENTOS_SOURCING_NCM", "39169090")
+FILAMENTOS_SOURCING_II_PCT = float(os.getenv("FILAMENTOS_SOURCING_II_PCT", "12.6"))
+FILAMENTOS_SOURCING_IPI_PCT = float(os.getenv("FILAMENTOS_SOURCING_IPI_PCT", "0.0"))
 FILAMENTOS_SOURCING_ICMS_PCT = float(os.getenv("FILAMENTOS_SOURCING_ICMS_PCT", "18.0"))
 FILAMENTOS_SOURCING_MOQ_CHINA = int(os.getenv("FILAMENTOS_SOURCING_MOQ_CHINA", "20"))
 FILAMENTOS_SOURCING_TAXA_ML_PCT = float(os.getenv("FILAMENTOS_SOURCING_TAXA_ML_PCT", "16.0"))
 FILAMENTOS_SOURCING_MARGEM_MIN_PCT = float(os.getenv("FILAMENTOS_SOURCING_MARGEM_MIN_PCT", "15.0"))
+# Importação filamento: CNPJ Masterprint (demais produtos) — CEP via IMPORTACAO_DESTINO_CEP
+FILAMENTOS_IMPORTACAO_CNPJ = os.getenv(
+    "FILAMENTOS_IMPORTACAO_CNPJ", DEMAIS_PRODUTOS_CNPJ or "23811261000197"
+).strip()
+# Monitor Masterprint PETG no ML
+MASTERPRINT_PETG_CATALOGO = os.getenv(
+    "MASTERPRINT_PETG_CATALOGO", "catalogo/masterprint_petg_monitor.json"
+)
+MASTERPRINT_PETG_CUSTOS = os.getenv(
+    "MASTERPRINT_PETG_CUSTOS", "catalogo/masterprint_petg_custos.json"
+)
+MASTERPRINT_PETG_PAUSA_SEG = float(os.getenv("MASTERPRINT_PETG_PAUSA_SEG", "1.5"))
+MASTERPRINT_PETG_ALERTA_RESUMO = os.getenv("MASTERPRINT_PETG_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MASTERPRINT_PETG_ALERTA_COOLDOWN_SEG = int(os.getenv("MASTERPRINT_PETG_ALERTA_COOLDOWN_SEG", "18000"))
+MASTERPRINT_PETG_TOP_N = int(os.getenv("MASTERPRINT_PETG_TOP_N", "10"))
+# Monitor Masterprint pincéis recarregáveis + apagadores
+MASTERPRINT_ESCRITORIO_CATALOGO = os.getenv(
+    "MASTERPRINT_ESCRITORIO_CATALOGO", "catalogo/masterprint_escritorio_monitor.json"
+)
+MASTERPRINT_ESCRITORIO_CUSTOS = os.getenv(
+    "MASTERPRINT_ESCRITORIO_CUSTOS", "catalogo/masterprint_escritorio_custos.json"
+)
+MASTERPRINT_ESCRITORIO_PAUSA_SEG = float(os.getenv("MASTERPRINT_ESCRITORIO_PAUSA_SEG", "1.5"))
+MASTERPRINT_ESCRITORIO_ALERTA_RESUMO = os.getenv(
+    "MASTERPRINT_ESCRITORIO_ALERTA_RESUMO", "1"
+).strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MASTERPRINT_ESCRITORIO_ALERTA_COOLDOWN_SEG = int(
+    os.getenv("MASTERPRINT_ESCRITORIO_ALERTA_COOLDOWN_SEG", "18000")
+)
+MASTERPRINT_ESCRITORIO_TOP_N = int(os.getenv("MASTERPRINT_ESCRITORIO_TOP_N", "10"))
+# Claude em Masterprint: 1×/dia por agente (default ON). Reserva orçamento para esmaltes.
+MASTERPRINT_CLAUDE_DIARIO = os.getenv("MASTERPRINT_CLAUDE_DIARIO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Alias legado
+MASTERPRINT_CLAUDE_SECUNDARIO = os.getenv(
+    "MASTERPRINT_CLAUDE_SECUNDARIO",
+    "1" if MASTERPRINT_CLAUDE_DIARIO else "0",
+).strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MASTERPRINT_CLAUDE_RESTANTE_MIN_USD = float(os.getenv("MASTERPRINT_CLAUDE_RESTANTE_MIN_USD", "2.50"))
+# Nova análise Claude só na janela noturna BRT (20–23); manhã/tarde reusam cache
+MASTERPRINT_CLAUDE_SO_NOITE = os.getenv("MASTERPRINT_CLAUDE_SO_NOITE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+MASTERPRINT_CLAUDE_NOITE_HORA_INI = int(os.getenv("MASTERPRINT_CLAUDE_NOITE_HORA_INI", "20"))
+MASTERPRINT_CLAUDE_NOITE_HORA_FIM = int(os.getenv("MASTERPRINT_CLAUDE_NOITE_HORA_FIM", "23"))
+# Ramo / conta / CNPJ separados do esmaltes (opcional)
+MASTERPRINT_RAMO_CATALOGO = os.getenv(
+    "MASTERPRINT_RAMO_CATALOGO", "catalogo/masterprint_ramo.json"
+)
+MASTERPRINT_CNPJ = os.getenv("MASTERPRINT_CNPJ", DEMAIS_PRODUTOS_CNPJ or "23811261000197").strip()
+MASTERPRINT_RAZAO_SOCIAL = os.getenv("MASTERPRINT_RAZAO_SOCIAL", "").strip()
+MASTERPRINT_NOME_FANTASIA = os.getenv("MASTERPRINT_NOME_FANTASIA", "").strip()
+MASTERPRINT_ML_SELLER_ID = os.getenv("MASTERPRINT_ML_SELLER_ID", "").strip()
+MASTERPRINT_ML_NICKNAME = os.getenv("MASTERPRINT_ML_NICKNAME", "").strip()
+# Se vazio, usa TELEGRAM_GESTOR_CHAT_ID (mesmo chat dos esmaltes)
+MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID = os.getenv("MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID", "").strip()
 
 # Busca kit esmaltes Anita/Impala — frequência diária + cores
 ESMALTES_BUSCA_KIT_CATALOGO = os.getenv(
@@ -348,7 +494,7 @@ ESMALTES_BUSCA_KIT_ALERTA_RESUMO = os.getenv("ESMALTES_BUSCA_KIT_ALERTA_RESUMO",
     "false",
     "no",
 )
-ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG", "3600"))
+ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_BUSCA_KIT_ALERTA_COOLDOWN_SEG", "18000"))
 # Tolerância de imprecisão nos anúncios retornados (0.10 = até ~10% fora da marca/kit)
 ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO = float(os.getenv("ESMALTES_BUSCA_KIT_TOLERANCIA_ERRO", "0.10"))
 
@@ -362,7 +508,7 @@ ESMALTES_KITS_MONITOR_ALERTA_RESUMO = os.getenv("ESMALTES_KITS_MONITOR_ALERTA_RE
     "false",
     "no",
 )
-ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG", "21600"))
+ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_KITS_MONITOR_ALERTA_COOLDOWN_SEG", "18000"))
 
 # Montar kits Impala — planilha NCM × kits mais vendidos no ML
 MONTAR_KITS_IMPALA_PLANILHA = os.getenv(
@@ -373,7 +519,7 @@ MONTAR_KITS_IMPALA_ALERTA = os.getenv("MONTAR_KITS_IMPALA_ALERTA", "1").strip().
     "false",
     "no",
 )
-MONTAR_KITS_IMPALA_COOLDOWN_SEG = int(os.getenv("MONTAR_KITS_IMPALA_COOLDOWN_SEG", "43200"))
+MONTAR_KITS_IMPALA_COOLDOWN_SEG = int(os.getenv("MONTAR_KITS_IMPALA_COOLDOWN_SEG", "18000"))
 MONTAR_KITS_IMPALA_TOP_KITS = int(os.getenv("MONTAR_KITS_IMPALA_TOP_KITS", "40"))
 
 # Ecossistema esmaltes — plano consolidado (cor → kit → anexos → B2B)
@@ -435,7 +581,7 @@ ESMALTES_OPERACAO_ALERTA = os.getenv("ESMALTES_OPERACAO_ALERTA", "1").strip().lo
     "false",
     "no",
 )
-ESMALTES_OPERACAO_COOLDOWN_SEG = int(os.getenv("ESMALTES_OPERACAO_COOLDOWN_SEG", "86400"))
+ESMALTES_OPERACAO_COOLDOWN_SEG = int(os.getenv("ESMALTES_OPERACAO_COOLDOWN_SEG", "18000"))
 # Alibaba busca + inteligência em um run
 ALIBABA_SOURCING_ATIVO = os.getenv("ALIBABA_SOURCING_ATIVO", "1").strip().lower() not in (
     "0",
@@ -472,7 +618,7 @@ REMOVEDORES_UNHA_ALERTA_RESUMO = os.getenv("REMOVEDORES_UNHA_ALERTA_RESUMO", "1"
     "false",
     "no",
 )
-REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG = int(os.getenv("REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG", "21600"))
+REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG = int(os.getenv("REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG", "18000"))
 REMOVEDORES_UNHA_TOLERANCIA_ERRO = float(os.getenv("REMOVEDORES_UNHA_TOLERANCIA_ERRO", "0.10"))
 REMOVEDORES_UNHA_IA_AVALIAR = os.getenv("REMOVEDORES_UNHA_IA_AVALIAR", "1").strip().lower() not in (
     "0",
@@ -500,7 +646,7 @@ ESMALTES_TENDENCIAS_ALERTA_RESUMO = os.getenv("ESMALTES_TENDENCIAS_ALERTA_RESUMO
     "false",
     "no",
 )
-ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG", "43200"))
+ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG = int(os.getenv("ESMALTES_TENDENCIAS_ALERTA_COOLDOWN_SEG", "18000"))
 
 # Monitor Acetona Cruzeiro no ML (vendedores, margem, estratégias Claude + Impala)
 ACETONA_CRUZEIRO_CATALOGO = os.getenv(
@@ -695,16 +841,71 @@ IMPORTACAO_PIS_PCT = float(os.getenv("IMPORTACAO_PIS_PCT", "2.1"))
 IMPORTACAO_COFINS_PCT = float(os.getenv("IMPORTACAO_COFINS_PCT", "9.65"))
 IMPORTACAO_ICMS_PCT = float(os.getenv("IMPORTACAO_ICMS_PCT", "18.0"))
 IMPORTACAO_SEGURO_PCT = float(os.getenv("IMPORTACAO_SEGURO_PCT", "0.5"))
-IMPORTACAO_SISCOMEX_BRL = float(os.getenv("IMPORTACAO_SISCOMEX_BRL", "214.50"))
+IMPORTACAO_SISCOMEX_BRL = float(os.getenv("IMPORTACAO_SISCOMEX_BRL", "154.23"))
+# Nº de adições na DI/DUIMP (Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021)
+# 1 adição → R$ 115,67 + R$ 38,56 = R$ 154,23 (não usar mais o legado 214,50)
+IMPORTACAO_SISCOMEX_ADICOES = int(os.getenv("IMPORTACAO_SISCOMEX_ADICOES", "1") or "1")
 IMPORTACAO_DESEMBARACO_BRL = float(os.getenv("IMPORTACAO_DESEMBARACO_BRL", "800.0"))
+# AFRMM (Lei 10.893/2004 art. 6º c/ Lei 14.301/2022) — 8% frete longo curso; 0 no aéreo
+IMPORTACAO_AFRMM_PCT = float(os.getenv("IMPORTACAO_AFRMM_PCT", "8.0"))
 IMPORTACAO_FRETE_MARITIMO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_MARITIMO_USD_KG", "0.85"))
 IMPORTACAO_FRETE_AEREO_USD_KG = float(os.getenv("IMPORTACAO_FRETE_AEREO_USD_KG", "5.5"))
 IMPORTACAO_FRETE_NACIONAL_BRL = float(os.getenv("IMPORTACAO_FRETE_NACIONAL_BRL", "12.0"))
 IMPORTACAO_OPERACAO_FIXA_CATALOGO = os.getenv(
     "IMPORTACAO_OPERACAO_FIXA_CATALOGO", "catalogo/importacao_operacao_fixa.json"
 )
+# CNPJ importador (default = dono produtos / esmaltes) — atrela CNAE × marketplaces
+IMPORTACAO_CNPJ = os.getenv("IMPORTACAO_CNPJ", CNPJ_DONO_PRODUTOS or ESMALTES_CNPJ or "52668583000127").strip()
+IMPORTACAO_RESPONSAVEL_NOME = os.getenv("IMPORTACAO_RESPONSAVEL_NOME", "").strip()
+IMPORTACAO_RESPONSAVEL_CARGO = os.getenv("IMPORTACAO_RESPONSAVEL_CARGO", "").strip()
+IMPORTACAO_RESPONSAVEL_CONTATO = os.getenv("IMPORTACAO_RESPONSAVEL_CONTATO", "").strip()
+# Destino da operação formal (default Americana/SP CEP 13467-694) — sobrescreve o JSON
+IMPORTACAO_AEROPORTO_CODIGO = os.getenv("IMPORTACAO_AEROPORTO_CODIGO", "").strip().upper()
+IMPORTACAO_AEROPORTO_NOME = os.getenv("IMPORTACAO_AEROPORTO_NOME", "").strip()
+IMPORTACAO_AEROPORTO_CIDADE = os.getenv("IMPORTACAO_AEROPORTO_CIDADE", "").strip()
+IMPORTACAO_AEROPORTO_UF = os.getenv("IMPORTACAO_AEROPORTO_UF", "").strip().upper()
+IMPORTACAO_DESTINO_CEP = os.getenv("IMPORTACAO_DESTINO_CEP", "13467-694").strip()
+IMPORTACAO_DESTINO_CIDADE = os.getenv("IMPORTACAO_DESTINO_CIDADE", "").strip()
+IMPORTACAO_DESTINO_UF = os.getenv("IMPORTACAO_DESTINO_UF", "").strip().upper()
+IMPORTACAO_DESTINO_KM_VIRACOPOS = os.getenv("IMPORTACAO_DESTINO_KM_VIRACOPOS", "").strip()
 # Importação formal aérea CNPJ (Viracopos) — substitui landed simplificado no modo aéreo
 IMPORTACAO_AEREO_FORMAL = os.getenv("IMPORTACAO_AEREO_FORMAL", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Portos/aeroportos BR — comparação multi-gateway referenciada em Alibaba
+IMPORTACAO_PORTOS_BRASIL_CATALOGO = os.getenv(
+    "IMPORTACAO_PORTOS_BRASIL_CATALOGO", "catalogo/portos_aeroportos_brasil.json"
+)
+IMPORTACAO_PORTOS_SCORE_MIN_ATRATIVA = float(os.getenv("IMPORTACAO_PORTOS_SCORE_MIN_ATRATIVA", "55.0"))
+IMPORTACAO_PORTOS_MARKUP_MAX_ATRATIVA = float(os.getenv("IMPORTACAO_PORTOS_MARKUP_MAX_ATRATIVA", "2.2"))
+# Abaixo deste % a decisão exige custo detalhado (frete/impostos/locais) com peso ≥85% no score
+IMPORTACAO_PORTOS_ASSERTIVIDADE_ALVO = float(os.getenv("IMPORTACAO_PORTOS_ASSERTIVIDADE_ALVO", "90.0"))
+IMPORTACAO_PORTOS_PESO_CUSTO_BAIXA_ASSERT = float(
+    os.getenv("IMPORTACAO_PORTOS_PESO_CUSTO_BAIXA_ASSERT", "0.85")
+)
+IMPORTACAO_PORTOS_COMPARAR_ATIVO = os.getenv("IMPORTACAO_PORTOS_COMPARAR_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+# Endereço comercial Paraguai + corredor terrestre → BR (Mercosul)
+IMPORTACAO_PY_ATIVO = os.getenv("IMPORTACAO_PY_ATIVO", "1").strip().lower() not in ("0", "false", "no")
+IMPORTACAO_PY_ENDERECO = os.getenv("IMPORTACAO_PY_ENDERECO", "").strip()
+IMPORTACAO_PY_CIDADE = os.getenv("IMPORTACAO_PY_CIDADE", "").strip()
+IMPORTACAO_PY_DEPARTAMENTO = os.getenv("IMPORTACAO_PY_DEPARTAMENTO", "").strip()
+IMPORTACAO_PY_CODIGO_POSTAL = os.getenv("IMPORTACAO_PY_CODIGO_POSTAL", "").strip()
+# Hub PY multi-cliente / marketplaces (estrutura futura — catalogo/hub_paraguai_clientes.json)
+HUB_PARAGUAI_CATALOGO = os.getenv("HUB_PARAGUAI_CATALOGO", "catalogo/hub_paraguai_clientes.json")
+HUB_PARAGUAI_ATIVO = os.getenv("HUB_PARAGUAI_ATIVO", "1").strip().lower() not in ("0", "false", "no")
+HUB_PY_FRETE_CHINA_USD_KG = float(os.getenv("HUB_PY_FRETE_CHINA_USD_KG", "1.2"))
+# Tributação PY × BR (Mercosul / origem) — estimativas de planejamento
+HUB_PY_IVA_PCT = float(os.getenv("HUB_PY_IVA_PCT", "10.0"))
+HUB_PY_MAQUILA_PCT = float(os.getenv("HUB_PY_MAQUILA_PCT", "1.0"))
+HUB_PY_CERTIFICADO_ORIGEM_BRL = float(os.getenv("HUB_PY_CERTIFICADO_ORIGEM_BRL", "180.0"))
+# China marítimo: Santos no SE, portos NE no Nordeste, comparar tributação com Sul
+IMPORTACAO_CHINA_ROTA_REGIONAL = os.getenv("IMPORTACAO_CHINA_ROTA_REGIONAL", "1").strip().lower() not in (
     "0",
     "false",
     "no",
@@ -818,8 +1019,8 @@ ORQUESTRADOR_EXCLUIR = {
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
         "montar_kits_impala,ecossistema_esmaltes,crescimento_esmaltes,decisao_dia_esmaltes,"
         "esmaltes_operacao,"
-        "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,licitacoes",
+        "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,comparar_portos_alibaba,"
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,licitacoes",
     ).split(",")
     if x.strip()
 }
@@ -999,7 +1200,7 @@ def _env_bool(nome: str, default: str = "0") -> bool:
 
 CONVERSAO_MANICURES_ATIVO = _env_bool("CONVERSAO_MANICURES_ATIVO", "1")
 CONVERSAO_MANICURES_ALERTA = _env_bool("CONVERSAO_MANICURES_ALERTA", "1")
-CONVERSAO_MANICURES_COOLDOWN_SEG = int(os.getenv("CONVERSAO_MANICURES_COOLDOWN_SEG", "14400"))  # 4h
+CONVERSAO_MANICURES_COOLDOWN_SEG = int(os.getenv("CONVERSAO_MANICURES_COOLDOWN_SEG", "18000"))
 CONVERSAO_MANICURES_PUBLICAR_FB = _env_bool("CONVERSAO_MANICURES_PUBLICAR_FB", "0")
 CONVERSAO_MANICURES_PUBLICAR_IG = _env_bool("CONVERSAO_MANICURES_PUBLICAR_IG", "0")
 CONVERSAO_MANICURES_REPLY_META = _env_bool("CONVERSAO_MANICURES_REPLY_META", "0")
@@ -1030,7 +1231,7 @@ NECESSIDADE_MANICURES_PEDIR_CONFIRMACAO = _env_bool(
 )
 NECESSIDADE_MANICURES_ENVIAR_CANAIS = _env_bool("NECESSIDADE_MANICURES_ENVIAR_CANAIS", "1")
 NECESSIDADE_MANICURES_COOLDOWN_SEG = int(
-    os.getenv("NECESSIDADE_MANICURES_COOLDOWN_SEG", "21600")
+    os.getenv("NECESSIDADE_MANICURES_COOLDOWN_SEG", "18000")
 )  # 6h
 
 # Regras de negócio
@@ -1048,7 +1249,7 @@ MONITOR_MARGEM_VENDAS_MARGEM_MIN_PCT = float(
     os.getenv("MONITOR_MARGEM_VENDAS_MARGEM_MIN_PCT", str(MARGEM_MINIMA))
 )
 MONITOR_MARGEM_VENDAS_RESUMO_COOLDOWN_SEG = int(
-    os.getenv("MONITOR_MARGEM_VENDAS_RESUMO_COOLDOWN_SEG", "14400")
+    os.getenv("MONITOR_MARGEM_VENDAS_RESUMO_COOLDOWN_SEG", "18000")
 )
 MONITOR_MARGEM_VENDAS_ALERTA_BAIXA = os.getenv(
     "MONITOR_MARGEM_VENDAS_ALERTA_BAIXA", "1"

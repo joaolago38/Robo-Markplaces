@@ -2,6 +2,13 @@
 integracoes/importacao/calculo_importacao_aerea.py
 Cálculo formal de importação aérea CNPJ — Viracopos (VCP) → Americana-SP.
 Função pura testável: calcular_custo_importacao_aerea_formal().
+
+Cascata com despesas aduaneiras (legislação BR — estimativa):
+  CIF (valor aduaneiro) → II → IPI → PIS/COFINS-Importação →
+  despesas locais (armazenagem, desembaraço, THC, Siscomex, frete rod.) →
+  ICMS por dentro.
+
+Refs: Decreto 6.759/2009 · TEC/TIPI · Lei 10.865/2004 · Siscomex · ICMS estadual.
 """
 from __future__ import annotations
 
@@ -43,6 +50,17 @@ _ICMS_UF_PCT: dict[str, float] = {
     "TO": 18.0,
 }
 
+REFERENCIA_LEGISLACAO_BR_AEREO = {
+    "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+    "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+    "ipi": "IPI — TIPI (base CIF+II)",
+    "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação (padrão 11,75%)",
+    "siscomex": "Taxa de utilização do Siscomex (DI)",
+    "despesas_locais": "Armazenagem/THC/desembaraço — despesas até o desembaraço",
+    "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+    "aviso": "Estimativa; confirme NCM/alíquotas com despachante. AFRMM não se aplica ao aéreo.",
+}
+
 
 def icms_pct_por_uf(uf: str) -> float:
     return float(_ICMS_UF_PCT.get((uf or "SP").upper(), 18.0))
@@ -69,7 +87,13 @@ def _pct_sobre_total(valor: float, total: float) -> float:
 
 
 def carregar_defaults_operacao() -> dict[str, Any]:
-    return ler_json(ROOT / IMPORTACAO_OPERACAO_FIXA_CATALOGO, default={})
+    """Defaults da operação formal com CEP/aeroporto sobrescritíveis via env."""
+    try:
+        from integracoes.importacao.operacao_destino import carregar_operacao_destino
+
+        return carregar_operacao_destino()
+    except Exception:
+        return ler_json(ROOT / IMPORTACAO_OPERACAO_FIXA_CATALOGO, default={})
 
 
 def montar_entradas_de_produto(
@@ -106,6 +130,29 @@ def montar_entradas_de_produto(
 
     uf = str(dest.get("uf") or "SP").upper()
 
+    # Siscomex: Portaria ME 4.131/2021 — DI + adições (não usar legado 214,50)
+    from integracoes.importacao.siscomex import calcular_taxa_siscomex, taxa_siscomex_brl
+
+    try:
+        from core import config as cfg
+
+        adicoes_cfg = int(getattr(cfg, "IMPORTACAO_SISCOMEX_ADICOES", 1) or 1)
+    except Exception:
+        adicoes_cfg = 1
+    adicoes = max(1, _i(produto.get("siscomex_adicoes") or custos.get("siscomex_adicoes") or adicoes_cfg, 1))
+    # Se catálogo/env fixou valor explícito e válido pós-2021, respeita; senão calcula
+    siscomex_fixo = custos.get("siscomex")
+    if siscomex_fixo is not None and abs(_f(siscomex_fixo) - 214.5) < 0.01:
+        siscomex_brl = taxa_siscomex_brl(adicoes=adicoes)
+        siscomex_calc = calcular_taxa_siscomex(adicoes=adicoes)
+    elif siscomex_fixo is not None and _f(siscomex_fixo) > 0:
+        siscomex_brl = _f(siscomex_fixo)
+        siscomex_calc = calcular_taxa_siscomex(adicoes=adicoes)
+        siscomex_calc = {**siscomex_calc, "total_brl": siscomex_brl, "origem": "catalogo_fixo"}
+    else:
+        siscomex_calc = calcular_taxa_siscomex(adicoes=adicoes)
+        siscomex_brl = float(siscomex_calc["total_brl"])
+
     return {
         "fob_usd": fob_usd,
         "fob_usd_listing": fob_usd_bruto,
@@ -127,7 +174,9 @@ def montar_entradas_de_produto(
         "armazenagem_brl": _f(custos.get("armazenagem_aeroportuaria"), 450.0),
         "desembaraco_brl": _f(custos.get("desembaraco_despachante"), 1200.0),
         "thc_brl": _f(custos.get("thc_manuseio_aereo"), 380.0),
-        "siscomex_brl": _f(custos.get("siscomex"), 214.5),
+        "siscomex_brl": siscomex_brl,
+        "siscomex_adicoes": adicoes,
+        "siscomex_detalhe": siscomex_calc,
         "frete_rodoviario_brl": _f(frete_rod),
     }
 
@@ -163,7 +212,9 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     thc = _f(entradas.get("thc_brl"))
     siscomex = _f(entradas.get("siscomex_brl"))
     frete_rod = _f(entradas.get("frete_rodoviario_brl"))
-    despesas_locais = armazenagem + desembaraco + thc + siscomex + frete_rod
+    # Frete rodoviário pós-desembaraço: fora da base do ICMS (alinhado a custo_landed)
+    despesas_aduaneiras = armazenagem + desembaraco + thc + siscomex
+    despesas_locais = despesas_aduaneiras + frete_rod
 
     fob_brl = fob_usd * qty * cambio
     frete_brl = frete_usd * cambio
@@ -174,11 +225,11 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     ipi_brl = (cif_brl + ii_brl) * (ipi_pct / 100.0)
     pis_cofins_brl = cif_brl * (pis_cofins_pct / 100.0)
 
-    base_icms = cif_brl + ii_brl + ipi_brl + pis_cofins_brl + despesas_locais
+    base_icms = cif_brl + ii_brl + ipi_brl + pis_cofins_brl + despesas_aduaneiras
     aliq_icms = icms_pct / 100.0
     icms_brl = (aliq_icms * base_icms) / (1.0 - aliq_icms) if 0 < aliq_icms < 1 else 0.0
 
-    custo_total_brl = base_icms + icms_brl
+    custo_total_brl = base_icms + icms_brl + frete_rod
     custo_unitario_brl = round(custo_total_brl / qty, 2)
 
     impostos_federais = ii_brl + ipi_brl + pis_cofins_brl
@@ -207,7 +258,7 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     _add("armazenagem", "Armazenagem Viracopos", armazenagem, "despesas_locais")
     _add("desembaraco", "Desembaraço aduaneiro", desembaraco, "despesas_locais")
     _add("thc", "THC / manuseio aéreo", thc, "despesas_locais")
-    _add("siscomex", "SISCOMEX", siscomex, "despesas_locais")
+    _add("siscomex", "Taxa Siscomex (DI+adições)", siscomex, "despesas_locais")
     _add("frete_rod", "Frete rodoviário VCP → destino", frete_rod, "despesas_locais")
 
     for item in itens:
@@ -222,11 +273,19 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
     }
 
     fixa = carregar_defaults_operacao()
+    aero = fixa.get("aeroporto_desembaraco") or {}
+    dest = fixa.get("destino_entrega") or {}
+    codigo = str(aero.get("codigo") or "VCP")
+    nome = str(aero.get("nome") or "Viracopos")
     return {
         "ok": True,
         "modal": "aereo_formal_cnpj",
-        "aeroporto": "VCP — Viracopos",
-        "destino_cep": (fixa.get("destino_entrega") or {}).get("cep", "13467-694"),
+        "aeroporto": f"{codigo} — {nome}",
+        "aeroporto_codigo": codigo,
+        "destino_cep": dest.get("cep") or "13467-694",
+        "destino_cidade": dest.get("cidade") or "Americana",
+        "destino_uf": str(dest.get("uf") or "SP").upper(),
+        "distancia_km_viracopos": dest.get("distancia_km_viracopos"),
         "entradas": {
             **entradas,
             "peso_taxavel_total_kg": round(peso_taxavel_total, 3),
@@ -239,12 +298,18 @@ def calcular_custo_importacao_aerea_formal(entradas: dict[str, Any]) -> dict[str
         "ipi_brl": round(ipi_brl, 2),
         "pis_cofins_brl": round(pis_cofins_brl, 2),
         "icms_brl": round(icms_brl, 2),
+        "siscomex_brl": round(siscomex, 2),
+        "desembaraco_brl": round(desembaraco, 2),
         "despesas_locais_brl": round(despesas_locais, 2),
+        "despesas_aduaneiras_inclusas": True,
+        "siscomex_adicoes": entradas.get("siscomex_adicoes"),
+        "siscomex_detalhe": entradas.get("siscomex_detalhe"),
         "custo_total_brl": round(custo_total_brl, 2),
         "custo_unitario_brl": custo_unitario_brl,
         "quantidade": qty,
         "itens": itens,
         "composicao_grafico": composicao,
+        "referencia_legislacao_br": REFERENCIA_LEGISLACAO_BR_AEREO,
         "aviso_legal": fixa.get("aviso_legal")
         or "Estimativa para planejamento — confirme NCM e alíquotas com despachante.",
     }
@@ -269,7 +334,13 @@ def formatar_breakdown_viracopos_telegram(
     entradas = resultado.get("entradas") or {}
     cambio = cambio_usd_brl or entradas.get("cambio_usd_brl")
     linhas = [
-        "  ✈️ *Formal VCP (Campinas)*",
+        f"  ✈️ *Formal {resultado.get('aeroporto') or 'VCP — Viracopos'}*",
+        f"  Destino CEP `{resultado.get('destino_cep') or '13467-694'}`"
+        + (
+            f" ({resultado.get('destino_cidade')}/{resultado.get('destino_uf')})"
+            if resultado.get("destino_cidade")
+            else ""
+        ),
         f"  CIF aduaneiro: {_brl(resultado.get('valor_aduaneiro_cif_brl'))}",
         f"  II: {_brl(resultado.get('ii_brl'))} | IPI: {_brl(resultado.get('ipi_brl'))}",
         f"  PIS/COFINS: {_brl(resultado.get('pis_cofins_brl'))} | ICMS: {_brl(resultado.get('icms_brl'))}",

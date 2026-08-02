@@ -6,8 +6,10 @@ name: Conversão manicures (WA / IG / FB / ML)
 on:
   workflow_dispatch:
   schedule:
-    # A cada 4h UTC (01,05,09,13,17,21) ≈ sparse coverage BRT
-    - cron: "0 1,5,9,13,17,21 * * *"
+    # 3x/dia BRT 08:25 / 14:25 / 21:25 (= 11:25 / 17:25 / 00:25 UTC)
+    - cron: "25 11 * * *"
+    - cron: "25 17 * * *"
+    - cron: "25 0 * * *"
 
 concurrency:
   # Inclui Claude estado: conversão grava uso/toggle no mesmo cache Actions
@@ -89,7 +91,7 @@ jobs:
           CONVERSAO_MANICURES_CHAT_ML: ${{ vars.CONVERSAO_MANICURES_CHAT_ML || '0' }}
           CONVERSAO_BLOQUEAR_LINK_INVALIDO: "1"
           CONVERSAO_MANICURES_IMAGEM_IG_URL: ${{ secrets.CONVERSAO_MANICURES_IMAGEM_IG_URL }}
-          CONVERSAO_MANICURES_COOLDOWN_SEG: "14400"
+          CONVERSAO_MANICURES_COOLDOWN_SEG: "18000"
           CONVERSAO_MANICURES_SUSTENTABILIDADE: "1"
           CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL: "1"
           CONVERSAO_MANICURES_SUST_DIAS: "1"

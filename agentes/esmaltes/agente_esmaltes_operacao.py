@@ -2,8 +2,9 @@
 agentes/esmaltes/agente_esmaltes_operacao.py
 Consolida em um run: crescimento (KPI) → decisão do dia → ecossistema.
 
-Os três agentes individuais continuam existentes para testes/manual;
-aqui eles rodam com enviar_alerta=False e um único Telegram é enviado.
+Telegram: card de decisão (FAZER primeiro), depois evidências curtas.
+Os três agentes individuais continuam para testes/manual;
+aqui rodam com enviar_alerta=False e um único alerta é enviado.
 
 Uso:
   python -m agentes.esmaltes.agente_esmaltes_operacao
@@ -42,54 +43,156 @@ def montar_mensagem_consolidada(
     decisao: dict[str, Any] | None,
     ecossistema: dict[str, Any] | None,
 ) -> str:
+    """
+    Card organizado para decisão:
+      1) AGIR AGORA (FAZER / NÃO FAZER / CUSTO)
+      2) Panorama (KPI + score)
+      3) Gaps / próximos 7 dias
+    """
     from core.telegram_explicacao import cabecalho_agente
 
     linhas = [
         cabecalho_agente(
             "esmaltes_operacao",
-            "🎯 *Impala — operação do dia (consolidado)*",
+            "🎯 *Impala — operação do dia*",
         ),
-        "",
-        "_Crescimento → Decisão → Ecossistema em um único alerta._",
     ]
+    try:
+        from core.empresa_contexto import (
+            empresa_por_id,
+            formatar_cnpj,
+            linha_empresa_telegram,
+            situacao_dono_produtos,
+        )
 
-    if _ok(decisao) and decisao.get("mensagem"):
-        linhas.extend(["", "─── *1) Decisão do dia* ───", str(decisao["mensagem"]).strip()])
+        linhas.append(linha_empresa_telegram(empresa_por_id("esmaltes_impala")))
+        dono = situacao_dono_produtos()
+        alvo_fmt = formatar_cnpj(str(dono.get("cnpj_alvo") or ""))
+        if dono.get("migracao_pendente"):
+            linhas.append(
+                f"_Produtos no CNPJ `{dono.get('cnpj_formatado')}` "
+                f"(alvo `{alvo_fmt}`)_"
+            )
+        else:
+            linhas.append(f"_Produtos no CNPJ `{dono.get('cnpj_formatado')}`_")
+    except Exception:
+        linhas.append("CNPJ `52.668.583/0001-27` · foco *Mercado Livre*")
+        linhas.append("_Produtos neste CNPJ (migração p/ 23.811.261/0001-97 preparada)_")
+    linhas.extend(
+        [
+            "",
+            "*1) AGIR AGORA*",
+        ]
+    )
+
+    if _ok(decisao):
+        fazer_t = decisao.get("fazer_titulo") or decisao.get("fazer") or "—"
+        fazer_d = decisao.get("fazer_detalhe") or ""
+        nao_t = decisao.get("nao_fazer_titulo") or decisao.get("nao_fazer") or "—"
+        nao_d = decisao.get("nao_fazer_detalhe") or ""
+        custo_t = decisao.get("custo_titulo") or ""
+        custo_d = decisao.get("custo_detalhe") or ""
+        linhas.append(f"✅ *FAZER:* {fazer_t}")
+        if fazer_d:
+            linhas.append(f"   _{fazer_d}_")
+        linhas.append(f"🛑 *NÃO FAZER:* {nao_t}")
+        if nao_d:
+            linhas.append(f"   _{nao_d}_")
+        if custo_t:
+            linhas.append(f"💸 *CUSTO DE NÃO FAZER:* {custo_t}")
+            if custo_d:
+                linhas.append(f"   _{custo_d}_")
+        lib = decisao.get("liberados")
+        bloq = decisao.get("bloqueados")
+        if lib is not None or bloq is not None:
+            linhas.append(
+                f"Guerra: *{lib or 0}* liberado(s) / *{bloq or 0}* bloqueado(s)"
+            )
+        for s in (decisao.get("skus_guerra") or [])[:3]:
+            if not isinstance(s, dict):
+                continue
+            emoji = "🟢" if s.get("pode_impulsionar") else "🔴"
+            status = "OK" if s.get("pode_impulsionar") else "/".join(s.get("bloqueios") or ["bloqueado"])
+            linhas.append(f"{emoji} `{s.get('sku')}` ({s.get('papel')}) {status}")
     elif decisao and not decisao.get("ok"):
-        linhas.extend(
-            [
-                "",
-                "─── *1) Decisão do dia* ───",
-                f"_Falhou: `{decisao.get('erro') or decisao.get('motivo') or '?'}`_",
-            ]
+        linhas.append(
+            f"_Decisão falhou: `{decisao.get('erro') or decisao.get('motivo') or '?'}`_"
         )
+    else:
+        linhas.append("_Sem decisão nesta rodada._")
 
-    if _ok(crescimento) and crescimento.get("mensagem"):
-        # evita repetir cabeçalho enorme: pega corpo se possível
-        msg = str(crescimento["mensagem"]).strip()
-        linhas.extend(["", "─── *2) Crescimento / KPI* ───", msg])
-    elif crescimento and not crescimento.get("ok"):
-        linhas.extend(
-            [
-                "",
-                "─── *2) Crescimento / KPI* ───",
-                f"_Falhou: `{crescimento.get('erro') or crescimento.get('motivo') or '?'}`_",
-            ]
-        )
+    # --- Panorama ---
+    linhas.extend(["", "*2) PANORAMA*"])
+    kpis = {}
+    if _ok(decisao) and isinstance(decisao.get("kpis"), dict):
+        kpis = decisao["kpis"]
+    elif _ok(crescimento) and isinstance(crescimento.get("kpis"), dict):
+        kpis = crescimento["kpis"]
 
-    if _ok(ecossistema) and ecossistema.get("mensagem"):
-        linhas.extend(
-            ["", "─── *3) Ecossistema* ───", str(ecossistema["mensagem"]).strip()]
-        )
-    elif ecossistema and not ecossistema.get("ok"):
-        linhas.extend(
-            [
-                "",
-                "─── *3) Ecossistema* ───",
-                f"_Falhou: `{ecossistema.get('erro') or ecossistema.get('motivo') or '?'}`_",
-            ]
-        )
+    partes_kpi: list[str] = []
+    if kpis and not kpis.get("sem_vendas_periodo"):
+        if kpis.get("kits_pct_receita") is not None:
+            ok_k = "✅" if kpis.get("kits_meta_ok") else "⚠️"
+            partes_kpi.append(f"{ok_k} kits *{kpis.get('kits_pct_receita')}%*")
+        if kpis.get("margem_media_pct") is not None:
+            ok_m = "✅" if kpis.get("margem_meta_ok") else "⚠️"
+            partes_kpi.append(f"{ok_m} margem *{kpis.get('margem_media_pct')}%*")
+    if partes_kpi:
+        linhas.append("KPI: " + " · ".join(partes_kpi))
+    elif _ok(crescimento) and crescimento.get("critico"):
+        linhas.append("KPI: 🚨 gaps críticos de publicação/canal")
+    else:
+        linhas.append("KPI: _sem dado de margem no período_")
 
+    score = None
+    if _ok(ecossistema):
+        score = ecossistema.get("score_ecossistema")
+    elif _ok(crescimento):
+        score = crescimento.get("score_ecossistema")
+    cob = (ecossistema or {}).get("cobertura_fontes_pct") if _ok(ecossistema) else None
+    if score is not None:
+        extra = f" · cobertura *{cob}%*" if cob is not None else ""
+        linhas.append(f"Ecossistema: score *{score}*{extra}")
+
+    if _ok(crescimento) and crescimento.get("kits_sem_mlb") is not None:
+        n = crescimento.get("kits_sem_mlb")
+        flag = "🚨" if crescimento.get("critico") else "•"
+        linhas.append(f"{flag} Kits sem MLB: *{n}*")
+
+    # --- Próximos passos (evidência curta) ---
+    linhas.extend(["", "*3) PRÓXIMOS PASSOS*"])
+    passos: list[str] = []
+
+    if _ok(crescimento):
+        for c in (crescimento.get("checklist") or [])[:3]:
+            if not isinstance(c, dict):
+                continue
+            titulo = c.get("titulo") or c.get("tipo") or "?"
+            passos.append(f"• [gap] {titulo}")
+        for k in (crescimento.get("kits_sem_mlb_lista") or [])[:2]:
+            if isinstance(k, dict) and k.get("sku"):
+                passos.append(f"• [MLB] `{k.get('sku')}` — {k.get('nome') or ''}".rstrip(" —"))
+
+    if _ok(ecossistema):
+        for i, a in enumerate((ecossistema.get("top_7d") or [])[:3], 1):
+            if not isinstance(a, dict):
+                continue
+            passos.append(
+                f"• [7d-{i}] {a.get('titulo') or '?'}"
+                + (f" _(score {a.get('score')})_" if a.get("score") is not None else "")
+            )
+
+    if passos:
+        linhas.extend(passos)
+    else:
+        linhas.append("_Nenhum gap/ação 7d listado nesta rodada._")
+
+    linhas.extend(
+        [
+            "",
+            "_Leitura:_ execute só o *FAZER* de hoje; gaps e 7d são fila, não competem com a decisão._",
+        ]
+    )
     return "\n".join(linhas).strip()
 
 
@@ -117,7 +220,6 @@ def executar(
             elif not gestor_telegram_configurado():
                 logger.warning("Telegram gestor não configurado")
 
-        # Ordem: crescimento grava snapshot usado pela decisão; eco lê vários logs.
         out_cre: dict[str, Any] | None = None
         out_dia: dict[str, Any] | None = None
         out_eco: dict[str, Any] | None = None
@@ -157,7 +259,9 @@ def executar(
             "ecossistema": {
                 "ok": _ok(out_eco),
                 "score": (out_eco or {}).get("score_ecossistema"),
-                "acoes": (out_eco or {}).get("acoes"),
+                "acoes": len((out_eco or {}).get("acoes") or [])
+                if isinstance((out_eco or {}).get("acoes"), list)
+                else (out_eco or {}).get("acoes"),
             }
             if out_eco is not None
             else None,
@@ -165,14 +269,8 @@ def executar(
         }
         escrever_json_atomico(SNAPSHOT_PATH, payload)
 
-        partes_ok = sum(
-            1
-            for o in (out_cre, out_dia, out_eco)
-            if o is not None and _ok(o)
-        )
-        partes_total = sum(
-            1 for o in (out_cre, out_dia, out_eco) if o is not None
-        )
+        partes_ok = sum(1 for o in (out_cre, out_dia, out_eco) if o is not None and _ok(o))
+        partes_total = sum(1 for o in (out_cre, out_dia, out_eco) if o is not None)
         gauge("esmaltes_operacao.partes_ok", float(partes_ok))
         gauge("esmaltes_operacao.partes_total", float(partes_total))
 

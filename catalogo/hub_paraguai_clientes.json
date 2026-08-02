@@ -1,0 +1,155 @@
+{
+  "versao": 1,
+  "status": "planejado",
+  "descricao": "Hub comercial no Paraguai (ponto futuro) para redistribuição / serviços a clientes e revenda em marketplaces BR. Valores são estimativas de planejamento — validar fiscal/aduaneiro com advogado e despachante.",
+  "aviso_legal": "Não constitui planejamento tributário. Operações Mercosul (PY→BR) e serviços a terceiros exigem enquadramento legal, documentos e compliance. Use apenas para modelar custos e lucro bruto potencial.",
+  "hub": {
+    "id": "hub_py_cde",
+    "pais": "PY",
+    "cidade": "Ciudad del Este",
+    "departamento": "Alto Paraná",
+    "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+    "codigo_postal": "7000",
+    "lat": -25.5097,
+    "lng": -54.6112,
+    "uso": [
+      "recebimento_china",
+      "armazenagem",
+      "handling_multi_cliente",
+      "despacho_terrestre_br",
+      "ponto_consolidacao"
+    ],
+    "cep_destino_br_padrao": "13467-694",
+    "sobrescrever_via_env": [
+      "IMPORTACAO_PY_ENDERECO",
+      "IMPORTACAO_PY_CIDADE",
+      "IMPORTACAO_PY_DEPARTAMENTO",
+      "IMPORTACAO_PY_CODIGO_POSTAL"
+    ]
+  },
+  "custos_operacionais_brl": {
+    "armazenagem_dia_m3": 8.0,
+    "handling_por_unidade_brl": 3.5,
+    "handling_por_volume_brl": 3.5,
+    "handling_minimo_embarque_brl": 80.0,
+    "dias_armazenagem_padrao": 5,
+    "volume_m3_padrao_por_unidade": 0.004,
+    "seguro_hub_pct_sobre_carga": 0.2,
+    "overhead_mensal_hub_brl": 2500.0,
+    "capacidade_m3_estimada": 40.0,
+    "nota": "Handling por unidade calibrado para filamento 1kg (margem trabalho 20% no ML)."
+  },
+  "taxa_servico_multi_cliente": {
+    "pct_sobre_custo_operacao": 12.0,
+    "minimo_por_embarque_brl": 150.0,
+    "maximo_por_embarque_brl": 5000.0,
+    "nota": "Receita do hub cobrada de outros clientes (markup de serviço logístico)."
+  },
+  "marketplace": {
+    "taxa_padrao_pct": 16.0,
+    "margem_minima_pct": 20.0,
+    "margem_alvo_lucro_pct": 20.0,
+    "margem_minima_brl": 5.0,
+    "canais": ["mercadolivre", "shopee", "magalu"],
+    "nota": "Lucro alvo 20% sobre preço de venda ML, após taxa do marketplace."
+  },
+  "possibilidades": [
+    {
+      "id": "proprio_revenda_ml",
+      "descricao": "Produto próprio: China → hub PY → terrestre BR → venda ML",
+      "ativo": true
+    },
+    {
+      "id": "servico_logistico_terceiros",
+      "descricao": "Outros clientes usam o endereço PY; cobramos handling + frete + taxa serviço",
+      "ativo": true
+    },
+    {
+      "id": "consolidacao_multi_sku",
+      "descricao": "Consolidar vários SKUs/clientes no mesmo corredor PY→BR para diluir frete",
+      "ativo": true
+    },
+    {
+      "id": "comparar_vs_import_direta_br",
+      "descricao": "Sempre comparar custo hub PY vs importação direta porto/aeroporto BR",
+      "ativo": true
+    }
+  ],
+  "clientes_exemplo": [
+    {
+      "id": "cliente_proprio_masterprint",
+      "nome": "Masterprint / operação própria",
+      "cnpj_br": "23811261000197",
+      "tipo": "proprio",
+      "ativo": true,
+      "ramos": ["filamentos", "escritorio"]
+    },
+    {
+      "id": "cliente_slot_externo_1",
+      "nome": "Cliente externo (slot futuro)",
+      "cnpj_br": "",
+      "tipo": "terceiro",
+      "ativo": false,
+      "ramos": [],
+      "nota": "Ativar quando houver contrato de serviço logístico."
+    }
+  ],
+  "produtos_candidato_exemplo": [
+    {
+      "id": "filamento-impressora-3d-pla",
+      "cliente_id": "cliente_proprio_masterprint",
+      "nome": "Filamento PLA 1kg",
+      "material": "PLA",
+      "fonte_marketplace": "mercadolivre",
+      "termo_marketplace": "filamento pla 1kg impressora 3d",
+      "fob_usd": 4.5,
+      "peso_kg": 1.0,
+      "volume_m3": 0.004,
+      "quantidade": 300,
+      "preco_venda_ml_brl": 93.9,
+      "ativo": true
+    },
+    {
+      "id": "filamento-impressora-3d-petg",
+      "cliente_id": "cliente_proprio_masterprint",
+      "nome": "Filamento PETG 1kg",
+      "material": "PETG",
+      "fonte_marketplace": "mercadolivre",
+      "termo_marketplace": "filamento petg 1kg impressora 3d",
+      "fob_usd": 5.0,
+      "peso_kg": 1.0,
+      "volume_m3": 0.004,
+      "quantidade": 300,
+      "preco_venda_ml_brl": 99.9,
+      "ativo": true
+    },
+    {
+      "id": "filamento-impressora-3d-abs",
+      "cliente_id": "cliente_proprio_masterprint",
+      "nome": "Filamento ABS 1kg",
+      "material": "ABS",
+      "fonte_marketplace": "mercadolivre",
+      "termo_marketplace": "filamento abs 1kg impressora 3d",
+      "fob_usd": 5.0,
+      "peso_kg": 1.0,
+      "volume_m3": 0.004,
+      "quantidade": 300,
+      "preco_venda_ml_brl": 97.9,
+      "ativo": true
+    },
+    {
+      "id": "filamento-impressora-3d-tpu",
+      "cliente_id": "cliente_proprio_masterprint",
+      "nome": "Filamento TPU 1kg",
+      "material": "TPU",
+      "fonte_marketplace": "mercadolivre",
+      "termo_marketplace": "filamento tpu flexivel 1kg impressora 3d",
+      "fob_usd": 7.0,
+      "peso_kg": 1.0,
+      "volume_m3": 0.004,
+      "quantidade": 200,
+      "preco_venda_ml_brl": 129.9,
+      "ativo": true
+    }
+  ]
+}

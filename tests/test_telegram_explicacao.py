@@ -28,7 +28,7 @@ class TestTelegramExplicacao(unittest.TestCase):
         self.assertIn("Anita e Impala", out)
         self.assertIn("frequência", out.lower())
         self.assertIn("Quando roda", out)
-        self.assertIn("A cada 4h", out)
+        self.assertIn("3x/dia", out)
         self.assertIn("Data: 2026-07-12", out)
         self.assertTrue(out.startswith("🔍 *Busca kit"))
 
@@ -39,6 +39,17 @@ class TestTelegramExplicacao(unittest.TestCase):
         self.assertEqual(msg.count("O que este agente faz"), 1)
         self.assertEqual(msg.count("Quando roda"), 1)
         self.assertEqual(out2, msg)
+
+    @patch.object(te, "explicacao_ativa", return_value=True)
+    def test_corpo_sem_cabecalho_remove_explicacao(self, _ativa):
+        full = te.cabecalho_agente("leilao", "🏛️ *Leilão*")
+        full = f"{full}\n\n*Corpo útil*\nItem A"
+        corpo = te.corpo_sem_cabecalho(full)
+        self.assertIn("Corpo útil", corpo)
+        self.assertIn("Item A", corpo)
+        self.assertNotIn("O que este agente faz", corpo)
+        self.assertNotIn("Quando roda", corpo)
+        self.assertNotIn("*Leilão*", corpo)
 
     @patch.object(te, "explicacao_ativa", return_value=True)
     def test_horario_novamix_diario(self, _ativa):

@@ -14,13 +14,19 @@
     "ii_pct": 12.6,
     "ipi_pct": 0,
     "icms_pct": 18,
+    "cnpj_importador": "23811261000197",
+    "empresa_id": "masterprint",
+    "ramo": "filamentos",
+    "cep_destino": "13467-694",
+    "siscomex_adicoes": 1,
+    "siscomex_brl": 154.23,
     "margem_minima_pct": 16,
     "margem_minima_reais": 10,
     "preco_max_usd": 12.0,
     "moq_max": 500,
     "frete_preferido": "maritimo",
     "termos_extra": ["factory", "wholesale", "OEM", "flexible"],
-    "notas": "TPU 1,75mm 1kg — cruzar FOB Alibaba × preço médio ML (monitor filamentos)."
+    "notas": "TPU 1,75mm 1kg — CNPJ Masterprint · CEP 13467-694 · Siscomex DI+1 adição R$154,23 · AFRMM no marítimo."
   },
   {
     "id": "filamento-impressora-3d-pla",
@@ -37,13 +43,19 @@
     "ii_pct": 12.6,
     "ipi_pct": 0,
     "icms_pct": 18,
+    "cnpj_importador": "23811261000197",
+    "empresa_id": "masterprint",
+    "ramo": "filamentos",
+    "cep_destino": "13467-694",
+    "siscomex_adicoes": 1,
+    "siscomex_brl": 154.23,
     "margem_minima_pct": 16,
     "margem_minima_reais": 8,
     "preco_max_usd": 9.0,
     "moq_max": 500,
     "frete_preferido": "maritimo",
     "termos_extra": ["factory", "wholesale", "OEM"],
-    "notas": "PLA 1,75mm rolo 1kg. Cruzamento com ML no agente monitor_filamentos_ml."
+    "notas": "PLA 1,75mm 1kg — CNPJ Masterprint · CEP 13467-694 · Siscomex vigente · cruzamento ML."
   },
   {
     "id": "filamento-impressora-3d-petg",
@@ -60,13 +72,19 @@
     "ii_pct": 12.6,
     "ipi_pct": 0,
     "icms_pct": 18,
+    "cnpj_importador": "23811261000197",
+    "empresa_id": "masterprint",
+    "ramo": "filamentos",
+    "cep_destino": "13467-694",
+    "siscomex_adicoes": 1,
+    "siscomex_brl": 154.23,
     "margem_minima_pct": 16,
     "margem_minima_reais": 8,
     "preco_max_usd": 10.0,
     "moq_max": 500,
     "frete_preferido": "maritimo",
     "termos_extra": ["factory", "wholesale", "OEM"],
-    "notas": "PETG 1,75mm 1kg — cruzar FOB Alibaba × preço médio ML."
+    "notas": "PETG 1,75mm 1kg — CNPJ Masterprint · CEP 13467-694 · Siscomex vigente · AFRMM marítimo."
   },
   {
     "id": "filamento-impressora-3d-abs",
@@ -83,13 +101,19 @@
     "ii_pct": 12.6,
     "ipi_pct": 0,
     "icms_pct": 18,
+    "cnpj_importador": "23811261000197",
+    "empresa_id": "masterprint",
+    "ramo": "filamentos",
+    "cep_destino": "13467-694",
+    "siscomex_adicoes": 1,
+    "siscomex_brl": 154.23,
     "margem_minima_pct": 16,
     "margem_minima_reais": 8,
     "preco_max_usd": 10.0,
     "moq_max": 500,
     "frete_preferido": "maritimo",
     "termos_extra": ["factory", "wholesale", "OEM"],
-    "notas": "ABS 1,75mm 1kg — cruzar FOB Alibaba × preço médio ML."
+    "notas": "ABS 1,75mm 1kg — CNPJ Masterprint · CEP 13467-694 · Siscomex vigente."
   },
   {
     "id": "abracadeira-nylon-150mm",

@@ -3,8 +3,10 @@ name: Monitor Filamentos 3D ML
 on:
   workflow_dispatch:
   schedule:
-    # A cada 6 horas
-    - cron: "45 */6 * * *"
+    # 3x/dia BRT 08:30 / 14:30 / 21:30 (= 11:30 / 17:30 / 00:30 UTC)
+    - cron: "30 11 * * *"
+    - cron: "30 17 * * *"
+    - cron: "30 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal

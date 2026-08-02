@@ -122,6 +122,7 @@ def obter_perfil_importador(*, atualizar_cnpj: bool = True) -> dict[str, Any]:
         "modal_transporte": fixa.get("modal_transporte") or "aereo",
         "aeroporto_desembaraco": fixa.get("aeroporto_desembaraco") or {},
         "destino_entrega": fixa.get("destino_entrega") or {},
+        "responsavel": fixa.get("responsavel") or {},
         "aviso_legal": fixa.get("aviso_legal") or "",
         "fonte_empresa": "catalogo",
     }

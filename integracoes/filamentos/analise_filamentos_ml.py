@@ -9,6 +9,7 @@ import unicodedata
 from typing import Any
 
 _MARCAS_FILAMENTO: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Masterprint", ("masterprint", "master print", "master-print")),
     ("3D Lab", ("3d lab", "3dlab")),
     ("Printalot", ("printalot",)),
     ("Voolt3D", ("voolt3d", "voolt")),

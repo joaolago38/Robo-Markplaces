@@ -1,0 +1,102 @@
+{
+  "versao": 1,
+  "descricao": "Duas empresas (dois CNPJs). Dados de produtos ficam no CNPJ 52.668.583/0001-27 por enquanto; migração preparada para 23.811.261/0001-97 via CNPJ_DONO_PRODUTOS_USAR_ALVO=1. Mercado Livre é o foco principal.",
+  "foco_marketplace_padrao": "mercadolivre",
+  "empresa_ativa_id": "esmaltes_impala",
+  "dono_produtos": {
+    "cnpj_atual": "52668583000127",
+    "empresa_id_atual": "esmaltes_impala",
+    "cnpj_alvo": "23811261000197",
+    "empresa_id_alvo": "masterprint",
+    "usar_alvo": false,
+    "notas": "Catálogos de produtos (produtos.json, Impala, custos) vinculados ao CNPJ atual. Quando for a hora, ligue CNPJ_DONO_PRODUTOS_USAR_ALVO=1 (ou usar_alvo=true aqui) sem reescrever os arquivos de produto."
+  },
+  "empresas": [
+    {
+      "id": "esmaltes_impala",
+      "ativo": true,
+      "nome_fantasia": "Impala / esmaltes e manicures",
+      "razao_social": "",
+      "cnpj": "52668583000127",
+      "dono_produtos_padrao": true,
+      "cnaes": [
+        {
+          "codigo": "4772-5/00",
+          "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+          "principal": true
+        },
+        {
+          "codigo": "4646-0/01",
+          "descricao": "Comércio atacadista de cosméticos e produtos de perfumaria",
+          "principal": false
+        }
+      ],
+      "marketplaces": {
+        "foco_principal": "mercadolivre",
+        "ativos": ["mercadolivre"],
+        "secundarios": ["shopee", "magalu"],
+        "notas": "ML é o canal principal das análises neste momento; Shopee/Magalu permanecem configurados mas secundários."
+      },
+      "ml": {
+        "seller_id": "",
+        "nickname": "",
+        "site_id": "MLB"
+      },
+      "telegram_gestor_chat_id": "",
+      "ramos": ["esmaltes", "manicures", "acetona", "removedores", "impala", "anita"],
+      "agentes_prioritarios": [
+        "esmaltes_operacao",
+        "monitor_mercado_esmaltes",
+        "monitor_kits_esmaltes",
+        "comparativo_anita_impala",
+        "monitor_acetona_cruzeiro"
+      ],
+      "notas": "CNPJ dono dos dados de produtos hoje. Env ESMALTES_CNPJ / CNPJ_DONO_PRODUTOS."
+    },
+    {
+      "id": "masterprint",
+      "ativo": true,
+      "nome_fantasia": "Masterprint (filamentos e escritório)",
+      "razao_social": "",
+      "cnpj": "23811261000197",
+      "dono_produtos_padrao": false,
+      "dono_produtos_candidato": true,
+      "cnaes": [
+        {
+          "codigo": "4751-2/01",
+          "descricao": "Comércio varejista especializado de equipamentos e suprimentos de informática",
+          "principal": true
+        },
+        {
+          "codigo": "4689-3/02",
+          "descricao": "Comércio atacadista de resinas e elastômeros",
+          "principal": false
+        },
+        {
+          "codigo": "4761-0/03",
+          "descricao": "Comércio varejista de artigos de papelaria",
+          "principal": false
+        }
+      ],
+      "marketplaces": {
+        "foco_principal": "mercadolivre",
+        "ativos": ["mercadolivre"],
+        "secundarios": [],
+        "notas": "Conta/análise Masterprint no ML. Candidato a assumir o dono dos catálogos de produtos."
+      },
+      "ml": {
+        "seller_id": "",
+        "nickname": "",
+        "site_id": "MLB"
+      },
+      "telegram_gestor_chat_id": "",
+      "ramos": ["filamentos", "escritorio", "masterprint", "petg", "demais_produtos"],
+      "agentes_prioritarios": [
+        "monitor_masterprint_petg",
+        "monitor_masterprint_escritorio",
+        "monitor_filamentos_ml"
+      ],
+      "notas": "CNPJ demais produtos / alvo da migração do dono dos catálogos. Env MASTERPRINT_CNPJ / CNPJ_DONO_PRODUTOS_ALVO."
+    }
+  ]
+}

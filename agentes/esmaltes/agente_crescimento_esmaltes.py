@@ -114,7 +114,9 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             "alerta_enviado": enviado,
             "critico": rel.get("critico"),
             "kits_sem_mlb": (rel.get("resumo") or {}).get("kits_sem_mlb"),
-            "checklist": len(rel.get("checklist") or []),
+            "checklist": rel.get("checklist") or [],
+            "kits_sem_mlb_lista": (rel.get("kits_sem_mlb") or [])[:4],
+            "score_ecossistema": rel.get("score_ecossistema"),
             "kpis": kpis,
             "mensagem": msg,
         }

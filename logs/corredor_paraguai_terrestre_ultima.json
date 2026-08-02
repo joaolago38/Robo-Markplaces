@@ -1,0 +1,100 @@
+{
+  "ok": true,
+  "gerado_em": "2026-08-02T17:18:33.096399-03:00",
+  "modal": "terrestre",
+  "referencia": "alibaba_ou_mercadoria_brl",
+  "paraguai_endereco_comercial": {
+    "ok": true,
+    "ativo": true,
+    "endereco": {
+      "pais": "PY",
+      "cidade": "Ciudad del Este",
+      "departamento": "Alto Paraná",
+      "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+      "codigo_postal": "7000",
+      "lat": -25.5097,
+      "lng": -54.6112,
+      "uso": "referencia_comercial_importacao"
+    },
+    "alternativos": [
+      {
+        "id": "asuncion_centro",
+        "cidade": "Asunción",
+        "endereco": "Av. España — zona comercial",
+        "codigo_postal": "1000"
+      },
+      {
+        "id": "encarnacion",
+        "cidade": "Encarnación",
+        "endereco": "Zona comercial fronteira Posadas",
+        "codigo_postal": "6000"
+      }
+    ],
+    "via_env": false
+  },
+  "destino_cep": "13467-694",
+  "cobertura_costa_brasil_pct": 100.0,
+  "cenarios_terrestres": [
+    {
+      "ok": true,
+      "modal": "terrestre",
+      "corredor_id": "cde_foz_americana",
+      "origem": "Ciudad del Este",
+      "fronteira_br": "Foz do Iguaçu",
+      "uf_entrada": "PR",
+      "destino_cep": "13467-694",
+      "km_total": 990.0,
+      "frete_km_brl": 4158.0,
+      "fixo_fronteira_brl": 350.0,
+      "pedagios_brl": 420.0,
+      "seguro_brl": 27.06,
+      "custo_total_brl": 4955.06,
+      "custo_unitario_brl": 24.78,
+      "dias_transito_estim": 3,
+      "valor_mercadoria_brl": 9020.0,
+      "custo_operacao_total_brl": 13975.06,
+      "custo_operacao_unitario_brl": 69.88
+    },
+    {
+      "ok": true,
+      "modal": "terrestre",
+      "corredor_id": "cde_foz_campinas",
+      "origem": "Ciudad del Este",
+      "fronteira_br": "Foz do Iguaçu",
+      "uf_entrada": "PR",
+      "destino_cep": "13467-694",
+      "km_total": 1060.0,
+      "frete_km_brl": 4452.0,
+      "fixo_fronteira_brl": 350.0,
+      "pedagios_brl": 450.0,
+      "seguro_brl": 27.06,
+      "custo_total_brl": 5279.06,
+      "custo_unitario_brl": 26.4,
+      "dias_transito_estim": 3,
+      "valor_mercadoria_brl": 9020.0,
+      "custo_operacao_total_brl": 14299.06,
+      "custo_operacao_unitario_brl": 71.5
+    }
+  ],
+  "melhor_corredor": {
+    "ok": true,
+    "modal": "terrestre",
+    "corredor_id": "cde_foz_americana",
+    "origem": "Ciudad del Este",
+    "fronteira_br": "Foz do Iguaçu",
+    "uf_entrada": "PR",
+    "destino_cep": "13467-694",
+    "km_total": 990.0,
+    "frete_km_brl": 4158.0,
+    "fixo_fronteira_brl": 350.0,
+    "pedagios_brl": 420.0,
+    "seguro_brl": 27.06,
+    "custo_total_brl": 4955.06,
+    "custo_unitario_brl": 24.78,
+    "dias_transito_estim": 3,
+    "valor_mercadoria_brl": 9020.0,
+    "custo_operacao_total_brl": 13975.06,
+    "custo_operacao_unitario_brl": 69.88
+  },
+  "aviso": "Transporte terrestre PY→BR (Mercosul). Não substitui assessoria fiscal/aduaneira na fronteira. Endereço PY padrão em Ciudad del Este — altere com IMPORTACAO_PY_ENDERECO / IMPORTACAO_PY_CIDADE."
+}

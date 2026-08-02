@@ -5,8 +5,10 @@ name: Monitor margem vendas marketplaces
 on:
   workflow_dispatch:
   schedule:
-    # A cada 3h (UTC) — cobre vendas entre ciclos do orquestrador
-    - cron: "15 */3 * * *"
+    # 3x/dia BRT 08:05 / 14:05 / 21:05 (= 11:05 / 17:05 / 00:05 UTC)
+    - cron: "5 11 * * *"
+    - cron: "5 17 * * *"
+    - cron: "5 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal

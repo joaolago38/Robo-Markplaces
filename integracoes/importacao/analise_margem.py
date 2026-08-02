@@ -54,19 +54,40 @@ def _params_imposto(produto: dict[str, Any]) -> dict[str, float]:
         except (TypeError, ValueError):
             return padrao
 
-    return {
+    from integracoes.importacao.siscomex import taxa_siscomex_brl
+
+    try:
+        adicoes = int(produto.get("siscomex_adicoes") or 1)
+    except (TypeError, ValueError):
+        adicoes = 1
+    adicoes = max(1, adicoes)
+    siscomex = _f("siscomex_brl", IMPORTACAO_SISCOMEX_BRL)
+    # Legado 214.50 ou override vazio → regra vigente
+    if abs(siscomex - 214.50) < 0.01 or siscomex <= 0:
+        siscomex = taxa_siscomex_brl(adicoes=adicoes)
+
+    out: dict[str, Any] = {
         "ii_pct": _f("ii_pct", IMPORTACAO_II_PCT_DEFAULT),
         "ipi_pct": _f("ipi_pct", IMPORTACAO_IPI_PCT_DEFAULT),
         "pis_pct": IMPORTACAO_PIS_PCT,
         "cofins_pct": IMPORTACAO_COFINS_PCT,
         "icms_pct": _f("icms_pct", IMPORTACAO_ICMS_PCT),
         "seguro_pct": IMPORTACAO_SEGURO_PCT,
-        "siscomex_brl": IMPORTACAO_SISCOMEX_BRL,
-        "desembaraco_brl": IMPORTACAO_DESEMBARACO_BRL,
+        "siscomex_brl": siscomex,
+        "siscomex_adicoes": adicoes,
+        "desembaraco_brl": _f("desembaraco_brl", IMPORTACAO_DESEMBARACO_BRL),
         "frete_nacional_brl_unit": _f("frete_nacional_brl", IMPORTACAO_FRETE_NACIONAL_BRL),
         "frete_maritimo_usd_kg": IMPORTACAO_FRETE_MARITIMO_USD_KG,
         "frete_aereo_usd_kg": IMPORTACAO_FRETE_AEREO_USD_KG,
     }
+    # AFRMM só no marítimo — landed aplica por modo_frete; passa % padrão
+    try:
+        from core.config import IMPORTACAO_AFRMM_PCT
+
+        out["afrmm_pct"] = float(IMPORTACAO_AFRMM_PCT)
+    except Exception:
+        out["afrmm_pct"] = 8.0
+    return out
 
 
 def consultar_precos_marketplace(termo: str, *, limite: int = 12) -> dict[str, Any]:

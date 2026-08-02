@@ -33,7 +33,16 @@ class CustoLandedTests(unittest.TestCase):
         self.assertGreater(out["pis_brl"], 0)
         self.assertGreater(out["cofins_brl"], 0)
         self.assertGreater(out["icms_brl"], 0)
+        self.assertTrue(out["despesas_aduaneiras_inclusas"])
+        self.assertGreater(out["afrmm_brl"], 0)  # marítimo: AFRMM Lei 10.893/2004
         self.assertGreater(out["custo_unitario_brl"], out["fob_usd_unit"] * 5.0)
+
+    def test_aereo_sem_afrmm(self):
+        out = cl.calcular_custo_landed(3.0, cambio_usd_brl=5.0, quantidade=10, modo_frete="aereo")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["afrmm_brl"], 0.0)
+        self.assertIn("referencia_legislacao_br", out)
+        self.assertGreater(out["despesas_aduaneiras_brl"], 0)
 
     def test_margem_lucro_razoavel(self):
         m = cl.calcular_margem_revenda(80.0, 40.0, taxa_marketplace_pct=14.0, margem_minima_pct=18.0)

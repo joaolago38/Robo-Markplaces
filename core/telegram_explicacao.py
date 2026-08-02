@@ -69,6 +69,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Consolida busca Alibaba (catálogo) + inteligência de margem/câmbio num "
         "único run — evita Telegram duplicado. Preferir este no cron."
     ),
+    "comparar_portos_alibaba": (
+        "Compara importação com referência Alibaba (FOB) em qualquer porto ou "
+        "aeroporto do Brasil — aéreo e marítimo — e ranqueia condições atrativas "
+        "por custo landed e atratividade do hub."
+    ),
     "ml_tendencias_importacao": (
         "Detecta o que está em alta no Mercado Livre e cruza com preços Alibaba para "
         "indicar se vale importar aquele item agora. Telegram: tendências + veredito "
@@ -170,6 +175,21 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "preços, cores, marcas e ranking de vendas; compara com Alibaba "
         "(FOB/landed × preço ML) e decide sourcing COMPRAR_BR vs IMPORTAR_CHINA "
         "vs NAO_COMPENSA com o catálogo de fornecedor nacional."
+    ),
+    "monitor_masterprint_petg": (
+        "Monitora PETG Masterprint no ML (margem real + Δ). Claude 1×/dia: análise "
+        "concisa do ecossistema ML. Pode usar CNPJ/conta/Telegram próprios (≠ esmaltes)."
+    ),
+    "monitor_masterprint_escritorio": (
+        "Monitora pincéis recarregáveis e apagadores Masterprint (margem real). "
+        "Claude 1×/dia no ecossistema ML. Ramo/conta separados dos esmaltes quando configurado."
+    ),
+    "monitor_cnpj_cnae": (
+        "A cada ~10 dias (dias 1/11/21): pelo CNAE resolve o CNPJ, lista produtos e, "
+        "se houver alteração (ou ciclo vencido), inicia monitoramento Mercado Livre "
+        "com card de decisão no Telegram (AGIR / PANORAMA ML / PRÓXIMOS PASSOS). "
+        "Limites Datadog (Alibaba + USD + vendas + saúde do produto) evitam o "
+        "ecossistema repetir o mesmo tema. Demais marketplaces ficam abertos no perfil."
     ),
     "monitor_acetona_cruzeiro": (
         "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
@@ -294,7 +314,7 @@ EXPLICACOES_AGENTES: dict[str, str] = {
 HORARIOS_AGENTES: dict[str, str] = {
     "vigia_datadog": "A cada 30 min (workflow próprio; fora do orquestrador)",
     "consumo_claude": "A cada 6h (Actions) + alerta a cada uso Claude",
-    "monitor_margem_vendas": "A cada 3h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_margem_vendas": "3x/dia às 08:05, 14:05 e 21:05 BRT (Actions) e a cada 30 min (orquestrador)",
     "inteligencia_precos": "A cada 30 min (orquestrador)",
     "leilao": "A cada hora (Actions); fora do orquestrador 30 min",
     "sumare_leiloes": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
@@ -304,6 +324,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "alibaba": "Manual / via alibaba_sourcing (cron 2h)",
     "alibaba_inteligencia": "Manual / via alibaba_sourcing (cron 2h)",
     "alibaba_sourcing": "A cada 2h (Actions); fora do orquestrador 30 min",
+    "comparar_portos_alibaba": "Sob demanda / CLI; fora do orquestrador 30 min",
     "ml_tendencias_importacao": "A cada 2h (Actions Alibaba); fora do orquestrador 30 min",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
@@ -314,16 +335,16 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_sem_venda_ml": "A cada 30 min (orquestrador)",
     "monitor_anita": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "monitor_mercado_esmaltes": "A cada 30 min (orquestrador); workflow dedicado só manual",
-    "monitor_busca_kit_esmaltes": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
-    "monitor_kits_esmaltes": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
-    "montar_kits_impala": "A cada 12h (Actions); fora do ciclo 30 min",
-    "ecossistema_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
-    "crescimento_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
-    "decisao_dia_esmaltes": "Manual / via esmaltes_operacao (cron diário consolidado)",
-    "esmaltes_operacao": "Todo dia às 08:00 BRT (Actions); fora do ciclo 30 min",
-    "monitor_removedores_unha": "A cada 6h (Actions) e a cada 30 min (orquestrador)",
+    "monitor_busca_kit_esmaltes": "3x/dia às 08:10, 14:10 e 21:10 BRT (Actions) e a cada 30 min (orquestrador)",
+    "monitor_kits_esmaltes": "3x/dia às 08:20, 14:20 e 21:20 BRT (Actions) e a cada 30 min (orquestrador)",
+    "montar_kits_impala": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
+    "ecossistema_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
+    "crescimento_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
+    "decisao_dia_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
+    "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
+    "monitor_removedores_unha": "3x/dia às 08:40, 14:40 e 21:40 BRT (Actions) e a cada 30 min (orquestrador)",
     "monitor_tendencias_esmaltes": (
-        "2x ao dia às 05:15 e 17:15 BRT (Actions) e a cada 30 min (orquestrador)"
+        "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
     "comparativo_anita_impala": (
         "Segundas e quintas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)"
@@ -331,7 +352,17 @@ HORARIOS_AGENTES: dict[str, str] = {
     "comparativo_ml_shopee": (
         "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
-    "monitor_filamentos_ml": "A cada 6h (Actions); fora do orquestrador 30 min",
+    "monitor_filamentos_ml": "3x/dia às 08:30, 14:30 e 21:30 BRT (Actions); fora do orquestrador 30 min",
+    "monitor_masterprint_petg": (
+        "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+    ),
+    "monitor_masterprint_escritorio": (
+        "3x/dia às 08:45, 14:45 e 21:45 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+    ),
+    "monitor_cnpj_cnae": (
+        "A cada ~10 dias (1, 11 e 21 do mês, 09:00 BRT via Actions); "
+        "alteração de CNPJ dispara ML + Telegram de decisão; fora do orquestrador 30 min"
+    ),
     "monitor_acetona_cruzeiro": (
         "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
@@ -340,8 +371,8 @@ HORARIOS_AGENTES: dict[str, str] = {
     "meta_metricas": "A cada 30 min (orquestrador)",
     "trafego_manicures": "A cada 30 min (orquestrador)",
     "promocoes_manicures": "Todo dia às 10:00 e 18:00 BRT (fora do orquestrador)",
-    "conversao_manicures": "A cada 4h (Actions); fora do ciclo 30 min",
-    "necessidade_manicures": "A cada 6h (Actions); fora do ciclo 30 min",
+    "conversao_manicures": "3x/dia às 08:25, 14:25 e 21:25 BRT (Actions); fora do ciclo 30 min",
+    "necessidade_manicures": "3x/dia às 08:35, 14:35 e 21:35 BRT (Actions); fora do ciclo 30 min",
     "panorama": "Todo dia às 06:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "orquestrador": "A cada 30 min (GitHub Actions)",
     "operacao_24h": (
@@ -402,6 +433,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("alibaba_intel", "alibaba_inteligencia"),
     ("alibaba_sourcing", "alibaba_sourcing"),
     ("alibaba:sourcing", "alibaba_sourcing"),
+    ("portos_alibaba", "comparar_portos_alibaba"),
+    ("portos_br", "comparar_portos_alibaba"),
     ("alibaba:", "alibaba"),
     ("importacao:ml_tendencias", "ml_tendencias_importacao"),
     ("ml_tendencias", "ml_tendencias_importacao"),
@@ -440,6 +473,15 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("ml_shopee", "comparativo_ml_shopee"),
     ("filamentos", "monitor_filamentos_ml"),
     ("filamentos:ml", "monitor_filamentos_ml"),
+    ("masterprint", "monitor_masterprint_petg"),
+    ("masterprint_petg", "monitor_masterprint_petg"),
+    ("petg_masterprint", "monitor_masterprint_petg"),
+    ("masterprint_escritorio", "monitor_masterprint_escritorio"),
+    ("pinceis_masterprint", "monitor_masterprint_escritorio"),
+    ("apagador_masterprint", "monitor_masterprint_escritorio"),
+    ("cnpj_cnae", "monitor_cnpj_cnae"),
+    ("monitor_cnpj", "monitor_cnpj_cnae"),
+    ("vinculo_cnae", "monitor_cnpj_cnae"),
     ("acetona", "monitor_acetona_cruzeiro"),
     ("descoberta", "descoberta_produtos"),
     ("ads_ml", "ads_gatilho"),
@@ -468,6 +510,49 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
 
 _MARCADOR = "_O que este agente faz:_"
 _MARCADOR_HORARIO = "_Quando roda:_"
+
+
+def corpo_sem_cabecalho(mensagem: str) -> str:
+    """
+    Remove título + blocos 'O que este agente faz' / 'Quando roda'.
+
+    Usado ao embutir mensagens de agentes-filho num consolidado (ex.: esmaltes_operacao),
+    evitando 3–4 cabeçalhos/explicações iguais na mesma mensagem do Telegram.
+    """
+    msg = (mensagem or "").strip()
+    if not msg:
+        return ""
+    lines = msg.split("\n")
+    i = 0
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    if i >= len(lines):
+        return ""
+    # Descarta a 1ª linha (título do agente-filho)
+    i += 1
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    while i < len(lines):
+        s = lines[i].strip()
+        if s.startswith(_MARCADOR):
+            i += 1
+            while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith(
+                _MARCADOR_HORARIO
+            ):
+                i += 1
+            while i < len(lines) and not lines[i].strip():
+                i += 1
+            continue
+        if s.startswith(_MARCADOR_HORARIO):
+            i += 1
+            while i < len(lines) and lines[i].strip():
+                i += 1
+            while i < len(lines) and not lines[i].strip():
+                i += 1
+            continue
+        break
+    corpo = "\n".join(lines[i:]).strip()
+    return corpo if corpo else msg
 
 
 _URL_RE = re.compile(r"https?://[^\s<>\]]+", re.IGNORECASE)

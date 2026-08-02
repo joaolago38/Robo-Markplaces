@@ -1,12 +1,37 @@
 """
 integracoes/importacao/custo_landed.py
-Custo landed (CIF + impostos BR + frete nacional) para importação China → Brasil.
+Custo landed (CIF + tributos/despesas aduaneiras BR + frete nacional)
+China → Brasil — referência legislação brasileira (estimativa de planejamento).
+
+Cascata (regime comum de importação formal):
+  valor aduaneiro (CIF ≈ FOB+frete+seguro) → II → IPI → PIS/COFINS-Importação
+  → despesas aduaneiras (Siscomex, desembaraço, AFRMM no marítimo) → ICMS “por dentro”.
+
+Referências (não substituem despachante):
+  - Valor aduaneiro / RA (Decreto 6.759/2009)
+  - II (TEC) · IPI (TIPI)
+  - PIS/COFINS-Importação (Lei 10.865/2004) — alíquotas padrão 2,1% + 9,65%
+  - Taxa de utilização do Siscomex
+  - AFRMM (Lei 10.893/2004 art. 6º, redação Lei 14.301/2022 — 8% longo curso)
+  - ICMS importação (base e cálculo “por dentro” — legislação estadual / Convênios ICMS)
 """
 from __future__ import annotations
 
 from typing import Any, Literal
 
 ModoFrete = Literal["maritimo", "aereo"]
+
+# Referência documental embutida nos resultados
+REFERENCIA_LEGISLACAO_BR = {
+    "valor_aduaneiro": "Decreto 6.759/2009 (RA) — CIF estimado FOB+frete+seguro",
+    "ii": "Imposto de Importação — TEC (alíquota por NCM)",
+    "ipi": "IPI — TIPI (base CIF+II)",
+    "pis_cofins": "Lei 10.865/2004 — PIS/COFINS-Importação sobre valor aduaneiro",
+    "siscomex": "Taxa Siscomex — Portaria ME 4.131/2021 + IN RFB 2.024/2021 (DI + adições)",
+    "afrmm": "Lei 10.893/2004 art. 6º (Lei 14.301/2022) — AFRMM 8% frete longo curso",
+    "icms": "ICMS importação — alíquota UF destino, cálculo por dentro",
+    "aviso": "Estimativa de planejamento; confirme NCM/alíquotas e benefícios com despachante.",
+}
 
 
 def calcular_custo_landed(
@@ -24,12 +49,15 @@ def calcular_custo_landed(
     frete_maritimo_usd_kg: float = 0.85,
     frete_aereo_usd_kg: float = 5.5,
     seguro_pct: float = 0.5,
-    siscomex_brl: float = 214.50,
+    siscomex_brl: float | None = None,
     desembaraco_brl: float = 800.0,
     frete_nacional_brl_unit: float = 12.0,
+    afrmm_pct: float | None = None,
+    siscomex_adicoes: int = 1,
 ) -> dict[str, Any]:
     """
-    Estima custo unitário landed com frete marítimo ou aéreo e tributos de importação.
+    Estima custo unitário landed com frete marítimo ou aéreo e tributos/despesas
+    aduaneiras brasileiras. Frete nacional (pós-desembaraço) fora da base do ICMS.
     """
     try:
         preco_usd = float(preco_usd_unit)
@@ -41,6 +69,32 @@ def calcular_custo_landed(
 
     if preco_usd <= 0 or cambio <= 0:
         return {"ok": False, "motivo": "preço ou câmbio inválido"}
+
+    from integracoes.importacao.siscomex import calcular_taxa_siscomex
+
+    # Siscomex: se None ou legado 214.50 → calcula pela regra vigente
+    if siscomex_brl is None or abs(float(siscomex_brl) - 214.50) < 0.01:
+        siscomex_detalhe = calcular_taxa_siscomex(adicoes=max(1, int(siscomex_adicoes or 1)))
+        siscomex_brl = float(siscomex_detalhe["total_brl"])
+    else:
+        siscomex_brl = float(siscomex_brl)
+        siscomex_detalhe = calcular_taxa_siscomex(adicoes=max(1, int(siscomex_adicoes or 1)))
+        siscomex_detalhe = {**siscomex_detalhe, "total_brl": round(siscomex_brl, 2), "origem": "override"}
+
+    # AFRMM: 8% longo curso (Lei 10.893/2004 art. 6º c/ redação Lei 14.301/2022).
+    # Override via afrmm_pct; se None, usa IMPORTACAO_AFRMM_PCT (marítimo) ou 0 (aéreo).
+    if afrmm_pct is None:
+        if modo_frete == "maritimo":
+            try:
+                from core.config import IMPORTACAO_AFRMM_PCT
+
+                afrmm_pct = float(IMPORTACAO_AFRMM_PCT)
+            except Exception:
+                afrmm_pct = 8.0
+        else:
+            afrmm_pct = 0.0
+    else:
+        afrmm_pct = float(afrmm_pct)
 
     fob_usd_total = preco_usd * qty
     fob_brl_total = fob_usd_total * cambio
@@ -58,7 +112,11 @@ def calcular_custo_landed(
     pis_brl = cif_brl * (pis_pct / 100.0)
     cofins_brl = cif_brl * (cofins_pct / 100.0)
 
-    base_sem_icms = cif_brl + ii_brl + ipi_brl + pis_brl + cofins_brl + siscomex_brl + desembaraco_brl
+    # AFRMM sobre frete internacional (marítimo); entra como despesa aduaneira na base ICMS
+    afrmm_brl = frete_brl_total * (afrmm_pct / 100.0) if afrmm_pct > 0 else 0.0
+
+    despesas_aduaneiras_brl = siscomex_brl + desembaraco_brl + afrmm_brl
+    base_sem_icms = cif_brl + ii_brl + ipi_brl + pis_brl + cofins_brl + despesas_aduaneiras_brl
     aliq_icms = icms_pct / 100.0
     icms_brl = base_sem_icms / (1.0 - aliq_icms) * aliq_icms if 0 < aliq_icms < 1 else 0.0
 
@@ -66,6 +124,7 @@ def calcular_custo_landed(
     custo_total_brl = base_sem_icms + icms_brl + frete_nacional_total
     custo_unitario_brl = round(custo_total_brl / qty, 2)
 
+    impostos_federais = ii_brl + ipi_brl + pis_brl + cofins_brl
     return {
         "ok": True,
         "modo_frete": modo_frete,
@@ -79,20 +138,32 @@ def calcular_custo_landed(
         "frete_internacional_brl": round(frete_brl_total, 2),
         "seguro_brl": round(seguro_brl, 2),
         "cif_brl": round(cif_brl, 2),
+        "valor_aduaneiro_cif_brl": round(cif_brl, 2),
         "ii_pct": ii_pct,
         "ii_brl": round(ii_brl, 2),
         "ipi_pct": ipi_pct,
         "ipi_brl": round(ipi_brl, 2),
+        "pis_pct": pis_pct,
         "pis_brl": round(pis_brl, 2),
+        "cofins_pct": cofins_pct,
         "cofins_brl": round(cofins_brl, 2),
+        "pis_cofins_brl": round(pis_brl + cofins_brl, 2),
         "icms_pct": icms_pct,
         "icms_brl": round(icms_brl, 2),
         "siscomex_brl": round(siscomex_brl, 2),
+        "siscomex_adicoes": max(1, int(siscomex_adicoes or 1)),
+        "siscomex_detalhe": siscomex_detalhe,
         "desembaraco_brl": round(desembaraco_brl, 2),
+        "afrmm_pct": afrmm_pct,
+        "afrmm_brl": round(afrmm_brl, 2),
+        "despesas_aduaneiras_brl": round(despesas_aduaneiras_brl, 2),
         "frete_nacional_brl": round(frete_nacional_total, 2),
-        "impostos_total_brl": round(ii_brl + ipi_brl + pis_brl + cofins_brl + icms_brl, 2),
+        "impostos_federais_brl": round(impostos_federais, 2),
+        "impostos_total_brl": round(impostos_federais + icms_brl, 2),
         "custo_total_brl": round(custo_total_brl, 2),
         "custo_unitario_brl": custo_unitario_brl,
+        "referencia_legislacao_br": REFERENCIA_LEGISLACAO_BR,
+        "despesas_aduaneiras_inclusas": True,
     }
 
 
@@ -105,13 +176,18 @@ def calcular_cenarios_frete(
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Retorna custo landed marítimo e aéreo lado a lado."""
+    kwargs_mar = dict(kwargs)
+    kwargs_aer = dict(kwargs)
+    # AFRMM (Lei 10.893/2004) só no marítimo
+    kwargs_aer["afrmm_pct"] = 0.0
+
     maritimo = calcular_custo_landed(
         preco_usd_unit,
         cambio_usd_brl=cambio_usd_brl,
         peso_kg_unit=peso_kg_unit,
         quantidade=quantidade,
         modo_frete="maritimo",
-        **kwargs,
+        **kwargs_mar,
     )
     aereo = calcular_custo_landed(
         preco_usd_unit,
@@ -119,7 +195,7 @@ def calcular_cenarios_frete(
         peso_kg_unit=peso_kg_unit,
         quantidade=quantidade,
         modo_frete="aereo",
-        **kwargs,
+        **kwargs_aer,
     )
     melhor = None
     if maritimo.get("ok") and aereo.get("ok"):

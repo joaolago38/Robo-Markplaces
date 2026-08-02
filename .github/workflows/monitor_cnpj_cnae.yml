@@ -1,0 +1,130 @@
+name: Monitor CNPJ × CNAE × ML (ciclo 10 dias)
+
+# A cada ~10 dias: resolve CNAE→CNPJ→produtos.
+# Alteração no CNPJ (ou ciclo vencido) ⇒ inicia monitoramento Mercado Livre
+# e envia card de decisão no Telegram (AGIR / PANORAMA / PRÓXIMOS PASSOS).
+
+on:
+  workflow_dispatch:
+    inputs:
+      cnae:
+        description: "CNAE opcional (ex. 4772-5/00)"
+        required: false
+        default: ""
+      cnpj:
+        description: "CNPJ opcional (só dígitos)"
+        required: false
+        default: ""
+      forcar_ml:
+        description: "Forçar coleta ML mesmo fora do ciclo (1/0)"
+        required: false
+        default: "0"
+  schedule:
+    # ~a cada 10 dias: dias 1, 11 e 21 do mês às 12:00 UTC (09:00 BRT)
+    - cron: "0 12 1,11,21 * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  MONITOR_CNPJ_CNAE_ATIVO: "1"
+  MONITOR_CNPJ_CNAE_ALERTA: "1"
+  MONITOR_CNPJ_CNAE_ALERTA_SO_ALTERACAO: "0"
+  MONITOR_CNPJ_CNAE_INTERVALO_DIAS: "10"
+  MONITOR_CNPJ_CNAE_ML_AO_VIVO: "1"
+
+jobs:
+  monitorar:
+    name: CNPJ × CNAE × ML → decisão Telegram
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar snapshots
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/monitor_cnpj_cnae_ultima.json
+            logs/monitor_cnpj_cnae_historico.json
+            logs/cnpjs_monitorados.json
+            logs/resumo_conta_ml_ultima.json
+            logs/decision_limits_ultima.json
+            logs/decision_limits_cupos.json
+          key: monitor-cnpj-cnae-${{ github.run_id }}
+          restore-keys: |
+            monitor-cnpj-cnae-
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor CNPJ × CNAE × ML
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.cnae }}" ]; then
+            ARGS="$ARGS --cnae ${{ github.event.inputs.cnae }}"
+          fi
+          if [ -n "${{ github.event.inputs.cnpj }}" ]; then
+            ARGS="$ARGS --cnpj ${{ github.event.inputs.cnpj }}"
+          fi
+          if [ "${{ github.event.inputs.forcar_ml }}" = "1" ]; then
+            ARGS="$ARGS --forcar-ml"
+          fi
+          python -m agentes.empresa.agente_monitor_cnpj_cnae $ARGS
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ESMALTES_CNPJ: ${{ vars.ESMALTES_CNPJ || '52668583000127' }}
+          DEMAIS_PRODUTOS_CNPJ: ${{ vars.DEMAIS_PRODUTOS_CNPJ || '23811261000197' }}
+          MASTERPRINT_CNPJ: ${{ secrets.MASTERPRINT_CNPJ }}
+          MONITOR_CNPJ_CNAE_ATIVO: "1"
+          MONITOR_CNPJ_CNAE_ALERTA: "1"
+          MONITOR_CNPJ_CNAE_INTERVALO_DIAS: "10"
+          MONITOR_CNPJ_CNAE_ML_AO_VIVO: "1"
+          MONITOR_CNPJ_CNAE_COOLDOWN_SEG: "864000"
+          DECISION_LIMITS_ATIVO: "1"
+          DECISION_LIMITS_MAX_FAZER: "3"
+          DECISION_LIMITS_JANELA_HORAS: "12"
+      - name: Publicar snapshot
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/monitor_cnpj_cnae_ultima.json
+            logs/monitor_cnpj_cnae_historico.json
+            logs/cnpjs_monitorados.json
+            logs/resumo_conta_ml_ultima.json
+            logs/decision_limits_ultima.json
+            logs/decision_limits_cupos.json
+            logs/alertas_cooldown.json
+          key: monitor-cnpj-cnae-${{ github.run_id }}
+      - name: Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-cnpj-cnae
+          path: |
+            logs/monitor_cnpj_cnae_ultima.json
+            logs/cnpjs_monitorados.json
+          retention-days: 30
+          if-no-files-found: ignore

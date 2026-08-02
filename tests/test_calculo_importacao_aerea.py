@@ -37,7 +37,7 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
             "armazenagem_brl": 450.0,
             "desembaraco_brl": 1200.0,
             "thc_brl": 380.0,
-            "siscomex_brl": 214.5,
+            "siscomex_brl": 154.23,
             "frete_rodoviario_brl": 650.0,
         }
         out = calcular_custo_importacao_aerea_formal(entradas)
@@ -48,6 +48,10 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
         self.assertGreater(out["custo_total_brl"], out["valor_aduaneiro_cif_brl"])
         self.assertEqual(out["custo_unitario_brl"], round(out["custo_total_brl"] / 10, 2))
         self.assertEqual(len(out["itens"]), 12)
+        self.assertTrue(out["despesas_aduaneiras_inclusas"])
+        self.assertIn("referencia_legislacao_br", out)
+        self.assertGreater(out["siscomex_brl"], 0)
+        self.assertGreater(out["desembaraco_brl"], 0)
 
     def test_icms_por_dentro(self):
         entradas = {
@@ -72,6 +76,30 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
         base = 100.0
         icms_esperado = (0.18 * base) / (1 - 0.18)
         self.assertAlmostEqual(out["icms_brl"], round(icms_esperado, 2), places=1)
+
+    def test_frete_rodoviario_fora_base_icms(self):
+        """Frete VCP→destino pós-desembaraço não entra na base do ICMS."""
+        base = {
+            "fob_usd": 100.0,
+            "peso_bruto_kg": 1.0,
+            "frete_aereo_usd": 0.0,
+            "seguro_pct": 0.0,
+            "cambio_usd_brl": 1.0,
+            "ii_pct": 0.0,
+            "ipi_pct": 0.0,
+            "pis_cofins_pct": 0.0,
+            "icms_pct": 18.0,
+            "uf_destino": "SP",
+            "quantidade": 1,
+            "armazenagem_brl": 0.0,
+            "desembaraco_brl": 0.0,
+            "thc_brl": 0.0,
+            "siscomex_brl": 0.0,
+        }
+        sem = calcular_custo_importacao_aerea_formal({**base, "frete_rodoviario_brl": 0.0})
+        com = calcular_custo_importacao_aerea_formal({**base, "frete_rodoviario_brl": 500.0})
+        self.assertAlmostEqual(sem["icms_brl"], com["icms_brl"], places=2)
+        self.assertAlmostEqual(com["custo_total_brl"] - sem["custo_total_brl"], 500.0, places=2)
 
     def test_montar_entradas_produto(self):
         produto = {
@@ -121,7 +149,7 @@ class CalculoImportacaoAereaTests(unittest.TestCase):
                 "armazenagem_brl": 450.0,
                 "desembaraco_brl": 1200.0,
                 "thc_brl": 380.0,
-                "siscomex_brl": 214.5,
+                "siscomex_brl": 154.23,
                 "frete_rodoviario_brl": 650.0,
             }
         )
