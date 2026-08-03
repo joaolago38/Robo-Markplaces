@@ -1,12 +1,14 @@
-name: Monitor Kits Esmaltes ML
+name: Monitor Kits Esmaltes ML (debug)
+
+# NÃO usar no cron. Produção = monitor_mercado_esmaltes + busca_kit.
+# Debug manual — sem alerta Telegram.
 
 on:
   workflow_dispatch:
-  schedule:
-    # 3x/dia BRT 08:20 / 14:20 / 21:20 (= 11:20 / 17:20 / 00:20 UTC)
-    - cron: "20 11 * * *"
-    - cron: "20 17 * * *"
-    - cron: "20 0 * * *"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"
@@ -15,6 +17,7 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  ESMALTES_KITS_MONITOR_ALERTA_RESUMO: "0"
 
 jobs:
   monitorar:
@@ -79,6 +82,7 @@ jobs:
           AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ESMALTES_KITS_MONITOR_ALERTA_RESUMO: "0"
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
