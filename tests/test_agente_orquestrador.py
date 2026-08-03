@@ -24,6 +24,8 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("alibaba", ids)
         self.assertNotIn("alibaba_inteligencia", ids)
         self.assertNotIn("alibaba_sourcing", ids)
+        self.assertNotIn("hub_paraguai_marketplace", ids)
+        self.assertNotIn("tributacao_py_br", ids)
         self.assertNotIn("esmaltes_operacao", ids)
         self.assertNotIn("crescimento_esmaltes", ids)
         self.assertNotIn("decisao_dia_esmaltes", ids)
@@ -43,8 +45,11 @@ class TestRegistroAgentes(unittest.TestCase):
     def test_registro_completo_inclui_rotinas_excluidas(self):
         ids = {a.id for a in listar_agentes()}
         self.assertIn("leilao", ids)
-        self.assertIn("alibaba", ids)
+        self.assertNotIn("alibaba", ids)
+        self.assertNotIn("alibaba_inteligencia", ids)
         self.assertIn("alibaba_sourcing", ids)
+        self.assertNotIn("hub_paraguai_marketplace", ids)
+        self.assertNotIn("tributacao_py_br", ids)
         self.assertIn("esmaltes_operacao", ids)
         self.assertIn("comparativo_anita_impala", ids)
         self.assertIn("monitor_busca_kit_esmaltes", ids)
