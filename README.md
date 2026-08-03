@@ -363,7 +363,7 @@ O projeto pode enviar logs automaticamente para o **Datadog Log Management** via
 | Variável | Descrição |
 |----------|-----------|
 | `DD_API_KEY` | Chave de API — Datadog → Organization Settings → API Keys |
-| `DD_SITE` | Região do site (padrão: `datadoghq.com`) |
+| `DD_SITE` | Região do site (padrão: `us5.datadoghq.com`) |
 | `DD_LOGS_ENABLED` | `true`/`false` — desligue com `false` para parar o envio sem alterar código |
 
 **Opcional:** sem `DD_API_KEY`, o sistema funciona exatamente como antes — só não envia logs ao Datadog.
