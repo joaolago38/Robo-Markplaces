@@ -219,14 +219,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="Espelho do Resumo do vendedor: pendências, reputação, envios → Telegram",
     ),
-    AgenteRegistrado(
-        "resumo_diario_novamix",
-        "Resumo diário Novamix",
-        "monitor",
-        "agentes.ml.agente_resumo_diario_novamix:executar",
-        {"enviar_alerta": True},
-        notas="Desempenho + plano guerra/competir + Ads (pausar com confirmação) Novamix",
-    ),
+    # resumo_diario_novamix NÃO entra no registro — operação separada / CLI se precisar.
     AgenteRegistrado(
         "monitor_sem_venda_ml",
         "Anúncios ML sem venda 30d",
@@ -279,14 +272,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="Demanda, perfil de consumidor e plano para vencer Impala no ML",
     ),
-    AgenteRegistrado(
-        "comparativo_ml_shopee",
-        "Comparativo ML × Shopee",
-        "monitor",
-        "agentes.comparativo.agente_comparativo_ml_shopee:executar",
-        {"enviar_alerta": True},
-        notas="Esmaltes e filamentos 3D: score e veredito de canal (ML vs Shopee)",
-    ),
+    # comparativo_ml_shopee NÃO entra no registro — loja foco = ML; canal Shopee = CLI/debug.
     AgenteRegistrado(
         "monitor_filamentos_ml",
         "Monitor filamentos 3D ML",
@@ -319,14 +305,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="A cada ~10d ou na alteração: inicia ML e Telegram de decisão (AGIR/PANORAMA/PASSOS)",
     ),
-    AgenteRegistrado(
-        "descoberta_produtos",
-        "Descoberta produtos marketplace",
-        "monitor",
-        "agentes.descoberta.agente_descoberta_produtos:executar",
-        {"enviar_alerta": True},
-        notas="Público-alvo e oportunidades por marketplace (Claude + busca ML)",
-    ),
+    # descoberta_produtos NÃO entra no registro — amplo demais no foco Impala; CLI/debug.
     AgenteRegistrado("ads_gatilho", "Gatilho Ads ML", "monitor", "agentes.ml.agente_ads_gatilho:executar"),
     AgenteRegistrado(
         "meta_metricas",
@@ -335,13 +314,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "agentes.social.agente_metricas_meta:executar",
         {"alertar_quando_atencao": False},
     ),
-    AgenteRegistrado(
-        "trafego_manicures",
-        "Tráfego manicures",
-        "social",
-        "agentes.social.agente_trafego_manicures:executar",
-        {"alertar_todo_relatorio": False},
-    ),
+    # trafego_manicures NÃO entra no registro — alerta off; métricas Meta já cobrem; API/CLI.
     AgenteRegistrado(
         "promocoes_manicures",
         "Promoções manicures ML",

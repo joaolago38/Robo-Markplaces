@@ -1,10 +1,10 @@
-name: Descoberta produtos marketplace
+name: Descoberta produtos (debug)
+
+# NÃO usar no cron. Foco atual = Impala/ML; descoberta ampla = CLI/manual.
+# Debug — sem alerta Telegram.
 
 on:
   workflow_dispatch:
-  schedule:
-    # Quarta 08:00 BRT = 11:00 UTC
-    - cron: "0 11 * * 3"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -37,14 +37,8 @@ jobs:
           restore-keys: |
             descoberta-produtos-history-
 
-      - name: Preflight Telegram
-        run: python scripts/preflight_monitor_telegram.py
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-
       - name: Rodar descoberta de produtos
-        run: python -m agentes.descoberta.agente_descoberta_produtos
+        run: python -m agentes.descoberta.agente_descoberta_produtos --sem-alerta
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
@@ -62,8 +56,6 @@ jobs:
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
           AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
 
       - name: Salvar histórico descoberta
         uses: actions/upload-artifact@v4

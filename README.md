@@ -556,34 +556,17 @@ Agente que roda **sob demanda** (`workflow_dispatch`) executando os agentes do p
 | `ads_gatilho_ml.yml` | `0 11 * * *` | 10:00 diário |
 | `relatorio_financeiro.yml` | `0 9 * * 1` | Segunda 08h |
 | `otimizar_listing.yml` | `0 9 * * 2` | Terça 08h |
-| `descoberta_produtos.yml` | `0 11 * * 3` | Quarta 08h |
 | `push_main_rotinas.yml` | manual | Sync completo sob demanda |
 
-## Descoberta de produtos por marketplace
+## Descoberta de produtos por marketplace (debug)
 
-Agente que analisa cada marketplace ativo (`spec/spec.yaml`) e identifica **público-alvo** + **oportunidades de produto** com base em busca real (ML) e inferência via Claude.
+Fora do ciclo Impala (amplo demais). Só CLI / Actions manual, sem Telegram.
 
 - Catálogo: `catalogo/descoberta_nichos.json` — nichos, termos de busca e `marketplaces` alvo
-- Agente: `python -m agentes.descoberta.agente_descoberta_produtos`
-- Workflow: `.github/workflows/descoberta_produtos.yml` (quarta-feira 08h BRT)
-- Orquestrador 30min: incluído como `descoberta_produtos` (somente leitura)
+- Agente: `python -m agentes.descoberta.agente_descoberta_produtos --sem-alerta`
+- Workflow: `.github/workflows/descoberta_produtos.yml` (**só** `workflow_dispatch`)
 - Histórico: `logs/descoberta_produtos_history.json`
-- **Snapshot da última rodada:** `logs/descoberta_produtos_ultima_rodada.json` (painel completo para decisão)
-- Alertas Telegram gestor:
-  - **Painel de decisão** (1×/dia) — marketplace + público + margem estimada + Alibaba
-  - **Nova análise** de marketplace
-  - **Novos fornecedores Alibaba** para importação
-
-**Cruzamento Alibaba:** para cada oportunidade identificada no marketplace, o agente busca fornecedores no Alibaba.com (preço USD, MOQ, distribuidor, URL) e estima margem de importação vs preço médio do mercado.
-
-**Por marketplace hoje:**
-
-| Marketplace | Coleta | Análise |
-|-------------|--------|---------|
-| Mercado Livre | Busca pública por termo (preços, vendas, títulos) | Claude + fallback estatístico |
-| Shopee / Magalu / Amazon | Saúde da conta + hints do catálogo | Claude infere público típico da plataforma |
-
-Para ativar Shopee/Magalu/Amazon na descoberta: marque `ativo: true` em `spec/spec.yaml` e inclua o id em `marketplaces` do nicho.
+- **Snapshot da última rodada:** `logs/descoberta_produtos_ultima_rodada.json`
 
 ```json
 {

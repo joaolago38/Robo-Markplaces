@@ -54,8 +54,8 @@ class TestTelegramExplicacao(unittest.TestCase):
     @patch.object(te, "explicacao_ativa", return_value=True)
     def test_horario_novamix_diario(self, _ativa):
         out = te.inserir_explicacao("Título", "resumo_diario_novamix")
-        self.assertIn("08:00 BRT", out)
-        self.assertIn("fora do orquestrador", out)
+        self.assertIn("Debug manual", out)
+        self.assertIn("fora do ciclo Impala", out)
 
     def test_chave_infere_agente(self):
         self.assertEqual(te.agente_id_da_chave("esmaltes:busca_kit:2026-07-12:resumo:x"), "monitor_busca_kit_esmaltes")

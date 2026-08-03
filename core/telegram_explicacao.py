@@ -107,9 +107,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "alertas de gap e resumo de concorrência."
     ),
     "resumo_diario_novamix": (
-        "Resume desempenho da loja Novamix (preços, giro, perfil), classifica "
-        "guerra/competir/observar e pode sugerir Ads (com confirmação). Preço nunca "
-        "muda sozinho. Telegram: resumo diário + plano de ação."
+        "Debug: resumo Novamix. Só se a loja for operação separada ainda "
+        "gerenciada — sem cron/Telegram no ciclo Impala."
     ),
     "monitor_sem_venda_ml": (
         "Lista anúncios ativos sem venda recente e sugere preço, Ads ou republicar "
@@ -166,9 +165,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "sugere como ganhar espaço frente à Impala. Telegram: comparativo + plano."
     ),
     "comparativo_ml_shopee": (
-        "Para esmaltes e filamentos 3D, pontua demanda, preço e competição em ML vs "
-        "Shopee e fecha um veredito de canal. Telegram: score + recomendação ML ou "
-        "Shopee."
+        "Debug: score ML × Shopee. Loja foco = ML — use só ao escolher canal; "
+        "sem cron/Telegram no ciclo atual."
     ),
     "monitor_filamentos_ml": (
         "Varre no Mercado Livre anúncios de filamento TPU, PLA, PETG e ABS: "
@@ -196,9 +194,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "fora do foco diário de kits."
     ),
     "descoberta_produtos": (
-        "Descobre produtos com potencial por marketplace (público-alvo + busca ML) e "
-        "pode cruzar com Alibaba quando há novidade. Telegram: painel de decisão e/"
-        "ou novos fornecedores."
+        "Debug: descoberta ampla por marketplace. Fora do foco Impala — "
+        "sem cron/Telegram; CLI/manual."
     ),
     "ads_gatilho": (
         "Decide ligar, pausar ou escalar Product Ads no ML com base em regras e "
@@ -210,8 +207,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "em atenção ou críticas. No orquestrador costuma alertar só o crítico."
     ),
     "trafego_manicures": (
-        "Avalia o tráfego pago voltado a manicures e resume se as campanhas estão "
-        "saudáveis ou precisam de ajuste. No ciclo 30 min o alerta costuma ficar off."
+        "Debug/API: tráfego pago manicures. Alerta costuma ficar off — "
+        "métricas Meta já cobrem; fora do orquestrador."
     ),
     "promocoes_manicures": (
         "Monta promoções de kits Impala a partir do catálogo ML e envia ao grupo de "
@@ -309,7 +306,7 @@ EXPLICACOES_AGENTES: dict[str, str] = {
 
 # Quando cada agente roda (BRT). Inclui workflow dedicado e/ou orquestrador 30 min.
 # Excluídos do orquestrador por padrão: vigia_datadog, promocoes_manicures,
-# relatorio_estrategia_ml, ads_gatilho, resumo_diario_novamix.
+# relatorio_estrategia_ml, ads_gatilho, resumo_conta_ml.
 HORARIOS_AGENTES: dict[str, str] = {
     "vigia_datadog": "A cada 30 min (workflow próprio; fora do orquestrador)",
     "consumo_claude": "A cada 6h (Actions) + alerta a cada uso Claude",
@@ -332,7 +329,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "relatorio_estrategia_ml": "Segundas às 08:00 BRT (fora do orquestrador)",
     "monitor_concorrentes": "A cada 30 min (orquestrador); workflow dedicado só manual",
-    "resumo_diario_novamix": "Todo dia às 08:00 BRT (fora do orquestrador)",
+    "resumo_diario_novamix": "Debug manual (sem Telegram) — Novamix fora do ciclo Impala",
     "monitor_sem_venda_ml": "A cada 30 min (orquestrador)",
     "monitor_anita": "Debug manual (sem Telegram) — produção via comparativo_anita_impala",
     "monitor_mercado_esmaltes": "A cada 30 min (orquestrador); workflow dedicado só manual",
@@ -348,9 +345,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "comparativo_anita_impala": (
         "Segundas e quintas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
-    "comparativo_ml_shopee": (
-        "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
-    ),
+    "comparativo_ml_shopee": "Debug manual (sem Telegram) — canal Shopee sob demanda",
     "monitor_filamentos_ml": "1x/dia às 08:30 BRT (Actions); fora do orquestrador 30 min",
     "monitor_masterprint_petg": (
         "1x/dia às 08:15 BRT (Actions); Claude 1×/noite; fora do orquestrador"
@@ -363,10 +358,10 @@ HORARIOS_AGENTES: dict[str, str] = {
         "alteração de CNPJ dispara ML + Telegram de decisão; fora do orquestrador 30 min"
     ),
     "monitor_acetona_cruzeiro": "1x/semana sexta 09:00 BRT (anexo)",
-    "descoberta_produtos": "Quartas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)",
+    "descoberta_produtos": "Debug manual (sem Telegram) — fora do foco Impala",
     "ads_gatilho": "Todo dia às 08:00 BRT (fora do orquestrador)",
     "meta_metricas": "A cada 30 min (orquestrador)",
-    "trafego_manicures": "A cada 30 min (orquestrador)",
+    "trafego_manicures": "Debug/API (fora do orquestrador) — cobrir com meta_metricas",
     "promocoes_manicures": "Todo dia às 10:00 e 18:00 BRT (fora do orquestrador)",
     "conversao_manicures": "3x/dia às 08:25, 14:25 e 21:25 BRT (Actions); fora do ciclo 30 min",
     "necessidade_manicures": "3x/dia às 08:35, 14:35 e 21:35 BRT (Actions); fora do ciclo 30 min",

@@ -40,6 +40,10 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("monitor_masterprint_petg", ids)
         self.assertNotIn("monitor_masterprint_escritorio", ids)
         self.assertNotIn("necessidade_manicures", ids)
+        self.assertNotIn("descoberta_produtos", ids)
+        self.assertNotIn("comparativo_ml_shopee", ids)
+        self.assertNotIn("trafego_manicures", ids)
+        self.assertNotIn("resumo_diario_novamix", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", set())
     def test_registro_completo_inclui_rotinas_excluidas(self):
@@ -62,6 +66,10 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("monitor_removedores_unha", ids)
         self.assertNotIn("monitor_acetona_cruzeiro", ids)
         self.assertIn("necessidade_manicures", ids)
+        self.assertNotIn("descoberta_produtos", ids)
+        self.assertNotIn("comparativo_ml_shopee", ids)
+        self.assertNotIn("trafego_manicures", ids)
+        self.assertNotIn("resumo_diario_novamix", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", {"leilao"})
     def test_excluir_por_env(self):

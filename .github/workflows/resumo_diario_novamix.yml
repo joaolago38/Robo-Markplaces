@@ -1,12 +1,10 @@
-name: Resumo Diario Novamix
+name: Resumo Diario Novamix (debug)
 
-# Perfil, desempenho e produtos com sinal de giro da loja NOVAMIX_COMERCIAL → Telegram.
+# NÃO usar no cron. Só se Novamix for operação separada ainda gerenciada.
+# Debug/manual — sem alerta Telegram; Ads off.
 
 on:
   workflow_dispatch:
-  schedule:
-    # 08:00 BRT = 11:00 UTC — todo dia
-    - cron: "0 11 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -19,16 +17,16 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
-  NOVAMIX_RESUMO_DIARIO_ALERTA: "1"
+  NOVAMIX_RESUMO_DIARIO_ALERTA: "0"
   NOVAMIX_RESUMO_DIARIO_ENRIQUECER: "1"
-  NOVAMIX_AUTO_ADS_PAUSAR: "1"
+  NOVAMIX_AUTO_ADS_PAUSAR: "0"
   NOVAMIX_AUTO_ADS_INVESTIR: "0"
   NOVAMIX_AUTO_ADS_PEDIR_CONFIRMACAO: "1"
   NOVAMIX_GAP_COMPETIR_PCT: "10"
 
 jobs:
   resumo:
-    name: Novamix — resumo diário Telegram
+    name: Novamix — resumo diário (manual)
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -49,14 +47,10 @@ jobs:
           key: novamix-diario-${{ github.run_id }}
           restore-keys: |
             novamix-diario-
-      - name: Preflight Telegram (gestor)
-        run: python scripts/preflight_monitor_telegram.py
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Rodar resumo diario Novamix
-        run: python -m agentes.ml.agente_resumo_diario_novamix
+        run: python -m agentes.ml.agente_resumo_diario_novamix --sem-alerta --sem-ads
         env:
+          NOVAMIX_RESUMO_DIARIO_ALERTA: "0"
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
@@ -64,8 +58,6 @@ jobs:
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
