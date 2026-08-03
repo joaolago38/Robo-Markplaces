@@ -164,15 +164,8 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Único cron Alibaba: busca catálogo + inteligência margem em 1 run",
     ),
     # alibaba / alibaba_inteligencia NÃO entram no registro — só via alibaba_sourcing.
+    # comparar_portos_alibaba = sob demanda (CLI com --fob/--produto-id); sem FOB falha.
     # hub_paraguai / tributacao_py_br = estrutura futura (CLI/manual, sem cron).
-    AgenteRegistrado(
-        "comparar_portos_alibaba",
-        "Portos BR × Alibaba (aéreo/marítimo)",
-        "monitor",
-        "agentes.importacao.agente_comparar_portos_alibaba:executar",
-        {"enviar_alerta": False},
-        notas="Sob demanda: compara produto Alibaba em portos/aeroportos do Brasil",
-    ),
     AgenteRegistrado(
         "ml_tendencias_importacao",
         "ML tendências × Alibaba",
