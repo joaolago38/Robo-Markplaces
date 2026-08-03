@@ -158,6 +158,9 @@ def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any
 
     cores = tendencia_cores(subset, top_n=5)
 
+    ordenados = sorted(subset, key=lambda x: _volume_proxy_anuncio(x)[0], reverse=True)
+    destaques = [_resumo_anuncio(a) for a in ordenados]
+
     return {
         "marca": marca,
         "anuncios": len(subset),
@@ -174,11 +177,24 @@ def _metricas_marca(anuncios: list[dict[str, Any]], marca: str) -> dict[str, Any
         ],
         "cores_top": cores,
         "kits_top": [{"qtd": q, "peso_vendas": w} for q, w in peso_kits.most_common(4)],
-        "destaques": sorted(
-            subset,
-            key=lambda x: _volume_proxy_anuncio(x)[0],
-            reverse=True,
-        )[:3],
+        "destaques": destaques,
+    }
+
+
+def _resumo_anuncio(anuncio: dict[str, Any]) -> dict[str, Any]:
+    """Campos leves para listar o anúncio no Telegram / snapshot."""
+    vol, fonte = _volume_proxy_anuncio(anuncio)
+    return {
+        "item_id": anuncio.get("item_id") or "",
+        "titulo": str(anuncio.get("titulo") or "")[:120],
+        "preco": anuncio.get("preco"),
+        "permalink": anuncio.get("permalink") or "",
+        "quantidade_vendida": _i(anuncio.get("quantidade_vendida") or anuncio.get("sold_quantity")),
+        "volume_proxy": vol,
+        "fonte_volume": fonte,
+        "descricao_kit": anuncio.get("descricao_kit") or "",
+        "qtd_kit": anuncio.get("qtd_kit"),
+        "frete_gratis": bool(anuncio.get("frete_gratis")),
     }
 
 
