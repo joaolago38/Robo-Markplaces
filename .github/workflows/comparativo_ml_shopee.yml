@@ -1,12 +1,10 @@
-name: Comparativo ML × Shopee
+name: Comparativo ML × Shopee (debug)
 
-# Esmaltes e filamentos 3D: qual marketplace é melhor para vendas.
+# NÃO usar no cron. Loja foco = ML; veredito de canal = CLI/manual.
+# Debug — sem alerta Telegram.
 
 on:
   workflow_dispatch:
-  schedule:
-    # Segunda e quinta 09:00 BRT = 12:00 UTC
-    - cron: "0 12 * * 1,4"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -20,7 +18,7 @@ env:
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
   MARKETPLACES_BUSCA_ATIVOS: "mercadolivre,shopee"
-  COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO: "1"
+  COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO: "0"
 
 jobs:
   comparativo:
@@ -51,14 +49,10 @@ jobs:
           key: comparativo-ml-shopee-${{ github.run_id }}
           restore-keys: |
             comparativo-ml-shopee-
-      - name: Preflight Telegram (gestor)
-        run: python scripts/preflight_monitor_telegram.py
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Rodar comparativo ML × Shopee
-        run: python -m agentes.comparativo.agente_comparativo_ml_shopee
+        run: python -m agentes.comparativo.agente_comparativo_ml_shopee --sem-alerta
         env:
+          COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO: "0"
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
@@ -71,8 +65,6 @@ jobs:
           SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
           SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:

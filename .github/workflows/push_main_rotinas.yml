@@ -70,7 +70,7 @@ jobs:
         run: python -m agentes.orquestrador.agente_sync_push_main
         env:
           # renovar_tokens fica no cron dedicado (evita corrida OAuth fora do grupo de tokens)
-          ORQUESTRADOR_EXCLUIR: renovar_tokens,leilao,alibaba_sourcing,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,montar_kits_impala,esmaltes_operacao
+          ORQUESTRADOR_EXCLUIR: renovar_tokens,leilao,alibaba_sourcing,comparar_portos_alibaba,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_conta_ml,montar_kits_impala,esmaltes_operacao
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}

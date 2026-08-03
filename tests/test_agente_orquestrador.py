@@ -24,6 +24,7 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("alibaba", ids)
         self.assertNotIn("alibaba_inteligencia", ids)
         self.assertNotIn("alibaba_sourcing", ids)
+        self.assertNotIn("comparar_portos_alibaba", ids)
         self.assertNotIn("hub_paraguai_marketplace", ids)
         self.assertNotIn("tributacao_py_br", ids)
         self.assertNotIn("esmaltes_operacao", ids)
@@ -40,6 +41,10 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("monitor_masterprint_petg", ids)
         self.assertNotIn("monitor_masterprint_escritorio", ids)
         self.assertNotIn("necessidade_manicures", ids)
+        self.assertNotIn("descoberta_produtos", ids)
+        self.assertNotIn("comparativo_ml_shopee", ids)
+        self.assertNotIn("trafego_manicures", ids)
+        self.assertNotIn("resumo_diario_novamix", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", set())
     def test_registro_completo_inclui_rotinas_excluidas(self):
@@ -48,6 +53,7 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("alibaba", ids)
         self.assertNotIn("alibaba_inteligencia", ids)
         self.assertIn("alibaba_sourcing", ids)
+        self.assertNotIn("comparar_portos_alibaba", ids)
         self.assertNotIn("hub_paraguai_marketplace", ids)
         self.assertNotIn("tributacao_py_br", ids)
         self.assertIn("esmaltes_operacao", ids)
@@ -62,6 +68,10 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("monitor_removedores_unha", ids)
         self.assertNotIn("monitor_acetona_cruzeiro", ids)
         self.assertIn("necessidade_manicures", ids)
+        self.assertNotIn("descoberta_produtos", ids)
+        self.assertNotIn("comparativo_ml_shopee", ids)
+        self.assertNotIn("trafego_manicures", ids)
+        self.assertNotIn("resumo_diario_novamix", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", {"leilao"})
     def test_excluir_por_env(self):

@@ -619,8 +619,13 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
 
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Descoberta de produtos por marketplace")
+    parser.add_argument("--sem-alerta", action="store_true", help="Não envia Telegram")
+    args = parser.parse_args()
     logger.info("=== Descoberta de produtos por marketplace ===")
-    out = executar(enviar_alerta=True)
+    out = executar(enviar_alerta=not args.sem_alerta)
     if not out.get("ok"):
         return 1
     logger.info(
