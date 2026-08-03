@@ -499,11 +499,15 @@ def listar_agentes_push_main(*, excluir: set[str] | None = None) -> list[AgenteR
     """
     Todos os agentes do ciclo 30min + rotinas extras de deploy (push main).
     Os crons dos workflows individuais permanecem inalterados.
+    Respeita ORQUESTRADOR_EXCLUIR também nos extras (ex.: renovar_tokens).
     """
+    from core.config import ORQUESTRADOR_EXCLUIR
+
+    bloqueados = ORQUESTRADOR_EXCLUIR | (excluir or set())
     vistos: set[str] = set()
     resultado: list[AgenteRegistrado] = []
     for registro in (*listar_agentes(excluir=excluir), *_AGENTES_PUSH_MAIN_EXTRA):
-        if registro.id in vistos:
+        if registro.id in vistos or registro.id in bloqueados:
             continue
         vistos.add(registro.id)
         resultado.append(registro)

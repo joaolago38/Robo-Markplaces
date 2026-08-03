@@ -23,7 +23,6 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "sincronizar_estoque.yml",
     "conectividade_marketplaces.yml",
     "orquestrador_30min.yml",
-    "push_main_rotinas.yml",
     "leilao_veiculo.yml",
     "alibaba_importacao.yml",
     "licitacoes.yml",
@@ -37,6 +36,7 @@ _WORKFLOWS_COM_CONCURRENCY = (
 
 _GROUP_ESPERADO = "robo-markplaces-token-renewal"
 _GROUP_VIGIA = "robo-markplaces-vigia-datadog"
+_GROUP_PUSH_MAIN = "robo-markplaces-push-main-sync"
 
 
 class TestWorkflowsConcurrency(unittest.TestCase):
@@ -54,6 +54,15 @@ class TestWorkflowsConcurrency(unittest.TestCase):
         texto = path.read_text(encoding="utf-8")
         self.assertIn(f"group: {_GROUP_VIGIA}", texto)
         self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto)
+        self.assertIn("cancel-in-progress: false", texto)
+
+    def test_push_main_tem_fila_propria_e_nao_dispara_pos_ci(self):
+        path = WORKFLOWS_DIR / "push_main_rotinas.yml"
+        texto = path.read_text(encoding="utf-8")
+        self.assertIn(f"group: {_GROUP_PUSH_MAIN}", texto)
+        self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto)
+        self.assertIn("workflow_dispatch:", texto)
+        self.assertNotIn("workflow_run:", texto)
         self.assertIn("cancel-in-progress: false", texto)
 
     def test_vigia_le_heartbeats_compartilhados_sem_regravar(self):

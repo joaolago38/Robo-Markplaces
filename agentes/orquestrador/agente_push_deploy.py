@@ -7,8 +7,8 @@ Uso local:
   python -m agentes.orquestrador.agente_push_deploy --sem-push
   python -m agentes.orquestrador.agente_push_deploy --mensagem "feat: ajustes"
 
-Após o push, o workflow push_main_rotinas.yml no GitHub também pode rodar
-o sync na nuvem quando o CI passar na main.
+Após o push local, o sync na nuvem (`push_main_rotinas.yml`) só roda se você
+disparar manualmente no Actions (não dispara mais após CI).
 """
 from __future__ import annotations
 
