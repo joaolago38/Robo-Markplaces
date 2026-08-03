@@ -1031,7 +1031,8 @@ ORQUESTRADOR_EXCLUIR = {
         "relatorio_estrategia_ml,ads_gatilho,resumo_conta_ml,"
         "montar_kits_impala,esmaltes_operacao,"
         "leilao,alibaba_sourcing,comparar_portos_alibaba,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,licitacoes",
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,licitacoes,"
+        "sincronizar_estoque,repricing,repricing_impala",
     ).split(",")
     if x.strip()
 }

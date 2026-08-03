@@ -236,22 +236,19 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "cada agente — só o consolidado do ciclo."
     ),
     "operacao_24h": (
-        "Gera snapshot da operação 24h (preços, estoque, NFe). No orquestrador roda "
-        "em dry-run e sempre manda resumo ao gestor. Escrita real fica no workflow "
-        "de segurança (a cada 2h)."
+        "Único dry-run do ciclo 30min: snapshot preços/estoque/NFe → Telegram. "
+        "Escrita real a cada 2h em operacao_24h_seguranca."
     ),
     "repricing": (
-        "Simula ou aplica ajustes de preço nos marketplaces conforme regras. No "
-        "orquestrador costuma ser dry-run, mas ainda avisa no Telegram quando detecta "
-        "ajustes necessários."
+        "Ajustes de preço nos marketplaces. Fora do orquestrador — "
+        "roda via operacao_24h_seguranca (escrita real)."
     ),
     "repricing_impala": (
-        "Repricing focado em SKUs Impala para manter competitividade com margem. "
-        "Dry-run no orquestrador; Telegram quando há kits a ajustar."
+        "Repricing Impala. Fora do orquestrador — via operacao_24h / CLI."
     ),
     "sincronizar_estoque": (
-        "Compara estoque Bling × marketplaces e aponta (ou aplica) divergências para "
-        "não vender sem saldo. Dry-run no orquestrador; Telegram quando há diferenças."
+        "Estoque Bling × marketplaces. Fora do orquestrador — "
+        "workflow sincronizar_estoque.yml a cada 2h (escrita real)."
     ),
     "algoritmo": (
         "Checa sinais de saúde do algoritmo/conta nos marketplaces e alerta quando "
@@ -368,12 +365,12 @@ HORARIOS_AGENTES: dict[str, str] = {
     "panorama": "Todo dia às 06:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "orquestrador": "A cada 30 min (GitHub Actions)",
     "operacao_24h": (
-        "Snapshot a cada 30 min (orquestrador, dry-run); escrita real a cada 2h "
-        "(workflow de segurança)"
+        "Snapshot dry-run a cada 30 min (orquestrador); escrita real a cada 2h "
+        "(operacao_24h_seguranca)"
     ),
-    "repricing": "A cada 30 min (orquestrador, dry-run)",
-    "repricing_impala": "A cada 30 min (orquestrador, dry-run)",
-    "sincronizar_estoque": "A cada 2h (Actions) e a cada 30 min (orquestrador, dry-run)",
+    "repricing": "Via operacao_24h_seguranca (2h) — fora do orquestrador",
+    "repricing_impala": "Via operacao_24h / CLI — fora do orquestrador",
+    "sincronizar_estoque": "A cada 2h (Actions, escrita real); fora do orquestrador",
     "algoritmo": (
         "4x ao dia às 00:00, 06:00, 12:00 e 18:00 BRT (agente principal) e a cada "
         "30 min (orquestrador)"
