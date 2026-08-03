@@ -38,5 +38,6 @@
     "frete_rodoviario_viracopos_destino": 650.0,
     "frete_rodoviario_por_km": 5.5
   },
-  "aviso_legal": "Valores estimados para planejamento. II/IPI dependem da classificação NCM confirmada por despachante aduaneiro."
+  "despesas_plus_brasil_ref": "catalogo/importacao_despesas_plus.json",
+  "aviso_legal": "Valores estimados para planejamento. II/IPI dependem da classificação NCM confirmada por despachante aduaneiro. Checklist detalhado de despesas: planilha PLUS BRASIL (dados/importacao_simula_plus_brasil.xlsx)."
 }

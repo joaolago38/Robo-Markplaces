@@ -48,16 +48,26 @@ def calcular_custo_landed(
     icms_pct: float = 18.0,
     frete_maritimo_usd_kg: float = 0.85,
     frete_aereo_usd_kg: float = 5.5,
+    frete_internacional_usd: float | None = None,
     seguro_pct: float = 0.5,
+    seguro_brl: float | None = None,
+    acrescimos_brl: float = 0.0,
     siscomex_brl: float | None = None,
     desembaraco_brl: float = 800.0,
     frete_nacional_brl_unit: float = 12.0,
     afrmm_pct: float | None = None,
     siscomex_adicoes: int = 1,
+    outras_despesas_brl: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     """
     Estima custo unitário landed com frete marítimo ou aéreo e tributos/despesas
     aduaneiras brasileiras. Frete nacional (pós-desembaraço) fora da base do ICMS.
+
+    Overrides opcionais (ex.: planilha PLUS BRASIL):
+      frete_internacional_usd — frete total do embarque (não USD/kg)
+      seguro_brl — seguro absoluto em R$ (ignora seguro_pct se informado)
+      acrescimos_brl — capatazia/outros no CIF
+      outras_despesas_brl — linhas nomeadas (liberação BL, armazenagem ZP, …)
     """
     try:
         preco_usd = float(preco_usd_unit)
@@ -100,12 +110,19 @@ def calcular_custo_landed(
     fob_brl_total = fob_usd_total * cambio
 
     peso_total_kg = peso * qty
-    frete_usd_kg = frete_maritimo_usd_kg if modo_frete == "maritimo" else frete_aereo_usd_kg
-    frete_usd_total = peso_total_kg * frete_usd_kg
+    if frete_internacional_usd is not None:
+        frete_usd_total = max(0.0, float(frete_internacional_usd))
+    else:
+        frete_usd_kg = frete_maritimo_usd_kg if modo_frete == "maritimo" else frete_aereo_usd_kg
+        frete_usd_total = peso_total_kg * frete_usd_kg
     frete_brl_total = frete_usd_total * cambio
 
-    seguro_brl = (fob_brl_total + frete_brl_total) * (seguro_pct / 100.0)
-    cif_brl = fob_brl_total + frete_brl_total + seguro_brl
+    if seguro_brl is not None:
+        seguro_brl_calc = max(0.0, float(seguro_brl))
+    else:
+        seguro_brl_calc = (fob_brl_total + frete_brl_total) * (seguro_pct / 100.0)
+    acresc = max(0.0, float(acrescimos_brl or 0.0))
+    cif_brl = fob_brl_total + frete_brl_total + seguro_brl_calc + acresc
 
     ii_brl = cif_brl * (ii_pct / 100.0)
     ipi_brl = (cif_brl + ii_brl) * (ipi_pct / 100.0)
@@ -115,7 +132,25 @@ def calcular_custo_landed(
     # AFRMM sobre frete internacional (marítimo); entra como despesa aduaneira na base ICMS
     afrmm_brl = frete_brl_total * (afrmm_pct / 100.0) if afrmm_pct > 0 else 0.0
 
-    despesas_aduaneiras_brl = siscomex_brl + desembaraco_brl + afrmm_brl
+    quebra_outras: dict[str, float] = {}
+    outras_total = 0.0
+    for k, v in (outras_despesas_brl or {}).items():
+        chave = str(k or "").strip()
+        if not chave:
+            continue
+        # AFRMM/Siscomex da planilha não entram aqui — motor calcula
+        if chave.lower() in ("afrmm", "siscomex"):
+            continue
+        try:
+            val = float(v)
+        except (TypeError, ValueError):
+            continue
+        if val <= 0:
+            continue
+        quebra_outras[chave] = round(val, 2)
+        outras_total += val
+
+    despesas_aduaneiras_brl = siscomex_brl + desembaraco_brl + afrmm_brl + outras_total
     base_sem_icms = cif_brl + ii_brl + ipi_brl + pis_brl + cofins_brl + despesas_aduaneiras_brl
     aliq_icms = icms_pct / 100.0
     icms_brl = base_sem_icms / (1.0 - aliq_icms) * aliq_icms if 0 < aliq_icms < 1 else 0.0
@@ -136,7 +171,8 @@ def calcular_custo_landed(
         "fob_brl_total": round(fob_brl_total, 2),
         "frete_internacional_usd": round(frete_usd_total, 2),
         "frete_internacional_brl": round(frete_brl_total, 2),
-        "seguro_brl": round(seguro_brl, 2),
+        "seguro_brl": round(seguro_brl_calc, 2),
+        "acrescimos_brl": round(acresc, 2),
         "cif_brl": round(cif_brl, 2),
         "valor_aduaneiro_cif_brl": round(cif_brl, 2),
         "ii_pct": ii_pct,
@@ -156,6 +192,8 @@ def calcular_custo_landed(
         "desembaraco_brl": round(desembaraco_brl, 2),
         "afrmm_pct": afrmm_pct,
         "afrmm_brl": round(afrmm_brl, 2),
+        "outras_despesas_brl": round(outras_total, 2),
+        "quebra_outras_despesas": quebra_outras,
         "despesas_aduaneiras_brl": round(despesas_aduaneiras_brl, 2),
         "frete_nacional_brl": round(frete_nacional_total, 2),
         "impostos_federais_brl": round(impostos_federais, 2),
