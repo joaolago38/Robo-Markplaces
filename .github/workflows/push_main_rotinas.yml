@@ -1,17 +1,16 @@
 name: Push main — sync completo
 
-# Após cada push na main com CI verde, roda TODOS os agentes uma vez.
-# Os crons dos demais workflows (30min, 1h, 2h, diário…) permanecem ativos.
+# Sync completo sob demanda (Actions → Run workflow).
+# Não dispara mais após CI: travava o grupo robo-markplaces-token-renewal
+# (~50 min) e atrasava análises (comparativo, orquestrador, esmaltes…).
+# Os crons dos demais workflows permanecem ativos.
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: robo-markplaces-token-renewal
+  # Fila própria — não bloqueia renovação de tokens nem monitores de análise.
+  group: robo-markplaces-push-main-sync
   cancel-in-progress: false
 
 env:
@@ -24,10 +23,7 @@ env:
 
 jobs:
   sync_push_main:
-    name: Sync completo pós-push (main)
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    name: Sync completo (manual)
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
@@ -62,6 +58,8 @@ jobs:
       - name: Preflight producao (Telegram + ML)
         run: python scripts/preflight_producao.py
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
@@ -71,7 +69,8 @@ jobs:
       - name: Rodar sync push main
         run: python -m agentes.orquestrador.agente_sync_push_main
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,ecossistema_esmaltes,montar_kits_impala,crescimento_esmaltes,decisao_dia_esmaltes,esmaltes_operacao
+          # renovar_tokens fica no cron dedicado (evita corrida OAuth fora do grupo de tokens)
+          ORQUESTRADOR_EXCLUIR: renovar_tokens,leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,ads_gatilho,relatorio_estrategia_ml,vigia_datadog,promocoes_manicures,resumo_diario_novamix,resumo_conta_ml,ecossistema_esmaltes,montar_kits_impala,crescimento_esmaltes,decisao_dia_esmaltes,esmaltes_operacao
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}

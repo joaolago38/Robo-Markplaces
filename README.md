@@ -527,14 +527,14 @@ Agente que **a cada 30 minutos** executa todos os monitores do robô em sequênc
 
 **Não incluídos** (rotinas diárias/semanais ou destrutivas): `publicador`, `relatorio`, `relatorio_financeiro`, `otimizador_listing`.
 
-## Sync push main (todos os agentes após deploy)
+## Sync push main (manual)
 
-Agente que roda **uma vez após cada push na `main` com CI verde**, executando **todos** os agentes (incluindo relatórios e renovação de tokens). **Não remove** os crons dos workflows abaixo — eles continuam nos horários cadastrados.
+Agente que roda **sob demanda** (`workflow_dispatch`) executando os agentes do push main. **Não** dispara mais após CI (evitava filar o grupo de tokens ~50 min e atrasar análises). **Não remove** os crons dos workflows abaixo — eles continuam nos horários cadastrados.
 
 - Módulo: `python -m agentes.orquestrador.agente_sync_push_main`
-- Workflow: `.github/workflows/push_main_rotinas.yml` (dispara após workflow **CI** concluir com sucesso na `main`)
+- Workflow: `.github/workflows/push_main_rotinas.yml` (somente **Run workflow** manual; fila própria `robo-markplaces-push-main-sync`)
 - Métricas Datadog: `robo.push_main.*`
-- Extras além do orquestrador 30min: renovar tokens, relatório GitHub, relatório financeiro, otimizador listing
+- Extras além do orquestrador 30min: relatório GitHub, relatório financeiro, otimizador listing (`renovar_tokens` fica no cron dedicado)
 
 ### Horários cadastrados (crons UTC — mantidos)
 
@@ -557,7 +557,7 @@ Agente que roda **uma vez após cada push na `main` com CI verde**, executando *
 | `relatorio_financeiro.yml` | `0 9 * * 1` | Segunda 08h |
 | `otimizar_listing.yml` | `0 9 * * 2` | Terça 08h |
 | `descoberta_produtos.yml` | `0 11 * * 3` | Quarta 08h |
-| `push_main_rotinas.yml` | após CI na `main` | Extra por deploy |
+| `push_main_rotinas.yml` | manual | Sync completo sob demanda |
 
 ## Descoberta de produtos por marketplace
 

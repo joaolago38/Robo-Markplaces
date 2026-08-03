@@ -1,7 +1,8 @@
 """
 agentes/orquestrador/agente_sync_push_main.py
-Sync completo após push na branch main — executa todos os agentes sem alterar
-os horários (cron) dos workflows existentes.
+Sync completo sob demanda (workflow_dispatch) — executa os agentes do push main
+sem alterar os horários (cron) dos workflows existentes.
+Não dispara mais automaticamente após CI (evita travar análises ~50 min).
 """
 from __future__ import annotations
 
