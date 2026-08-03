@@ -186,6 +186,7 @@ _LOGGER_META = {
     "agente_calculo_importacao_aerea": ("multi", "agente"),
     "cotacao_usd": ("infra", "integracao"),
     "custo_landed": ("infra", "integracao"),
+    "planilha_plus_brasil": ("multi", "integracao"),
     "calculo_importacao_aerea": ("multi", "integracao"),
     "perfil_empresa_importacao": ("multi", "integracao"),
     "analise_margem_importacao": ("multi", "integracao"),

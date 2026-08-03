@@ -854,6 +854,13 @@ IMPORTACAO_FRETE_NACIONAL_BRL = float(os.getenv("IMPORTACAO_FRETE_NACIONAL_BRL",
 IMPORTACAO_OPERACAO_FIXA_CATALOGO = os.getenv(
     "IMPORTACAO_OPERACAO_FIXA_CATALOGO", "catalogo/importacao_operacao_fixa.json"
 )
+# Planilha PLUS BRASIL (custos na importação) — inputs + checklist de despesas
+IMPORTACAO_PLANILHA_PLUS = os.getenv(
+    "IMPORTACAO_PLANILHA_PLUS", "dados/importacao_simula_plus_brasil.xlsx"
+).strip()
+IMPORTACAO_DESPESAS_PLUS_CATALOGO = os.getenv(
+    "IMPORTACAO_DESPESAS_PLUS_CATALOGO", "catalogo/importacao_despesas_plus.json"
+).strip()
 # CNPJ importador (default = dono produtos / esmaltes) — atrela CNAE × marketplaces
 IMPORTACAO_CNPJ = os.getenv("IMPORTACAO_CNPJ", CNPJ_DONO_PRODUTOS or ESMALTES_CNPJ or "52668583000127").strip()
 IMPORTACAO_RESPONSAVEL_NOME = os.getenv("IMPORTACAO_RESPONSAVEL_NOME", "").strip()
