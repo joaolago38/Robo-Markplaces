@@ -1319,7 +1319,7 @@ ROBO_API_KEY = os.getenv("ROBO_API_KEY", "").strip()
 # Datadog Log Management (opcional — HTTP Intake, sem Agent)
 DD_API_KEY = os.getenv("DD_API_KEY", "").strip()
 DD_APPLICATION_KEY = os.getenv("DD_APPLICATION_KEY", "").strip()
-DD_SITE = os.getenv("DD_SITE", "datadoghq.com").strip() or "datadoghq.com"
+DD_SITE = os.getenv("DD_SITE", "us5.datadoghq.com").strip() or "us5.datadoghq.com"
 DD_LOGS_ENABLED = os.getenv("DD_LOGS_ENABLED", "true").lower() in {"1", "true", "yes"}
 # Métricas independentes dos logs: dá para cortar volume de log sem cegar o Datadog.
 DD_METRICS_ENABLED = os.getenv("DD_METRICS_ENABLED", "true").lower() in {"1", "true", "yes"}
