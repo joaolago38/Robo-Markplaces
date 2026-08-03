@@ -305,37 +305,15 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="Cruza cores Impala da planilha com kits mais vendidos no ML e sugere montagem",
     ),
-    AgenteRegistrado(
-        "ecossistema_esmaltes",
-        "Ecossistema esmaltes (plano consolidado)",
-        "monitor",
-        "agentes.esmaltes.agente_ecossistema_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="Cor atrai → kit+anexos+B2B. Preferir esmaltes_operacao no cron diário",
-    ),
-    AgenteRegistrado(
-        "crescimento_esmaltes",
-        "Crescimento esmaltes (KPI + kits sem MLB)",
-        "monitor",
-        "agentes.esmaltes.agente_crescimento_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="KPI kits% + checklist. Preferir esmaltes_operacao no cron diário",
-    ),
-    AgenteRegistrado(
-        "decisao_dia_esmaltes",
-        "Decisão do dia Impala ML",
-        "monitor",
-        "agentes.esmaltes.agente_decisao_dia_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="Um card: FAZER / NÃO FAZER / CUSTO. Preferir esmaltes_operacao no cron diário",
-    ),
+    # crescimento / decisao_dia / ecossistema NÃO entram no registro:
+    # só via esmaltes_operacao (1 Telegram). Workflows individuais = debug manual sem alerta.
     AgenteRegistrado(
         "esmaltes_operacao",
         "Operação esmaltes consolidada",
         "monitor",
         "agentes.esmaltes.agente_esmaltes_operacao:executar",
         {"enviar_alerta": True},
-        notas="Crescimento+decisão+ecossistema em 1 Telegram. Fora do ciclo 30min",
+        notas="Único cron Impala: crescimento+decisão+ecossistema em 1 Telegram",
     ),
     AgenteRegistrado(
         "monitor_removedores_unha",

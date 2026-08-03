@@ -1,6 +1,7 @@
-name: Crescimento esmaltes (KPI + kits sem MLB)
+name: Crescimento esmaltes (debug)
 
-# Manual — cron diário migrou para esmaltes_operacao.yml
+# NÃO usar no cron. Produção = esmaltes_operacao.yml (1 Telegram).
+# Este workflow só para debug manual — sem alerta Telegram.
 
 on:
   workflow_dispatch:
@@ -17,7 +18,7 @@ env:
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
   CRESCIMENTO_ESMALTES_ATIVO: "1"
-  CRESCIMENTO_ESMALTES_ALERTA: "1"
+  CRESCIMENTO_ESMALTES_ALERTA: "0"
   CRESCIMENTO_ESMALTES_COMBO_ANEXO: "1"
 
 jobs:
@@ -63,7 +64,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           CRESCIMENTO_ESMALTES_ATIVO: "1"
-          CRESCIMENTO_ESMALTES_ALERTA: "1"
+          CRESCIMENTO_ESMALTES_ALERTA: "0"
           CRESCIMENTO_ESMALTES_COOLDOWN_SEG: "86400"
           CRESCIMENTO_ESMALTES_META_KITS_PCT: "40"
           CRESCIMENTO_ESMALTES_META_MARGEM_PCT: "15"

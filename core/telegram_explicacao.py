@@ -137,20 +137,20 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "e sugere quais cores montar em kits 3/5/6/10. Telegram: top cores + kits sugeridos."
     ),
     "ecossistema_esmaltes": (
-        "Consolida monitores de esmaltes/manicures num plano de ecossistema: "
-        "cor atrai; kit, anexos e B2B pagam. Telegram: ações 7/30/90 dias por camada."
+        "Plano de ecossistema (cor → kit → anexos → B2B). Em produção roda só "
+        "dentro de esmaltes_operacao — não manda Telegram sozinho."
     ),
     "crescimento_esmaltes": (
-        "Fecha o loop do crescimento: KPI kits na receita + margem, lista kits sem MLB, "
-        "checklist do que falta (WA/IG/publicar) e alerta o gestor."
+        "KPI kits% + checklist MLB. Em produção roda só dentro de "
+        "esmaltes_operacao — não manda Telegram sozinho."
     ),
     "decisao_dia_esmaltes": (
-        "Um veredito por dia para Impala no ML: FAZER, NÃO FAZER e CUSTO DE NÃO FAZER, "
-        "com foco nos 3 SKUs de guerra e piso de margem."
+        "Veredito FAZER / NÃO FAZER / CUSTO. Em produção roda só dentro de "
+        "esmaltes_operacao — não manda Telegram sozinho."
     ),
     "esmaltes_operacao": (
-        "Roda crescimento + decisão do dia + ecossistema sem alertas individuais e "
-        "envia um único Telegram consolidado da operação Impala."
+        "Único card Impala do dia: roda crescimento + decisão + ecossistema "
+        "e envia um Telegram consolidado."
     ),
     "monitor_removedores_unha": (
         "Monitora removedores de unha no ML: fabricantes, nomes e ranking por vendas, "
@@ -338,10 +338,10 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_busca_kit_esmaltes": "3x/dia às 08:10, 14:10 e 21:10 BRT (Actions) e a cada 30 min (orquestrador)",
     "monitor_kits_esmaltes": "3x/dia às 08:20, 14:20 e 21:20 BRT (Actions) e a cada 30 min (orquestrador)",
     "montar_kits_impala": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
-    "ecossistema_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
-    "crescimento_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
-    "decisao_dia_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
-    "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
+    "ecossistema_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
+    "crescimento_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
+    "decisao_dia_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
+    "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT — único Telegram Impala",
     "monitor_removedores_unha": "3x/dia às 08:40, 14:40 e 21:40 BRT (Actions) e a cada 30 min (orquestrador)",
     "monitor_tendencias_esmaltes": (
         "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions) e a cada 30 min (orquestrador)"
@@ -352,12 +352,12 @@ HORARIOS_AGENTES: dict[str, str] = {
     "comparativo_ml_shopee": (
         "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
-    "monitor_filamentos_ml": "3x/dia às 08:30, 14:30 e 21:30 BRT (Actions); fora do orquestrador 30 min",
+    "monitor_filamentos_ml": "1x/dia às 08:30 BRT (Actions); fora do orquestrador 30 min",
     "monitor_masterprint_petg": (
-        "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+        "1x/dia às 08:15 BRT (Actions); Claude 1×/noite; fora do orquestrador"
     ),
     "monitor_masterprint_escritorio": (
-        "3x/dia às 08:45, 14:45 e 21:45 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+        "1x/dia às 08:45 BRT (Actions); Claude 1×/noite; fora do orquestrador"
     ),
     "monitor_cnpj_cnae": (
         "A cada ~10 dias (1, 11 e 21 do mês, 09:00 BRT via Actions); "
