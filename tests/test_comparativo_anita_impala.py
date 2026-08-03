@@ -131,8 +131,32 @@ class ComparativoAnitaImpalaTests(unittest.TestCase):
                 {
                     "nome": "Kit 5",
                     "vencedor_vendas": "Impala",
-                    "anita": {"unidades_vendidas": 80, "preco_por_unidade_medio": 9.5},
-                    "impala": {"unidades_vendidas": 120, "preco_por_unidade_medio": 8.9},
+                    "anita": {
+                        "unidades_vendidas": 80,
+                        "preco_por_unidade_medio": 9.5,
+                        "destaques": [
+                            {
+                                "titulo": "Kit 5 Esmaltes Anita Nude Bege",
+                                "preco": 48.9,
+                                "quantidade_vendida": 80,
+                                "permalink": "https://produto.mercadolivre.com.br/MLB-anita",
+                                "descricao_kit": "kit 5",
+                            }
+                        ],
+                    },
+                    "impala": {
+                        "unidades_vendidas": 120,
+                        "preco_por_unidade_medio": 8.9,
+                        "destaques": [
+                            {
+                                "titulo": "Kit 5 Esmaltes Impala Nude Rosa Atacado",
+                                "preco": 44.9,
+                                "quantidade_vendida": 120,
+                                "item_id": "MLB123",
+                                "descricao_kit": "kit 5",
+                            }
+                        ],
+                    },
                 }
             ],
             "sinais_proprios": {"anita": [{"visitas_7d": 50}], "impala": [{"visitas_7d": 70}]},
@@ -141,6 +165,22 @@ class ComparativoAnitaImpalaTests(unittest.TestCase):
         painel = ag._montar_painel(consolidado, estrategias)
         self.assertIn("Anita vs Impala", painel)
         self.assertIn("Impala", painel)
+        self.assertIn("Anita Nude", painel)
+        self.assertIn("Impala Nude", painel)
+        self.assertIn("https://produto.mercadolivre.com.br/MLB-anita", painel)
+
+    def test_destaques_lista_todos_anuncios(self):
+        anuncios = [
+            {"titulo": "Kit 5 Impala A", "preco": 30.0, "quantidade_vendida": 10, "item_id": "MLB1"},
+            {"titulo": "Kit 5 Impala B", "preco": 31.0, "quantidade_vendida": 5, "item_id": "MLB2"},
+            {"titulo": "Kit 5 Impala C", "preco": 32.0, "quantidade_vendida": 1, "item_id": "MLB3"},
+            {"titulo": "Kit 5 Anita X", "preco": 40.0, "quantidade_vendida": 8, "item_id": "MLB4"},
+        ]
+        out = cmp.comparar_segmento({"id": "k5", "nome": "Kit 5", "termo_busca": "kit"}, anuncios)
+        self.assertEqual(len(out["impala"]["destaques"]), 3)
+        self.assertEqual(len(out["anita"]["destaques"]), 1)
+        self.assertEqual(out["impala"]["destaques"][0]["item_id"], "MLB1")
+        self.assertEqual(out["impala"]["destaques"][0]["titulo"], "Kit 5 Impala A")
 
     @patch("agentes.esmaltes.agente_comparativo_anita_impala.comparar_segmento")
     @patch("agentes.esmaltes.agente_comparativo_anita_impala._carregar_segmentos")

@@ -64,6 +64,46 @@ def _fmt_brl(valor: Any) -> str:
         return "n/d"
 
 
+_MAX_ANUNCIOS_PAINEL = 8
+
+
+def _linhas_anuncios_marca(
+    marca: str,
+    destaques: list[dict[str, Any]],
+    *,
+    proxy: bool = False,
+) -> list[str]:
+    """Lista os anúncios da marca no Telegram (título, preço, link)."""
+    if not destaques:
+        return []
+    linhas = [f"    _{marca} ({len(destaques)}):_"]
+    for dest in destaques[:_MAX_ANUNCIOS_PAINEL]:
+        titulo = str(dest.get("titulo") or "").strip() or "(sem título)"
+        titulo = titulo[:48]
+        preco = _fmt_brl(dest.get("preco"))
+        kit = str(dest.get("descricao_kit") or "").strip()
+        if proxy:
+            vol = int(dest.get("volume_proxy") or 1)
+            vol_txt = f"{vol} proxy"
+        else:
+            vol_txt = f"{int(dest.get('quantidade_vendida') or 0)} vend."
+        detalhe = f"{preco} | {vol_txt}"
+        if kit:
+            detalhe = f"{detalhe} | {kit}"
+        link = str(dest.get("permalink") or "").strip()
+        iid = str(dest.get("item_id") or "").strip()
+        if link:
+            linhas.append(f"      • [{titulo}]({link}) — {detalhe}")
+        elif iid:
+            linhas.append(f"      • {titulo} ({iid}) — {detalhe}")
+        else:
+            linhas.append(f"      • {titulo} — {detalhe}")
+    resto = len(destaques) - _MAX_ANUNCIOS_PAINEL
+    if resto > 0:
+        linhas.append(f"      _… e mais {resto}_")
+    return linhas
+
+
 def _coletar_sinais_referencia() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     sinais_anita: list[dict[str, Any]] = []
     sinais_impala: list[dict[str, Any]] = []
@@ -163,6 +203,8 @@ def _montar_painel(consolidado: dict[str, Any], estrategias: list[dict[str, Any]
                 f"    Preço/un: Anita {_fmt_brl(anita.get('preco_por_unidade_medio'))} | "
                 f"Impala {_fmt_brl(impala.get('preco_por_unidade_medio'))}"
             )
+        linhas.extend(_linhas_anuncios_marca("Anita", anita.get("destaques") or [], proxy=proxy))
+        linhas.extend(_linhas_anuncios_marca("Impala", impala.get("destaques") or [], proxy=proxy))
 
     sinais = consolidado.get("sinais_proprios") or {}
     visitas_a = sum(int(s.get("visitas_7d") or 0) for s in sinais.get("anita") or [])
