@@ -1030,7 +1030,7 @@ ORQUESTRADOR_EXCLUIR = {
         "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_diario_novamix,resumo_conta_ml,"
         "montar_kits_impala,esmaltes_operacao,"
-        "leilao,alibaba,alibaba_inteligencia,alibaba_sourcing,comparar_portos_alibaba,"
+        "leilao,alibaba_sourcing,comparar_portos_alibaba,"
         "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,licitacoes",
     ).split(",")
     if x.strip()

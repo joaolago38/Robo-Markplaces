@@ -1,10 +1,13 @@
 name: Monitor Alibaba Importação
 
+# Único cron de importação Alibaba: alibaba_sourcing (+ ML tendências).
+# Busca e inteligência individuais só via CLI/módulo (sem Telegram duplicado).
+
 on:
   workflow_dispatch:
   schedule:
-    # A cada 2 horas (UTC)
-    - cron: "0 */2 * * *"
+    # 2x/dia BRT 08:00 / 20:00 (= 11:00 / 23:00 UTC)
+    - cron: "0 11,23 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -21,11 +24,13 @@ env:
   CAMBIO_MAX_IDADE_SEG: "21600"
   ALIBABA_EXIGIR_MOQ_PARA_OPORTUNIDADE: "0"
   DDG_MIN_INTERVAL_SEG: "8"
+  ALIBABA_SOURCING_ATIVO: "1"
 
 jobs:
   monitorar:
-    name: Oportunidades de importação no Alibaba.com
+    name: Alibaba sourcing + tendências ML
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -72,6 +77,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: alibaba-importacao-history
-          path: logs/alibaba_importacao_history.json
+          path: |
+            logs/alibaba_importacao_history.json
+            logs/alibaba_sourcing_ultima.json
           retention-days: 90
           if-no-files-found: ignore

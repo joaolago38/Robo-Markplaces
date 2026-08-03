@@ -548,7 +548,7 @@ Agente que roda **sob demanda** (`workflow_dispatch`) executando os agentes do p
 | `operacao_24h_seguranca.yml` | `0 */2 * * *` | A cada 2h |
 | `sincronizar_estoque.yml` | `0 */2 * * *` | A cada 2h |
 | `leilao_veiculo.yml` | `0 11,20 * * *` | 2×/dia (acompanhar) |
-| `alibaba_importacao.yml` | `0 */2 * * *` | A cada 2h |
+| `alibaba_importacao.yml` | `0 11,23 * * *` | 2×/dia (sourcing) |
 | `conectividade_marketplaces.yml` | `0 * * * *` | A cada hora |
 | `panorama.yml` | `30 9 * * *` | 08:30 diário |
 | `monitor_ml.yml` | `0 10 * * *` | 09:00 diário |
@@ -603,17 +603,18 @@ Para ativar Shopee/Magalu/Amazon na descoberta: marque `ativo: true` em `spec/sp
 
 Variáveis: `DESCOBERTA_NICHOS_CATALOGO`, `DESCOBERTA_BUSCAR_ALIBABA` (1), `DESCOBERTA_ALIBABA_PRECO_MAX_USD` (15), `DESCOBERTA_ALIBABA_MOQ_MAX` (1000), `DESCOBERTA_CAMBIO_USD_BRL` (5.5), `DESCOBERTA_ALERTA_PAINEL_COOLDOWN_SEG` (86400), `ANTHROPIC_API_KEY` (recomendado).
 
-## Monitor Alibaba — oportunidades de importação (2h)
+## Monitor Alibaba — sourcing consolidado (2×/dia)
 
-Agente que varre [Alibaba.com](https://www.alibaba.com/) buscando fornecedores para produtos que você configurar (preço máximo USD, MOQ máximo).
+Único cron de importação: `alibaba_sourcing` (busca + margem/câmbio) + `ml_tendencias_importacao`.
 
 - Catálogo: `catalogo/alibaba_produtos_importacao.json`
-- Agente: `python -m agentes.importacao.agente_alibaba_importacao`
-- Workflow: `.github/workflows/alibaba_importacao.yml` (cron **a cada 2 horas**)
-- Alertas Telegram gestor: **resumo da varredura** (1×/2h, padrão) + alerta **detalhado** quando houver anúncio **novo**
-- Variáveis: `ALIBABA_ALERTA_RESUMO` (1), `ALIBABA_ALERTA_RESUMO_COOLDOWN_SEG` (7200)
-- Histórico: `logs/alibaba_importacao_history.json` (restaurado via cache entre execuções no GitHub Actions)
+- Agente: `python -m agentes.importacao.agente_alibaba_sourcing`
+- Workflow: `.github/workflows/alibaba_importacao.yml` (cron **2×/dia** BRT 08h/20h)
+- Busca/inteligência individuais: só via módulo/CLI (sem Telegram duplicado)
+- Histórico: `logs/alibaba_importacao_history.json`, `logs/alibaba_sourcing_ultima.json`
 - Preflight: `python scripts/preflight_monitor_telegram.py`
+
+Hub Paraguai e tributação PY×BR ficam **fora do cron** (estrutura futura / CLI).
 
 Exemplo de produto no catálogo (produto inicial configurado: **filamento impressora 3D**):
 

@@ -56,23 +56,26 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "licitações novas + resumo com checklist de participação."
     ),
     "alibaba": (
-        "Busca fornecedores e ofertas no Alibaba para produtos do catálogo (preço, MOQ) "
-        "e filtra oportunidades de importação. Telegram: lista de ofertas e resumo "
-        "da varredura."
+        "Busca catálogo Alibaba. Em produção roda só dentro de alibaba_sourcing — "
+        "não manda Telegram sozinho."
     ),
     "alibaba_inteligencia": (
-        "Cruza cotação do dólar, custo landed e preços no ML para dizer se ainda dá "
-        "lucro importar. Também alerta queda/alta forte do câmbio. Telegram: "
-        "oportunidades com lucro razoável e alerta de variação USD."
+        "Câmbio + landed + margem. Em produção roda só dentro de alibaba_sourcing — "
+        "não manda Telegram sozinho."
     ),
     "alibaba_sourcing": (
-        "Consolida busca Alibaba (catálogo) + inteligência de margem/câmbio num "
-        "único run — evita Telegram duplicado. Preferir este no cron."
+        "Único run Alibaba: busca catálogo + inteligência de margem/câmbio. "
+        "Preferir este no cron."
     ),
     "comparar_portos_alibaba": (
         "Compara importação com referência Alibaba (FOB) em qualquer porto ou "
-        "aeroporto do Brasil — aéreo e marítimo — e ranqueia condições atrativas "
-        "por custo landed e atratividade do hub."
+        "aeroporto do Brasil — aéreo e marítimo — sob demanda (sem cron)."
+    ),
+    "hub_paraguai_marketplace": (
+        "Estrutura futura (hub PY × marketplaces). Sem cron — só CLI/manual quando ativar."
+    ),
+    "tributacao_py_br": (
+        "Cenário futuro Mercosul (II=0). Sem cron — só CLI/manual quando ativar."
     ),
     "ml_tendencias_importacao": (
         "Detecta o que está em alta no Mercado Livre e cruza com preços Alibaba para "
@@ -317,11 +320,13 @@ HORARIOS_AGENTES: dict[str, str] = {
     "lojas_veiculos": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
     "carros_batidos": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
     "licitacoes": "A cada 4h (Actions); fora do orquestrador 30 min",
-    "alibaba": "Manual / via alibaba_sourcing (cron 2h)",
-    "alibaba_inteligencia": "Manual / via alibaba_sourcing (cron 2h)",
-    "alibaba_sourcing": "A cada 2h (Actions); fora do orquestrador 30 min",
+    "alibaba": "Debug/CLI — produção via alibaba_sourcing",
+    "alibaba_inteligencia": "Debug/CLI — produção via alibaba_sourcing",
+    "alibaba_sourcing": "2x/dia às 08:00 e 20:00 BRT (Actions); fora do orquestrador 30 min",
     "comparar_portos_alibaba": "Sob demanda / CLI; fora do orquestrador 30 min",
-    "ml_tendencias_importacao": "A cada 2h (Actions Alibaba); fora do orquestrador 30 min",
+    "hub_paraguai_marketplace": "Planejado — sem cron",
+    "tributacao_py_br": "Futuro Mercosul — sem cron",
+    "ml_tendencias_importacao": "Junto com alibaba_sourcing (2x/dia Actions)",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
     "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions) e a cada 30 min (orquestrador)",
