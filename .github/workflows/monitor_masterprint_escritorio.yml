@@ -1,12 +1,12 @@
 name: Monitor Masterprint escritório ML
 
+# Acompanhamento secundário: 1 digest/dia. Continua no grupo OAuth (renova ML).
+
 on:
   workflow_dispatch:
   schedule:
-    # 3x/dia BRT 08:45 / 14:45 / 21:45 (= 11:45 / 17:45 / 00:45 UTC)
+    # 1x/dia BRT 08:45 (= 11:45 UTC)
     - cron: "45 11 * * *"
-    - cron: "45 17 * * *"
-    - cron: "45 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -20,6 +20,7 @@ env:
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
   MASTERPRINT_ESCRITORIO_ALERTA_RESUMO: "1"
+  MASTERPRINT_ESCRITORIO_ALERTA_COOLDOWN_SEG: "72000"
   MASTERPRINT_ESCRITORIO_PAUSA_SEG: "1.5"
   MASTERPRINT_ESCRITORIO_TOP_N: "10"
   MASTERPRINT_CLAUDE_DIARIO: "1"

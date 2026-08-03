@@ -1,12 +1,15 @@
 name: Monitor Lojas Veículos FIPE
 
+# Acompanhamento secundário: coleta diária + alerta só de oportunidade nova.
+
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 */2 * * *"
+    # 1x/dia BRT 09:30 (= 12:30 UTC)
+    - cron: "30 12 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
+  group: robo-markplaces-monitor-secundario
   cancel-in-progress: false
 
 env:
@@ -16,6 +19,7 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  LOJAS_VEICULOS_ALERTA_RESUMO: "0"
 
 jobs:
   monitorar:

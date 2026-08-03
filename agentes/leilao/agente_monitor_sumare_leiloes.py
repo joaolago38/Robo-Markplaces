@@ -22,6 +22,7 @@ from core.config import (
     LEILAO_IA_AVALIAR_PARAMETROS,
     ROOT,
     SUMARE_LEILOES_ALERTA_COOLDOWN_SEG,
+    SUMARE_LEILOES_ALERTA_RESUMO,
     SUMARE_LEILOES_CATALOGO,
     SUMARE_LEILOES_LANCE_MIN_BRL,
     SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG,
@@ -242,7 +243,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     agente_id="sumare_leiloes",
                 )
             )
-        elif enviar_alerta and lotes:
+        elif enviar_alerta and SUMARE_LEILOES_ALERTA_RESUMO and lotes:
             msg = _montar_alerta(
                 [],
                 [],

@@ -1,15 +1,16 @@
 name: Monitor Sumare Leiloes
 
 # PREFEITURA/DETRAN no site oficial — veículos com documento, alerta de lances.
+# Acompanhamento secundário: fora do grupo OAuth Impala/ML.
 
 on:
   workflow_dispatch:
   schedule:
-    # A cada 2 horas
-    - cron: "0 */2 * * *"
+    # 2x/dia BRT 09:00 / 18:00 (= 12:00 / 21:00 UTC)
+    - cron: "0 12,21 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
+  group: robo-markplaces-monitor-secundario
   cancel-in-progress: false
 
 env:
@@ -22,6 +23,7 @@ env:
   SUMARE_LEILOES_PAUSA_ENTRE_LEILOES_SEG: "2.5"
   SUMARE_LEILOES_RETRY_MAX: "3"
   SUMARE_LEILOES_TIMEOUT_SEG: "45"
+  SUMARE_LEILOES_ALERTA_RESUMO: "0"
 
 jobs:
   monitorar:

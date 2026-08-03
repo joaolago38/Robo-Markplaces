@@ -774,6 +774,11 @@ SUMARE_LEILOES_PAUSA_PAGINAS_SEG = float(os.getenv("SUMARE_LEILOES_PAUSA_PAGINAS
 SUMARE_LEILOES_TIMEOUT_SEG = float(os.getenv("SUMARE_LEILOES_TIMEOUT_SEG", "45"))
 SUMARE_LEILOES_RETRY_MAX = int(os.getenv("SUMARE_LEILOES_RETRY_MAX", "3"))
 SUMARE_LEILOES_ALERTA_COOLDOWN_SEG = int(os.getenv("SUMARE_LEILOES_ALERTA_COOLDOWN_SEG", "7200"))
+SUMARE_LEILOES_ALERTA_RESUMO = os.getenv("SUMARE_LEILOES_ALERTA_RESUMO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # DuckDuckGo Lite (compartilhado leilão + Alibaba)
 DDG_MIN_INTERVAL_SEG = float(os.getenv("DDG_MIN_INTERVAL_SEG", "3.0"))
