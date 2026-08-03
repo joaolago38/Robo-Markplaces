@@ -1,7 +1,14 @@
-name: Monitor Anita Esmaltes
+name: Monitor Anita Esmaltes (debug)
+
+# NÃO usar no cron. Produção = comparativo_anita_impala.yml.
+# Debug manual — sem alerta Telegram.
 
 on:
   workflow_dispatch:
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"
@@ -10,6 +17,7 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  ANITA_ALERTA_RESUMO: "0"
 
 jobs:
   monitorar:
@@ -33,6 +41,7 @@ jobs:
       - name: Rodar monitor Anita
         run: python -m agentes.esmaltes.agente_monitor_anita
         env:
+          ANITA_ALERTA_RESUMO: "0"
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}

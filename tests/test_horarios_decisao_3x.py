@@ -31,9 +31,6 @@ class TestHorariosDecisao3x(unittest.TestCase):
         wf = Path(ROOT) / ".github" / "workflows"
         for nome in (
             "esmaltes_operacao.yml",
-            "monitor_masterprint_petg.yml",
-            "monitor_masterprint_escritorio.yml",
-            "monitor_filamentos_ml.yml",
             "monitor_margem_vendas.yml",
         ):
             texto = (wf / nome).read_text(encoding="utf-8")
@@ -41,6 +38,17 @@ class TestHorariosDecisao3x(unittest.TestCase):
             self.assertIn("11 * * *", texto)
             self.assertIn("17 * * *", texto)
             self.assertIn("0 * * *", texto)
+
+    def test_monitores_secundarios_ml_uma_vez_ao_dia(self):
+        wf = Path(ROOT) / ".github" / "workflows"
+        for nome in (
+            "monitor_masterprint_petg.yml",
+            "monitor_masterprint_escritorio.yml",
+            "monitor_filamentos_ml.yml",
+        ):
+            texto = (wf / nome).read_text(encoding="utf-8")
+            self.assertEqual(texto.count("- cron:"), 1, msg=nome)
+            self.assertIn("11 * * *", texto)
 
 
 if __name__ == "__main__":

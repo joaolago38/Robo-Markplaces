@@ -266,14 +266,6 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Sugere preço/ads/republicar para ativos sem pedido no período",
     ),
     AgenteRegistrado(
-        "monitor_anita",
-        "Monitor esmaltes Anita",
-        "monitor",
-        "agentes.esmaltes.agente_monitor_anita:executar",
-        {"enviar_alerta": True},
-        notas="Cores/kits vs preferência + ranking marcas + margem",
-    ),
-    AgenteRegistrado(
         "monitor_mercado_esmaltes",
         "Monitor mercado esmaltes ML",
         "monitor",
@@ -289,14 +281,8 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="Conta buscas diárias por kit/cor Anita e Impala no ML + Telegram",
     ),
-    AgenteRegistrado(
-        "monitor_kits_esmaltes",
-        "Monitor kits esmaltes — vendas e marcas",
-        "monitor",
-        "agentes.esmaltes.agente_monitor_kits_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="Varre todos os kits de esmaltes no ML: vendas, preços e ranking de marcas",
-    ),
+    # Sobreposições (anita / kits / tendencias / removedores / acetona) NÃO entram no registro:
+    # cobertos por comparativo + busca_kit + mercado; workflows = debug/anexo semanal.
     AgenteRegistrado(
         "montar_kits_impala",
         "Montar kits Impala (planilha × ML)",
@@ -305,53 +291,15 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="Cruza cores Impala da planilha com kits mais vendidos no ML e sugere montagem",
     ),
-    AgenteRegistrado(
-        "ecossistema_esmaltes",
-        "Ecossistema esmaltes (plano consolidado)",
-        "monitor",
-        "agentes.esmaltes.agente_ecossistema_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="Cor atrai → kit+anexos+B2B. Preferir esmaltes_operacao no cron diário",
-    ),
-    AgenteRegistrado(
-        "crescimento_esmaltes",
-        "Crescimento esmaltes (KPI + kits sem MLB)",
-        "monitor",
-        "agentes.esmaltes.agente_crescimento_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="KPI kits% + checklist. Preferir esmaltes_operacao no cron diário",
-    ),
-    AgenteRegistrado(
-        "decisao_dia_esmaltes",
-        "Decisão do dia Impala ML",
-        "monitor",
-        "agentes.esmaltes.agente_decisao_dia_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="Um card: FAZER / NÃO FAZER / CUSTO. Preferir esmaltes_operacao no cron diário",
-    ),
+    # crescimento / decisao_dia / ecossistema NÃO entram no registro:
+    # só via esmaltes_operacao (1 Telegram). Workflows individuais = debug manual sem alerta.
     AgenteRegistrado(
         "esmaltes_operacao",
         "Operação esmaltes consolidada",
         "monitor",
         "agentes.esmaltes.agente_esmaltes_operacao:executar",
         {"enviar_alerta": True},
-        notas="Crescimento+decisão+ecossistema em 1 Telegram. Fora do ciclo 30min",
-    ),
-    AgenteRegistrado(
-        "monitor_removedores_unha",
-        "Monitor removedores de unha — ranking",
-        "monitor",
-        "agentes.esmaltes.agente_monitor_removedores_unha:executar",
-        {"enviar_alerta": True},
-        notas="Removedores de unha no ML: nomes, fabricantes e ranking por vendas",
-    ),
-    AgenteRegistrado(
-        "monitor_tendencias_esmaltes",
-        "Tendências esmaltes — web × marketplaces",
-        "monitor",
-        "agentes.esmaltes.agente_monitor_tendencias_esmaltes:executar",
-        {"enviar_alerta": True},
-        notas="Varre internet (Brave/DDG) e cruza com ML/Magalu/Shopee/Amazon para tendências",
+        notas="Único cron Impala: crescimento+decisão+ecossistema em 1 Telegram",
     ),
     AgenteRegistrado(
         "comparativo_anita_impala",
@@ -400,14 +348,6 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "agentes.empresa.agente_monitor_cnpj_cnae:executar",
         {"enviar_alerta": True},
         notas="A cada ~10d ou na alteração: inicia ML e Telegram de decisão (AGIR/PANORAMA/PASSOS)",
-    ),
-    AgenteRegistrado(
-        "monitor_acetona_cruzeiro",
-        "Monitor Acetona Cruzeiro ML",
-        "monitor",
-        "agentes.esmaltes.agente_monitor_acetona_cruzeiro:executar",
-        {"enviar_alerta": True},
-        notas="Vendedores, margem, manicures BR e estratégias Claude + Impala",
     ),
     AgenteRegistrado(
         "descoberta_produtos",

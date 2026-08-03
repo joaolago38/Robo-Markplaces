@@ -113,9 +113,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "para reativar o giro. Telegram: lista priorizada de reativação."
     ),
     "monitor_anita": (
-        "Acompanha esmaltes Anita no ML (cores, kits, ranking de marcas e margem) e "
-        "compara com a preferência do seu catálogo Impala. Telegram: painel dos seus "
-        "kits vs mercado."
+        "Debug: Anita no ML. Em produção use comparativo_anita_impala — "
+        "este monitor não manda Telegram no cron."
     ),
     "monitor_mercado_esmaltes": (
         "Varre o mercado de esmaltes no ML (não só uma marca): cores, kits, preços e "
@@ -128,38 +127,36 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "e última rodada — o que o mercado está procurando agora."
     ),
     "monitor_kits_esmaltes": (
-        "Lista kits de esmaltes no ML com vendas e preços, ranqueia marcas e destaca "
-        "o que está girando mais. Pode enviar gráfico. Telegram: ranking de kits/"
-        "marcas."
+        "Debug: ranking de kits. Em produção use monitor_mercado_esmaltes — "
+        "sem Telegram no cron."
     ),
     "montar_kits_impala": (
         "Lê a planilha Impala (cores/SKU), cruza com os kits mais vendidos no Mercado Livre "
         "e sugere quais cores montar em kits 3/5/6/10. Telegram: top cores + kits sugeridos."
     ),
     "ecossistema_esmaltes": (
-        "Consolida monitores de esmaltes/manicures num plano de ecossistema: "
-        "cor atrai; kit, anexos e B2B pagam. Telegram: ações 7/30/90 dias por camada."
+        "Plano de ecossistema (cor → kit → anexos → B2B). Em produção roda só "
+        "dentro de esmaltes_operacao — não manda Telegram sozinho."
     ),
     "crescimento_esmaltes": (
-        "Fecha o loop do crescimento: KPI kits na receita + margem, lista kits sem MLB, "
-        "checklist do que falta (WA/IG/publicar) e alerta o gestor."
+        "KPI kits% + checklist MLB. Em produção roda só dentro de "
+        "esmaltes_operacao — não manda Telegram sozinho."
     ),
     "decisao_dia_esmaltes": (
-        "Um veredito por dia para Impala no ML: FAZER, NÃO FAZER e CUSTO DE NÃO FAZER, "
-        "com foco nos 3 SKUs de guerra e piso de margem."
+        "Veredito FAZER / NÃO FAZER / CUSTO. Em produção roda só dentro de "
+        "esmaltes_operacao — não manda Telegram sozinho."
     ),
     "esmaltes_operacao": (
-        "Roda crescimento + decisão do dia + ecossistema sem alertas individuais e "
-        "envia um único Telegram consolidado da operação Impala."
+        "Único card Impala do dia: roda crescimento + decisão + ecossistema "
+        "e envia um Telegram consolidado."
     ),
     "monitor_removedores_unha": (
-        "Monitora removedores de unha no ML: fabricantes, nomes e ranking por vendas, "
-        "para ver líderes e oportunidades. Telegram: ranking (+ gráfico quando houver)."
+        "Anexo: ranking de removedores no ML. Digest semanal (quarta) — "
+        "fora do foco diário de kits."
     ),
     "monitor_tendencias_esmaltes": (
-        "Busca tendências de esmaltes na internet (Brave/DDG) e cruza com ML, Magalu, "
-        "Shopee e Amazon para antecipar cores e kits em alta. Telegram: tendências + "
-        "cruzamento com marketplaces."
+        "Debug: tendências web. Em produção use monitor_busca_kit_esmaltes — "
+        "sem Telegram no cron."
     ),
     "comparativo_anita_impala": (
         "Compara Anita vs Impala no ML (demanda, preço, perfil de consumidor) e "
@@ -192,9 +189,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "ecossistema repetir o mesmo tema. Demais marketplaces ficam abertos no perfil."
     ),
     "monitor_acetona_cruzeiro": (
-        "Analisa acetona Cruzeiro no ML: vendedores, margem e público manicures, com "
-        "ideias de estratégia (Claude + Impala). Telegram: relatório completo da "
-        "categoria."
+        "Anexo: acetona Cruzeiro no ML. Digest semanal (sexta) — "
+        "fora do foco diário de kits."
     ),
     "descoberta_produtos": (
         "Descobre produtos com potencial por marketplace (público-alvo + busca ML) e "
@@ -333,39 +329,35 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_concorrentes": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_diario_novamix": "Todo dia às 08:00 BRT (fora do orquestrador)",
     "monitor_sem_venda_ml": "A cada 30 min (orquestrador)",
-    "monitor_anita": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "monitor_anita": "Debug manual (sem Telegram) — produção via comparativo_anita_impala",
     "monitor_mercado_esmaltes": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "monitor_busca_kit_esmaltes": "3x/dia às 08:10, 14:10 e 21:10 BRT (Actions) e a cada 30 min (orquestrador)",
-    "monitor_kits_esmaltes": "3x/dia às 08:20, 14:20 e 21:20 BRT (Actions) e a cada 30 min (orquestrador)",
+    "monitor_kits_esmaltes": "Debug manual (sem Telegram) — produção via monitor_mercado_esmaltes",
     "montar_kits_impala": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
-    "ecossistema_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
-    "crescimento_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
-    "decisao_dia_esmaltes": "Manual / via esmaltes_operacao (3x/dia consolidado)",
-    "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
-    "monitor_removedores_unha": "3x/dia às 08:40, 14:40 e 21:40 BRT (Actions) e a cada 30 min (orquestrador)",
-    "monitor_tendencias_esmaltes": (
-        "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions) e a cada 30 min (orquestrador)"
-    ),
+    "ecossistema_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
+    "crescimento_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
+    "decisao_dia_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
+    "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT — único Telegram Impala",
+    "monitor_removedores_unha": "1x/semana quarta 09:00 BRT (anexo)",
+    "monitor_tendencias_esmaltes": "Debug manual (sem Telegram) — produção via busca_kit",
     "comparativo_anita_impala": (
         "Segundas e quintas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
     "comparativo_ml_shopee": (
         "Segundas e quintas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
     ),
-    "monitor_filamentos_ml": "3x/dia às 08:30, 14:30 e 21:30 BRT (Actions); fora do orquestrador 30 min",
+    "monitor_filamentos_ml": "1x/dia às 08:30 BRT (Actions); fora do orquestrador 30 min",
     "monitor_masterprint_petg": (
-        "3x/dia às 08:15, 14:15 e 21:15 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+        "1x/dia às 08:15 BRT (Actions); Claude 1×/noite; fora do orquestrador"
     ),
     "monitor_masterprint_escritorio": (
-        "3x/dia às 08:45, 14:45 e 21:45 BRT (Actions); Claude 1×/noite; fora do orquestrador"
+        "1x/dia às 08:45 BRT (Actions); Claude 1×/noite; fora do orquestrador"
     ),
     "monitor_cnpj_cnae": (
         "A cada ~10 dias (1, 11 e 21 do mês, 09:00 BRT via Actions); "
         "alteração de CNPJ dispara ML + Telegram de decisão; fora do orquestrador 30 min"
     ),
-    "monitor_acetona_cruzeiro": (
-        "Terças e sextas às 09:00 BRT (Actions) e a cada 30 min (orquestrador)"
-    ),
+    "monitor_acetona_cruzeiro": "1x/semana sexta 09:00 BRT (anexo)",
     "descoberta_produtos": "Quartas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)",
     "ads_gatilho": "Todo dia às 08:00 BRT (fora do orquestrador)",
     "meta_metricas": "A cada 30 min (orquestrador)",

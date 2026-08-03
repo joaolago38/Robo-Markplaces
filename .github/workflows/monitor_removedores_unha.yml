@@ -1,12 +1,16 @@
 name: Monitor Removedores de Unha ML
 
+# Anexo Impala: acompanhamento semanal (não compete com kits/comparativo).
+
 on:
   workflow_dispatch:
   schedule:
-    # 3x/dia BRT 08:40 / 14:40 / 21:40 (= 11:40 / 17:40 / 00:40 UTC)
-    - cron: "40 11 * * *"
-    - cron: "40 17 * * *"
-    - cron: "40 0 * * *"
+    # 1x/semana quarta 09:00 BRT (= 12:00 UTC)
+    - cron: "0 12 * * 3"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.11"
@@ -15,6 +19,8 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  REMOVEDORES_UNHA_ALERTA_RESUMO: "1"
+  REMOVEDORES_UNHA_ALERTA_COOLDOWN_SEG: "540000"
 
 jobs:
   monitorar:

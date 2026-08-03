@@ -1,12 +1,12 @@
 name: Monitor Acetona Cruzeiro
 
-# Vendedores, margem média, manicures BR e estratégias Claude + Impala no ML.
+# Anexo Impala: 1 digest/semana (não prioridade do core kits).
 
 on:
   workflow_dispatch:
   schedule:
-    # Terça e sexta 09:00 BRT = 12:00 UTC
-    - cron: "0 12 * * 2,5"
+    # Sexta 09:00 BRT = 12:00 UTC
+    - cron: "0 12 * * 5"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -19,6 +19,8 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  ACETONA_CRUZEIRO_ALERTA_RESUMO: "1"
+  ACETONA_CRUZEIRO_ALERTA_COOLDOWN_SEG: "540000"
 
 jobs:
   monitor:
