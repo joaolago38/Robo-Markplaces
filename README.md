@@ -503,7 +503,7 @@ Modelos já configurados e ativos (por prioridade): **Fiorino Furgão**, **Gol**
 
 - Catálogo: `catalogo/leiloes_veiculos_monitorados.json` — campo `perfil: recuperado_furto_media_monta` e `prioridade` (1 = mais importante)
 - Agente: `python -m agentes.leilao.agente_leilao_veiculo`
-- Workflow: `.github/workflows/leilao_veiculo.yml` (cron **a cada hora**, 24×7)
+- Workflow: `.github/workflows/leilao_veiculo.yml` (cron **2×/dia** BRT 08h/17h; fila `monitor-secundario`)
 - Alertas Telegram gestor: **resumo da varredura** (1×/hora, padrão) + alerta **detalhado** quando houver achado **novo**
 - Variáveis: `LEILAO_ALERTA_RESUMO` (1), `LEILAO_ALERTA_RESUMO_COOLDOWN_SEG` (3600)
 - Histórico: `logs/leilao_veiculos_history.json` (restaurado via cache entre execuções no GitHub Actions)
@@ -547,7 +547,7 @@ Agente que roda **sob demanda** (`workflow_dispatch`) executando os agentes do p
 | `agente_principal.yml` | `0 9` | Relatório 08h |
 | `operacao_24h_seguranca.yml` | `0 */2 * * *` | A cada 2h |
 | `sincronizar_estoque.yml` | `0 */2 * * *` | A cada 2h |
-| `leilao_veiculo.yml` | `0 * * * *` | A cada hora |
+| `leilao_veiculo.yml` | `0 11,20 * * *` | 2×/dia (acompanhar) |
 | `alibaba_importacao.yml` | `0 */2 * * *` | A cada 2h |
 | `conectividade_marketplaces.yml` | `0 * * * *` | A cada hora |
 | `panorama.yml` | `30 9 * * *` | 08:30 diário |

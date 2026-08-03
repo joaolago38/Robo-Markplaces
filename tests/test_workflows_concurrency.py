@@ -23,10 +23,7 @@ _WORKFLOWS_COM_CONCURRENCY = (
     "sincronizar_estoque.yml",
     "conectividade_marketplaces.yml",
     "orquestrador_30min.yml",
-    "leilao_veiculo.yml",
     "alibaba_importacao.yml",
-    "licitacoes.yml",
-    "lojas_veiculos.yml",
     "push_deploy.yml",
     "branch_cleanup.yml",
     "relatorio_manha_ml.yml",
@@ -37,6 +34,15 @@ _WORKFLOWS_COM_CONCURRENCY = (
 _GROUP_ESPERADO = "robo-markplaces-token-renewal"
 _GROUP_VIGIA = "robo-markplaces-vigia-datadog"
 _GROUP_PUSH_MAIN = "robo-markplaces-push-main-sync"
+_GROUP_SECUNDARIO = "robo-markplaces-monitor-secundario"
+
+_WORKFLOWS_MONITOR_SECUNDARIO = (
+    "leilao_veiculo.yml",
+    "monitor_sumare_leiloes.yml",
+    "lojas_veiculos.yml",
+    "carros_batidos.yml",
+    "licitacoes.yml",
+)
 
 
 class TestWorkflowsConcurrency(unittest.TestCase):
@@ -64,6 +70,21 @@ class TestWorkflowsConcurrency(unittest.TestCase):
         self.assertIn("workflow_dispatch:", texto)
         self.assertNotIn("workflow_run:", texto)
         self.assertIn("cancel-in-progress: false", texto)
+
+    def test_monitores_secundarios_tem_fila_propria(self):
+        for nome in _WORKFLOWS_MONITOR_SECUNDARIO:
+            path = WORKFLOWS_DIR / nome
+            self.assertTrue(path.is_file(), f"workflow ausente: {nome}")
+            texto = path.read_text(encoding="utf-8")
+            self.assertIn(f"group: {_GROUP_SECUNDARIO}", texto, nome)
+            self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto, nome)
+            self.assertIn("cancel-in-progress: false", texto, nome)
+            # Sem resumo periódico — só oportunidade nova (acompanhar sem poluir)
+            self.assertRegex(
+                texto,
+                r"(ALERTA_RESUMO|SUMARE_LEILOES_ALERTA_RESUMO):\s*[\"']0[\"']",
+                msg=f"{nome} deve desligar resumo periódico",
+            )
 
     def test_vigia_le_heartbeats_compartilhados_sem_regravar(self):
         path = WORKFLOWS_DIR / "vigia_datadog.yml"

@@ -1,12 +1,12 @@
 name: Monitor Masterprint PETG ML
 
+# Acompanhamento secundário: 1 digest/dia. Continua no grupo OAuth (renova ML).
+
 on:
   workflow_dispatch:
   schedule:
-    # 3x/dia BRT 08:15 / 14:15 / 21:15 (= 11:15 / 17:15 / 00:15 UTC)
+    # 1x/dia BRT 08:15 (= 11:15 UTC)
     - cron: "15 11 * * *"
-    - cron: "15 17 * * *"
-    - cron: "15 0 * * *"
 
 concurrency:
   group: robo-markplaces-token-renewal
@@ -20,6 +20,7 @@ env:
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
   MASTERPRINT_PETG_ALERTA_RESUMO: "1"
+  MASTERPRINT_PETG_ALERTA_COOLDOWN_SEG: "72000"
   MASTERPRINT_PETG_PAUSA_SEG: "1.5"
   MASTERPRINT_PETG_TOP_N: "10"
   MASTERPRINT_CLAUDE_DIARIO: "1"

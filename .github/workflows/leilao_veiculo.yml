@@ -1,13 +1,16 @@
 name: Monitor Leilões Veículos
 
+# Acompanhamento secundário: coleta + alerta só de vantagem FIPE nova.
+# Fora do grupo de tokens OAuth para não atrasar Impala/ML.
+
 on:
   workflow_dispatch:
   schedule:
-    # A cada hora (UTC) — cobertura contínua 24h via GitHub Actions
-    - cron: "0 * * * *"
+    # 2x/dia BRT 08:00 / 17:00 (= 11:00 / 20:00 UTC)
+    - cron: "0 11,20 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
+  group: robo-markplaces-monitor-secundario
   cancel-in-progress: false
 
 env:
@@ -33,7 +36,8 @@ env:
   LEILAO_BUSCA_TODOS_VEICULOS: "1"
   LEILAO_VARREDURA_TODAS_FONTES: "0"
   LEILAO_ALERTAR_TODOS_ACHADOS: "0"
-  LEILAO_ALERTA_TOP_N: "8"
+  LEILAO_ALERTA_RESUMO: "0"
+  LEILAO_ALERTA_TOP_N: "5"
   LEILAO_FIPE_HAIRCUT_SINISTRO_PCT: "40"
   LEILAO_MARGEM_FIPE_MIN_PCT: "10"
   LEILAO_MARGEM_FIPE_MIN_REAIS: "800"

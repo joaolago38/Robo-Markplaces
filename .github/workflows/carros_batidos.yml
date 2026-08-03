@@ -1,13 +1,15 @@
 name: Monitor Carros Batidos
 
+# Acompanhamento secundário: coleta diária + alerta só de anúncio novo elegível.
+
 on:
   workflow_dispatch:
   schedule:
-    # A cada 4 horas
-    - cron: "15 */4 * * *"
+    # 1x/dia BRT 10:15 (= 13:15 UTC)
+    - cron: "15 13 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
+  group: robo-markplaces-monitor-secundario
   cancel-in-progress: false
 
 env:
@@ -19,7 +21,7 @@ env:
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
   CARROS_BATIDOS_INCLUIR_FIPE: "1"
   CARROS_BATIDOS_PRECO_MAX: "150000"
-  CARROS_BATIDOS_ALERTA_RESUMO: "1"
+  CARROS_BATIDOS_ALERTA_RESUMO: "0"
   CARROS_BATIDOS_ALERTA_TOP_N: "10"
   CARROS_BATIDOS_FIPE_HAIRCUT_PCT: "40"
   CARROS_BATIDOS_BUSCA_WEB: "1"
