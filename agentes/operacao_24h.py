@@ -159,13 +159,25 @@ def _fallback_resumo_operacao(payload: dict) -> str:
 def _sintetizar_claude_operacao(payload: dict) -> str:
     contexto = _payload_para_contexto_claude(payload)
     fallback = _fallback_resumo_operacao(payload)
+    # Dry-run total: regras locais bastam; evita Claude sem sinal operacional real.
+    modo = payload.get("modo") or {}
+    if modo.get("repricing_dry_run") and modo.get("nfe_dry_run"):
+        kpis = payload.get("kpis_24h") or {}
+        if float(kpis.get("receita_24h") or 0) <= 0 and not (payload.get("alertas_esmaltes") or []):
+            return fallback
     prompt = (
         "Com base no contexto JSON acima, escreva um resumo executivo de NO MÁXIMO 5 linhas, "
         "objetivo, priorizando o que muda receita ou risco nas próximas horas. "
         "Não repita números brutos que já aparecem no relatório detalhado; foque em interpretação "
         "(ex.: vendas 24h abaixo da média, ACOS subindo, estoque crítico bloqueando repricing)."
     )
-    return sintetizar_claude(prompt, contexto, fallback, max_tokens=400)
+    return sintetizar_claude(
+        prompt,
+        contexto,
+        fallback,
+        max_tokens=400,
+        origem="operacao_24h",
+    )
 
 
 def _formatar_notas_repricing(repricing: dict) -> str:

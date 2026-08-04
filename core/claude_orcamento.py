@@ -70,17 +70,29 @@ def estimar_custo_usd(modelo: str, input_tokens: int, output_tokens: int) -> flo
 
 
 def detectar_origem() -> str:
-    """Heurística: primeiro frame em agentes/ ou integracoes/."""
+    """Heurística: primeiro frame em agentes/ ou integracoes/ (Windows + Linux/Actions)."""
+    skip_arquivos = (
+        "claude_orcamento.py",
+        "claude_client.py",
+        "resumo_ia.py",
+    )
     for fr in traceback.extract_stack():
         path = (fr.filename or "").replace("\\", "/")
-        if "/tests/" in path or path.endswith("claude_orcamento.py") or path.endswith(
-            "claude_client.py"
-        ):
+        low = path.lower()
+        if "/tests/" in low or "\\tests\\" in (fr.filename or "").lower():
             continue
-        for marcador in ("/agentes/", "/integracoes/", "/api/", "/core/"):
-            if marcador in path:
-                trecho = path.split(marcador, 1)[-1]
-                return trecho.replace(".py", "").replace("/", ".")[:80]
+        if any(low.endswith(nome) for nome in skip_arquivos):
+            continue
+        for marcador in ("agentes/", "integracoes/", "api/", "core/"):
+            needle = "/" + marcador
+            if needle in low:
+                idx = low.index(needle) + 1
+            elif low.startswith(marcador):
+                idx = 0
+            else:
+                continue
+            trecho = path[idx + len(marcador) :]
+            return trecho.replace(".py", "").replace("/", ".")[:80]
     return "desconhecido"
 
 

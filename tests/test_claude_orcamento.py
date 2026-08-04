@@ -223,6 +223,34 @@ class TestClaudeOrcamento(unittest.TestCase):
         self.assertEqual(len(curto), 10)
         self.assertTrue(curto.startswith("…"))
 
+    def test_detectar_origem_path_windows(self):
+        class _Fr:
+            def __init__(self, filename):
+                self.filename = filename
+
+        with patch(
+            "core.claude_orcamento.traceback.extract_stack",
+            return_value=[
+                _Fr(r"C:\proj\Robo-Markplaces\agentes\panorama\agente_panorama.py"),
+                _Fr(r"C:\proj\Robo-Markplaces\core\claude_client.py"),
+            ],
+        ):
+            self.assertEqual(o.detectar_origem(), "panorama.agente_panorama")
+
+    def test_detectar_origem_path_linux_actions(self):
+        class _Fr:
+            def __init__(self, filename):
+                self.filename = filename
+
+        with patch(
+            "core.claude_orcamento.traceback.extract_stack",
+            return_value=[
+                _Fr("/home/runner/work/repo/agentes/ml/agente_monitor_ml.py"),
+                _Fr("/home/runner/work/repo/core/claude_client.py"),
+            ],
+        ):
+            self.assertEqual(o.detectar_origem(), "ml.agente_monitor_ml")
+
 
 if __name__ == "__main__":
     unittest.main()
