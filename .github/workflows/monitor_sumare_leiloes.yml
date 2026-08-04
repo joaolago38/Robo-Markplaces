@@ -1,13 +1,13 @@
 name: Monitor Sumare Leiloes
 
 # PREFEITURA/DETRAN no site oficial — veículos com documento, alerta de lances.
-# Acompanhamento secundário: fora do grupo OAuth Impala/ML.
+# Acompanhamento secundário: 1x/dia — fora do grupo OAuth Impala/ML e do orquestrador 30min.
 
 on:
   workflow_dispatch:
   schedule:
-    # 2x/dia BRT 09:00 / 18:00 (= 12:00 / 21:00 UTC)
-    - cron: "0 12,21 * * *"
+    # 1x/dia BRT 09:00 (= 12:00 UTC)
+    - cron: "0 12 * * *"
 
 concurrency:
   group: robo-markplaces-monitor-secundario
