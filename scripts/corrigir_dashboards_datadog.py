@@ -1,21 +1,19 @@
 """
-Corrige queries quebradas nos dashboards Datadog do Robo-Markplaces.
+Corrige dashboard Saúde: troca widgets de log quebrados por métricas reais.
 
-Problema: widgets de log usavam wildcards colados (*Orquestrador*iniciando*)
-que nao batem no texto tokenizado. Troca por frases exatas + queries de metrica.
+Grupo \"Orquestrador - Execucao de Tarefas\" usava wildcards de log
+(*Orquestrador*iniciando*) que retornam 0 hits. Substitui por:
+  robo.orquestrador.agente.execucao / .erro / .ciclo / latencia by agente
 
-Requer no .env (ou ambiente):
-  DD_API_KEY
-  DD_APPLICATION_KEY   # leitura/escrita de dashboards
+Requer:
+  DD_API_KEY + DD_APPLICATION_KEY no .env
   DD_SITE=us5.datadoghq.com
 
 Uso:
   python scripts/corrigir_dashboards_datadog.py
-  python scripts/corrigir_dashboards_datadog.py --dry-run
 """
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import sys
@@ -28,7 +26,6 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# Carrega .env sem sobrescrever env ja definido
 _env = ROOT / ".env"
 if _env.is_file():
     for line in _env.read_text(encoding="utf-8").splitlines():
@@ -42,71 +39,7 @@ DD_API_KEY = (os.getenv("DD_API_KEY") or "").strip()
 DD_APPLICATION_KEY = (os.getenv("DD_APPLICATION_KEY") or "").strip()
 DD_SITE = (os.getenv("DD_SITE") or "us5.datadoghq.com").strip() or "us5.datadoghq.com"
 
-DASHBOARDS = (
-    "3iy-tka-awu",  # Saude de Integracoes e Orquestrador
-    "7be-b7r-nrk",  # Operacao Marketplaces
-)
-
-# Ordem importa: padroes mais especificos primeiro.
-_QUERY_REPLACES: list[tuple[str, str]] = [
-    ("*Orquestrador*iniciando*", '"Orquestrador: iniciando"'),
-    ("*finalizado*ok=True*", '"finalizado ok=True"'),
-    ("*finalizado*ok=False*", '"finalizado ok=False"'),
-    ("*ciclo*concluído*", '"ciclo concluído"'),
-    ("*ciclo*concluido*", '"ciclo concluído"'),
-    ("*Token*renovado*", '"Token renovado" OR "token renovado" OR "Token renovado"'),
-    ("*token*expirado*", '"token expirado" OR "Token expirado"'),
-    ("*circuit*breaker*", '"circuit breaker" OR circuit_breaker OR "circuit-breaker"'),
-    ("*Conectividade*FALHOU*", '"Conectividade" AND FALHOU'),
-    ("*Vigia*problemas*detectados*", '"Vigia" AND problemas'),
-    ("*Claude*bloqueado*", '"Claude" AND (bloqueado OR pausado)'),
-    ("*Claude*desligado*", '"Claude" AND (desligado OR "CLAUDE_ATIVO=0")'),
-    ("*DDG*bloqueado*", "DDG AND (bloqueado OR 403)"),
-    ("*DDG*HTTP*403*", "DDG AND 403"),
-    ("*DDG*vazio*", "DDG AND (vazio OR vazia)"),
-    ("*sem*resultados*", '"sem resultados" OR "nenhum resultado"'),
-    ("*não*configurado*", '"não configurado" OR "nao configurado"'),
-    ("*nao*configurado*", '"não configurado" OR "nao configurado"'),
-    ("*Não*configurado*", '"não configurado" OR "nao configurado"'),
-    ("*SSL* OR *CERTIFICATE_VERIFY_FAILED*", "SSL OR CERTIFICATE_VERIFY_FAILED"),
-    (
-        "*timed*out* OR *Read*timed*out* OR *ReadTimeoutError* OR *Max*retries*exceeded*",
-        "timeout OR timed OR ReadTimeoutError OR \"Max retries\"",
-    ),
-    (
-        "*timed*out* OR *ReadTimeoutError* OR *Max*retries*exceeded*",
-        "timeout OR timed OR ReadTimeoutError OR \"Max retries\"",
-    ),
-    (
-        "*SSL* OR *timed*out* OR *ReadTimeoutError* OR *Max*retries* OR *Conectividade*FALHOU* OR *indisponível*",
-        "(SSL OR CERTIFICATE_VERIFY_FAILED OR timeout OR timed OR ReadTimeoutError OR FALHOU OR indispon)",
-    ),
-    (
-        "*SSL* OR *timed*out* OR *ReadTimeoutError* OR *Max*retries* OR *Conectividade*FALHOU* OR *indisponivel*",
-        "(SSL OR CERTIFICATE_VERIFY_FAILED OR timeout OR timed OR ReadTimeoutError OR FALHOU OR indispon)",
-    ),
-    ("*sem*resultados* OR *403*bloqueada*", '("sem resultados" OR "nenhum resultado" OR 403)'),
-    ("*sem*resultados* OR *vazio*", '("sem resultados" OR vazio OR vazia)'),
-    ("*DDG*bloqueado* OR *DDG*HTTP*403*", "(DDG AND (bloqueado OR 403))"),
-    ("*DDG*bloqueado* OR *DDG*HTTP*403* OR *DDG*vazio*", "(DDG AND (bloqueado OR 403 OR vazio))"),
-    (
-        "*Claude*bloqueado* OR *Claude*desligado* OR *CLAUDE_ATIVO=0*",
-        '("Claude" AND (bloqueado OR desligado OR pausado)) OR CLAUDE_ATIVO=0',
-    ),
-    (
-        "*não*configurado* OR *nao*configurado* OR *Não*configurado*",
-        '("não configurado" OR "nao configurado")',
-    ),
-    (
-        "*não*configurado* OR *nao*configurado* OR *Claude*bloqueado* OR *Claude*desligado* OR *Vigia*problemas* OR *Conectividade*FALHOU* OR *Falha*sincronizar* OR *token*inválido* OR *invalid_grant*",
-        '("não configurado" OR "nao configurado" OR Claude OR Vigia OR FALHOU OR sincronizar OR invalid_grant)',
-    ),
-]
-
-# Metrica inventada / sem Agent → metrica real do robo
-_METRIC_REPLACES: list[tuple[str, str]] = [
-    ("avg:system.cpu.user{*}", "avg:robo.orquestrador.ciclo.agentes_ok{*}"),
-]
+DASH_ID = "3iy-tka-awu"
 
 
 def _headers() -> dict[str, str]:
@@ -121,46 +54,151 @@ def _api(path: str) -> str:
     return f"https://api.{DD_SITE}{path}"
 
 
-def _fixar_query(q: str) -> tuple[str, bool]:
-    original = q
-    mudou = False
-    for velho, novo in _QUERY_REPLACES:
-        if velho in q:
-            q = q.replace(velho, novo)
-            mudou = True
-    for velho, novo in _METRIC_REPLACES:
-        if velho in q:
-            q = q.replace(velho, novo)
-            mudou = True
-    return q, mudou or q != original
+def _qv_metric(title: str, query: str, *, green_gt: float | None = 0, red_gt: float | None = None) -> dict:
+    formats = []
+    if red_gt is not None:
+        formats.append({"comparator": ">", "palette": "white_on_red", "value": red_gt})
+    if green_gt is not None:
+        formats.append({"comparator": ">", "palette": "white_on_green", "value": green_gt})
+    formats.append({"comparator": ">=", "palette": "white_on_green", "value": 0})
+    return {
+        "definition": {
+            "title": title,
+            "type": "query_value",
+            "autoscale": True,
+            "precision": 0,
+            "requests": [
+                {
+                    "conditional_formats": formats,
+                    "formulas": [{"formula": "query1"}],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": "query1",
+                            "query": query,
+                        }
+                    ],
+                    "response_format": "scalar",
+                    "aggregator": "sum",
+                }
+            ],
+        }
+    }
 
 
-def _walk_fix(obj: Any, stats: dict[str, int]) -> Any:
-    if isinstance(obj, dict):
-        out = {}
-        for k, v in obj.items():
-            if k in ("query", "query_string", "search") and isinstance(v, str):
-                novo, mudou = _fixar_query(v)
-                if mudou:
-                    stats["queries"] += 1
-                out[k] = novo
-            elif k == "search" and isinstance(v, dict) and isinstance(v.get("query"), str):
-                novo, mudou = _fixar_query(v["query"])
-                if mudou:
-                    stats["queries"] += 1
-                out[k] = {**v, "query": novo}
-            else:
-                out[k] = _walk_fix(v, stats)
-        return out
-    if isinstance(obj, list):
-        return [_walk_fix(x, stats) for x in obj]
-    if isinstance(obj, str):
-        # queries soltas em listas de strings (raro)
-        novo, mudou = _fixar_query(obj)
-        if mudou:
-            stats["queries"] += 1
-        return novo
-    return obj
+def _grupo_orquestrador_metricas() -> dict[str, Any]:
+    """Substitui o grupo 100003 (logs quebrados) por métricas reais."""
+    return {
+        "id": 100003,
+        "definition": {
+            "title": "Orquestrador - Execucao de Tarefas",
+            "type": "group",
+            "background_color": "vivid_blue",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv_metric(
+                        "Execucoes de Agentes",
+                        "sum:robo.orquestrador.agente.execucao{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 400001,
+                },
+                {
+                    **_qv_metric(
+                        "Agentes OK (media/ciclo)",
+                        "avg:robo.orquestrador.ciclo.agentes_ok{*}",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 400002,
+                },
+                {
+                    **_qv_metric(
+                        "Erros de Agente",
+                        "sum:robo.orquestrador.agente.erro{*}.as_count()",
+                        green_gt=None,
+                        red_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 400003,
+                },
+                {
+                    **_qv_metric(
+                        "Ciclos Concluidos",
+                        "sum:robo.orquestrador.ciclo{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 400004,
+                },
+                {
+                    "id": 400005,
+                    "definition": {
+                        "title": "Execucoes vs Erros (orquestrador)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "legend_columns": ["value", "sum"],
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "style": {"palette": "datadog16"},
+                                "formulas": [
+                                    {"alias": "Execucoes", "formula": "query1"},
+                                    {"alias": "Erros", "formula": "query2"},
+                                    {"alias": "Ciclos", "formula": "query3"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "sum:robo.orquestrador.agente.execucao{*}.as_count()",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "sum:robo.orquestrador.agente.erro{*}.as_count()",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "sum:robo.orquestrador.ciclo{*}.as_count()",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
+                },
+                {
+                    "id": 400006,
+                    "definition": {
+                        "title": "Top Agentes por Execucao",
+                        "type": "toplist",
+                        "requests": [
+                            {
+                                "response_format": "scalar",
+                                "formulas": [{"formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "sum:robo.orquestrador.agente.execucao{*} "
+                                            "by {agente}.as_count()"
+                                        ),
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 2, "width": 12, "height": 1},
+    }
 
 
 def get_dashboard(dash_id: str) -> dict[str, Any]:
@@ -169,11 +207,13 @@ def get_dashboard(dash_id: str) -> dict[str, Any]:
     return r.json()
 
 
-def put_dashboard(dash_id: str, body: dict[str, Any]) -> dict[str, Any]:
-    # PUT espera campos do dashboard (nao o wrapper completo da GET)
+def put_dashboard(body: dict[str, Any]) -> None:
     payload = {
         "title": body["title"],
-        "description": body.get("description") or "",
+        "description": (
+            "Complemento ao dashboard principal. Orquestrador usa metricas "
+            "robo.orquestrador.* (nao wildcards de log). Tokens, APIs, Claude, conectividade."
+        ),
         "widgets": body["widgets"],
         "layout_type": body.get("layout_type") or "ordered",
         "template_variables": body.get("template_variables") or [],
@@ -181,83 +221,53 @@ def put_dashboard(dash_id: str, body: dict[str, Any]) -> dict[str, Any]:
         "reflow_type": body.get("reflow_type"),
         "tags": body.get("tags") or [],
     }
-    # remove Nones
     payload = {k: v for k, v in payload.items() if v is not None}
     r = requests.put(
-        _api(f"/api/v1/dashboard/{dash_id}"),
+        _api(f"/api/v1/dashboard/{DASH_ID}"),
         headers=_headers(),
         data=json.dumps(payload),
         timeout=60,
     )
     if r.status_code >= 300:
-        raise RuntimeError(f"PUT {dash_id} HTTP {r.status_code}: {(r.text or '')[:500]}")
-    return r.json()
-
-
-def corrigir(dash_id: str, *, dry_run: bool) -> dict[str, Any]:
-    raw = get_dashboard(dash_id)
-    stats = {"queries": 0}
-    fixed = _walk_fix(raw, stats)
-    # Atualiza descricao do board de saude
-    if dash_id == "3iy-tka-awu":
-        fixed["description"] = (
-            "Complemento ao dashboard principal. Monitora tokens/auth, APIs, "
-            "orquestrador (logs + metricas robo.orquestrador.*), conectividade e Claude."
-        )
-    if dry_run:
-        return {
-            "id": dash_id,
-            "title": fixed.get("title"),
-            "queries_corrigidas": stats["queries"],
-            "dry_run": True,
-            "url": f"https://{DD_SITE.replace('datadoghq', 'datadoghq')}/dashboard/{dash_id}".replace(
-                "api.", "app."
-            )
-            if False
-            else f"https://us5.datadoghq.com/dashboard/{dash_id}",
-        }
-    put_dashboard(dash_id, fixed)
-    return {
-        "id": dash_id,
-        "title": fixed.get("title"),
-        "queries_corrigidas": stats["queries"],
-        "dry_run": False,
-        "url": f"https://us5.datadoghq.com/dashboard/{dash_id}",
-    }
+        raise RuntimeError(f"PUT HTTP {r.status_code}: {(r.text or '')[:600]}")
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true")
-    args = ap.parse_args()
-
     if not DD_API_KEY:
         print("FALHA: DD_API_KEY ausente")
         return 1
     if not DD_APPLICATION_KEY:
         print(
-            "FALHA: DD_APPLICATION_KEY ausente no .env.\n"
-            "Copie a Application Key (GitHub Secret DD_APPLICATION_KEY) para o .env local:\n"
+            "FALHA: DD_APPLICATION_KEY ausente no .env\n"
+            "Adicione a Application Key (mesmo secret do GitHub) e rode de novo:\n"
             "  DD_APPLICATION_KEY=...\n"
-            "Ela precisa de permissao de leitura/escrita de dashboards."
+            "Sem ela a API nao deixa atualizar o dashboard."
         )
         return 1
 
-    print(f"Site={DD_SITE} dry_run={args.dry_run}")
-    resultados = []
-    for dash_id in DASHBOARDS:
-        try:
-            out = corrigir(dash_id, dry_run=args.dry_run)
-            resultados.append(out)
-            print(
-                f"OK {out['id']} ({out['title']}): "
-                f"{out['queries_corrigidas']} queries "
-                f"{'[dry-run]' if out['dry_run'] else 'atualizadas'} → {out['url']}"
-            )
-        except Exception as exc:
-            print(f"ERRO {dash_id}: {exc}")
-            return 1
-    print(json.dumps(resultados, ensure_ascii=False, indent=2))
+    raw = get_dashboard(DASH_ID)
+    widgets = list(raw.get("widgets") or [])
+    novo = []
+    trocou = False
+    for w in widgets:
+        if w.get("id") == 100003 or (
+            isinstance(w.get("definition"), dict)
+            and w["definition"].get("title") == "Orquestrador - Execucao de Tarefas"
+        ):
+            novo.append(_grupo_orquestrador_metricas())
+            trocou = True
+        else:
+            novo.append(w)
+    if not trocou:
+        print("Grupo Orquestrador nao encontrado — abortando")
+        return 1
+    raw["widgets"] = novo
+    put_dashboard(raw)
+    print(f"OK dashboard atualizado: https://us5.datadoghq.com/dashboard/{DASH_ID}")
+    print(
+        "Widgets agora usam: robo.orquestrador.agente.execucao / .erro / "
+        "ciclo / ciclo.agentes_ok"
+    )
     return 0
 
 
