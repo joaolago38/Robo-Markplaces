@@ -405,10 +405,23 @@ class TestHelpersPanorama(unittest.TestCase):
     @patch.object(pan, "perguntar", return_value="Resumo ok")
     @patch.object(pan.cfg, "ANTHROPIC_API_KEY", "sk-test")
     def test_sintetizar_claude_prompt_menciona_concorrentes(self, mock_perguntar, *_):
-        pan._sintetizar_claude("{}", "fallback")
+        ctx = (
+            '{"mercado_livre":{"monitor":{"concorrencia":[{"titulo":"Kit Impala"}]}},'
+            '"magalu":{"configurado":false},"bling":{},"alertas":["estoque baixo"],'
+            '"decisoes_prioritarias":["revisar preco"]}'
+        )
+        pan._sintetizar_claude(ctx, "fallback")
         prompt = mock_perguntar.call_args.args[0]
         self.assertIn("concorrencia", prompt.lower())
         self.assertIn("não invente", prompt.lower())
+        self.assertEqual(mock_perguntar.call_args.kwargs.get("origem"), "panorama.agente_panorama")
+
+    @patch.object(pan, "perguntar")
+    @patch.object(pan.cfg, "ANTHROPIC_API_KEY", "sk-test")
+    def test_sintetizar_claude_contexto_curto_usa_fallback(self, mock_perguntar, *_):
+        out = pan._sintetizar_claude("{}", "fallback_local")
+        self.assertEqual(out, "fallback_local")
+        mock_perguntar.assert_not_called()
 
     def test_parametros_financeiros_no_payload(self):
         params = pan._montar_parametros_financeiros()

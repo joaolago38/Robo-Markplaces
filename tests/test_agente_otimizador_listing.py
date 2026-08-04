@@ -17,6 +17,12 @@ class TestAnalisarItem(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertIn("inválido", out["erro"].lower())
 
+    def test_item_id_placeholder_mlb_preencher(self):
+        out = opt.analisar_item("MLB_PREENCHER")
+        self.assertFalse(out["ok"])
+        self.assertTrue(out.get("pulado"))
+        self.assertEqual(out.get("motivo"), "sem_mlb_publicado")
+
     @patch.object(opt.ml_client, "buscar_metricas_item", return_value={})
     def test_item_nao_encontrado(self, *_):
         out = opt.analisar_item("MLB999")

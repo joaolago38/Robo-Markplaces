@@ -165,8 +165,15 @@ def analisar_item(item_id: str) -> dict:
     de título, e retorna um dict estruturado. Nunca lança exceção.
     """
     item_id = str(item_id or "").strip()
-    if not item_id:
-        return {"ok": False, "erro": "item_id inválido"}
+    from core.claude_client import mlb_invalido, perguntar_estruturado
+
+    if mlb_invalido(item_id):
+        return {
+            "ok": False,
+            "erro": "item_id inválido ou placeholder (MLB_PREENCHER)",
+            "pulado": True,
+            "motivo": "sem_mlb_publicado",
+        }
 
     try:
         metricas = ml_client.buscar_metricas_item(item_id) or {}
@@ -177,7 +184,6 @@ def analisar_item(item_id: str) -> dict:
         concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
         contexto_txt = _montar_contexto(metricas, concorrentes, descricao_atual)
 
-        from core.claude_client import perguntar_estruturado
         from core.claude_contexto_ml import (
             enriquecer_contexto_claude,
             max_tokens_dosados,
@@ -194,6 +200,7 @@ def analisar_item(item_id: str) -> dict:
             proposito="otimizar_listing",
         )
         contexto = json.dumps(ctx, ensure_ascii=False, indent=2)
+        _origem = "ml.agente_otimizador_listing"
 
         sugestoes_estruturadas = perguntar_estruturado(
             (
@@ -206,6 +213,8 @@ def analisar_item(item_id: str) -> dict:
             max_tokens=max_tokens_dosados(600, dosagem),
             contexto=contexto,
             system=system_com_decisao(SYSTEM_OTIMIZADOR, dosagem),
+            origem=_origem,
+            exigir_contexto=True,
         )
         lista_sugestoes = (sugestoes_estruturadas or {}).get("sugestoes") or []
         sugestoes_titulo = "\n".join(
@@ -221,6 +230,8 @@ def analisar_item(item_id: str) -> dict:
             max_tokens=max_tokens_dosados(900, dosagem),
             contexto=contexto,
             system=system_com_decisao(SYSTEM_DESCRICAO, dosagem),
+            origem=_origem,
+            exigir_contexto=True,
         )
 
         resultado: dict[str, Any] = {

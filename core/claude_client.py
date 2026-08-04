@@ -77,6 +77,30 @@ Use sempre dados reais do contexto fornecido.
 Nunca invente informações. Nunca prometa o que não pode cumprir.
 """
 
+# Contexto JSON/texto curto demais → não gasta Claude (cai assertividade com falha/vazio).
+CONTEXTO_MINIMO_CHARS = 80
+
+
+def contexto_suficiente(contexto: str | None, *, minimo: int = CONTEXTO_MINIMO_CHARS) -> bool:
+    return len((contexto or "").strip()) >= int(minimo)
+
+
+def _extrair_tokens_usage(uso: dict | None) -> tuple[int, int]:
+    """Soma input (incl. cache) + output do usage Anthropic."""
+    if not isinstance(uso, dict):
+        return 0, 0
+    tin = int(uso.get("input_tokens") or 0)
+    tin += int(uso.get("cache_creation_input_tokens") or 0)
+    tin += int(uso.get("cache_read_input_tokens") or 0)
+    tout = int(uso.get("output_tokens") or 0)
+    return tin, tout
+
+
+def mlb_invalido(item_id: str | None) -> bool:
+    """True se item_id vazio, placeholder MLB_PREENCHER ou não começa com MLB."""
+    u = str(item_id or "").strip().upper().replace("-", "")
+    return (not u) or u in {"MLB_PREENCHER", "MLBPREENCHER"} or not u.startswith("MLB")
+
 
 def perguntar(
     prompt: str,
@@ -87,9 +111,14 @@ def perguntar(
     modelo: str | None = None,
     *,
     forcar_modelo: bool = False,
+    origem: str | None = None,
+    exigir_contexto: bool = False,
 ) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
+    if exigir_contexto and not contexto_suficiente(contexto):
+        logger.info("Claude pulado: contexto insuficiente (origem=%s)", origem or "?")
+        return "⚠️ Claude pulado: contexto insuficiente."
     modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso
@@ -103,6 +132,7 @@ def perguntar(
                 output_tokens=0,
                 tipo="perguntar",
                 resultado="bloqueado",
+                origem=origem,
             )
             return f"⚠️ Claude pausado: {motivo_orc}"
     except Exception as exc:
@@ -150,8 +180,7 @@ def perguntar(
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
-        tin = int(uso.get("input_tokens") or 0) if uso else 0
-        tout = int(uso.get("output_tokens") or 0) if uso else 0
+        tin, tout = _extrair_tokens_usage(uso)
         if uso:
             incrementar("ia.tokens_entrada", tin, tags=_tags)
             incrementar("ia.tokens_saida", tout, tags=_tags)
@@ -167,15 +196,14 @@ def perguntar(
             from core.claude_orcamento import registrar_uso as _reg
 
             resultado = _cls(texto)
-            # Resposta sem usage (ex.: mock/teste) não conta como ok real no orçamento
-            if resultado == "ok" and tin <= 0 and tout <= 0:
-                resultado = "vazio"
+            # Texto útil conta como ok mesmo se usage vier sem tokens (API/cache).
             _reg(
                 modelo=modelo_efetivo,
                 input_tokens=tin,
                 output_tokens=tout,
                 tipo="perguntar",
                 resultado=resultado,
+                origem=origem,
             )
         except Exception:
             pass
@@ -189,7 +217,14 @@ def perguntar(
         try:
             from core.claude_orcamento import registrar_uso as _reg
 
-            _reg(modelo=modelo_efetivo, input_tokens=0, output_tokens=0, tipo="perguntar", resultado="falha")
+            _reg(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo="perguntar",
+                resultado="falha",
+                origem=origem,
+            )
         except Exception:
             pass
         return "⚠️ Erro na IA: resposta inválida."
@@ -199,7 +234,14 @@ def perguntar(
         try:
             from core.claude_orcamento import registrar_uso as _reg
 
-            _reg(modelo=modelo_efetivo, input_tokens=0, output_tokens=0, tipo="perguntar", resultado="falha")
+            _reg(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo="perguntar",
+                resultado="falha",
+                origem=origem,
+            )
         except Exception:
             pass
         return "⚠️ Erro na IA: falha de comunicação com o provedor."
@@ -215,6 +257,8 @@ def perguntar_estruturado(
     system: str | None = None,
     modelo: str | None = None,
     forcar_modelo: bool = False,
+    origem: str | None = None,
+    exigir_contexto: bool = False,
 ) -> dict | None:
     """
     Como `perguntar`, mas força a resposta a seguir `schema` (JSON Schema
@@ -225,6 +269,9 @@ def perguntar_estruturado(
     """
     if not ANTHROPIC_API_KEY:
         logger.warning("perguntar_estruturado sem ANTHROPIC_API_KEY.")
+        return None
+    if exigir_contexto and not contexto_suficiente(contexto):
+        logger.info("Claude estruturado pulado: contexto insuficiente (origem=%s)", origem or "?")
         return None
     modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
     try:
@@ -239,6 +286,7 @@ def perguntar_estruturado(
                 output_tokens=0,
                 tipo=f"estruturado:{tool_name}",
                 resultado="bloqueado",
+                origem=origem,
             )
             return None
     except Exception as exc:
@@ -278,8 +326,7 @@ def perguntar_estruturado(
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
-        tin = int(uso.get("input_tokens") or 0) if uso else 0
-        tout = int(uso.get("output_tokens") or 0) if uso else 0
+        tin, tout = _extrair_tokens_usage(uso)
         if uso:
             incrementar("ia.tokens_entrada", tin, tags=_tags)
             incrementar("ia.tokens_saida", tout, tags=_tags)
@@ -288,13 +335,8 @@ def perguntar_estruturado(
         for bloco in data.get("content", []):
             if bloco.get("type") == "tool_use" and bloco.get("name") == tool_name:
                 payload_out = bloco.get("input") or {}
-                # Sem tokens de usage, não marcar ok (evita assertividade falsa de mocks)
-                if payload_out and (tin > 0 or tout > 0):
-                    resultado_final = "ok"
-                elif payload_out:
-                    resultado_final = "vazio"
-                else:
-                    resultado_final = "vazio"
+                # Payload estruturado útil = ok (não castigar por usage sem tokens).
+                resultado_final = "ok" if payload_out else "vazio"
                 break
         if payload_out is None:
             incrementar("ia.resposta_vazia", tags=_tags)
@@ -309,6 +351,7 @@ def perguntar_estruturado(
                 output_tokens=tout,
                 tipo=f"estruturado:{tool_name}",
                 resultado=resultado_final,
+                origem=origem,
             )
         except Exception:
             pass
@@ -325,6 +368,7 @@ def perguntar_estruturado(
                 output_tokens=0,
                 tipo=f"estruturado:{tool_name}",
                 resultado="falha",
+                origem=origem,
             )
         except Exception:
             pass

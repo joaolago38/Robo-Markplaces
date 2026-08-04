@@ -178,6 +178,49 @@ class TestClaudePerguntar(unittest.TestCase):
         self.assertIsNone(out)
         self.assertTrue(any("indisponível" in line for line in logs.output))
 
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_texto_util_sem_usage_tokens_conta_ok(self, mock_request, *_patches):
+        from core import claude_orcamento as orc
+
+        mock_request.return_value = _mock_resp({"content": [{"text": "análise útil"}]})
+        out = claude_client.perguntar("p", origem="teste.assertividade")
+        self.assertEqual(out, "análise útil")
+        r = orc.resumo()
+        self.assertEqual(r["resultados"].get("ok"), 1)
+        self.assertEqual(r["resultados"].get("vazio"), 0)
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_estruturado_sem_tokens_com_payload_conta_ok(self, mock_request, *_patches):
+        from core import claude_orcamento as orc
+
+        esperado = {"sugestoes": [{"titulo": "A", "motivo": "B"}]}
+        mock_request.return_value = _mock_resp({
+            "content": [{"type": "tool_use", "name": "t", "input": esperado}],
+        })
+        out = claude_client.perguntar_estruturado(
+            "p", {"type": "object"}, "t", origem="teste.estruturado"
+        )
+        self.assertEqual(out, esperado)
+        r = orc.resumo()
+        self.assertEqual(r["resultados"].get("ok"), 1)
+        self.assertEqual(r["resultados"].get("vazio"), 0)
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_exigir_contexto_pula_api(self, mock_request, *_patches):
+        out = claude_client.perguntar(
+            "p", contexto="curto", exigir_contexto=True, origem="teste.skip"
+        )
+        self.assertIn("pulado", out.lower())
+        mock_request.assert_not_called()
+
+    def test_mlb_invalido_placeholder(self):
+        self.assertTrue(claude_client.mlb_invalido("MLB_PREENCHER"))
+        self.assertTrue(claude_client.mlb_invalido(""))
+        self.assertFalse(claude_client.mlb_invalido("MLB1234567890"))
+
 
 class TestClaudeResponderGerar(unittest.TestCase):
     @patch.object(claude_client, "perguntar", return_value="ok")

@@ -38,15 +38,20 @@ def sintetizar_claude(
     modelo: str | None = None,
     enriquecer_ml: bool | None = None,
     consolidado: dict[str, Any] | None = None,
+    origem: str | None = None,
+    exigir_contexto: bool = True,
 ) -> str:
     """
     Chama Claude com guardrail obrigatório. Nunca propaga exceção — retorna fallback.
     Se o prompt/contexto fala de Mercado Livre, injeta estado_ml e dosa profundidade.
+    Sem contexto útil (padrão), não chama a API — preserva assertividade.
     """
     if not (cfg.ANTHROPIC_API_KEY or "").strip():
         return fallback
 
     try:
+        from core.claude_client import contexto_suficiente
+
         ctx_obj: dict[str, Any] | str = contexto
         dosagem = None
         usar_ml = enriquecer_ml
@@ -78,8 +83,18 @@ def sintetizar_claude(
                 logger.warning("enriquecer_ml falhou: %s", exc)
 
         ctx_str = _contexto_json(ctx_obj)
+        if exigir_contexto and not contexto_suficiente(ctx_str):
+            logger.info("sintetizar_claude: contexto insuficiente — fallback (origem=%s)", origem or "?")
+            return fallback
         prompt_completo = f"{GUARDRAIL}\n\n{prompt}\n\n{GUARDRAIL}"
-        resposta = perguntar(prompt_completo, max_tokens=max_tokens, contexto=ctx_str, modelo=modelo)
+        resposta = perguntar(
+            prompt_completo,
+            max_tokens=max_tokens,
+            contexto=ctx_str,
+            modelo=modelo,
+            origem=origem or "resumo_ia",
+            exigir_contexto=exigir_contexto,
+        )
         if not resposta or resposta.startswith("⚠️") or "API" in resposta:
             return fallback
         return resposta.strip()
