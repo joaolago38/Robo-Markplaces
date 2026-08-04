@@ -1,4 +1,4 @@
-name: Orquestrador 30min
+﻿name: Orquestrador 30min
 
 # Executa todos os agentes de monitoramento a cada 30 minutos e envia
 # resumo consolidado ao Telegram gestor + métricas ao Datadog.
@@ -15,8 +15,8 @@ concurrency:
 env:
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
 
@@ -94,6 +94,9 @@ jobs:
           key: ml-concorrentes-history-${{ github.run_id }}
           restore-keys: |
             ml-concorrentes-history-
+      - name: Diagnostico Datadog (intake)
+        continue-on-error: true
+        run: python scripts/diagnostico_datadog.py
       - name: Preflight producao (Telegram + ML)
         run: python scripts/preflight_producao.py
         env:

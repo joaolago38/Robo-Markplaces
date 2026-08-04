@@ -1,4 +1,4 @@
-# GitHub Actions — Orquestrador do Robo-Markplaces
+﻿# GitHub Actions — Orquestrador do Robo-Markplaces
 #
 # SERIALIZAÇÃO DE RENOVAÇÃO DE TOKENS:
 # Jobs como chat_marketplaces renovam tokens via get_token_* durante a execução.
@@ -61,8 +61,8 @@ jobs:
       github.event.inputs.rotina == 'relatorio'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
       DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
       DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
@@ -98,8 +98,8 @@ jobs:
       github.event.inputs.rotina == 'chat'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
       DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
       DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
@@ -184,8 +184,8 @@ jobs:
       github.event.inputs.rotina == 'vendas_whatsapp'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
       DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
       DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
@@ -246,8 +246,8 @@ jobs:
       github.event.inputs.rotina == 'algoritmo'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
       DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
       DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
