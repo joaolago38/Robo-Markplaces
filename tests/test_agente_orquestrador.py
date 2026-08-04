@@ -15,7 +15,7 @@ from agentes.orquestrador.registro_agentes import AgenteRegistrado, listar_agent
 class TestRegistroAgentes(unittest.TestCase):
     def test_lista_padrao_tem_agentes(self):
         agentes = listar_agentes()
-        self.assertGreaterEqual(len(agentes), 15)
+        self.assertGreaterEqual(len(agentes), 10)
         ids = {a.id for a in agentes}
         self.assertIn("conectividade", ids)
         self.assertIn("chat_ml", ids)
@@ -48,7 +48,19 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("sincronizar_estoque", ids)
         self.assertNotIn("repricing", ids)
         self.assertNotIn("repricing_impala", ids)
-        self.assertIn("operacao_24h", ids)
+        self.assertNotIn("operacao_24h", ids)
+        self.assertNotIn("sumare_leiloes", ids)
+        self.assertNotIn("lojas_veiculos", ids)
+        self.assertNotIn("carros_batidos", ids)
+        self.assertNotIn("chat_shopee", ids)
+        self.assertNotIn("chat_magalu", ids)
+        self.assertNotIn("chat_amazon", ids)
+        self.assertNotIn("auto_respostas", ids)
+        self.assertNotIn("comparativo_anita_impala", ids)
+        self.assertNotIn("monitor_busca_kit_esmaltes", ids)
+        self.assertNotIn("relatorio_manha_ml", ids)
+        self.assertIn("chat_ml", ids)
+        self.assertIn("monitor_mercado_esmaltes", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", set())
     def test_registro_completo_inclui_rotinas_excluidas(self):
@@ -80,6 +92,8 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("repricing", ids)
         self.assertNotIn("repricing_impala", ids)
         self.assertIn("operacao_24h", ids)
+        self.assertIn("sumare_leiloes", ids)
+        self.assertIn("chat_shopee", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", {"leilao"})
     def test_excluir_por_env(self):

@@ -1020,19 +1020,21 @@ FIPE_PAUSA_ENTRE_CHAMADAS_SEG = float(os.getenv("FIPE_PAUSA_ENTRE_CHAMADAS_SEG",
 
 # Orquestrador 30 min
 ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))
-ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "1.5"))
+ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "0.4"))
 ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
-        # Rotinas com workflow próprio — não repetir no ciclo 30min
+        # Rotinas com workflow próprio / secundárias — não repetir no ciclo 30min
         "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
         "necessidade_manicures,"
-        "relatorio_estrategia_ml,ads_gatilho,resumo_conta_ml,"
-        "montar_kits_impala,esmaltes_operacao,"
-        "leilao,alibaba_sourcing,comparar_portos_alibaba,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,licitacoes,"
-        "sincronizar_estoque,repricing,repricing_impala",
+        "relatorio_estrategia_ml,ads_gatilho,resumo_conta_ml,relatorio_manha_ml,"
+        "montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,"
+        "leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,"
+        "alibaba_sourcing,comparar_portos_alibaba,"
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,"
+        "sincronizar_estoque,repricing,repricing_impala,operacao_24h,"
+        "chat_shopee,chat_magalu,chat_amazon,auto_respostas",
     ).split(",")
     if x.strip()
 }
