@@ -376,7 +376,9 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                 fn = _updater(canal)
                 if fn and ref:
                     resultado_aplicacao = fn(ref, novo_preco)
-                    if not resultado_aplicacao:
+                    if resultado_aplicacao:
+                        incrementar("repricing.aplicado", tags=[f"canal:{canal}"])
+                    else:
                         falhou_aplicacao = True
                         incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}"])
                         logger.error(
@@ -467,4 +469,14 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
         "ajustes": ajustes,
     }
     logger.info("Repricing marketplaces: %s", payload)
+    try:
+        if total_ajustes:
+            incrementar(
+                "repricing.ajustes_candidatos",
+                float(total_ajustes),
+                tags=[f"dry_run:{str(bool(dry_run)).lower()}"],
+            )
+        incrementar("repricing.rodadas", tags=[f"dry_run:{str(bool(dry_run)).lower()}"])
+    except Exception:
+        pass
     return payload

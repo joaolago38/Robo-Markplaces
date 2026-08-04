@@ -7,7 +7,6 @@
     "amazon_client",
     "bling",
     "claude",
-    "notificador",
     "buffer_erros_datadog",
     "consulta_erros_datadog",
     "vigia_saude_datadog"
@@ -31,14 +30,17 @@
     "agente_repricing_marketplaces",
     "sincronizar_estoque_marketplaces",
     "token_manager",
-    "painel_item"
+    "painel_item",
+    "agente_faturamento",
+    "notificador"
   ],
   "loggers_multi_ml": [
     "vendas_notificador",
     "conectividade_marketplaces",
     "agente_repricing_marketplaces",
     "sincronizar_estoque_marketplaces",
-    "token_manager"
+    "token_manager",
+    "notificador"
   ],
   "mensagens_ml_obrigatorias": [
     "mercadolivre",
@@ -50,7 +52,10 @@
     "ML probe",
     "ML buscar",
     "ML atualizar",
-    "canal=mercadolivre"
+    "canal=mercadolivre",
+    "Telegram erro",
+    "Telegram sendPhoto erro",
+    "alerta NÃO entregue"
   ],
   "mensagens_ignorar": [
     "Erro inesperado ao testar conectividade mercadolivre: boom",
@@ -64,5 +69,5 @@
     "Telegram: envio suprimido",
     "Telegram answerCallbackQuery"
   ],
-  "query_datadog": "service:robo-markplaces status:error (marketplace:mercadolivre OR marketplace:mercadolivre_ads OR marketplace:mercadolivre_e_outros OR @logger.name:token_manager)"
+  "query_datadog": "service:robo-markplaces status:error (marketplace:mercadolivre OR marketplace:mercadolivre_ads OR marketplace:mercadolivre_e_outros OR @logger.name:token_manager OR @logger.name:notificador OR @logger.name:agente_faturamento OR logger:notificador OR logger:agente_faturamento)"
 }

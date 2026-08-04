@@ -15,6 +15,7 @@ from core.config import (
     NFE_ORIGEM_PADRAO,
     NFE_SERIE_PADRAO,
 )
+from core.datadog_metrics import incrementar
 from core.fiscal_mapper import resolver_ncm_item
 from core.notificador import alertar_critico
 from integracoes.bling.bling_client import (
@@ -25,6 +26,13 @@ from integracoes.bling.bling_client import (
 )
 
 logger = logging.getLogger("agente_faturamento")
+
+
+def _metric_nfe(nome: str) -> None:
+    try:
+        incrementar(nome)
+    except Exception:
+        pass
 
 
 def _to_float(v, default=0.0) -> float:
@@ -116,14 +124,17 @@ def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
     cliente = pedido.get("cliente") or {}
 
     if not pedido_id:
+        _metric_nfe("nfe.erro")
         return {"ok": False, "erro": "pedido_id obrigatório"}
     if not itens:
+        _metric_nfe("nfe.erro")
         return {"ok": False, "erro": "itens obrigatórios"}
 
     itens_nfe, erros = _montar_itens_nfe(itens)
     if erros:
         msg = f"NF-e bloqueada para pedido {pedido_id}: " + "; ".join(erros)
         alertar_critico(msg)
+        _metric_nfe("nfe.erro")
         return {"ok": False, "erro": msg, "erros": erros}
 
     payload_nfe = {
@@ -137,6 +148,7 @@ def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
     }
 
     if dry_run:
+        _metric_nfe("nfe.dry_run")
         return {"ok": True, "dry_run": True, "payload_nfe": payload_nfe, "itens_total": len(itens_nfe)}
 
     try:
@@ -144,10 +156,12 @@ def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
     except NfeVerificacaoIndisponivel as exc:
         msg = f"NF-e NÃO emitida para pedido {pedido_id}: checagem de duplicidade falhou ({exc})"
         alertar_critico(msg)
+        _metric_nfe("nfe.erro")
         return {"ok": False, "erro": msg, "pedido_id": pedido_id}
 
     if existente:
         logger.info("NF-e já existente para pedido %s — pulando emissão duplicada.", pedido_id)
+        _metric_nfe("nfe.ja_existia")
         return {
             "ok": True,
             "pedido_id": pedido_id,
@@ -158,9 +172,11 @@ def emitir_nfe_pedido(pedido: dict, dry_run: bool = True) -> dict:
     resposta = criar_nfe(payload_nfe)
     if not resposta.get("ok"):
         alertar_critico(f"Erro ao emitir NF-e no Bling pedido {pedido_id}: {resposta.get('erro')}")
+        _metric_nfe("nfe.erro")
         return {"ok": False, "erro": resposta.get("erro"), "payload_nfe": payload_nfe}
 
     logger.info("NF-e emitida com sucesso pedido_id=%s", pedido_id)
+    _metric_nfe("nfe.emitida")
     return {
         "ok": True,
         "pedido_id": pedido_id,
