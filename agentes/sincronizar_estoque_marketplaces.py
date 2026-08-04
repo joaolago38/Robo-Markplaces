@@ -10,8 +10,8 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
-from core.config import SPEC
 from core.atomic_io import escrever_json_atomico
+from core.config import SPEC
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
 from integracoes.bling.bling_client import listar_produtos_por_sku
