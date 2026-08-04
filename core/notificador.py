@@ -25,6 +25,19 @@ logger = logging.getLogger("notificador")
 _COOLDOWN_PATH = ROOT / "logs" / "alertas_cooldown.json"
 
 
+def _metric_telegram(ok: bool, *, canal: str = "texto", motivo: str | None = None) -> None:
+    """Conta entrega Telegram sem derrubar o fluxo se Datadog falhar."""
+    try:
+        from core.datadog_metrics import incrementar
+
+        tags = [f"canal:{canal}"]
+        if motivo:
+            tags.append(f"motivo:{motivo}")
+        incrementar("telegram.envio_ok" if ok else "telegram.envio_erro", tags=tags)
+    except Exception:
+        pass
+
+
 def gestor_telegram_configurado(chat_id: str | None = None) -> bool:
     """True se token e chat do gestor estão definidos (chat opcional override)."""
     cid = (chat_id or TELEGRAM_GESTOR_CHAT_ID or "").strip()
@@ -129,10 +142,12 @@ def _enviar(chat_id: str, msg: str) -> bool:
         logger.warning(
             "Telegram não configurado — alerta NÃO entregue (apenas impresso no stdout)"
         )
+        _metric_telegram(False, motivo="nao_configurado")
         return False
     if not pode_enviar(token):
         if not verificar_token(token=token, forcar=True):
             logger.info("Telegram: envio suprimido (token inválido ou circuit breaker ativo)")
+            _metric_telegram(False, motivo="circuit_breaker")
             return False
     try:
         from core.telegram_explicacao import sanitizar_markdown_legado
@@ -160,12 +175,14 @@ def _enviar(chat_id: str, msg: str) -> bool:
                 timeout=10,
             )
         r.raise_for_status()
+        _metric_telegram(True)
         return True
     except Exception as e:
         err = mascarar_url_telegram(str(e))
         registrar_falha_envio(err)
         if "404" not in err:
             logger.error("Telegram erro: %s", err)
+        _metric_telegram(False, motivo="http")
         return False
 
 
@@ -175,16 +192,19 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
     cid = (chat_id or "").strip()
     if not token or not cid:
         logger.warning("Telegram não configurado — foto NÃO entregue")
+        _metric_telegram(False, canal="foto", motivo="nao_configurado")
         return False
     if not pode_enviar(token):
         if not verificar_token(token=token, forcar=True):
             logger.info("Telegram: envio de foto suprimido (token inválido/circuit breaker)")
+            _metric_telegram(False, canal="foto", motivo="circuit_breaker")
             return False
     try:
         import os
 
         if not foto_path or not os.path.exists(str(foto_path)):
             logger.warning("Telegram sendPhoto: arquivo inexistente %s", foto_path)
+            _metric_telegram(False, canal="foto", motivo="arquivo")
             return False
         from core.telegram_explicacao import sanitizar_markdown_legado
 
@@ -219,12 +239,14 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
                     timeout=30,
                 )
         r.raise_for_status()
+        _metric_telegram(True, canal="foto")
         return True
     except Exception as e:
         err = mascarar_url_telegram(str(e))
         registrar_falha_envio(err)
         if "404" not in err:
             logger.error("Telegram sendPhoto erro: %s", err)
+        _metric_telegram(False, canal="foto", motivo="http")
         return False
 
 

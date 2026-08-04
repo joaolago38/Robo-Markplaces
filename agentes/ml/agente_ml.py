@@ -11,6 +11,7 @@ from core.chat_claim import tentar_claim
 from core.claude_client import responder_chat
 from core.config import MARGEM_MINIMA
 from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
+from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_critico, alertar_gestor
 from core.produto_lookup import buscar_produto_por_ref
 from integracoes.bling.bling_client import buscar_produto
@@ -24,6 +25,7 @@ from integracoes.ml.ml_client import (
 )
 
 logger = logging.getLogger("agente_ml")
+_TAG_ML = ["marketplace:mercadolivre"]
 
 
 def pergunta_valida(texto: str) -> bool:
@@ -108,11 +110,14 @@ def ciclo_chat():
 
     perguntas = buscar_perguntas()
     ok = 0
+    falhas = 0
     ctx_f = carregar_contexto_fechamento_ml()
     sinal_ads = ctx_f.get("sinal_ads")
     oferta = ctx_f.get("oferta")
     link_oferta = str(ctx_f.get("link_ml") or "")
     link_ok = bool(ctx_f.get("link_valido"))
+
+    gauge("chat.fila", float(len(perguntas or [])), tags=_TAG_ML)
 
     # Em prioridade, processa a fila completa sem cortar cedo
     for p in perguntas:
@@ -170,6 +175,8 @@ def ciclo_chat():
 
         if responder(p["id"], resposta):
             ok += 1
+        else:
+            falhas += 1
 
         logger.info(
             "%s -> %s | contexto_ads=%s oferta=%s",
@@ -181,6 +188,11 @@ def ciclo_chat():
 
         time.sleep(1)
 
+    if ok:
+        incrementar("chat.respondidas", float(ok), tags=_TAG_ML)
+    if falhas:
+        incrementar("chat.falha", float(falhas), tags=_TAG_ML)
+    incrementar("chat.rodadas", tags=_TAG_ML)
     return ok
 
 

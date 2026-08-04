@@ -32,7 +32,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-08-02T20:18:20.268155+00:00",
+    "timestamp": "2026-08-04T21:28:48.089597+00:00",
     "resultados": [
       {
         "item_id": "MLB7277440640",
@@ -83,51 +83,51 @@
         "listing_type_id": "gold_pro"
       },
       {
-        "item_id": "MLB7296136942",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 49.99,
+        "item_id": "MLB7218168058",
+        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
+        "preco": 59.9,
         "quantidade_vendida": 0,
-        "seller_id": "3504979925",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7296136942",
+        "seller_id": "3396614641",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7218168058",
         "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
+        "catalog_product_id": "MLB67376199",
+        "catalog_date_created": "2026-03-29T15:51:53Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB6737772730",
+        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
+        "preco": 67.0,
+        "quantidade_vendida": 0,
+        "seller_id": "3238461592",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6737772730",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB67376199",
+        "catalog_date_created": "2026-03-29T15:51:53Z",
         "listing_type_id": "gold_special"
       },
       {
-        "item_id": "MLB7070371760",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 54.9,
+        "item_id": "MLB4941585663",
+        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
+        "preco": 75.04,
         "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7070371760",
+        "seller_id": "2137618943",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4941585663",
         "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_special"
+        "catalog_product_id": "MLB67376199",
+        "catalog_date_created": "2026-03-29T15:51:53Z",
+        "listing_type_id": "gold_pro"
       },
       {
-        "item_id": "MLB4979931813",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 56.43,
+        "item_id": "MLB4780280085",
+        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
+        "preco": 75.89,
         "quantidade_vendida": 0,
-        "seller_id": "3143409372",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4979931813",
+        "seller_id": "1293316098",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4780280085",
         "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4832948581",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 58.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4832948581",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
+        "catalog_product_id": "MLB67376199",
+        "catalog_date_created": "2026-03-29T15:51:53Z",
         "listing_type_id": "gold_pro"
       }
     ]

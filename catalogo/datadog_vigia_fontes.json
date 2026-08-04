@@ -73,5 +73,15 @@
     "max_horas": 26,
     "critico": false,
     "ignorar_ausente": true
+  },
+  {
+    "id": "estoque",
+    "ativo": true,
+    "nome": "Sincronizar estoque marketplaces",
+    "path": "logs/estoque_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 3,
+    "critico": true,
+    "ignorar_ausente": true
   }
 ]

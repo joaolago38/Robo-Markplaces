@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from core.config import SPEC
+from core.atomic_io import escrever_json_atomico
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
 from integracoes.bling.bling_client import listar_produtos_por_sku
@@ -27,6 +28,7 @@ _MARKETPLACES_ATIVOS: set[str] = {
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOGO_PATH = ROOT / "catalogo" / "produtos.json"
+HEARTBEAT_PATH = ROOT / "logs" / "estoque_ultima.json"
 
 _CANAIS_ESTOQUE: dict[str, Callable[..., bool]] = {
     "mercadolivre": atualizar_estoque_ml,
@@ -169,6 +171,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
                 if aplicado:
                     dados["estoque"] = estoque_bling
                     catalogo_alterado = True
+                    incrementar("estoque.aplicado", tags=[f"canal:{canal}"])
                     if estoque_bling == 0:
                         zeros_ativos.append(f"{sku}/{canal}")
                         if canal == "mercadolivre" and _item_id_valido(ref):
@@ -241,6 +244,23 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
         "produtos_sem_estoque_bling": sem_estoque_bling,
     }
     logger.info("Sincronizar estoque: %s", payload)
+    try:
+        from datetime import datetime, timezone
+
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": total_falhas_aplicacao == 0,
+                "dry_run": dry_run,
+                "total_ajustes": total_ajustes,
+                "total_aplicados_sucesso": total_aplicados_sucesso,
+                "total_falhas_aplicacao": total_falhas_aplicacao,
+            },
+        )
+        incrementar("estoque.rodadas", tags=[f"dry_run:{str(bool(dry_run)).lower()}"])
+    except Exception as exc:
+        logger.warning("Estoque: falha ao gravar heartbeat: %s", exc)
     return payload
 
 
