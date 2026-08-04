@@ -20,7 +20,7 @@ from typing import Any
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import PROMOCOES_MANICURES_COOLDOWN_SEG, PROMOCOES_MANICURES_INTERVALO_SEG, ROOT
 from core.datadog_metrics import incrementar
-from core.notificador import enviar_telegram_manicures
+from core.notificador import alertar_gestor, enviar_telegram_manicures, gestor_telegram_configurado
 from core.prontidao import pode_divulgar_promocoes_manicures
 from core.whatsapp import enviar_grupo_manicures, whatsapp_grupo_manicures_configurado
 from integracoes.social.promocoes_manicures import (
@@ -115,9 +115,14 @@ def _montar_com_fallback(
         out["contrato_motivo"] = motivo_c
         return out
 
+    falhas = [t for t in tentativas if not t.get("ok")]
+    so_sem_mlb = bool(falhas) and all(
+        "link_mlb_invalido" in str(t.get("motivo") or "") for t in falhas
+    )
     return {
         "ok": False,
-        "motivo": "nenhuma campanha montou mensagem válida",
+        "motivo": "sem_mlb_publicado" if so_sem_mlb else "nenhuma campanha montou mensagem válida",
+        "pulado_esperado": so_sem_mlb,
         "tentativas": tentativas,
     }
 
@@ -149,8 +154,35 @@ def executar(
 
     montado = _montar_com_fallback(campanhas, campanha_id=campanha_id, ultimo_id=ultimo_id)
     if not montado.get("ok"):
-        logger.error("Falha ao montar promoção: %s", montado.get("motivo"))
-        return {"ok": False, "motivo": montado.get("motivo"), "enviado": False, "detalhe": montado}
+        motivo = str(montado.get("motivo") or "falha_montar")
+        # Sem MLB real no catálogo = estado esperado até publicar anúncios (não falha vermelha no Actions).
+        if montado.get("pulado_esperado") or motivo == "sem_mlb_publicado":
+            logger.warning(
+                "Promoções manicures pausadas: kits sem MLB (preencha item_id em catalogo/produtos.json)"
+            )
+            if gestor_telegram_configurado():
+                try:
+                    alertar_gestor(
+                        "⏸️ *Promoções manicures pausadas*\n\n"
+                        "Nenhum kit com *MLB real* no catálogo (`MLB_PREENCHER`).\n"
+                        "Publique os anúncios Impala e atualize `canais.mercadolivre.item_id` "
+                        "para retomar WhatsApp/Telegram.",
+                        chave="promocoes_manicures:sem_mlb",
+                        cooldown_segundos=86400,
+                        agente_id="promocoes_manicures",
+                    )
+                except Exception as exc:
+                    logger.debug("alerta gestor sem_mlb: %s", exc)
+            incrementar("promocoes_manicures.pulado_sem_mlb")
+            return {
+                "ok": True,
+                "pulado": True,
+                "motivo": "sem_mlb_publicado",
+                "enviado": False,
+                "detalhe": montado,
+            }
+        logger.error("Falha ao montar promoção: %s", motivo)
+        return {"ok": False, "motivo": motivo, "enviado": False, "detalhe": montado}
 
     cid = str(montado.get("campanha_id") or "")
     chave_cooldown = f"promocoes_manicures:{cid}"
@@ -231,8 +263,8 @@ def main(argv: list[str] | None = None) -> int:
     if not out.get("ok"):
         logger.error("Falhou: %s", out.get("motivo"))
         return 1
-    if out.get("adiado"):
-        logger.info("Adiado: %s", out.get("motivo"))
+    if out.get("pulado") or out.get("adiado"):
+        logger.info("Adiado/pausado: %s", out.get("motivo"))
         return 0
     logger.info(
         "Concluído: campanha=%s enviado=%s (WA=%s TG=%s)",

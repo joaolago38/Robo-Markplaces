@@ -64,5 +64,28 @@ class PromocoesManicuresTests(unittest.TestCase):
         self.assertEqual(out[0]["id"], "c1")
 
 
+class AgentePromocoesManicuresTests(unittest.TestCase):
+    @patch("agentes.social.agente_promocoes_manicures.alertar_gestor", return_value=True)
+    @patch("agentes.social.agente_promocoes_manicures.gestor_telegram_configurado", return_value=True)
+    @patch("agentes.social.agente_promocoes_manicures.pode_divulgar_promocoes_manicures", return_value=(True, "ok"))
+    @patch("agentes.social.agente_promocoes_manicures.carregar_campanhas")
+    @patch("agentes.social.agente_promocoes_manicures._montar_com_fallback")
+    def test_sem_mlb_pula_sem_falhar(self, mock_montar, mock_camps, *_):
+        from agentes.social import agente_promocoes_manicures as ag
+
+        mock_camps.return_value = [{"id": "kit-3", "ativo": True}]
+        mock_montar.return_value = {
+            "ok": False,
+            "motivo": "sem_mlb_publicado",
+            "pulado_esperado": True,
+            "tentativas": [{"id": "kit-3", "ok": False, "motivo": "contrato:link_mlb_invalido"}],
+        }
+        out = ag.executar(enviar=False)
+        self.assertTrue(out["ok"])
+        self.assertTrue(out.get("pulado"))
+        self.assertEqual(out.get("motivo"), "sem_mlb_publicado")
+        self.assertEqual(ag.main(["--sem-envio"]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
