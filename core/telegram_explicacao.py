@@ -310,9 +310,9 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_margem_vendas": "3x/dia às 08:05, 14:05 e 21:05 BRT (Actions) e a cada 30 min (orquestrador)",
     "inteligencia_precos": "A cada 30 min (orquestrador)",
     "leilao": "A cada hora (Actions); fora do orquestrador 30 min",
-    "sumare_leiloes": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
-    "lojas_veiculos": "A cada 2h (Actions) e a cada 30 min (orquestrador)",
-    "carros_batidos": "A cada 4h (Actions) e a cada 30 min (orquestrador)",
+    "sumare_leiloes": "Workflow próprio (secundário); fora do orquestrador 30 min",
+    "lojas_veiculos": "1x/dia (Actions secundário); fora do orquestrador 30 min",
+    "carros_batidos": "1x/dia (Actions secundário); fora do orquestrador 30 min",
     "licitacoes": "A cada 4h (Actions); fora do orquestrador 30 min",
     "alibaba": "Debug/CLI — produção via alibaba_sourcing",
     "alibaba_inteligencia": "Debug/CLI — produção via alibaba_sourcing",
@@ -323,14 +323,14 @@ HORARIOS_AGENTES: dict[str, str] = {
     "ml_tendencias_importacao": "Junto com alibaba_sourcing (2x/dia Actions)",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
-    "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions) e a cada 30 min (orquestrador)",
+    "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions); fora do orquestrador 30 min",
     "relatorio_estrategia_ml": "Segundas às 08:00 BRT (fora do orquestrador)",
     "monitor_concorrentes": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_diario_novamix": "Debug manual (sem Telegram) — Novamix fora do ciclo Impala",
     "monitor_sem_venda_ml": "A cada 30 min (orquestrador)",
     "monitor_anita": "Debug manual (sem Telegram) — produção via comparativo_anita_impala",
     "monitor_mercado_esmaltes": "A cada 30 min (orquestrador); workflow dedicado só manual",
-    "monitor_busca_kit_esmaltes": "3x/dia às 08:10, 14:10 e 21:10 BRT (Actions) e a cada 30 min (orquestrador)",
+    "monitor_busca_kit_esmaltes": "3x/dia às 08:10, 14:10 e 21:10 BRT (Actions); fora do orquestrador",
     "monitor_kits_esmaltes": "Debug manual (sem Telegram) — produção via monitor_mercado_esmaltes",
     "montar_kits_impala": "3x/dia às 08:00, 14:00 e 21:00 BRT (Actions); fora do ciclo 30 min",
     "ecossistema_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
@@ -339,9 +339,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT — único Telegram Impala",
     "monitor_removedores_unha": "1x/semana quarta 09:00 BRT (anexo)",
     "monitor_tendencias_esmaltes": "Debug manual (sem Telegram) — produção via busca_kit",
-    "comparativo_anita_impala": (
-        "Segundas e quintas às 08:00 BRT (Actions) e a cada 30 min (orquestrador)"
-    ),
+    "comparativo_anita_impala": "Segundas e quintas às 08:00 BRT (Actions); fora do orquestrador 30 min",
     "comparativo_ml_shopee": "Debug manual (sem Telegram) — canal Shopee sob demanda",
     "monitor_filamentos_ml": "1x/dia às 08:30 BRT (Actions); fora do orquestrador 30 min",
     "monitor_masterprint_petg": (
@@ -364,10 +362,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "necessidade_manicures": "3x/dia às 08:35, 14:35 e 21:35 BRT (Actions); fora do ciclo 30 min",
     "panorama": "Todo dia às 06:30 BRT (Actions) e a cada 30 min (orquestrador)",
     "orquestrador": "A cada 30 min (GitHub Actions)",
-    "operacao_24h": (
-        "Snapshot dry-run a cada 30 min (orquestrador); escrita real a cada 2h "
-        "(operacao_24h_seguranca)"
-    ),
+    "operacao_24h": "A cada 2h (operacao_24h_seguranca); fora do orquestrador 30 min",
     "repricing": "Via operacao_24h_seguranca (2h) — fora do orquestrador",
     "repricing_impala": "Via operacao_24h / CLI — fora do orquestrador",
     "sincronizar_estoque": "A cada 2h (Actions, escrita real); fora do orquestrador",
@@ -379,23 +374,14 @@ HORARIOS_AGENTES: dict[str, str] = {
     "otimizador_listing": "Terças às 06:00 BRT (Actions; fora do ciclo 30 min)",
     "relatorio_financeiro": "Segundas às 06:00 BRT (Actions; fora do ciclo 30 min)",
     "push_deploy": "Somente manual (workflow_dispatch)",
-    "auto_respostas": "A cada 30 min (orquestrador)",
+    "auto_respostas": "Agente principal (chat); fora do orquestrador 30 min",
     "chat_ml": (
         "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
         "no orquestrador"
     ),
-    "chat_shopee": (
-        "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
-        "no orquestrador"
-    ),
-    "chat_magalu": (
-        "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
-        "no orquestrador"
-    ),
-    "chat_amazon": (
-        "A cada 30 min no horário comercial via agente principal (~06h–19h BRT) e "
-        "no orquestrador"
-    ),
+    "chat_shopee": "Agente principal (chat); fora do orquestrador 30 min",
+    "chat_magalu": "Agente principal (chat); fora do orquestrador 30 min",
+    "chat_amazon": "Agente principal (chat); fora do orquestrador 30 min",
     "conectividade": "A cada hora (Actions) e a cada 30 min (orquestrador)",
     "vendas_whatsapp": "A cada 30 min (orquestrador / agente principal)",
 }

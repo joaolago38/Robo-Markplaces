@@ -79,9 +79,9 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "agentes.algoritmo_marketplaces:executar",
         {"alertar_quando_atencao": False},
     ),
-    # sincronizar_estoque / repricing / repricing_impala NÃO entram no registro:
-    # dry-run no ciclo 30min pesava sem escrita. Estoque real = sincronizar_estoque.yml;
-    # preço/NFe reais = operacao_24h_seguranca.yml. Snapshot dry-run único = operacao_24h.
+    # sincronizar_estoque / repricing / repricing_impala:
+    # fora do ciclo 30min (pesavam em dry-run). Escrita real = workflows 2h.
+    # operacao_24h fica no registro mas em ORQUESTRADOR_EXCLUIR (só workflow 2h).
     AgenteRegistrado(
         "inteligencia_precos",
         "Inteligência de preços",
@@ -96,7 +96,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "operacao",
         "agentes.operacao_24h:executar",
         {"dry_run_repricing": True, "dry_run_nfe": True},
-        notas="Único dry-run do ciclo 30min; escrita real = operacao_24h_seguranca (2h)",
+        notas="Fora do ciclo 30min; escrita real = operacao_24h_seguranca (2h)",
     ),
     AgenteRegistrado(
         "leilao",
