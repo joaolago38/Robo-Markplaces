@@ -491,8 +491,8 @@ def main() -> int:
     put_dashboard(raw)
 
     print(f"OK dashboard atualizado: https://us5.datadoghq.com/dashboard/{DASH_ID}")
-    print(f"  Orquestrador → metricas: {trocou_orc}")
-    print(f"  Config/Alertas → logs+vigia: {trocou_cfg}")
+    print(f"  Orquestrador -> metricas: {trocou_orc}")
+    print(f"  Config/Alertas -> logs+vigia: {trocou_cfg}")
     print(f"  Queries de log corrigidas nos demais grupos: {stats['queries']}")
     return 0
 
