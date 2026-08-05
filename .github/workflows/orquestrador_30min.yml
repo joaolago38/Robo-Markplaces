@@ -19,6 +19,10 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  DDG_BACKEND: ${{ secrets.DDG_BACKEND || 'auto' }}
+  DDG_MIN_INTERVAL_SEG: ${{ secrets.DDG_MIN_INTERVAL_SEG || '8' }}
+  DDG_CIRCUIT_BREAKER_SEG: ${{ secrets.DDG_CIRCUIT_BREAKER_SEG || '600' }}
+  DDG_FALHAS_403_PARA_BREAKER: ${{ secrets.DDG_FALHAS_403_PARA_BREAKER || '8' }}
 
 jobs:
   orquestrador:
