@@ -310,7 +310,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "monitor_margem_vendas": "3x/dia às 08:05, 14:05 e 21:05 BRT (Actions) e a cada 30 min (orquestrador)",
     "inteligencia_precos": "A cada 30 min (orquestrador)",
     "leilao": "A cada hora (Actions); fora do orquestrador 30 min",
-    "sumare_leiloes": "1x/dia às 09:00 BRT (Actions); fora do orquestrador 30 min",
+    "sumare_leiloes": "DESLIGADO (SSL site); só workflow_dispatch manual",
     "lojas_veiculos": "1x/dia às 09:30 BRT (Actions); fora do orquestrador 30 min",
     "carros_batidos": "1x/dia às 10:15 BRT (Actions); fora do orquestrador 30 min",
     "licitacoes": "A cada 4h (Actions); fora do orquestrador 30 min",

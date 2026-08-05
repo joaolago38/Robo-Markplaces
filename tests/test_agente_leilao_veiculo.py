@@ -157,27 +157,28 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
             "meta_fontes": {"leiloeiros_na_rodada": 5, "detrans_na_rodada": 5, "leiloeiros_ids": ["copart"], "detrans_ufs": ["SP"]},
             "sumare_coleta": {"lotes_veiculo": 3, "leiloes_ok": 2, "leiloes_falha": 0},
         }
-        msg = agente._montar_resumo_varredura(
-            [
-                {
-                    "veiculo": "Fiat Fiorino",
-                    "prioridade": 1,
-                    "achados_total": 2,
-                    "vantajosos_total": 1,
-                    "novos": [],
-                    "novos_vantajosos": [],
-                },
-                {
-                    "veiculo": "VW Gol",
-                    "prioridade": 2,
-                    "achados_total": 0,
-                    "vantajosos_total": 0,
-                    "novos": [],
-                    "novos_vantajosos": [],
-                },
-            ],
-            diagnostico_agregado=diag,
-        )
+        with patch.object(agente, "LEILAO_INCLUIR_SUMARE_DIRETO", True):
+            msg = agente._montar_resumo_varredura(
+                [
+                    {
+                        "veiculo": "Fiat Fiorino",
+                        "prioridade": 1,
+                        "achados_total": 2,
+                        "vantajosos_total": 1,
+                        "novos": [],
+                        "novos_vantajosos": [],
+                    },
+                    {
+                        "veiculo": "VW Gol",
+                        "prioridade": 2,
+                        "achados_total": 0,
+                        "vantajosos_total": 0,
+                        "novos": [],
+                        "novos_vantajosos": [],
+                    },
+                ],
+                diagnostico_agregado=diag,
+            )
         self.assertIn("resumo da varredura", msg)
         self.assertIn("FIPE", msg)
         self.assertIn("Fiorino", msg)
@@ -187,6 +188,12 @@ class TestAgenteLeilaoVeiculo(unittest.TestCase):
         self.assertIn("DDG (vazio)", msg)
         self.assertIn("DETRAN:", msg)
         self.assertIn("Nota DDG:", msg)
+
+        msg_off = agente._montar_resumo_varredura(
+            [{"veiculo": "X", "prioridade": 1, "achados_total": 0, "vantajosos_total": 0, "novos": [], "novos_vantajosos": []}],
+            diagnostico_agregado=diag,
+        )
+        self.assertNotIn("Sumaré direto", msg_off)
 
     def test_agregar_diagnostico_prioriza_status_ddg(self):
         agg = agente._agregar_diagnostico(

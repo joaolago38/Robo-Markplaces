@@ -1,13 +1,11 @@
 ﻿name: Monitor Sumare Leiloes
 
-# PREFEITURA/DETRAN no site oficial — veículos com documento, alerta de lances.
-# Acompanhamento secundário: 1x/dia — fora do grupo OAuth Impala/ML e do orquestrador 30min.
+# DESLIGADO (SSL do site sumareleiloes.com.br quebra a cadeia e polui Datadog).
+# Código permanece para reativação manual (workflow_dispatch) se o certificado melhorar.
+# Coleta Sumaré no leilão geral: LEILAO_INCLUIR_SUMARE_DIRETO=0 (padrão).
 
 on:
   workflow_dispatch:
-  schedule:
-    # 1x/dia BRT 09:00 (= 12:00 UTC)
-    - cron: "0 12 * * *"
 
 concurrency:
   group: robo-markplaces-monitor-secundario

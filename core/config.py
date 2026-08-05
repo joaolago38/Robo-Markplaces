@@ -695,7 +695,7 @@ LEILAO_PULAR_DDG_SE_BREAKER = os.getenv("LEILAO_PULAR_DDG_SE_BREAKER", "1").stri
     "false",
     "no",
 )
-LEILAO_INCLUIR_SUMARE_DIRETO = os.getenv("LEILAO_INCLUIR_SUMARE_DIRETO", "1").strip().lower() not in (
+LEILAO_INCLUIR_SUMARE_DIRETO = os.getenv("LEILAO_INCLUIR_SUMARE_DIRETO", "0").strip().lower() not in (
     "0",
     "false",
     "no",
