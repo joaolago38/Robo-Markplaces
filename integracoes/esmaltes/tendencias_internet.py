@@ -8,15 +8,13 @@ import logging
 from collections import Counter
 from typing import Any
 
-from core.config import BRAVE_SEARCH_API_KEY
+from core.brave_search import buscar_web as brave_buscar_web
 from core.ddg_lite import buscar as ddg_buscar
-from core.http_client import request
 from integracoes.esmaltes.analise_anita import _normalizar
 from integracoes.esmaltes.analise_mercado import extrair_cores_titulo
 
 logger = logging.getLogger("tendencias_internet")
 
-_BRAVE_URL = "https://api.search.brave.com/res/v1/web/search"
 
 _TERMOS_TENDENCIA: tuple[str, ...] = (
     "tendencia",
@@ -51,42 +49,21 @@ _TERMOS_TENDENCIA: tuple[str, ...] = (
 
 
 def _buscar_brave(termo: str, limite: int) -> list[dict[str, str]]:
-    if not BRAVE_SEARCH_API_KEY:
-        return []
-    try:
-        r = request(
-            "GET",
-            _BRAVE_URL,
-            params={"q": termo, "count": max(1, min(20, limite))},
-            headers={
-                "Accept": "application/json",
-                "X-Subscription-Token": BRAVE_SEARCH_API_KEY,
-            },
-            timeout=20,
-        )
-        if r.status_code >= 400:
-            return []
-        body = r.json() or {}
-        brutos = (body.get("web") or {}).get("results") or []
-        out: list[dict[str, str]] = []
-        for row in brutos:
-            if not isinstance(row, dict):
-                continue
-            url = str(row.get("url") or "").strip()
-            titulo = str(row.get("title") or "").strip()
-            if url and titulo:
-                out.append(
-                    {
-                        "url": url,
-                        "titulo": titulo,
-                        "snippet": str(row.get("description") or ""),
-                        "fonte": "brave",
-                    }
-                )
-        return out
-    except Exception as exc:
-        logger.debug("Brave tendências termo=%r: %s", termo[:50], exc)
-        return []
+    brutos = brave_buscar_web(termo, limite=limite, contexto="esmaltes_tendencias")
+    out: list[dict[str, str]] = []
+    for row in brutos:
+        url = str(row.get("url") or "").strip()
+        titulo = str(row.get("titulo") or "").strip()
+        if url and titulo:
+            out.append(
+                {
+                    "url": url,
+                    "titulo": titulo,
+                    "snippet": str(row.get("snippet") or ""),
+                    "fonte": "brave",
+                }
+            )
+    return out
 
 
 def _buscar_ddg(termo: str, limite: int) -> list[dict[str, str]]:

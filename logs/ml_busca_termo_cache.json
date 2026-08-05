@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-08-02T20:17:24.589107+00:00",
+    "timestamp": "2026-08-05T13:38:12.218740+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,108 +32,23 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-08-04T21:28:48.089597+00:00",
+    "timestamp": "2026-08-05T13:38:12.205164+00:00",
     "resultados": [
       {
-        "item_id": "MLB7277440640",
-        "titulo": "Kit Impala Branco Essencial Branco",
-        "preco": 26.9,
-        "quantidade_vendida": 0,
-        "seller_id": "1495866222",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7277440640",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB75885800",
-        "catalog_date_created": "2026-07-29T06:50:11Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4716057869",
-        "titulo": "Kit Impala Paixão Vermelhos Vibrantes Vermelho",
-        "preco": 26.9,
-        "quantidade_vendida": 0,
-        "seller_id": "1495866222",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4716057869",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB70335125",
-        "catalog_date_created": "2026-05-26T21:58:07Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7144006914",
-        "titulo": "Kit Impala Disney Channel Hannah Montana Esmalte",
-        "preco": 29.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7144006914",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB75354806",
-        "catalog_date_created": "2026-07-10T19:32:30Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7144286198",
-        "titulo": "Kit Impala Disney Channel Hannah Montana Esmalte",
-        "preco": 31.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7144286198",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB75354806",
-        "catalog_date_created": "2026-07-10T19:32:30Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7218168058",
-        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
-        "preco": 59.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3396614641",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7218168058",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB67376199",
-        "catalog_date_created": "2026-03-29T15:51:53Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB6737772730",
-        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
-        "preco": 67.0,
-        "quantidade_vendida": 0,
-        "seller_id": "3238461592",
-        "permalink": "https://produto.mercadolivre.com.br/MLB6737772730",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB67376199",
-        "catalog_date_created": "2026-03-29T15:51:53Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4941585663",
-        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
-        "preco": 75.04,
-        "quantidade_vendida": 0,
-        "seller_id": "2137618943",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4941585663",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB67376199",
-        "catalog_date_created": "2026-03-29T15:51:53Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB4780280085",
-        "titulo": "Kit Impala Coleção Top Coat Pro Finish Multicor",
-        "preco": 75.89,
-        "quantidade_vendida": 0,
-        "seller_id": "1293316098",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4780280085",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB67376199",
-        "catalog_date_created": "2026-03-29T15:51:53Z",
-        "listing_type_id": "gold_pro"
+        "item_id": "MLB2",
+        "titulo": "Kit Impala",
+        "preco": 35.0,
+        "frete_gratis": true,
+        "condicao": "new",
+        "quantidade_vendida": 5,
+        "seller_id": "888",
+        "permalink": "",
+        "fonte_busca": "api"
       }
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-08-02T20:17:24.504569+00:00",
+    "timestamp": "2026-08-05T13:38:12.188199+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -149,7 +64,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-08-02T20:17:24.526940+00:00",
+    "timestamp": "2026-08-05T13:38:12.197144+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",

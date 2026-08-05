@@ -248,6 +248,14 @@ ML_BUSCA_TERMO_CACHE_TTL_SEG = int(os.getenv("ML_BUSCA_TERMO_CACHE_TTL_SEG", "21
 ML_BUSCA_TERMO_MAX_REFS_CATALOGO = int(os.getenv("ML_BUSCA_TERMO_MAX_REFS_CATALOGO", "5"))
 # Brave Search API — fallback JSON quando DDG bloqueia (opcional, requer chave)
 BRAVE_SEARCH_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "").strip()
+# Cota mensal controlada (free ~2000). Padrão 1800 deixa folga.
+BRAVE_QUOTA_MES = int(os.getenv("BRAVE_QUOTA_MES", "1800") or "1800")
+BRAVE_QUOTA_ALERTA_PCT = float(os.getenv("BRAVE_QUOTA_ALERTA_PCT", "80") or "80")
+BRAVE_QUOTA_HARD_STOP = os.getenv("BRAVE_QUOTA_HARD_STOP", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 ML_BUSCA_TERMO_FALLBACK_BRAVE = os.getenv("ML_BUSCA_TERMO_FALLBACK_BRAVE", "1").strip().lower() not in (
     "0",
     "false",

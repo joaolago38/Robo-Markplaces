@@ -692,6 +692,37 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             },
             "priority": 1,
         },
+        {
+            "name": "[Robo] Brave cota esgotada",
+            "type": "query alert",
+            "query": "sum(last_1d):sum:robo.brave.quota_esgotada{*}.as_count() > 0",
+            "message": (
+                "Cota mensal Brave esgotada (hard-stop). "
+                "Suba plano, BRAVE_QUOTA_MES, ou BRAVE_QUOTA_HARD_STOP=0.\n" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:brave", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Brave HTTP 429",
+            "type": "query alert",
+            "query": "sum(last_6h):sum:robo.brave.http_429{*}.as_count() > 2",
+            "message": "Brave Search retornou 429 (rate/cota). Verifique painel Brave.\n" + msg_base,
+            "tags": [TAG_MONITOR, "monitor:brave", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 2},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
     ]
 
 
