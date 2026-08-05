@@ -111,7 +111,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.leilao.agente_monitor_sumare_leiloes:executar",
         {"enviar_alerta": True},
-        notas="Veículos com documento no site oficial — alerta de lances",
+        notas="DESLIGADO — SSL do site; só manual. Use LEILAO_INCLUIR_SUMARE_DIRETO=1 para religar na busca.",
     ),
     AgenteRegistrado(
         "lojas_veiculos",

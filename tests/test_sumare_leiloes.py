@@ -11,6 +11,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from integracoes.leilao import sumare_leiloes as sl
 
 
+class TestSessaoSsl(unittest.TestCase):
+    def test_criar_sessao_desliga_verify(self):
+        sess = sl._criar_sessao()
+        self.assertIs(sess.verify, False)
+
+
 def _fake_sess_com_request(get_fn=None, post_fn=None):
     """Compatível com _request_sumare (sess.request) nos testes."""
 

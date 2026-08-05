@@ -42,8 +42,17 @@ _HEADERS = {
 
 
 def _criar_sessao() -> requests.Session:
-    """Sessão com retry urllib3 — reduz falhas transitórias HTTPSConnectionPool."""
-    return _criar_sessao_base(retry_max=SUMARE_LEILOES_RETRY_MAX, headers=_HEADERS)
+    """Sessão com retry urllib3 — reduz falhas transitórias HTTPSConnectionPool.
+
+    Sumaré usa cadeia SSL incompleta (CERTIFICATE_VERIFY_FAILED no Actions).
+    verify=False só nesta sessão de scraper; APIs (ML/Telegram) seguem verificando.
+    """
+    import urllib3
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    sess = _criar_sessao_base(retry_max=SUMARE_LEILOES_RETRY_MAX, headers=_HEADERS)
+    sess.verify = False
+    return sess
 
 
 def _request_sumare(
