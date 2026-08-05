@@ -23,6 +23,13 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
       - name: Rodar monitor de concorrentes
         run: python -m agentes.ml.agente_monitor_concorrentes
         env:
@@ -39,3 +46,10 @@ jobs:
           name: concorrentes-ml-history
           path: logs/concorrentes_ml_history.json
           retention-days: 90
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}

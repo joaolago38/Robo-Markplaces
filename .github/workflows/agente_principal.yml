@@ -73,6 +73,13 @@ jobs:
           cache: pip
       - name: Instalar dependências
         run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
       - name: Executar relatório
         run: python -c "from agentes.relatorio import executar; executar()"
         env:
@@ -165,6 +172,13 @@ jobs:
         if: always()
         continue-on-error: true
         uses: actions/cache/save@v4
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
         with:
           path: |
             logs/claude_uso_orcamento.json

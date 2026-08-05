@@ -33,6 +33,13 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
       - name: Restaurar cooldown Telegram
         uses: actions/cache@v4
         with:
@@ -66,3 +73,10 @@ jobs:
             logs/concorrentes_ml_history.json
           retention-days: 30
           if-no-files-found: ignore
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}

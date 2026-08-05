@@ -28,6 +28,13 @@ jobs:
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
 
       - name: Restaurar histórico descoberta
         uses: actions/cache@v4
@@ -63,3 +70,10 @@ jobs:
           name: descoberta-produtos-history
           path: logs/descoberta_produtos_history.json
           if-no-files-found: ignore
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}

@@ -10,13 +10,11 @@ import logging
 import re
 from typing import Any
 
-from core.config import BRAVE_SEARCH_API_KEY
+from core.brave_search import buscar_web
 from core.ddg_lite import buscar as ddg_buscar
-from core.http_client import request
 
 logger = logging.getLogger("busca_termo_externa")
 
-_BRAVE_URL = "https://api.search.brave.com/res/v1/web/search"
 _RE_PRECO = re.compile(r"R\$\s*([\d]{1,3}(?:\.\d{3})*,\d{2}|\d+[,\.]\d{2})")
 
 _META_MARKETPLACES: dict[str, dict[str, str]] = {
@@ -67,42 +65,21 @@ def _normalizar_hit(
 
 
 def _buscar_brave_site(dominio: str, termo: str, limite: int) -> list[dict[str, str]]:
-    if not BRAVE_SEARCH_API_KEY:
-        return []
     query = f"site:{dominio} {termo}"
-    try:
-        r = request(
-            "GET",
-            _BRAVE_URL,
-            params={"q": query, "count": max(1, min(20, limite))},
-            headers={
-                "Accept": "application/json",
-                "X-Subscription-Token": BRAVE_SEARCH_API_KEY,
-            },
-            timeout=20,
+    brutos = buscar_web(query, limite=max(limite * 2, 10), contexto=f"mp_{dominio}")
+    out: list[dict[str, str]] = []
+    for row in brutos:
+        url = str(row.get("url") or "")
+        if dominio not in url.lower():
+            continue
+        out.append(
+            {
+                "url": url,
+                "titulo": str(row.get("titulo") or ""),
+                "snippet": str(row.get("snippet") or ""),
+            }
         )
-        if r.status_code >= 400:
-            return []
-        body = r.json() or {}
-        brutos = (body.get("web") or {}).get("results") or []
-        out: list[dict[str, str]] = []
-        for row in brutos:
-            if not isinstance(row, dict):
-                continue
-            url = str(row.get("url") or "")
-            if dominio not in url.lower():
-                continue
-            out.append(
-                {
-                    "url": url,
-                    "titulo": str(row.get("title") or ""),
-                    "snippet": str(row.get("description") or ""),
-                }
-            )
-        return out
-    except Exception as exc:
-        logger.debug("Brave site:%s termo=%r: %s", dominio, termo[:50], exc)
-        return []
+    return out
 
 
 def _buscar_ddg_site(dominio: str, termo: str, limite: int) -> list[dict[str, str]]:

@@ -23,6 +23,9 @@ env:
   DDG_MIN_INTERVAL_SEG: ${{ secrets.DDG_MIN_INTERVAL_SEG || '8' }}
   DDG_CIRCUIT_BREAKER_SEG: ${{ secrets.DDG_CIRCUIT_BREAKER_SEG || '600' }}
   DDG_FALHAS_403_PARA_BREAKER: ${{ secrets.DDG_FALHAS_403_PARA_BREAKER || '8' }}
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
 
 jobs:
   orquestrador:
@@ -37,6 +40,13 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
       - name: Restaurar heartbeats de saude
         uses: actions/cache@v4
         with:
@@ -73,6 +83,7 @@ jobs:
             logs/claude_toggle.json
             logs/conversao_manicures_ultima.json
             logs/chat_perguntas_claimed.json
+            logs/brave_uso_mensal.json
           key: estado-vendas-ia-${{ github.run_id }}
           restore-keys: |
             estado-vendas-ia-
@@ -197,10 +208,18 @@ jobs:
         if: always()
         continue-on-error: true
         uses: actions/cache/save@v4
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
         with:
           path: |
             logs/claude_uso_orcamento.json
             logs/claude_toggle.json
             logs/conversao_manicures_ultima.json
             logs/chat_perguntas_claimed.json
+            logs/brave_uso_mensal.json
           key: estado-vendas-ia-${{ github.run_id }}

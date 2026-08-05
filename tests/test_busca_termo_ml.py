@@ -233,7 +233,7 @@ class TestExecutarBuscaTermo(unittest.TestCase):
         ), patch.object(
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CACHE", False
         ), patch(
-            "integracoes.ml.busca_externa_brave.request"
+            "core.brave_search.request"
         ) as mock_http:
             mock_req.side_effect = [
                 _mock_resp({}, status=403),
@@ -254,7 +254,11 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             )
             with patch.object(busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", True):
                 with patch("integracoes.ml.busca_externa_brave.BRAVE_SEARCH_API_KEY", "test-key"):
-                    out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
+                    with patch(
+                        "core.brave_search._cfg",
+                        return_value=("test-key", 9999, 80.0, True),
+                    ):
+                        out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["fonte_busca"], "brave")
 
