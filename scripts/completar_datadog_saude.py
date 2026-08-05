@@ -40,7 +40,31 @@ DD_SITE = (os.getenv("DD_SITE") or "us5.datadoghq.com").strip() or "us5.datadogh
 DASH_SAUDE = "3iy-tka-awu"
 DASH_OPS = "7be-b7r-nrk"
 GROUP_PONTOS_CEGOS_ID = 700005
+GROUP_TOKENS_ID = 100001
 TAG_MONITOR = "service:robo-markplaces"
+
+# ── Queries de log do grupo "Tokens e Autenticacao" ───────────────────────
+# O widget antigo usava (*401* OR *token* OR *Token*), que casava com a DICA
+# "verifique ML_ACCESS_TOKEN/refresh" dentro do aviso de HTTP 403 da busca do
+# ML. Resultado: ~87% do painel era 403 de busca, nao problema de credencial.
+# Agora cada caixa tem um significado unico.
+
+# Credencial realmente morta — exige acao manual (reautorizar/regerar secret).
+Q_OAUTH_MORTO = (
+    "service:robo-markplaces (status:error OR status:warn) "
+    '-"buscar_concorrentes_por_termo" -"nao configurado" -"não configurado" '
+    '(invalid_grant OR invalid_client OR "token inválido" OR "token expirado" '
+    'OR "Erro ao renovar token" OR "Regenere token")'
+)
+# 401 do Bling que o robo renova sozinho na sequencia: informativo, nao erro.
+Q_BLING_AUTO = 'service:robo-markplaces "Bling retornou 401"'
+# Restricao do endpoint /sites/MLB/search — nao e token; tem fallback proprio.
+Q_ML_BUSCA_403 = 'service:robo-markplaces "buscar_concorrentes_por_termo" "HTTP 403"'
+# Rate limit de verdade (sem wildcard *429*, que pegava IDs contendo 429).
+Q_RATE_LIMIT = (
+    "service:robo-markplaces "
+    '("HTTP 429" OR "429 Client Error" OR "status=429" OR "Too Many Requests")'
+)
 
 
 def _headers() -> dict[str, str]:
@@ -115,6 +139,201 @@ def _qv(
                 }
             ],
         }
+    }
+
+
+def _lv(
+    title: str,
+    query: str,
+    *,
+    palette: str = "white_on_red",
+    value: float = 0,
+) -> dict[str, Any]:
+    """query_value sobre logs (contagem)."""
+    return {
+        "definition": {
+            "title": title,
+            "type": "query_value",
+            "autoscale": True,
+            "precision": 0,
+            "requests": [
+                {
+                    "conditional_formats": [
+                        {"comparator": ">", "palette": palette, "value": value}
+                    ],
+                    "formulas": [{"formula": "query1"}],
+                    "queries": [
+                        {
+                            "compute": {"aggregation": "count"},
+                            "data_source": "logs",
+                            "indexes": ["*"],
+                            "name": "query1",
+                            "search": {"query": query},
+                        }
+                    ],
+                    "response_format": "scalar",
+                }
+            ],
+        }
+    }
+
+
+def _grupo_tokens() -> dict[str, Any]:
+    """Grupo Tokens/Auth com cada caixa medindo uma coisa so.
+
+    Separa credencial morta (acao manual) de ruido esperado: 401 do Bling que
+    auto-renova e 403 do /sites/MLB/search, que nao tem relacao com token.
+    """
+    nota = (
+        "## Tokens e Auth\n\n"
+        "- **OAuth morto** — credencial nao se cura sozinha; reautorizar/regerar "
+        "secret. Ex.: Magalu `invalid_grant`.\n"
+        "- **Bling 401 auto-renovado** — esperado; robo renova na sequencia.\n"
+        "- **ML busca 403** — restricao do `/sites/MLB/search`, **nao** e token; "
+        "cai em catalogo/Brave/DDG.\n"
+        "- **429** — rate limit (cotacao USD, PNCP)."
+    )
+    return {
+        "id": GROUP_TOKENS_ID,
+        "definition": {
+            "title": "Tokens e Autenticacao",
+            "type": "group",
+            "background_color": "vivid_red",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "definition": {
+                        "type": "note",
+                        "content": nota,
+                        "background_color": "red",
+                        "font_size": "12",
+                        "has_padding": True,
+                        "show_tick": False,
+                        "text_align": "left",
+                        "vertical_align": "top",
+                    },
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 200001,
+                },
+                {
+                    **_lv("OAuth morto (acao manual)", Q_OAUTH_MORTO),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 200002,
+                },
+                {
+                    **_lv(
+                        "ML busca 403 (limite da API, nao token)",
+                        Q_ML_BUSCA_403,
+                        palette="white_on_yellow",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 200007,
+                },
+                {
+                    **_lv("Rate limits (429)", Q_RATE_LIMIT, palette="white_on_yellow"),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 200004,
+                },
+                {
+                    **_lv(
+                        "Bling 401 auto-renovado (ok)",
+                        Q_BLING_AUTO,
+                        palette="white_on_green",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 200008,
+                },
+                {
+                    **_lv(
+                        "Renovacoes de Token ML",
+                        'service:robo-markplaces "Token renovado"',
+                        palette="white_on_green",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 200003,
+                },
+                {
+                    "definition": {
+                        "title": "Top OAuth morto (por mensagem)",
+                        "type": "toplist",
+                        "requests": [
+                            {
+                                "conditional_formats": [
+                                    {
+                                        "comparator": ">",
+                                        "palette": "white_on_red",
+                                        "value": 0,
+                                    }
+                                ],
+                                "formulas": [{"formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "compute": {"aggregation": "count"},
+                                        "data_source": "logs",
+                                        "group_by": [
+                                            {
+                                                "facet": "message",
+                                                "limit": 10,
+                                                "sort": {
+                                                    "aggregation": "count",
+                                                    "order": "desc",
+                                                },
+                                            }
+                                        ],
+                                        "indexes": ["*"],
+                                        "name": "query1",
+                                        "search": {"query": Q_OAUTH_MORTO},
+                                    }
+                                ],
+                                "response_format": "scalar",
+                            }
+                        ],
+                    },
+                    "layout": {"height": 4, "width": 6, "x": 6, "y": 2},
+                    "id": 200006,
+                },
+                {
+                    "definition": {
+                        "title": "OAuth morto por Marketplace",
+                        "type": "timeseries",
+                        "legend_columns": ["value", "sum"],
+                        "legend_layout": "horizontal",
+                        "show_legend": True,
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "formulas": [{"formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "compute": {"aggregation": "count"},
+                                        "data_source": "logs",
+                                        "group_by": [
+                                            {
+                                                "facet": "marketplace",
+                                                "limit": 10,
+                                                "sort": {
+                                                    "aggregation": "count",
+                                                    "order": "desc",
+                                                },
+                                            }
+                                        ],
+                                        "indexes": ["*"],
+                                        "name": "query1",
+                                        "search": {"query": Q_OAUTH_MORTO},
+                                    }
+                                ],
+                                "response_format": "timeseries",
+                                "style": {"palette": "semantic"},
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
+                    "id": 200005,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
     }
 
 
@@ -390,6 +609,7 @@ def atualizar_dashboard_saude() -> None:
     widgets = list(raw.get("widgets") or [])
     novo = []
     substituido = False
+    tokens_ok = False
     for w in widgets:
         d = w.get("definition") or {}
         title = d.get("title") if isinstance(d, dict) else None
@@ -398,10 +618,17 @@ def atualizar_dashboard_saude() -> None:
         ):
             novo.append(_grupo_pontos_cegos())
             substituido = True
+        elif w.get("id") == GROUP_TOKENS_ID or title == "Tokens e Autenticacao":
+            grupo = _grupo_tokens()
+            grupo["layout"] = w.get("layout") or grupo["layout"]
+            novo.append(grupo)
+            tokens_ok = True
         else:
             novo.append(w)
     if not substituido:
         novo.append(_grupo_pontos_cegos())
+    if not tokens_ok:
+        novo.insert(0, _grupo_tokens())
 
     payload = {
         "title": raw["title"],
