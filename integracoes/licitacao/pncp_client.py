@@ -39,8 +39,8 @@ _SESS.headers.update(
 
 def _cfg() -> tuple[int, int, float]:
     from core.config import (
-        LICITACOES_PNCP_FALHAS_PARA_BREAKER,
         LICITACOES_PNCP_BREAKER_SEG,
+        LICITACOES_PNCP_FALHAS_PARA_BREAKER,
         LICITACOES_PNCP_TIMEOUT_SEG,
     )
 
