@@ -6,8 +6,9 @@ Baseado em avaliações reais, nota média e ACOS atual.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
+from core.atomic_io import escrever_json_atomico
 from core.config import (
     ACOS_MAXIMO,
     AVALIACOES_PARA_ADS,
@@ -17,7 +18,9 @@ from core.config import (
     BUDGET_FASE_INICIO,
     ML_ADS_ACOS_DIAS_LIMITE,
     NOTA_MINIMA_PARA_ADS,
+    ROOT,
 )
+from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
 from integracoes.ml.ml_client import buscar_acos_ads, buscar_reputacao_vendedor
 from integracoes.ml.ml_product_ads import (
@@ -28,6 +31,45 @@ from integracoes.ml.ml_product_ads import (
 )
 
 logger = logging.getLogger("agente_ads_gatilho")
+HEARTBEAT_PATH = ROOT / "logs" / "ads_gatilho_ultima.json"
+
+
+def _metricas_e_heartbeat(resultado: dict) -> None:
+    """Emite métricas ads.* e heartbeat para o Vigia (best-effort)."""
+    try:
+        decisao = str(resultado.get("decisao") or "desconhecida")
+        tags = [f"decisao:{decisao}"]
+        incrementar("ads.rodadas", tags=tags)
+        gauge("ads.budget_sugerido", float(resultado.get("budget_sugerido_dia") or 0))
+        gauge("ads.acos_atual", float(resultado.get("acos_atual") or 0))
+        gauge("ads.avaliacoes", float(resultado.get("avaliacoes") or 0))
+        if resultado.get("confirmado_gestor") is True:
+            incrementar("ads.aprovado_gestor", tags=tags)
+        elif resultado.get("confirmado_gestor") is False:
+            incrementar("ads.recusado_gestor", tags=tags)
+        probe = resultado.get("probe_escrita") or {}
+        if probe and not probe.get("ok"):
+            incrementar("ads.probe_falha", tags=tags)
+        aplicacoes = resultado.get("aplicacoes_api") or []
+        for a in aplicacoes:
+            if a.get("ok"):
+                incrementar("ads.aplicado", tags=tags)
+            else:
+                incrementar("ads.falha", tags=tags)
+        gasto_ev = float(resultado.get("gasto_diario_estimado_evitado") or 0)
+        if gasto_ev > 0:
+            gauge("ads.gasto_diario_evitado", gasto_ev)
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": True,
+                "decisao": decisao,
+                "confirmado_gestor": resultado.get("confirmado_gestor"),
+            },
+        )
+    except Exception as exc:
+        logger.warning("Ads: falha ao emitir metricas/heartbeat: %s", exc)
 
 
 def _contexto_decisao_ads(
@@ -284,17 +326,26 @@ def _executar_api_se_aprovado(resultado: dict) -> dict:
 
 
 def executar(item_id: str = "", acos_atual: float = 0.0, full_ativo: bool = False) -> dict:
-    rep = buscar_reputacao_vendedor()
-    if item_id and acos_atual == 0.0:
-        acos_atual = buscar_acos_ads(item_id)
-    elif acos_atual == 0.0:
-        acos_atual = _calcular_acos_agregado()
-    metrics = rep.get("metrics", {})
-    avaliacoes = int(metrics.get("total_ratings", 0))
-    nota = float(metrics.get("average_rating", 0.0))
-    if not full_ativo:
-        full_ativo = bool(metrics.get("power_seller_status") in ("gold", "platinum"))
-    return avaliar_momento_ads(avaliacoes, nota, acos_atual, full_ativo)
+    try:
+        rep = buscar_reputacao_vendedor()
+        if item_id and acos_atual == 0.0:
+            acos_atual = buscar_acos_ads(item_id)
+        elif acos_atual == 0.0:
+            acos_atual = _calcular_acos_agregado()
+        metrics = rep.get("metrics", {})
+        avaliacoes = int(metrics.get("total_ratings", 0))
+        nota = float(metrics.get("average_rating", 0.0))
+        if not full_ativo:
+            full_ativo = bool(metrics.get("power_seller_status") in ("gold", "platinum"))
+        resultado = avaliar_momento_ads(avaliacoes, nota, acos_atual, full_ativo)
+    except Exception:
+        try:
+            incrementar("ads.falha", tags=["tipo:execucao"])
+        except Exception:
+            pass
+        raise
+    _metricas_e_heartbeat(resultado)
+    return resultado
 
 
 if __name__ == "__main__":

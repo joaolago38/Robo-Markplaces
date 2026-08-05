@@ -11,6 +11,7 @@ from core.config import (
     META_GASTO_MINIMO_ALERTA,
     META_ROAS_MINIMO,
 )
+from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
 from integracoes.meta.meta_ads_client import listar_metricas_campanhas, normalizar_metrica_campanha
 
@@ -80,6 +81,20 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
         "critico": sum(1 for c in campanhas if c["status"] == "critico"),
     }
     payload = {"resumo": resumo, "campanhas": campanhas}
+    try:
+        incrementar("meta.rodadas")
+        gauge("meta.campanhas_total", float(resumo["total"]))
+        gauge("meta.campanhas_critico", float(resumo["critico"]))
+        gauge("meta.campanhas_atencao", float(resumo["atencao"]))
+        gastos = [float((c.get("metricas") or {}).get("gasto") or 0) for c in campanhas]
+        roas_vals = [float((c.get("metricas") or {}).get("roas") or 0) for c in campanhas]
+        gauge("meta.gasto_total", float(sum(gastos)))
+        if roas_vals:
+            gauge("meta.roas_medio", float(sum(roas_vals) / len(roas_vals)))
+        if resumo["critico"]:
+            incrementar("meta.alerta_critico", float(resumo["critico"]))
+    except Exception as exc:
+        logger.warning("Meta metricas Datadog: %s", exc)
     logger.info("Métricas Meta: %s", payload)
     return payload
 

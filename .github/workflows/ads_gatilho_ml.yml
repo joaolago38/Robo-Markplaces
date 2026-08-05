@@ -41,3 +41,22 @@ jobs:
           ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
           TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID:   ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+
+      - name: Publicar heartbeat ads
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/ads_gatilho_ultima.json
+            logs/orquestrador_ultimo_ciclo.json
+            logs/operacao_24h_ultima.json
+            logs/conectividade_ultima.json
+            logs/renovacao_tokens_ultima.json
+            logs/relatorio_manha_ml_ultima.json
+            logs/esmaltes_mercado_history.json
+            logs/estoque_ultima.json
+            logs/chat_ultima.json
+            logs/nfe_ultima.json
+            logs/vendas_whatsapp_ultima.json
+          key: saude-heartbeats-${{ github.run_id }}

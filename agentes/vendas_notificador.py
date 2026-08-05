@@ -12,6 +12,7 @@ from pathlib import Path
 
 from core.atomic_io import escrever_json_atomico, lock_exclusivo
 from core.config import ROOT, SPEC
+from core.datadog_metrics import incrementar
 from core.log_opcional import erro_opcional, log_erros_pedidos_ativos
 from core.notificador import alertar_critico
 from core.whatsapp import notificar_venda
@@ -24,6 +25,7 @@ _MARKETPLACES_ATIVOS: set[str] = {
 
 PEDIDOS_NOTIFICADOS_PATH: Path = ROOT / "dados" / "pedidos_notificados.json"
 _LOCK_PATH: Path = PEDIDOS_NOTIFICADOS_PATH.with_name(PEDIDOS_NOTIFICADOS_PATH.name + ".lock")
+HEARTBEAT_PATH: Path = ROOT / "logs" / "vendas_whatsapp_ultima.json"
 
 
 def _carregar_notificados() -> set[str]:
@@ -57,6 +59,13 @@ def _checar_busca_falhou(marketplace: str, ok: bool) -> None:
     Religar ERROR no Datadog: LOG_ERROS_PEDIDOS=1
     """
     if not ok:
+        try:
+            incrementar(
+                "vendas.busca_falhou",
+                tags=[f"marketplace:{marketplace.lower().replace(' ', '')}"],
+            )
+        except Exception:
+            pass
         erro_opcional(
             logger,
             log_erros_pedidos_ativos(),
@@ -118,8 +127,16 @@ def _notificar_novos_pedidos(
                 pedido_id,
                 valor,
             )
+            try:
+                incrementar("vendas.notificadas", tags=[f"marketplace:{marketplace}"])
+            except Exception:
+                pass
         else:
             logger.warning("WhatsApp FALHOU: %s pedido %s", marketplace, pedido_id)
+            try:
+                incrementar("vendas.falha_whatsapp", tags=[f"marketplace:{marketplace}"])
+            except Exception:
+                pass
 
     return novos
 
@@ -246,6 +263,21 @@ def executar() -> dict:
 
     total = sum(resumo.values())
     logger.info("Notificações WhatsApp enviadas: %d | Detalhe: %s", total, resumo)
+    try:
+        from datetime import datetime, timezone
+
+        incrementar("vendas.rodadas")
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": True,
+                "total_notificacoes": total,
+                "por_marketplace": resumo,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Vendas WhatsApp heartbeat: %s", exc)
     return {"total_notificacoes": total, "por_marketplace": resumo}
 
 

@@ -4,8 +4,12 @@ Agente Shopee (versão limpa)
 
 import logging
 import time
+from datetime import datetime, timezone
 
+from core.atomic_io import escrever_json_atomico
 from core.claude_client import responder_chat
+from core.config import ROOT
+from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar
 from integracoes.bling.bling_client import buscar_produto
 from integracoes.shopee.shopee_client import (
@@ -14,12 +18,17 @@ from integracoes.shopee.shopee_client import (
 )
 
 logger = logging.getLogger("agente_shopee")
+_TAG = ["marketplace:shopee"]
+HEARTBEAT_PATH = ROOT / "logs" / "chat_ultima.json"
+
 
 def responder_perguntas():
     logger.info("Shopee: verificando perguntas...")
     perguntas = listar_perguntas_nao_respondidas()
+    gauge("chat.fila", float(len(perguntas or [])), tags=_TAG)
 
     ok = 0
+    falhas = 0
 
     for p in perguntas:
         texto = (p.get("comment") or p.get("text") or "").strip()
@@ -36,12 +45,34 @@ def responder_perguntas():
             if item_id and comment_id and responder_pergunta(item_id, comment_id, resposta):
                 logger.info("[Shopee] respondido comment_id=%s", comment_id)
                 ok += 1
+            else:
+                falhas += 1
 
         except Exception as e:
+            falhas += 1
             logger.error(f"Erro Shopee IA: {e}")
             alertar("Erro no agente Shopee")
 
         time.sleep(1)
+
+    if ok:
+        incrementar("chat.respondidas", float(ok), tags=_TAG)
+    if falhas:
+        incrementar("chat.falha", float(falhas), tags=_TAG)
+    incrementar("chat.rodadas", tags=_TAG)
+    try:
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": falhas == 0,
+                "marketplace": "shopee",
+                "respondidas": ok,
+                "falhas": falhas,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Shopee chat heartbeat: %s", exc)
 
     return ok
 

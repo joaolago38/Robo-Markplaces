@@ -83,5 +83,45 @@
     "max_horas": 3,
     "critico": true,
     "ignorar_ausente": true
+  },
+  {
+    "id": "ads_gatilho",
+    "ativo": true,
+    "nome": "Gatilho Product Ads ML",
+    "path": "logs/ads_gatilho_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 30,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "chat",
+    "ativo": true,
+    "nome": "Chat marketplaces",
+    "path": "logs/chat_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 2,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "nfe",
+    "ativo": true,
+    "nome": "NF-e / faturamento",
+    "path": "logs/nfe_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 26,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "vendas_whatsapp",
+    "ativo": true,
+    "nome": "Notificação vendas WhatsApp",
+    "path": "logs/vendas_whatsapp_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 2,
+    "critico": false,
+    "ignorar_ausente": true
   }
 ]

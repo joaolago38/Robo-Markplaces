@@ -7,9 +7,10 @@ Usa snapshot conversão (Ads/oferta) e mapeia MLB→SKU via catálogo.
 import logging
 import time
 
+from core.atomic_io import escrever_json_atomico
 from core.chat_claim import tentar_claim
 from core.claude_client import responder_chat
-from core.config import MARGEM_MINIMA
+from core.config import MARGEM_MINIMA, ROOT
 from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_critico, alertar_gestor
@@ -26,6 +27,7 @@ from integracoes.ml.ml_client import (
 
 logger = logging.getLogger("agente_ml")
 _TAG_ML = ["marketplace:mercadolivre"]
+HEARTBEAT_PATH = ROOT / "logs" / "chat_ultima.json"
 
 
 def pergunta_valida(texto: str) -> bool:
@@ -193,6 +195,22 @@ def ciclo_chat():
     if falhas:
         incrementar("chat.falha", float(falhas), tags=_TAG_ML)
     incrementar("chat.rodadas", tags=_TAG_ML)
+    try:
+        from datetime import datetime, timezone
+
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": falhas == 0,
+                "marketplace": "mercadolivre",
+                "respondidas": ok,
+                "falhas": falhas,
+                "fila": len(perguntas or []),
+            },
+        )
+    except Exception as exc:
+        logger.warning("Chat ML heartbeat: %s", exc)
     return ok
 
 

@@ -1,4 +1,4 @@
-"""tests/test_metricas_pontos_cegos.py — chat/nfe/estoque/telegram/repricing."""
+"""tests/test_metricas_pontos_cegos.py — chat/nfe/estoque/telegram/repricing/ads/vendas."""
 from __future__ import annotations
 
 import os
@@ -21,16 +21,43 @@ class TestChatMetricas(unittest.TestCase):
     @patch("agentes.ml.agente_ml.buscar_perguntas", return_value=[{"id": "1", "text": "tem frete?"}])
     @patch("agentes.ml.agente_ml._montar_produto_resposta", return_value={"nome": "Kit", "preco": 10})
     @patch("agentes.ml.agente_ml.time.sleep")
+    @patch("agentes.ml.agente_ml.escrever_json_atomico")
     def test_chat_incrementa_respondidas(self, *_):
         from agentes.ml import agente_ml as ml
 
-        with patch.dict("sys.modules", {"integracoes.social.conversao_manicures": MagicMock(
-            pergunta_parece_manicure=MagicMock(return_value=False),
-            resposta_chat_ml_haiku=MagicMock(),
-        )}):
+        with patch.dict(
+            "sys.modules",
+            {
+                "integracoes.social.conversao_manicures": MagicMock(
+                    pergunta_parece_manicure=MagicMock(return_value=False),
+                    resposta_chat_ml_haiku=MagicMock(),
+                )
+            },
+        ):
             out = ml.ciclo_chat()
         self.assertEqual(out, 1)
         nomes = [c.args[0] for c in ml.incrementar.call_args_list]
+        self.assertIn("chat.respondidas", nomes)
+        self.assertIn("chat.rodadas", nomes)
+
+
+class TestChatShopeeMetricas(unittest.TestCase):
+    @patch("agentes.shopee.agente_shopee.escrever_json_atomico")
+    @patch("agentes.shopee.agente_shopee.incrementar")
+    @patch("agentes.shopee.agente_shopee.gauge")
+    @patch("agentes.shopee.agente_shopee.time.sleep")
+    @patch("agentes.shopee.agente_shopee.responder_pergunta", return_value=True)
+    @patch("agentes.shopee.agente_shopee.responder_chat", return_value="ok")
+    @patch("agentes.shopee.agente_shopee.buscar_produto", return_value={})
+    @patch(
+        "agentes.shopee.agente_shopee.listar_perguntas_nao_respondidas",
+        return_value=[{"item_id": "1", "comment_id": "c1", "comment": "tem estoque?"}],
+    )
+    def test_shopee_chat_metricas(self, *_mocks):
+        from agentes.shopee import agente_shopee as sh
+
+        self.assertEqual(sh.responder_perguntas(), 1)
+        nomes = [c.args[0] for c in sh.incrementar.call_args_list]
         self.assertIn("chat.respondidas", nomes)
         self.assertIn("chat.rodadas", nomes)
 
@@ -92,6 +119,59 @@ class TestEstoqueHeartbeat(unittest.TestCase):
             self.assertTrue(hb.exists())
 
 
+class TestAdsMetricas(unittest.TestCase):
+    @patch("agentes.ml.agente_ads_gatilho.escrever_json_atomico")
+    @patch("agentes.ml.agente_ads_gatilho.gauge")
+    @patch("agentes.ml.agente_ads_gatilho.incrementar")
+    def test_metricas_e_heartbeat(self, mock_inc, mock_gauge, _hb):
+        from agentes.ml.agente_ads_gatilho import _metricas_e_heartbeat
+
+        _metricas_e_heartbeat(
+            {
+                "decisao": "aguardar",
+                "budget_sugerido_dia": 0,
+                "acos_atual": 0.1,
+                "avaliacoes": 5,
+                "confirmado_gestor": None,
+            }
+        )
+        nomes = [c.args[0] for c in mock_inc.call_args_list]
+        self.assertIn("ads.rodadas", nomes)
+        self.assertTrue(mock_gauge.called)
+
+
+class TestVendasMetricas(unittest.TestCase):
+    @patch("agentes.vendas_notificador.incrementar")
+    def test_falha_whatsapp_conta(self, mock_inc):
+        from agentes.vendas_notificador import _notificar_novos_pedidos
+
+        with patch("agentes.vendas_notificador.notificar_venda", return_value=False):
+            novos = _notificar_novos_pedidos(
+                "mercadolivre",
+                [{"order_id": "O1", "total": 10, "itens": [{"sku": "X", "quantidade": 1}]}],
+                set(),
+            )
+        self.assertEqual(novos, set())
+        mock_inc.assert_any_call("vendas.falha_whatsapp", tags=["marketplace:mercadolivre"])
+
+
+class TestMetaMetricas(unittest.TestCase):
+    @patch("agentes.social.agente_metricas_meta.alertar_gestor")
+    @patch("agentes.social.agente_metricas_meta.gauge")
+    @patch("agentes.social.agente_metricas_meta.incrementar")
+    @patch(
+        "agentes.social.agente_metricas_meta.listar_metricas_campanhas",
+        return_value=[],
+    )
+    def test_meta_rodadas(self, *_mocks):
+        from agentes.social import agente_metricas_meta as meta
+
+        out = meta.executar()
+        self.assertEqual(out["resumo"]["total"], 0)
+        nomes = [c.args[0] for c in meta.incrementar.call_args_list]
+        self.assertIn("meta.rodadas", nomes)
+
+
 class TestVigiaFiltrosNotificador(unittest.TestCase):
     def test_notificador_nao_esta_em_ignorar(self):
         from integracoes.datadog import vigia_saude as vs
@@ -107,6 +187,10 @@ class TestVigiaFiltrosNotificador(unittest.TestCase):
         fontes = vs.carregar_fontes("catalogo/datadog_vigia_fontes.json")
         ids = {f.get("id") for f in fontes}
         self.assertIn("estoque", ids)
+        self.assertIn("ads_gatilho", ids)
+        self.assertIn("chat", ids)
+        self.assertIn("nfe", ids)
+        self.assertIn("vendas_whatsapp", ids)
 
 
 if __name__ == "__main__":
