@@ -21,7 +21,11 @@ from core.config import (
 )
 from core.ddg_lite import buscar as ddg_buscar
 from integracoes.licitacao.fontes import MODALIDADES_PADRAO_BUSCA, PORTAIS_POR_ESTADO, TODAS_UFS
-from integracoes.licitacao.pncp_client import buscar_detalhe_compra, buscar_propostas_abertas
+from integracoes.licitacao.pncp_client import (
+    breaker_aberto,
+    buscar_detalhe_compra,
+    buscar_propostas_abertas,
+)
 from integracoes.licitacao.requisitos import montar_requisitos_participacao
 
 logger = logging.getLogger("licitacao_busca")
@@ -202,7 +206,12 @@ def _buscar_pncp_item(item_cat: dict[str, Any]) -> list[dict[str, Any]]:
         ufs_filtro = set(_ufs_item(item_cat))
 
     for modalidade in _modalidades_item(item_cat):
+        if breaker_aberto():
+            logger.info("PNCP breaker aberto — interrompendo busca do item")
+            break
         for pagina in range(1, LICITACOES_MAX_PAGINAS_PNCP + 1):
+            if breaker_aberto():
+                break
             body = buscar_propostas_abertas(
                 codigo_modalidade=modalidade,
                 uf=None,
@@ -217,6 +226,8 @@ def _buscar_pncp_item(item_cat: dict[str, Any]) -> list[dict[str, Any]]:
             for raw in registros:
                 if not isinstance(raw, dict):
                     continue
+                if breaker_aberto():
+                    break
                 unidade = raw.get("unidadeOrgao") or {}
                 uf_item = str(unidade.get("ufSigla") or "").upper()
                 if ufs_filtro and uf_item and uf_item not in ufs_filtro:
