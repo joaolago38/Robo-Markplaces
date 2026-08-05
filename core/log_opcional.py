@@ -9,6 +9,7 @@ Religar no .env / secrets do Actions:
   LOG_ERROS_BLING=1
   LOG_ERROS_TOKENS=1   # Magalu / Shopee / Amazon (credenciais / refresh)
   LOG_ERROS_PEDIDOS=1  # busca de pedidos FALHOU (margem / notificador)
+  LOG_ERROS_PNCP=1     # timeouts/503 do PNCP (gov.br)
 """
 from __future__ import annotations
 
@@ -44,6 +45,11 @@ def log_erros_pedidos_ativos() -> bool:
     return _env_ligado("LOG_ERROS_PEDIDOS", "0")
 
 
+def log_erros_pncp_ativos() -> bool:
+    """Timeouts/503 do PNCP (gov.br) — ruidoso; silenciado por padrão."""
+    return _env_ligado("LOG_ERROS_PNCP", "0")
+
+
 # Hosts dos scrapers de veículos (http_client silencia falhas de conexão quando off).
 HOSTS_SCRAPERS_VEICULOS: frozenset[str] = frozenset(
     {
@@ -64,6 +70,13 @@ HOSTS_SCRAPERS_VEICULOS: frozenset[str] = frozenset(
     }
 )
 
+HOSTS_PNCP: frozenset[str] = frozenset(
+    {
+        "pncp.gov.br",
+        "www.pncp.gov.br",
+    }
+)
+
 
 def host_scraper_veiculos(host: str) -> bool:
     h = (host or "").strip().lower()
@@ -72,6 +85,15 @@ def host_scraper_veiculos(host: str) -> bool:
     if h in HOSTS_SCRAPERS_VEICULOS:
         return True
     return any(h.endswith("." + d) or h == d for d in HOSTS_SCRAPERS_VEICULOS)
+
+
+def host_pncp(host: str) -> bool:
+    h = (host or "").strip().lower()
+    if not h:
+        return False
+    if h in HOSTS_PNCP:
+        return True
+    return h.endswith(".pncp.gov.br")
 
 
 def erro_opcional(

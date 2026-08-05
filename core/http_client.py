@@ -22,7 +22,9 @@ from urllib3.util.retry import Retry
 from core.datadog_metrics import gauge, incrementar
 from core.log_opcional import (
     erro_opcional,
+    host_pncp,
     host_scraper_veiculos,
+    log_erros_pncp_ativos,
     log_erros_veiculos_ativos,
 )
 
@@ -51,10 +53,19 @@ def _host_simplificado(url: str) -> str:
         return "desconhecido"
 
 
+def _silenciar_host_ruidoso(host: str) -> tuple[bool, str]:
+    """(silenciar?, flag_hint) — scrapers veículos / PNCP não sobem ERROR no Datadog."""
+    if host_scraper_veiculos(host) and not log_erros_veiculos_ativos():
+        return True, "LOG_ERROS_VEICULOS_SCRAPERS"
+    if host_pncp(host) and not log_erros_pncp_ativos():
+        return True, "LOG_ERROS_PNCP"
+    return False, ""
+
+
 def _origem_http(host: str) -> str:
     """Classifica origem para facet de latência (api vs scraper vs ia)."""
     h = (host or "").lower()
-    if host_scraper_veiculos(host):
+    if host_scraper_veiculos(host) or host_pncp(host):
         return "scraper"
     if "anthropic.com" in h:
         return "ia"
@@ -93,11 +104,11 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
     except Exception as exc:
         duracao_ms = (time.monotonic() - inicio) * 1000
         _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag="exception")
-        if not (origem == "scraper" and not log_erros_veiculos_ativos()):
+        silenciar, flag = _silenciar_host_ruidoso(host)
+        if not silenciar:
             incrementar("http.exception", tags=tags_base)
-        # Scrapers de lojas (Leopardo etc.) falham com frequência por timeout/bloqueio —
-        # não poluir Datadog enquanto LOG_ERROS_VEICULOS_SCRAPERS=0.
-        if host_scraper_veiculos(host) and not log_erros_veiculos_ativos():
+        # Scrapers / PNCP falham com frequência — não poluir Datadog com flag off.
+        if silenciar:
             erro_opcional(
                 logger,
                 False,
@@ -105,7 +116,7 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
                 metodo,
                 host,
                 exc,
-                flag_hint="LOG_ERROS_VEICULOS_SCRAPERS",
+                flag_hint=flag,
                 extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
             )
         else:
@@ -122,7 +133,8 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
     faixa_status = f"{response.status_code // 100}xx"
     _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag=faixa_status)
     if response.status_code >= 400:
-        if not (origem == "scraper" and not log_erros_veiculos_ativos()):
+        silenciar, _flag = _silenciar_host_ruidoso(host)
+        if not silenciar:
             incrementar(
                 "http.erro",
                 tags=[*tags_base, f"status_code:{response.status_code}"],
