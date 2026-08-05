@@ -19,6 +19,9 @@ env:
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
   MARKETPLACES_BUSCA_ATIVOS: "mercadolivre,shopee"
   COMPARATIVO_ML_SHOPEE_ALERTA_RESUMO: "0"
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
 
 jobs:
   comparativo:
@@ -72,6 +75,9 @@ jobs:
           SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
           SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:

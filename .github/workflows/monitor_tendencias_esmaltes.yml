@@ -18,6 +18,9 @@ env:
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
   ESMALTES_TENDENCIAS_ALERTA_RESUMO: "0"
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
 
 jobs:
   monitorar:
@@ -68,6 +71,9 @@ jobs:
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           MARKETPLACES_BUSCA_ATIVOS: mercadolivre,magalu,shopee,amazon
           ESMALTES_BUSCA_MULTI_MARKETPLACE: "1"
           ESMALTES_TENDENCIAS_PAUSA_SEG: "2.0"

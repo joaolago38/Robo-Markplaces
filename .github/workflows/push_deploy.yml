@@ -27,6 +27,9 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
 
 jobs:
   push_deploy:
@@ -88,6 +91,9 @@ jobs:
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
