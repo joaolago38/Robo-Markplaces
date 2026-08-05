@@ -4,8 +4,12 @@ Agente da Amazon com integração de mensagens de comprador.
 """
 import logging
 import time
+from datetime import datetime, timezone
 
+from core.atomic_io import escrever_json_atomico
 from core.claude_client import responder_chat
+from core.config import ROOT
+from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar
 from integracoes.amazon.amazon_client import (
     listar_mensagens_nao_respondidas,
@@ -14,11 +18,15 @@ from integracoes.amazon.amazon_client import (
 from integracoes.bling.bling_client import buscar_produto
 
 logger = logging.getLogger("agente_amazon")
+_TAG = ["marketplace:amazon"]
+HEARTBEAT_PATH = ROOT / "logs" / "chat_ultima.json"
+
 
 def processar_mensagens() -> int:
     mensagens = listar_mensagens_nao_respondidas()
+    gauge("chat.fila", float(len(mensagens or [])), tags=_TAG)
     ok = 0
-
+    falhas = 0
 
     for m in mensagens:
         texto = (m.get("message") or m.get("text") or "").strip()
@@ -33,11 +41,33 @@ def processar_mensagens() -> int:
             resposta = responder_chat(texto, produto or {}, "amazon")
             if thread_id and responder_mensagem(str(thread_id), resposta):
                 ok += 1
+            else:
+                falhas += 1
         except Exception as exc:
+            falhas += 1
             logger.error("Erro Amazon IA: %s", exc)
             alertar("Erro no agente Amazon")
 
         time.sleep(1)
+
+    if ok:
+        incrementar("chat.respondidas", float(ok), tags=_TAG)
+    if falhas:
+        incrementar("chat.falha", float(falhas), tags=_TAG)
+    incrementar("chat.rodadas", tags=_TAG)
+    try:
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": falhas == 0,
+                "marketplace": "amazon",
+                "respondidas": ok,
+                "falhas": falhas,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Amazon chat heartbeat: %s", exc)
 
     return ok
 

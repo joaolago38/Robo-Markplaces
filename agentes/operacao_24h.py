@@ -115,7 +115,28 @@ def _faturar_pedidos_lojahub(dry_run_nfe: bool = True, limite: int = 20) -> dict
         if out.get("ok"):
             sucesso += 1
         resultados.append({"pedido_id": pedido["pedido_id"], "ok": out.get("ok"), "resultado": out})
-    return {"total": len(resultados), "sucesso": sucesso, "falhas": len(resultados) - sucesso, "itens": resultados}
+    payload = {
+        "total": len(resultados),
+        "sucesso": sucesso,
+        "falhas": len(resultados) - sucesso,
+        "itens": resultados,
+    }
+    try:
+        incrementar("nfe.rodadas", tags=[f"dry_run:{str(bool(dry_run_nfe)).lower()}"])
+        escrever_json_atomico(
+            ROOT / "logs" / "nfe_ultima.json",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": payload["falhas"] == 0,
+                "dry_run": dry_run_nfe,
+                "total": payload["total"],
+                "sucesso": sucesso,
+                "falhas": payload["falhas"],
+            },
+        )
+    except Exception as exc:
+        logger.warning("NF-e heartbeat: %s", exc)
+    return payload
 
 
 def _payload_para_contexto_claude(payload: dict) -> dict:

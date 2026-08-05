@@ -59,6 +59,10 @@ jobs:
             logs/relatorio_manha_ml_ultima.json
             logs/esmaltes_mercado_history.json
             logs/estoque_ultima.json
+            logs/ads_gatilho_ultima.json
+            logs/chat_ultima.json
+            logs/nfe_ultima.json
+            logs/vendas_whatsapp_ultima.json
           key: saude-heartbeats-${{ github.run_id }}
           restore-keys: |
             saude-heartbeats-
