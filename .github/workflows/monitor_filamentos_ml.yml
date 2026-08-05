@@ -19,6 +19,9 @@ env:
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
   DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
   DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
   # Catálogo ativo: TPU, PLA, PETG, ABS — um resumo/dia para acompanhar
   FILAMENTOS_ML_ALERTA_RESUMO: "1"
   FILAMENTOS_ML_ALERTA_COOLDOWN_SEG: "72000"
@@ -75,6 +78,9 @@ jobs:
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Salvar snapshot
