@@ -23,13 +23,14 @@ class MarketplaceAlgorithmTests(unittest.TestCase):
         self._patch.stop()
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def test_marketplace_nao_configurado_vira_critico(self):
+    def test_marketplace_nao_configurado_vira_inativo_sem_alerta(self):
         out = avaliar_marketplace(
             "market_x_test",
             {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 0},
         )
         self.assertEqual(out["score"], 0)
-        self.assertEqual(out["status"], "critico")
+        self.assertEqual(out["status"], "inativo")
+        self.assertFalse(self._history.exists())  # não polui histórico
 
     def test_marketplace_api_falha_nao_vira_critico_score_zero(self):
         out = avaliar_marketplace(

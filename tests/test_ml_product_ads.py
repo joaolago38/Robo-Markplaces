@@ -66,6 +66,19 @@ class TestListarCampanhas(unittest.TestCase):
         self.assertEqual(out[0]["id"], "C1")
         self.assertEqual(out[0]["acos"], 0.15)
 
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_vira_warning_nao_error(self, _en, mock_req, *_):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        with self.assertLogs("ml_product_ads", level="WARNING") as cm:
+            out = ads.listar_campanhas(advertiser_id="421764")
+        self.assertEqual(out, [])
+        self.assertTrue(any("HTTP 404" in m for m in cm.output))
+        self.assertFalse(any("ERROR:" in m for m in cm.output))
+
 
 class TestEscritaCampanha(unittest.TestCase):
     @patch.object(ads, "_enabled", return_value=True)

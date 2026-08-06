@@ -156,7 +156,26 @@ def listar_campanhas(
             rows = list(rows.values())
         return [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
     except Exception as exc:
-        logger.error("ML listar_campanhas erro: %s", exc)
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        # 404 = advertiser/campanhas inexistente ou Product Ads sem escopo —
+        # config, não queda do robô. Evita ERROR recorrente no Datadog.
+        if status == 404:
+            logger.warning(
+                "ML listar_campanhas: Product Ads indisponível (HTTP 404) "
+                "advertiser=%s — confira escopos advertising / ID no DevCenter",
+                advertiser_id,
+            )
+            try:
+                from core.datadog_metrics import incrementar
+
+                incrementar(
+                    "ads.probe_falha",
+                    tags=["motivo:http_404", "origem:listar_campanhas"],
+                )
+            except Exception:
+                pass
+        else:
+            logger.error("ML listar_campanhas erro: %s", exc)
         return []
 
 

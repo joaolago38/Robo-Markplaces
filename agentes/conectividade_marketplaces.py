@@ -47,24 +47,47 @@ def _probe(nome_marketplace: str) -> dict:
     return probe_conexao()
 
 
+def _eh_nao_configurado(msg: str, status_http: object) -> bool:
+    """Canal sem secrets — não é falha de conectividade."""
+    try:
+        st = int(status_http or 0)
+    except (TypeError, ValueError):
+        st = 0
+    m = (msg or "").casefold()
+    return st == 0 and ("não configurado" in m or "nao configurado" in m)
+
+
 def _avaliar_um(nome_marketplace: str) -> dict:
     resultado = _probe(nome_marketplace) or {}
     ok = bool(resultado.get("ok"))
     status_http = resultado.get("status", 0)
     msg = str(resultado.get("msg", "") or "")
+    skipped = (not ok) and _eh_nao_configurado(msg, status_http)
+    tags_mp = [f"marketplace:{nome_marketplace}"]
 
-    # Gauge contínuo (1=ok, 0=falha) — no Datadog, a média desse valor
-    # ao longo do tempo já é, na prática, o % de uptime de conectividade.
-    gauge("conectividade.status", 1.0 if ok else 0.0, tags=[f"marketplace:{nome_marketplace}"])
+    # Gauge contínuo (1=ok, 0=falha). Canal inativo → não polui uptime.
+    if skipped:
+        gauge("conectividade.status", 1.0, tags=[*tags_mp, "estado:pulado"])
+        incrementar("conectividade.pulado", tags=tags_mp)
+        logger.info(
+            "Conectividade %s pulada (não configurado) — canal inativo, não é falha",
+            nome_marketplace,
+        )
+    else:
+        gauge(
+            "conectividade.status",
+            1.0 if ok else 0.0,
+            tags=[*tags_mp, f"estado:{'ok' if ok else 'falha'}"],
+        )
 
     if ok:
         # Uma chamada real que funcionou conta como acesso de verdade —
         # mesmo critério já usado em obter_saude_conta()/manter_conta_ativa().
         registrar_acesso(nome_marketplace)
-    else:
+    elif not skipped:
         incrementar(
             "conectividade.falha",
-            tags=[f"marketplace:{nome_marketplace}", f"status_http:{status_http}"],
+            tags=[*tags_mp, f"status_http:{status_http}"],
         )
         logger.error(
             "Conectividade %s FALHOU (status=%s): %s",
@@ -85,7 +108,9 @@ def _avaliar_um(nome_marketplace: str) -> dict:
 
     return {
         "marketplace": nome_marketplace,
-        "ok": ok,
+        # Canal sem secrets conta como ok (skipped) — não derruba o heartbeat.
+        "ok": ok or skipped,
+        "skipped": skipped,
         "status_http": status_http,
         "msg": msg,
         "dias_sem_acesso": dias_sem_acesso(nome_marketplace) or 0,
@@ -117,10 +142,12 @@ def executar() -> dict:
                 }
             )
 
+    incrementar("conectividade.rodadas")
     payload = {
         "total": len(resultados),
         "ok": sum(1 for r in resultados if r["ok"]),
-        "falha": sum(1 for r in resultados if not r["ok"]),
+        "falha": sum(1 for r in resultados if not r["ok"] and not r.get("skipped")),
+        "pulado": sum(1 for r in resultados if r.get("skipped")),
         "resultados": resultados,
     }
     try:

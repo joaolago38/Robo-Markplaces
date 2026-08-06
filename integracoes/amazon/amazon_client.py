@@ -63,7 +63,7 @@ def probe_conexao() -> dict:
 
 def listar_mensagens_nao_respondidas_detalhado(limit: int = 20) -> tuple[list[dict], bool]:
     if not _enabled():
-        logger.warning("Amazon não configurado.")
+        logger.info("Amazon não configurado.")
         return [], False
     try:
         r = request(
@@ -90,7 +90,7 @@ def listar_mensagens_nao_respondidas(limit: int = 20) -> list[dict]:
 
 def responder_mensagem(thread_id: str, texto: str) -> bool:
     if not _enabled():
-        logger.warning("Amazon não configurado para responder mensagem.")
+        logger.info("Amazon não configurado para responder mensagem.")
         return False
     try:
         r = request(
@@ -130,7 +130,7 @@ def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
         logger.warning("Amazon atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Amazon não configurado para atualização de preço.")
+        logger.info("Amazon não configurado para atualização de preço.")
         return False
     try:
         r = request(
@@ -154,7 +154,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     Nunca lança exceção.
     """
     if not _enabled():
-        logger.warning("Amazon não configurada para listar pedidos.")
+        logger.info("Amazon não configurada para listar pedidos.")
         return [], False
     out: list[dict] = []
     try:

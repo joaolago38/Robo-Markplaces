@@ -77,7 +77,7 @@ def probe_conexao() -> dict:
 def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: int = 5) -> tuple[list[dict], bool]:
     """Retorna (perguntas, sucesso_chamada), percorrendo páginas via offset."""
     if not _enabled():
-        logger.warning("Magalu não configurado.")
+        logger.info("Magalu não configurado.")
         return [], False
     out: list[dict] = []
     offset = 0
@@ -115,7 +115,7 @@ def listar_perguntas_nao_respondidas(limit: int = 20) -> list[dict]:
 
 def responder_pergunta(question_id: str, texto: str) -> bool:
     if not _enabled():
-        logger.warning("Magalu não configurado para responder pergunta.")
+        logger.info("Magalu não configurado para responder pergunta.")
         return False
     try:
         r = request(
@@ -200,7 +200,7 @@ def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
         logger.warning("Magalu atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Magalu não configurado para atualização de preço.")
+        logger.info("Magalu não configurado para atualização de preço.")
         return False
     try:
         r = request(
@@ -224,7 +224,7 @@ def atualizar_estoque_item(sku: str, novo_estoque: int) -> bool:
         logger.warning("Magalu atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Magalu não configurado para atualização de estoque.")
+        logger.info("Magalu não configurado para atualização de estoque.")
         return False
     try:
         r = request(
@@ -250,7 +250,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     Retorno alinhado ao padrão do ML.
     """
     if not _enabled():
-        logger.warning("Magalu não configurado para listar pedidos.")
+        logger.info("Magalu não configurado para listar pedidos.")
         return [], False
 
     out: list[dict] = []

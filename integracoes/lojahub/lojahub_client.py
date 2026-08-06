@@ -18,7 +18,7 @@ def _enabled() -> bool:
 
 def listar_pedidos_pendentes() -> list[dict]:
     if not _enabled():
-        logger.warning("Lojahub não configurado.")
+        logger.info("Lojahub não configurado.")
         return []
     try:
         r = request("GET", f"{BASE}/pedidos", headers=_h(), params={"status": "pending", "limit": 50}, timeout=20)
@@ -35,7 +35,7 @@ def listar_pedidos_prontos_faturar(limit: int = 50) -> list[dict]:
     Retorna pedidos pagos/aprovados aguardando emissão de NF.
     """
     if not _enabled():
-        logger.warning("Lojahub não configurado para faturamento.")
+        logger.info("Lojahub não configurado para faturamento.")
         return []
     try:
         r = request(

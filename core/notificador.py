@@ -191,7 +191,7 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
     token = (TELEGRAM_TOKEN or "").strip()
     cid = (chat_id or "").strip()
     if not token or not cid:
-        logger.warning("Telegram não configurado — foto NÃO entregue")
+        logger.info("Telegram não configurado — foto NÃO entregue")
         _metric_telegram(False, canal="foto", motivo="nao_configurado")
         return False
     if not pode_enviar(token):
@@ -310,7 +310,7 @@ def enviar_telegram_manicures(
 ) -> bool:
     """Envia promoção ao canal/grupo Telegram das manicures (não é o gestor)."""
     if not manicures_telegram_configurado():
-        logger.warning("Telegram manicures não configurado — mensagem não enviada")
+        logger.info("Telegram manicures não configurado — mensagem não enviada")
         return False
     cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
     chave_final = chave or _chave_msg(msg)
