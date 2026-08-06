@@ -165,17 +165,19 @@ def listar_campanhas(
                 "advertiser=%s — confira escopos advertising / ID no DevCenter",
                 advertiser_id,
             )
+            # Não incrementa ads.probe_falha: 404 de config conhecida poluía
+            # o monitor P1 até o escopo Ads ser corrigido no DevCenter.
+        else:
+            logger.error("ML listar_campanhas erro: %s", exc)
             try:
                 from core.datadog_metrics import incrementar
 
                 incrementar(
                     "ads.probe_falha",
-                    tags=["motivo:http_404", "origem:listar_campanhas"],
+                    tags=["motivo:http_erro", "origem:listar_campanhas"],
                 )
             except Exception:
                 pass
-        else:
-            logger.error("ML listar_campanhas erro: %s", exc)
         return []
 
 

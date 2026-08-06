@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "5b3e3ad32aa0d6ed8be2",
+      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
+      "ultima_vez": "2026-08-06T14:20:28.417707+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 7
+    },
+    {
       "fingerprint": "f8f8a4d6839d615ab87b",
       "primeira_vez": "2026-07-05T20:44:37.197647+00:00",
       "ultima_vez": "2026-08-05T22:37:01.425544+00:00",
@@ -43,17 +54,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 5
-    },
-    {
-      "fingerprint": "5b3e3ad32aa0d6ed8be2",
-      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-08-05T22:37:01.378378+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 6
     },
     {
       "fingerprint": "1eb800981d76f7181fbe",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-08-05T22:37:01.425544+00:00"
+  "atualizado_em": "2026-08-06T14:20:28.417707+00:00"
 }

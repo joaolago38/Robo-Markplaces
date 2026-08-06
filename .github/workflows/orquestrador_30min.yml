@@ -211,13 +211,6 @@ jobs:
         if: always()
         continue-on-error: true
         uses: actions/cache/save@v4
-      - name: Publicar cota Brave
-        if: always()
-        continue-on-error: true
-        uses: actions/cache/save@v4
-        with:
-          path: logs/brave_uso_mensal.json
-          key: brave-uso-mensal-${{ github.run_id }}
         with:
           path: |
             logs/claude_uso_orcamento.json
@@ -226,3 +219,10 @@ jobs:
             logs/chat_perguntas_claimed.json
             logs/brave_uso_mensal.json
           key: estado-vendas-ia-${{ github.run_id }}
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
