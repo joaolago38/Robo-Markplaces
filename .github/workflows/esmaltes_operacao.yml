@@ -1,4 +1,4 @@
-﻿name: Operação esmaltes consolidada
+name: Operação esmaltes consolidada
 
 # Crescimento + decisão do dia + ecossistema → 1 Telegram.
 # Substitui os crons separados (workflows individuais ficam só manuais).
@@ -12,8 +12,9 @@ on:
     - cron: "0 0 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

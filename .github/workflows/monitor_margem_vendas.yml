@@ -1,4 +1,4 @@
-﻿name: Monitor margem vendas marketplaces
+name: Monitor margem vendas marketplaces
 
 # Lucro/margem das vendas ML/Shopee/Magalu/Amazon → Telegram gestor
 
@@ -11,8 +11,9 @@ on:
     - cron: "5 0 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

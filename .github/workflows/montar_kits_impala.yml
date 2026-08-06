@@ -1,4 +1,4 @@
-﻿name: Montar Kits Impala (planilha x ML)
+name: Montar Kits Impala (planilha x ML)
 
 # Cruza cores Impala da planilha NCM com kits mais vendidos no ML → Telegram.
 
@@ -11,8 +11,9 @@ on:
     - cron: "0 0 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

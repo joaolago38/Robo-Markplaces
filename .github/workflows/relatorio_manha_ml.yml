@@ -1,4 +1,4 @@
-﻿name: Relatorio manha Mercado Livre
+name: Relatorio manha Mercado Livre
 
 # Visão matinal: seus anúncios vs mercado + propostas com lucro viável.
 # Consolida monitor ML, preços, concorrentes e Anita em um único Telegram.
@@ -10,8 +10,9 @@ on:
     - cron: "30 10 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"
