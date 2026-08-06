@@ -17,7 +17,7 @@ class TestAlgoritmoEventos(unittest.TestCase):
             "mercadolivre": {
                 "status": "critico",
                 "score": 40,
-                "metrics": {"pendencias": 20, "claims_rate": 0.02},
+                "metrics": {"pendencias": 20, "claims_rate": 0.02, "configurado": True},
                 "variacoes_relevantes": [{"metrica": "score", "variacao_pct": -8}],
                 "acoes_recomendadas": [],
             }
@@ -28,6 +28,19 @@ class TestAlgoritmoEventos(unittest.TestCase):
         self.assertIn("priorizar_chat", tipos)
         self.assertIn("congelar_repricing", tipos)
         self.assertIn("revisar_listing", tipos)
+
+    def test_inativo_nao_emite_eventos(self):
+        avaliacoes = {
+            "shopee": {
+                "status": "inativo",
+                "score": 0,
+                "metrics": {"configurado": False, "pendencias": 0, "claims_rate": 0.0},
+                "variacoes_relevantes": [],
+                "acoes_recomendadas": [],
+            }
+        }
+        with patch.object(ev, "ALGORITMO_EVENTOS_ATIVO", True):
+            self.assertEqual(ev.emitir_de_avaliacao(avaliacoes), [])
 
     def test_emitir_desligado_retorna_vazio(self):
         with patch.object(ev, "ALGORITMO_EVENTOS_ATIVO", False):

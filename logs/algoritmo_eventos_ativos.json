@@ -1,52 +1,52 @@
 {
-  "timestamp": "2026-08-02T20:17:06.948122+00:00",
+  "timestamp": "2026-08-06T11:11:17.948115+00:00",
   "eventos": [
-    {
-      "tipo": "congelar_repricing",
-      "marketplace": "mercadolivre",
-      "motivo": "score=10 claims=0.0000 status=critico",
-      "criado_em": "2026-08-02T13:11:30.696714+00:00",
-      "expira_em": "2026-08-03T13:11:30.696714+00:00",
-      "prioridade": 1
-    },
-    {
-      "tipo": "congelar_repricing",
-      "marketplace": "amazon",
-      "motivo": "score=20 claims=0.0000 status=critico",
-      "criado_em": "2026-08-02T13:11:30.717867+00:00",
-      "expira_em": "2026-08-03T13:11:30.717867+00:00",
-      "prioridade": 1
-    },
     {
       "tipo": "priorizar_chat",
       "marketplace": "mercadolivre",
       "motivo": "pendencias=0 status=critico score=10",
-      "criado_em": "2026-08-02T20:17:06.937761+00:00",
-      "expira_em": "2026-08-03T02:17:06.937761+00:00",
+      "criado_em": "2026-08-06T11:11:17.616718+00:00",
+      "expira_em": "2026-08-06T17:11:17.616718+00:00",
+      "prioridade": 1
+    },
+    {
+      "tipo": "congelar_repricing",
+      "marketplace": "mercadolivre",
+      "motivo": "score=10 claims=0.0000 status=critico",
+      "criado_em": "2026-08-06T11:11:17.616718+00:00",
+      "expira_em": "2026-08-07T11:11:17.616718+00:00",
       "prioridade": 1
     },
     {
       "tipo": "priorizar_chat",
-      "marketplace": "amazon",
+      "marketplace": "shopee",
       "motivo": "pendencias=0 status=critico score=20",
-      "criado_em": "2026-08-02T20:17:06.947679+00:00",
-      "expira_em": "2026-08-03T02:17:06.947679+00:00",
+      "criado_em": "2026-08-06T11:11:17.944989+00:00",
+      "expira_em": "2026-08-06T17:11:17.944989+00:00",
+      "prioridade": 1
+    },
+    {
+      "tipo": "congelar_repricing",
+      "marketplace": "shopee",
+      "motivo": "score=20 claims=0.0000 status=critico",
+      "criado_em": "2026-08-06T11:11:17.944989+00:00",
+      "expira_em": "2026-08-07T11:11:17.944989+00:00",
       "prioridade": 1
     },
     {
       "tipo": "revisar_listing",
       "marketplace": "mercadolivre",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-08-02T13:11:30.696714+00:00",
-      "expira_em": "2026-08-04T13:11:30.696714+00:00",
+      "criado_em": "2026-08-06T11:11:17.616718+00:00",
+      "expira_em": "2026-08-08T11:11:17.616718+00:00",
       "prioridade": 2
     },
     {
       "tipo": "revisar_listing",
-      "marketplace": "amazon",
+      "marketplace": "shopee",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-08-02T13:11:30.717867+00:00",
-      "expira_em": "2026-08-04T13:11:30.717867+00:00",
+      "criado_em": "2026-08-06T11:11:17.944989+00:00",
+      "expira_em": "2026-08-08T11:11:17.944989+00:00",
       "prioridade": 2
     }
   ]

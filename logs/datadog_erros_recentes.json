@@ -1,6 +1,83 @@
 {
   "erros": [
     {
+      "fingerprint": "f8f8a4d6839d615ab87b",
+      "primeira_vez": "2026-07-05T20:44:37.197647+00:00",
+      "ultima_vez": "2026-08-05T22:37:01.425544+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Erro inesperado ao testar conectividade amazon: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "630e40591b18aca6969f",
+      "primeira_vez": "2026-07-05T20:44:37.192592+00:00",
+      "ultima_vez": "2026-08-05T22:37:01.419675+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Erro inesperado ao testar conectividade shopee: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "584e931949b515566c14",
+      "primeira_vez": "2026-07-05T20:44:37.186746+00:00",
+      "ultima_vez": "2026-08-05T22:37:01.414014+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Erro inesperado ao testar conectividade mercadolivre: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "e9474800da85f0ed62ff",
+      "primeira_vez": "2026-07-05T20:44:37.172361+00:00",
+      "ultima_vez": "2026-08-05T22:37:01.384912+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Conectividade mercadolivre FALHOU (status=401): token expirado ou inválido",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "5b3e3ad32aa0d6ed8be2",
+      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
+      "ultima_vez": "2026-08-05T22:37:01.378378+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 6
+    },
+    {
+      "fingerprint": "1eb800981d76f7181fbe",
+      "primeira_vez": "2026-07-05T20:46:21.287193+00:00",
+      "ultima_vez": "2026-08-05T22:37:00.044802+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Conectividade lojahub FALHOU (status=0): marketplace desconhecido",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "f5603abc6d3a1645dcdd",
+      "primeira_vez": "2026-07-05T20:46:21.270300+00:00",
+      "ultima_vez": "2026-08-05T22:37:00.026245+00:00",
+      "logger": "conectividade_marketplaces",
+      "mensagem": "Conectividade amazon FALHOU (status=403): sem permissão",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "9eef7e4427e1dd79f31f",
       "primeira_vez": "2026-08-03T15:49:08.785083+00:00",
       "ultima_vez": "2026-08-04T17:26:35.797235+00:00",
@@ -21,17 +98,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 9
-    },
-    {
-      "fingerprint": "5b3e3ad32aa0d6ed8be2",
-      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-08-04T15:33:36.186666+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
     },
     {
       "fingerprint": "fb3ad3caa7752b836796",
@@ -936,72 +1002,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "f8f8a4d6839d615ab87b",
-      "primeira_vez": "2026-07-05T20:44:37.197647+00:00",
-      "ultima_vez": "2026-07-10T17:42:25.400290+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Erro inesperado ao testar conectividade amazon: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "630e40591b18aca6969f",
-      "primeira_vez": "2026-07-05T20:44:37.192592+00:00",
-      "ultima_vez": "2026-07-10T17:42:24.637495+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Erro inesperado ao testar conectividade shopee: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
-      "fingerprint": "584e931949b515566c14",
-      "primeira_vez": "2026-07-05T20:44:37.186746+00:00",
-      "ultima_vez": "2026-07-10T17:42:23.895443+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Erro inesperado ao testar conectividade mercadolivre: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
-      "fingerprint": "e9474800da85f0ed62ff",
-      "primeira_vez": "2026-07-05T20:44:37.172361+00:00",
-      "ultima_vez": "2026-07-10T17:42:21.937671+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Conectividade mercadolivre FALHOU (status=401): token expirado ou inválido",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
-      "fingerprint": "1eb800981d76f7181fbe",
-      "primeira_vez": "2026-07-05T20:46:21.287193+00:00",
-      "ultima_vez": "2026-07-10T17:42:18.527895+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Conectividade lojahub FALHOU (status=0): marketplace desconhecido",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "f5603abc6d3a1645dcdd",
-      "primeira_vez": "2026-07-05T20:46:21.270300+00:00",
-      "ultima_vez": "2026-07-10T17:42:15.867179+00:00",
-      "logger": "conectividade_marketplaces",
-      "mensagem": "Conectividade amazon FALHOU (status=403): sem permissão",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "8d6751d8c3aa91f0b816",
       "primeira_vez": "2026-07-10T17:41:45.044577+00:00",
       "ultima_vez": "2026-07-10T17:41:45.044577+00:00",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-08-04T17:26:35.797235+00:00"
+  "atualizado_em": "2026-08-05T22:37:01.425544+00:00"
 }

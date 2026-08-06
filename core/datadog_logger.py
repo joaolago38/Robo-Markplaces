@@ -248,6 +248,24 @@ _LOGGER_META = {
 
 _DEFAULT_META = ("geral", "outros")
 
+# Bibliotecas de terceiros cujo WARNING polui marketplace:geral/outros e
+# não acrescenta sinal operacional (retries urllib3, fontes matplotlib…).
+# Continuam no console/Actions; só o intake Datadog as ignora.
+_PREFIXOS_IGNORAR_DD = (
+    "urllib3",
+    "matplotlib",
+    "PIL",
+    "fontTools",
+)
+
+
+def _ignorar_no_datadog(nome_logger: str) -> bool:
+    n = (nome_logger or "").strip()
+    if not n:
+        return False
+    return any(n == p or n.startswith(p + ".") for p in _PREFIXOS_IGNORAR_DD)
+
+
 # Evita inundar o Datadog com o mesmo aviso de "logger não mapeado" a cada
 # linha de log — avisa uma única vez por nome de logger, por processo.
 _avisados_sem_mapeamento: set[str] = set()
@@ -329,6 +347,8 @@ class DatadogLogHandler(logging.Handler):
             return
         # Evita recursão se o aviso de falha de envio voltar para este handler
         if record.name in ("datadog_logger", "datadog_metrics"):
+            return
+        if _ignorar_no_datadog(record.name):
             return
         from core.config import DD_API_KEY, DD_ENV, DD_LOGS_ENABLED
         from core.http_errors import mascarar_segredos_http

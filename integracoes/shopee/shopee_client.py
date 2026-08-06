@@ -121,7 +121,7 @@ def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: 
     Endpoint pode variar entre contas; retorna (lista, sucesso_chamada).
     """
     if not _enabled():
-        logger.warning("Shopee não configurado.")
+        logger.info("Shopee não configurado.")
         return [], False
     path = "/api/v2/product/get_comment"
     comentarios: list[dict] = []
@@ -180,7 +180,7 @@ def responder_pergunta(item_id: int, comment_id: int, texto: str) -> bool:
     Endpoint de reply pode variar por categoria/permissão.
     """
     if not _enabled():
-        logger.warning("Shopee não configurado para responder pergunta.")
+        logger.info("Shopee não configurado para responder pergunta.")
         return False
     path = "/api/v2/product/reply_comment"
     try:
@@ -282,7 +282,7 @@ def atualizar_preco_item(item_id: int, novo_preco: float, model_id: int | None =
         logger.warning("Shopee atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Shopee não configurado para atualização de preço.")
+        logger.info("Shopee não configurado para atualização de preço.")
         return False
     path = "/api/v2/product/update_price"
     try:
@@ -312,7 +312,7 @@ def atualizar_estoque_item(item_id: int, novo_estoque: int, model_id: int | None
         logger.warning("Shopee atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Shopee não configurado para atualização de estoque.")
+        logger.info("Shopee não configurado para atualização de estoque.")
         return False
     path = "/api/v2/product/update_stock"
     try:
@@ -343,7 +343,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     Retorno alinhado ao padrão do ML. Nunca lança exceção.
     """
     if not _enabled():
-        logger.warning("Shopee não configurado para listar pedidos.")
+        logger.info("Shopee não configurado para listar pedidos.")
         return [], False
     try:
         path_list = "/api/v2/order/get_order_list"

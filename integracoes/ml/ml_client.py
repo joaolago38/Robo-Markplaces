@@ -97,7 +97,9 @@ def _log_erro_leitura_item(acao: str, item_id: str, exc: Exception) -> None:
         )
         return
     if status in (404, 403):
-        logger.warning(
+        # Operacional (anúncio apagado / sem escopo no item) — não é incidente.
+        # Antes era WARNING e dominava ~30% do volume de warns no Datadog.
+        logger.info(
             "ML %s item_id=%s HTTP %s — item inexistente ou sem permissão: %s",
             acao,
             item_id,
@@ -274,7 +276,7 @@ def _listar_perguntas_nao_respondidas_detalhado() -> tuple[list[dict], bool]:
     """Retorna (perguntas, sucesso_chamada). Use isto quando precisar saber
     se a lista vazia é "sem pendência" ou "a chamada falhou"."""
     if not _enabled():
-        logger.warning("Mercado Livre não configurado.")
+        logger.info("Mercado Livre não configurado.")
         return [], False
     try:
         r = _request_ml(
@@ -300,7 +302,7 @@ def listar_perguntas_nao_respondidas() -> list[dict]:
 
 def responder_pergunta(question_id: str, texto: str) -> bool:
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para responder pergunta.")
+        logger.info("Mercado Livre não configurado para responder pergunta.")
         return False
     try:
         r = _request_ml(
@@ -322,7 +324,7 @@ def buscar_perfil_vendedor() -> dict:
     Nunca lança exceção.
     """
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para perfil.")
+        logger.info("Mercado Livre não configurado para perfil.")
         return {}
     try:
         r = _request_ml("GET", f"{BASE}/users/{ML_SELLER_ID}", timeout=20)
@@ -536,7 +538,7 @@ def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
         logger.warning("ML atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para atualização de preço.")
+        logger.info("Mercado Livre não configurado para atualização de preço.")
         return False
     try:
         r = _request_ml(
@@ -561,7 +563,7 @@ def atualizar_titulo_item(item_id: str, novo_titulo: str) -> bool:
         logger.warning("ML atualizar_titulo_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para atualização de título.")
+        logger.info("Mercado Livre não configurado para atualização de título.")
         return False
     titulo = (novo_titulo or "").strip()[:60]
     if len(titulo) < 10:
@@ -589,7 +591,7 @@ def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
         logger.warning("ML atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para atualização de estoque.")
+        logger.info("Mercado Livre não configurado para atualização de estoque.")
         return False
     try:
         r = _request_ml(
@@ -615,7 +617,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     (ex.: token expirado, API fora do ar).
     """
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para listar pedidos.")
+        logger.info("Mercado Livre não configurado para listar pedidos.")
         return [], False
 
     out: list[dict] = []
@@ -1089,7 +1091,7 @@ def listar_meus_anuncios(*, statuses: tuple[str, ...] | list[str] | None = None)
     Nunca lança exceção.
     """
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para listar anúncios.")
+        logger.info("Mercado Livre não configurado para listar anúncios.")
         return []
     status_list = tuple(statuses) if statuses else ("active",)
     try:

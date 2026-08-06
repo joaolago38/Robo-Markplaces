@@ -1,6 +1,9 @@
 """
 agentes/algoritmo_marketplaces.py
 Monitora saúde das contas, emite eventos tipados e alerta o gestor.
+
+Canais inativos no spec ou sem credenciais → status "inativo":
+não disparam Telegram nem eventos de congelar/priorizar.
 """
 import logging
 
@@ -15,26 +18,41 @@ from integracoes.shopee.shopee_client import obter_saude_conta as saude_shopee
 
 logger = logging.getLogger("algoritmo_marketplaces")
 
+_COLETORES = {
+    "mercadolivre": saude_ml,
+    "shopee": saude_shopee,
+    "magalu": saude_magalu,
+    "amazon": saude_amazon,
+}
+
 _MARKETPLACES_ATIVOS: set[str] = {
     m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
 }
 
 
+def _marketplaces_a_avaliar() -> list[str]:
+    """Só canais ativos no spec e com coletor. Ordem estável."""
+    ordem = ("mercadolivre", "shopee", "magalu", "amazon")
+    return [n for n in ordem if n in _MARKETPLACES_ATIVOS and n in _COLETORES]
+
+
 def executar(alertar_quando_atencao: bool = False) -> dict:
-    saude = {
-        "mercadolivre": saude_ml(),
-        "shopee": saude_shopee(),
-        "amazon": saude_amazon(),
-    }
-    if "magalu" in _MARKETPLACES_ATIVOS:
-        saude["magalu"] = saude_magalu()
+    nomes = _marketplaces_a_avaliar()
+    saude = {nome: _COLETORES[nome]() for nome in nomes}
     avaliacoes = {nome: avaliar_marketplace(nome, metrics) for nome, metrics in saude.items()}
 
+    # Eventos só para canais configurados (emitir_de_avaliacao também ignora inativo).
     eventos = emitir_de_avaliacao(avaliacoes)
     eventos_ativos = persistir_eventos(eventos) if eventos else persistir_eventos([])
 
     for nome, avaliacao in avaliacoes.items():
         status = avaliacao["status"]
+        if status == "inativo":
+            logger.info(
+                "Algoritmo %s: inativo/não configurado — sem alerta Telegram",
+                nome,
+            )
+            continue
         variacoes = avaliacao.get("variacoes_relevantes", [])
         variacao_critica = any(
             v.get("metrica") == "score" and v.get("variacao_pct", 0) <= -5 for v in variacoes
@@ -58,6 +76,7 @@ def executar(alertar_quando_atencao: bool = False) -> dict:
         "saudavel": sum(1 for a in avaliacoes.values() if a["status"] == "saudavel"),
         "atencao": sum(1 for a in avaliacoes.values() if a["status"] == "atencao"),
         "critico": sum(1 for a in avaliacoes.values() if a["status"] == "critico"),
+        "inativo": sum(1 for a in avaliacoes.values() if a["status"] == "inativo"),
     }
 
     payload = {

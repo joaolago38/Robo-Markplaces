@@ -47,8 +47,13 @@ def emitir_de_avaliacao(avaliacoes: dict[str, Any]) -> list[dict[str, Any]]:
         if not isinstance(av, dict):
             continue
         status = str(av.get("status") or "")
-        score = int(av.get("score") or 0)
+        # Canal desligado/sem secrets: não congela repricing nem prioriza chat.
+        if status == "inativo":
+            continue
         metrics = av.get("metrics") or {}
+        if metrics.get("configurado") is False:
+            continue
+        score = int(av.get("score") or 0)
         pendencias = int(metrics.get("pendencias") or 0)
         claims = float(metrics.get("claims_rate") or 0)
         variacoes = av.get("variacoes_relevantes") or []

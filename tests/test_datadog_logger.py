@@ -124,6 +124,16 @@ class TestDatadogLogHandler(unittest.TestCase):
     @patch("core.datadog_logger.requests.post")
     @patch("core.config.DD_API_KEY", "dd-key-test")
     @patch("core.config.DD_LOGS_ENABLED", True)
+    def test_urllib3_e_matplotlib_nao_vao_ao_datadog(self, mock_post, *_):
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.emit(_make_record(name="urllib3.connectionpool", msg="Retrying"))
+        handler.emit(_make_record(name="matplotlib.font_manager", msg="findfont"))
+        mock_post.assert_not_called()
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
     @patch("core.datadog_logger.obter_request_id", return_value="req-abc123")
     def test_emit_inclui_request_id(self, mock_rid, mock_post, *_):
         handler = DatadogLogHandler()

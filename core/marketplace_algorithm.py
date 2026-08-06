@@ -30,15 +30,20 @@ def _save_history(history: dict) -> None:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
 
-def _score_from_metrics(metrics: dict) -> tuple[int, list[str]]:
+def _score_from_metrics(metrics: dict) -> tuple[int, list[str], str | None]:
+    """Retorna (score, penalidades, status_forcado).
+
+    status_forcado='inativo' quando o canal não está configurado — não é
+    incidente de algoritmo; alerta/Telegram ficam suspensos até ativar.
+    """
     penalidades = []
     score = 100
 
     if not metrics.get("configurado", False):
-        return 0, ["configuração ausente para este marketplace"]
+        return 0, ["canal não configurado — alerta suspenso até ativar"], "inativo"
 
     if metrics.get("api_ok") is False:
-        return 65, ["falha na API de saúde (credenciais presentes; verifique token/conectividade)"]
+        return 65, ["falha na API de saúde (credenciais presentes; verifique token/conectividade)"], None
 
     pendencias = int(metrics.get("pendencias", 0) or 0)
     claims_rate = float(metrics.get("claims_rate", 0) or 0)
@@ -68,7 +73,7 @@ def _score_from_metrics(metrics: dict) -> tuple[int, list[str]]:
         score -= 12
         penalidades.append(f"{dias_sem_acesso} dias sem acesso")
 
-    return max(0, min(100, score)), penalidades
+    return max(0, min(100, score)), penalidades, None
 
 
 def _classificar(score: int) -> str:
@@ -132,6 +137,9 @@ def _ajustes_finos_vendas(variacoes: list[dict], score_atual: int) -> list[str]:
 
 
 def _ajustes_recomendados(metrics: dict, score_atual: int, media_historica: float | None, variacoes: list[dict]) -> list[str]:
+    if not metrics.get("configurado", False):
+        return ["canal inativo/não configurado — sem alerta Telegram até ativar credenciais"]
+
     acoes = []
     pendencias = int(metrics.get("pendencias", 0) or 0)
     claims_rate = float(metrics.get("claims_rate", 0) or 0)
@@ -161,18 +169,22 @@ def avaliar_marketplace(nome: str, metrics: dict) -> dict:
     historico = _load_history()
     pontos = historico.get(nome, [])
 
-    score_atual, penalidades = _score_from_metrics(metrics)
+    score_atual, penalidades, status_forcado = _score_from_metrics(metrics)
     metrics_com_score = {**metrics, "score_atual": score_atual}
     media_historica = None
-    if pontos:
+    if pontos and status_forcado is None:
         media_historica = sum(p.get("score", 0) for p in pontos[-10:]) / min(len(pontos), 10)
     ponto_anterior = pontos[-1] if pontos else None
-    variacoes = _detectar_variacoes_relevantes(metrics_com_score, ponto_anterior)
+    variacoes = (
+        []
+        if status_forcado == "inativo"
+        else _detectar_variacoes_relevantes(metrics_com_score, ponto_anterior)
+    )
 
     avaliacao = {
         "marketplace": nome,
         "score": score_atual,
-        "status": _classificar(score_atual),
+        "status": status_forcado or _classificar(score_atual),
         "penalidades": penalidades,
         "variacoes_relevantes": variacoes,
         "acoes_recomendadas": _ajustes_recomendados(metrics, score_atual, media_historica, variacoes),
@@ -180,12 +192,14 @@ def avaliar_marketplace(nome: str, metrics: dict) -> dict:
         "media_historica": round(media_historica, 1) if media_historica is not None else None,
     }
 
-    pontos.append({
-        "ts": datetime.now(timezone.utc).isoformat(),
-        "score": score_atual,
-        "metrics": metrics,
-    })
-    historico[nome] = pontos[-100:]
-    _save_history(historico)
+    # Não grava histórico de canal inativo — evita “queda brusca” falsa ao ativar.
+    if status_forcado != "inativo":
+        pontos.append({
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "score": score_atual,
+            "metrics": metrics,
+        })
+        historico[nome] = pontos[-100:]
+        _save_history(historico)
 
     return avaliacao
