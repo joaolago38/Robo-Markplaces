@@ -1,4 +1,4 @@
-﻿name: Monitor Alibaba Importação
+name: Monitor Alibaba Importação
 
 # Único cron de importação Alibaba: alibaba_sourcing (+ ML tendências).
 # Busca e inteligência individuais só via CLI/módulo (sem Telegram duplicado).
@@ -10,8 +10,9 @@ on:
     - cron: "0 11,23 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

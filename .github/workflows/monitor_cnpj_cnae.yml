@@ -1,4 +1,4 @@
-﻿name: Monitor CNPJ × CNAE × ML (ciclo 10 dias)
+name: Monitor CNPJ × CNAE × ML (ciclo 10 dias)
 
 # A cada ~10 dias: resolve CNAE→CNPJ→produtos.
 # Alteração no CNPJ (ou ciclo vencido) ⇒ inicia monitoramento Mercado Livre
@@ -24,8 +24,9 @@ on:
     - cron: "0 12 1,11,21 * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

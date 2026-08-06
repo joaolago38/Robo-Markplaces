@@ -1,4 +1,4 @@
-﻿name: Monitor Tendências Esmaltes (debug)
+name: Monitor Tendências Esmaltes (debug)
 
 # NÃO usar no cron. Produção = monitor_busca_kit_esmaltes (demanda real no ML).
 # Debug manual — sem alerta Telegram.
@@ -7,8 +7,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

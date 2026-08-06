@@ -1,4 +1,4 @@
-﻿name: Relatorio estrategia vendas ML
+name: Relatorio estrategia vendas ML
 
 # Top ações (preço / ads / diferenciar / canal próprio) a partir do monitor + loja.
 
@@ -9,8 +9,9 @@ on:
     - cron: "0 11 * * 1"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

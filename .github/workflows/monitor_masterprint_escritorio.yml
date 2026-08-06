@@ -1,4 +1,4 @@
-﻿name: Monitor Masterprint escritório ML
+name: Monitor Masterprint escritório ML
 
 # Acompanhamento secundário: 1 digest/dia. Continua no grupo OAuth (renova ML).
 
@@ -9,8 +9,9 @@ on:
     - cron: "45 11 * * *"
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"

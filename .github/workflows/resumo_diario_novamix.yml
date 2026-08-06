@@ -1,4 +1,4 @@
-﻿name: Resumo Diario Novamix (debug)
+name: Resumo Diario Novamix (debug)
 
 # NÃO usar no cron. Só se Novamix for operação separada ainda gerenciada.
 # Debug/manual — sem alerta Telegram; Ads off.
@@ -7,8 +7,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"
