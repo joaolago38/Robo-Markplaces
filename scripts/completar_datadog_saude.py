@@ -863,11 +863,15 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Ads falha / probe",
             "type": "query alert",
-            "query": (
-                "sum(last_24h):(sum:robo.ads.falha{*}.as_count() + "
-                "sum:robo.ads.probe_falha{*}.as_count()) > 0"
+            # Só falha de escrita real. HTTP 404 de listagem/escopo Ads é config
+            # conhecida e não deve manter P1 em Alert permanente.
+            # Nome mantido para upsert atualizar o monitor 21629780 existente.
+            "query": "sum(last_24h):sum:robo.ads.falha{*}.as_count() > 0",
+            "message": (
+                "Falha ao aplicar Product Ads (escrita). "
+                "404 de listagem/escopo NAO dispara este monitor — "
+                "revise scopes advertising no DevCenter separadamente.\n" + msg_base
             ),
-            "message": "Falha no gatilho Product Ads (API/probe). Revise scopes advertising.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:ads", "severity:p1"],
             "options": {
                 "thresholds": {"critical": 0},

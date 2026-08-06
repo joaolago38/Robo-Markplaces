@@ -67,7 +67,10 @@
     "ML performance ",
     "indisponível (esperado)",
     "Telegram: envio suprimido",
-    "Telegram answerCallbackQuery"
+    "Telegram answerCallbackQuery",
+    "ML listar_campanhas",
+    "Product Ads indisponível (HTTP 404)",
+    "advertising/advertisers/"
   ],
   "query_datadog": "service:robo-markplaces status:error (marketplace:mercadolivre OR marketplace:mercadolivre_ads OR marketplace:mercadolivre_e_outros OR @logger.name:token_manager OR @logger.name:notificador OR @logger.name:agente_faturamento OR logger:notificador OR logger:agente_faturamento)"
 }

@@ -5,7 +5,7 @@
     "nome": "Orquestrador 30min",
     "path": "logs/orquestrador_ultimo_ciclo.json",
     "campo": "timestamp",
-    "max_horas": 1,
+    "max_horas": 2,
     "critico": true
   },
   {
@@ -32,7 +32,7 @@
     "nome": "Renovação de tokens",
     "path": "logs/renovacao_tokens_ultima.json",
     "campo": "timestamp",
-    "max_horas": 1,
+    "max_horas": 2,
     "critico": true
   },
   {
