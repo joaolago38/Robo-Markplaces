@@ -73,11 +73,47 @@ class TestListarCampanhas(unittest.TestCase):
         err = Exception("404 Client Error: Not Found")
         err.response = MagicMock(status_code=404)
         mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
         with self.assertLogs("ml_product_ads", level="WARNING") as cm:
             out = ads.listar_campanhas(advertiser_id="421764")
         self.assertEqual(out, [])
+        self.assertEqual(ads.ultima_listagem_codigo(), "http_404")
         self.assertTrue(any("HTTP 404" in m for m in cm.output))
         self.assertFalse(any("ERROR:" in m for m in cm.output))
+
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_suprimido_em_cooldown(self, _en, mock_req, *_):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
+        with self.assertLogs("ml_product_ads", level="WARNING") as cm1:
+            ads.listar_campanhas(advertiser_id="421764")
+        self.assertEqual(len(cm1.output), 1)
+        # Segunda chamada no mesmo processo: sem novo WARNING
+        with self.assertRaises(AssertionError):
+            with self.assertLogs("ml_product_ads", level="WARNING"):
+                ads.listar_campanhas(advertiser_id="421764")
+
+
+class TestProbeEscrita404(unittest.TestCase):
+    @patch.object(ads, "listar_campanhas", return_value=[])
+    @patch.object(
+        ads,
+        "obter_advertiser",
+        return_value={"ok": True, "advertiser_id": "421764", "site_id": "MLB"},
+    )
+    def test_probe_propaga_http_404(self, *_):
+        ads._ULTIMA_LISTAGEM = {
+            "ok": False,
+            "codigo": "http_404",
+            "advertiser_id": "421764",
+        }
+        out = ads.probe_escrita_product_ads()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["codigo"], "http_404")
 
 
 class TestEscritaCampanha(unittest.TestCase):

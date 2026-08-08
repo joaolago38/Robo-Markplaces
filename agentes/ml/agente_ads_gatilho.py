@@ -186,14 +186,23 @@ def avaliar_momento_ads(
         probe = probe_escrita_product_ads()
         resultado["probe_escrita"] = probe
         if not probe.get("ok"):
+            codigo_probe = str(probe.get("codigo") or "")
             msg_probe = (
                 "⚠️ *ADS ML — escrita Product Ads indisponível*\n\n"
                 f"Decisão sugerida: *{decisao}*, mas a API recusou escrita.\n"
-                f"Código: `{probe.get('codigo')}`\n"
+                f"Código: `{codigo_probe}`\n"
                 f"Erro: `{probe.get('erro')}`\n\n"
-                "Libere Product Ads no DevCenter / regenerar token com scopes de advertising "
-                "antes de aprovar ligar/pausar/escalar."
             )
+            if codigo_probe == "http_404":
+                msg_probe += (
+                    "Product Ads retornou HTTP 404 (escopo/advertiser). "
+                    "Não peço aprovação no Telegram até corrigir no DevCenter."
+                )
+            else:
+                msg_probe += (
+                    "Libere Product Ads no DevCenter / regenerar token com scopes de advertising "
+                    "antes de aprovar ligar/pausar/escalar."
+                )
             alertar_gestor(msg_probe, chave="ads_ml:probe_escrita_falhou", cooldown_segundos=86400)
             resultado["confirmado_gestor"] = False
             resultado["decisao"] = "aguardar" if decisao == "ligar" else "manter"

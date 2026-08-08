@@ -21,6 +21,9 @@ from core.token_manager import get_token_magalu
 
 logger = logging.getLogger("magalu_client")
 BASE = "https://api.magalu.com"
+# Última listagem de pedidos — distingue auth quebrada de falha genérica
+# (vendas_notificador não deve poluir o P1 vendas.busca_falhou com invalid_grant).
+_ULTIMA_LISTAGEM_PEDIDOS: dict = {"auth_quebrada": False, "status": 0}
 # Endpoints com escopo "services:*" (Perguntas & Respostas, Tickets,
 # Conversations) vivem em um host separado dos endpoints "open:*"
 # (Produtos, Pedidos). Confirmado manualmente em 01/07/2026: GET
@@ -43,6 +46,19 @@ def _h():
         "Authorization": f"Bearer {tok}",
         "Content-Type": "application/json",
     }
+
+
+def ultima_listagem_auth_quebrada() -> bool:
+    """True se a última listar_pedidos_detalhado falhou por 401/403/invalid_grant."""
+    return bool(_ULTIMA_LISTAGEM_PEDIDOS.get("auth_quebrada"))
+
+
+def _resposta_indica_auth_quebrada(resposta) -> bool:
+    status = status_http(resposta)
+    if status in (401, 403):
+        return True
+    texto = (getattr(resposta, "text", "") or "").lower()
+    return "invalid_grant" in texto or "unauthorized" in texto
 
 
 def probe_conexao() -> dict:
@@ -249,6 +265,9 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     a lista vazia é "sem venda nova" ou "a chamada falhou de verdade".
     Retorno alinhado ao padrão do ML.
     """
+    global _ULTIMA_LISTAGEM_PEDIDOS
+    _ULTIMA_LISTAGEM_PEDIDOS = {"auth_quebrada": False, "status": 0}
+
     if not _enabled():
         logger.info("Magalu não configurado para listar pedidos.")
         return [], False
@@ -267,6 +286,20 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
                 timeout=25,
             )
             if status_http(r) != 200:
+                status = status_http(r)
+                auth_quebrada = _resposta_indica_auth_quebrada(r)
+                _ULTIMA_LISTAGEM_PEDIDOS = {
+                    "auth_quebrada": auth_quebrada,
+                    "status": status,
+                }
+                if auth_quebrada:
+                    try:
+                        incrementar(
+                            "magalu.auth_falha",
+                            tags=[f"status_code:{status}", "origem:listar_pedidos"],
+                        )
+                    except Exception:
+                        pass
                 log_http_erro_listagem(logger, "Magalu listar_pedidos", r)
                 return out, False
             body = r.json() or {}

@@ -551,11 +551,10 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Meta Campanhas Critico",
-                        "avg:robo.meta.campanhas_critico{*}",
-                        aggregator="avg",
+                        "Ads Indisponivel 404",
+                        "sum:robo.ads.indisponivel{*}.as_count()",
                         green_gt=None,
-                        red_gt=0,
+                        yellow_gt=0,
                     ),
                     "layout": {"height": 2, "width": 2, "x": 10, "y": 7},
                     "id": 720019,
@@ -763,7 +762,7 @@ def _grupo_catalogo_impala() -> dict[str, Any]:
                 {
                     "id": 730012,
                     "definition": {
-                        "title": "Gap vs mercado % (por papel)",
+                        "title": "Gap % preco-alvo vs mercado (por papel)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -772,7 +771,7 @@ def _grupo_catalogo_impala() -> dict[str, Any]:
                                 "display_type": "line",
                                 "response_format": "timeseries",
                                 "style": {"palette": "orange"},
-                                "formulas": [{"alias": "gap %", "formula": "query1"}],
+                                "formulas": [{"alias": "gap % (alvo)", "formula": "query1"}],
                                 "queries": [
                                     {
                                         "data_source": "metrics",
@@ -790,7 +789,7 @@ def _grupo_catalogo_impala() -> dict[str, Any]:
                 {
                     "id": 730013,
                     "definition": {
-                        "title": "Preco F1 vs mercado (por papel)",
+                        "title": "Preco-alvo F1 vs mercado (por papel)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -863,7 +862,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Nossos acima do rival",
+                        "Preco-alvo acima do rival",
                         "avg:robo.impala.batalha.nossos_acima_rival{*}",
                         aggregator="avg",
                         green_gt=None,
@@ -875,7 +874,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Preco min Impala",
+                        "Preco min Impala (amostra)",
                         "avg:robo.impala.batalha.preco_min{*}",
                         aggregator="avg",
                         green_gt=0,
@@ -887,7 +886,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 {
                     "id": 740010,
                     "definition": {
-                        "title": "Gap % nosso vs rival min (por kit)",
+                        "title": "Gap % preco-alvo vs rival min (por kit)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -896,7 +895,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                                 "display_type": "line",
                                 "response_format": "timeseries",
                                 "style": {"palette": "cool"},
-                                "formulas": [{"alias": "gap %", "formula": "query1"}],
+                                "formulas": [{"alias": "gap % (alvo)", "formula": "query1"}],
                                 "queries": [
                                     {
                                         "data_source": "metrics",
@@ -941,7 +940,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 {
                     "id": 740012,
                     "definition": {
-                        "title": "Nosso preco vs rival min (por kit)",
+                        "title": "Preco-alvo (catalogo) vs rival min (por kit)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -951,7 +950,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                                 "response_format": "timeseries",
                                 "style": {"palette": "datadog16"},
                                 "formulas": [
-                                    {"alias": "nosso", "formula": "query1"},
+                                    {"alias": "preco-alvo", "formula": "query1"},
                                     {"alias": "rival min", "formula": "query2"},
                                 ],
                                 "queries": [
@@ -1261,16 +1260,17 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Ads falha / probe",
             "type": "query alert",
-            # Só falha de escrita real. HTTP 404 de listagem/escopo Ads é config
-            # conhecida e não deve manter P1 em Alert permanente.
+            # So falha de escrita real. HTTP 404 de listagem/escopo Ads e config
+            # conhecida e nao deve manter P1 em Alert permanente.
             # Nome mantido para upsert atualizar o monitor 21629780 existente.
             "query": "sum(last_24h):sum:robo.ads.falha{*}.as_count() > 0",
             "message": (
                 "Falha ao aplicar Product Ads (escrita). "
                 "404 de listagem/escopo NAO dispara este monitor — "
-                "revise scopes advertising no DevCenter separadamente.\n" + msg_base
+                "veja '[Robo] Product Ads indisponivel'.
+" + msg_base
             ),
-            "tags": [TAG_MONITOR, "monitor:ads", "severity:p1"],
+            "tags": [TAG_MONITOR, "monitor:ads", "prioridad:p1"],
             "options": {
                 "thresholds": {"critical": 0},
                 "notify_no_data": False,
@@ -1278,6 +1278,25 @@ def _monitores_desejados() -> list[dict[str, Any]]:
                 "include_tags": True,
             },
             "priority": 1,
+        },
+        {
+            "name": "[Robo] Product Ads indisponivel (404/escopo)",
+            "type": "query alert",
+            "query": "sum(last_12h):sum:robo.ads.indisponivel{*}.as_count() > 0",
+            "message": (
+                "Product Ads ML retornou HTTP 404 (escopo advertising / advertiser). "
+                "Corrija no DevCenter e regenere o token. "
+                "Gatilho NAO pede aprovacao Telegram enquanto isto persistir.
+" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:ads", "prioridad:p2"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
         },
         {
             "name": "[Robo] Conectividade falhas",
@@ -1311,8 +1330,13 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "name": "[Robo] Vendas WhatsApp busca falhou",
             "type": "query alert",
             "query": "sum(last_2h):sum:robo.vendas.busca_falhou{*}.as_count() > 0",
-            "message": "Busca de pedidos falhou — vendas podem nao ser notificadas no WhatsApp.\n" + msg_base,
-            "tags": [TAG_MONITOR, "monitor:vendas", "severity:p1"],
+            "message": (
+                "Busca de pedidos falhou (API generica) — vendas podem nao ser notificadas. "
+                "Auth Magalu/invalid_grant NAO entra aqui (vai para busca_auth_quebrada + "
+                "monitor Magalu).
+" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:vendas", "prioridad:p1"],
             "options": {
                 "thresholds": {"critical": 0},
                 "notify_no_data": False,
@@ -1320,6 +1344,25 @@ def _monitores_desejados() -> list[dict[str, Any]]:
                 "include_tags": True,
             },
             "priority": 1,
+        },
+        {
+            "name": "[Robo] Vendas auth quebrada (OAuth)",
+            "type": "query alert",
+            "query": "sum(last_6h):sum:robo.vendas.busca_auth_quebrada{*}.as_count() > 0",
+            "message": (
+                "Busca de pedidos falhou por auth (401/403/invalid_grant). "
+                "Renove OAuth do canal (tipicamente Magalu). "
+                "Separado do P1 de busca generica.
+" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:vendas", "prioridad:p2"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
         },
         {
             "name": "[Robo] Brave cota esgotada",
