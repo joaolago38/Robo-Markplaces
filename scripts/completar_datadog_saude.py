@@ -1398,11 +1398,105 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 2, "x": 10, "y": 5},
                     "id": 750055,
                 },
+                {
+                    **_qv(
+                        "Invest. validacao total R$",
+                        "avg:robo.catalogo.invest_validacao_total{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 7},
+                    "id": 750070,
+                },
+                {
+                    **_qv(
+                        "Kits no plano validacao",
+                        "avg:robo.catalogo.plano_validacao_kits{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 7},
+                    "id": 750071,
+                },
+                {
+                    **_qv(
+                        "Kits Cruzeiro (validar)",
+                        "avg:robo.cruzeiro.kits_validacao{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 7},
+                    "id": 750072,
+                },
+                {
+                    **_qv(
+                        "Margem media Cruzeiro %",
+                        "avg:robo.cruzeiro.margem_media_pct{*}",
+                        aggregator="avg",
+                        green_gt=25,
+                        yellow_gt=15,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 7},
+                    "id": 750073,
+                },
+                {
+                    **_qv(
+                        "Oportunidades Impala",
+                        "avg:robo.catalogo.oportunidades_impala{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 7},
+                    "id": 750074,
+                },
+                {
+                    **_qv(
+                        "Complementos Livia",
+                        "avg:robo.catalogo.complementos_livia{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 7},
+                    "id": 750075,
+                },
                 # --- Produto x valores ---
                 {
                     **_tabela_produto_catalogo(),
-                    "layout": {"height": 4, "width": 12, "x": 0, "y": 7},
+                    "layout": {"height": 4, "width": 12, "x": 0, "y": 9},
                     "id": 750060,
+                },
+                {
+                    **_toplist_metric(
+                        "Invest. validacao por kit R$",
+                        "avg:robo.catalogo.invest_validacao{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 13},
+                    "id": 750076,
+                },
+                {
+                    **_toplist_metric(
+                        "Margem Cruzeiro % por kit",
+                        "avg:robo.cruzeiro.margem_pct{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 13},
+                    "id": 750077,
+                },
+                {
+                    **_toplist_metric(
+                        "Lucro Cruzeiro R$ por kit",
+                        "avg:robo.cruzeiro.lucro_ref{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 13},
+                    "id": 750078,
                 },
                 {
                     **_toplist_metric(
@@ -1410,7 +1504,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "sum:robo.vendas.receita_por_kit{*} by {kit}",
                         aggregator="sum",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 0, "y": 11},
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 16},
                     "id": 750061,
                 },
                 {
@@ -1419,7 +1513,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "sum:robo.vendas.lucro_por_kit{*} by {kit}",
                         aggregator="sum",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 4, "y": 11},
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 16},
                     "id": 750062,
                 },
                 {
@@ -1428,7 +1522,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "sum:robo.vendas.custo_por_kit{*} by {kit}",
                         aggregator="sum",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 8, "y": 11},
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 16},
                     "id": 750063,
                 },
                 {
@@ -1437,7 +1531,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "avg:robo.catalogo.vd_dia_ref{*} by {kit}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 0, "y": 14},
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 19},
                     "id": 750064,
                 },
                 {
@@ -1446,7 +1540,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "avg:robo.catalogo.custo_total{*} by {kit}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 4, "y": 14},
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 19},
                     "id": 750065,
                 },
                 {
@@ -1455,18 +1549,18 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "avg:robo.catalogo.lucro_ref_ml{*} by {kit}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 8, "y": 14},
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 19},
                     "id": 750066,
                 },
                 # --- Ads ---
                 {
                     **_qv("Ads Rodadas", "sum:robo.ads.rodadas{*}.as_count()"),
-                    "layout": {"height": 2, "width": 2, "x": 0, "y": 17},
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 22},
                     "id": 750001,
                 },
                 {
                     **_qv("Ads Aplicado", "sum:robo.ads.aplicado{*}.as_count()"),
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 17},
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 22},
                     "id": 750002,
                 },
                 {
@@ -1476,7 +1570,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         red_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 4, "y": 17},
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 22},
                     "id": 750003,
                 },
                 {
@@ -1486,7 +1580,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         yellow_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 17},
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 22},
                     "id": 750004,
                 },
                 {
@@ -1499,7 +1593,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0.25,
                         precision=2,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 8, "y": 17},
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 22},
                     "id": 750005,
                 },
                 {
@@ -1510,7 +1604,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 10, "y": 17},
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 22},
                     "id": 750006,
                 },
                 # --- Alertas de canal + decisao ---
@@ -1519,7 +1613,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "Vendas WA Notificadas",
                         "sum:robo.vendas.notificadas{*}.as_count()",
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 0, "y": 19},
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 24},
                     "id": 750010,
                 },
                 {
@@ -1529,7 +1623,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         red_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 19},
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 24},
                     "id": 750011,
                 },
                 {
@@ -1539,7 +1633,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         yellow_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 4, "y": 19},
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 24},
                     "id": 750012,
                 },
                 {
@@ -1547,7 +1641,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "Itens analisados (margem)",
                         "sum:robo.vendas.itens_analisados{*}.as_count()",
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 19},
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 24},
                     "id": 750014,
                 },
                 {
@@ -1559,7 +1653,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=50,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 8, "y": 19},
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 24},
                     "id": 750013,
                 },
                 {
@@ -1571,7 +1665,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=10,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 10, "y": 19},
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 24},
                     "id": 750015,
                 },
                 {
@@ -1582,7 +1676,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 0, "y": 21},
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 26},
                     "id": 750020,
                 },
                 {
@@ -1594,7 +1688,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 3, "y": 21},
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 26},
                     "id": 750021,
                 },
                 {
@@ -1606,7 +1700,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 6, "y": 21},
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 26},
                     "id": 750022,
                 },
                 {
@@ -1618,7 +1712,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 21},
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 26},
                     "id": 750023,
                 },
             ],
@@ -1705,7 +1799,8 @@ def atualizar_dashboard_ecommerce() -> None:
         (
             "## Aba E-commerce Impala / ML\n\n"
             "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
-            "**taxa de crescimento (kits % receita + VD/dia)** e **custo investido / Ads**.\n\n"
+            "**invest. validacao**, **kits Cruzeiro**, **oportunidades/Livia**, "
+            "**taxa de crescimento** e **custo/Ads**.\n\n"
             f"**Robo / plataforma (motor ligado?):** "
             f"[Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})"
         ),

@@ -136,6 +136,8 @@ _LOGGER_META = {
     "sustentabilidade_ads_ml": ("social", "integracao"),
     "meta_inbox": ("meta", "integracao"),
     "planilha_impala": ("mercadolivre", "integracao"),
+    "planilha_consolidado_ecommerce": ("mercadolivre", "integracao"),
+    "agente_sync_planilhas_ecommerce": ("mercadolivre", "agente"),
     "agente_monitor_removedores_unha": ("mercadolivre", "agente"),
     "agente_monitor_tendencias_esmaltes": ("multi", "agente"),
     "agente_monitor_mercado_esmaltes": ("mercadolivre", "agente"),

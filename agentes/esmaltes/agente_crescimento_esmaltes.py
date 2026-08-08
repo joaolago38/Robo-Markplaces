@@ -99,6 +99,31 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         except Exception as exc:
             logger.warning("metricas catalogo impala: %s", exc)
 
+        try:
+            from core.config import PLANILHAS_ECOMMERCE_SYNC_ATIVO
+
+            if PLANILHAS_ECOMMERCE_SYNC_ATIVO:
+                from integracoes.esmaltes.planilha_consolidado_ecommerce import (
+                    emitir_metricas_planilha_ecommerce,
+                )
+
+                # Só métricas (catálogos já sincronizados via agente/CLI); se JSON
+                # ainda não existir, faz sync completo uma vez.
+                from pathlib import Path
+
+                from core.config import ROOT
+
+                if not (ROOT / "catalogo" / "plano_validacao_impala.json").is_file():
+                    from integracoes.esmaltes.planilha_consolidado_ecommerce import (
+                        sincronizar_planilhas_ecommerce,
+                    )
+
+                    sincronizar_planilhas_ecommerce(emitir_metricas=True)
+                else:
+                    emitir_metricas_planilha_ecommerce()
+        except Exception as exc:
+            logger.warning("metricas planilha ecommerce: %s", exc)
+
         enviado = False
         if (
             enviar_alerta
