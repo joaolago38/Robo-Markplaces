@@ -1,111 +1,75 @@
 [
   {
-    "id": "kit3-mimo-carmed",
+    "id": "kit4-perolado",
     "ativo": true,
-    "nome": "Kit 3 Mimo + Carmed Impala",
-    "termo_busca": "kit 3 esmaltes impala mimo carmed",
-    "sku": "IMP-MIMO-003",
-    "meu_preco": 44.90,
-    "limite_resultados": 10
+    "nome": "Kit 4 Impala Perolado Tendência",
+    "termo_busca": "kit 4 esmaltes impala perolado",
+    "sku": "IMP-PERL-004",
+    "meu_preco": 39.90,
+    "limite_resultados": 15
   },
   {
-    "id": "kit5-bailarina",
+    "id": "kit15-verm-rosa",
     "ativo": true,
-    "nome": "Kit 5 Bailarina Impala",
-    "termo_busca": "kit 5 esmaltes impala bailarina",
-    "sku": "IMP-BAIL-005",
-    "meu_preco": 48.90,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit6-sortido",
-    "ativo": true,
-    "nome": "Kit 6 Sortido Cores da Moda Impala",
-    "termo_busca": "kit 6 esmaltes impala sortidos",
-    "sku": "IMP-SORT-006",
-    "meu_preco": 49.90,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit10-atacado-imp",
-    "ativo": true,
-    "nome": "Kit 10 Atacado Manicure Impala",
-    "termo_busca": "kit 10 esmaltes impala atacado",
-    "sku": "IMP-ATAC-010",
+    "nome": "Kit 15 Impala Vermelho e Rosa",
+    "termo_busca": "kit 15 esmaltes impala vermelho rosa",
+    "sku": "IMP-VR-015",
     "meu_preco": 69.90,
-    "limite_resultados": 10
+    "limite_resultados": 20
   },
   {
-    "id": "kit15-cores-moda",
+    "id": "kit10-sortido",
     "ativo": true,
-    "nome": "Kit 15 Cores da Sua Moda Impala",
-    "termo_busca": "kit 15 esmaltes impala cores da moda",
-    "sku": "IMP-COLC-015",
-    "meu_preco": 79.90,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit30-gran",
-    "ativo": true,
-    "nome": "Kit 30 Atacado Clássico Impala",
-    "termo_busca": "kit 30 esmaltes impala atacado",
-    "sku": "IMP-GRAN-030",
-    "meu_preco": 145.00,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit10-verm-rosa",
-    "ativo": true,
-    "nome": "Kit 10 Esmaltes Impala Vermelho e Rosa",
-    "termo_busca": "kit 10 esmaltes impala vermelho rosa",
-    "sku": "KIT-10-VERM-ROSA",
-    "meu_preco": 49.90,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit12-classicos",
-    "ativo": true,
-    "nome": "Kit 12 Esmaltes Impala Clássicos",
-    "termo_busca": "kit 12 esmaltes impala classicos",
-    "sku": "KIT-12-CLASSICOS",
-    "meu_preco": 59.90,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit10-nude",
-    "ativo": true,
-    "nome": "Kit 10 Esmaltes Impala Nude e Claro",
-    "termo_busca": "kit 10 esmaltes impala nude",
-    "sku": "KIT-10-NUDE",
-    "meu_preco": 46.90,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit15-sortidos",
-    "ativo": true,
-    "nome": "Kit 15 Esmaltes Impala Cores Sortidas",
-    "termo_busca": "kit 15 esmaltes impala sortidos atacado",
-    "sku": "KIT-15-SORTIDOS",
-    "meu_preco": 69.90,
-    "limite_resultados": 10
-  },
-  {
-    "id": "kit30-atacado",
-    "ativo": true,
-    "nome": "Kit 30 Esmaltes Impala Atacado",
-    "termo_busca": "kit 30 esmaltes impala atacado manicure",
-    "sku": "KIT-30-ATACADO",
-    "meu_preco": 119.90,
-    "limite_resultados": 10
+    "nome": "Kit 10 Impala Sortido Atacado",
+    "termo_busca": "kit 10 esmaltes impala sortidos atacado",
+    "sku": "IMP-SORT-010",
+    "meu_preco": 48.00,
+    "limite_resultados": 20
   },
   {
     "id": "bundle-777-5esm",
     "ativo": true,
-    "nome": "Kit Manicure Alicate Mundial 777 + 5 Esmaltes Impala",
+    "nome": "Bundle Alicate Mundial 777 + 5 Impala",
     "termo_busca": "kit alicate manicure mundial 777 esmaltes impala",
     "sku": "BUNDLE-777-5ESM",
     "meu_preco": 79.90,
-    "limite_resultados": 10
+    "limite_resultados": 12
+  },
+  {
+    "id": "kit10-nude",
+    "ativo": true,
+    "nome": "Kit 10 Impala Nude e Claro",
+    "termo_busca": "kit 10 esmaltes impala nude",
+    "sku": "IMP-NUDE-010",
+    "meu_preco": 49.90,
+    "limite_resultados": 15
+  },
+  {
+    "id": "kit12-classicos",
+    "ativo": true,
+    "nome": "Kit 12 Impala Clássicos",
+    "termo_busca": "kit 12 esmaltes impala classicos",
+    "sku": "IMP-CLAS-012",
+    "meu_preco": 54.90,
+    "limite_resultados": 15
+  },
+  {
+    "id": "kit30-atacado",
+    "ativo": true,
+    "nome": "Kit 30 Impala Atacado",
+    "termo_busca": "kit 30 esmaltes impala atacado manicure",
+    "sku": "IMP-ATAC-030",
+    "meu_preco": 119.90,
+    "limite_resultados": 15
+  },
+  {
+    "id": "impala-kit-geral",
+    "ativo": true,
+    "nome": "Radar geral kits Impala",
+    "termo_busca": "esmalte impala kit manicure",
+    "sku": "IMP-SORT-010",
+    "meu_preco": 48.00,
+    "limite_resultados": 30
   },
   {
     "id": "loja-novamix-comercial",
@@ -116,38 +80,26 @@
     "nickname": "NOVAMIX_COMERCIAL",
     "url_loja": "https://lista.mercadolivre.com.br/pagina/novamix_comercial",
     "termos_busca": [
-      "kit 5 esmaltes impala bailarina",
-      "kit 3 esmaltes impala mimo",
+      "kit 4 esmaltes impala perolado",
+      "kit 15 esmaltes impala",
+      "kit 10 esmaltes impala",
       "kit esmalte impala",
       "kit esmalte risque atacado",
       "kit esmalte colorama",
-      "kit esmalte dailus",
-      "kit esmalte manicure atacado",
-      "kit 10 esmaltes impala",
-      "kit 30 esmaltes atacado",
-      "kit esmalte helen color"
+      "kit 30 esmaltes atacado"
     ],
     "limite_resultados": 20,
-    "meu_preco": 44.90,
-    "notas": "SP — Mercado Líder Platinum (~71k vendas). Concorrente de kits esmalte/manicure."
+    "meu_preco": 39.90,
+    "notas": "SP — Mercado Líder Platinum. Concorrente de kits esmalte/manicure."
   },
   {
-    "id": "watch-template-kit10-impala",
+    "id": "watch-template-kit15-impala",
     "ativo": false,
     "tipo": "item",
-    "nome": "Watchlist — Kit 10 Impala (rival a preencher)",
+    "nome": "Watchlist — Kit 15 Impala rival (preencher MLB)",
     "item_id_concorrente": "MLB_PREENCHER",
-    "sku": "IMP-ATAC-010",
+    "sku": "IMP-VR-015",
     "meu_preco": 69.90,
-    "notas": "Troque MLB_PREENCHER pelo MLB do anúncio rival e ative (ativo:true). Alta confiança em preço/status."
-  },
-  {
-    "id": "watch-template-kit5-risque",
-    "ativo": false,
-    "tipo": "item",
-    "nome": "Watchlist — Kit 5 Risqué (rival a preencher)",
-    "item_id_concorrente": "MLB_PREENCHER",
-    "meu_preco": 48.90,
     "notas": "Troque MLB_PREENCHER pelo MLB do anúncio rival e ative (ativo:true)."
   }
 ]

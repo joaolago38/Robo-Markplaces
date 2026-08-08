@@ -90,6 +90,15 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             float((rel.get("resumo") or {}).get("kits_sem_mlb") or 0),
         )
 
+        try:
+            from integracoes.esmaltes.metricas_catalogo_impala import (
+                emitir_metricas_catalogo_impala,
+            )
+
+            emitir_metricas_catalogo_impala()
+        except Exception as exc:
+            logger.warning("metricas catalogo impala: %s", exc)
+
         enviado = False
         if (
             enviar_alerta

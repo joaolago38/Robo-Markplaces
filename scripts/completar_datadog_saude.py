@@ -41,6 +41,8 @@ DASH_SAUDE = "3iy-tka-awu"
 DASH_OPS = "7be-b7r-nrk"
 GROUP_PONTOS_CEGOS_ID = 700005
 GROUP_TOKENS_ID = 100001
+GROUP_CATALOGO_IMPALA_ID = 700006
+GROUP_BATALHA_IMPALA_ID = 700007
 TAG_MONITOR = "service:robo-markplaces"
 
 # ── Queries de log do grupo "Tokens e Autenticacao" ───────────────────────
@@ -604,12 +606,389 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
     }
 
 
+def _grupo_catalogo_impala() -> dict[str, Any]:
+    """Gauges do catálogo Impala (cruzamento cores × preço × margem)."""
+    return {
+        "id": GROUP_CATALOGO_IMPALA_ID,
+        "definition": {
+            "title": "[Catalogo Impala] Score / Margem / MLB / Guerra",
+            "type": "group",
+            "background_color": "vivid_orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Kits no catalogo",
+                        "avg:robo.catalogo.kits_total{*}",
+                        aggregator="avg",
+                        green_gt=6,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 730001,
+                },
+                {
+                    **_qv(
+                        "Guerra sem MLB",
+                        "avg:robo.catalogo.guerra_sem_mlb{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 730002,
+                },
+                {
+                    **_qv(
+                        "Guerra estoque zero",
+                        "avg:robo.catalogo.guerra_estoque_zero{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 730003,
+                },
+                {
+                    **_qv(
+                        "Kits sem MLB (todos)",
+                        "avg:robo.catalogo.sem_mlb{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 730004,
+                },
+                {
+                    **_qv(
+                        "P0 no catalogo",
+                        "avg:robo.catalogo.kits_p0{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 730005,
+                },
+                {
+                    **_qv(
+                        "P1 no catalogo",
+                        "avg:robo.catalogo.kits_p1{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 730006,
+                },
+                {
+                    "id": 730010,
+                    "definition": {
+                        "title": "Margem trabalho vs real (por papel)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "legend_columns": ["avg", "value"],
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "datadog16"},
+                                "formulas": [
+                                    {"alias": "trabalho", "formula": "query1"},
+                                    {"alias": "real", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.catalogo.margem_trabalho_pct{*} by {papel}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.catalogo.margem_real_pct{*} by {papel}"
+                                        ),
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
+                },
+                {
+                    "id": 730011,
+                    "definition": {
+                        "title": "Score alavancagem / vd_dia_ref (por papel)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "legend_columns": ["avg", "value"],
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "style": {"palette": "datadog16"},
+                                "formulas": [
+                                    {"alias": "score", "formula": "query1"},
+                                    {"alias": "vd/dia ref", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.catalogo.score{*} by {papel}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.catalogo.vd_dia_ref{*} by {papel}"
+                                        ),
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
+                },
+                {
+                    "id": 730012,
+                    "definition": {
+                        "title": "Gap vs mercado % (por papel)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "orange"},
+                                "formulas": [{"alias": "gap %", "formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.catalogo.gap_mercado_pct{*} by {papel}"
+                                        ),
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 5},
+                },
+                {
+                    "id": 730013,
+                    "definition": {
+                        "title": "Preco F1 vs mercado (por papel)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "datadog16"},
+                                "formulas": [
+                                    {"alias": "preco", "formula": "query1"},
+                                    {"alias": "mercado", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.catalogo.preco{*} by {papel}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.catalogo.preco_ml_mercado{*} by {papel}"
+                                        ),
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 5},
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 22, "width": 12, "height": 1},
+    }
+
+
+def _grupo_batalha_impala() -> dict[str, Any]:
+    """Com quantos anúncios Impala lutamos + gap vs nossos preços."""
+    return {
+        "id": GROUP_BATALHA_IMPALA_ID,
+        "definition": {
+            "title": "[Batalha Impala] Concorrentes vs nossos kits",
+            "type": "group",
+            "background_color": "vivid_purple",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Anuncios Impala (amostra)",
+                        "avg:robo.impala.batalha.anuncios_unicos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 740001,
+                },
+                {
+                    **_qv(
+                        "Sellers unicos",
+                        "avg:robo.impala.batalha.sellers_unicos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 740002,
+                },
+                {
+                    **_qv(
+                        "Nossos acima do rival",
+                        "avg:robo.impala.batalha.nossos_acima_rival{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 740003,
+                },
+                {
+                    **_qv(
+                        "Preco min Impala",
+                        "avg:robo.impala.batalha.preco_min{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 740004,
+                },
+                {
+                    "id": 740010,
+                    "definition": {
+                        "title": "Gap % nosso vs rival min (por kit)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "cool"},
+                                "formulas": [{"alias": "gap %", "formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.impala.batalha.gap_vs_rival_pct{*} by {kit}"
+                                        ),
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
+                },
+                {
+                    "id": 740011,
+                    "definition": {
+                        "title": "Anuncios Impala por tamanho de kit",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "style": {"palette": "datadog16"},
+                                "formulas": [{"alias": "anuncios", "formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.impala.batalha.tam_anuncios{*} by {tam}"
+                                        ),
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
+                },
+                {
+                    "id": 740012,
+                    "definition": {
+                        "title": "Nosso preco vs rival min (por kit)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "datadog16"},
+                                "formulas": [
+                                    {"alias": "nosso", "formula": "query1"},
+                                    {"alias": "rival min", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.impala.batalha.nosso_preco{*} by {kit}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.impala.batalha.rival_min{*} by {kit}"
+                                        ),
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 12, "x": 0, "y": 5},
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 24, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_saude() -> None:
     raw = _get(f"/api/v1/dashboard/{DASH_SAUDE}")
     widgets = list(raw.get("widgets") or [])
     novo = []
     substituido = False
     tokens_ok = False
+    catalogo_ok = False
+    batalha_ok = False
     for w in widgets:
         d = w.get("definition") or {}
         title = d.get("title") if isinstance(d, dict) else None
@@ -623,17 +1002,36 @@ def atualizar_dashboard_saude() -> None:
             grupo["layout"] = w.get("layout") or grupo["layout"]
             novo.append(grupo)
             tokens_ok = True
+        elif w.get("id") == GROUP_CATALOGO_IMPALA_ID or (
+            isinstance(title, str) and title.startswith("[Catalogo Impala]")
+        ):
+            grupo = _grupo_catalogo_impala()
+            grupo["layout"] = w.get("layout") or grupo["layout"]
+            novo.append(grupo)
+            catalogo_ok = True
+        elif w.get("id") == GROUP_BATALHA_IMPALA_ID or (
+            isinstance(title, str) and title.startswith("[Batalha Impala]")
+        ):
+            grupo = _grupo_batalha_impala()
+            grupo["layout"] = w.get("layout") or grupo["layout"]
+            novo.append(grupo)
+            batalha_ok = True
         else:
             novo.append(w)
     if not substituido:
         novo.append(_grupo_pontos_cegos())
     if not tokens_ok:
         novo.insert(0, _grupo_tokens())
+    if not catalogo_ok:
+        novo.append(_grupo_catalogo_impala())
+    if not batalha_ok:
+        novo.append(_grupo_batalha_impala())
 
     payload = {
         "title": raw["title"],
         "description": (
-            "Saude + pontos cegos (chat/nfe/estoque/telegram/repricing). "
+            "Saude + pontos cegos + Catalogo Impala + Batalha Impala "
+            "(anuncios rivais vs nossos kits). "
             "Orquestrador e Vigia em metricas; logs sem marketplace:*/componente:*."
         ),
         "widgets": novo,
@@ -948,6 +1346,40 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "tags": [TAG_MONITOR, "monitor:brave", "severity:p2"],
             "options": {
                 "thresholds": {"critical": 2},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Catalogo Impala guerra sem MLB",
+            "type": "query alert",
+            "query": "avg(last_1d):avg:robo.catalogo.guerra_sem_mlb{*} > 0",
+            "message": (
+                "SKU(s) de guerra Impala ainda sem MLB (MLB_PREENCHER). "
+                "Publique PERL/VR/SORT antes de ads/promocao.\n" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p1"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 1,
+        },
+        {
+            "name": "[Robo] Catalogo Impala margem real P0 baixa",
+            "type": "query alert",
+            "query": "avg(last_1d):avg:robo.catalogo.margem_real_pct{prio:p0} < 10",
+            "message": (
+                "Margem real media dos kits P0 abaixo de 10%. "
+                "Revise preco F1 / Full / taxa vs custo_total.\n" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 10},
                 "notify_no_data": False,
                 "require_full_window": False,
                 "include_tags": True,
