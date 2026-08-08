@@ -81,6 +81,27 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
     def test_kit_tag(self):
         self.assertEqual(m.kit_tag("IMP-PERL-004"), "kit:perl004")
         self.assertEqual(m.kit_tag("BUNDLE-777-5ESM"), "kit:b7775esm")
+        self.assertEqual(m.kit_tag(""), "kit:x")
+
+    def test_helpers_edge(self):
+        self.assertIsNone(m.margem_real_pct({"preco": 0, "custo_total": 10}))
+        self.assertIsNone(m.gap_mercado_pct({"preco": 10, "preco_ml_mercado": 0}))
+        self.assertTrue(
+            m._estoque_zero({"estoque_total": 0, "canais": {"mercadolivre": {}}})
+        )
+        self.assertTrue(
+            m._estoque_zero({"canais": {"mercadolivre": {"estoque": 0}}})
+        )
+        self.assertFalse(
+            m._estoque_zero(
+                {"estoque_total": 3, "canais": {"mercadolivre": {"estoque": 3}}}
+            )
+        )
+        snap = m.montar_snapshot_catalogo(
+            produtos=[None, {}, {"sku": ""}, *self.produtos],  # type: ignore[list-item]
+            guerra=self.guerra,
+        )
+        self.assertEqual(snap["kits_total"], 3)
 
     def test_snapshot_agregados(self):
         snap = m.montar_snapshot_catalogo(
@@ -120,6 +141,16 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
                 tags = []
             self.assertFalse(any(str(t).startswith("sku:") for t in tags))
         mock_inc.assert_any_call("catalogo.heartbeat")
+
+    @patch("integracoes.esmaltes.metricas_catalogo_impala.incrementar")
+    @patch(
+        "integracoes.esmaltes.metricas_catalogo_impala.montar_snapshot_catalogo",
+        side_effect=RuntimeError("boom"),
+    )
+    def test_emitir_erro(self, _snap, mock_inc):
+        out = m.emitir_metricas_catalogo_impala(produtos=[], guerra=[])
+        self.assertFalse(out["ok"])
+        mock_inc.assert_any_call("catalogo.heartbeat_erro")
 
 
 if __name__ == "__main__":

@@ -71,12 +71,16 @@ class AgenteMonitorKitsEsmaltesTests(unittest.TestCase):
             agente, "GRAFICO_PATH", self.tmp_path / "g.png"
         ), patch.object(agente, "enviar_foto_gestor", return_value=True), patch.object(
             agente, "pode_alertar_esmaltes", return_value=(True, "ok")
-        ), patch.object(agente, "ESMALTES_KITS_MONITOR_PAUSA_SEG", 0):
+        ), patch.object(agente, "ESMALTES_KITS_MONITOR_PAUSA_SEG", 0), patch(
+            "integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir",
+            return_value={"batalha": {"anuncios_unicos": 1, "sellers_unicos": 1}},
+        ):
             out = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_termos"], 2)
         self.assertEqual(out["consolidado"]["total_kits_unicos"], 2)
+        self.assertEqual(out.get("batalha_impala", {}).get("anuncios_unicos"), 1)
         mock_alertar.assert_called_once()
         msg = mock_alertar.call_args[0][0]
         self.assertIn("radar de mercado", msg)
