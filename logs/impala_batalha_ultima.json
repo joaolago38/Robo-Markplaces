@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-08-08T14:21:40.234880+00:00",
+  "origem": "bootstrap",
+  "batalha": {
+    "anuncios_unicos": 0,
+    "sellers_unicos": 0,
+    "vendas_proxy": 0,
+    "preco_min": 0.0,
+    "preco_mediano": 0.0,
+    "preco_medio": 0.0,
+    "preco_max": 0.0,
+    "por_tamanho": [],
+    "comparacoes": [
+      {
+        "sku": "IMP-PERL-004",
+        "papel": "entrada",
+        "prio": "p0",
+        "kit_tag": "kit:perl004",
+        "tam": 4,
+        "nosso_preco": 39.9,
+        "rival_min": 42.0,
+        "rivais_no_tam": 0,
+        "gap_pct": -5.0,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-VR-015",
+        "papel": "giro",
+        "prio": "p0",
+        "kit_tag": "kit:vr015",
+        "tam": 15,
+        "nosso_preco": 69.9,
+        "rival_min": 72.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -4.12,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-SORT-010",
+        "papel": "atacado",
+        "prio": "p0",
+        "kit_tag": "kit:sort010",
+        "tam": 10,
+        "nosso_preco": 48.0,
+        "rival_min": 48.0,
+        "rivais_no_tam": 0,
+        "gap_pct": 0.0,
+        "mlb_ok": false
+      },
+      {
+        "sku": "BUNDLE-777-5ESM",
+        "papel": "catalogo",
+        "prio": "p0",
+        "kit_tag": "kit:b7775esm",
+        "tam": 5,
+        "nosso_preco": 79.9,
+        "rival_min": 85.0,
+        "rivais_no_tam": 0,
+        "gap_pct": -6.0,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-NUDE-010",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:nude010",
+        "tam": 10,
+        "nosso_preco": 49.9,
+        "rival_min": 52.0,
+        "rivais_no_tam": 0,
+        "gap_pct": -4.04,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-CLAS-012",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:clas012",
+        "tam": 12,
+        "nosso_preco": 54.9,
+        "rival_min": 59.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -8.35,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-ATAC-030",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:atac030",
+        "tam": 30,
+        "nosso_preco": 119.9,
+        "rival_min": 131.31,
+        "rivais_no_tam": 0,
+        "gap_pct": -8.69,
+        "mlb_ok": false
+      }
+    ],
+    "nossos_acima_rival": 0,
+    "nossos_abaixo_ou_igual": 7,
+    "top_anuncios": []
+  },
+  "amostra_impala": 0
+}

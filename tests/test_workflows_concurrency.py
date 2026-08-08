@@ -1,9 +1,9 @@
 """
 tests/test_workflows_concurrency.py
 
-Documenta e valida a decisão de serializar renovação OAuth entre workflows:
-refresh_tokens de uso único (ML, Magalu, Bling) não podem ser renovados em
-paralelo por runners efêmeros sem MAGALU_TOKEN_STORE / ML_TOKEN_STORE.
+Núcleo OAuth (tokens/estoque/orquestrador) compartilha `robo-markplaces-token-renewal`.
+Workflows secundários usam fila própria `robo-markplaces-${{ github.workflow }}`
+(ou grupos dedicados) para não disputar o cadeado de refresh.
 """
 from __future__ import annotations
 
@@ -16,25 +16,31 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 WORKFLOWS_DIR = Path(__file__).resolve().parent.parent / ".github" / "workflows"
 
-_WORKFLOWS_COM_CONCURRENCY = (
+_GROUP_TOKEN = "robo-markplaces-token-renewal"
+_GROUP_VIGIA = "robo-markplaces-vigia-datadog"
+_GROUP_PUSH_MAIN = "robo-markplaces-push-main-sync"
+_GROUP_SECUNDARIO = "robo-markplaces-monitor-secundario"
+_GROUP_POR_WORKFLOW = "robo-markplaces-${{ github.workflow }}"
+
+# Núcleo que renova/usa refresh OAuth — permanece no cadeado compartilhado.
+_WORKFLOWS_TOKEN_RENEWAL = (
     "renovar_tokens.yml",
-    "agente_principal.yml",
     "operacao_24h_seguranca.yml",
     "sincronizar_estoque.yml",
     "conectividade_marketplaces.yml",
     "orquestrador_30min.yml",
-    "alibaba_importacao.yml",
     "push_deploy.yml",
+)
+
+# Secundários: fila própria por workflow (cancel stale).
+_WORKFLOWS_FILA_PROPRIA = (
+    "agente_principal.yml",
+    "alibaba_importacao.yml",
     "branch_cleanup.yml",
     "relatorio_manha_ml.yml",
     "relatorio_estrategia_ml.yml",
     "monitor_margem_vendas.yml",
 )
-
-_GROUP_ESPERADO = "robo-markplaces-token-renewal"
-_GROUP_VIGIA = "robo-markplaces-vigia-datadog"
-_GROUP_PUSH_MAIN = "robo-markplaces-push-main-sync"
-_GROUP_SECUNDARIO = "robo-markplaces-monitor-secundario"
 
 _WORKFLOWS_MONITOR_SECUNDARIO = (
     "leilao_veiculo.yml",
@@ -46,27 +52,37 @@ _WORKFLOWS_MONITOR_SECUNDARIO = (
 
 
 class TestWorkflowsConcurrency(unittest.TestCase):
-    def test_workflows_compartilham_grupo_de_concurrency(self):
-        for nome in _WORKFLOWS_COM_CONCURRENCY:
+    def test_nucleo_oauth_usa_grupo_token_renewal(self):
+        for nome in _WORKFLOWS_TOKEN_RENEWAL:
             path = WORKFLOWS_DIR / nome
             self.assertTrue(path.is_file(), f"workflow ausente: {nome}")
             texto = path.read_text(encoding="utf-8")
             self.assertIn("concurrency:", texto, nome)
-            self.assertIn(f"group: {_GROUP_ESPERADO}", texto, nome)
+            self.assertIn(f"group: {_GROUP_TOKEN}", texto, nome)
             self.assertIn("cancel-in-progress: false", texto, nome)
+
+    def test_secundarios_usam_fila_por_workflow(self):
+        for nome in _WORKFLOWS_FILA_PROPRIA:
+            path = WORKFLOWS_DIR / nome
+            self.assertTrue(path.is_file(), f"workflow ausente: {nome}")
+            texto = path.read_text(encoding="utf-8")
+            self.assertIn("concurrency:", texto, nome)
+            self.assertIn(f"group: {_GROUP_POR_WORKFLOW}", texto, nome)
+            self.assertNotIn(f"group: {_GROUP_TOKEN}", texto, nome)
+            self.assertIn("cancel-in-progress: true", texto, nome)
 
     def test_vigia_datadog_tem_fila_propria(self):
         path = WORKFLOWS_DIR / "vigia_datadog.yml"
         texto = path.read_text(encoding="utf-8")
         self.assertIn(f"group: {_GROUP_VIGIA}", texto)
-        self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto)
+        self.assertNotIn(f"group: {_GROUP_TOKEN}", texto)
         self.assertIn("cancel-in-progress: false", texto)
 
     def test_push_main_tem_fila_propria_e_nao_dispara_pos_ci(self):
         path = WORKFLOWS_DIR / "push_main_rotinas.yml"
         texto = path.read_text(encoding="utf-8")
         self.assertIn(f"group: {_GROUP_PUSH_MAIN}", texto)
-        self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto)
+        self.assertNotIn(f"group: {_GROUP_TOKEN}", texto)
         self.assertIn("workflow_dispatch:", texto)
         self.assertNotIn("workflow_run:", texto)
         self.assertIn("cancel-in-progress: false", texto)
@@ -77,7 +93,7 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             self.assertTrue(path.is_file(), f"workflow ausente: {nome}")
             texto = path.read_text(encoding="utf-8")
             self.assertIn(f"group: {_GROUP_SECUNDARIO}", texto, nome)
-            self.assertNotIn(f"group: {_GROUP_ESPERADO}", texto, nome)
+            self.assertNotIn(f"group: {_GROUP_TOKEN}", texto, nome)
             self.assertIn("cancel-in-progress: false", texto, nome)
             # Sem resumo periódico — só oportunidade nova (acompanhar sem poluir)
             self.assertRegex(

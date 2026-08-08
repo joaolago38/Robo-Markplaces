@@ -584,6 +584,7 @@ def _monitorar_entrada(
         "menor_preco": menor,
         "total_concorrentes": len(concorrentes),
         "concorrentes_amostra": concorrentes[:5],
+        "anuncios": concorrentes,
         "alertas": alertas,
     }
 
@@ -610,6 +611,17 @@ def executar(
             alertas_todos.extend(resultado.get("alertas") or [])
 
         _salvar_historico(historico)
+
+        try:
+            from integracoes.esmaltes.metricas_batalha_impala import processar_e_persistir
+
+            amostra: list[dict[str, Any]] = []
+            for r in resultados:
+                amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
+            if amostra:
+                processar_e_persistir(amostra, origem="monitor_concorrentes")
+        except Exception as exc:
+            logger.warning("batalha Impala apos concorrentes: %s", exc)
 
         enviado = False
         if enviar_alerta and alertas_todos:

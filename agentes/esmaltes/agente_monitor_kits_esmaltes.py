@@ -311,6 +311,17 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("esmaltes.kits.total_vendas", float(consolidado.get("total_vendas") or 0))
         incrementar("esmaltes.kits.rodadas")
 
+        batalha_out: dict[str, Any] = {}
+        try:
+            from integracoes.esmaltes.metricas_batalha_impala import processar_e_persistir
+
+            batalha_out = processar_e_persistir(
+                list(consolidado.get("kits_unicos") or []),
+                origem="kits_monitor",
+            )
+        except Exception as exc:
+            logger.warning("batalha Impala métricas: %s", exc)
+
         return {
             "ok": True,
             "total_termos": len(resultados),
@@ -318,6 +329,10 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "deltas": deltas,
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
+            "batalha_impala": {
+                "anuncios_unicos": (batalha_out.get("batalha") or {}).get("anuncios_unicos"),
+                "sellers_unicos": (batalha_out.get("batalha") or {}).get("sellers_unicos"),
+            },
         }
     except Exception as exc:
         logger.error("Agente kits esmaltes erro: %s", exc)

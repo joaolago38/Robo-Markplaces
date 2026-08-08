@@ -1,20 +1,20 @@
 [
   {
-    "sku": "IMP-MIMO-003",
+    "sku": "IMP-PERL-004",
     "papel": "entrada",
-    "nome": "Kit 3 Mimo + Carmed",
-    "diferencial_obrigatorio": "kit compacto + Carmed (anexo no combo)"
+    "nome": "Kit 4 Perolado Tendência",
+    "diferencial_obrigatorio": "melhor margem de trabalho (~43%) + 15 vd/dia — Sonho/Polar/Lua/Dengo"
   },
   {
-    "sku": "IMP-BAIL-005",
+    "sku": "IMP-VR-015",
     "papel": "giro",
-    "nome": "Kit 5 Bailarina",
-    "diferencial_obrigatorio": "5 cores Bailarina — mix salão"
+    "nome": "Kit 15 Vermelho e Rosa",
+    "diferencial_obrigatorio": "líder absoluto ML (~30 vd/dia) — Tomate/Le Rose + Full"
   },
   {
-    "sku": "IMP-ATAC-010",
+    "sku": "IMP-SORT-010",
     "papel": "atacado",
-    "nome": "Kit 10 Atacado Manicure",
-    "diferencial_obrigatorio": "volume B2B / reposição manicure"
+    "nome": "Kit 10 Sortido Atacado",
+    "diferencial_obrigatorio": "volume manicure (+5.000) — cores top ML; subir preço após 20 avaliações"
   }
 ]

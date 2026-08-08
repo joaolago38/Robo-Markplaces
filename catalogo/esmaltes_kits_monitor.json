@@ -72,6 +72,38 @@
     "limite_resultados": 30
   },
   {
+    "id": "impala-kit4",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 4 Impala",
+    "termo_busca": "kit 4 esmaltes impala",
+    "limite_resultados": 20
+  },
+  {
+    "id": "impala-kit10",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 10 Impala",
+    "termo_busca": "kit 10 esmaltes impala atacado",
+    "limite_resultados": 25
+  },
+  {
+    "id": "impala-kit15",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 15 Impala",
+    "termo_busca": "kit 15 esmaltes impala vermelho rosa",
+    "limite_resultados": 25
+  },
+  {
+    "id": "impala-kit30",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kit 30 Impala",
+    "termo_busca": "kit 30 esmaltes impala atacado",
+    "limite_resultados": 20
+  },
+  {
     "id": "risque",
     "ativo": true,
     "prioridade": 2,

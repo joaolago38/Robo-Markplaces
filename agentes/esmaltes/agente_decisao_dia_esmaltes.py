@@ -92,6 +92,15 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("decisao_dia_esmaltes.liberados", float(dec.get("liberados") or 0))
         gauge("decisao_dia_esmaltes.bloqueados", float(dec.get("bloqueados") or 0))
 
+        try:
+            from integracoes.esmaltes.metricas_catalogo_impala import (
+                emitir_metricas_catalogo_impala,
+            )
+
+            emitir_metricas_catalogo_impala()
+        except Exception as exc:
+            logger.warning("metricas catalogo impala: %s", exc)
+
         enviado = False
         if enviar_alerta and DECISAO_DIA_ESMALTES_ALERTA and pode_alertar and msg:
             enviado = bool(
