@@ -150,12 +150,14 @@ def montar_snapshot_catalogo(
                 "gap_mercado_pct": gap_mercado_pct(p),
                 "custo_total": _f(p.get("custo_total") or p.get("custo")),
                 "preco": _preco_e_taxa(p)[0],
+                "taxa_canal_pct": _preco_e_taxa(p)[1],
                 "preco_ml_mercado": _f(p.get("preco_ml_mercado")),
                 "fase": _f(p.get("fase_atual"), 1.0),
                 "lucro_ref_ml": _f(p.get("lucro_ref_ml")),
             }
         )
 
+    custo_investido = round(sum(float(k["custo_total"] or 0) for k in kits), 2)
     return {
         "kits_total": len(kits),
         "kits_p0": p0,
@@ -165,6 +167,7 @@ def montar_snapshot_catalogo(
         "guerra_total": len(skus_guerra),
         "guerra_sem_mlb": guerra_sem_mlb,
         "guerra_estoque_zero": guerra_estoque_z,
+        "custo_investido": custo_investido,
         "kits": kits,
     }
 
@@ -198,6 +201,8 @@ def emitir_metricas_catalogo_impala(
         gauge("catalogo.guerra_total", float(snap["guerra_total"]))
         gauge("catalogo.guerra_sem_mlb", float(snap["guerra_sem_mlb"]))
         gauge("catalogo.guerra_estoque_zero", float(snap["guerra_estoque_zero"]))
+        # Soma dos custos unitários do catálogo (= capital de custo / investido em produto)
+        gauge("catalogo.custo_investido", float(snap.get("custo_investido") or 0))
 
         for k in snap["kits"]:
             tags = [
@@ -211,6 +216,7 @@ def emitir_metricas_catalogo_impala(
             gauge("catalogo.margem_trabalho_pct", float(k["margem_trabalho_pct"]), tags=tags)
             gauge("catalogo.custo_total", float(k["custo_total"]), tags=tags)
             gauge("catalogo.preco", float(k["preco"]), tags=tags)
+            gauge("catalogo.taxa_canal_pct", float(k.get("taxa_canal_pct") or 0), tags=tags)
             gauge("catalogo.preco_ml_mercado", float(k["preco_ml_mercado"]), tags=tags)
             gauge("catalogo.fase", float(k["fase"]), tags=tags)
             gauge("catalogo.lucro_ref_ml", float(k["lucro_ref_ml"]), tags=tags)

@@ -278,6 +278,82 @@ def _lv(
     }
 
 
+def _toplist_metric(
+    title: str,
+    query: str,
+    *,
+    aggregator: str = "avg",
+    order: str = "desc",
+    limit: int = 10,
+) -> dict[str, Any]:
+    """Toplist de métrica (ex.: por kit / papel)."""
+    return {
+        "definition": {
+            "title": title,
+            "type": "toplist",
+            "requests": [
+                {
+                    "formulas": [
+                        {
+                            "formula": "query1",
+                            "limit": {"count": limit, "order": order},
+                        }
+                    ],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": "query1",
+                            "query": query,
+                            "aggregator": aggregator,
+                        }
+                    ],
+                    "response_format": "scalar",
+                }
+            ],
+        }
+    }
+
+
+def _tabela_produto_catalogo() -> dict[str, Any]:
+    """Tabela: produto (kit) × preço × custo × lucro × margem × vd/dia."""
+    cols = [
+        ("preco", "avg:robo.catalogo.preco{*} by {kit}", "Preco R$"),
+        ("custo", "avg:robo.catalogo.custo_total{*} by {kit}", "Custo R$"),
+        ("lucro", "avg:robo.catalogo.lucro_ref_ml{*} by {kit}", "Lucro ref R$"),
+        ("margem", "avg:robo.catalogo.margem_real_pct{*} by {kit}", "Margem real %"),
+        ("taxa", "avg:robo.catalogo.taxa_canal_pct{*} by {kit}", "Taxa canal %"),
+        ("vd", "avg:robo.catalogo.vd_dia_ref{*} by {kit}", "VD/dia ref"),
+    ]
+    queries = []
+    formulas = []
+    for i, (name, q, alias) in enumerate(cols):
+        queries.append(
+            {
+                "data_source": "metrics",
+                "name": name,
+                "query": q,
+                "aggregator": "avg",
+            }
+        )
+        formula: dict[str, Any] = {"alias": alias, "formula": name}
+        if i == 0:
+            formula["limit"] = {"count": 20, "order": "desc"}
+        formulas.append(formula)
+    return {
+        "definition": {
+            "title": "Produtos (kit) — preco / custo / lucro / margem / taxa / VD",
+            "type": "query_table",
+            "requests": [
+                {
+                    "queries": queries,
+                    "formulas": formulas,
+                    "response_format": "scalar",
+                }
+            ],
+        }
+    }
+
+
 def _grupo_tokens() -> dict[str, Any]:
     """Grupo Tokens/Auth com cada caixa medindo uma coisa so.
 
@@ -1079,24 +1155,318 @@ def _grupo_batalha_impala() -> dict[str, Any]:
 
 
 def _grupo_operacao_comercial() -> dict[str, Any]:
-    """Ads / vendas / decisao — leitura comercial (nao saude do motor)."""
+    """Vendas/lucro em destaque + ads + decisao (leitura comercial)."""
+    lucro_qv = {
+        "definition": {
+            "title": "Lucro R$ (periodo)",
+            "type": "query_value",
+            "autoscale": True,
+            "precision": 2,
+            "requests": [
+                {
+                    "conditional_formats": [
+                        {"comparator": ">", "palette": "white_on_green", "value": 0},
+                        {"comparator": "<", "palette": "white_on_red", "value": 0},
+                        {"comparator": "=", "palette": "white_on_yellow", "value": 0},
+                    ],
+                    "formulas": [{"formula": "query1"}],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": "query1",
+                            "query": "sum:robo.vendas.lucro_reais{*}",
+                        }
+                    ],
+                    "response_format": "scalar",
+                    "aggregator": "sum",
+                }
+            ],
+        }
+    }
     return {
         "id": GROUP_OPERACAO_COMERCIAL_ID,
         "definition": {
-            "title": "[Operacao comercial] Ads / Vendas / Decisao Impala",
+            "title": "[Operacao comercial] Vendas / Lucro / Ads / Decisao",
             "type": "group",
             "background_color": "vivid_orange",
             "layout_type": "ordered",
             "show_title": True,
             "widgets": [
+                # --- Vendas e lucro (primeira leitura) ---
+                {
+                    **_qv(
+                        "Receita bruta R$",
+                        "sum:robo.vendas.receita_bruta{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 750030,
+                },
+                {
+                    **lucro_qv,
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 750031,
+                },
+                {
+                    **_qv(
+                        "Margem media vendas %",
+                        "avg:robo.vendas.margem_media_pct{*}",
+                        aggregator="avg",
+                        green_gt=15,
+                        yellow_gt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 750032,
+                },
+                {
+                    **_qv(
+                        "Lucro ref ML (catalogo)",
+                        "sum:robo.catalogo.lucro_ref_ml{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 750033,
+                },
+                {
+                    **_qv(
+                        "Margem trabalho %",
+                        "avg:robo.catalogo.margem_trabalho_pct{*}",
+                        aggregator="avg",
+                        green_gt=15,
+                        yellow_gt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 750034,
+                },
+                {
+                    **_qv(
+                        "Margem real % (pos taxas)",
+                        "avg:robo.catalogo.margem_real_pct{*}",
+                        aggregator="avg",
+                        green_gt=10,
+                        yellow_gt=5,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 750035,
+                },
+                {
+                    "id": 750040,
+                    "definition": {
+                        "title": "Receita vs lucro (R$)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "dog_classic"},
+                                "formulas": [
+                                    {"alias": "receita", "formula": "query1"},
+                                    {"alias": "lucro", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "sum:robo.vendas.receita_bruta{*}.rollup(sum, 3600)",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "sum:robo.vendas.lucro_reais{*}.rollup(sum, 3600)",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
+                },
+                {
+                    "id": 750041,
+                    "definition": {
+                        "title": "Margem % (vendas vs catalogo)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "cool"},
+                                "formulas": [
+                                    {"alias": "margem vendas", "formula": "query1"},
+                                    {"alias": "margem trabalho", "formula": "query2"},
+                                    {"alias": "margem real", "formula": "query3"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.vendas.margem_media_pct{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.catalogo.margem_trabalho_pct{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.catalogo.margem_real_pct{*}",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
+                },
+                # --- Custo / investimento / crescimento ---
+                {
+                    **_qv(
+                        "Custo investido (catalogo)",
+                        "avg:robo.catalogo.custo_investido{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 5},
+                    "id": 750050,
+                },
+                {
+                    **_qv(
+                        "Custo vendas (COGS) R$",
+                        "sum:robo.vendas.custo_total{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 5},
+                    "id": 750051,
+                },
+                {
+                    **_qv(
+                        "Investimento Ads R$/dia",
+                        "avg:robo.ads.budget_sugerido{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 5},
+                    "id": 750052,
+                },
+                {
+                    **_qv(
+                        "Taxa crescimento kits % receita",
+                        "avg:robo.crescimento_esmaltes.kits_pct{*}",
+                        aggregator="avg",
+                        green_gt=40,
+                        yellow_gt=25,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 5},
+                    "id": 750053,
+                },
+                {
+                    **_qv(
+                        "VD/dia ref (crescimento)",
+                        "sum:robo.catalogo.vd_dia_ref{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 5},
+                    "id": 750054,
+                },
+                {
+                    **_qv(
+                        "Taxa canal media %",
+                        "avg:robo.catalogo.taxa_canal_pct{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=16,
+                        red_gt=20,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 5},
+                    "id": 750055,
+                },
+                # --- Produto x valores ---
+                {
+                    **_tabela_produto_catalogo(),
+                    "layout": {"height": 4, "width": 12, "x": 0, "y": 7},
+                    "id": 750060,
+                },
+                {
+                    **_toplist_metric(
+                        "Receita por produto (kit)",
+                        "sum:robo.vendas.receita_por_kit{*} by {kit}",
+                        aggregator="sum",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 11},
+                    "id": 750061,
+                },
+                {
+                    **_toplist_metric(
+                        "Lucro por produto (kit)",
+                        "sum:robo.vendas.lucro_por_kit{*} by {kit}",
+                        aggregator="sum",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 11},
+                    "id": 750062,
+                },
+                {
+                    **_toplist_metric(
+                        "Custo por produto (kit)",
+                        "sum:robo.vendas.custo_por_kit{*} by {kit}",
+                        aggregator="sum",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 11},
+                    "id": 750063,
+                },
+                {
+                    **_toplist_metric(
+                        "VD/dia por produto (kit)",
+                        "avg:robo.catalogo.vd_dia_ref{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 14},
+                    "id": 750064,
+                },
+                {
+                    **_toplist_metric(
+                        "Custo unitario por produto",
+                        "avg:robo.catalogo.custo_total{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 14},
+                    "id": 750065,
+                },
+                {
+                    **_toplist_metric(
+                        "Lucro ref ML por produto",
+                        "avg:robo.catalogo.lucro_ref_ml{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 14},
+                    "id": 750066,
+                },
+                # --- Ads ---
                 {
                     **_qv("Ads Rodadas", "sum:robo.ads.rodadas{*}.as_count()"),
-                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 17},
                     "id": 750001,
                 },
                 {
                     **_qv("Ads Aplicado", "sum:robo.ads.aplicado{*}.as_count()"),
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 17},
                     "id": 750002,
                 },
                 {
@@ -1106,7 +1476,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         red_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 17},
                     "id": 750003,
                 },
                 {
@@ -1116,7 +1486,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         yellow_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 17},
                     "id": 750004,
                 },
                 {
@@ -1129,7 +1499,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0.25,
                         precision=2,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 17},
                     "id": 750005,
                 },
                 {
@@ -1140,15 +1510,16 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 17},
                     "id": 750006,
                 },
+                # --- Alertas de canal + decisao ---
                 {
                     **_qv(
                         "Vendas WA Notificadas",
                         "sum:robo.vendas.notificadas{*}.as_count()",
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 19},
                     "id": 750010,
                 },
                 {
@@ -1158,7 +1529,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         red_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 19},
                     "id": 750011,
                 },
                 {
@@ -1168,8 +1539,16 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         yellow_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 19},
                     "id": 750012,
+                },
+                {
+                    **_qv(
+                        "Itens analisados (margem)",
+                        "sum:robo.vendas.itens_analisados{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 19},
+                    "id": 750014,
                 },
                 {
                     **_qv(
@@ -1180,8 +1559,20 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=50,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 19},
                     "id": 750013,
+                },
+                {
+                    **_qv(
+                        "Crescimento margem %",
+                        "avg:robo.crescimento_esmaltes.margem_pct{*}",
+                        aggregator="avg",
+                        green_gt=15,
+                        yellow_gt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 19},
+                    "id": 750015,
                 },
                 {
                     **_qv(
@@ -1191,7 +1582,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 0, "y": 4},
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 21},
                     "id": 750020,
                 },
                 {
@@ -1203,7 +1594,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 3, "y": 4},
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 21},
                     "id": 750021,
                 },
                 {
@@ -1215,7 +1606,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 6, "y": 4},
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 21},
                     "id": 750022,
                 },
                 {
@@ -1227,7 +1618,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 4},
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 21},
                     "id": 750023,
                 },
             ],
@@ -1313,7 +1704,8 @@ def atualizar_dashboard_ecommerce() -> None:
         NOTE_ECOM_ID,
         (
             "## Aba E-commerce Impala / ML\n\n"
-            "Catalogo, batalha de precos (preco-alvo), ads, vendas e decisao do dia.\n\n"
+            "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
+            "**taxa de crescimento (kits % receita + VD/dia)** e **custo investido / Ads**.\n\n"
             f"**Robo / plataforma (motor ligado?):** "
             f"[Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})"
         ),
