@@ -530,6 +530,15 @@ MONTAR_KITS_IMPALA_ALERTA = os.getenv("MONTAR_KITS_IMPALA_ALERTA", "1").strip().
 MONTAR_KITS_IMPALA_COOLDOWN_SEG = int(os.getenv("MONTAR_KITS_IMPALA_COOLDOWN_SEG", "18000"))
 MONTAR_KITS_IMPALA_TOP_KITS = int(os.getenv("MONTAR_KITS_IMPALA_TOP_KITS", "40"))
 
+# Planilhas ecommerce (Consolidado Impala/Cruzeiro) → catálogo + invest validação
+PLANILHAS_ECOMMERCE_CONSOLIDADO = os.getenv(
+    "PLANILHAS_ECOMMERCE_CONSOLIDADO",
+    "planilhas_ecommerce/Consolidado_Impala_Cruzeiro.xlsx",
+)
+PLANILHAS_ECOMMERCE_SYNC_ATIVO = os.getenv(
+    "PLANILHAS_ECOMMERCE_SYNC_ATIVO", "1"
+).strip().lower() not in ("0", "false", "no")
+
 # Ecossistema esmaltes — plano consolidado (cor → kit → anexos → B2B)
 ECOSSISTEMA_ESMALTES_ATIVO = os.getenv("ECOSSISTEMA_ESMALTES_ATIVO", "1").strip().lower() not in (
     "0",

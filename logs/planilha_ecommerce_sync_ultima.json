@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "timestamp": "2026-08-08T21:04:20.771445+00:00",
+  "faixas_frete": 6,
+  "plano_validacao": 8,
+  "resumo_kits": 8,
+  "kits_cruzeiro": 5,
+  "ranking_cruzeiro": 28,
+  "oportunidades": 23,
+  "livia": 34,
+  "kits_combinados": 7,
+  "invest_total_reais": 5198.3,
+  "produtos": {
+    "produtos_total": 20,
+    "produtos_atualizados": 28,
+    "produtos_inseridos": 0
+  },
+  "metricas": {
+    "ok": true,
+    "invest_validacao_total": 5198.3,
+    "planos": 8,
+    "cruzeiro": 5,
+    "oportunidades": 23,
+    "livia": 34
+  }
+}

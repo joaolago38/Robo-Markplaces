@@ -1,0 +1,311 @@
+{
+  "timestamp": "2026-08-08T21:04:20.771445+00:00",
+  "itens": [
+    {
+      "nome": "Lixa Katy Colors Pink 6un",
+      "codigo_livia": "114719",
+      "descricao": "Lixa de Unha Katy Colors Pink 6 Unidades",
+      "categoria": "Lixas",
+      "tipo_uso": "Brinde no kit",
+      "estrategia_kit": "Incluir 1 lixa em todo kit enviado — custo < R$ 1, percepção de valor alta",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lixa Katy Colors Roxa 6un",
+      "codigo_livia": "114718",
+      "descricao": "Lixa de Unha Katy Colors Com 6 Roxa",
+      "categoria": "Lixas",
+      "tipo_uso": "Brinde no kit",
+      "estrategia_kit": "Cor roxa complementa tons frios do Impala",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lixa Katy Colors Laranja 6un",
+      "codigo_livia": "114717",
+      "descricao": "Lixa de Unha Katy Colors Com 6 Laranja",
+      "categoria": "Lixas",
+      "tipo_uso": "Brinde no kit",
+      "estrategia_kit": "Cor quente para kits terrosos",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lixa Katy Big 6un",
+      "codigo_livia": "103487",
+      "descricao": "Lixa de Unha Katy 6 Unidades Big",
+      "categoria": "Lixas",
+      "tipo_uso": "Brinde no kit",
+      "estrategia_kit": "Formato grande — percepção de produto premium",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lixa Katy Banana Floral",
+      "codigo_livia": "122034",
+      "descricao": "Lixa de Unha Katy Banana Floral",
+      "categoria": "Lixas",
+      "tipo_uso": "Brinde diferenciado",
+      "estrategia_kit": "Design floral — combina com kits delicados",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lixa Katy Banana Onça",
+      "codigo_livia": "122037",
+      "descricao": "Lixa de Unha Katy Banana Onça",
+      "categoria": "Lixas",
+      "tipo_uso": "Brinde diferenciado",
+      "estrategia_kit": "Design animal print — kits arrojados",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lixa Pé Katy EVA Anatômica",
+      "codigo_livia": "91459",
+      "descricao": "Lixa de Pé Katy E.V.A Anatômica Cores Sortidas",
+      "categoria": "Lixas",
+      "tipo_uso": "Kit pedicure",
+      "estrategia_kit": "Incluir em kit de esmaltes de pé",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lixa Pé Katy Madeira",
+      "codigo_livia": "85425",
+      "descricao": "Lixa de Pé Katy Reta Madeira",
+      "categoria": "Lixas",
+      "tipo_uso": "Kit pedicure",
+      "estrategia_kit": "Produto clássico com boa percepção",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Alicate Mundial Classic 522-C",
+      "codigo_livia": "7947",
+      "descricao": "Alicate para Cutícula Mundial Classic 522-C",
+      "categoria": "Cutelaria",
+      "tipo_uso": "Kit manicure completo",
+      "estrategia_kit": "Já na planilha Mundial — comparar preço entre fontes",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Alicate Mundial + Espátula Sandy",
+      "codigo_livia": "42357",
+      "descricao": "Alicate Para Cutícula + Espátula Mundial Sandy 756",
+      "categoria": "Cutelaria",
+      "tipo_uso": "Kit manicure completo",
+      "estrategia_kit": "Kit duplo — aumenta ticket médio",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Alicate Mundial Flex Rosa",
+      "codigo_livia": "44401",
+      "descricao": "Alicate para Cutícula Flex + Espátula Rosa",
+      "categoria": "Cutelaria",
+      "tipo_uso": "Kit presente feminino",
+      "estrategia_kit": "Rosa combina com esmaltes — apelo visual",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Alicate Flex Fragrância Morango",
+      "codigo_livia": "56483",
+      "descricao": "Alicate Para Cutícula Flex Fragrância de Morango",
+      "categoria": "Cutelaria",
+      "tipo_uso": "Kit diferenciado",
+      "estrategia_kit": "Fragrância surpreende cliente — ótimo para 5 estrelas",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Alicate Flex Fragrância Uva",
+      "codigo_livia": "56484",
+      "descricao": "Alicate Para Cutícula Flex Fragrância de Uva",
+      "categoria": "Cutelaria",
+      "tipo_uso": "Kit diferenciado",
+      "estrategia_kit": "Diferencial nas fotos do anúncio",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Alicate + Palito Flex 751-RO",
+      "codigo_livia": "141675",
+      "descricao": "Alicate Para Cutícula + Palito Mundial Flex 751-RO",
+      "categoria": "Cutelaria",
+      "tipo_uso": "Kit manicure completo",
+      "estrategia_kit": "Kit duplo econômico",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Alicate + Lixa Sandy 748",
+      "codigo_livia": "42358",
+      "descricao": "Alicate Para Cutícula + lixa Mundial Sandy 748",
+      "categoria": "Cutelaria",
+      "tipo_uso": "Kit manicure completo",
+      "estrategia_kit": "Já inclui lixa — solução tudo em 1",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Espátula Katy Inox 2 em 1",
+      "codigo_livia": "46617",
+      "descricao": "Espátula para Unha Katy Inox 2 em 1",
+      "categoria": "Acessórios Unhas",
+      "tipo_uso": "Kit manicure pro",
+      "estrategia_kit": "Produto inox = percepção premium",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Afastador Cutículas Katy Inox",
+      "codigo_livia": "134193",
+      "descricao": "Afastador de Cutículas Katy Inox Cabo de Silicone",
+      "categoria": "Acessórios Unhas",
+      "tipo_uso": "Kit manicure pro",
+      "estrategia_kit": "Cabo silicone = ergonômico e moderno",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Afastador + Palito Katy Inox",
+      "codigo_livia": "134195",
+      "descricao": "Afastador Com Palito Katy Inox Cabo de Silicone",
+      "categoria": "Acessórios Unhas",
+      "tipo_uso": "Kit manicure pro",
+      "estrategia_kit": "Dupla função — mais valor percebido",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Escova para Unha Katy",
+      "codigo_livia": "100222",
+      "descricao": "Escova Para Unha Katy Plastico",
+      "categoria": "Acessórios Unhas",
+      "tipo_uso": "Kit manicure",
+      "estrategia_kit": "Complemento básico de boa saída",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Protetor Bacia Descartável 50un",
+      "codigo_livia": "47541",
+      "descricao": "Protetor de Bacia Katy Pedicure Descartável 50 un",
+      "categoria": "Acessórios Unhas",
+      "tipo_uso": "Venda recorrente manicure",
+      "estrategia_kit": "Consumível — cliente repete compra mensalmente",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Unhas Postiças Ricca Francesinha Nude",
+      "codigo_livia": "101506",
+      "descricao": "Unhas Postiças Ricca Francesinha Nude 24 unidades",
+      "categoria": "Unhas Postiças",
+      "tipo_uso": "Kit presente premium",
+      "estrategia_kit": "Francesinha = clássico e atemporal",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Unhas Postiças Ricca Francesinha Rosa",
+      "codigo_livia": "101505",
+      "descricao": "Unhas Postiças Ricca Francesinha Rosa 24 unidades",
+      "categoria": "Unhas Postiças",
+      "tipo_uso": "Kit presente premium",
+      "estrategia_kit": "Combina com esmaltes tons claros",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Unhas Postiças Ricca Vermelho Paixão",
+      "codigo_livia": "101513",
+      "descricao": "Unhas Postiças Ricca Vermelho Paixão 24 unidades",
+      "categoria": "Unhas Postiças",
+      "tipo_uso": "Kit presente premium",
+      "estrategia_kit": "Kit Dia dos Namorados / aniversário",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Unhas Postiças Ricca Rosa Magia",
+      "codigo_livia": "101508",
+      "descricao": "Unhas Postiças Ricca Rosa Magia 24 unidades",
+      "categoria": "Unhas Postiças",
+      "tipo_uso": "Kit presente premium",
+      "estrategia_kit": "Rosa + esmalte nude = kit delicado",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Unhas Postiças Katy 56un Quadrada",
+      "codigo_livia": "117832",
+      "descricao": "Unhas Postiças Katy Sem Cola 56 Quadrada Média",
+      "categoria": "Unhas Postiças",
+      "tipo_uso": "Kit manicure pro",
+      "estrategia_kit": "56 unidades = custo baixo por peça",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Unhas Postiças Katy 48un Curvatura",
+      "codigo_livia": "117831",
+      "descricao": "Unhas Postiças Katy Sem Cola Com 48 Curvatura Natural",
+      "categoria": "Unhas Postiças",
+      "tipo_uso": "Kit manicure pro",
+      "estrategia_kit": "Curvatura natural = resultado mais realista",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Carmed Stranger Things",
+      "codigo_livia": "148401",
+      "descricao": "Hidratante Labial Carmed 10gr Stranger Things Waffle",
+      "categoria": "Complemento Presente",
+      "tipo_uso": "Kit mimo viral",
+      "estrategia_kit": "Carmed + esmalte = formato viral no ML/TikTok",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Carmed Kit SOS + Ultra Gloss",
+      "codigo_livia": "146868",
+      "descricao": "Kit Carmed SOS Esfoliante + Ultra Gloss Algodão Doce",
+      "categoria": "Complemento Presente",
+      "tipo_uso": "Kit mimo premium",
+      "estrategia_kit": "Kit completo labial — ticket maior",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Lip Balm Dabelle Cereja",
+      "codigo_livia": "148674",
+      "descricao": "Lip Balm Dabelle Cereja Mania Bombom de Cereja 03",
+      "categoria": "Complemento Presente",
+      "tipo_uso": "Kit mimo",
+      "estrategia_kit": "Alternativa mais econômica ao Carmed",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Impala Ju Paes Plot Twist 7,5ml",
+      "codigo_livia": "148372",
+      "descricao": "Esmalte Impala Ju Paes Virando o Jogo 7,5ml Plot Twist",
+      "categoria": "Esmaltes",
+      "tipo_uso": "Confirmar preço",
+      "estrategia_kit": "Comparar com planilha Mundial R$ 3,36",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Impala Blister Ju Paes Plot Twist",
+      "codigo_livia": "148364",
+      "descricao": "Esmalte Impala Blister Ju Paes Virando o Jogo Plot Twist",
+      "categoria": "Esmaltes",
+      "tipo_uso": "Kit premium",
+      "estrategia_kit": "Blister = apresentação mais premium p/ fotos",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "Risqué Lollapalooza Pôr do Show",
+      "codigo_livia": "148602",
+      "descricao": "Esmalte Risqué Lollapalooza 8ml Pôr do Show",
+      "categoria": "Esmaltes",
+      "tipo_uso": "Kit multimarca",
+      "estrategia_kit": "Misturar Impala + Risqué = kit mais rico",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "None",
+      "codigo_livia": "None",
+      "descricao": "None",
+      "categoria": "None",
+      "tipo_uso": "None",
+      "estrategia_kit": "None",
+      "fonte": "Catálogo Lívia Distribuidora"
+    },
+    {
+      "nome": "LEGENDA:  Verde = lixas  |  Teal = cutelaria  |  Azul = acessórios  |  Rosa = unhas postiças  |  Amarelo = presentes  |  Cinza = esmaltes",
+      "codigo_livia": "None",
+      "descricao": "None",
+      "categoria": "None",
+      "tipo_uso": "None",
+      "estrategia_kit": "None",
+      "fonte": "Catálogo Lívia Distribuidora"
+    }
+  ]
+}

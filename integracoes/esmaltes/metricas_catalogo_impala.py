@@ -154,6 +154,12 @@ def montar_snapshot_catalogo(
                 "preco_ml_mercado": _f(p.get("preco_ml_mercado")),
                 "fase": _f(p.get("fase_atual"), 1.0),
                 "lucro_ref_ml": _f(p.get("lucro_ref_ml")),
+                "invest_validacao_reais": (
+                    _f(p["invest_validacao_reais"])
+                    if p.get("invest_validacao_reais") is not None
+                    else None
+                ),
+                "frete_estimado": _f(p.get("frete_estimado")),
             }
         )
 
@@ -221,6 +227,14 @@ def emitir_metricas_catalogo_impala(
             gauge("catalogo.fase", float(k["fase"]), tags=tags)
             gauge("catalogo.lucro_ref_ml", float(k["lucro_ref_ml"]), tags=tags)
             gauge("catalogo.mlb_ok", 1.0 if k["mlb_ok"] else 0.0, tags=tags)
+            if k.get("invest_validacao_reais") is not None:
+                gauge(
+                    "catalogo.invest_validacao",
+                    float(k["invest_validacao_reais"] or 0),
+                    tags=tags,
+                )
+            if k.get("frete_estimado") is not None:
+                gauge("catalogo.frete_estimado", float(k["frete_estimado"] or 0), tags=tags)
             if k["margem_real_pct"] is not None:
                 gauge("catalogo.margem_real_pct", float(k["margem_real_pct"]), tags=tags)
             if k["gap_mercado_pct"] is not None:
