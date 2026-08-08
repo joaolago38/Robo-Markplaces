@@ -376,6 +376,41 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         gauge("filamentos.ml.total_unicos", float(consolidado.get("total_filamentos_unicos") or 0))
         gauge("filamentos.ml.total_vendas", float(consolidado.get("total_vendas") or 0))
+        try:
+            from integracoes.filamentos.metricas_top_anuncios import (
+                emitir_ranking_marcas,
+                emitir_top_anuncios,
+            )
+
+            emitir_ranking_marcas("filamentos.ml", consolidado.get("ranking_marcas") or [])
+            # Só anúncios Masterprint entre os top vendas do mercado
+            top = consolidado.get("top_vendas") or []
+            mp = [
+                p
+                for p in top
+                if "masterprint" in str(p.get("marca") or "").lower()
+                or "masterprint" in str(p.get("titulo") or "").lower()
+            ]
+            if not mp:
+                mp = [
+                    p
+                    for p in top
+                    if "master" in str(p.get("titulo") or "").lower()
+                ]
+            if mp:
+                emitir_top_anuncios(
+                    "filamentos.ml.masterprint",
+                    mp,
+                    top_n=10,
+                )
+            # Top mercado geral (todas as marcas) — separado do recorte Masterprint
+            emitir_top_anuncios(
+                "filamentos.ml",
+                top,
+                top_n=10,
+            )
+        except Exception as exc:
+            logger.debug("metricas top anuncios filamentos: %s", exc)
         incrementar("filamentos.ml.rodadas")
 
         return {

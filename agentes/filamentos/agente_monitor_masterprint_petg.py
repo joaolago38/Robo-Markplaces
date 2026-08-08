@@ -252,6 +252,27 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("masterprint_petg.vendas", float(consolidado.get("vendas_totais") or 0))
         gauge("masterprint_petg.receita_proxy", float(consolidado.get("receita_proxy_total") or 0))
         gauge("masterprint_petg.lucro_proxy", float(consolidado.get("lucro_proxy_total") or 0))
+        if consolidado.get("margem_media_brl") is not None:
+            gauge("masterprint_petg.margem_media_brl", float(consolidado.get("margem_media_brl") or 0))
+        if consolidado.get("preco_medio") is not None:
+            gauge("masterprint_petg.preco_medio", float(consolidado.get("preco_medio") or 0))
+        try:
+            from integracoes.filamentos.metricas_top_anuncios import (
+                emitir_top_anuncios,
+                enriquecer_sellers,
+            )
+
+            # Top anúncios + maiores sellers (porte ML quando sold_quantity=0)
+            base = consolidado.get("produtos") or consolidado.get("mais_vendidos") or []
+            perfis = enriquecer_sellers(base, max_sellers=MASTERPRINT_PETG_TOP_N)
+            emitir_top_anuncios(
+                "masterprint_petg",
+                base,
+                top_n=MASTERPRINT_PETG_TOP_N,
+                sellers_perfil=perfis,
+            )
+        except Exception as exc:
+            logger.debug("metricas top anuncios petg: %s", exc)
 
         alerta_enviado = False
         from integracoes.masterprint.ramo import chat_gestor_masterprint

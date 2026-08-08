@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-08-08T14:21:40.234880+00:00",
-  "origem": "bootstrap",
+  "timestamp": "2026-08-08T22:00:10.439845+00:00",
+  "origem": "monitor_concorrentes",
   "batalha": {
-    "anuncios_unicos": 0,
+    "anuncios_unicos": 1,
     "sellers_unicos": 0,
-    "vendas_proxy": 0,
-    "preco_min": 0.0,
-    "preco_mediano": 0.0,
-    "preco_medio": 0.0,
-    "preco_max": 0.0,
+    "vendas_proxy": 5,
+    "preco_min": 38.0,
+    "preco_mediano": 38.0,
+    "preco_medio": 38.0,
+    "preco_max": 38.0,
     "por_tamanho": [],
     "comparacoes": [
       {
@@ -94,11 +94,176 @@
         "rivais_no_tam": 0,
         "gap_pct": -8.69,
         "mlb_ok": false
+      },
+      {
+        "sku": "CRZ-KIT-103",
+        "papel": "catalogo",
+        "prio": "p0",
+        "kit_tag": "kit:crzkit103",
+        "tam": null,
+        "nosso_preco": 45.9,
+        "rival_min": null,
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false
+      },
+      {
+        "sku": "CRZ-KIT-002",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:crzkit002",
+        "tam": 2,
+        "nosso_preco": 49.9,
+        "rival_min": null,
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false
+      },
+      {
+        "sku": "CRZ-KIT-001",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:crzkit001",
+        "tam": null,
+        "nosso_preco": 39.9,
+        "rival_min": null,
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false
+      },
+      {
+        "sku": "CRZ-KIT-003",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:crzkit003",
+        "tam": 3,
+        "nosso_preco": 54.9,
+        "rival_min": null,
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false
+      },
+      {
+        "sku": "CRZ-KIT-111",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:crzkit111",
+        "tam": null,
+        "nosso_preco": 78.9,
+        "rival_min": null,
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-MIMO-003",
+        "papel": "catalogo",
+        "prio": "p0",
+        "kit_tag": "kit:mimo003",
+        "tam": 3,
+        "nosso_preco": 44.9,
+        "rival_min": 49.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -10.02,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-BAIL-005",
+        "papel": "catalogo",
+        "prio": "p0",
+        "kit_tag": "kit:bail005",
+        "tam": 5,
+        "nosso_preco": 48.9,
+        "rival_min": 52.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -7.56,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-SORT-006",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:sort006",
+        "tam": 6,
+        "nosso_preco": 49.9,
+        "rival_min": 54.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -9.11,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-SORT-006B",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:sort006b",
+        "tam": 7,
+        "nosso_preco": 49.9,
+        "rival_min": 54.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -9.11,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-POV-008",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:pov008",
+        "tam": 8,
+        "nosso_preco": 74.9,
+        "rival_min": 82.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -9.65,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-ATAC-010",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:atac010",
+        "tam": 10,
+        "nosso_preco": 69.9,
+        "rival_min": 74.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -6.68,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:jupaes006",
+        "tam": 6,
+        "nosso_preco": 64.9,
+        "rival_min": 69.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -7.15,
+        "mlb_ok": false
+      },
+      {
+        "sku": "IMP-COLC-015",
+        "papel": "catalogo",
+        "prio": "p1",
+        "kit_tag": "kit:colc015",
+        "tam": 15,
+        "nosso_preco": 79.9,
+        "rival_min": 89.9,
+        "rivais_no_tam": 0,
+        "gap_pct": -11.12,
+        "mlb_ok": false
       }
     ],
     "nossos_acima_rival": 0,
-    "nossos_abaixo_ou_igual": 7,
-    "top_anuncios": []
+    "nossos_abaixo_ou_igual": 15,
+    "top_anuncios": [
+      {
+        "item_id": "MLB1",
+        "titulo": "Kit Impala X",
+        "preco": 38.0,
+        "quantidade_vendida": 5,
+        "qtd_kit": null,
+        "seller_id": null
+      }
+    ]
   },
-  "amostra_impala": 0
+  "amostra_impala": 1
 }

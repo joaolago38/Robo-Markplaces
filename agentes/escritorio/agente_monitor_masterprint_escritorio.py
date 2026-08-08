@@ -252,7 +252,40 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
 
         gauge("masterprint_escritorio.anuncios", float(consolidado.get("total_anuncios_ativos") or 0))
         gauge("masterprint_escritorio.vendas", float(consolidado.get("vendas_totais") or 0))
+        gauge("masterprint_escritorio.receita_proxy", float(consolidado.get("receita_proxy_total") or 0))
         gauge("masterprint_escritorio.lucro_proxy", float(consolidado.get("lucro_proxy_total") or 0))
+        if consolidado.get("margem_media_brl") is not None:
+            gauge("masterprint_escritorio.margem_media_brl", float(consolidado.get("margem_media_brl") or 0))
+        for tipo, bucket in (consolidado.get("por_tipo") or {}).items():
+            if not isinstance(bucket, dict):
+                continue
+            t = str(tipo or "x").lower().replace(" ", "_")[:32]
+            tags = [f"tipo:{t}"]
+            gauge("masterprint_escritorio.vendas_tipo", float(bucket.get("vendas") or 0), tags=tags)
+            gauge(
+                "masterprint_escritorio.lucro_tipo",
+                float(bucket.get("lucro_proxy") or bucket.get("lucro_proxy_total") or 0),
+                tags=tags,
+            )
+        try:
+            from integracoes.filamentos.metricas_top_anuncios import (
+                emitir_top_anuncios,
+                enriquecer_sellers,
+            )
+
+            from core.config import MASTERPRINT_ESCRITORIO_TOP_N
+
+            top_n = int(MASTERPRINT_ESCRITORIO_TOP_N or 10)
+            base = consolidado.get("produtos") or consolidado.get("mais_vendidos") or []
+            perfis = enriquecer_sellers(base, max_sellers=top_n)
+            emitir_top_anuncios(
+                "masterprint_escritorio",
+                base,
+                top_n=top_n,
+                sellers_perfil=perfis,
+            )
+        except Exception as exc:
+            logger.debug("metricas top anuncios escritorio: %s", exc)
 
         alerta_enviado = False
         from integracoes.masterprint.ramo import chat_gestor_masterprint

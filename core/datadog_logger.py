@@ -138,6 +138,8 @@ _LOGGER_META = {
     "planilha_impala": ("mercadolivre", "integracao"),
     "planilha_consolidado_ecommerce": ("mercadolivre", "integracao"),
     "agente_sync_planilhas_ecommerce": ("mercadolivre", "agente"),
+    "planilha_tabela_pedidos": ("mercadolivre", "integracao"),
+    "agente_sync_tabela_pedidos": ("mercadolivre", "agente"),
     "agente_monitor_removedores_unha": ("mercadolivre", "agente"),
     "agente_monitor_tendencias_esmaltes": ("multi", "agente"),
     "agente_monitor_mercado_esmaltes": ("mercadolivre", "agente"),

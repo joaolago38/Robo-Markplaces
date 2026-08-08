@@ -184,6 +184,7 @@ def classificar_anuncio(
         "titulo": titulo[:140],
         "preco": preco,
         "quantidade_vendida": max(0, vendidos),
+        "seller_id": str(anuncio.get("seller_id") or anuncio.get("seller") or "").strip(),
         "marca": detectar_marca(titulo),
         "material": detectar_material(titulo, fallback=material_esperado),
         "cor": detectar_cor_principal(titulo),

@@ -2,8 +2,9 @@
 Completa observabilidade Datadog do Robo Marketplaces:
 
 1) Dashboard Robo/Saude (3iy-tka-awu): tokens, orquestrador, vigia, pontos cegos ops
-2) Dashboard Ecommerce (criado/upsert): Catalogo Impala, Batalha, operacao comercial
-3) Monitores de alerta
+2) Dashboard Ecommerce Impala: Catalogo, Batalha, operacao comercial
+3) Dashboard Masterprint: Filamentos / Escritorio (mesma estrutura)
+4) Monitores de alerta
 
 Requer DD_API_KEY + DD_APPLICATION_KEY no .env
   DD_SITE=us5.datadoghq.com
@@ -43,13 +44,19 @@ DASH_OPS = "7be-b7r-nrk"
 # Preenchido em runtime (env DD_DASH_ECOMMERCE ou busca/cria pelo titulo).
 DASH_ECOMMERCE = (os.getenv("DD_DASH_ECOMMERCE") or "j53-h48-8ea").strip()
 DASH_ECOMMERCE_TITLE = "Robo Marketplaces - Ecommerce Impala / ML"
+DASH_MASTERPRINT = (os.getenv("DD_DASH_MASTERPRINT") or "ggq-my7-h6g").strip()
+DASH_MASTERPRINT_TITLE = "Robo Marketplaces - Masterprint Filamentos / Escritorio"
 GROUP_PONTOS_CEGOS_ID = 700005
 GROUP_TOKENS_ID = 100001
 GROUP_CATALOGO_IMPALA_ID = 700006
 GROUP_BATALHA_IMPALA_ID = 700007
 GROUP_OPERACAO_COMERCIAL_ID = 700008
+GROUP_MP_CATALOGO_ID = 760001
+GROUP_MP_MERCADO_ID = 760002
+GROUP_MP_COMERCIAL_ID = 760003
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
+NOTE_MP_ID = 700011
 TAG_MONITOR = "service:robo-markplaces"
 
 # ── Queries de log do grupo "Tokens e Autenticacao" ───────────────────────
@@ -180,6 +187,35 @@ def _resolver_dash_ecommerce() -> str:
     return DASH_ECOMMERCE
 
 
+def _resolver_dash_masterprint() -> str:
+    """Retorna ID do dash Masterprint (filamentos + escritorio)."""
+    global DASH_MASTERPRINT
+    if DASH_MASTERPRINT:
+        return DASH_MASTERPRINT
+    existente = _buscar_dashboard_por_titulo(DASH_MASTERPRINT_TITLE)
+    if existente:
+        DASH_MASTERPRINT = existente
+        return DASH_MASTERPRINT
+    created = _post(
+        "/api/v1/dashboard",
+        {
+            "title": DASH_MASTERPRINT_TITLE,
+            "description": (
+                "Masterprint: filamentos 3D, pinceis/apagadores, custos tabela pedidos e mercado ML. "
+                f"Robo: {_url_dash(DASH_SAUDE)}"
+            ),
+            "widgets": [],
+            "layout_type": "ordered",
+        },
+    )
+    did = str(created.get("id") or "").strip()
+    if not did:
+        raise RuntimeError(f"Falha ao criar dashboard masterprint: {created!r}")
+    DASH_MASTERPRINT = did
+    print(f"OK dashboard masterprint CRIADO id={did}")
+    return DASH_MASTERPRINT
+
+
 def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
     d = w.get("definition") or {}
     title = d.get("title") if isinstance(d, dict) else None
@@ -196,7 +232,7 @@ def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
 
 
 def _eh_note_navegacao(w: dict[str, Any]) -> bool:
-    return w.get("id") in (NOTE_ROBO_ID, NOTE_ECOM_ID)
+    return w.get("id") in (NOTE_ROBO_ID, NOTE_ECOM_ID, NOTE_MP_ID)
 
 
 def _qv(
@@ -1721,9 +1757,549 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
     }
 
 
+def _grupo_catalogo_masterprint() -> dict[str, Any]:
+    """Custos/SKUs da TABELA DE PEDIDOS (filamentos + escritorio)."""
+    return {
+        "id": GROUP_MP_CATALOGO_ID,
+        "definition": {
+            "title": "[Catalogo Masterprint] Filamentos / Pinceis / Apagadores",
+            "type": "group",
+            "background_color": "vivid_blue",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "SKUs tabela (foco)",
+                        "avg:robo.masterprint.tabela.skus{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 760101,
+                },
+                {
+                    **_qv(
+                        "SKUs filamentos",
+                        "avg:robo.masterprint.tabela.filamentos_skus{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 760102,
+                },
+                {
+                    **_qv(
+                        "SKUs escritorio",
+                        "avg:robo.masterprint.tabela.escritorio_skus{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 760103,
+                },
+                {
+                    **_qv(
+                        "Custo invest. filamentos",
+                        "avg:robo.masterprint.tabela.custo_investido_filamentos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 760104,
+                },
+                {
+                    **_qv(
+                        "Custo invest. escritorio",
+                        "avg:robo.masterprint.tabela.custo_investido_escritorio{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 760105,
+                },
+                {
+                    **_toplist_metric(
+                        "SKUs por material",
+                        "avg:robo.masterprint.tabela.skus_material{*} by {material}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 2},
+                    "id": 760110,
+                },
+                {
+                    **_toplist_metric(
+                        "Custo medio R$ por material",
+                        "avg:robo.masterprint.tabela.custo_medio{*} by {material}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 2},
+                    "id": 760111,
+                },
+                {
+                    **_toplist_metric(
+                        "Custo min R$ por material",
+                        "avg:robo.masterprint.tabela.custo_min{*} by {material}",
+                        aggregator="avg",
+                        order="asc",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 2},
+                    "id": 760112,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
+    }
+
+
+def _grupo_mercado_masterprint() -> dict[str, Any]:
+    """Monitor ML (equivalente à batalha Impala)."""
+    return {
+        "id": GROUP_MP_MERCADO_ID,
+        "definition": {
+            "title": "[Mercado ML] Filamentos / PETG / Escritorio",
+            "type": "group",
+            "background_color": "vivid_purple",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Filamentos unicos (ML)",
+                        "avg:robo.filamentos.ml.total_unicos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 760201,
+                },
+                {
+                    **_qv(
+                        "Vendas proxy filamentos",
+                        "avg:robo.filamentos.ml.total_vendas{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 760202,
+                },
+                {
+                    **_qv(
+                        "Alibaba lucrativos",
+                        "avg:robo.filamentos.ml.alibaba_lucrativos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 760203,
+                },
+                {
+                    **_qv(
+                        "PETG anuncios ML",
+                        "avg:robo.masterprint_petg.anuncios{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 760204,
+                },
+                {
+                    **_qv(
+                        "Sourcing COMPRAR_BR",
+                        "avg:robo.filamentos.sourcing.comprar_br{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 0, "y": 2},
+                    "id": 760210,
+                },
+                {
+                    **_qv(
+                        "Sourcing IMPORTAR_CHINA",
+                        "avg:robo.filamentos.sourcing.importar_china{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 4, "y": 2},
+                    "id": 760211,
+                },
+                {
+                    **_qv(
+                        "Sourcing NAO_COMPENSA",
+                        "avg:robo.filamentos.sourcing.nao_compensa{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 8, "y": 2},
+                    "id": 760212,
+                },
+                {
+                    "id": 760220,
+                    "definition": {
+                        "title": "PETG — anuncios / vendas / receita proxy",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.anuncios{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.masterprint_petg.vendas{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_petg.receita_proxy{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "anuncios", "formula": "query1"},
+                                    {"alias": "vendas", "formula": "query2"},
+                                    {"alias": "receita", "formula": "query3"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
+                },
+                {
+                    "id": 760221,
+                    "definition": {
+                        "title": "Escritorio — anuncios / vendas / lucro proxy",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_escritorio.anuncios{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.masterprint_escritorio.vendas{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_escritorio.lucro_proxy{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "anuncios", "formula": "query1"},
+                                    {"alias": "vendas", "formula": "query2"},
+                                    {"alias": "lucro", "formula": "query3"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 4},
+                },
+                {
+                    **_toplist_metric(
+                        "Top anuncios PETG por margem (R$)",
+                        "avg:robo.masterprint_petg.top_margem_rank{*} by {ad}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 7},
+                    "id": 760230,
+                },
+                {
+                    **_toplist_metric(
+                        "Maiores sellers PETG (transacoes ML)",
+                        "avg:robo.masterprint_petg.seller_transacoes{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 7},
+                    "id": 760231,
+                },
+                {
+                    **_toplist_metric(
+                        "Sellers PETG — anuncios ativos",
+                        "avg:robo.masterprint_petg.seller_anuncios{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 7},
+                    "id": 760232,
+                },
+                {
+                    **_toplist_metric(
+                        "Marcas filamento por vendas (ML)",
+                        "avg:robo.filamentos.ml.marca_vendas{*} by {marca}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 10},
+                    "id": 760233,
+                },
+                {
+                    **_toplist_metric(
+                        "Top anuncios Masterprint (mercado)",
+                        "avg:robo.filamentos.ml.masterprint.top_vendas{*} by {ad}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 10},
+                    "id": 760234,
+                },
+                {
+                    **_toplist_metric(
+                        "Maiores sellers Masterprint (mercado)",
+                        "avg:robo.filamentos.ml.masterprint.seller_transacoes{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 10},
+                    "id": 760235,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
+    }
+
+
+def _grupo_operacao_masterprint() -> dict[str, Any]:
+    """Receita / lucro / crescimento — espelho da operacao comercial Impala."""
+    lucro_petg = {
+        "definition": {
+            "title": "Lucro proxy PETG R$",
+            "type": "query_value",
+            "autoscale": True,
+            "precision": 2,
+            "requests": [
+                {
+                    "conditional_formats": [
+                        {"comparator": ">", "palette": "white_on_green", "value": 0},
+                        {"comparator": "<", "palette": "white_on_red", "value": 0},
+                        {"comparator": "=", "palette": "white_on_yellow", "value": 0},
+                    ],
+                    "formulas": [{"formula": "query1"}],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": "query1",
+                            "query": "sum:robo.masterprint_petg.lucro_proxy{*}",
+                        }
+                    ],
+                    "response_format": "scalar",
+                    "aggregator": "sum",
+                }
+            ],
+        }
+    }
+    lucro_esc = {
+        "definition": {
+            "title": "Lucro proxy escritorio R$",
+            "type": "query_value",
+            "autoscale": True,
+            "precision": 2,
+            "requests": [
+                {
+                    "conditional_formats": [
+                        {"comparator": ">", "palette": "white_on_green", "value": 0},
+                        {"comparator": "<", "palette": "white_on_red", "value": 0},
+                        {"comparator": "=", "palette": "white_on_yellow", "value": 0},
+                    ],
+                    "formulas": [{"formula": "query1"}],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": "query1",
+                            "query": "sum:robo.masterprint_escritorio.lucro_proxy{*}",
+                        }
+                    ],
+                    "response_format": "scalar",
+                    "aggregator": "sum",
+                }
+            ],
+        }
+    }
+    return {
+        "id": GROUP_MP_COMERCIAL_ID,
+        "definition": {
+            "title": "[Operacao comercial] Filamentos / Escritorio — vendas e lucro",
+            "type": "group",
+            "background_color": "vivid_orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Receita proxy PETG R$",
+                        "sum:robo.masterprint_petg.receita_proxy{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 760301,
+                },
+                {
+                    **lucro_petg,
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 760302,
+                },
+                {
+                    **_qv(
+                        "Vendas PETG",
+                        "avg:robo.masterprint_petg.vendas{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 760303,
+                },
+                {
+                    **_qv(
+                        "Receita proxy escritorio R$",
+                        "sum:robo.masterprint_escritorio.receita_proxy{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 760304,
+                },
+                {
+                    **lucro_esc,
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 760305,
+                },
+                {
+                    **_qv(
+                        "Vendas escritorio",
+                        "avg:robo.masterprint_escritorio.vendas{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 760306,
+                },
+                {
+                    "id": 760310,
+                    "definition": {
+                        "title": "Receita vs lucro PETG (R$)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "formulas": [
+                                    {"alias": "receita", "formula": "query1"},
+                                    {"alias": "lucro", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.receita_proxy{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.masterprint_petg.lucro_proxy{*}",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
+                },
+                {
+                    "id": 760311,
+                    "definition": {
+                        "title": "Vendas escritorio por tipo",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "formulas": [{"alias": "vendas", "formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.masterprint_escritorio.vendas_tipo{*} by {tipo}"
+                                        ),
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
+                },
+                {
+                    **_toplist_metric(
+                        "Lucro escritorio por tipo",
+                        "avg:robo.masterprint_escritorio.lucro_tipo{*} by {tipo}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 5},
+                    "id": 760320,
+                },
+                {
+                    **_qv(
+                        "Preco medio PETG ML",
+                        "avg:robo.masterprint_petg.preco_medio{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 5},
+                    "id": 760321,
+                },
+                {
+                    **_qv(
+                        "Margem media PETG R$",
+                        "avg:robo.masterprint_petg.margem_media_brl{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 5},
+                    "id": 760322,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_saude() -> None:
     """Dashboard Robo: saude do motor — sem Catalogo/Batalha (vao para Ecommerce)."""
     ecom_id = _resolver_dash_ecommerce()
+    mp_id = _resolver_dash_masterprint()
     raw = _get(f"/api/v1/dashboard/{DASH_SAUDE}")
     widgets = list(raw.get("widgets") or [])
     novo: list[Any] = []
@@ -1736,8 +2312,9 @@ def atualizar_dashboard_saude() -> None:
             "## Aba Robo / plataforma\n\n"
             "Orquestrador, tokens, conectividade, vigia e falhas ops "
             "(chat / NF-e / estoque / telegram).\n\n"
-            f"**E-commerce Impala/ML (catalogo, batalha, ads, vendas):** "
-            f"[{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
+            f"**E-commerce Impala/ML:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})\n\n"
+            f"**Masterprint (filamentos / escritorio):** "
+            f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="blue",
         height=2,
@@ -1775,7 +2352,8 @@ def atualizar_dashboard_saude() -> None:
         "description": (
             "ABA ROBO: saude do motor (orquestrador, tokens, vigia, conectividade, "
             "pontos cegos ops). "
-            f"ABA ECOMMERCE: {_url_dash(ecom_id)}"
+            f"ABA ECOMMERCE: {_url_dash(ecom_id)} · "
+            f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
         "widgets": novo,
         "layout_type": raw.get("layout_type") or "ordered",
@@ -1792,6 +2370,7 @@ def atualizar_dashboard_saude() -> None:
 def atualizar_dashboard_ecommerce() -> None:
     """Dashboard Ecommerce: catalogo, batalha, ads/vendas/decisao."""
     ecom_id = _resolver_dash_ecommerce()
+    mp_id = _resolver_dash_masterprint()
     raw = _get(f"/api/v1/dashboard/{ecom_id}")
 
     note = _note_widget(
@@ -1801,8 +2380,9 @@ def atualizar_dashboard_ecommerce() -> None:
             "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
             "**invest. validacao**, **kits Cruzeiro**, **oportunidades/Livia**, "
             "**taxa de crescimento** e **custo/Ads**.\n\n"
-            f"**Robo / plataforma (motor ligado?):** "
-            f"[Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})"
+            f"**Robo / plataforma:** [Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
+            f"**Masterprint (filamentos / pinceis / apagadores):** "
+            f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="orange",
         height=2,
@@ -1818,7 +2398,8 @@ def atualizar_dashboard_ecommerce() -> None:
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
             "ABA ECOMMERCE: catalogo Impala, batalha, ads e vendas. "
-            f"ABA ROBO: {_url_dash(DASH_SAUDE)}"
+            f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
+            f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
         "widgets": [note, com, cat, bat],
         "layout_type": raw.get("layout_type") or "ordered",
@@ -1830,6 +2411,51 @@ def atualizar_dashboard_ecommerce() -> None:
     payload = {k: v for k, v in payload.items() if v is not None}
     _put(f"/api/v1/dashboard/{ecom_id}", payload)
     print(f"OK dashboard ecommerce: {_url_dash(ecom_id)}")
+
+
+def atualizar_dashboard_masterprint() -> None:
+    """Dashboard Masterprint: mesma estrutura do Impala (catalogo / mercado / comercial)."""
+    mp_id = _resolver_dash_masterprint()
+    ecom_id = _resolver_dash_ecommerce()
+    raw = _get(f"/api/v1/dashboard/{mp_id}")
+
+    note = _note_widget(
+        NOTE_MP_ID,
+        (
+            "## Aba Masterprint — Filamentos / Escritorio\n\n"
+            "Mesma leitura do Impala: **custo/catalogo** → **mercado ML** → "
+            "**receita / lucro / vendas**.\n\n"
+            "Linhas: filamentos 3D (PLA/PETG/ABS/TPU…) + pinceis quadro/permanente + apagadores "
+            "(fonte: `TABELA DE PEDIDOS.XLSX`).\n\n"
+            f"**Robo / plataforma:** [Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
+            f"**E-commerce Impala:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
+        ),
+        background_color="purple",
+        height=2,
+    )
+    cat = _grupo_catalogo_masterprint()
+    cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    merc = _grupo_mercado_masterprint()
+    merc["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    com = _grupo_operacao_masterprint()
+    com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+
+    payload = {
+        "title": DASH_MASTERPRINT_TITLE,
+        "description": (
+            "ABA MASTERPRINT: filamentos + pinceis/apagadores (custos, mercado ML, lucro). "
+            f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA IMPALA: {_url_dash(ecom_id)}"
+        ),
+        "widgets": [note, com, cat, merc],
+        "layout_type": raw.get("layout_type") or "ordered",
+        "template_variables": raw.get("template_variables") or [],
+        "notify_list": raw.get("notify_list") or [],
+        "reflow_type": raw.get("reflow_type"),
+        "tags": list({*(raw.get("tags") or []), "team:robo-markplaces"}),
+    }
+    payload = {k: v for k, v in payload.items() if v is not None}
+    _put(f"/api/v1/dashboard/{mp_id}", payload)
+    print(f"OK dashboard masterprint: {_url_dash(mp_id)}")
 
 
 def _strip_cpu_ops_dashboard() -> None:
@@ -2255,14 +2881,17 @@ def main() -> int:
     if not DD_API_KEY or not DD_APPLICATION_KEY:
         print("FALHA: DD_API_KEY e DD_APPLICATION_KEY obrigatorios no .env")
         return 1
-    # Resolve ecommerce primeiro para notes/links cruzados.
+    # Resolve dashboards primeiro para notes/links cruzados.
     ecom_id = _resolver_dash_ecommerce()
+    mp_id = _resolver_dash_masterprint()
     atualizar_dashboard_ecommerce()
+    atualizar_dashboard_masterprint()
     atualizar_dashboard_saude()
     _strip_cpu_ops_dashboard()
     upsert_monitores()
-    print(f"Aba Robo:       {_url_dash(DASH_SAUDE)}")
-    print(f"Aba Ecommerce:  {_url_dash(ecom_id)}")
+    print(f"Aba Robo:         {_url_dash(DASH_SAUDE)}")
+    print(f"Aba Ecommerce:    {_url_dash(ecom_id)}")
+    print(f"Aba Masterprint:  {_url_dash(mp_id)}")
     print("Monitores: https://us5.datadoghq.com/monitors/manage?q=tag%3Aservice%3Arobo-markplaces")
     print("Nota: OAuth Magalu continua manual (token invalid_grant nos logs).")
     return 0

@@ -1,0 +1,14 @@
+{
+  "rodadas": [
+    {
+      "timestamp": "2026-08-08T21:28:49.270712+00:00",
+      "total_anuncios_ativos": 42,
+      "vendas_totais": 0,
+      "receita_proxy_total": 0.0,
+      "preco_medio": 105.8,
+      "lucro_proxy_total": 0.0,
+      "margem_media_brl": 42.82
+    }
+  ],
+  "ultima": "2026-08-08T21:28:49.270712+00:00"
+}
