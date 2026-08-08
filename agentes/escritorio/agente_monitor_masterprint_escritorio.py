@@ -273,8 +273,6 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
                 enriquecer_sellers,
             )
 
-            from core.config import MASTERPRINT_ESCRITORIO_TOP_N
-
             top_n = int(MASTERPRINT_ESCRITORIO_TOP_N or 10)
             base = consolidado.get("produtos") or consolidado.get("mais_vendidos") or []
             perfis = enriquecer_sellers(base, max_sellers=top_n)

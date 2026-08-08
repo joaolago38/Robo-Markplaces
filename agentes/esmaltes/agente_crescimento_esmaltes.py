@@ -103,15 +103,11 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             from core.config import PLANILHAS_ECOMMERCE_SYNC_ATIVO
 
             if PLANILHAS_ECOMMERCE_SYNC_ATIVO:
+                # Só métricas (catálogos já sincronizados via agente/CLI); se JSON
+                # ainda não existir, faz sync completo uma vez.
                 from integracoes.esmaltes.planilha_consolidado_ecommerce import (
                     emitir_metricas_planilha_ecommerce,
                 )
-
-                # Só métricas (catálogos já sincronizados via agente/CLI); se JSON
-                # ainda não existir, faz sync completo uma vez.
-                from pathlib import Path
-
-                from core.config import ROOT
 
                 if not (ROOT / "catalogo" / "plano_validacao_impala.json").is_file():
                     from integracoes.esmaltes.planilha_consolidado_ecommerce import (
