@@ -82,13 +82,27 @@ class TestAdsConfirmacao(unittest.TestCase):
     @patch("agentes.ml.agente_ads_gatilho.probe_escrita_product_ads", return_value={"ok": False, "codigo": "http_401", "erro": "HTTP 401"})
     @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar")
     @patch("agentes.ml.agente_ads_gatilho.alertar_gestor")
-    @patch("integracoes.ml.contrato_impulso_ml.montar_contrato", return_value={"ok": True, "skus_liberados": ["IMP-MIMO-003"]})
+    @patch("integracoes.ml.contrato_impulso_ml.montar_contrato", return_value={"ok": True, "skus_liberados": ["IMP-PERL-004"]})
     @patch("integracoes.ml.contrato_impulso_ml.ads_pode_ligar", return_value=(True, "teste"))
     def test_probe_401_nao_pergunta_gestor(self, mock_ads, mock_montar, mock_alerta, mock_pergunta, *_):
         resultado = avaliar_momento_ads(avaliacoes=25, nota_media=4.9)
         self.assertEqual(resultado["decisao"], "aguardar")
         mock_pergunta.assert_not_called()
         mock_alerta.assert_called()
+
+    @patch("agentes.ml.agente_ads_gatilho.probe_escrita_product_ads", return_value={"ok": False, "codigo": "http_404", "erro": "Product Ads indisponível (HTTP 404)"})
+    @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar")
+    @patch("agentes.ml.agente_ads_gatilho.alertar_gestor")
+    @patch("integracoes.ml.contrato_impulso_ml.montar_contrato", return_value={"ok": True, "skus_liberados": ["IMP-PERL-004"]})
+    @patch("integracoes.ml.contrato_impulso_ml.ads_pode_ligar", return_value=(True, "teste"))
+    def test_probe_404_nao_pergunta_gestor(self, mock_ads, mock_montar, mock_alerta, mock_pergunta, *_):
+        resultado = avaliar_momento_ads(avaliacoes=25, nota_media=4.9)
+        self.assertEqual(resultado["decisao"], "aguardar")
+        mock_pergunta.assert_not_called()
+        mock_alerta.assert_called()
+        msg = mock_alerta.call_args[0][0]
+        self.assertIn("404", msg)
+        self.assertIn("Não peço aprovação", msg)
 
 
 if __name__ == "__main__":

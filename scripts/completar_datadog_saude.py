@@ -1,8 +1,9 @@
 """
 Completa observabilidade Datadog do Robo Marketplaces:
 
-1) Dashboard Saude (3iy-tka-awu): grupo [Metricas] Chat / NF-e / Estoque / Telegram / Repricing
-2) Monitores de alerta (orquestrador, vigia, Claude, Magalu auth, Telegram)
+1) Dashboard Robo/Saude (3iy-tka-awu): tokens, orquestrador, vigia, pontos cegos ops
+2) Dashboard Ecommerce (criado/upsert): Catalogo Impala, Batalha, operacao comercial
+3) Monitores de alerta
 
 Requer DD_API_KEY + DD_APPLICATION_KEY no .env
   DD_SITE=us5.datadoghq.com
@@ -39,10 +40,16 @@ DD_SITE = (os.getenv("DD_SITE") or "us5.datadoghq.com").strip() or "us5.datadogh
 
 DASH_SAUDE = "3iy-tka-awu"
 DASH_OPS = "7be-b7r-nrk"
+# Preenchido em runtime (env DD_DASH_ECOMMERCE ou busca/cria pelo titulo).
+DASH_ECOMMERCE = (os.getenv("DD_DASH_ECOMMERCE") or "j53-h48-8ea").strip()
+DASH_ECOMMERCE_TITLE = "Robo Marketplaces - Ecommerce Impala / ML"
 GROUP_PONTOS_CEGOS_ID = 700005
 GROUP_TOKENS_ID = 100001
 GROUP_CATALOGO_IMPALA_ID = 700006
 GROUP_BATALHA_IMPALA_ID = 700007
+GROUP_OPERACAO_COMERCIAL_ID = 700008
+NOTE_ROBO_ID = 700009
+NOTE_ECOM_ID = 700010
 TAG_MONITOR = "service:robo-markplaces"
 
 # ── Queries de log do grupo "Tokens e Autenticacao" ───────────────────────
@@ -99,6 +106,97 @@ def _put(path: str, body: dict[str, Any]) -> Any:
     if r.status_code >= 300:
         raise RuntimeError(f"PUT {path} HTTP {r.status_code}: {(r.text or '')[:800]}")
     return r.json() if r.text else {}
+
+
+def _url_dash(dash_id: str) -> str:
+    return f"https://{DD_SITE}/dashboard/{dash_id}"
+
+
+def _note_widget(
+    widget_id: int,
+    content: str,
+    *,
+    background_color: str = "blue",
+    height: int = 2,
+) -> dict[str, Any]:
+    return {
+        "id": widget_id,
+        "definition": {
+            "type": "note",
+            "content": content,
+            "background_color": background_color,
+            "font_size": "14",
+            "text_align": "left",
+            "show_tick": False,
+            "tick_edge": "left",
+            "tick_pos": "50%",
+            "has_padding": True,
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": height},
+    }
+
+
+def _buscar_dashboard_por_titulo(titulo: str) -> str | None:
+    raw = _get("/api/v1/dashboard")
+    dashboards = raw.get("dashboards") if isinstance(raw, dict) else raw
+    if not isinstance(dashboards, list):
+        return None
+    for d in dashboards:
+        if not isinstance(d, dict):
+            continue
+        if str(d.get("title") or "").strip() == titulo:
+            did = str(d.get("id") or "").strip()
+            if did:
+                return did
+    return None
+
+
+def _resolver_dash_ecommerce() -> str:
+    """Retorna ID do dash Ecommerce (env, busca por titulo, ou cria vazio)."""
+    global DASH_ECOMMERCE
+    if DASH_ECOMMERCE:
+        return DASH_ECOMMERCE
+    existente = _buscar_dashboard_por_titulo(DASH_ECOMMERCE_TITLE)
+    if existente:
+        DASH_ECOMMERCE = existente
+        return DASH_ECOMMERCE
+    created = _post(
+        "/api/v1/dashboard",
+        {
+            "title": DASH_ECOMMERCE_TITLE,
+            "description": (
+                "Ecommerce Impala / ML: catalogo, batalha de precos, ads e vendas. "
+                f"Robo/plataforma: {_url_dash(DASH_SAUDE)}"
+            ),
+            "widgets": [],
+            "layout_type": "ordered",
+        },
+    )
+    did = str(created.get("id") or "").strip()
+    if not did:
+        raise RuntimeError(f"Falha ao criar dashboard ecommerce: {created!r}")
+    DASH_ECOMMERCE = did
+    print(f"OK dashboard ecommerce CRIADO id={did}")
+    return DASH_ECOMMERCE
+
+
+def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
+    d = w.get("definition") or {}
+    title = d.get("title") if isinstance(d, dict) else None
+    wid = w.get("id")
+    if wid in (GROUP_CATALOGO_IMPALA_ID, GROUP_BATALHA_IMPALA_ID, GROUP_OPERACAO_COMERCIAL_ID):
+        return True
+    if isinstance(title, str) and (
+        title.startswith("[Catalogo Impala]")
+        or title.startswith("[Batalha Impala]")
+        or title.startswith("[Operacao comercial]")
+    ):
+        return True
+    return False
+
+
+def _eh_note_navegacao(w: dict[str, Any]) -> bool:
+    return w.get("id") in (NOTE_ROBO_ID, NOTE_ECOM_ID)
 
 
 def _qv(
@@ -173,6 +271,82 @@ def _lv(
                             "search": {"query": query},
                         }
                     ],
+                    "response_format": "scalar",
+                }
+            ],
+        }
+    }
+
+
+def _toplist_metric(
+    title: str,
+    query: str,
+    *,
+    aggregator: str = "avg",
+    order: str = "desc",
+    limit: int = 10,
+) -> dict[str, Any]:
+    """Toplist de métrica (ex.: por kit / papel)."""
+    return {
+        "definition": {
+            "title": title,
+            "type": "toplist",
+            "requests": [
+                {
+                    "formulas": [
+                        {
+                            "formula": "query1",
+                            "limit": {"count": limit, "order": order},
+                        }
+                    ],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": "query1",
+                            "query": query,
+                            "aggregator": aggregator,
+                        }
+                    ],
+                    "response_format": "scalar",
+                }
+            ],
+        }
+    }
+
+
+def _tabela_produto_catalogo() -> dict[str, Any]:
+    """Tabela: produto (kit) × preço × custo × lucro × margem × vd/dia."""
+    cols = [
+        ("preco", "avg:robo.catalogo.preco{*} by {kit}", "Preco R$"),
+        ("custo", "avg:robo.catalogo.custo_total{*} by {kit}", "Custo R$"),
+        ("lucro", "avg:robo.catalogo.lucro_ref_ml{*} by {kit}", "Lucro ref R$"),
+        ("margem", "avg:robo.catalogo.margem_real_pct{*} by {kit}", "Margem real %"),
+        ("taxa", "avg:robo.catalogo.taxa_canal_pct{*} by {kit}", "Taxa canal %"),
+        ("vd", "avg:robo.catalogo.vd_dia_ref{*} by {kit}", "VD/dia ref"),
+    ]
+    queries = []
+    formulas = []
+    for i, (name, q, alias) in enumerate(cols):
+        queries.append(
+            {
+                "data_source": "metrics",
+                "name": name,
+                "query": q,
+                "aggregator": "avg",
+            }
+        )
+        formula: dict[str, Any] = {"alias": alias, "formula": name}
+        if i == 0:
+            formula["limit"] = {"count": 20, "order": "desc"}
+        formulas.append(formula)
+    return {
+        "definition": {
+            "title": "Produtos (kit) — preco / custo / lucro / margem / taxa / VD",
+            "type": "query_table",
+            "requests": [
+                {
+                    "queries": queries,
+                    "formulas": formulas,
                     "response_format": "scalar",
                 }
             ],
@@ -551,11 +725,10 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Meta Campanhas Critico",
-                        "avg:robo.meta.campanhas_critico{*}",
-                        aggregator="avg",
+                        "Ads Indisponivel 404",
+                        "sum:robo.ads.indisponivel{*}.as_count()",
                         green_gt=None,
-                        red_gt=0,
+                        yellow_gt=0,
                     ),
                     "layout": {"height": 2, "width": 2, "x": 10, "y": 7},
                     "id": 720019,
@@ -763,7 +936,7 @@ def _grupo_catalogo_impala() -> dict[str, Any]:
                 {
                     "id": 730012,
                     "definition": {
-                        "title": "Gap vs mercado % (por papel)",
+                        "title": "Gap % preco-alvo vs mercado (por papel)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -772,7 +945,7 @@ def _grupo_catalogo_impala() -> dict[str, Any]:
                                 "display_type": "line",
                                 "response_format": "timeseries",
                                 "style": {"palette": "orange"},
-                                "formulas": [{"alias": "gap %", "formula": "query1"}],
+                                "formulas": [{"alias": "gap % (alvo)", "formula": "query1"}],
                                 "queries": [
                                     {
                                         "data_source": "metrics",
@@ -790,7 +963,7 @@ def _grupo_catalogo_impala() -> dict[str, Any]:
                 {
                     "id": 730013,
                     "definition": {
-                        "title": "Preco F1 vs mercado (por papel)",
+                        "title": "Preco-alvo F1 vs mercado (por papel)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -863,7 +1036,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Nossos acima do rival",
+                        "Preco-alvo acima do rival",
                         "avg:robo.impala.batalha.nossos_acima_rival{*}",
                         aggregator="avg",
                         green_gt=None,
@@ -875,7 +1048,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Preco min Impala",
+                        "Preco min Impala (amostra)",
                         "avg:robo.impala.batalha.preco_min{*}",
                         aggregator="avg",
                         green_gt=0,
@@ -887,7 +1060,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 {
                     "id": 740010,
                     "definition": {
-                        "title": "Gap % nosso vs rival min (por kit)",
+                        "title": "Gap % preco-alvo vs rival min (por kit)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -896,7 +1069,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                                 "display_type": "line",
                                 "response_format": "timeseries",
                                 "style": {"palette": "cool"},
-                                "formulas": [{"alias": "gap %", "formula": "query1"}],
+                                "formulas": [{"alias": "gap % (alvo)", "formula": "query1"}],
                                 "queries": [
                                     {
                                         "data_source": "metrics",
@@ -941,7 +1114,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                 {
                     "id": 740012,
                     "definition": {
-                        "title": "Nosso preco vs rival min (por kit)",
+                        "title": "Preco-alvo (catalogo) vs rival min (por kit)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -951,7 +1124,7 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                                 "response_format": "timeseries",
                                 "style": {"palette": "datadog16"},
                                 "formulas": [
-                                    {"alias": "nosso", "formula": "query1"},
+                                    {"alias": "preco-alvo", "formula": "query1"},
                                     {"alias": "rival min", "formula": "query2"},
                                 ],
                                 "queries": [
@@ -981,15 +1154,507 @@ def _grupo_batalha_impala() -> dict[str, Any]:
     }
 
 
+def _grupo_operacao_comercial() -> dict[str, Any]:
+    """Vendas/lucro em destaque + ads + decisao (leitura comercial)."""
+    lucro_qv = {
+        "definition": {
+            "title": "Lucro R$ (periodo)",
+            "type": "query_value",
+            "autoscale": True,
+            "precision": 2,
+            "requests": [
+                {
+                    "conditional_formats": [
+                        {"comparator": ">", "palette": "white_on_green", "value": 0},
+                        {"comparator": "<", "palette": "white_on_red", "value": 0},
+                        {"comparator": "=", "palette": "white_on_yellow", "value": 0},
+                    ],
+                    "formulas": [{"formula": "query1"}],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": "query1",
+                            "query": "sum:robo.vendas.lucro_reais{*}",
+                        }
+                    ],
+                    "response_format": "scalar",
+                    "aggregator": "sum",
+                }
+            ],
+        }
+    }
+    return {
+        "id": GROUP_OPERACAO_COMERCIAL_ID,
+        "definition": {
+            "title": "[Operacao comercial] Vendas / Lucro / Ads / Decisao",
+            "type": "group",
+            "background_color": "vivid_orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                # --- Vendas e lucro (primeira leitura) ---
+                {
+                    **_qv(
+                        "Receita bruta R$",
+                        "sum:robo.vendas.receita_bruta{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 750030,
+                },
+                {
+                    **lucro_qv,
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 750031,
+                },
+                {
+                    **_qv(
+                        "Margem media vendas %",
+                        "avg:robo.vendas.margem_media_pct{*}",
+                        aggregator="avg",
+                        green_gt=15,
+                        yellow_gt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 750032,
+                },
+                {
+                    **_qv(
+                        "Lucro ref ML (catalogo)",
+                        "sum:robo.catalogo.lucro_ref_ml{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 750033,
+                },
+                {
+                    **_qv(
+                        "Margem trabalho %",
+                        "avg:robo.catalogo.margem_trabalho_pct{*}",
+                        aggregator="avg",
+                        green_gt=15,
+                        yellow_gt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 750034,
+                },
+                {
+                    **_qv(
+                        "Margem real % (pos taxas)",
+                        "avg:robo.catalogo.margem_real_pct{*}",
+                        aggregator="avg",
+                        green_gt=10,
+                        yellow_gt=5,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 750035,
+                },
+                {
+                    "id": 750040,
+                    "definition": {
+                        "title": "Receita vs lucro (R$)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "dog_classic"},
+                                "formulas": [
+                                    {"alias": "receita", "formula": "query1"},
+                                    {"alias": "lucro", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "sum:robo.vendas.receita_bruta{*}.rollup(sum, 3600)",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "sum:robo.vendas.lucro_reais{*}.rollup(sum, 3600)",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
+                },
+                {
+                    "id": 750041,
+                    "definition": {
+                        "title": "Margem % (vendas vs catalogo)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "cool"},
+                                "formulas": [
+                                    {"alias": "margem vendas", "formula": "query1"},
+                                    {"alias": "margem trabalho", "formula": "query2"},
+                                    {"alias": "margem real", "formula": "query3"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.vendas.margem_media_pct{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.catalogo.margem_trabalho_pct{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.catalogo.margem_real_pct{*}",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
+                },
+                # --- Custo / investimento / crescimento ---
+                {
+                    **_qv(
+                        "Custo investido (catalogo)",
+                        "avg:robo.catalogo.custo_investido{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 5},
+                    "id": 750050,
+                },
+                {
+                    **_qv(
+                        "Custo vendas (COGS) R$",
+                        "sum:robo.vendas.custo_total{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 5},
+                    "id": 750051,
+                },
+                {
+                    **_qv(
+                        "Investimento Ads R$/dia",
+                        "avg:robo.ads.budget_sugerido{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 5},
+                    "id": 750052,
+                },
+                {
+                    **_qv(
+                        "Taxa crescimento kits % receita",
+                        "avg:robo.crescimento_esmaltes.kits_pct{*}",
+                        aggregator="avg",
+                        green_gt=40,
+                        yellow_gt=25,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 5},
+                    "id": 750053,
+                },
+                {
+                    **_qv(
+                        "VD/dia ref (crescimento)",
+                        "sum:robo.catalogo.vd_dia_ref{*}",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 5},
+                    "id": 750054,
+                },
+                {
+                    **_qv(
+                        "Taxa canal media %",
+                        "avg:robo.catalogo.taxa_canal_pct{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=16,
+                        red_gt=20,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 5},
+                    "id": 750055,
+                },
+                # --- Produto x valores ---
+                {
+                    **_tabela_produto_catalogo(),
+                    "layout": {"height": 4, "width": 12, "x": 0, "y": 7},
+                    "id": 750060,
+                },
+                {
+                    **_toplist_metric(
+                        "Receita por produto (kit)",
+                        "sum:robo.vendas.receita_por_kit{*} by {kit}",
+                        aggregator="sum",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 11},
+                    "id": 750061,
+                },
+                {
+                    **_toplist_metric(
+                        "Lucro por produto (kit)",
+                        "sum:robo.vendas.lucro_por_kit{*} by {kit}",
+                        aggregator="sum",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 11},
+                    "id": 750062,
+                },
+                {
+                    **_toplist_metric(
+                        "Custo por produto (kit)",
+                        "sum:robo.vendas.custo_por_kit{*} by {kit}",
+                        aggregator="sum",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 11},
+                    "id": 750063,
+                },
+                {
+                    **_toplist_metric(
+                        "VD/dia por produto (kit)",
+                        "avg:robo.catalogo.vd_dia_ref{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 14},
+                    "id": 750064,
+                },
+                {
+                    **_toplist_metric(
+                        "Custo unitario por produto",
+                        "avg:robo.catalogo.custo_total{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 14},
+                    "id": 750065,
+                },
+                {
+                    **_toplist_metric(
+                        "Lucro ref ML por produto",
+                        "avg:robo.catalogo.lucro_ref_ml{*} by {kit}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 14},
+                    "id": 750066,
+                },
+                # --- Ads ---
+                {
+                    **_qv("Ads Rodadas", "sum:robo.ads.rodadas{*}.as_count()"),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 17},
+                    "id": 750001,
+                },
+                {
+                    **_qv("Ads Aplicado", "sum:robo.ads.aplicado{*}.as_count()"),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 17},
+                    "id": 750002,
+                },
+                {
+                    **_qv(
+                        "Ads Falha",
+                        "sum:robo.ads.falha{*}.as_count()",
+                        green_gt=None,
+                        red_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 17},
+                    "id": 750003,
+                },
+                {
+                    **_qv(
+                        "Ads Indisponivel 404",
+                        "sum:robo.ads.indisponivel{*}.as_count()",
+                        green_gt=None,
+                        yellow_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 17},
+                    "id": 750004,
+                },
+                {
+                    **_qv(
+                        "ACOS atual",
+                        "avg:robo.ads.acos_atual{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.15,
+                        red_gt=0.25,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 17},
+                    "id": 750005,
+                },
+                {
+                    **_qv(
+                        "Budget sugerido",
+                        "avg:robo.ads.budget_sugerido{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 17},
+                    "id": 750006,
+                },
+                # --- Alertas de canal + decisao ---
+                {
+                    **_qv(
+                        "Vendas WA Notificadas",
+                        "sum:robo.vendas.notificadas{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 19},
+                    "id": 750010,
+                },
+                {
+                    **_qv(
+                        "Vendas busca falhou",
+                        "sum:robo.vendas.busca_falhou{*}.as_count()",
+                        green_gt=None,
+                        red_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 19},
+                    "id": 750011,
+                },
+                {
+                    **_qv(
+                        "Vendas auth quebrada",
+                        "sum:robo.vendas.busca_auth_quebrada{*}.as_count()",
+                        green_gt=None,
+                        yellow_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 19},
+                    "id": 750012,
+                },
+                {
+                    **_qv(
+                        "Itens analisados (margem)",
+                        "sum:robo.vendas.itens_analisados{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 19},
+                    "id": 750014,
+                },
+                {
+                    **_qv(
+                        "Ecossistema score",
+                        "avg:robo.ecossistema_esmaltes.score{*}",
+                        aggregator="avg",
+                        green_gt=70,
+                        yellow_gt=50,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 19},
+                    "id": 750013,
+                },
+                {
+                    **_qv(
+                        "Crescimento margem %",
+                        "avg:robo.crescimento_esmaltes.margem_pct{*}",
+                        aggregator="avg",
+                        green_gt=15,
+                        yellow_gt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 19},
+                    "id": 750015,
+                },
+                {
+                    **_qv(
+                        "Decisao liberados",
+                        "avg:robo.decisao_dia_esmaltes.liberados{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 21},
+                    "id": 750020,
+                },
+                {
+                    **_qv(
+                        "Decisao bloqueados",
+                        "avg:robo.decisao_dia_esmaltes.bloqueados{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 21},
+                    "id": 750021,
+                },
+                {
+                    **_qv(
+                        "Kits sem MLB (crescimento)",
+                        "avg:robo.crescimento_esmaltes.kits_sem_mlb{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 21},
+                    "id": 750022,
+                },
+                {
+                    **_qv(
+                        "Guerra sem MLB",
+                        "avg:robo.catalogo.guerra_sem_mlb{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 21},
+                    "id": 750023,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_saude() -> None:
+    """Dashboard Robo: saude do motor — sem Catalogo/Batalha (vao para Ecommerce)."""
+    ecom_id = _resolver_dash_ecommerce()
     raw = _get(f"/api/v1/dashboard/{DASH_SAUDE}")
     widgets = list(raw.get("widgets") or [])
-    novo = []
+    novo: list[Any] = []
     substituido = False
     tokens_ok = False
-    catalogo_ok = False
-    batalha_ok = False
+
+    note = _note_widget(
+        NOTE_ROBO_ID,
+        (
+            "## Aba Robo / plataforma\n\n"
+            "Orquestrador, tokens, conectividade, vigia e falhas ops "
+            "(chat / NF-e / estoque / telegram).\n\n"
+            f"**E-commerce Impala/ML (catalogo, batalha, ads, vendas):** "
+            f"[{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
+        ),
+        background_color="blue",
+        height=2,
+    )
+
     for w in widgets:
+        if not isinstance(w, dict):
+            novo.append(w)
+            continue
+        if _eh_grupo_ecommerce(w) or _eh_note_navegacao(w):
+            continue
         d = w.get("definition") or {}
         title = d.get("title") if isinstance(d, dict) else None
         if w.get("id") == GROUP_PONTOS_CEGOS_ID or title == (
@@ -1002,37 +1667,21 @@ def atualizar_dashboard_saude() -> None:
             grupo["layout"] = w.get("layout") or grupo["layout"]
             novo.append(grupo)
             tokens_ok = True
-        elif w.get("id") == GROUP_CATALOGO_IMPALA_ID or (
-            isinstance(title, str) and title.startswith("[Catalogo Impala]")
-        ):
-            grupo = _grupo_catalogo_impala()
-            grupo["layout"] = w.get("layout") or grupo["layout"]
-            novo.append(grupo)
-            catalogo_ok = True
-        elif w.get("id") == GROUP_BATALHA_IMPALA_ID or (
-            isinstance(title, str) and title.startswith("[Batalha Impala]")
-        ):
-            grupo = _grupo_batalha_impala()
-            grupo["layout"] = w.get("layout") or grupo["layout"]
-            novo.append(grupo)
-            batalha_ok = True
         else:
             novo.append(w)
+
+    novo.insert(0, note)
     if not substituido:
         novo.append(_grupo_pontos_cegos())
     if not tokens_ok:
-        novo.insert(0, _grupo_tokens())
-    if not catalogo_ok:
-        novo.append(_grupo_catalogo_impala())
-    if not batalha_ok:
-        novo.append(_grupo_batalha_impala())
+        novo.insert(1, _grupo_tokens())
 
     payload = {
-        "title": raw["title"],
+        "title": "Robo Marketplaces - Robo / Saude de Integracoes",
         "description": (
-            "Saude + pontos cegos + Catalogo Impala + Batalha Impala "
-            "(anuncios rivais vs nossos kits). "
-            "Orquestrador e Vigia em metricas; logs sem marketplace:*/componente:*."
+            "ABA ROBO: saude do motor (orquestrador, tokens, vigia, conectividade, "
+            "pontos cegos ops). "
+            f"ABA ECOMMERCE: {_url_dash(ecom_id)}"
         ),
         "widgets": novo,
         "layout_type": raw.get("layout_type") or "ordered",
@@ -1043,7 +1692,49 @@ def atualizar_dashboard_saude() -> None:
     }
     payload = {k: v for k, v in payload.items() if v is not None}
     _put(f"/api/v1/dashboard/{DASH_SAUDE}", payload)
-    print(f"OK dashboard saude: https://us5.datadoghq.com/dashboard/{DASH_SAUDE}")
+    print(f"OK dashboard robo/saude: {_url_dash(DASH_SAUDE)}")
+
+
+def atualizar_dashboard_ecommerce() -> None:
+    """Dashboard Ecommerce: catalogo, batalha, ads/vendas/decisao."""
+    ecom_id = _resolver_dash_ecommerce()
+    raw = _get(f"/api/v1/dashboard/{ecom_id}")
+
+    note = _note_widget(
+        NOTE_ECOM_ID,
+        (
+            "## Aba E-commerce Impala / ML\n\n"
+            "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
+            "**taxa de crescimento (kits % receita + VD/dia)** e **custo investido / Ads**.\n\n"
+            f"**Robo / plataforma (motor ligado?):** "
+            f"[Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})"
+        ),
+        background_color="orange",
+        height=2,
+    )
+    cat = _grupo_catalogo_impala()
+    cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    bat = _grupo_batalha_impala()
+    bat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    com = _grupo_operacao_comercial()
+    com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+
+    payload = {
+        "title": DASH_ECOMMERCE_TITLE,
+        "description": (
+            "ABA ECOMMERCE: catalogo Impala, batalha, ads e vendas. "
+            f"ABA ROBO: {_url_dash(DASH_SAUDE)}"
+        ),
+        "widgets": [note, com, cat, bat],
+        "layout_type": raw.get("layout_type") or "ordered",
+        "template_variables": raw.get("template_variables") or [],
+        "notify_list": raw.get("notify_list") or [],
+        "reflow_type": raw.get("reflow_type"),
+        "tags": list({*(raw.get("tags") or []), "team:robo-markplaces"}),
+    }
+    payload = {k: v for k, v in payload.items() if v is not None}
+    _put(f"/api/v1/dashboard/{ecom_id}", payload)
+    print(f"OK dashboard ecommerce: {_url_dash(ecom_id)}")
 
 
 def _strip_cpu_ops_dashboard() -> None:
@@ -1091,10 +1782,19 @@ def _strip_cpu_ops_dashboard() -> None:
 
 
 def _monitores_desejados() -> list[dict[str, Any]]:
+    ecom_id = DASH_ECOMMERCE or _resolver_dash_ecommerce()
     msg_base = (
         "{{#is_alert}}Robo Marketplaces em alerta.{{/is_alert}}\n"
         "{{#is_recovery}}Recuperado.{{/is_recovery}}\n"
-        f"Dashboard: https://us5.datadoghq.com/dashboard/{DASH_SAUDE}\n"
+        f"Dashboard Robo: {_url_dash(DASH_SAUDE)}\n"
+        f"Dashboard Ecommerce: {_url_dash(ecom_id)}\n"
+        "Tags: service:robo-markplaces"
+    )
+    msg_ecom = (
+        "{{#is_alert}}Robo Marketplaces em alerta.{{/is_alert}}\n"
+        "{{#is_recovery}}Recuperado.{{/is_recovery}}\n"
+        f"Dashboard Ecommerce: {_url_dash(ecom_id)}\n"
+        f"Dashboard Robo: {_url_dash(DASH_SAUDE)}\n"
         "Tags: service:robo-markplaces"
     )
     return [
@@ -1261,16 +1961,16 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Ads falha / probe",
             "type": "query alert",
-            # Só falha de escrita real. HTTP 404 de listagem/escopo Ads é config
-            # conhecida e não deve manter P1 em Alert permanente.
+            # So falha de escrita real. HTTP 404 de listagem/escopo Ads e config
+            # conhecida e nao deve manter P1 em Alert permanente.
             # Nome mantido para upsert atualizar o monitor 21629780 existente.
             "query": "sum(last_24h):sum:robo.ads.falha{*}.as_count() > 0",
             "message": (
                 "Falha ao aplicar Product Ads (escrita). "
                 "404 de listagem/escopo NAO dispara este monitor — "
-                "revise scopes advertising no DevCenter separadamente.\n" + msg_base
+                "veja '[Robo] Product Ads indisponivel'.\n" + msg_ecom
             ),
-            "tags": [TAG_MONITOR, "monitor:ads", "severity:p1"],
+            "tags": [TAG_MONITOR, "monitor:ads", "prioridad:p1"],
             "options": {
                 "thresholds": {"critical": 0},
                 "notify_no_data": False,
@@ -1278,6 +1978,24 @@ def _monitores_desejados() -> list[dict[str, Any]]:
                 "include_tags": True,
             },
             "priority": 1,
+        },
+        {
+            "name": "[Robo] Product Ads indisponivel (404/escopo)",
+            "type": "query alert",
+            "query": "sum(last_12h):sum:robo.ads.indisponivel{*}.as_count() > 0",
+            "message": (
+                "Product Ads ML retornou HTTP 404 (escopo advertising / advertiser). "
+                "Corrija no DevCenter e regenere o token. "
+                "Gatilho NAO pede aprovacao Telegram enquanto isto persistir.\n" + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:ads", "prioridad:p2"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
         },
         {
             "name": "[Robo] Conectividade falhas",
@@ -1311,8 +2029,12 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "name": "[Robo] Vendas WhatsApp busca falhou",
             "type": "query alert",
             "query": "sum(last_2h):sum:robo.vendas.busca_falhou{*}.as_count() > 0",
-            "message": "Busca de pedidos falhou — vendas podem nao ser notificadas no WhatsApp.\n" + msg_base,
-            "tags": [TAG_MONITOR, "monitor:vendas", "severity:p1"],
+            "message": (
+                "Busca de pedidos falhou (API generica) — vendas podem nao ser notificadas. "
+                "Auth Magalu/invalid_grant NAO entra aqui (vai para busca_auth_quebrada + "
+                "monitor Magalu).\n" + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:vendas", "prioridad:p1"],
             "options": {
                 "thresholds": {"critical": 0},
                 "notify_no_data": False,
@@ -1320,6 +2042,24 @@ def _monitores_desejados() -> list[dict[str, Any]]:
                 "include_tags": True,
             },
             "priority": 1,
+        },
+        {
+            "name": "[Robo] Vendas auth quebrada (OAuth)",
+            "type": "query alert",
+            "query": "sum(last_6h):sum:robo.vendas.busca_auth_quebrada{*}.as_count() > 0",
+            "message": (
+                "Busca de pedidos falhou por auth (401/403/invalid_grant). "
+                "Renove OAuth do canal (tipicamente Magalu). "
+                "Separado do P1 de busca generica.\n" + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:vendas", "prioridad:p2"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
         },
         {
             "name": "[Robo] Brave cota esgotada",
@@ -1358,7 +2098,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "query": "avg(last_1d):avg:robo.catalogo.guerra_sem_mlb{*} > 0",
             "message": (
                 "SKU(s) de guerra Impala ainda sem MLB (MLB_PREENCHER). "
-                "Publique PERL/VR/SORT antes de ads/promocao.\n" + msg_base
+                "Publique PERL/VR/SORT antes de ads/promocao.\n" + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p1"],
             "options": {
@@ -1375,7 +2115,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "query": "avg(last_1d):avg:robo.catalogo.margem_real_pct{prio:p0} < 10",
             "message": (
                 "Margem real media dos kits P0 abaixo de 10%. "
-                "Revise preco F1 / Full / taxa vs custo_total.\n" + msg_base
+                "Revise preco F1 / Full / taxa vs custo_total.\n" + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p2"],
             "options": {
@@ -1420,10 +2160,15 @@ def main() -> int:
     if not DD_API_KEY or not DD_APPLICATION_KEY:
         print("FALHA: DD_API_KEY e DD_APPLICATION_KEY obrigatorios no .env")
         return 1
+    # Resolve ecommerce primeiro para notes/links cruzados.
+    ecom_id = _resolver_dash_ecommerce()
+    atualizar_dashboard_ecommerce()
     atualizar_dashboard_saude()
     _strip_cpu_ops_dashboard()
     upsert_monitores()
-    print("Pronto. Monitores: https://us5.datadoghq.com/monitors/manage?q=tag%3Aservice%3Arobo-markplaces")
+    print(f"Aba Robo:       {_url_dash(DASH_SAUDE)}")
+    print(f"Aba Ecommerce:  {_url_dash(ecom_id)}")
+    print("Monitores: https://us5.datadoghq.com/monitors/manage?q=tag%3Aservice%3Arobo-markplaces")
     print("Nota: OAuth Magalu continua manual (token invalid_grant nos logs).")
     return 0
 

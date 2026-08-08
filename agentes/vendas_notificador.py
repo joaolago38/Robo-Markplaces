@@ -49,36 +49,77 @@ def _salvar_notificados(ids: set[str]) -> None:
         logger.error("Erro ao salvar pedidos notificados: %s", exc)
 
 
-def _checar_busca_falhou(marketplace: str, ok: bool) -> None:
+def _checar_busca_falhou(
+    marketplace: str,
+    ok: bool,
+    *,
+    auth_quebrada: bool = False,
+) -> None:
     """
     Quando a chamada à API falhou de verdade (token expirado, API fora do
     ar, etc.), `pedidos` volta vazio igual a "sem venda nova" — sem isto,
     as duas situações são indistinguíveis e o time nunca saberia que está
     cego para vendas reais enquanto o problema persistir.
 
+    Auth quebrada conhecida (ex.: Magalu invalid_grant) NÃO incrementa
+    `vendas.busca_falhou` (P1) — vai para `vendas.busca_auth_quebrada` e
+    alerta com cooldown longo, para não misturar com queda genérica da API.
+
     Religar ERROR no Datadog: LOG_ERROS_PEDIDOS=1
     """
-    if not ok:
+    if ok:
+        return
+
+    mp_tag = marketplace.lower().replace(" ", "")
+    if auth_quebrada:
         try:
             incrementar(
-                "vendas.busca_falhou",
-                tags=[f"marketplace:{marketplace.lower().replace(' ', '')}"],
+                "vendas.busca_auth_quebrada",
+                tags=[f"marketplace:{mp_tag}"],
             )
         except Exception:
             pass
         erro_opcional(
             logger,
             log_erros_pedidos_ativos(),
-            "%s: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
+            "%s: auth quebrada na busca de pedidos (fora do P1 vendas.busca_falhou).",
             marketplace,
             flag_hint="LOG_ERROS_PEDIDOS",
         )
-        alertar_critico(
-            f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
-            "Isso pode significar que vendas reais não estão sendo notificadas. "
-            "Verifique o token/credenciais e o status da API.",
-            chave=f"falha_pedidos:{marketplace}",
+        try:
+            from core.notificador import alertar_gestor
+
+            alertar_gestor(
+                f"🔐 {marketplace}: OAuth/token inválido — vendas WhatsApp deste canal "
+                "podem estar cegas.\nRenove o token nos secrets. "
+                "(Não conta no monitor P1 de busca genérica.)",
+                chave=f"falha_pedidos_auth:{marketplace}",
+                cooldown_segundos=86400,
+            )
+        except Exception:
+            pass
+        return
+
+    try:
+        incrementar(
+            "vendas.busca_falhou",
+            tags=[f"marketplace:{mp_tag}"],
         )
+    except Exception:
+        pass
+    erro_opcional(
+        logger,
+        log_erros_pedidos_ativos(),
+        "%s: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
+        marketplace,
+        flag_hint="LOG_ERROS_PEDIDOS",
+    )
+    alertar_critico(
+        f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
+        "Isso pode significar que vendas reais não estão sendo notificadas. "
+        "Verifique o token/credenciais e o status da API.",
+        chave=f"falha_pedidos:{marketplace}",
+    )
 
 
 def _notificar_novos_pedidos(
@@ -166,10 +207,14 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
             pedidos, ok = lp_detalhado(dias=1)
             _checar_busca_falhou("Shopee", ok)
         elif mp == "magalu":
-            from integracoes.magalu.magalu_client import listar_pedidos_detalhado as lp_detalhado
+            from integracoes.magalu import magalu_client as mag_cli
 
-            pedidos, ok = lp_detalhado(dias=1)
-            _checar_busca_falhou("Magalu", ok)
+            pedidos, ok = mag_cli.listar_pedidos_detalhado(dias=1)
+            _checar_busca_falhou(
+                "Magalu",
+                ok,
+                auth_quebrada=(not ok) and mag_cli.ultima_listagem_auth_quebrada(),
+            )
         elif mp == "amazon":
             from integracoes.amazon.amazon_client import listar_pedidos_detalhado as lp_detalhado
 
@@ -233,10 +278,15 @@ def executar() -> dict:
 
         if "magalu" in _MARKETPLACES_ATIVOS:
             try:
-                from integracoes.magalu.magalu_client import listar_pedidos_detalhado as magalu_pedidos_detalhado
+                from integracoes.magalu import magalu_client as mag_cli
 
-                pedidos_magalu, ok_magalu = magalu_pedidos_detalhado(dias=1)
-                _checar_busca_falhou("Magalu", ok_magalu)
+                pedidos_magalu, ok_magalu = mag_cli.listar_pedidos_detalhado(dias=1)
+                _checar_busca_falhou(
+                    "Magalu",
+                    ok_magalu,
+                    auth_quebrada=(not ok_magalu)
+                    and mag_cli.ultima_listagem_auth_quebrada(),
+                )
                 novos_magalu = _notificar_novos_pedidos("magalu", pedidos_magalu, notificados)
                 resumo["magalu"] = len(novos_magalu)
                 novos_total.update(novos_magalu)

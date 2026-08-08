@@ -140,12 +140,52 @@ def _carregar_produtos() -> list[dict[str, Any]]:
 
 def _emitir_metricas(analise: dict[str, Any]) -> None:
     try:
+        from integracoes.esmaltes.metricas_catalogo_impala import kit_tag
+
         gauge("vendas.margem_media_pct", float(analise.get("margem_media_pct") or 0))
         gauge("vendas.lucro_reais", float(analise.get("lucro_reais") or 0))
         gauge("vendas.receita_bruta", float(analise.get("receita_bruta") or 0))
+        custo_cogs = sum(
+            float(lin.get("custo_total") or 0)
+            for lin in (analise.get("linhas") or [])
+            if isinstance(lin, dict)
+        )
+        gauge("vendas.custo_total", float(round(custo_cogs, 2)))
         incrementar("vendas.itens_analisados", float(analise.get("total_itens") or 0))
         if analise.get("total_alertas"):
             incrementar("vendas.alertas_margem_baixa", float(analise["total_alertas"]))
+
+        # Agrega por kit (tag kit:xxx — sem sku: de alta cardinalidade)
+        por_kit: dict[str, dict[str, float]] = {}
+        for lin in analise.get("linhas") or []:
+            if not isinstance(lin, dict):
+                continue
+            sku = str(lin.get("sku") or "").strip()
+            if not sku:
+                continue
+            tag = kit_tag(sku)
+            bucket = por_kit.setdefault(
+                tag,
+                {"receita": 0.0, "lucro": 0.0, "custo": 0.0, "qtd": 0.0},
+            )
+            bucket["receita"] += float(lin.get("receita_bruta") or 0)
+            bucket["lucro"] += float(lin.get("lucro_reais") or 0)
+            bucket["custo"] += float(lin.get("custo_total") or 0)
+            bucket["qtd"] += float(lin.get("quantidade") or 0)
+
+        for tag, bucket in por_kit.items():
+            tags = [tag]
+            gauge("vendas.receita_por_kit", round(bucket["receita"], 2), tags=tags)
+            gauge("vendas.lucro_por_kit", round(bucket["lucro"], 2), tags=tags)
+            gauge("vendas.custo_por_kit", round(bucket["custo"], 2), tags=tags)
+            gauge("vendas.qtd_por_kit", round(bucket["qtd"], 2), tags=tags)
+
+        for mp, bucket in (analise.get("por_marketplace") or {}).items():
+            if not isinstance(bucket, dict):
+                continue
+            mp_tag = f"marketplace:{str(mp).strip().lower() or 'x'}"
+            gauge("vendas.receita_por_canal", float(bucket.get("receita_bruta") or 0), tags=[mp_tag])
+            gauge("vendas.lucro_por_canal", float(bucket.get("lucro_reais") or 0), tags=[mp_tag])
     except Exception as exc:
         logger.debug("métricas margem: %s", exc)
 

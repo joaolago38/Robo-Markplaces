@@ -113,6 +113,7 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertEqual(snap["sem_mlb"], 2)
         self.assertEqual(snap["guerra_sem_mlb"], 1)
         self.assertEqual(snap["guerra_estoque_zero"], 1)
+        self.assertGreater(snap["custo_investido"], 0)
         by = {k["sku"]: k for k in snap["kits"]}
         self.assertEqual(by["IMP-PERL-004"]["papel"], "entrada")
         self.assertFalse(by["IMP-PERL-004"]["mlb_ok"])
@@ -120,6 +121,7 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertEqual(by["IMP-NUDE-010"]["papel"], "catalogo")
         self.assertIsNotNone(by["IMP-PERL-004"]["margem_real_pct"])
         self.assertGreater(by["IMP-PERL-004"]["gap_mercado_pct"], 0)
+        self.assertGreater(by["IMP-PERL-004"]["taxa_canal_pct"], 0)
 
     @patch("integracoes.esmaltes.metricas_catalogo_impala.incrementar")
     @patch("integracoes.esmaltes.metricas_catalogo_impala.gauge")
@@ -134,6 +136,9 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertIn("catalogo.guerra_sem_mlb", nomes)
         self.assertIn("catalogo.margem_trabalho_pct", nomes)
         self.assertIn("catalogo.margem_real_pct", nomes)
+        self.assertIn("catalogo.custo_investido", nomes)
+        self.assertIn("catalogo.taxa_canal_pct", nomes)
+        self.assertIn("catalogo.custo_total", nomes)
         # nenhuma tag sku:
         for c in mock_gauge.call_args_list:
             tags = (c.kwargs.get("tags") or (c.args[2] if len(c.args) > 2 else None) or [])

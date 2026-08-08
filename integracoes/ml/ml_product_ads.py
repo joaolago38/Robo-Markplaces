@@ -5,6 +5,7 @@ Product Ads do Mercado Livre — leitura e controle de campanhas (status/orçame
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 
 from core.config import (
@@ -19,6 +20,43 @@ from integracoes.ml.ml_client import BASE, _enabled, _request_ml
 logger = logging.getLogger("ml_product_ads")
 
 _METRICS = "clicks,prints,ctr,cost,cpc,acos,roas,cvr,units_quantity,total_amount"
+# Estado da última listagem — probe/escrita usam para distinguir 404 de "sem campanha".
+_ULTIMA_LISTAGEM: dict = {"ok": True, "codigo": "", "advertiser_id": ""}
+_ULTIMO_AVISO_404_TS: float = 0.0
+_COOLDOWN_AVISO_404_SEG = 6 * 3600  # evita spam warn no Datadog a cada ciclo 30min
+
+
+def ultima_listagem_codigo() -> str:
+    return str(_ULTIMA_LISTAGEM.get("codigo") or "")
+
+
+def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
+    """Warn + métrica no máximo 1x por processo / 6h (evita spam no Datadog)."""
+    global _ULTIMO_AVISO_404_TS
+    agora = time.time()
+    if (agora - _ULTIMO_AVISO_404_TS) < _COOLDOWN_AVISO_404_SEG:
+        logger.debug(
+            "ML listar_campanhas: Product Ads ainda 404 advertiser=%s (aviso em cooldown)",
+            advertiser_id,
+        )
+        return
+    _ULTIMO_AVISO_404_TS = agora
+    try:
+        from core.datadog_metrics import incrementar
+
+        incrementar(
+            "ads.indisponivel",
+            tags=["motivo:http_404", f"advertiser:{advertiser_id or 'desconhecido'}"],
+        )
+    except Exception:
+        pass
+    logger.warning(
+        "ML listar_campanhas: Product Ads indisponível (HTTP 404) "
+        "advertiser=%s — confira escopos advertising / ID no DevCenter "
+        "(próximos avisos em cooldown %sh neste processo)",
+        advertiser_id,
+        _COOLDOWN_AVISO_404_SEG // 3600,
+    )
 
 
 def _notificar_dry_run(acao: str, detalhe: str) -> None:
@@ -124,15 +162,26 @@ def listar_campanhas(
     offset: int = 0,
 ) -> list[dict]:
     """Lista campanhas Product Ads com métricas do período. Nunca lança exceção."""
+    global _ULTIMA_LISTAGEM
+    _ULTIMA_LISTAGEM = {"ok": True, "codigo": "", "advertiser_id": advertiser_id or ""}
+
     if not _enabled():
+        _ULTIMA_LISTAGEM = {"ok": False, "codigo": "ml_desabilitado", "advertiser_id": ""}
         return []
 
     if not advertiser_id:
         adv = obter_advertiser()
         if not adv.get("ok"):
+            codigo = str(adv.get("codigo") or "sem_advertiser")
+            _ULTIMA_LISTAGEM = {
+                "ok": False,
+                "codigo": codigo,
+                "advertiser_id": "",
+            }
             logger.warning("listar_campanhas: %s", adv.get("erro"))
             return []
         advertiser_id = adv["advertiser_id"]
+        _ULTIMA_LISTAGEM["advertiser_id"] = advertiser_id
 
     try:
         date_from, date_to = _periodo_ads(dias)
@@ -154,20 +203,31 @@ def listar_campanhas(
         rows = body.get("results") or body.get("campaigns") or body.get("data") or []
         if isinstance(rows, dict):
             rows = list(rows.values())
+        _ULTIMA_LISTAGEM = {
+            "ok": True,
+            "codigo": "ok",
+            "advertiser_id": advertiser_id,
+        }
         return [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
     except Exception as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
         # 404 = advertiser/campanhas inexistente ou Product Ads sem escopo —
         # config, não queda do robô. Evita ERROR recorrente no Datadog.
         if status == 404:
-            logger.warning(
-                "ML listar_campanhas: Product Ads indisponível (HTTP 404) "
-                "advertiser=%s — confira escopos advertising / ID no DevCenter",
-                advertiser_id,
-            )
+            _ULTIMA_LISTAGEM = {
+                "ok": False,
+                "codigo": "http_404",
+                "advertiser_id": advertiser_id,
+            }
+            _avisar_ads_indisponivel_404(advertiser_id)
             # Não incrementa ads.probe_falha: 404 de config conhecida poluía
             # o monitor P1 até o escopo Ads ser corrigido no DevCenter.
         else:
+            _ULTIMA_LISTAGEM = {
+                "ok": False,
+                "codigo": f"http_{status}" if status else "http_erro",
+                "advertiser_id": advertiser_id,
+            }
             logger.error("ML listar_campanhas erro: %s", exc)
             try:
                 from core.datadog_metrics import incrementar
@@ -292,6 +352,22 @@ def probe_escrita_product_ads() -> dict:
         }
     campanhas = listar_campanhas(advertiser_id=adv.get("advertiser_id"))
     if not campanhas:
+        codigo_lista = ultima_listagem_codigo()
+        if codigo_lista == "http_404":
+            return {
+                "ok": False,
+                "codigo": "http_404",
+                "erro": (
+                    "Product Ads indisponível (HTTP 404) — escopos advertising "
+                    "ou advertiser_id no DevCenter"
+                ),
+            }
+        if codigo_lista and codigo_lista not in {"ok", "sem_campanhas"}:
+            return {
+                "ok": False,
+                "codigo": codigo_lista,
+                "erro": f"Listagem Product Ads falhou ({codigo_lista})",
+            }
         return {
             "ok": False,
             "codigo": "sem_campanhas",
