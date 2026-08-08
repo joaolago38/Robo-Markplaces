@@ -79,6 +79,66 @@ def _linha_de_sku(sku: str) -> tuple[str, str] | None:
     return None
 
 
+def _candidatos_sheet(z: zipfile.ZipFile) -> list[str]:
+    """Resolve caminho(s) da worksheet no XLSX (layout Masterprint ou OOXML padrão)."""
+    nomes = list(z.namelist())
+    out: list[str] = []
+    # Preferência: rels do workbook → Target relativo a xl/
+    try:
+        rels = ET.fromstring(z.read("xl/_rels/workbook.xml.rels"))
+        for rel in rels:
+            if "worksheet" not in (rel.get("Type") or ""):
+                continue
+            target = (rel.get("Target") or "").replace("\\", "/").lstrip("/")
+            if not target:
+                continue
+            cand = target if target.startswith("xl/") else f"xl/{target}"
+            if cand in nomes and cand not in out:
+                out.append(cand)
+    except Exception:
+        pass
+    for cand in (
+        "xl/sheet1.xml",
+        "xl/worksheets/sheet1.xml",
+        "xl/worksheets/sheet.xml",
+    ):
+        if cand in nomes and cand not in out:
+            out.append(cand)
+    for n in nomes:
+        low = n.lower().replace("\\", "/")
+        if "/worksheets/sheet" in low and low.endswith(".xml") and n not in out:
+            out.append(n)
+        elif re.search(r"/sheet\d*\.xml$", low) and n not in out:
+            out.append(n)
+    return out
+
+
+def _ler_sheet_rows(z: zipfile.ZipFile) -> list[ET.Element]:
+    candidatos = _candidatos_sheet(z)
+    erros: list[str] = []
+    for cand in candidatos:
+        try:
+            root = ET.fromstring(z.read(cand))
+            rows = root.findall(".//m:sheetData/m:row", _NS)
+            if rows:
+                return rows
+            # Namespace às vezes ausente / diferente — fallback sem NS
+            rows = root.findall(
+                ".//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}row"
+            )
+            if rows:
+                return rows
+            rows = root.findall(".//row")
+            if rows:
+                return rows
+            erros.append(f"{cand}: sem rows")
+        except Exception as exc:
+            erros.append(f"{cand}: {exc}")
+    amostra = ",".join(z.namelist()[:12])
+    detalhe = "; ".join(erros[:3]) if erros else f"candidatos vazios; zip=[{amostra}]"
+    raise FileNotFoundError(f"worksheet XML não encontrado no XLSX ({detalhe})")
+
+
 def parse_tabela_pedidos(path: Path | None = None) -> dict[str, Any]:
     """
     Parse via zip/xml (openpyxl quebra no stylesheet deste xlsx).
@@ -90,8 +150,7 @@ def parse_tabela_pedidos(path: Path | None = None) -> dict[str, Any]:
 
     try:
         with zipfile.ZipFile(p) as z:
-            root = ET.fromstring(z.read("xl/sheet1.xml"))
-        rows = root.findall(".//m:sheetData/m:row", _NS)
+            rows = _ler_sheet_rows(z)
     except Exception as exc:
         return {"ok": False, "erro": str(exc), "itens": []}
 

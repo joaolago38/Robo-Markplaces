@@ -42,6 +42,8 @@ omit = [
     "agentes/importacao/agente_hub_paraguai_marketplace.py",
     "agentes/importacao/agente_tributacao_py_br.py",
     "agentes/escritorio/agente_monitor_masterprint_escritorio.py",
+    "agentes/masterprint/agente_sync_tabela_pedidos.py",
+    "agentes/esmaltes/agente_sync_planilhas_ecommerce.py",
     "agentes/ml/agente_resumo_conta_ml.py",
     "agentes/esmaltes/agente_montar_kits_impala.py",
     "agentes/social/agente_conversao_manicures.py",
