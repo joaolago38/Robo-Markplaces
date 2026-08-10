@@ -38,6 +38,31 @@ class AnaliseMercadoEsmaltesTests(unittest.TestCase):
         self.assertEqual(kits[0]["qtd"], 5)
         self.assertEqual(kits[0]["vendidos"], 180)
 
+    def test_padroes_kits_sem_vendas_api_usa_presenca(self):
+        anuncios = [
+            am.classificar_anuncio({"titulo": "Kit 3 Impala Nude", "preco": 33, "quantidade_vendida": 0}),
+            am.classificar_anuncio({"titulo": "Kit 3 Impala Rosa", "preco": 34, "quantidade_vendida": 0}),
+            am.classificar_anuncio(
+                {"titulo": "Kit 10 Atacado", "preco": 70, "quantidade_vendida": 0, "avaliacoes": 40}
+            ),
+        ]
+        kits = am.padroes_kits(anuncios)
+        self.assertEqual(kits[0]["vendidos"], 0)
+        # kit 10 tem avaliações → volume_proxy maior; kit 3 tem 2 anúncios
+        self.assertTrue(any(k["qtd"] == 3 and k["anuncios"] == 2 for k in kits))
+        props = am.gerar_propostas_competir(
+            {"id": "kit3", "nome": "Kit 3 esmaltes"},
+            anuncios,
+            None,
+        )
+        textos = " ".join(p["texto"] for p in props)
+        self.assertIn("vendas API n/d", textos)
+        self.assertNotIn("0 vendidos", textos)
+
+    def test_fmt_vendas_amostra(self):
+        self.assertEqual(am.fmt_vendas_amostra(0), "n/d")
+        self.assertEqual(am.fmt_vendas_amostra(12), "12 vend.")
+
     def test_gerar_propostas_competir(self):
         segmento = {
             "id": "seg-kit5",

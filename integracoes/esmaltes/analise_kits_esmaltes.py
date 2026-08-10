@@ -8,9 +8,12 @@ import logging
 from typing import Any
 
 from integracoes.esmaltes.analise_mercado import (
+    chave_ranking_anuncio,
     classificar_anuncio,
+    fmt_vendas_amostra,
     padroes_kits,
     ranking_marcas_mercado,
+    vendas_api,
 )
 from integracoes.marketplaces.busca_multi_marketplace import resumo_por_marketplace
 
@@ -25,24 +28,13 @@ def _eh_kit(anuncio: dict[str, Any]) -> bool:
 
 
 def vendas_tem_dado(anuncio: dict[str, Any] | None) -> bool:
-    """True só quando a API informou sold_quantity > 0 (proxy fraco, mas presente)."""
-    if not isinstance(anuncio, dict):
-        return False
-    try:
-        return int(anuncio.get("quantidade_vendida") or anuncio.get("sold_quantity") or 0) > 0
-    except (TypeError, ValueError):
-        return False
+    """True só quando a API informou sold_quantity > 0."""
+    return vendas_api(anuncio) > 0
 
 
 def fmt_vendas_proxy(valor: Any, *, sufixo: str = "vendas") -> str:
     """Exibe n/d em vez de '0 vendas' quando a API não informou volume."""
-    try:
-        n = int(valor or 0)
-    except (TypeError, ValueError):
-        n = 0
-    if n <= 0:
-        return "n/d"
-    return f"{n} {sufixo}"
+    return fmt_vendas_amostra(valor, sufixo=sufixo)
 
 
 def processar_termo(segmento: dict[str, Any], anuncios: list[dict[str, Any]]) -> dict[str, Any]:
@@ -67,14 +59,10 @@ def _recalcular_kpis(kits_unicos: list[dict[str, Any]], termos_ok: int) -> dict[
     com_dado = [k for k in kits_unicos if vendas_tem_dado(k)]
     total_vendas = sum(int(k.get("quantidade_vendida") or 0) for k in com_dado)
     precos = [float(k.get("preco") or 0) for k in kits_unicos if float(k.get("preco") or 0) > 0]
-    # Prioriza quem tem vendas; se todos n/d, mantém amostra por preço médio estável
+    # Prioriza quem tem vendas; se todos n/d, usa proxy (avaliações/seller/presença)
     top_vendas = sorted(
         kits_unicos,
-        key=lambda x: (
-            1 if vendas_tem_dado(x) else 0,
-            int(x.get("quantidade_vendida") or 0),
-            float(x.get("avaliacoes") or 0),
-        ),
+        key=chave_ranking_anuncio,
         reverse=True,
     )[:15]
 

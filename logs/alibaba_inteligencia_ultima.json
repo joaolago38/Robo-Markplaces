@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-08-08T21:59:25.484969+00:00",
+  "timestamp": "2026-08-10T11:40:13.888004+00:00",
   "cotacao": {
     "ok": true,
     "usd_brl": 5.5,
-    "fonte": "fallback",
-    "confiavel": false
+    "fonte": "awesomeapi",
+    "confiavel": true
   },
   "variacao_cambio": {
     "ok": false
@@ -13,30 +13,57 @@
     {
       "ok": true,
       "id": "p1",
-      "produto": "X",
+      "produto": "Filamento PLA",
       "total_oportunidades": 1,
       "lucrativas": 1,
+      "precos_marketplace": {
+        "ok": true,
+        "preco_mediana_brl": 75.0
+      },
       "analises": [
         {
           "ok": true,
           "lucro_razoavel": true,
-          "titulo": "X",
-          "preco_usd": 1.0,
-          "melhor_frete": "aereo",
+          "titulo": "PLA",
+          "preco_usd": 3.5,
+          "melhor_frete": "maritimo",
           "url": "http://x",
           "margem_melhor": {
-            "margem_brl": 10.0,
-            "margem_pct": 20.0
+            "margem_brl": 20.0,
+            "margem_pct": 25.0
           },
           "cenarios_frete": {
-            "aereo": {
-              "custo_unitario_brl": 5.0
+            "maritimo": {
+              "custo_unitario_brl": 35.0
             }
           }
         }
       ],
       "melhor_analise": {
-        "ok": true
+        "ok": true,
+        "preco_usd": 3.5,
+        "moq": 100,
+        "melhor_frete": "maritimo",
+        "cenarios_frete": {
+          "maritimo": {
+            "custo_unitario_brl": 35.0
+          },
+          "aereo": {
+            "custo_unitario_brl": 55.0
+          }
+        },
+        "precos_marketplace": {
+          "preco_mediana_brl": 75.0,
+          "preco_min_brl": 60.0
+        },
+        "margens": {
+          "maritimo": {
+            "ok": true,
+            "margem_brl": 20.0,
+            "margem_pct": 25.0,
+            "lucro_razoavel": true
+          }
+        }
       }
     }
   ],

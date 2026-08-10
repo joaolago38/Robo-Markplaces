@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-08-08T22:10:25.739496+00:00",
+    "timestamp": "2026-08-10T11:40:22.273057+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-08-08T22:08:21.450690+00:00",
+    "timestamp": "2026-08-10T11:40:22.068993+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,7 +32,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-08-08T22:10:41.747158+00:00",
+    "timestamp": "2026-08-10T11:40:29.102006+00:00",
     "resultados": [
       {
         "item_id": "MLB4795826219",
@@ -133,7 +133,7 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-08-08T22:08:10.682935+00:00",
+    "timestamp": "2026-08-10T11:40:21.840813+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -149,7 +149,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-08-08T22:08:12.135867+00:00",
+    "timestamp": "2026-08-10T11:40:21.880500+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
@@ -3267,6 +3267,107 @@
         "catalog_product_id": "MLB66368287",
         "catalog_date_created": "2026-03-09T15:35:04Z",
         "listing_type_id": "gold_pro"
+      }
+    ]
+  },
+  "kit 3 esmaltes impala": {
+    "timestamp": "2026-08-10T11:31:53.876990+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB7286297590",
+        "titulo": "Kit 3 Esmaltes Impala Perolado Neném 7,5ml Kit 3 Neném",
+        "preco": 24.99,
+        "quantidade_vendida": 0,
+        "seller_id": "628846388",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7286297590",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB75947402",
+        "catalog_date_created": "2026-07-29T22:59:33Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5106097646",
+        "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+        "preco": 23.19,
+        "quantidade_vendida": 0,
+        "seller_id": "473582111",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5106097646",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB34852824",
+        "catalog_date_created": "2024-03-23T13:33:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB3715746005",
+        "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+        "preco": 23.99,
+        "quantidade_vendida": 0,
+        "seller_id": "296685441",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3715746005",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB34852824",
+        "catalog_date_created": "2024-03-23T13:33:41Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7153021930",
+        "titulo": "Kit 3 Esmaltes Misturinha Impala + Risqué Roxo Glitter 3 Cores",
+        "preco": 22.89,
+        "quantidade_vendida": 0,
+        "seller_id": "1029102477",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7153021930",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB75417074",
+        "catalog_date_created": "2026-07-12T20:12:39Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4087433501",
+        "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+        "preco": 36.98,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4087433501",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51023483",
+        "catalog_date_created": "2025-06-06T07:49:37Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6688504570",
+        "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+        "preco": 48.95,
+        "quantidade_vendida": 0,
+        "seller_id": "799344550",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6688504570",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB51023483",
+        "catalog_date_created": "2025-06-06T07:49:37Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4056949611",
+        "titulo": "Kit 3 Esmaltes Impala Base Verniz Vermelho Intensificador",
+        "preco": 36.06,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4056949611",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB49120997",
+        "catalog_date_created": "2025-05-09T05:22:46Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5975566072",
+        "titulo": "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
+        "preco": 22.99,
+        "quantidade_vendida": 0,
+        "seller_id": "173473498",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5975566072",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB24803372",
+        "catalog_date_created": "2023-07-23T00:32:51Z",
+        "listing_type_id": "gold_special"
       }
     ]
   }

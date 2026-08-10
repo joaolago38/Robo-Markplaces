@@ -70,6 +70,71 @@ _TERMOS_KIT: tuple[str, ...] = (
 )
 
 
+def _as_int(valor: Any) -> int:
+    try:
+        return max(0, int(valor or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def vendas_api(anuncio: dict[str, Any] | None) -> int:
+    """sold_quantity real da API (0 = ausente/zerado, não 'sem venda confirmada')."""
+    if not isinstance(anuncio, dict):
+        return 0
+    return _as_int(anuncio.get("quantidade_vendida") or anuncio.get("sold_quantity"))
+
+
+def avaliacoes_anuncio(anuncio: dict[str, Any] | None) -> int:
+    if not isinstance(anuncio, dict):
+        return 0
+    metricas = anuncio.get("metricas") if isinstance(anuncio.get("metricas"), dict) else {}
+    return _as_int(
+        anuncio.get("avaliacoes") or anuncio.get("reviews") or metricas.get("avaliacoes")
+    )
+
+
+def seller_porte(anuncio: dict[str, Any] | None) -> int:
+    if not isinstance(anuncio, dict):
+        return 0
+    seller = anuncio.get("seller") if isinstance(anuncio.get("seller"), dict) else {}
+    return _as_int(
+        anuncio.get("seller_transactions")
+        or anuncio.get("transactions_total")
+        or seller.get("transactions_total")
+        or seller.get("transactions")
+    )
+
+
+def volume_proxy_anuncio(anuncio: dict[str, Any] | None) -> tuple[int, str]:
+    """
+    Ranking quando a API não devolve sold_quantity de concorrentes.
+    1) vendas API  2) avaliações  3) porte do seller  4) presença (1)
+    """
+    vend = vendas_api(anuncio)
+    if vend > 0:
+        return vend, "vendas"
+    aval = avaliacoes_anuncio(anuncio)
+    if aval > 0:
+        return aval, "avaliacoes"
+    porte = seller_porte(anuncio)
+    if porte > 0:
+        return porte, "seller"
+    return 1, "presenca"
+
+
+def chave_ranking_anuncio(anuncio: dict[str, Any]) -> tuple[int, int, float]:
+    proxy, _ = volume_proxy_anuncio(anuncio)
+    return (vendas_api(anuncio), proxy, float(anuncio.get("nota") or 0))
+
+
+def fmt_vendas_amostra(valor: Any, *, sufixo: str = "vend.") -> str:
+    """Exibe n/d em vez de '0 vend.' quando a API não informou volume."""
+    n = _as_int(valor)
+    if n <= 0:
+        return "n/d"
+    return f"{n} {sufixo}"
+
+
 def extrair_cores_titulo(titulo: str) -> list[str]:
     norm = _normalizar(titulo)
     encontradas: list[str] = []
@@ -159,9 +224,24 @@ def padroes_kits(anuncios: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not qtd or int(qtd) < 2:
             continue
         q = int(qtd)
-        b = buckets.setdefault(q, {"qtd": q, "anuncios": 0, "vendidos": 0, "preco_medio": 0.0, "_precos": []})
+        b = buckets.setdefault(
+            q,
+            {
+                "qtd": q,
+                "anuncios": 0,
+                "vendidos": 0,
+                "volume_proxy": 0,
+                "fonte_volume": "presenca",
+                "preco_medio": 0.0,
+                "_precos": [],
+                "_fontes": Counter(),
+            },
+        )
         b["anuncios"] += 1
-        b["vendidos"] += int(an.get("quantidade_vendida") or 0)
+        b["vendidos"] += vendas_api(an)
+        proxy, fonte = volume_proxy_anuncio(an)
+        b["volume_proxy"] += proxy
+        b["_fontes"][fonte] += 1
         preco = float(an.get("preco") or 0)
         if preco > 0:
             b["_precos"].append(preco)
@@ -169,19 +249,27 @@ def padroes_kits(anuncios: list[dict[str, Any]]) -> list[dict[str, Any]]:
     saida: list[dict[str, Any]] = []
     for item in buckets.values():
         precos = item.pop("_precos", [])
+        fontes: Counter = item.pop("_fontes", Counter())
         if precos:
             item["preco_medio"] = round(sum(precos) / len(precos), 2)
+        if item["vendidos"] > 0:
+            item["fonte_volume"] = "vendas"
+        elif fontes:
+            item["fonte_volume"] = fontes.most_common(1)[0][0]
         saida.append(item)
-    saida.sort(key=lambda x: (x["vendidos"], x["anuncios"]), reverse=True)
+    saida.sort(
+        key=lambda x: (x["vendidos"], x.get("volume_proxy", 0), x["anuncios"]),
+        reverse=True,
+    )
     return saida
 
 
 def tendencia_cores(anuncios: list[dict[str, Any]], top_n: int = 8) -> list[dict[str, Any]]:
     pesos: Counter[str] = Counter()
     for an in anuncios:
-        vendas = max(1, int(an.get("quantidade_vendida") or 0))
+        peso, _ = volume_proxy_anuncio(an)
         for cor in an.get("cores_detectadas") or extrair_cores_titulo(str(an.get("titulo") or "")):
-            pesos[cor] += vendas
+            pesos[cor] += max(1, peso)
     return [{"cor": cor, "peso_vendas": peso} for cor, peso in pesos.most_common(top_n)]
 
 
@@ -189,24 +277,44 @@ def ranking_marcas_mercado(anuncios: list[dict[str, Any]]) -> list[dict[str, Any
     totais: dict[str, dict[str, Any]] = {}
     for an in anuncios:
         marca = str(an.get("marca") or detectar_marca(str(an.get("titulo") or "")))
-        vendidos = int(an.get("quantidade_vendida") or 0)
+        vendidos = vendas_api(an)
+        proxy, fonte = volume_proxy_anuncio(an)
         preco = float(an.get("preco") or 0)
         bucket = totais.setdefault(
             marca,
-            {"marca": marca, "vendidos": 0, "anuncios": 0, "preco_medio": 0.0, "_precos": []},
+            {
+                "marca": marca,
+                "vendidos": 0,
+                "volume_proxy": 0,
+                "anuncios": 0,
+                "fonte_volume": "presenca",
+                "preco_medio": 0.0,
+                "_precos": [],
+                "_fontes": Counter(),
+            },
         )
         bucket["vendidos"] += max(0, vendidos)
+        bucket["volume_proxy"] += proxy
         bucket["anuncios"] += 1
+        bucket["_fontes"][fonte] += 1
         if preco > 0:
             bucket["_precos"].append(preco)
 
     ranking: list[dict[str, Any]] = []
     for item in totais.values():
         precos = item.pop("_precos", [])
+        fontes: Counter = item.pop("_fontes", Counter())
         if precos:
             item["preco_medio"] = round(sum(precos) / len(precos), 2)
+        if item["vendidos"] > 0:
+            item["fonte_volume"] = "vendas"
+        elif fontes:
+            item["fonte_volume"] = fontes.most_common(1)[0][0]
         ranking.append(item)
-    ranking.sort(key=lambda x: (x["vendidos"], x["anuncios"]), reverse=True)
+    ranking.sort(
+        key=lambda x: (x["vendidos"], x.get("volume_proxy", 0), x["anuncios"]),
+        reverse=True,
+    )
     return ranking
 
 
@@ -260,11 +368,15 @@ def listar_oportunidades_margem(
     if custo <= 0:
         return []
 
+    tem_vendas_api = any(vendas_api(a) > 0 for a in anuncios)
     candidatos = sorted(
         [a for a in anuncios if float(a.get("preco") or 0) > 0],
-        key=lambda x: int(x.get("quantidade_vendida") or 0),
+        key=chave_ranking_anuncio,
         reverse=True,
     )
+    # Sem sold_quantity: limita à amostra ranqueada por proxy (avaliações/seller)
+    if not tem_vendas_api:
+        candidatos = candidatos[:8]
 
     oportunidades: list[dict[str, Any]] = []
     vistos: set[str] = set()
@@ -274,9 +386,12 @@ def listar_oportunidades_margem(
             continue
         vistos.add(item_id)
 
-        vendas = int(an.get("quantidade_vendida") or 0)
-        if vendas < vendas_min:
-            continue
+        vendas = vendas_api(an)
+        proxy, fonte = volume_proxy_anuncio(an)
+        if tem_vendas_api:
+            if vendas < vendas_min:
+                continue
+        # Sem sold_quantity na amostra: usa proxy (avaliações/seller/presença)
 
         preco_conc = float(an.get("preco") or 0)
         preco_alvo = round(preco_conc * (1 - abaixo_concorrente_pct / 100.0), 2)
@@ -292,6 +407,8 @@ def listar_oportunidades_margem(
                 "preco_concorrente": preco_conc,
                 "preco_alvo": preco_alvo,
                 "quantidade_vendida": vendas,
+                "volume_proxy": proxy,
+                "fonte_volume": fonte if vendas <= 0 else "vendas",
                 "qtd_kit": an.get("qtd_kit"),
                 "cores_detectadas": an.get("cores_detectadas") or [],
                 "descricao_kit": an.get("descricao_kit"),
@@ -320,15 +437,23 @@ def gerar_propostas_competir(
 
     if kits:
         lider = kits[0]
+        if int(lider.get("vendidos") or 0) > 0:
+            texto_kit = (
+                f"*{seg_nome}*: kits de {lider['qtd']} un lideram vendas "
+                f"({lider['vendidos']} vendidos, média R$ {lider['preco_medio']:.2f})"
+            )
+        else:
+            texto_kit = (
+                f"*{seg_nome}*: kits de {lider['qtd']} un mais presentes na amostra "
+                f"({lider['anuncios']} anúncios, média R$ {lider['preco_medio']:.2f}) "
+                f"— vendas API n/d"
+            )
         propostas.append(
             {
                 "prioridade": "media",
                 "tipo": "kit",
                 "segmento_id": seg_id,
-                "texto": (
-                    f"*{seg_nome}*: kits de {lider['qtd']} un lideram vendas "
-                    f"({lider['vendidos']} vendidos, média R$ {lider['preco_medio']:.2f})"
-                ),
+                "texto": texto_kit,
             }
         )
 
@@ -346,15 +471,23 @@ def gerar_propostas_competir(
 
     if ranking:
         lider_marca = ranking[0]
+        if int(lider_marca.get("vendidos") or 0) > 0:
+            texto_marca = (
+                f"*{seg_nome}*: {lider_marca['marca']} lidera com "
+                f"{lider_marca['vendidos']} vendas (média R$ {lider_marca.get('preco_medio', 0):.2f})"
+            )
+        else:
+            texto_marca = (
+                f"*{seg_nome}*: {lider_marca['marca']} mais presente "
+                f"({lider_marca['anuncios']} anúncios, média R$ {lider_marca.get('preco_medio', 0):.2f}) "
+                f"— vendas API n/d"
+            )
         propostas.append(
             {
                 "prioridade": "baixa",
                 "tipo": "marca",
                 "segmento_id": seg_id,
-                "texto": (
-                    f"*{seg_nome}*: {lider_marca['marca']} lidera com "
-                    f"{lider_marca['vendidos']} vendas (média R$ {lider_marca.get('preco_medio', 0):.2f})"
-                ),
+                "texto": texto_marca,
             }
         )
 
@@ -376,6 +509,10 @@ def gerar_propostas_competir(
 
     for op in oportunidades[:3]:
         margem = op.get("margem") or {}
+        vol_txt = fmt_vendas_amostra(op.get("quantidade_vendida"))
+        if vol_txt == "n/d":
+            fonte = str(op.get("fonte_volume") or "presenca")
+            vol_txt = f"proxy {fonte}"
         propostas.append(
             {
                 "prioridade": "alta",
@@ -385,7 +522,7 @@ def gerar_propostas_competir(
                 "texto": (
                     f"Competir com *{sku}* em R$ {op['preco_alvo']:.2f} "
                     f"(−{abaixo_concorrente_pct:.0f}% vs {op['preco_concorrente']:.2f}, "
-                    f"{op['quantidade_vendida']} vendas) — margem {margem.get('margem_operacional_pct')}%"
+                    f"{vol_txt}) — margem {margem.get('margem_operacional_pct')}%"
                 ),
                 "preco_sugerido": op["preco_alvo"],
                 "margem_pct": margem.get("margem_operacional_pct"),
@@ -427,8 +564,10 @@ def gerar_propostas_competir(
                 }
             )
 
-    # Se está caro vs menor concorrente com vendas
-    com_vendas = [a for a in classificados if int(a.get("quantidade_vendida") or 0) >= vendas_min]
+    # Se está caro vs menor concorrente com volume (API ou proxy)
+    com_vendas = [a for a in classificados if vendas_api(a) >= vendas_min]
+    if not com_vendas:
+        com_vendas = sorted(classificados, key=chave_ranking_anuncio, reverse=True)[:8]
     if com_vendas and meu_preco > 0:
         menor = min(com_vendas, key=lambda x: float(x.get("preco") or 999999))
         menor_preco = float(menor.get("preco") or 0)
@@ -534,7 +673,7 @@ def analisar_segmento(
 
     destaques = sorted(
         classificados,
-        key=lambda x: int(x.get("quantidade_vendida") or 0),
+        key=chave_ranking_anuncio,
         reverse=True,
     )[:6]
 
@@ -559,7 +698,7 @@ def consolidar_mercado(resultados: list[dict[str, Any]]) -> dict[str, Any]:
     """Agrega anúncios únicos e propostas de todos os segmentos."""
     por_item: dict[str, dict[str, Any]] = {}
     todas_propostas: list[dict[str, Any]] = []
-    ranking_global: dict[str, int] = {}
+    ranking_global: dict[str, dict[str, int]] = {}
 
     for seg in resultados:
         if not seg.get("ok"):
@@ -568,18 +707,24 @@ def consolidar_mercado(resultados: list[dict[str, Any]]) -> dict[str, Any]:
             todas_propostas.append(prop)
         for marca in seg.get("ranking_marcas") or []:
             m = str(marca.get("marca") or "?")
-            ranking_global[m] = ranking_global.get(m, 0) + int(marca.get("vendidos") or 0)
+            bucket = ranking_global.setdefault(
+                m, {"vendidos": 0, "anuncios": 0, "volume_proxy": 0}
+            )
+            bucket["vendidos"] += _as_int(marca.get("vendidos"))
+            bucket["anuncios"] += _as_int(marca.get("anuncios"))
+            bucket["volume_proxy"] += _as_int(
+                marca.get("volume_proxy") or marca.get("vendidos")
+            )
         for dest in seg.get("destaques") or []:
             iid = str(dest.get("item_id") or "")
             if not iid:
                 continue
             atual = por_item.get(iid)
-            vendas = int(dest.get("quantidade_vendida") or 0)
-            if not atual or vendas > int(atual.get("quantidade_vendida") or 0):
+            if not atual or chave_ranking_anuncio(dest) > chave_ranking_anuncio(atual):
                 por_item[iid] = dest
 
     anuncios_unicos = list(por_item.values())
-    anuncios_unicos.sort(key=lambda x: int(x.get("quantidade_vendida") or 0), reverse=True)
+    anuncios_unicos.sort(key=chave_ranking_anuncio, reverse=True)
 
     ordem = {"alta": 0, "media": 1, "baixa": 2}
     propostas_unicas: list[dict[str, Any]] = []
@@ -591,13 +736,27 @@ def consolidar_mercado(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         vistas.add(chave)
         propostas_unicas.append(p)
 
-    ranking_ord = sorted(ranking_global.items(), key=lambda x: x[1], reverse=True)
+    ranking_ord = sorted(
+        ranking_global.items(),
+        key=lambda x: (x[1]["vendidos"], x[1]["volume_proxy"], x[1]["anuncios"]),
+        reverse=True,
+    )
 
     return {
         "total_anuncios_unicos": len(anuncios_unicos),
         "total_segmentos": len([r for r in resultados if r.get("ok")]),
-        "ranking_marcas_global": [{"marca": m, "vendidos": v} for m, v in ranking_ord[:8]],
+        "ranking_marcas_global": [
+            {
+                "marca": m,
+                "vendidos": v["vendidos"],
+                "anuncios": v["anuncios"],
+                "volume_proxy": v["volume_proxy"],
+            }
+            for m, v in ranking_ord[:8]
+        ],
         "top_anuncios": anuncios_unicos[:12],
         "propostas": propostas_unicas,
-        "total_oportunidades_margem": sum(len(s.get("oportunidades_margem") or []) for s in resultados),
+        "total_oportunidades_margem": sum(
+            len(s.get("oportunidades_margem") or []) for s in resultados
+        ),
     }

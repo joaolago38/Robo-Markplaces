@@ -1,7 +1,8 @@
 """
 core/claude_orcamento.py
 Orçamento local Claude (tokens → US$) + hard stop + alertas Telegram.
-O saldo restante da console Anthropic NÃO vem pela API — usamos orçamento configurado.
+O saldo restante da console (Anthropic/OpenAI) NÃO vem pela API automaticamente.
+Usamos orçamento local + sync manual via aplicar_saldo_console() / --creditos.
 """
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ logger = logging.getLogger("claude_orcamento")
 
 USO_PATH = ROOT / "logs" / "claude_uso_orcamento.json"
 HIST_PATH = ROOT / "logs" / "claude_consumo_historico.json"
+PAINEL_PATH = ROOT / "logs" / "claude_saldo_painel_ultima.json"
 GRAFICO_AGENTES_PATH = ROOT / "logs" / "grafico_claude_por_agente.png"
 GRAFICO_EVOLUCAO_PATH = ROOT / "logs" / "grafico_claude_evolucao.png"
 MAX_EVENTOS = 200
@@ -170,7 +172,11 @@ def carregar_estado() -> dict[str, Any]:
     base = _estado_vazio()
     base.update(data)
     c = _cfg()
-    base["orcamento_usd"] = float(getattr(c, "CLAUDE_ORCAMENTO_USD", base["orcamento_usd"]) or 8.99)
+    # Saldo do painel Anthropic prevalece sobre CLAUDE_ORCAMENTO_USD do .env
+    if str(base.get("fonte_saldo") or "") != "console_painel":
+        base["orcamento_usd"] = float(
+            getattr(c, "CLAUDE_ORCAMENTO_USD", base["orcamento_usd"]) or 8.99
+        )
     if not isinstance(base.get("resultados"), dict):
         base["resultados"] = _estado_vazio()["resultados"]
     return base
@@ -197,6 +203,7 @@ def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
         "consumido_usd": round(used, 4),
         "restante_usd": round(resta, 4),
         "percentual_usado": pct,
+        "fonte_saldo": e.get("fonte_saldo"),
         "chamadas": int(e.get("chamadas") or 0),
         "tokens_in": int(e.get("tokens_in") or 0),
         "tokens_out": int(e.get("tokens_out") or 0),
@@ -526,6 +533,106 @@ def resetar_consumo(*, manter_orcamento: bool = True) -> dict[str, Any]:
     escrever_json_atomico(USO_PATH, novo)
     escrever_json_atomico(HIST_PATH, {"pontos": []})
     return resumo(novo)
+
+
+def emitir_metricas_claude_datadog(
+    r: dict[str, Any] | None = None,
+    *,
+    tokens_7d: float | None = None,
+    tokens_7d_crescimento_pct: float | None = None,
+    prompt_cache_ativo: bool | None = None,
+    limite_mes_usd: float | None = None,
+) -> dict[str, Any]:
+    """Emite as métricas que o dashboard/monitores Claude já usam."""
+    from core.datadog_metrics import gauge
+
+    r = r or resumo()
+    tags = ["fonte:consumo_claude"]
+    if r.get("fonte_saldo"):
+        tags.append(f"fonte_saldo:{r.get('fonte_saldo')}")
+    gauge("claude.orcamento_consumido_usd", float(r.get("consumido_usd") or 0), tags=tags)
+    gauge("claude.orcamento_restante_usd", float(r.get("restante_usd") or 0), tags=tags)
+    gauge("claude.orcamento_usd", float(r.get("orcamento_usd") or 0), tags=tags)
+    gauge("claude.assertividade_pct", float(r.get("assertividade_pct") or 0), tags=tags)
+    if tokens_7d is not None:
+        gauge("claude.tokens_7d", float(tokens_7d), tags=tags)
+    if tokens_7d_crescimento_pct is not None:
+        gauge("claude.tokens_7d_crescimento_pct", float(tokens_7d_crescimento_pct), tags=tags)
+    if prompt_cache_ativo is not None:
+        gauge("claude.prompt_cache_ativo", 1.0 if prompt_cache_ativo else 0.0, tags=tags)
+    if limite_mes_usd is not None:
+        gauge("claude.limite_mes_usd", float(limite_mes_usd), tags=tags)
+    return r
+
+
+def aplicar_saldo_console(
+    creditos_usd: float,
+    *,
+    gasto_mes_usd: float | None = None,
+    tokens_7d: float | None = None,
+    tokens_7d_crescimento_pct: float | None = None,
+    prompt_cache_ativo: bool | None = None,
+    limite_mes_usd: float | None = None,
+    emitir_datadog: bool = True,
+) -> dict[str, Any]:
+    """
+    Alinha o orçamento local ao saldo do painel (print/console).
+    restante = créditos; consumido = gasto do mês (se informado).
+    """
+    creditos = max(0.0, float(creditos_usd or 0))
+    gasto = float(gasto_mes_usd) if gasto_mes_usd is not None else None
+
+    def _patch(estado: dict[str, Any]) -> dict[str, Any]:
+        used = float(gasto) if gasto is not None else float(estado.get("consumido_usd") or 0)
+        # orçamento = consumido + créditos → restante bate com o painel
+        estado["consumido_usd"] = round(max(0.0, used), 6)
+        estado["orcamento_usd"] = round(max(0.0, used) + creditos, 6)
+        estado["bloqueado"] = bool(
+            estado["orcamento_usd"] > 0 and estado["consumido_usd"] >= estado["orcamento_usd"]
+        )
+        estado["fonte_saldo"] = "console_painel"
+        estado["saldo_console_usd"] = round(creditos, 4)
+        if gasto is not None:
+            estado["gasto_mes_console_usd"] = round(gasto, 4)
+        if tokens_7d is not None:
+            estado["tokens_7d_console"] = float(tokens_7d)
+        if tokens_7d_crescimento_pct is not None:
+            estado["tokens_7d_crescimento_pct"] = float(tokens_7d_crescimento_pct)
+        if prompt_cache_ativo is not None:
+            estado["prompt_cache_ativo"] = bool(prompt_cache_ativo)
+        if limite_mes_usd is not None:
+            estado["limite_mes_console_usd"] = float(limite_mes_usd)
+        estado["saldo_sincronizado_em"] = datetime.now(timezone.utc).isoformat()
+        estado["atualizado_em"] = estado["saldo_sincronizado_em"]
+        return estado
+
+    estado = ler_e_atualizar_json(USO_PATH, _patch, default=_estado_vazio())
+    r = resumo(estado if isinstance(estado, dict) else None)
+    r["fonte_saldo"] = "console_painel"
+    snap = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "creditos_usd": creditos,
+        "gasto_mes_usd": gasto,
+        "tokens_7d": tokens_7d,
+        "tokens_7d_crescimento_pct": tokens_7d_crescimento_pct,
+        "prompt_cache_ativo": prompt_cache_ativo,
+        "limite_mes_usd": limite_mes_usd,
+        "resumo": r,
+    }
+    escrever_json_atomico(PAINEL_PATH, snap)
+    try:
+        registrar_ponto_historico(r)
+    except Exception as exc:
+        logger.debug("historico claude apos sync painel: %s", exc)
+    if emitir_datadog:
+        emitir_metricas_claude_datadog(
+            r,
+            tokens_7d=tokens_7d,
+            tokens_7d_crescimento_pct=tokens_7d_crescimento_pct,
+            prompt_cache_ativo=prompt_cache_ativo,
+            limite_mes_usd=limite_mes_usd,
+        )
+    return r
 
 
 def _nome_agente_curto(origem: str, max_len: int = 40) -> str:
