@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-08-10T13:52:03.146405+00:00",
+  "timestamp": "2026-08-10T14:38:01.830648+00:00",
   "origem": "monitor_concorrentes",
   "batalha": {
     "anuncios_unicos": 1,
     "sellers_unicos": 0,
-    "vendas_proxy": 5,
-    "preco_min": 38.0,
-    "preco_mediano": 38.0,
-    "preco_medio": 38.0,
-    "preco_max": 38.0,
+    "vendas_proxy": 10,
+    "preco_min": 30.0,
+    "preco_mediano": 30.0,
+    "preco_medio": 30.0,
+    "preco_max": 30.0,
     "por_tamanho": [],
     "comparacoes": [
       {
@@ -258,8 +258,8 @@
       {
         "item_id": "MLB1",
         "titulo": "Kit Impala X",
-        "preco": 38.0,
-        "quantidade_vendida": 5,
+        "preco": 30.0,
+        "quantidade_vendida": 10,
         "qtd_kit": null,
         "seller_id": null
       }

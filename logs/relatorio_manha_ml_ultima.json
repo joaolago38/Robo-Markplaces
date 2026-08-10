@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-08-10T13:52:18.588074+00:00",
+  "timestamp": "2026-08-10T14:38:14.986063+00:00",
   "ml_ok": true,
   "total_propostas": 0,
-  "relatorio": "☀️ *Relatório manhã — Mercado Livre*\n\n_O que este agente faz:_\n_Relatório matinal da operação ML: conta, anúncios, concorrentes e propostas de preço com margem viável para o dia. Telegram: briefing completo da manhã._\n\n_Quando roda:_\n_Todo dia às 07:30 BRT (Actions); fora do orquestrador 30 min_\n_10/08/2026 10:52_\n\n_Lucro = preço − taxa ML − custo | respeita margem mínima por fase_\n📊 *Sua conta ML*\n\n• Perguntas pendentes: 0\n• Ads: não consultado\n\n🔎 *Seus anúncios vs mercado*\n\n_Nenhum anúncio analisado (verifique token ML)._\n\n💰 *Propostas de preço (lucro viável)*\n\n_Preços atuais dentro da margem — sem alteração sugerida hoje._\n\n✅ *Prioridades do dia*\n\n1. Manter estratégia atual — margens dentro do esperado."
+  "relatorio": "☀️ *Relatório manhã — Mercado Livre*\n\n_O que este agente faz:_\n_Relatório matinal da operação ML: conta, anúncios, concorrentes e propostas de preço com margem viável para o dia. Telegram: briefing completo da manhã._\n\n_Quando roda:_\n_Todo dia às 07:30 BRT (Actions); fora do orquestrador 30 min_\n_10/08/2026 11:38_\n\n_Lucro = preço − taxa ML − custo | respeita margem mínima por fase_\n📊 *Sua conta ML*\n\n• Perguntas pendentes: 0\n• Ads: não consultado\n\n🔎 *Seus anúncios vs mercado*\n\n_Nenhum anúncio analisado (verifique token ML)._\n\n💰 *Propostas de preço (lucro viável)*\n\n_Preços atuais dentro da margem — sem alteração sugerida hoje._\n\n✅ *Prioridades do dia*\n\n1. Manter estratégia atual — margens dentro do esperado."
 }

@@ -191,6 +191,7 @@ def montar_mensagem_telegram(
         formatar_secao_pontos_cegos,
         top_por_visitas,
     )
+    from integracoes.ml.acoes_funil_ml import formatar_secao_acoes_funil
 
     rivais_vis = top_por_visitas(consolidado.get("produtos") or [], top_n=5)
     if rivais_vis:
@@ -199,6 +200,7 @@ def montar_mensagem_telegram(
             linhas.append(_linha_anuncio(p, modo="visitas"))
 
     linhas.extend(formatar_secao_funil(consolidado.get("funil_proprio")))
+    linhas.extend(formatar_secao_acoes_funil(consolidado.get("acoes_funil")))
     linhas.extend(formatar_secao_pontos_cegos(consolidado.get("pontos_cegos")))
 
     secao_ia = formatar_secao_ia_masterprint(avaliacao_ia, com_tagline_ramo=False)
@@ -289,6 +291,16 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             funil=funil,
             visitas_enriquecidas=n_vis,
             contexto="masterprint_petg",
+        )
+        from integracoes.ml.acoes_funil_ml import processar_e_persistir_acoes
+        from integracoes.masterprint.ramo import chat_gestor_masterprint
+
+        consolidado["acoes_funil"] = processar_e_persistir_acoes(
+            funil,
+            contexto="masterprint_petg",
+            prefixo_metricas="masterprint_petg",
+            enviar_alerta_criticas=bool(enviar_alerta),
+            chat_id=chat_gestor_masterprint(),
         )
 
         from integracoes.masterprint.avaliacao_ia_secundaria import avaliar_masterprint_secundario

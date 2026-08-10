@@ -131,10 +131,22 @@ def coletar_funil_proprio(
     dias: int = 7,
     max_anuncios: int = 25,
     filtro_titulo: str | None = None,
+    min_visitas_conv: int | None = None,
 ) -> dict[str, Any]:
     """
     Visitas → unidades pedidas (pedidos pagos) → conversão nos seus anúncios.
+    conversao_pct só é confiável com visitas >= min_visitas_conv.
+    visitas_convertidas_proxy ≈ unidades (não é atribuição visita-a-visita).
     """
+    try:
+        from core.config import FUNIL_ML_MIN_VISITAS_CONV
+
+        min_vis = int(
+            min_visitas_conv if min_visitas_conv is not None else FUNIL_ML_MIN_VISITAS_CONV
+        )
+    except Exception:
+        min_vis = int(min_visitas_conv if min_visitas_conv is not None else 10)
+
     if not ml_client._enabled():
         return {
             "ok": False,
@@ -179,6 +191,7 @@ def coletar_funil_proprio(
         if visitas.get("disponivel"):
             visitas_ok = True
         un = vendas_por_item.get(iid, 0)
+        confiavel = bool(visitas.get("disponivel")) and v7 >= max(1, min_vis)
         conv = round((un / v7) * 100.0, 2) if v7 > 0 else None
         total_visitas += v7
         total_unidades += un
@@ -191,8 +204,10 @@ def coletar_funil_proprio(
                 "visitas_7d": v7 if visitas.get("disponivel") else None,
                 "visitas_30d": v30 if visitas.get("disponivel") else None,
                 "unidades_pedidos": un,
+                "visitas_convertidas_proxy": un,
                 "receita_pedidos": round(receita_por_item.get(iid, 0.0), 2),
                 "conversao_pct": conv,
+                "conversao_confiavel": confiavel,
                 "sold_quantity": _i(an.get("sold_quantity")),
             }
         )
@@ -205,6 +220,7 @@ def coletar_funil_proprio(
         reverse=True,
     )
     conv_tot = round((total_unidades / total_visitas) * 100.0, 2) if total_visitas > 0 else None
+    conv_tot_confiavel = total_visitas >= max(1, min_vis)
     return {
         "ok": True,
         "dias": dias,
@@ -213,10 +229,13 @@ def coletar_funil_proprio(
         "pedidos_ok": bool(pedidos_ok),
         "visitas_ok": bool(visitas_ok),
         "pedidos_count": len(pedidos),
+        "min_visitas_conv": min_vis,
         "totais": {
             "visitas_7d": total_visitas,
             "unidades_7d": total_unidades,
+            "visitas_convertidas_proxy": total_unidades,
             "conversao_pct": conv_tot,
+            "conversao_confiavel": conv_tot_confiavel,
             "receita_7d": round(sum(receita_por_item.values()), 2),
         },
         "itens": itens,
@@ -323,6 +342,8 @@ def formatar_secao_funil(funil: dict[str, Any] | None) -> list[str]:
     tot = funil.get("totais") or {}
     conv = tot.get("conversao_pct")
     conv_txt = f"{conv}%" if conv is not None else "n/d"
+    if tot.get("conversao_confiavel") is False and conv is not None:
+        conv_txt += " _(amostra pequena)_"
     avisos = []
     if not funil.get("pedidos_ok"):
         avisos.append("pedidos degradado")
@@ -331,7 +352,8 @@ def formatar_secao_funil(funil: dict[str, Any] | None) -> list[str]:
     aviso = f" _(⚠ {' | '.join(avisos)})_" if avisos else ""
     linhas.append(
         f"• {dias}d: *{_i(tot.get('visitas_7d'))}* visitas → "
-        f"*{_i(tot.get('unidades_7d'))}* un. | conv. *{conv_txt}*{aviso}"
+        f"*{_i(tot.get('unidades_7d'))}* un. convertidas (proxy) | "
+        f"taxa *{conv_txt}*{aviso}"
     )
     for item in (funil.get("itens") or [])[:5]:
         titulo = str(item.get("titulo") or "?")[:45]
@@ -339,6 +361,8 @@ def formatar_secao_funil(funil: dict[str, Any] | None) -> list[str]:
         v_txt = str(v7) if v7 is not None else "n/d"
         c = item.get("conversao_pct")
         c_txt = f"{c}%" if c is not None else "n/d"
+        if item.get("conversao_confiavel") is False and c is not None:
+            c_txt += "*"
         linhas.append(
             f"• {titulo} — vis {v_txt} → {_i(item.get('unidades_pedidos'))} un. ({c_txt})"
         )

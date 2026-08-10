@@ -54,6 +54,7 @@ GROUP_OPERACAO_COMERCIAL_ID = 700008
 GROUP_MP_CATALOGO_ID = 760001
 GROUP_MP_MERCADO_ID = 760002
 GROUP_MP_COMERCIAL_ID = 760003
+GROUP_MP_FUNIL_ID = 760004
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -1857,6 +1858,357 @@ def _grupo_catalogo_masterprint() -> dict[str, Any]:
     }
 
 
+def _grupo_funil_demanda_masterprint() -> dict[str, Any]:
+    """Funil próprio (visitas→vendas) + ações + blindspots + visitas rivais."""
+    return {
+        "id": GROUP_MP_FUNIL_ID,
+        "definition": {
+            "title": "[Funil ML] Visitas → vendas / acoes / blindspots",
+            "type": "group",
+            "background_color": "vivid_green",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "id": 760400,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Funil próprio** = visitas e pedidos da *sua* conta "
+                            "(taxa ≈ un./visitas). "
+                            "**Visitas rivais** = proxy de demanda (sem vendas). "
+                            "**Ações críticas** = visitas sem conversão / conversão baixa → "
+                            "otimizador_listing prioriza esses IDs.\n"
+                            "Blindspot vendas API = 1 enquanto `sold_quantity` de rivais = 403."
+                        ),
+                        "background_color": "green",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+                },
+                {
+                    **_qv(
+                        "PETG funil visitas 7d",
+                        "avg:robo.masterprint_petg.funil.visitas_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+                    "id": 760401,
+                },
+                {
+                    **_qv(
+                        "PETG un. convertidas 7d",
+                        "avg:robo.masterprint_petg.funil.unidades_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
+                    "id": 760402,
+                },
+                {
+                    **_qv(
+                        "PETG conversao %",
+                        "avg:robo.masterprint_petg.funil.conversao_pct{*}",
+                        aggregator="avg",
+                        green_gt=2,
+                        yellow_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
+                    "id": 760403,
+                },
+                {
+                    **_qv(
+                        "PETG acoes criticas",
+                        "avg:robo.masterprint_petg.funil.acoes_criticas{*}",
+                        aggregator="avg",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "id": 760404,
+                },
+                {
+                    **_qv(
+                        "PETG visitas rivais (amostra)",
+                        "avg:robo.masterprint_petg.rivais.visitas_amostra{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
+                    "id": 760405,
+                },
+                {
+                    **_qv(
+                        "PETG blindspot vendas API",
+                        "avg:robo.masterprint_petg.blindspot.vendas_api{*}",
+                        aggregator="avg",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "id": 760406,
+                },
+                {
+                    **_qv(
+                        "Filamentos funil visitas 7d",
+                        "avg:robo.filamentos.ml.funil.visitas_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 4},
+                    "id": 760410,
+                },
+                {
+                    **_qv(
+                        "Filamentos un. 7d",
+                        "avg:robo.filamentos.ml.funil.unidades_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 4},
+                    "id": 760411,
+                },
+                {
+                    **_qv(
+                        "Filamentos conversao %",
+                        "avg:robo.filamentos.ml.funil.conversao_pct{*}",
+                        aggregator="avg",
+                        green_gt=2,
+                        yellow_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 4},
+                    "id": 760412,
+                },
+                {
+                    **_qv(
+                        "Filamentos acoes criticas",
+                        "avg:robo.filamentos.ml.funil.acoes_criticas{*}",
+                        aggregator="avg",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 4},
+                    "id": 760413,
+                },
+                {
+                    **_qv(
+                        "Filamentos visitas rivais",
+                        "avg:robo.filamentos.ml.rivais.visitas_amostra{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 4},
+                    "id": 760414,
+                },
+                {
+                    **_qv(
+                        "Filamentos blindspot vendas",
+                        "avg:robo.filamentos.ml.blindspot.vendas_api{*}",
+                        aggregator="avg",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 4},
+                    "id": 760415,
+                },
+                {
+                    "id": 760420,
+                    "definition": {
+                        "title": "PETG — funil visitas / un. / conversao %",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.funil.visitas_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.masterprint_petg.funil.unidades_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_petg.funil.conversao_pct{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "visitas_7d", "formula": "query1"},
+                                    {"alias": "unidades_7d", "formula": "query2"},
+                                    {"alias": "conversao_pct", "formula": "query3"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 6},
+                },
+                {
+                    "id": 760421,
+                    "definition": {
+                        "title": "Filamentos — funil visitas / un. / conversao %",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.filamentos.ml.funil.visitas_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.filamentos.ml.funil.unidades_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.filamentos.ml.funil.conversao_pct{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "visitas_7d", "formula": "query1"},
+                                    {"alias": "unidades_7d", "formula": "query2"},
+                                    {"alias": "conversao_pct", "formula": "query3"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 6},
+                },
+                {
+                    "id": 760430,
+                    "definition": {
+                        "title": "Acoes funil — criticas / total (PETG + Filamentos)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.funil.acoes_criticas{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.filamentos.ml.funil.acoes_criticas{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_petg.funil.acoes_total{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": "avg:robo.filamentos.ml.funil.acoes_total{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "petg_criticas", "formula": "query1"},
+                                    {"alias": "fil_criticas", "formula": "query2"},
+                                    {"alias": "petg_total", "formula": "query3"},
+                                    {"alias": "fil_total", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 9},
+                },
+                {
+                    "id": 760431,
+                    "definition": {
+                        "title": "Acoes por tipo (PETG) — baixar_preco / titulo_ads / conversao",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "baixar_preco_ou_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "melhorar_titulo_e_ads{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "melhorar_conversao_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "republicar_ou_ads{*}"
+                                        ),
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "baixar_preco", "formula": "query1"},
+                                    {"alias": "titulo_ads", "formula": "query2"},
+                                    {"alias": "conversao_listing", "formula": "query3"},
+                                    {"alias": "republicar_ads", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 9},
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
+    }
+
+
 def _grupo_mercado_masterprint() -> dict[str, Any]:
     """Monitor ML — foco em anúncios, preço, margem e porte de seller (vendas API = n/d)."""
     return {
@@ -2404,29 +2756,35 @@ def atualizar_dashboard_masterprint() -> None:
         NOTE_MP_ID,
         (
             "## Aba Masterprint — Filamentos / Escritorio\n\n"
-            "Leitura: **custo/catalogo** → **mercado ML** → **margem / preço / sellers**.\n\n"
+            "Leitura: **funil próprio** → **custo/catalogo** → **mercado ML** → "
+            "**margem / preço / sellers**.\n\n"
+            "**Funil:** visitas→unidades→conversão% + ações críticas "
+            "(otimizador prioriza IDs).\n"
             "**Atenção:** vendas/receita/lucro de concorrentes ficam **n/d** (API ML 403). "
-            "Decida por margem, preço e porte do seller.\n\n"
+            "Use visitas rivais como proxy de demanda.\n\n"
             f"**Robo / plataforma:** [Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
             f"**E-commerce Impala:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
         ),
         background_color="purple",
         height=3,
     )
+    funil = _grupo_funil_demanda_masterprint()
+    funil["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
     cat = _grupo_catalogo_masterprint()
-    cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    cat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     merc = _grupo_mercado_masterprint()
-    merc["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    merc["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     com = _grupo_operacao_masterprint()
-    com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+    com["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_MASTERPRINT_TITLE,
         "description": (
-            "ABA MASTERPRINT: filamentos + pinceis/apagadores (custos, mercado ML, lucro). "
+            "ABA MASTERPRINT: funil visitas→vendas, filamentos + escritorio "
+            "(custos, mercado ML, margem). "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, com, cat, merc],
+        "widgets": [note, funil, com, cat, merc],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -2499,6 +2857,29 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         "Tags: service:robo-markplaces"
     )
     return [
+        {
+            "name": "[Masterprint] Funil ML — acoes criticas",
+            "type": "query alert",
+            "query": (
+                "avg(last_4h):(avg:robo.masterprint_petg.funil.acoes_criticas{*} + "
+                "avg:robo.filamentos.ml.funil.acoes_criticas{*}) > 0"
+            ),
+            "message": (
+                "Funil proprio com acoes criticas "
+                "(visitas sem conversao / conversao baixa). "
+                "Veja grupo [Funil ML] no dashboard Masterprint e "
+                "logs/funil_ml_acoes_ultima.json.\n"
+                f"Dashboard: {_url_dash(DASH_MASTERPRINT)}\n" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:funil_ml", "severity:p3"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 3,
+        },
         {
             "name": "[Robo] Orquestrador sem ciclos (2h)",
             "type": "query alert",

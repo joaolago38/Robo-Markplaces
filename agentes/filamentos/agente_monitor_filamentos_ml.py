@@ -319,9 +319,11 @@ def montar_mensagem_telegram(
         formatar_secao_pontos_cegos,
         formatar_secao_visitas_rivais,
     )
+    from integracoes.ml.acoes_funil_ml import formatar_secao_acoes_funil
 
     linhas.extend(formatar_secao_visitas_rivais(consolidado.get("produtos_unicos") or top))
     linhas.extend(formatar_secao_funil(consolidado.get("funil_proprio")))
+    linhas.extend(formatar_secao_acoes_funil(consolidado.get("acoes_funil")))
     linhas.extend(formatar_secao_pontos_cegos(consolidado.get("pontos_cegos")))
 
     if cruzamento is not None:
@@ -413,6 +415,14 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
             funil=funil,
             visitas_enriquecidas=n_vis,
             contexto="filamentos_ml",
+        )
+        from integracoes.ml.acoes_funil_ml import processar_e_persistir_acoes
+
+        consolidado["acoes_funil"] = processar_e_persistir_acoes(
+            funil,
+            contexto="filamentos_ml",
+            prefixo_metricas="filamentos.ml",
+            enviar_alerta_criticas=bool(enviar_alerta),
         )
 
         cruzamento: dict[str, Any] | None = None

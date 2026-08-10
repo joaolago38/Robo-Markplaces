@@ -1,7 +1,13 @@
 {
-  "timestamp": "2026-08-10T13:52:00.228716+00:00",
-  "ok": true,
-  "falhas": 0,
+  "timestamp": "2026-08-10T14:37:55.000770+00:00",
+  "ok": false,
+  "falhas": 1,
   "total": 1,
-  "agentes_falha": []
+  "agentes_falha": [
+    {
+      "id": "x",
+      "nome": "x",
+      "erro": "boom"
+    }
+  ]
 }

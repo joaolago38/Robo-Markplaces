@@ -176,6 +176,9 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             },
         ), patch(
             "integracoes.ml.coleta_demanda_ml.emitir_metricas_demanda",
+        ), patch(
+            "integracoes.ml.acoes_funil_ml.processar_e_persistir_acoes",
+            return_value={"ok": True, "acoes": [], "criticas": 0, "alerta_enviado": False},
         ):
             out = agente.executar(enviar_alerta=True)
 
@@ -382,6 +385,9 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             },
         ), patch(
             "integracoes.ml.coleta_demanda_ml.emitir_metricas_demanda",
+        ), patch(
+            "integracoes.ml.acoes_funil_ml.processar_e_persistir_acoes",
+            return_value={"ok": True, "acoes": [], "criticas": 0, "alerta_enviado": False},
         ):
             out = agente.executar(enviar_alerta=True)
         self.assertTrue(out["ok"])
