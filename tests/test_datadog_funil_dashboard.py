@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 
 from scripts import completar_datadog_saude as dd
 
@@ -19,9 +20,18 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.filamentos.ml.funil.acoes_criticas",
             "robo.masterprint_petg.blindspot.vendas_api",
             "robo.filamentos.ml.rivais.visitas_amostra",
+            "robo.masterprint_petg.blindspot.cegos",
+            "robo.filamentos.ml.blindspot.cegos",
+            "robo.ml.busca.sites_search_403",
+            "robo.filamentos.ml.funil.acao.baixar_preco_ou_listing",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_MP_FUNIL_ID)
+
+    def test_impala_tem_ads_probe(self):
+        # Grupo Impala é montado por função que precisa de helpers; busca no source
+        src = Path(dd.__file__).read_text(encoding="utf-8")
+        self.assertIn("robo.ads.probe_falha", src)
 
     def test_monitor_funil_nas_desejadas(self):
         nomes = [m["name"] for m in dd._monitores_desejados()]

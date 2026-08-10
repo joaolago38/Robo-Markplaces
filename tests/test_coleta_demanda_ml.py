@@ -139,17 +139,31 @@ class ColetaDemandaMlTests(unittest.TestCase):
             cd.emitir_metricas_demanda(
                 "pref",
                 funil={
-                    "totais": {"visitas_7d": 10, "unidades_7d": 1, "conversao_pct": 10.0}
+                    "totais": {"visitas_7d": 10, "unidades_7d": 0, "conversao_pct": None},
+                    "pedidos_ok": True,
+                    "visitas_ok": True,
                 },
                 pontos_cegos={
                     "cegos": 3,
-                    "itens": [{"id": "vendas_concorrente", "status": "cego"}],
+                    "parciais": 1,
+                    "oks": 2,
+                    "itens": [
+                        {"id": "vendas_concorrente", "status": "cego"},
+                        {"id": "busca_oficial", "status": "cego"},
+                        {"id": "funil_proprio", "status": "ok"},
+                    ],
                 },
                 visitas_enriquecidas=2,
             )
             nomes = [c.args[0] for c in mock_g.call_args_list]
             self.assertIn("pref.funil.visitas_7d", nomes)
+            self.assertIn("pref.funil.conversao_pct", nomes)
+            self.assertIn("pref.funil.conversao_confiavel", nomes)
             self.assertIn("pref.blindspot.vendas_api", nomes)
+            self.assertIn("pref.blindspot.cegos", nomes)
+            self.assertIn("pref.blindspot.parciais", nomes)
+            self.assertIn("pref.blindspot.busca_oficial", nomes)
+            self.assertIn("pref.blindspot.funil_proprio", nomes)
 
     def test_formatar_visitas_rivais(self):
         linhas = cd.formatar_secao_visitas_rivais(

@@ -25,6 +25,7 @@ from core.config import (
     ML_SITE_ID,
     ROOT,
 )
+from core.datadog_metrics import incrementar
 from core.ddg_lite import buscar as ddg_buscar
 from integracoes.ml.busca_externa_brave import buscar_mercadolivre as brave_buscar_ml
 
@@ -199,6 +200,10 @@ def _buscar_via_api(termo: str, limite: int) -> list[dict[str, Any]]:
         r = request("GET", url, params=params, timeout=20)
 
     if r.status_code == 403:
+        try:
+            incrementar("ml.busca.sites_search_403")
+        except Exception:
+            pass
         ml_client._log_erro_leitura_termo(
             "buscar_concorrentes_por_termo",
             termo,

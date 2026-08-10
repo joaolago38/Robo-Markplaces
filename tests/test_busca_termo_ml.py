@@ -95,6 +95,26 @@ class TestExecutarBuscaTermo(unittest.TestCase):
         self.assertEqual(out[0]["item_id"], "MLB123")
         self.assertEqual(out[0]["fonte_busca"], "ddg")
 
+    def test_403_incrementa_metrica_busca(self):
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            ml_client, "_request_ml", return_value=_mock_resp({}, status=403)
+        ), patch.object(ml_client, "listar_meus_anuncios", return_value=[]), patch(
+            "integracoes.ml.busca_termo_ml.incrementar"
+        ) as mock_inc, patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CACHE", False
+        ):
+            out = busca_termo_ml.executar_busca_termo("kit x", limite=3)
+        self.assertEqual(out, [])
+        mock_inc.assert_any_call("ml.busca.sites_search_403")
+
     def test_403_usa_fallback_products_api(self):
         with patch.object(ml_client, "_enabled", return_value=True), patch.object(
             ml_client, "_request_ml"

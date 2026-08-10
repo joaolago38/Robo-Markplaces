@@ -1644,13 +1644,34 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 2, "x": 10, "y": 22},
                     "id": 750006,
                 },
+                {
+                    **_qv(
+                        "Ads probe falha",
+                        "sum:robo.ads.probe_falha{*}.as_count()",
+                        green_gt=None,
+                        red_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 24},
+                    "id": 750007,
+                },
+                {
+                    **_qv(
+                        "Ads avaliacoes",
+                        "avg:robo.ads.avaliacoes{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 24},
+                    "id": 750008,
+                },
                 # --- Alertas de canal + decisao ---
                 {
                     **_qv(
                         "Vendas WA Notificadas",
                         "sum:robo.vendas.notificadas{*}.as_count()",
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 0, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 26},
                     "id": 750010,
                 },
                 {
@@ -1660,7 +1681,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         red_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 26},
                     "id": 750011,
                 },
                 {
@@ -1670,7 +1691,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         yellow_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 4, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 26},
                     "id": 750012,
                 },
                 {
@@ -1678,7 +1699,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "Itens analisados (margem)",
                         "sum:robo.vendas.itens_analisados{*}.as_count()",
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 26},
                     "id": 750014,
                 },
                 {
@@ -1690,7 +1711,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=50,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 8, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 26},
                     "id": 750013,
                 },
                 {
@@ -1702,7 +1723,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=10,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 10, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 26},
                     "id": 750015,
                 },
                 {
@@ -1713,7 +1734,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 0, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 28},
                     "id": 750020,
                 },
                 {
@@ -1725,7 +1746,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 3, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 28},
                     "id": 750021,
                 },
                 {
@@ -1737,7 +1758,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 6, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 28},
                     "id": 750022,
                 },
                 {
@@ -1749,7 +1770,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 28},
                     "id": 750023,
                 },
             ],
@@ -1879,7 +1900,10 @@ def _grupo_funil_demanda_masterprint() -> dict[str, Any]:
                             "**Visitas rivais** = proxy de demanda (sem vendas). "
                             "**Ações críticas** = visitas sem conversão / conversão baixa → "
                             "otimizador_listing prioriza esses IDs.\n"
-                            "Blindspot vendas API = 1 enquanto `sold_quantity` de rivais = 403."
+                            "Blindspot vendas API = 1 enquanto `sold_quantity` de rivais = 403.\n"
+                            "`blindspot.cegos` = quantos gaps estruturais (busca 403, claims, reviews…).\n"
+                            "Métricas `*.funil.*` / `*.blindspot.*` aparecem após a 1ª rodada "
+                            "dos monitores PETG / Filamentos com o código novo."
                         ),
                         "background_color": "green",
                         "font_size": "14",
@@ -2202,6 +2226,178 @@ def _grupo_funil_demanda_masterprint() -> dict[str, Any]:
                         ],
                     },
                     "layout": {"height": 3, "width": 6, "x": 6, "y": 9},
+                },
+                {
+                    **_qv(
+                        "PETG blindspots cegos",
+                        "avg:robo.masterprint_petg.blindspot.cegos{*}",
+                        aggregator="avg",
+                        yellow_gt=2,
+                        red_gt=4,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 12},
+                    "id": 760440,
+                },
+                {
+                    **_qv(
+                        "Fil blindspots cegos",
+                        "avg:robo.filamentos.ml.blindspot.cegos{*}",
+                        aggregator="avg",
+                        yellow_gt=2,
+                        red_gt=4,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 12},
+                    "id": 760441,
+                },
+                {
+                    **_qv(
+                        "PETG rodadas monitor",
+                        "sum:robo.masterprint_petg.rodadas{*}.as_count()",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 12},
+                    "id": 760442,
+                },
+                {
+                    **_qv(
+                        "Fil rodadas monitor",
+                        "sum:robo.filamentos.ml.rodadas{*}.as_count()",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 12},
+                    "id": 760443,
+                },
+                {
+                    **_qv(
+                        "ML busca sites 403",
+                        "sum:robo.ml.busca.sites_search_403{*}.as_count()",
+                        aggregator="sum",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 12},
+                    "id": 760444,
+                },
+                {
+                    **_qv(
+                        "ML sem venda (itens)",
+                        "avg:robo.ml.sem_venda.total{*}",
+                        aggregator="avg",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 12},
+                    "id": 760445,
+                },
+                {
+                    "id": 760450,
+                    "definition": {
+                        "title": "Acoes por tipo (Filamentos) — baixar_preco / titulo_ads / conversao",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "baixar_preco_ou_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "melhorar_titulo_e_ads{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "melhorar_conversao_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "republicar_ou_ads{*}"
+                                        ),
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "baixar_preco", "formula": "query1"},
+                                    {"alias": "titulo_ads", "formula": "query2"},
+                                    {"alias": "conversao_listing", "formula": "query3"},
+                                    {"alias": "republicar_ads", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 14},
+                },
+                {
+                    "id": 760451,
+                    "definition": {
+                        "title": "Blindspots estruturais — cegos / parciais / oks",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.blindspot.cegos{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.filamentos.ml.blindspot.cegos{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_petg.blindspot.parciais{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": "avg:robo.filamentos.ml.blindspot.oks{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "petg_cegos", "formula": "query1"},
+                                    {"alias": "fil_cegos", "formula": "query2"},
+                                    {"alias": "petg_parciais", "formula": "query3"},
+                                    {"alias": "fil_oks", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 14},
                 },
             ],
         },

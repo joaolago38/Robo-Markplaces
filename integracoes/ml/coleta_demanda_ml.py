@@ -416,14 +416,42 @@ def emitir_metricas_demanda(
         return
     fun = funil or {}
     tot = fun.get("totais") or {}
-    gauge(f"{pref}.funil.visitas_7d", float(_i(tot.get("visitas_7d"))))
-    gauge(f"{pref}.funil.unidades_7d", float(_i(tot.get("unidades_7d"))))
+    visitas = _i(tot.get("visitas_7d"))
+    unidades = _i(tot.get("unidades_7d"))
+    gauge(f"{pref}.funil.visitas_7d", float(visitas))
+    gauge(f"{pref}.funil.unidades_7d", float(unidades))
+    gauge(f"{pref}.funil.visitas_convertidas_proxy", float(unidades))
     conv = tot.get("conversao_pct")
     if conv is not None:
         gauge(f"{pref}.funil.conversao_pct", float(conv))
+    elif visitas > 0:
+        # Visitas sem venda no período → taxa 0 (evita widget vazio no Datadog)
+        gauge(f"{pref}.funil.conversao_pct", 0.0)
+    gauge(
+        f"{pref}.funil.conversao_confiavel",
+        1.0 if tot.get("conversao_confiavel") else 0.0,
+    )
+    gauge(f"{pref}.funil.pedidos_ok", 1.0 if fun.get("pedidos_ok") else 0.0)
+    gauge(f"{pref}.funil.visitas_ok", 1.0 if fun.get("visitas_ok") else 0.0)
     gauge(f"{pref}.rivais.visitas_amostra", float(_i(visitas_enriquecidas)))
     pc = pontos_cegos or {}
     gauge(f"{pref}.blindspot.cegos", float(_i(pc.get("cegos"))))
+    gauge(f"{pref}.blindspot.parciais", float(_i(pc.get("parciais"))))
+    gauge(f"{pref}.blindspot.oks", float(_i(pc.get("oks"))))
+    for item in pc.get("itens") or []:
+        if not isinstance(item, dict):
+            continue
+        bid = str(item.get("id") or "").strip()
+        if not bid:
+            continue
+        st = str(item.get("status") or "")
+        if st == "cego":
+            val = 1.0
+        elif st == "parcial":
+            val = 0.5
+        else:
+            val = 0.0
+        gauge(f"{pref}.blindspot.{bid}", val)
     vendas_cego = 1.0
     for item in pc.get("itens") or []:
         if item.get("id") == "vendas_concorrente":
