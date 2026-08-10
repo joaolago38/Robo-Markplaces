@@ -155,8 +155,8 @@ class ColetaDemandaMlTests(unittest.TestCase):
         linhas = cd.formatar_secao_visitas_rivais(
             [{"titulo": "RIVAL", "visitas_7d": 50, "preco": 99.9}]
         )
-        self.assertTrue(any("Rivais" in l for l in linhas))
-        self.assertTrue(any("50" in l for l in linhas))
+        self.assertTrue(any("Rivais" in linha for linha in linhas))
+        self.assertTrue(any("50" in linha for linha in linhas))
 
 
 if __name__ == "__main__":

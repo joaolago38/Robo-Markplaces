@@ -186,12 +186,12 @@ def montar_mensagem_telegram(
         for p in (consolidado.get("mais_vendidos") or [])[:3]:
             linhas.append(_linha_anuncio(p, modo="vendas"))
 
+    from integracoes.ml.acoes_funil_ml import formatar_secao_acoes_funil
     from integracoes.ml.coleta_demanda_ml import (
         formatar_secao_funil,
         formatar_secao_pontos_cegos,
         top_por_visitas,
     )
-    from integracoes.ml.acoes_funil_ml import formatar_secao_acoes_funil
 
     rivais_vis = top_por_visitas(consolidado.get("produtos") or [], top_n=5)
     if rivais_vis:
@@ -292,8 +292,8 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             visitas_enriquecidas=n_vis,
             contexto="masterprint_petg",
         )
-        from integracoes.ml.acoes_funil_ml import processar_e_persistir_acoes
         from integracoes.masterprint.ramo import chat_gestor_masterprint
+        from integracoes.ml.acoes_funil_ml import processar_e_persistir_acoes
 
         consolidado["acoes_funil"] = processar_e_persistir_acoes(
             funil,

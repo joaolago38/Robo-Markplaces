@@ -314,12 +314,12 @@ def montar_mensagem_telegram(
                 f"{an.get('marca', '?')} | {an.get('cor', '?')} | {an.get('material', '?')}"
             )
 
+    from integracoes.ml.acoes_funil_ml import formatar_secao_acoes_funil
     from integracoes.ml.coleta_demanda_ml import (
         formatar_secao_funil,
         formatar_secao_pontos_cegos,
         formatar_secao_visitas_rivais,
     )
-    from integracoes.ml.acoes_funil_ml import formatar_secao_acoes_funil
 
     linhas.extend(formatar_secao_visitas_rivais(consolidado.get("produtos_unicos") or top))
     linhas.extend(formatar_secao_funil(consolidado.get("funil_proprio")))
