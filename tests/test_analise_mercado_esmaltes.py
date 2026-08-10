@@ -63,6 +63,25 @@ class AnaliseMercadoEsmaltesTests(unittest.TestCase):
         self.assertEqual(am.fmt_vendas_amostra(0), "n/d")
         self.assertEqual(am.fmt_vendas_amostra(12), "12 vend.")
 
+    def test_fmt_base_volume(self):
+        self.assertEqual(
+            am.fmt_base_volume("vendas", quantidade_vendida=120),
+            "120 vend.",
+        )
+        self.assertEqual(
+            am.fmt_base_volume("avaliacoes", volume_proxy=40),
+            "base: 40 avaliações (sem vendas na API)",
+        )
+        self.assertEqual(
+            am.fmt_base_volume("seller", volume_proxy=900),
+            "base: seller grande (sem vendas na API)",
+        )
+        self.assertEqual(
+            am.fmt_base_volume("presenca"),
+            "base: só aparece na busca (vendas n/d)",
+        )
+        self.assertNotIn("proxy", am.fmt_base_volume("presenca"))
+
     def test_gerar_propostas_competir(self):
         segmento = {
             "id": "seg-kit5",

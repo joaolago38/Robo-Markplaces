@@ -135,6 +135,34 @@ def fmt_vendas_amostra(valor: Any, *, sufixo: str = "vend.") -> str:
     return f"{n} {sufixo}"
 
 
+def fmt_base_volume(
+    fonte: str | None,
+    *,
+    volume_proxy: Any = None,
+    quantidade_vendida: Any = None,
+) -> str:
+    """
+    Texto legível da base de ranking (Telegram).
+    Quando há vendas na API: 'N vend.'; senão explica o proxy usado.
+    """
+    vend = _as_int(quantidade_vendida)
+    if vend > 0:
+        return f"{vend} vend."
+    fonte_n = str(fonte or "presenca").strip().lower().replace("ç", "c")
+    proxy = _as_int(volume_proxy)
+    if fonte_n == "vendas":
+        return f"{proxy} vend." if proxy > 0 else "n/d"
+    if fonte_n == "avaliacoes":
+        if proxy > 0:
+            return f"base: {proxy} avaliações (sem vendas na API)"
+        return "base: avaliações (sem vendas na API)"
+    if fonte_n == "seller":
+        return "base: seller grande (sem vendas na API)"
+    if fonte_n in ("presenca", "anuncios"):
+        return "base: só aparece na busca (vendas n/d)"
+    return f"base: {fonte_n} (vendas n/d)"
+
+
 def extrair_cores_titulo(titulo: str) -> list[str]:
     norm = _normalizar(titulo)
     encontradas: list[str] = []
@@ -522,10 +550,11 @@ def gerar_propostas_competir(
 
     for op in oportunidades[:3]:
         margem = op.get("margem") or {}
-        vol_txt = fmt_vendas_amostra(op.get("quantidade_vendida"))
-        if vol_txt == "n/d":
-            fonte = str(op.get("fonte_volume") or "presenca")
-            vol_txt = f"proxy {fonte}"
+        vol_txt = fmt_base_volume(
+            op.get("fonte_volume"),
+            volume_proxy=op.get("volume_proxy"),
+            quantidade_vendida=op.get("quantidade_vendida"),
+        )
         propostas.append(
             {
                 "prioridade": "alta",
