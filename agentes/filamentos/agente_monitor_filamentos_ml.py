@@ -33,7 +33,11 @@ from core.datadog_metrics import gauge, incrementar
 from core.graficos import grafico_evolucao
 from core.notificador import alertar_gestor, chave_resumo_periodo, enviar_foto_gestor, gestor_telegram_configurado
 from core.series_historica import formatar_comparativo, registrar_ponto
-from integracoes.filamentos.analise_filamentos_ml import consolidar_varredura, processar_termo
+from integracoes.filamentos.analise_filamentos_ml import (
+    consolidar_varredura,
+    fmt_vendas_amostra,
+    processar_termo,
+)
 from integracoes.filamentos.cruzamento_alibaba import cruzar_filamentos_ml_alibaba, formatar_secao_cruzamento
 from integracoes.filamentos.sourcing_filamentos import analisar_sourcing, formatar_secao_sourcing
 from integracoes.ml import ml_client
@@ -78,6 +82,14 @@ def _fmt_brl(valor: Any) -> str:
     if v <= 0:
         return "n/d"
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _fmt_volume_ranking(item: dict[str, Any]) -> str:
+    """Texto de volume: vendas reais ou n/d (não imprime '0 vendas')."""
+    vend = int(item.get("vendidos") or 0)
+    if vend > 0:
+        return f"{vend} vendas"
+    return "vendas n/d"
 
 
 def _resumo_por_material(resultados: list[dict[str, Any]]) -> list[str]:
@@ -129,6 +141,16 @@ def montar_mensagem_telegram(
     from core.telegram_explicacao import cabecalho_agente
 
     mats = " · ".join(MATERIAIS_MONITORADOS)
+    vendas_txt = fmt_vendas_amostra(consolidado.get("total_vendas"))
+    if vendas_txt == "n/d":
+        vendas_linha = "Vendas (API): *n/d* — ranking por presença/avaliações"
+    else:
+        com_dado = int(consolidado.get("anuncios_com_vendas_api") or 0)
+        vendas_linha = (
+            f"Vendas (API, {com_dado} anúncio(s)): *{int(consolidado.get('total_vendas') or 0):,}*".replace(
+                ",", "."
+            )
+        )
     linhas = [
         cabecalho_agente(
             "monitor_filamentos_ml",
@@ -136,8 +158,7 @@ def montar_mensagem_telegram(
         ),
         "",
         f"*Materiais monitorados:* {mats}",
-        f"Anúncios únicos: *{consolidado.get('total_filamentos_unicos', 0)}* | "
-        f"Vendas (proxy): *{consolidado.get('total_vendas', 0):,}*".replace(",", "."),
+        f"Anúncios únicos: *{consolidado.get('total_filamentos_unicos', 0)}* | {vendas_linha}",
         f"Preços: {_fmt_brl(consolidado.get('preco_min'))} – "
         f"{_fmt_brl(consolidado.get('preco_max'))} | média {_fmt_brl(consolidado.get('preco_medio'))}",
         f"Termos varridos: {consolidado.get('termos_varridos', 0)}",
@@ -158,26 +179,39 @@ def montar_mensagem_telegram(
             linhas.extend(["", comp])
 
     cores = consolidado.get("ranking_cores") or []
-    linhas.extend(["", "*Cores mais vendidas (ML)*"])
+    tem_vendas_cores = any(int(c.get("vendidos") or 0) > 0 for c in cores)
+    linhas.extend(
+        ["", "*Cores mais vendidas (ML)*" if tem_vendas_cores else "*Cores mais presentes (ML — vendas API n/d)*"]
+    )
     if cores:
         for item in cores[:8]:
+            vol = _fmt_volume_ranking(item)
             linhas.append(
-                f"• {item.get('cor', '?')}: {item.get('vendidos', 0)} vendas | "
+                f"• {item.get('cor', '?')}: {vol} | "
                 f"{item.get('anuncios', 0)} anúncio(s) | média {_fmt_brl(item.get('preco_medio'))}"
             )
     else:
         linhas.append("_Nenhuma cor detectada nos títulos nesta rodada._")
 
     ranking = consolidado.get("ranking_marcas") or []
-    linhas.extend(["", "*Marcas que mais vendem*"])
+    tem_vendas_marcas = any(int(m.get("vendidos") or 0) > 0 for m in ranking)
+    linhas.extend(
+        [
+            "",
+            "*Marcas que mais vendem*"
+            if tem_vendas_marcas
+            else "*Marcas mais presentes (vendas API n/d)*",
+        ]
+    )
     if ranking:
         for item in ranking[:8]:
+            vol = _fmt_volume_ranking(item)
             linhas.append(
-                f"• {item.get('marca', '?')}: {item.get('vendidos', 0)} vendas | "
+                f"• {item.get('marca', '?')}: {vol} | "
                 f"{item.get('anuncios', 0)} anúncio(s) | média {_fmt_brl(item.get('preco_medio'))}"
             )
     else:
-        linhas.append("_Nenhuma marca com vendas nesta rodada._")
+        linhas.append("_Nenhuma marca na amostra desta rodada._")
 
     baratos = consolidado.get("top_baratos") or []
     if baratos:
@@ -191,12 +225,21 @@ def montar_mensagem_telegram(
 
     top = consolidado.get("top_vendas") or []
     if top:
-        linhas.extend(["", "*Top anúncios (vendas)*"])
+        titulo_top = (
+            "*Top anúncios (vendas)*"
+            if any(int(a.get("quantidade_vendida") or 0) > 0 for a in top)
+            else "*Top anúncios (amostra — vendas API n/d)*"
+        )
+        linhas.extend(["", titulo_top])
         for i, an in enumerate(top[:8], 1):
             titulo = str(an.get("titulo") or "?")[:55]
+            vol = fmt_vendas_amostra(an.get("quantidade_vendida"))
+            extra = ""
+            if vol == "n/d" and an.get("avaliacoes"):
+                extra = f" | {an.get('avaliacoes')} aval."
             linhas.append(
                 f"{i}. {titulo} — {_fmt_brl(an.get('preco'))} | "
-                f"{int(an.get('quantidade_vendida') or 0)} vendas | "
+                f"{vol}{extra} | "
                 f"{an.get('marca', '?')} | {an.get('cor', '?')} | {an.get('material', '?')}"
             )
 

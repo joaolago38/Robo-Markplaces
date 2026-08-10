@@ -87,6 +87,67 @@ _COR_EN: dict[str, str] = {
 }
 
 
+def _as_int(valor: Any) -> int:
+    try:
+        return max(0, int(valor or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def vendas_api(anuncio: dict[str, Any] | None) -> int:
+    """sold_quantity real da API (0 = ausente/zerado para concorrentes)."""
+    if not isinstance(anuncio, dict):
+        return 0
+    return _as_int(anuncio.get("quantidade_vendida") or anuncio.get("sold_quantity"))
+
+
+def avaliacoes_anuncio(anuncio: dict[str, Any] | None) -> int:
+    if not isinstance(anuncio, dict):
+        return 0
+    metricas = anuncio.get("metricas") if isinstance(anuncio.get("metricas"), dict) else {}
+    return _as_int(
+        anuncio.get("avaliacoes") or anuncio.get("reviews") or metricas.get("avaliacoes")
+    )
+
+
+def seller_porte(anuncio: dict[str, Any] | None) -> int:
+    if not isinstance(anuncio, dict):
+        return 0
+    seller = anuncio.get("seller") if isinstance(anuncio.get("seller"), dict) else {}
+    return _as_int(
+        anuncio.get("seller_transactions")
+        or anuncio.get("transactions_total")
+        or seller.get("transactions_total")
+        or seller.get("transactions")
+    )
+
+
+def volume_proxy_anuncio(anuncio: dict[str, Any] | None) -> tuple[int, str]:
+    """1) vendas API  2) avaliações  3) porte seller  4) presença (1)."""
+    vend = vendas_api(anuncio)
+    if vend > 0:
+        return vend, "vendas"
+    aval = avaliacoes_anuncio(anuncio)
+    if aval > 0:
+        return aval, "avaliacoes"
+    porte = seller_porte(anuncio)
+    if porte > 0:
+        return porte, "seller"
+    return 1, "presenca"
+
+
+def chave_ranking_anuncio(anuncio: dict[str, Any]) -> tuple[int, int, float]:
+    proxy, _ = volume_proxy_anuncio(anuncio)
+    return (vendas_api(anuncio), proxy, float(anuncio.get("nota") or 0))
+
+
+def fmt_vendas_amostra(valor: Any, *, sufixo: str = "vendas") -> str:
+    n = _as_int(valor)
+    if n <= 0:
+        return "n/d"
+    return f"{n} {sufixo}"
+
+
 def cor_para_termo_en(cor: str) -> str:
     return _COR_EN.get(cor, _normalizar(cor))
 
@@ -178,13 +239,19 @@ def classificar_anuncio(
         return None
 
     preco = float(anuncio.get("preco") or anuncio.get("price") or 0)
-    vendidos = int(anuncio.get("quantidade_vendida") or anuncio.get("sold_quantity") or 0)
+    vendidos = vendas_api(anuncio)
+    seller = anuncio.get("seller") if isinstance(anuncio.get("seller"), dict) else {}
+    sid = anuncio.get("seller_id") or seller.get("id")
+    if not sid and isinstance(anuncio.get("seller"), (str, int)):
+        sid = anuncio.get("seller")
     return {
         "item_id": str(anuncio.get("item_id") or anuncio.get("id") or ""),
         "titulo": titulo[:140],
         "preco": preco,
         "quantidade_vendida": max(0, vendidos),
-        "seller_id": str(anuncio.get("seller_id") or anuncio.get("seller") or "").strip(),
+        "avaliacoes": avaliacoes_anuncio(anuncio),
+        "seller_transactions": seller_porte(anuncio),
+        "seller_id": str(sid or "").strip(),
         "marca": detectar_marca(titulo),
         "material": detectar_material(titulo, fallback=material_esperado),
         "cor": detectar_cor_principal(titulo),
@@ -224,39 +291,60 @@ def _ranking(produtos: list[dict[str, Any]], chave: str, top_n: int = 12) -> lis
     totais: dict[str, dict[str, Any]] = {}
     for p in produtos:
         nome = str(p.get(chave) or "Indefinido")
-        vendidos = int(p.get("quantidade_vendida") or 0)
+        vendidos = vendas_api(p)
+        proxy, fonte = volume_proxy_anuncio(p)
         preco = float(p.get("preco") or 0)
         bucket = totais.setdefault(
             nome,
-            {chave: nome, "vendidos": 0, "anuncios": 0, "preco_medio": 0.0, "_precos": []},
+            {
+                chave: nome,
+                "vendidos": 0,
+                "volume_proxy": 0,
+                "anuncios": 0,
+                "fonte_volume": "presenca",
+                "preco_medio": 0.0,
+                "_precos": [],
+                "_fontes": {},
+            },
         )
         bucket["vendidos"] += max(0, vendidos)
+        bucket["volume_proxy"] += proxy
         bucket["anuncios"] += 1
+        bucket["_fontes"][fonte] = int(bucket["_fontes"].get(fonte) or 0) + 1
         if preco > 0:
             bucket["_precos"].append(preco)
 
     ranking: list[dict[str, Any]] = []
     for item in totais.values():
         precos = item.pop("_precos", [])
+        fontes: dict[str, int] = item.pop("_fontes", {})
         if precos:
             item["preco_medio"] = round(sum(precos) / len(precos), 2)
+        if item["vendidos"] > 0:
+            item["fonte_volume"] = "vendas"
+        elif fontes:
+            item["fonte_volume"] = max(fontes.items(), key=lambda kv: kv[1])[0]
         ranking.append(item)
-    ranking.sort(key=lambda x: (x["vendidos"], x["anuncios"]), reverse=True)
+    ranking.sort(
+        key=lambda x: (x["vendidos"], x.get("volume_proxy", 0), x["anuncios"]),
+        reverse=True,
+    )
     for i, item in enumerate(ranking[:top_n], 1):
         item["rank"] = i
     return ranking[:top_n]
 
 
 def ranking_cores(produtos: list[dict[str, Any]], top_n: int = 10) -> list[dict[str, Any]]:
-    """Ranking ponderado por vendas; anúncios sem cor vão para Indefinida."""
+    """Ranking por vendas API; sem sold_quantity, pondera por avaliações/presença."""
     totais: dict[str, dict[str, Any]] = {}
     for p in produtos:
         cores = list(p.get("cores") or [])
         if not cores:
             cores = [str(p.get("cor") or "Indefinida")]
-        vendidos = int(p.get("quantidade_vendida") or 0)
+        vendidos = vendas_api(p)
+        proxy, fonte = volume_proxy_anuncio(p)
         preco = float(p.get("preco") or 0)
-        peso = max(1, vendidos)
+        peso = proxy if proxy > 0 else 1
         for cor in cores:
             bucket = totais.setdefault(
                 cor,
@@ -265,23 +353,36 @@ def ranking_cores(produtos: list[dict[str, Any]], top_n: int = 10) -> list[dict[
                     "vendidos": 0,
                     "anuncios": 0,
                     "peso_vendas": 0,
+                    "volume_proxy": 0,
+                    "fonte_volume": "presenca",
                     "preco_medio": 0.0,
                     "_precos": [],
+                    "_fontes": {},
                 },
             )
             bucket["vendidos"] += max(0, vendidos)
             bucket["anuncios"] += 1
             bucket["peso_vendas"] += peso
+            bucket["volume_proxy"] += proxy
+            bucket["_fontes"][fonte] = int(bucket["_fontes"].get(fonte) or 0) + 1
             if preco > 0:
                 bucket["_precos"].append(preco)
 
     ranking: list[dict[str, Any]] = []
     for item in totais.values():
         precos = item.pop("_precos", [])
+        fontes: dict[str, int] = item.pop("_fontes", {})
         if precos:
             item["preco_medio"] = round(sum(precos) / len(precos), 2)
+        if item["vendidos"] > 0:
+            item["fonte_volume"] = "vendas"
+        elif fontes:
+            item["fonte_volume"] = max(fontes.items(), key=lambda kv: kv[1])[0]
         ranking.append(item)
-    ranking.sort(key=lambda x: (x["peso_vendas"], x["vendidos"], x["anuncios"]), reverse=True)
+    ranking.sort(
+        key=lambda x: (x["vendidos"], x["peso_vendas"], x["anuncios"]),
+        reverse=True,
+    )
     for i, item in enumerate(ranking[:top_n], 1):
         item["rank"] = i
     return ranking[:top_n]
@@ -299,14 +400,14 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
             iid = str(prod.get("item_id") or "").strip()
             chave = iid or f"{prod.get('titulo')}|{prod.get('preco')}"
             atual = por_item.get(chave)
-            vendas = int(prod.get("quantidade_vendida") or 0)
-            if not atual or vendas > int(atual.get("quantidade_vendida") or 0):
+            if not atual or chave_ranking_anuncio(prod) > chave_ranking_anuncio(atual):
                 por_item[chave] = prod
 
     unicos = list(por_item.values())
     precos = [float(p.get("preco") or 0) for p in unicos if float(p.get("preco") or 0) > 0]
-    total_vendas = sum(int(p.get("quantidade_vendida") or 0) for p in unicos)
-    top_vendas = sorted(unicos, key=lambda x: int(x.get("quantidade_vendida") or 0), reverse=True)
+    com_vendas = [p for p in unicos if vendas_api(p) > 0]
+    total_vendas = sum(vendas_api(p) for p in com_vendas)
+    top_vendas = sorted(unicos, key=chave_ranking_anuncio, reverse=True)
     top_baratos = sorted(
         [p for p in unicos if float(p.get("preco") or 0) > 0],
         key=lambda x: float(x.get("preco") or 0),
@@ -316,6 +417,8 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "total_filamentos_unicos": len(unicos),
         "total_vendas": total_vendas,
+        "vendas_proxy_confiavel": total_vendas > 0,
+        "anuncios_com_vendas_api": len(com_vendas),
         "termos_varridos": termos_ok,
         "preco_medio": round(sum(precos) / len(precos), 2) if precos else 0.0,
         "preco_min": round(min(precos), 2) if precos else 0.0,
