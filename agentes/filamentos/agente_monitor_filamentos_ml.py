@@ -35,8 +35,10 @@ from core.notificador import alertar_gestor, chave_resumo_periodo, enviar_foto_g
 from core.series_historica import formatar_comparativo, registrar_ponto
 from integracoes.filamentos.analise_filamentos_ml import (
     consolidar_varredura,
+    enriquecer_avaliacoes_amostra,
     fmt_vendas_amostra,
     processar_termo,
+    resumo_decisao_filamentos,
 )
 from integracoes.filamentos.cruzamento_alibaba import cruzar_filamentos_ml_alibaba, formatar_secao_cruzamento
 from integracoes.filamentos.sourcing_filamentos import analisar_sourcing, formatar_secao_sourcing
@@ -90,6 +92,69 @@ def _fmt_volume_ranking(item: dict[str, Any]) -> str:
     if vend > 0:
         return f"{vend} vendas"
     return "vendas n/d"
+
+
+def _custo_masterprint_1kg() -> float | None:
+    try:
+        from integracoes.filamentos.custos_masterprint_petg import carregar_tabela_custos
+
+        tab = carregar_tabela_custos()
+        c = float(tab.get("custo_padrao_1kg_brl") or 0)
+        return c if c > 0 else None
+    except Exception:
+        return None
+
+
+def _montar_secao_decisao(consolidado: dict[str, Any]) -> list[str]:
+    from core.config import FILAMENTOS_SOURCING_TAXA_ML_PCT
+
+    decisao = consolidado.get("decisao") or resumo_decisao_filamentos(
+        consolidado,
+        custo_1kg_brl=_custo_masterprint_1kg(),
+        taxa_ml_pct=FILAMENTOS_SOURCING_TAXA_ML_PCT,
+    )
+    fonte = str(decisao.get("fonte_cores") or "presenca_anuncios")
+    conf = int(decisao.get("confianca_cores_pct") or 25)
+    linhas = [
+        "",
+        "*🎯 Decisão (o que usar / o que ignorar)*",
+        f"_Confiança cores: ~{conf}% (fonte: {fonte})_",
+        "• *Usar:* faixa de preço, sortimento, custo×margem",
+        "• *Não usar:* volume de vendas da API (concorrente = n/d)",
+    ]
+    top = decisao.get("top_cores") or []
+    if top:
+        linhas.append(f"• *Cores em evidência:* {', '.join(str(c) for c in top)}")
+    sat = decisao.get("cores_saturadas") or []
+    if sat:
+        linhas.append(f"• *Mais concorridas:* {', '.join(str(c) for c in sat)}")
+    nicho = decisao.get("cores_nicho") or []
+    if nicho:
+        linhas.append(f"• *Nicho (poucos anúncios):* {', '.join(str(c) for c in nicho)}")
+
+    custo = decisao.get("custo_1kg_brl")
+    preco_med = float(decisao.get("preco_medio") or 0)
+    piso = decisao.get("preco_piso_sugerido")
+    margem = decisao.get("margem_no_preco_medio") or {}
+    if custo and preco_med > 0:
+        linhas.append(
+            f"• *Custo Masterprint 1kg:* {_fmt_brl(custo)} | "
+            f"mercado médio {_fmt_brl(preco_med)}"
+        )
+        if margem.get("ok"):
+            linhas.append(
+                f"• *Margem no preço médio:* {margem.get('margem_pct')}% "
+                f"({_fmt_brl(margem.get('margem_brl'))}/un após taxa)"
+            )
+        if piso:
+            linhas.append(
+                f"• *Preço piso (~{decisao.get('margem_alvo_pct')}% alvo):* {_fmt_brl(piso)}"
+            )
+    linhas.append(
+        "• *Próximo passo:* validar 3–5 MLB da 1ª página (preço/frete/aval.) "
+        "e acompanhar visitas→vendas dos *seus* anúncios"
+    )
+    return linhas
 
 
 def _resumo_por_material(resultados: list[dict[str, Any]]) -> list[str]:
@@ -249,6 +314,8 @@ def montar_mensagem_telegram(
     if sourcing is not None:
         linhas.extend(formatar_secao_sourcing(sourcing, fmt_brl=_fmt_brl))
 
+    linhas.extend(_montar_secao_decisao(consolidado))
+
     linhas.extend(["", "*Por termo de busca*"])
     for r in resultados:
         if not r.get("ok"):
@@ -263,7 +330,7 @@ def montar_mensagem_telegram(
     return "\n".join(linhas).strip()
 
 
-def executar(enviar_alerta: bool = True) -> dict[str, Any]:
+def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> dict[str, Any]:
     try:
         if enviar_alerta and not gestor_telegram_configurado():
             logger.warning("Telegram gestor não configurado — alertas filamentos ML não serão entregues")
@@ -295,7 +362,19 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             if i < len(termos) - 1 and FILAMENTOS_ML_PAUSA_SEG > 0:
                 time.sleep(FILAMENTOS_ML_PAUSA_SEG)
 
+        # Avaliações = melhor proxy de demanda quando sold_quantity vem n/d
+        n_aval = enriquecer_avaliacoes_amostra(resultados, limite=15)
+        logger.info("Enriquecidos com avaliações: %s anúncio(s)", n_aval)
+
         consolidado = consolidar_varredura(resultados)
+        from core.config import FILAMENTOS_SOURCING_TAXA_ML_PCT
+
+        consolidado["decisao"] = resumo_decisao_filamentos(
+            consolidado,
+            custo_1kg_brl=_custo_masterprint_1kg(),
+            taxa_ml_pct=FILAMENTOS_SOURCING_TAXA_ML_PCT,
+        )
+        consolidado["avaliacoes_enriquecidas"] = n_aval
 
         cruzamento: dict[str, Any] | None = None
         if FILAMENTOS_ML_CRUZAR_ALIBABA:
@@ -404,6 +483,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     chave=chave,
                     cooldown_segundos=FILAMENTOS_ML_ALERTA_COOLDOWN_SEG,
                     agente_id="monitor_filamentos_ml",
+                    _ignorar_cooldown=forcar_telegram,
                 )
             )
             grafico = grafico_evolucao(
@@ -474,10 +554,18 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Monitor filamentos 3D ML × Alibaba")
     parser.add_argument("--sem-alerta", action="store_true")
+    parser.add_argument(
+        "--agora",
+        action="store_true",
+        help="Envia Telegram ignorando cooldown (pedido manual)",
+    )
     args = parser.parse_args(argv)
 
     logger.info("=== Monitor filamentos 3D ML × Alibaba ===")
-    out = executar(enviar_alerta=not args.sem_alerta)
+    out = executar(
+        enviar_alerta=not args.sem_alerta,
+        forcar_telegram=bool(args.agora),
+    )
     if not out.get("ok"):
         logger.error("Falhou: %s", out.get("erro"))
         return 1

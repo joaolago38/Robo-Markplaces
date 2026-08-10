@@ -1,6 +1,28 @@
 {
   "erros": [
     {
+      "fingerprint": "6bd386e0e78d2a0affac",
+      "primeira_vez": "2026-08-01T19:21:48.172963+00:00",
+      "ultima_vez": "2026-08-10T12:51:28.925208+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 12
+    },
+    {
+      "fingerprint": "5b3e3ad32aa0d6ed8be2",
+      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
+      "ultima_vez": "2026-08-10T12:43:41.074418+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 24
+    },
+    {
       "fingerprint": "7835a6676fa701a6460f",
       "primeira_vez": "2026-07-05T20:44:32.184596+00:00",
       "ultima_vez": "2026-08-08T22:10:51.152065+00:00",
@@ -43,17 +65,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 6
-    },
-    {
-      "fingerprint": "5b3e3ad32aa0d6ed8be2",
-      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-08-08T22:10:50.318903+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 22
     },
     {
       "fingerprint": "0b73de2bc1cf19630d64",
@@ -604,17 +615,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 10
-    },
-    {
-      "fingerprint": "6bd386e0e78d2a0affac",
-      "primeira_vez": "2026-08-01T19:21:48.172963+00:00",
-      "ultima_vez": "2026-08-08T22:02:57.462608+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 11
     },
     {
       "fingerprint": "d94cda7e7d717982cca9",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 15
     }
   ],
-  "atualizado_em": "2026-08-08T22:10:51.152065+00:00"
+  "atualizado_em": "2026-08-10T12:51:28.925208+00:00"
 }

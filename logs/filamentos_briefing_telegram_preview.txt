@@ -1,0 +1,69 @@
+🧵 *Filamentos 3D — Mercado Livre*
+
+_O que este agente faz:_
+_Varre no Mercado Livre anúncios de filamento TPU, PLA, PETG e ABS: preços, cores, marcas e ranking de vendas; compara com Alibaba (FOB/landed × preço ML) e decide sourcing COMPRAR\_BR vs IMPORTAR\_CHINA vs NAO\_COMPENSA com o catálogo de fornecedor nacional._
+
+_Quando roda:_
+_1x/dia às 08:30 BRT (Actions); fora do orquestrador 30 min_
+
+*Materiais monitorados:* TPU · PLA · PETG · ABS
+Anúncios únicos: *93* | Vendas (API): *n/d* — ranking por presença/avaliações
+Preços: R$ 86,00 – R$ 169,99 | média R$ 131,13
+Termos varridos: 5
+
+*Por material (TPU / PLA / PETG / ABS)*
+• *TPU*: 9 anúncio(s) | média R$ 154,19 | 1 busca(s)
+• *PLA*: 65 anúncio(s) | média R$ 133,04 | 2 busca(s)
+• *PETG*: 17 anúncio(s) | média R$ 126,50 | 1 busca(s)
+• *ABS*: 2 anúncio(s) | média R$ 109,90 | 1 busca(s)
+
+*Cores mais presentes (ML — vendas API n/d)*
+• Preto: vendas n/d | 39 anúncio(s) | média R$ 123,12
+• Azul: vendas n/d | 36 anúncio(s) | média R$ 135,35
+• Branco: vendas n/d | 5 anúncio(s) | média R$ 130,20
+• Amarelo: vendas n/d | 4 anúncio(s) | média R$ 129,45
+• Vermelho: vendas n/d | 4 anúncio(s) | média R$ 135,05
+• Indefinida: vendas n/d | 3 anúncio(s) | média R$ 158,00
+• Rosa: vendas n/d | 1 anúncio(s) | média R$ 169,00
+• Laranja: vendas n/d | 1 anúncio(s) | média R$ 169,00
+
+*Marcas mais presentes (vendas API n/d)*
+• Genérico/Outros: vendas n/d | 87 anúncio(s) | média R$ 132,45
+• Masterprint: vendas n/d | 5 anúncio(s) | média R$ 103,29
+• Creality: vendas n/d | 1 anúncio(s) | média R$ 156,00
+
+*Mais baratos (1kg proxy)*
+• R$ 86,00 — Filamento Petg 1kg Branco Fluion 3d (Genérico/Outros, Branco)
+• R$ 92,00 — Filamento Petg Preto 1,75mm 1kg Masterprint Impres (Masterprint, Preto)
+• R$ 99,90 — Filamento Petg Preto 1,75mm 1kg Masterprint Impres (Masterprint, Preto)
+• R$ 105,00 — Filamento Petg Preto 1,75mm 1kg Masterprint Impres (Masterprint, Preto)
+• R$ 109,56 — Filamento Petg Preto 1,75mm 1kg Masterprint Impres (Masterprint, Preto)
+
+*Top anúncios (amostra — vendas API n/d)*
+1. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 149,00 | n/d | Genérico/Outros | Indefinida | TPU
+2. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 169,00 | n/d | Genérico/Outros | Indefinida | TPU
+3. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 139,00 | n/d | Genérico/Outros | Branco | TPU
+4. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 149,00 | n/d | Genérico/Outros | Branco | TPU
+5. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 149,00 | n/d | Genérico/Outros | Branco | TPU
+6. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 149,00 | n/d | Genérico/Outros | Amarelo | TPU
+7. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 149,00 | n/d | Genérico/Outros | Amarelo | TPU
+8. Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Co — R$ 169,00 | n/d | Genérico/Outros | Rosa | TPU
+
+*🎯 Decisão (o que usar / o que ignorar)*
+_Confiança cores: ~25% (fonte: presenca_anuncios)_
+• *Usar:* faixa de preço, sortimento, custo×margem
+• *Não usar:* volume de vendas da API (concorrente = n/d)
+• *Cores em evidência:* Preto, Azul, Branco, Amarelo, Vermelho
+• *Mais concorridas:* Preto, Azul
+• *Nicho (poucos anúncios):* Rosa, Laranja
+• *Custo Masterprint 1kg:* R$ 45,96 | mercado médio R$ 131,13
+• *Margem no preço médio:* 49.0% (R$ 64,19/un após taxa)
+• *Preço piso (~25.0% alvo):* R$ 77,90
+• *Próximo passo:* validar 3–5 MLB da 1ª página (preço/frete/aval.) e acompanhar visitas→vendas dos *seus* anúncios
+
+*Por termo de busca*
+• Filamento TPU (TPU): R$ 139,00–R$ 169,00 (média R$ 154,56) | 9 de 9 anúncio(s)
+• Filamento PLA (PLA): R$ 113,89–R$ 159,77 (média R$ 126,89) | 35 de 35 anúncio(s)
+• Filamento PETG (PETG): R$ 86,00–R$ 169,99 (média R$ 123,52) | 17 de 17 anúncio(s)
+• Filamento ABS (ABS): R$ 109,90–R$ 109,90 (média R$ 109,90) | 2 de 2 anúncio(s)
+• Filamento PLA 1.75mm (PLA): R$ 119,90–R$ 142,99 (média R$ 134,78) | 30 de 30 anúncio(s)

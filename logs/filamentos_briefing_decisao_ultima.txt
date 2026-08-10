@@ -1,0 +1,26 @@
+Filamentos — briefing de decisão
+
+Anuncios unicos: 93 | Vendas API: n/d
+Preco: R$ 86,00 – R$ 169,99 | media R$ 131,13
+
+Cores (proxy presenca — NAO e ranking de vendas)
+- Preto: 39 anuncios | media R$ 123,12
+- Azul: 36 anuncios | media R$ 135,35
+- Branco: 5 anuncios | media R$ 130,20
+- Amarelo: 4 anuncios | media R$ 129,45
+- Vermelho: 4 anuncios | media R$ 135,05
+- Indefinida: 3 anuncios | media R$ 158,00
+- Rosa: 1 anuncios | media R$ 169,00
+- Laranja: 1 anuncios | media R$ 169,00
+
+🎯 Decisão (o que usar / o que ignorar)
+Confiança cores: ~25% (fonte: presencaanuncios)
+• Usar: faixa de preço, sortimento, custo×margem
+• Não usar: volume de vendas da API (concorrente = n/d)
+• Cores em evidência: Preto, Azul, Branco, Amarelo, Vermelho
+• Mais concorridas: Preto, Azul
+• Nicho (poucos anúncios): Rosa, Laranja
+• Custo Masterprint 1kg: R$ 45,96 | mercado médio R$ 131,13
+• Margem no preço médio: 49.0% (R$ 64,19/un após taxa)
+• Preço piso (~25.0% alvo): R$ 77,90
+• Próximo passo: validar 3–5 MLB da 1ª página (preço/frete/aval.) e acompanhar visitas→vendas dos seus anúncios
