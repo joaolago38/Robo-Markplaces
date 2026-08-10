@@ -63,6 +63,25 @@ class AnaliseMercadoEsmaltesTests(unittest.TestCase):
         self.assertEqual(am.fmt_vendas_amostra(0), "n/d")
         self.assertEqual(am.fmt_vendas_amostra(12), "12 vend.")
 
+    def test_fmt_base_volume(self):
+        self.assertEqual(
+            am.fmt_base_volume("vendas", quantidade_vendida=120),
+            "120 vend.",
+        )
+        self.assertEqual(
+            am.fmt_base_volume("avaliacoes", volume_proxy=40),
+            "base: 40 avaliações (sem vendas na API)",
+        )
+        self.assertEqual(
+            am.fmt_base_volume("seller", volume_proxy=900),
+            "base: seller grande (sem vendas na API)",
+        )
+        self.assertEqual(
+            am.fmt_base_volume("presenca"),
+            "base: só aparece na busca (vendas n/d)",
+        )
+        self.assertNotIn("proxy", am.fmt_base_volume("presenca"))
+
     def test_gerar_propostas_competir(self):
         segmento = {
             "id": "seg-kit5",
@@ -71,6 +90,7 @@ class AnaliseMercadoEsmaltesTests(unittest.TestCase):
         }
         referencia = {
             "sku": "IMP-BAIL-005",
+            "nome": "Kit 5 Bailarina Impala",
             "custo_total": 25.0,
             "meu_preco": 52.0,
             "taxa_marketplace_pct": 18,
@@ -96,7 +116,19 @@ class AnaliseMercadoEsmaltesTests(unittest.TestCase):
         self.assertIn("cores", tipos)
         altas = [p for p in props if p.get("prioridade") == "alta"]
         self.assertTrue(any(p.get("sku") == "IMP-BAIL-005" for p in altas))
+        textos_alta = " ".join(str(p.get("texto") or "") for p in altas)
+        self.assertIn("IMP-BAIL-005", textos_alta)
+        self.assertIn("Kit 5 Bailarina Impala", textos_alta)
 
+    def test_rotulo_produto(self):
+        self.assertEqual(am._rotulo_produto("IMP-SORT-006"), "*IMP-SORT-006*")
+        self.assertEqual(
+            am._rotulo_produto("IMP-SORT-006", "Kit 6 Sortido — Cores da Moda"),
+            "*IMP-SORT-006* (Kit 6 Sortido — Cores da Moda)",
+        )
+        longo = am._rotulo_produto("X", "A" * 60, max_nome=20)
+        self.assertIn("…", longo)
+        self.assertLessEqual(len(longo), len("*X* ()") + 20)
     def test_consolidar_mercado(self):
         r1 = {
             "ok": True,

@@ -135,6 +135,34 @@ def fmt_vendas_amostra(valor: Any, *, sufixo: str = "vend.") -> str:
     return f"{n} {sufixo}"
 
 
+def fmt_base_volume(
+    fonte: str | None,
+    *,
+    volume_proxy: Any = None,
+    quantidade_vendida: Any = None,
+) -> str:
+    """
+    Texto legível da base de ranking (Telegram).
+    Quando há vendas na API: 'N vend.'; senão explica o proxy usado.
+    """
+    vend = _as_int(quantidade_vendida)
+    if vend > 0:
+        return f"{vend} vend."
+    fonte_n = str(fonte or "presenca").strip().lower().replace("ç", "c")
+    proxy = _as_int(volume_proxy)
+    if fonte_n == "vendas":
+        return f"{proxy} vend." if proxy > 0 else "n/d"
+    if fonte_n == "avaliacoes":
+        if proxy > 0:
+            return f"base: {proxy} avaliações (sem vendas na API)"
+        return "base: avaliações (sem vendas na API)"
+    if fonte_n == "seller":
+        return "base: seller grande (sem vendas na API)"
+    if fonte_n in ("presenca", "anuncios"):
+        return "base: só aparece na busca (vendas n/d)"
+    return f"base: {fonte_n} (vendas n/d)"
+
+
 def extrair_cores_titulo(titulo: str) -> list[str]:
     norm = _normalizar(titulo)
     encontradas: list[str] = []
@@ -355,6 +383,17 @@ def _qtd_do_nome(nome: str) -> int | None:
     return None
 
 
+def _rotulo_produto(sku: str, nome: str | None = None, *, max_nome: int = 48) -> str:
+    """SKU + nome curto para Telegram (ex.: *IMP-SORT-006* (Kit 6 Sortido — Cores da Moda))."""
+    sku_s = str(sku or "?").strip() or "?"
+    nome_s = " ".join(str(nome or "").split())
+    if not nome_s:
+        return f"*{sku_s}*"
+    if len(nome_s) > max_nome:
+        nome_s = nome_s[: max_nome - 1].rstrip() + "…"
+    return f"*{sku_s}* ({nome_s})"
+
+
 def listar_oportunidades_margem(
     anuncios: list[dict[str, Any]],
     referencia: dict[str, Any],
@@ -495,6 +534,8 @@ def gerar_propostas_competir(
         return propostas
 
     sku = referencia.get("sku", "?")
+    nome = str(referencia.get("nome") or referencia.get("titulo_ml") or "").strip()
+    rotulo = _rotulo_produto(sku, nome)
     meu_preco = float(referencia.get("meu_preco") or 0)
     custo = float(referencia.get("custo_total") or 0)
     taxa = float(referencia.get("taxa_marketplace_pct") or 18)
@@ -509,18 +550,20 @@ def gerar_propostas_competir(
 
     for op in oportunidades[:3]:
         margem = op.get("margem") or {}
-        vol_txt = fmt_vendas_amostra(op.get("quantidade_vendida"))
-        if vol_txt == "n/d":
-            fonte = str(op.get("fonte_volume") or "presenca")
-            vol_txt = f"proxy {fonte}"
+        vol_txt = fmt_base_volume(
+            op.get("fonte_volume"),
+            volume_proxy=op.get("volume_proxy"),
+            quantidade_vendida=op.get("quantidade_vendida"),
+        )
         propostas.append(
             {
                 "prioridade": "alta",
                 "tipo": "preco",
                 "segmento_id": seg_id,
                 "sku": sku,
+                "nome": nome or None,
                 "texto": (
-                    f"Competir com *{sku}* em R$ {op['preco_alvo']:.2f} "
+                    f"Competir com {rotulo} em R$ {op['preco_alvo']:.2f} "
                     f"(−{abaixo_concorrente_pct:.0f}% vs {op['preco_concorrente']:.2f}, "
                     f"{vol_txt}) — margem {margem.get('margem_operacional_pct')}%"
                 ),
@@ -541,7 +584,8 @@ def gerar_propostas_competir(
                 "tipo": "cores",
                 "segmento_id": seg_id,
                 "sku": sku,
-                "texto": f"Incluir no anúncio *{sku}* cores em alta: {', '.join(faltando)}",
+                "nome": nome or None,
+                "texto": f"Incluir no anúncio {rotulo} cores em alta: {', '.join(faltando)}",
                 "cores_sugeridas": faltando,
             }
         )
@@ -585,8 +629,9 @@ def gerar_propostas_competir(
                         "tipo": "preco",
                         "segmento_id": seg_id,
                         "sku": sku,
+                        "nome": nome or None,
                         "texto": (
-                            f"Seu *{sku}* a R$ {meu_preco:.2f} está acima do líder "
+                            f"Seu {rotulo} a R$ {meu_preco:.2f} está acima do líder "
                             f"(R$ {menor_preco:.2f}) — teste R$ {diag.get('preco_piso', menor_preco):.2f} "
                             f"com margem {diag.get('margem_operacional_pct')}%"
                         ),
@@ -602,9 +647,10 @@ def gerar_propostas_competir(
                         "tipo": "preco",
                         "segmento_id": seg_id,
                         "sku": sku,
+                        "nome": nome or None,
                         "texto": (
                             f"Líder a R$ {menor_preco:.2f} abaixo do seu piso — "
-                            f"mínimo viável *{sku}*: R$ {piso:.2f}"
+                            f"mínimo viável {rotulo}: R$ {piso:.2f}"
                         ),
                         "preco_sugerido": piso,
                     }
