@@ -117,6 +117,11 @@ class AnaliseFilamentosMlTests(unittest.TestCase):
         self.assertEqual(marcas[0]["marca"], "eSUN")
         self.assertEqual(af.fmt_vendas_amostra(0), "n/d")
         self.assertEqual(af.fmt_vendas_amostra(10), "10 vendas")
+        proxy, fonte = af.volume_proxy_anuncio(
+            {"quantidade_vendida": 0, "visitas_7d": 80, "avaliacoes": 5}
+        )
+        self.assertEqual(fonte, "visitas")
+        self.assertEqual(proxy, 80)
 
     def test_resumo_decisao_e_enriquecer_noop(self):
         produtos = [

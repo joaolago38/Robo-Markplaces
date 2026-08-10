@@ -39,6 +39,24 @@ class TestAnaliseSemVenda(unittest.TestCase):
         )
         self.assertEqual(out["itens"][0]["acao"], "republicar_ou_ads")
 
+    def test_sugerir_acao_com_venda_conversao_baixa(self):
+        self.assertEqual(
+            sv.sugerir_acao(
+                visitas_30d=40,
+                unidades_periodo=1,
+                conversao_pct=1.5,
+                conversao_confiavel=True,
+                conv_baixa_pct=2.0,
+            ),
+            "melhorar_conversao_listing",
+        )
+
+    def test_sugerir_acao_usa_visitas_7d_se_30_zerada(self):
+        self.assertEqual(
+            sv.sugerir_acao(visitas_30d=0, visitas_7d=25, visitas_altas=20),
+            "baixar_preco_ou_listing",
+        )
+
 
 class TestAgenteSemVenda(unittest.TestCase):
     @patch.object(ag, "alertar_gestor", return_value=True)

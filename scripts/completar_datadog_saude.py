@@ -54,6 +54,7 @@ GROUP_OPERACAO_COMERCIAL_ID = 700008
 GROUP_MP_CATALOGO_ID = 760001
 GROUP_MP_MERCADO_ID = 760002
 GROUP_MP_COMERCIAL_ID = 760003
+GROUP_MP_FUNIL_ID = 760004
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -1643,13 +1644,34 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 2, "x": 10, "y": 22},
                     "id": 750006,
                 },
+                {
+                    **_qv(
+                        "Ads probe falha",
+                        "sum:robo.ads.probe_falha{*}.as_count()",
+                        green_gt=None,
+                        red_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 24},
+                    "id": 750007,
+                },
+                {
+                    **_qv(
+                        "Ads avaliacoes",
+                        "avg:robo.ads.avaliacoes{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 24},
+                    "id": 750008,
+                },
                 # --- Alertas de canal + decisao ---
                 {
                     **_qv(
                         "Vendas WA Notificadas",
                         "sum:robo.vendas.notificadas{*}.as_count()",
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 0, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 26},
                     "id": 750010,
                 },
                 {
@@ -1659,7 +1681,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         red_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 26},
                     "id": 750011,
                 },
                 {
@@ -1669,7 +1691,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=None,
                         yellow_gt=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 4, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 26},
                     "id": 750012,
                 },
                 {
@@ -1677,7 +1699,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         "Itens analisados (margem)",
                         "sum:robo.vendas.itens_analisados{*}.as_count()",
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 26},
                     "id": 750014,
                 },
                 {
@@ -1689,7 +1711,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=50,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 8, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 26},
                     "id": 750013,
                 },
                 {
@@ -1701,7 +1723,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=10,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 10, "y": 24},
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 26},
                     "id": 750015,
                 },
                 {
@@ -1712,7 +1734,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 0, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 28},
                     "id": 750020,
                 },
                 {
@@ -1724,7 +1746,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         yellow_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 3, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 28},
                     "id": 750021,
                 },
                 {
@@ -1736,7 +1758,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 6, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 28},
                     "id": 750022,
                 },
                 {
@@ -1748,7 +1770,7 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                         red_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 26},
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 28},
                     "id": 750023,
                 },
             ],
@@ -1857,8 +1879,534 @@ def _grupo_catalogo_masterprint() -> dict[str, Any]:
     }
 
 
+def _grupo_funil_demanda_masterprint() -> dict[str, Any]:
+    """Funil próprio (visitas→vendas) + ações + blindspots + visitas rivais."""
+    return {
+        "id": GROUP_MP_FUNIL_ID,
+        "definition": {
+            "title": "[Funil ML] Visitas → vendas / acoes / blindspots",
+            "type": "group",
+            "background_color": "vivid_green",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "id": 760400,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Funil próprio** = visitas e pedidos da *sua* conta "
+                            "(taxa ≈ un./visitas). "
+                            "**Visitas rivais** = proxy de demanda (sem vendas). "
+                            "**Ações críticas** = visitas sem conversão / conversão baixa → "
+                            "otimizador_listing prioriza esses IDs.\n"
+                            "Blindspot vendas API = 1 enquanto `sold_quantity` de rivais = 403.\n"
+                            "`blindspot.cegos` = quantos gaps estruturais (busca 403, claims, reviews…).\n"
+                            "Métricas `*.funil.*` / `*.blindspot.*` aparecem após a 1ª rodada "
+                            "dos monitores PETG / Filamentos com o código novo."
+                        ),
+                        "background_color": "green",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+                },
+                {
+                    **_qv(
+                        "PETG funil visitas 7d",
+                        "avg:robo.masterprint_petg.funil.visitas_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+                    "id": 760401,
+                },
+                {
+                    **_qv(
+                        "PETG un. convertidas 7d",
+                        "avg:robo.masterprint_petg.funil.unidades_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
+                    "id": 760402,
+                },
+                {
+                    **_qv(
+                        "PETG conversao %",
+                        "avg:robo.masterprint_petg.funil.conversao_pct{*}",
+                        aggregator="avg",
+                        green_gt=2,
+                        yellow_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
+                    "id": 760403,
+                },
+                {
+                    **_qv(
+                        "PETG acoes criticas",
+                        "avg:robo.masterprint_petg.funil.acoes_criticas{*}",
+                        aggregator="avg",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "id": 760404,
+                },
+                {
+                    **_qv(
+                        "PETG visitas rivais (amostra)",
+                        "avg:robo.masterprint_petg.rivais.visitas_amostra{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
+                    "id": 760405,
+                },
+                {
+                    **_qv(
+                        "PETG blindspot vendas API",
+                        "avg:robo.masterprint_petg.blindspot.vendas_api{*}",
+                        aggregator="avg",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "id": 760406,
+                },
+                {
+                    **_qv(
+                        "Filamentos funil visitas 7d",
+                        "avg:robo.filamentos.ml.funil.visitas_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 4},
+                    "id": 760410,
+                },
+                {
+                    **_qv(
+                        "Filamentos un. 7d",
+                        "avg:robo.filamentos.ml.funil.unidades_7d{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 4},
+                    "id": 760411,
+                },
+                {
+                    **_qv(
+                        "Filamentos conversao %",
+                        "avg:robo.filamentos.ml.funil.conversao_pct{*}",
+                        aggregator="avg",
+                        green_gt=2,
+                        yellow_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 4},
+                    "id": 760412,
+                },
+                {
+                    **_qv(
+                        "Filamentos acoes criticas",
+                        "avg:robo.filamentos.ml.funil.acoes_criticas{*}",
+                        aggregator="avg",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 4},
+                    "id": 760413,
+                },
+                {
+                    **_qv(
+                        "Filamentos visitas rivais",
+                        "avg:robo.filamentos.ml.rivais.visitas_amostra{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 4},
+                    "id": 760414,
+                },
+                {
+                    **_qv(
+                        "Filamentos blindspot vendas",
+                        "avg:robo.filamentos.ml.blindspot.vendas_api{*}",
+                        aggregator="avg",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 4},
+                    "id": 760415,
+                },
+                {
+                    "id": 760420,
+                    "definition": {
+                        "title": "PETG — funil visitas / un. / conversao %",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.funil.visitas_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.masterprint_petg.funil.unidades_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_petg.funil.conversao_pct{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "visitas_7d", "formula": "query1"},
+                                    {"alias": "unidades_7d", "formula": "query2"},
+                                    {"alias": "conversao_pct", "formula": "query3"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 6},
+                },
+                {
+                    "id": 760421,
+                    "definition": {
+                        "title": "Filamentos — funil visitas / un. / conversao %",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.filamentos.ml.funil.visitas_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.filamentos.ml.funil.unidades_7d{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.filamentos.ml.funil.conversao_pct{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "visitas_7d", "formula": "query1"},
+                                    {"alias": "unidades_7d", "formula": "query2"},
+                                    {"alias": "conversao_pct", "formula": "query3"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 6},
+                },
+                {
+                    "id": 760430,
+                    "definition": {
+                        "title": "Acoes funil — criticas / total (PETG + Filamentos)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.funil.acoes_criticas{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.filamentos.ml.funil.acoes_criticas{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_petg.funil.acoes_total{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": "avg:robo.filamentos.ml.funil.acoes_total{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "petg_criticas", "formula": "query1"},
+                                    {"alias": "fil_criticas", "formula": "query2"},
+                                    {"alias": "petg_total", "formula": "query3"},
+                                    {"alias": "fil_total", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 9},
+                },
+                {
+                    "id": 760431,
+                    "definition": {
+                        "title": "Acoes por tipo (PETG) — baixar_preco / titulo_ads / conversao",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "baixar_preco_ou_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "melhorar_titulo_e_ads{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "melhorar_conversao_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": (
+                                            "avg:robo.masterprint_petg.funil.acao."
+                                            "republicar_ou_ads{*}"
+                                        ),
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "baixar_preco", "formula": "query1"},
+                                    {"alias": "titulo_ads", "formula": "query2"},
+                                    {"alias": "conversao_listing", "formula": "query3"},
+                                    {"alias": "republicar_ads", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 9},
+                },
+                {
+                    **_qv(
+                        "PETG blindspots cegos",
+                        "avg:robo.masterprint_petg.blindspot.cegos{*}",
+                        aggregator="avg",
+                        yellow_gt=2,
+                        red_gt=4,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 12},
+                    "id": 760440,
+                },
+                {
+                    **_qv(
+                        "Fil blindspots cegos",
+                        "avg:robo.filamentos.ml.blindspot.cegos{*}",
+                        aggregator="avg",
+                        yellow_gt=2,
+                        red_gt=4,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 12},
+                    "id": 760441,
+                },
+                {
+                    **_qv(
+                        "PETG rodadas monitor",
+                        "sum:robo.masterprint_petg.rodadas{*}.as_count()",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 12},
+                    "id": 760442,
+                },
+                {
+                    **_qv(
+                        "Fil rodadas monitor",
+                        "sum:robo.filamentos.ml.rodadas{*}.as_count()",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 12},
+                    "id": 760443,
+                },
+                {
+                    **_qv(
+                        "ML busca sites 403",
+                        "sum:robo.ml.busca.sites_search_403{*}.as_count()",
+                        aggregator="sum",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 12},
+                    "id": 760444,
+                },
+                {
+                    **_qv(
+                        "ML sem venda (itens)",
+                        "avg:robo.ml.sem_venda.total{*}",
+                        aggregator="avg",
+                        yellow_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 12},
+                    "id": 760445,
+                },
+                {
+                    "id": 760450,
+                    "definition": {
+                        "title": "Acoes por tipo (Filamentos) — baixar_preco / titulo_ads / conversao",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "baixar_preco_ou_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "melhorar_titulo_e_ads{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "melhorar_conversao_listing{*}"
+                                        ),
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": (
+                                            "avg:robo.filamentos.ml.funil.acao."
+                                            "republicar_ou_ads{*}"
+                                        ),
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "baixar_preco", "formula": "query1"},
+                                    {"alias": "titulo_ads", "formula": "query2"},
+                                    {"alias": "conversao_listing", "formula": "query3"},
+                                    {"alias": "republicar_ads", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 14},
+                },
+                {
+                    "id": 760451,
+                    "definition": {
+                        "title": "Blindspots estruturais — cegos / parciais / oks",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.blindspot.cegos{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.filamentos.ml.blindspot.cegos{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query3",
+                                        "query": "avg:robo.masterprint_petg.blindspot.parciais{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query4",
+                                        "query": "avg:robo.filamentos.ml.blindspot.oks{*}",
+                                    },
+                                ],
+                                "formulas": [
+                                    {"alias": "petg_cegos", "formula": "query1"},
+                                    {"alias": "fil_cegos", "formula": "query2"},
+                                    {"alias": "petg_parciais", "formula": "query3"},
+                                    {"alias": "fil_oks", "formula": "query4"},
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 14},
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
+    }
+
+
 def _grupo_mercado_masterprint() -> dict[str, Any]:
-    """Monitor ML (equivalente à batalha Impala)."""
+    """Monitor ML — foco em anúncios, preço, margem e porte de seller (vendas API = n/d)."""
     return {
         "id": GROUP_MP_MERCADO_ID,
         "definition": {
@@ -1869,6 +2417,24 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
             "show_title": True,
             "widgets": [
                 {
+                    "id": 760200,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Vendas ML de concorrentes = indisponível (API 403).**\n"
+                            "Use **anúncios / preço / margem / seller_transacoes**. "
+                            "Widgets de vendas/receita/lucro proxy ficam 0 por bloqueio da API, "
+                            "não por falta de rodada."
+                        ),
+                        "background_color": "yellow",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+                },
+                {
                     **_qv(
                         "Filamentos unicos (ML)",
                         "avg:robo.filamentos.ml.total_unicos{*}",
@@ -1876,18 +2442,18 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
                     "id": 760201,
                 },
                 {
                     **_qv(
-                        "Vendas proxy filamentos",
-                        "avg:robo.filamentos.ml.total_vendas{*}",
+                        "Margem media PETG R$",
+                        "avg:robo.masterprint_petg.margem_media_brl{*}",
                         aggregator="avg",
                         green_gt=0,
-                        precision=0,
+                        precision=2,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
                     "id": 760202,
                 },
                 {
@@ -1898,7 +2464,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
                     "id": 760203,
                 },
                 {
@@ -1909,7 +2475,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
                     "id": 760204,
                 },
                 {
@@ -1920,7 +2486,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 4, "x": 0, "y": 2},
+                    "layout": {"height": 2, "width": 4, "x": 0, "y": 4},
                     "id": 760210,
                 },
                 {
@@ -1931,7 +2497,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 4, "x": 4, "y": 2},
+                    "layout": {"height": 2, "width": 4, "x": 4, "y": 4},
                     "id": 760211,
                 },
                 {
@@ -1943,13 +2509,13 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         yellow_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 4, "x": 8, "y": 2},
+                    "layout": {"height": 2, "width": 4, "x": 8, "y": 4},
                     "id": 760212,
                 },
                 {
                     "id": 760220,
                     "definition": {
-                        "title": "PETG — anuncios / vendas / receita proxy",
+                        "title": "PETG — anuncios / preco / margem (vendas API n/d)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -1966,28 +2532,28 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                                     {
                                         "data_source": "metrics",
                                         "name": "query2",
-                                        "query": "avg:robo.masterprint_petg.vendas{*}",
+                                        "query": "avg:robo.masterprint_petg.preco_medio{*}",
                                     },
                                     {
                                         "data_source": "metrics",
                                         "name": "query3",
-                                        "query": "avg:robo.masterprint_petg.receita_proxy{*}",
+                                        "query": "avg:robo.masterprint_petg.margem_media_brl{*}",
                                     },
                                 ],
                                 "formulas": [
                                     {"alias": "anuncios", "formula": "query1"},
-                                    {"alias": "vendas", "formula": "query2"},
-                                    {"alias": "receita", "formula": "query3"},
+                                    {"alias": "preco_medio", "formula": "query2"},
+                                    {"alias": "margem_R$", "formula": "query3"},
                                 ],
                             }
                         ],
                     },
-                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 6},
                 },
                 {
                     "id": 760221,
                     "definition": {
-                        "title": "Escritorio — anuncios / vendas / lucro proxy",
+                        "title": "Escritorio — anuncios ativos (vendas API n/d)",
                         "type": "timeseries",
                         "show_legend": True,
                         "legend_layout": "horizontal",
@@ -2004,23 +2570,17 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                                     {
                                         "data_source": "metrics",
                                         "name": "query2",
-                                        "query": "avg:robo.masterprint_escritorio.vendas{*}",
-                                    },
-                                    {
-                                        "data_source": "metrics",
-                                        "name": "query3",
-                                        "query": "avg:robo.masterprint_escritorio.lucro_proxy{*}",
+                                        "query": "avg:robo.masterprint_escritorio.rodadas{*}",
                                     },
                                 ],
                                 "formulas": [
                                     {"alias": "anuncios", "formula": "query1"},
-                                    {"alias": "vendas", "formula": "query2"},
-                                    {"alias": "lucro", "formula": "query3"},
+                                    {"alias": "rodadas", "formula": "query2"},
                                 ],
                             }
                         ],
                     },
-                    "layout": {"height": 3, "width": 6, "x": 6, "y": 4},
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 6},
                 },
                 {
                     **_toplist_metric(
@@ -2028,7 +2588,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         "avg:robo.masterprint_petg.top_margem_rank{*} by {ad}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 0, "y": 7},
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 9},
                     "id": 760230,
                 },
                 {
@@ -2037,7 +2597,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         "avg:robo.masterprint_petg.seller_transacoes{*} by {seller}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 4, "y": 7},
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 9},
                     "id": 760231,
                 },
                 {
@@ -2046,25 +2606,25 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         "avg:robo.masterprint_petg.seller_anuncios{*} by {seller}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 8, "y": 7},
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 9},
                     "id": 760232,
                 },
                 {
                     **_toplist_metric(
-                        "Marcas filamento por vendas (ML)",
-                        "avg:robo.filamentos.ml.marca_vendas{*} by {marca}",
+                        "Top anuncios PETG por margem (detalhe)",
+                        "avg:robo.masterprint_petg.top_margem{*} by {ad}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 0, "y": 10},
+                    "layout": {"height": 3, "width": 4, "x": 0, "y": 12},
                     "id": 760233,
                 },
                 {
                     **_toplist_metric(
-                        "Top anuncios Masterprint (mercado)",
-                        "avg:robo.filamentos.ml.masterprint.top_vendas{*} by {ad}",
+                        "Top anuncios PETG por preco",
+                        "avg:robo.masterprint_petg.top_preco{*} by {ad}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 4, "y": 10},
+                    "layout": {"height": 3, "width": 4, "x": 4, "y": 12},
                     "id": 760234,
                 },
                 {
@@ -2073,7 +2633,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         "avg:robo.filamentos.ml.masterprint.seller_transacoes{*} by {seller}",
                         aggregator="avg",
                     ),
-                    "layout": {"height": 3, "width": 4, "x": 8, "y": 10},
+                    "layout": {"height": 3, "width": 4, "x": 8, "y": 12},
                     "id": 760235,
                 },
             ],
@@ -2083,201 +2643,33 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
 
 
 def _grupo_operacao_masterprint() -> dict[str, Any]:
-    """Receita / lucro / crescimento — espelho da operacao comercial Impala."""
-    lucro_petg = {
-        "definition": {
-            "title": "Lucro proxy PETG R$",
-            "type": "query_value",
-            "autoscale": True,
-            "precision": 2,
-            "requests": [
-                {
-                    "conditional_formats": [
-                        {"comparator": ">", "palette": "white_on_green", "value": 0},
-                        {"comparator": "<", "palette": "white_on_red", "value": 0},
-                        {"comparator": "=", "palette": "white_on_yellow", "value": 0},
-                    ],
-                    "formulas": [{"formula": "query1"}],
-                    "queries": [
-                        {
-                            "data_source": "metrics",
-                            "name": "query1",
-                            "query": "sum:robo.masterprint_petg.lucro_proxy{*}",
-                        }
-                    ],
-                    "response_format": "scalar",
-                    "aggregator": "sum",
-                }
-            ],
-        }
-    }
-    lucro_esc = {
-        "definition": {
-            "title": "Lucro proxy escritorio R$",
-            "type": "query_value",
-            "autoscale": True,
-            "precision": 2,
-            "requests": [
-                {
-                    "conditional_formats": [
-                        {"comparator": ">", "palette": "white_on_green", "value": 0},
-                        {"comparator": "<", "palette": "white_on_red", "value": 0},
-                        {"comparator": "=", "palette": "white_on_yellow", "value": 0},
-                    ],
-                    "formulas": [{"formula": "query1"}],
-                    "queries": [
-                        {
-                            "data_source": "metrics",
-                            "name": "query1",
-                            "query": "sum:robo.masterprint_escritorio.lucro_proxy{*}",
-                        }
-                    ],
-                    "response_format": "scalar",
-                    "aggregator": "sum",
-                }
-            ],
-        }
-    }
+    """Operação comercial — margem/preço/sellers (sem fingir vendas/receita zeradas)."""
     return {
         "id": GROUP_MP_COMERCIAL_ID,
         "definition": {
-            "title": "[Operacao comercial] Filamentos / Escritorio — vendas e lucro",
+            "title": "[Operacao comercial] Filamentos / Escritorio — margem e precificação",
             "type": "group",
             "background_color": "vivid_orange",
             "layout_type": "ordered",
             "show_title": True,
             "widgets": [
                 {
-                    **_qv(
-                        "Receita proxy PETG R$",
-                        "sum:robo.masterprint_petg.receita_proxy{*}",
-                        aggregator="sum",
-                        green_gt=0,
-                        precision=2,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
-                    "id": 760301,
-                },
-                {
-                    **lucro_petg,
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
-                    "id": 760302,
-                },
-                {
-                    **_qv(
-                        "Vendas PETG",
-                        "avg:robo.masterprint_petg.vendas{*}",
-                        aggregator="avg",
-                        green_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
-                    "id": 760303,
-                },
-                {
-                    **_qv(
-                        "Receita proxy escritorio R$",
-                        "sum:robo.masterprint_escritorio.receita_proxy{*}",
-                        aggregator="sum",
-                        green_gt=0,
-                        precision=2,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
-                    "id": 760304,
-                },
-                {
-                    **lucro_esc,
-                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
-                    "id": 760305,
-                },
-                {
-                    **_qv(
-                        "Vendas escritorio",
-                        "avg:robo.masterprint_escritorio.vendas{*}",
-                        aggregator="avg",
-                        green_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
-                    "id": 760306,
-                },
-                {
-                    "id": 760310,
+                    "id": 760300,
                     "definition": {
-                        "title": "Receita vs lucro PETG (R$)",
-                        "type": "timeseries",
-                        "show_legend": True,
-                        "legend_layout": "horizontal",
-                        "requests": [
-                            {
-                                "display_type": "line",
-                                "response_format": "timeseries",
-                                "formulas": [
-                                    {"alias": "receita", "formula": "query1"},
-                                    {"alias": "lucro", "formula": "query2"},
-                                ],
-                                "queries": [
-                                    {
-                                        "data_source": "metrics",
-                                        "name": "query1",
-                                        "query": "avg:robo.masterprint_petg.receita_proxy{*}",
-                                    },
-                                    {
-                                        "data_source": "metrics",
-                                        "name": "query2",
-                                        "query": "avg:robo.masterprint_petg.lucro_proxy{*}",
-                                    },
-                                ],
-                            }
-                        ],
+                        "type": "note",
+                        "content": (
+                            "**Receita / lucro / vendas proxy = n/d** enquanto a API ML "
+                            "bloquear `sold_quantity` de terceiros.\n"
+                            "Decisão de preço: **margem média + preço médio + top margem + "
+                            "porte do seller**."
+                        ),
+                        "background_color": "yellow",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
                     },
-                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
-                },
-                {
-                    "id": 760311,
-                    "definition": {
-                        "title": "Vendas escritorio por tipo",
-                        "type": "timeseries",
-                        "show_legend": True,
-                        "legend_layout": "horizontal",
-                        "requests": [
-                            {
-                                "display_type": "bars",
-                                "response_format": "timeseries",
-                                "formulas": [{"alias": "vendas", "formula": "query1"}],
-                                "queries": [
-                                    {
-                                        "data_source": "metrics",
-                                        "name": "query1",
-                                        "query": (
-                                            "avg:robo.masterprint_escritorio.vendas_tipo{*} by {tipo}"
-                                        ),
-                                    },
-                                ],
-                            }
-                        ],
-                    },
-                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
-                },
-                {
-                    **_toplist_metric(
-                        "Lucro escritorio por tipo",
-                        "avg:robo.masterprint_escritorio.lucro_tipo{*} by {tipo}",
-                        aggregator="avg",
-                    ),
-                    "layout": {"height": 3, "width": 6, "x": 0, "y": 5},
-                    "id": 760320,
-                },
-                {
-                    **_qv(
-                        "Preco medio PETG ML",
-                        "avg:robo.masterprint_petg.preco_medio{*}",
-                        aggregator="avg",
-                        green_gt=0,
-                        precision=2,
-                    ),
-                    "layout": {"height": 2, "width": 3, "x": 6, "y": 5},
-                    "id": 760321,
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
                 },
                 {
                     **_qv(
@@ -2287,8 +2679,145 @@ def _grupo_operacao_masterprint() -> dict[str, Any]:
                         green_gt=0,
                         precision=2,
                     ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 5},
-                    "id": 760322,
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+                    "id": 760301,
+                },
+                {
+                    **_qv(
+                        "Preco medio PETG ML",
+                        "avg:robo.masterprint_petg.preco_medio{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
+                    "id": 760302,
+                },
+                {
+                    **_qv(
+                        "PETG anuncios",
+                        "avg:robo.masterprint_petg.anuncios{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
+                    "id": 760303,
+                },
+                {
+                    **_qv(
+                        "Seller txs (porte) PETG",
+                        "avg:robo.masterprint_petg.seller_transacoes{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "id": 760304,
+                },
+                {
+                    **_qv(
+                        "Escritorio anuncios",
+                        "avg:robo.masterprint_escritorio.anuncios{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
+                    "id": 760305,
+                },
+                {
+                    **_qv(
+                        "Custo medio tabela",
+                        "avg:robo.masterprint.tabela.custo_medio{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "id": 760306,
+                },
+                {
+                    "id": 760310,
+                    "definition": {
+                        "title": "PETG — preco medio vs margem media (R$)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "formulas": [
+                                    {"alias": "preco_medio", "formula": "query1"},
+                                    {"alias": "margem_R$", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.preco_medio{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.masterprint_petg.margem_media_brl{*}",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
+                },
+                {
+                    "id": 760311,
+                    "definition": {
+                        "title": "Anuncios PETG vs Escritorio",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "formulas": [
+                                    {"alias": "petg", "formula": "query1"},
+                                    {"alias": "escritorio", "formula": "query2"},
+                                ],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.masterprint_petg.anuncios{*}",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query2",
+                                        "query": "avg:robo.masterprint_escritorio.anuncios{*}",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 4},
+                },
+                {
+                    **_toplist_metric(
+                        "Top anuncios por margem R$",
+                        "avg:robo.masterprint_petg.top_margem{*} by {ad}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 7},
+                    "id": 760320,
+                },
+                {
+                    **_toplist_metric(
+                        "Sellers por porte (transacoes)",
+                        "avg:robo.masterprint_petg.seller_transacoes{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 7},
+                    "id": 760321,
                 },
             ],
         },
@@ -2423,30 +2952,35 @@ def atualizar_dashboard_masterprint() -> None:
         NOTE_MP_ID,
         (
             "## Aba Masterprint — Filamentos / Escritorio\n\n"
-            "Mesma leitura do Impala: **custo/catalogo** → **mercado ML** → "
-            "**receita / lucro / vendas**.\n\n"
-            "Linhas: filamentos 3D (PLA/PETG/ABS/TPU…) + pinceis quadro/permanente + apagadores "
-            "(fonte: `TABELA DE PEDIDOS.XLSX`).\n\n"
+            "Leitura: **funil próprio** → **custo/catalogo** → **mercado ML** → "
+            "**margem / preço / sellers**.\n\n"
+            "**Funil:** visitas→unidades→conversão% + ações críticas "
+            "(otimizador prioriza IDs).\n"
+            "**Atenção:** vendas/receita/lucro de concorrentes ficam **n/d** (API ML 403). "
+            "Use visitas rivais como proxy de demanda.\n\n"
             f"**Robo / plataforma:** [Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
             f"**E-commerce Impala:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
         ),
         background_color="purple",
-        height=2,
+        height=3,
     )
+    funil = _grupo_funil_demanda_masterprint()
+    funil["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
     cat = _grupo_catalogo_masterprint()
-    cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    cat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     merc = _grupo_mercado_masterprint()
-    merc["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    merc["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     com = _grupo_operacao_masterprint()
-    com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+    com["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_MASTERPRINT_TITLE,
         "description": (
-            "ABA MASTERPRINT: filamentos + pinceis/apagadores (custos, mercado ML, lucro). "
+            "ABA MASTERPRINT: funil visitas→vendas, filamentos + escritorio "
+            "(custos, mercado ML, margem). "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, com, cat, merc],
+        "widgets": [note, funil, com, cat, merc],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -2519,6 +3053,29 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         "Tags: service:robo-markplaces"
     )
     return [
+        {
+            "name": "[Masterprint] Funil ML — acoes criticas",
+            "type": "query alert",
+            "query": (
+                "avg(last_4h):(avg:robo.masterprint_petg.funil.acoes_criticas{*} + "
+                "avg:robo.filamentos.ml.funil.acoes_criticas{*}) > 0"
+            ),
+            "message": (
+                "Funil proprio com acoes criticas "
+                "(visitas sem conversao / conversao baixa). "
+                "Veja grupo [Funil ML] no dashboard Masterprint e "
+                "logs/funil_ml_acoes_ultima.json.\n"
+                f"Dashboard: {_url_dash(DASH_MASTERPRINT)}\n" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:funil_ml", "severity:p3"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 3,
+        },
         {
             "name": "[Robo] Orquestrador sem ciclos (2h)",
             "type": "query alert",

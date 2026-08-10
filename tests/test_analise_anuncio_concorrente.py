@@ -137,7 +137,26 @@ class EnriquecerTests(unittest.TestCase):
 
 class VisitasPropriasTests(unittest.TestCase):
     @patch.object(aa, "ML_SELLER_ID", "111")
-    def test_terceiro_sem_visitas(self):
+    @patch.object(aa.ml_client, "_enabled", return_value=True)
+    @patch.object(aa.ml_client, "buscar_visitas_item")
+    def test_terceiro_com_visitas(self, mock_vis, _en):
+        mock_vis.return_value = {
+            "ok": True,
+            "disponivel": True,
+            "visitas_7d": 58,
+            "visitas_30d": 200,
+        }
+        out = aa.buscar_visitas_se_proprio("MLB9", "999")
+        self.assertTrue(out.get("ok"))
+        self.assertTrue(out.get("disponivel"))
+        self.assertEqual(out.get("visitas_7d"), 58)
+        self.assertFalse(out.get("proprio"))
+
+    @patch.object(aa, "ML_SELLER_ID", "111")
+    @patch.object(aa.ml_client, "_enabled", return_value=True)
+    @patch.object(aa.ml_client, "buscar_visitas_item")
+    def test_terceiro_visitas_indisponivel(self, mock_vis, _en):
+        mock_vis.return_value = {"ok": False, "disponivel": False, "motivo": "403"}
         out = aa.buscar_visitas_se_proprio("MLB9", "999")
         self.assertTrue(out.get("ok"))
         self.assertFalse(out.get("disponivel"))

@@ -159,7 +159,27 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             agente, "gestor_telegram_configurado", return_value=True
         ), patch.object(agente, "FILAMENTOS_ML_PAUSA_SEG", 0), patch.object(
             agente, "FILAMENTOS_ML_CRUZAR_ALIBABA", False
-        ), patch.object(agente, "FILAMENTOS_ML_ALERTA_RESUMO", True):
+        ), patch.object(agente, "FILAMENTOS_ML_ALERTA_RESUMO", True), patch.object(
+            agente, "enriquecer_avaliacoes_amostra", return_value=0
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.enriquecer_visitas_amostra",
+            return_value=0,
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.coletar_funil_proprio",
+            return_value={
+                "ok": True,
+                "dias": 7,
+                "pedidos_ok": True,
+                "visitas_ok": True,
+                "totais": {"visitas_7d": 0, "unidades_7d": 0, "conversao_pct": None},
+                "itens": [],
+            },
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.emitir_metricas_demanda",
+        ), patch(
+            "integracoes.ml.acoes_funil_ml.processar_e_persistir_acoes",
+            return_value={"ok": True, "acoes": [], "criticas": 0, "alerta_enviado": False},
+        ):
             out = agente.executar(enviar_alerta=True)
 
         self.assertTrue(out["ok"])
@@ -348,7 +368,27 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             agente, "gestor_telegram_configurado", return_value=True
         ), patch.object(agente, "FILAMENTOS_ML_PAUSA_SEG", 0), patch.object(
             agente, "FILAMENTOS_ML_CRUZAR_ALIBABA", True
-        ), patch.object(agente, "FILAMENTOS_ML_ALERTA_RESUMO", False):
+        ), patch.object(agente, "FILAMENTOS_ML_ALERTA_RESUMO", False), patch.object(
+            agente, "enriquecer_avaliacoes_amostra", return_value=0
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.enriquecer_visitas_amostra",
+            return_value=0,
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.coletar_funil_proprio",
+            return_value={
+                "ok": True,
+                "dias": 7,
+                "pedidos_ok": True,
+                "visitas_ok": True,
+                "totais": {},
+                "itens": [],
+            },
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.emitir_metricas_demanda",
+        ), patch(
+            "integracoes.ml.acoes_funil_ml.processar_e_persistir_acoes",
+            return_value={"ok": True, "acoes": [], "criticas": 0, "alerta_enviado": False},
+        ):
             out = agente.executar(enviar_alerta=True)
         self.assertTrue(out["ok"])
         self.assertTrue(

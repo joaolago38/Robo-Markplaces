@@ -122,11 +122,23 @@ def seller_porte(anuncio: dict[str, Any] | None) -> int:
     )
 
 
+def visitas_anuncio(anuncio: dict[str, Any] | None) -> int:
+    if not isinstance(anuncio, dict):
+        return 0
+    v7 = _as_int(anuncio.get("visitas_7d"))
+    if v7 > 0:
+        return v7
+    return _as_int(anuncio.get("visitas_30d"))
+
+
 def volume_proxy_anuncio(anuncio: dict[str, Any] | None) -> tuple[int, str]:
-    """1) vendas API  2) avaliações  3) porte seller  4) presença (1)."""
+    """1) vendas API  2) visitas  3) avaliações  4) porte seller  5) presença (1)."""
     vend = vendas_api(anuncio)
     if vend > 0:
         return vend, "vendas"
+    vis = visitas_anuncio(anuncio)
+    if vis > 0:
+        return vis, "visitas"
     aval = avaliacoes_anuncio(anuncio)
     if aval > 0:
         return aval, "avaliacoes"
@@ -414,6 +426,8 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
     )[:10]
     cores = ranking_cores(unicos)
     com_aval = sum(1 for p in unicos if avaliacoes_anuncio(p) > 0)
+    com_vis = sum(1 for p in unicos if visitas_anuncio(p) > 0)
+    total_visitas_7d = sum(visitas_anuncio(p) for p in unicos)
 
     return {
         "total_filamentos_unicos": len(unicos),
@@ -421,6 +435,8 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "vendas_proxy_confiavel": total_vendas > 0,
         "anuncios_com_vendas_api": len(com_vendas),
         "anuncios_com_avaliacoes": com_aval,
+        "anuncios_com_visitas": com_vis,
+        "total_visitas_7d_amostra": total_visitas_7d,
         "termos_varridos": termos_ok,
         "preco_medio": round(sum(precos) / len(precos), 2) if precos else 0.0,
         "preco_min": round(min(precos), 2) if precos else 0.0,
@@ -509,8 +525,20 @@ def resumo_decisao_filamentos(
     preco_min = float(consolidado.get("preco_min") or 0)
     tem_vendas = bool(consolidado.get("vendas_proxy_confiavel"))
     com_aval = int(consolidado.get("anuncios_com_avaliacoes") or 0)
+    com_vis = int(consolidado.get("anuncios_com_visitas") or 0)
 
-    fonte_cores = "vendas_api" if tem_vendas else ("avaliacoes" if com_aval > 0 else "presenca_anuncios")
+    if tem_vendas:
+        fonte_cores = "vendas_api"
+        conf = 70
+    elif com_vis > 0:
+        fonte_cores = "visitas"
+        conf = 50
+    elif com_aval > 0:
+        fonte_cores = "avaliacoes"
+        conf = 35
+    else:
+        fonte_cores = "presenca_anuncios"
+        conf = 25
     top_cores = [c.get("cor") for c in cores[:5] if c.get("cor")]
     saturadas = [c.get("cor") for c in cores[:3] if int(c.get("anuncios") or 0) >= 10]
     nicho = [
@@ -532,7 +560,7 @@ def resumo_decisao_filamentos(
 
     return {
         "fonte_cores": fonte_cores,
-        "confianca_cores_pct": 70 if tem_vendas else (35 if com_aval > 0 else 25),
+        "confianca_cores_pct": conf,
         "top_cores": top_cores,
         "cores_saturadas": saturadas,
         "cores_nicho": nicho,

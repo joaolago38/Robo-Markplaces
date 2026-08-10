@@ -25,12 +25,35 @@ def sugerir_acao(
     *,
     visitas_30d: int,
     visitas_altas: int = 20,
+    visitas_7d: int = 0,
+    unidades_periodo: int = 0,
+    conversao_pct: float | None = None,
+    conversao_confiavel: bool = False,
+    conv_baixa_pct: float = 2.0,
 ) -> str:
-    if visitas_30d >= visitas_altas:
-        return "baixar_preco_ou_listing"
-    if visitas_30d > 0:
-        return "melhorar_titulo_e_ads"
-    return "republicar_ou_ads"
+    """
+    Sem venda: visitas altas → preço/listing; poucas → título+ads; zero → ads/republicar.
+    Com venda + conversão baixa confiável → melhorar conversão listing.
+    """
+    v30 = int(visitas_30d or 0)
+    v7 = int(visitas_7d or 0)
+    un = int(unidades_periodo or 0)
+    visitas = v30 if v30 > 0 else v7
+
+    if un <= 0:
+        if visitas >= visitas_altas:
+            return "baixar_preco_ou_listing"
+        if visitas > 0:
+            return "melhorar_titulo_e_ads"
+        return "republicar_ou_ads"
+
+    if (
+        conversao_confiavel
+        and conversao_pct is not None
+        and float(conversao_pct) < float(conv_baixa_pct)
+    ):
+        return "melhorar_conversao_listing"
+    return "escalar_ou_manter"
 
 
 def _rotulo_acao(acao: str) -> str:
@@ -38,6 +61,8 @@ def _rotulo_acao(acao: str) -> str:
         "baixar_preco_ou_listing": "Visitas sem conversão → baixar preço / frete / fotos",
         "melhorar_titulo_e_ads": "Poucas visitas → título + Product Ads leve",
         "republicar_ou_ads": "Sem visitas → ads ou republicar anúncio",
+        "melhorar_conversao_listing": "Converte pouco → listing (fotos/descrição/preço)",
+        "escalar_ou_manter": "Conversão ok → manter / escalar",
     }.get(acao, acao)
 
 

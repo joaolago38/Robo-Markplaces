@@ -111,6 +111,8 @@ _LOGGER_META = {
     "analise_sem_venda": ("mercadolivre", "integracao"),
     "analise_loja_concorrente": ("mercadolivre", "integracao"),
     "acoes_novamix": ("mercadolivre", "integracao"),
+    "acoes_funil_ml": ("mercadolivre", "integracao"),
+    "coleta_demanda_ml": ("mercadolivre", "integracao"),
     "analise_anuncio_concorrente": ("mercadolivre", "integracao"),
     "estrategia_vendas_ml": ("mercadolivre", "integracao"),
     "agente_monitor_anita": ("mercadolivre", "agente"),

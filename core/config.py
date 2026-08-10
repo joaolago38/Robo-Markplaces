@@ -330,6 +330,21 @@ MONITOR_SEM_VENDA_ALERTA_RESUMO = os.getenv(
 MONITOR_SEM_VENDA_COOLDOWN_SEG = int(os.getenv("MONITOR_SEM_VENDA_COOLDOWN_SEG", "14400"))
 MONITOR_SEM_VENDA_VISITAS_ALTAS = int(os.getenv("MONITOR_SEM_VENDA_VISITAS_ALTAS", "20"))
 
+# Funil próprio → ações (visitas→pedidos→conversão)
+FUNIL_ML_MIN_VISITAS_CONV = int(os.getenv("FUNIL_ML_MIN_VISITAS_CONV", "10"))
+FUNIL_ML_CONV_BAIXA_PCT = float(os.getenv("FUNIL_ML_CONV_BAIXA_PCT", "2.0"))
+FUNIL_ML_CONV_BOA_PCT = float(os.getenv("FUNIL_ML_CONV_BOA_PCT", "5.0"))
+FUNIL_ML_VISITAS_ALTAS = int(
+    os.getenv("FUNIL_ML_VISITAS_ALTAS", str(MONITOR_SEM_VENDA_VISITAS_ALTAS))
+)
+FUNIL_ML_ACOES_MAX = int(os.getenv("FUNIL_ML_ACOES_MAX", "25"))
+FUNIL_ML_ACOES_ALERTA = os.getenv("FUNIL_ML_ACOES_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+FUNIL_ML_ACOES_COOLDOWN_SEG = int(os.getenv("FUNIL_ML_ACOES_COOLDOWN_SEG", "14400"))
+
 # Relatório de estratégia de vendas ML (ações a partir de gaps/margem)
 ESTRATEGIA_ML_MAX_ACOES = int(os.getenv("ESTRATEGIA_ML_MAX_ACOES", "3"))
 ESTRATEGIA_ML_GAP_GUERRA_PCT = float(os.getenv("ESTRATEGIA_ML_GAP_GUERRA_PCT", "25.0"))

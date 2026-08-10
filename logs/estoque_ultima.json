@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-08-10T11:40:24.063373+00:00",
+  "timestamp": "2026-08-10T14:40:28.924584+00:00",
   "ok": true,
   "dry_run": false,
-  "total_ajustes": 0,
-  "total_aplicados_sucesso": 0,
+  "total_ajustes": 1,
+  "total_aplicados_sucesso": 1,
   "total_falhas_aplicacao": 0
 }

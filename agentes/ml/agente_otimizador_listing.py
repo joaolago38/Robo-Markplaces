@@ -295,12 +295,14 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
         catalogo = _carregar_catalogo()
         itens_ml = _listar_itens_ml_ativos(catalogo)
 
-        # Prioriza guerra liberados
+        # Prioriza guerra liberados + itens do funil (visitas sem conversão / listing)
         try:
+            from integracoes.ml.acoes_funil_ml import listar_item_ids_prioridade_funil
             from integracoes.ml.contrato_impulso_ml import listar_item_ids_para_otimizacao, montar_contrato
 
             montar_contrato()
             prioridade = {i.upper() for i in listar_item_ids_para_otimizacao()}
+            prioridade |= {i.upper() for i in listar_item_ids_prioridade_funil()}
             if prioridade:
                 itens_ml = sorted(
                     itens_ml,

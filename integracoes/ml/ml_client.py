@@ -702,23 +702,25 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
     return pedidos
 
 
-def buscar_metricas_item(item_id: str) -> dict:
+def buscar_visitas_item(item_id: str) -> dict:
     """
-    Busca visitas e métricas de exposição de um anúncio específico.
-    Retorna dict com visitas_7d, visitas_30d e status do anúncio.
+    GET /items/{id}/visits/time_window (7d e 30d).
+    No app atual responde para anúncios próprios e de terceiros.
     Nunca lança exceção.
     """
     if not _enabled() or not (item_id or "").strip():
-        return {}
+        return {
+            "ok": False,
+            "disponivel": False,
+            "motivo": "nao_configurado",
+            "visitas_7d": None,
+            "visitas_30d": None,
+        }
+    iid = item_id.strip()
     try:
-        item_id = item_id.strip()
-        basico = buscar_item_publico(item_id)
-        if not basico:
-            return {}
-
         r7 = _request_ml(
             "GET",
-            f"{BASE}/items/{item_id}/visits/time_window",
+            f"{BASE}/items/{iid}/visits/time_window",
             params={"last": 7, "unit": "day"},
             timeout=20,
         )
@@ -727,7 +729,7 @@ def buscar_metricas_item(item_id: str) -> dict:
 
         r30 = _request_ml(
             "GET",
-            f"{BASE}/items/{item_id}/visits/time_window",
+            f"{BASE}/items/{iid}/visits/time_window",
             params={"last": 30, "unit": "day"},
             timeout=20,
         )
@@ -735,23 +737,48 @@ def buscar_metricas_item(item_id: str) -> dict:
         v30 = int((r30.json() or {}).get("total_visits", 0) or 0)
 
         return {
-            **basico,
+            "ok": True,
+            "disponivel": True,
+            "item_id": iid,
             "visitas_7d": v7,
             "visitas_30d": v30,
         }
     except Exception as exc:
-        _log_erro_leitura_item("buscar_metricas_item", item_id, exc)
-        # Visitas falham em anúncio alheio — ainda devolve preço/status se possível
-        try:
-            return buscar_item_publico(item_id)
-        except Exception:
-            return {}
+        _log_erro_leitura_item("buscar_visitas_item", iid, exc)
+        return {
+            "ok": False,
+            "disponivel": False,
+            "motivo": str(exc),
+            "item_id": iid,
+            "visitas_7d": None,
+            "visitas_30d": None,
+        }
+
+
+def buscar_metricas_item(item_id: str) -> dict:
+    """
+    Busca visitas e, quando a API permitir, preço/status/estoque do anúncio.
+    Visitas não dependem de GET /items (que retorna 403 em rivais).
+    Nunca lança exceção.
+    """
+    if not _enabled() or not (item_id or "").strip():
+        return {}
+    iid = item_id.strip()
+    basico = buscar_item_publico(iid)
+    visitas = buscar_visitas_item(iid)
+    if not basico and not visitas.get("disponivel"):
+        return {}
+    out = dict(basico) if basico else {"item_id": iid}
+    if visitas.get("disponivel"):
+        out["visitas_7d"] = int(visitas.get("visitas_7d") or 0)
+        out["visitas_30d"] = int(visitas.get("visitas_30d") or 0)
+    return out
 
 
 def buscar_item_publico(item_id: str) -> dict:
     """
     GET /items/{id} — preço, status, sold_quantity, estoque.
-    Serve para watchlist de concorrentes (sem visitas, que só existem nos seus).
+    Em rivais o app atual costuma receber 403; visitas ficam em buscar_visitas_item.
     Nunca lança exceção.
     """
     if not _enabled() or not (item_id or "").strip():
