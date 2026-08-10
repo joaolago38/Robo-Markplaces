@@ -19,7 +19,7 @@ class AgenteMonitorMercadoEsmaltesTests(unittest.TestCase):
             "total_oportunidades_margem": 2,
             "ranking_marcas_global": [{"marca": "Impala", "vendidos": 500, "anuncios": 20}],
             "propostas": [
-                {"prioridade": "alta", "texto": "Competir com IMP-BAIL-005 em R$ 45,90"},
+                {"prioridade": "alta", "texto": "Competir com *IMP-BAIL-005* (Kit 5 Bailarina Impala) em R$ 45,90"},
                 {"prioridade": "media", "texto": "Cores em alta — Nude, Rosa"},
             ],
         }
