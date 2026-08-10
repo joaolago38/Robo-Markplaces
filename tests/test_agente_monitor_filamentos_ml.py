@@ -265,6 +265,58 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
         self.assertIn("Por material (TPU / PLA / PETG / ABS)", msg)
         self.assertIn("eSUN", msg)
         self.assertIn("Comparativo ML × Alibaba", msg)
+        self.assertIn("400 vendas", msg)
+
+    def test_montar_mensagem_vendas_nd(self):
+        msg = agente.montar_mensagem_telegram(
+            {
+                "total_filamentos_unicos": 90,
+                "total_vendas": 0,
+                "anuncios_com_vendas_api": 0,
+                "preco_min": 100.0,
+                "preco_max": 169.0,
+                "preco_medio": 133.0,
+                "termos_varridos": 4,
+                "ranking_cores": [
+                    {"cor": "Preto", "vendidos": 0, "anuncios": 42, "preco_medio": 124.97}
+                ],
+                "ranking_marcas": [
+                    {
+                        "marca": "Genérico/Outros",
+                        "vendidos": 0,
+                        "anuncios": 90,
+                        "preco_medio": 133.0,
+                    }
+                ],
+                "top_vendas": [
+                    {
+                        "titulo": "Filamento PETG preto 1kg",
+                        "preco": 124.0,
+                        "quantidade_vendida": 0,
+                        "avaliacoes": 12,
+                        "marca": "Genérico/Outros",
+                        "cor": "Preto",
+                        "material": "PETG",
+                    }
+                ],
+            },
+            [
+                {
+                    "ok": True,
+                    "nome": "PETG",
+                    "material": "PETG",
+                    "preco_min": 100,
+                    "preco_max": 169,
+                    "preco_medio": 133,
+                    "total_filamentos": 90,
+                    "total_bruto": 100,
+                }
+            ],
+        )
+        self.assertIn("vendas API n/d", msg)
+        self.assertIn("vendas n/d", msg)
+        self.assertNotIn("0 vendas", msg)
+        self.assertIn("12 aval.", msg)
 
     @patch.object(agente, "alertar_gestor", return_value=True)
     @patch.object(agente, "cruzar_filamentos_ml_alibaba")

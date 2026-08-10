@@ -77,6 +77,51 @@ class AnaliseFilamentosMlTests(unittest.TestCase):
         self.assertEqual(cons["ranking_cores"][0]["cor"], "Preto")
         self.assertEqual(cons["ranking_marcas"][0]["marca"], "eSUN")
 
+    def test_ranking_sem_vendas_api_usa_presenca(self):
+        produtos = [
+            af.classificar_anuncio(
+                {
+                    "item_id": "MLB1",
+                    "titulo": "Filamento PETG preto 1kg",
+                    "preco": 120,
+                    "quantidade_vendida": 0,
+                },
+                material_esperado="PETG",
+            ),
+            af.classificar_anuncio(
+                {
+                    "item_id": "MLB2",
+                    "titulo": "Filamento PETG preto 1kg Creality",
+                    "preco": 130,
+                    "quantidade_vendida": 0,
+                },
+                material_esperado="PETG",
+            ),
+            af.classificar_anuncio(
+                {
+                    "item_id": "MLB3",
+                    "titulo": "eSUN Filamento PETG azul 1kg",
+                    "preco": 140,
+                    "quantidade_vendida": 0,
+                    "avaliacoes": 50,
+                },
+                material_esperado="PETG",
+            ),
+        ]
+        produtos = [p for p in produtos if p]
+        cores = af.ranking_cores(produtos)
+        self.assertEqual(cores[0]["vendidos"], 0)
+        # Azul com avaliações deve pesar mais que Preto só por presença
+        self.assertEqual(cores[0]["cor"], "Azul")
+        marcas = af._ranking(produtos, "marca")
+        self.assertEqual(marcas[0]["marca"], "eSUN")
+        self.assertEqual(af.fmt_vendas_amostra(0), "n/d")
+        self.assertEqual(af.fmt_vendas_amostra(10), "10 vendas")
+
+    def test_fmt_vendas_amostra(self):
+        self.assertEqual(af.fmt_vendas_amostra(0), "n/d")
+        self.assertEqual(af.fmt_vendas_amostra(12), "12 vendas")
+
 
 if __name__ == "__main__":
     unittest.main()
