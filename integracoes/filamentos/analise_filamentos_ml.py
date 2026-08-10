@@ -413,12 +413,14 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         key=lambda x: float(x.get("preco") or 0),
     )[:10]
     cores = ranking_cores(unicos)
+    com_aval = sum(1 for p in unicos if avaliacoes_anuncio(p) > 0)
 
     return {
         "total_filamentos_unicos": len(unicos),
         "total_vendas": total_vendas,
         "vendas_proxy_confiavel": total_vendas > 0,
         "anuncios_com_vendas_api": len(com_vendas),
+        "anuncios_com_avaliacoes": com_aval,
         "termos_varridos": termos_ok,
         "preco_medio": round(sum(precos) / len(precos), 2) if precos else 0.0,
         "preco_min": round(min(precos), 2) if precos else 0.0,
@@ -428,6 +430,7 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "ranking_cores": cores,
         "top_vendas": top_vendas[:12],
         "top_baratos": top_baratos,
+        "produtos_unicos": unicos,
         "por_termo": [
             {
                 "id": r.get("id"),
@@ -441,4 +444,104 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
             for r in resultados
             if r.get("ok")
         ],
+    }
+
+
+def enriquecer_avaliacoes_amostra(
+    resultados: list[dict[str, Any]],
+    *,
+    limite: int = 15,
+) -> int:
+    """
+    Busca /reviews/item nos top anúncios (proxy de demanda quando sold_quantity=0).
+    Atualiza produtos in-place; retorna quantos receberam avaliações.
+    """
+    from integracoes.ml.analise_anuncio_concorrente import buscar_reviews_item
+
+    por_item: dict[str, dict[str, Any]] = {}
+    for resultado in resultados:
+        if not resultado.get("ok"):
+            continue
+        for prod in resultado.get("produtos") or []:
+            iid = str(prod.get("item_id") or "").strip()
+            if not iid:
+                continue
+            atual = por_item.get(iid)
+            if not atual or chave_ranking_anuncio(prod) > chave_ranking_anuncio(atual):
+                por_item[iid] = prod
+
+    candidatos = sorted(por_item.values(), key=chave_ranking_anuncio, reverse=True)[: max(0, limite)]
+    atualizados = 0
+    for prod in candidatos:
+        iid = str(prod.get("item_id") or "").strip()
+        if not iid or avaliacoes_anuncio(prod) > 0:
+            continue
+        rev = buscar_reviews_item(iid)
+        if not rev.get("ok"):
+            continue
+        aval = _as_int(rev.get("avaliacoes"))
+        if aval <= 0:
+            continue
+        # propaga para todas as cópias do item nos resultados
+        for resultado in resultados:
+            for p in resultado.get("produtos") or []:
+                if str(p.get("item_id") or "").strip() == iid:
+                    p["avaliacoes"] = aval
+                    if rev.get("nota") is not None:
+                        p["nota"] = rev.get("nota")
+        atualizados += 1
+    return atualizados
+
+
+def resumo_decisao_filamentos(
+    consolidado: dict[str, Any],
+    *,
+    custo_1kg_brl: float | None = None,
+    taxa_ml_pct: float = 16.0,
+    margem_alvo_pct: float = 25.0,
+) -> dict[str, Any]:
+    """Insights acionáveis (preço/sortimento/cores) — sem fingir volume de vendas."""
+    from integracoes.importacao.custo_landed import calcular_margem_revenda
+
+    cores = list(consolidado.get("ranking_cores") or [])
+    marcas = list(consolidado.get("ranking_marcas") or [])
+    preco_med = float(consolidado.get("preco_medio") or 0)
+    preco_min = float(consolidado.get("preco_min") or 0)
+    tem_vendas = bool(consolidado.get("vendas_proxy_confiavel"))
+    com_aval = int(consolidado.get("anuncios_com_avaliacoes") or 0)
+
+    fonte_cores = "vendas_api" if tem_vendas else ("avaliacoes" if com_aval > 0 else "presenca_anuncios")
+    top_cores = [c.get("cor") for c in cores[:5] if c.get("cor")]
+    saturadas = [c.get("cor") for c in cores[:3] if int(c.get("anuncios") or 0) >= 10]
+    nicho = [
+        c.get("cor")
+        for c in cores
+        if c.get("cor") and c.get("cor") != "Indefinida" and int(c.get("anuncios") or 0) <= 3
+    ][:4]
+
+    margem = None
+    preco_piso = None
+    if custo_1kg_brl and custo_1kg_brl > 0 and preco_med > 0:
+        margem = calcular_margem_revenda(
+            preco_med, float(custo_1kg_brl), taxa_marketplace_pct=taxa_ml_pct
+        )
+        # piso aproximado: custo / (1 - taxa - margem_alvo)
+        denom = 1 - (taxa_ml_pct / 100.0) - (margem_alvo_pct / 100.0)
+        if denom > 0.05:
+            preco_piso = round(float(custo_1kg_brl) / denom, 2)
+
+    return {
+        "fonte_cores": fonte_cores,
+        "confianca_cores_pct": 70 if tem_vendas else (35 if com_aval > 0 else 25),
+        "top_cores": top_cores,
+        "cores_saturadas": saturadas,
+        "cores_nicho": nicho,
+        "preco_medio": preco_med,
+        "preco_min": preco_min,
+        "custo_1kg_brl": custo_1kg_brl,
+        "taxa_ml_pct": taxa_ml_pct,
+        "margem_no_preco_medio": margem,
+        "preco_piso_sugerido": preco_piso,
+        "margem_alvo_pct": margem_alvo_pct,
+        "marca_mais_presente": (marcas[0].get("marca") if marcas else None),
     }

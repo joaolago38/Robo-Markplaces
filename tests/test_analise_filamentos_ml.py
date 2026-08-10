@@ -118,9 +118,37 @@ class AnaliseFilamentosMlTests(unittest.TestCase):
         self.assertEqual(af.fmt_vendas_amostra(0), "n/d")
         self.assertEqual(af.fmt_vendas_amostra(10), "10 vendas")
 
-    def test_fmt_vendas_amostra(self):
-        self.assertEqual(af.fmt_vendas_amostra(0), "n/d")
-        self.assertEqual(af.fmt_vendas_amostra(12), "12 vendas")
+    def test_resumo_decisao_e_enriquecer_noop(self):
+        produtos = [
+            af.classificar_anuncio(
+                {
+                    "item_id": "MLB1",
+                    "titulo": "Filamento PETG preto 1kg",
+                    "preco": 120,
+                    "quantidade_vendida": 0,
+                    "avaliacoes": 30,
+                },
+                material_esperado="PETG",
+            ),
+            af.classificar_anuncio(
+                {
+                    "item_id": "MLB2",
+                    "titulo": "Filamento PETG azul 1kg",
+                    "preco": 130,
+                    "quantidade_vendida": 0,
+                },
+                material_esperado="PETG",
+            ),
+        ]
+        produtos = [p for p in produtos if p]
+        cons = af.consolidar_varredura(
+            [{"ok": True, "produtos": produtos, "total_filamentos": 2}]
+        )
+        d = af.resumo_decisao_filamentos(cons, custo_1kg_brl=45.96, taxa_ml_pct=16.0)
+        self.assertIn(d["fonte_cores"], ("avaliacoes", "presenca_anuncios"))
+        self.assertTrue(d["top_cores"])
+        self.assertIsNotNone(d["preco_piso_sugerido"])
+        self.assertEqual(af.enriquecer_avaliacoes_amostra([], limite=5), 0)
 
 
 if __name__ == "__main__":
