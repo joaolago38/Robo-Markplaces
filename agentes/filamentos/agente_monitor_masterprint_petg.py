@@ -67,6 +67,16 @@ def _fmt_brl(valor: Any) -> str:
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _fmt_vendas(valor: Any) -> str:
+    try:
+        n = int(valor or 0)
+    except (TypeError, ValueError):
+        n = 0
+    if n <= 0:
+        return "n/d"
+    return f"{n} vendas"
+
+
 def _linha_anuncio(
     p: dict[str, Any],
     *,
@@ -76,15 +86,13 @@ def _linha_anuncio(
     """modo: rentavel | ganho | vendas — evita repetir os mesmos campos em toda seção."""
     titulo = str(p.get("titulo") or "?")[:55]
     preco = _fmt_brl(p.get("preco"))
+    vend_txt = _fmt_vendas(p.get("quantidade_vendida"))
     if modo == "vendas":
-        base = (
-            f"• {preco} | {int(p.get('quantidade_vendida') or 0)} vendas | "
-            f"rec. {_fmt_brl(p.get('receita_proxy'))} — {titulo}"
-        )
+        rec = p.get("receita_proxy")
+        rec_txt = _fmt_brl(rec) if float(rec or 0) > 0 else "n/d"
+        base = f"• {preco} | {vend_txt} | rec. {rec_txt} — {titulo}"
     elif modo == "ganho":
-        base = (
-            f"• {preco} | {int(p.get('quantidade_vendida') or 0)} vendas — {titulo}"
-        )
+        base = f"• {preco} | {vend_txt} — {titulo}"
     else:
         margem = p.get("margem_brl")
         custo = p.get("custo_unitario_brl")
@@ -95,13 +103,11 @@ def _linha_anuncio(
                 f"lucro {_fmt_brl(p.get('lucro_proxy'))} — {titulo}"
             )
         else:
-            base = (
-                f"• {preco} | {int(p.get('quantidade_vendida') or 0)} vendas | "
-                f"rec. {_fmt_brl(p.get('receita_proxy'))} — {titulo}"
-            )
+            base = f"• {preco} | {vend_txt} — {titulo}"
     if com_delta:
         dv = int(p.get("delta_vendas") or 0)
-        base += f" | Δvendas +{dv}"
+        if dv > 0:
+            base += f" | Δvendas +{dv}"
     iid = str(p.get("item_id") or "").strip()
     if iid:
         base += f"\n  `{iid}`"
@@ -126,6 +132,10 @@ def montar_mensagem_telegram(
     rent = consolidado.get("mais_rentaveis") or []
     ganhos = consolidado.get("maior_ganho") or []
     sem_historico = bool(ganhos and ganhos[0].get("ganho_fonte") == "sem_historico_usa_vendas")
+    vendas_tot = int(consolidado.get("vendas_totais") or 0)
+    vendas_panorama = _fmt_vendas(vendas_tot)
+    if vendas_panorama == "n/d":
+        vendas_panorama = "n/d (API concorrente bloqueada)"
 
     linhas = [
         cabecalho_agente(
@@ -137,8 +147,12 @@ def montar_mensagem_telegram(
         (
             f"Panorama: *{consolidado.get('total_anuncios_ativos', 0)}* anúncios | "
             f"margem méd. {_fmt_brl(consolidado.get('margem_media_brl'))} | "
-            f"vendas *{consolidado.get('vendas_totais', 0)}* | "
+            f"vendas *{vendas_panorama}* | "
             f"custo 1kg {_fmt_brl(consolidado.get('custo_padrao_1kg_brl'))}"
+        ),
+        (
+            f"Preço méd. {_fmt_brl(consolidado.get('preco_medio'))} "
+            f"({_fmt_brl(consolidado.get('preco_min'))}–{_fmt_brl(consolidado.get('preco_max'))})"
         ),
         "",
         "*1) AGIR — priorize margem*",
@@ -150,7 +164,12 @@ def montar_mensagem_telegram(
         linhas.append("_Nenhum anúncio Masterprint PETG nesta rodada._")
 
     linhas.extend(["", "*2) ATENÇÃO — movimento de vendas*"])
-    if ganhos:
+    if vendas_tot <= 0:
+        linhas.append(
+            "_Vendas/receita proxy zeradas: busca `/items` e reviews de terceiros "
+            "retornam 403 — use a seção de *margem* para decidir._"
+        )
+    elif ganhos:
         if sem_historico:
             linhas.append("_Sem histórico Δ — ranking por vendas atuais._")
         for p in ganhos[:4]:
@@ -158,7 +177,7 @@ def montar_mensagem_telegram(
     else:
         linhas.append("_Sem ganho vs rodada anterior._")
 
-    if not sem_historico and (consolidado.get("mais_vendidos") or []):
+    if vendas_tot > 0 and not sem_historico and (consolidado.get("mais_vendidos") or []):
         linhas.extend(["", "*Volume* _(complemento)_"])
         for p in (consolidado.get("mais_vendidos") or [])[:3]:
             linhas.append(_linha_anuncio(p, modo="vendas"))
@@ -170,7 +189,8 @@ def montar_mensagem_telegram(
     linhas.extend(
         [
             "",
-            "_Decisão:_ empurre o top de *margem*; use Δ vendas só para timing, não para preço abaixo do custo._",
+            "_Decisão:_ empurre o top de *margem*; Δ vendas só quando a API liberar "
+            "`sold_quantity` (hoje n/d para concorrentes).",
         ]
     )
     return "\n".join(linhas).strip()
