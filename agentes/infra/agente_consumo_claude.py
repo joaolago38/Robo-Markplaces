@@ -16,6 +16,8 @@ from typing import Any
 
 from core.atomic_io import escrever_json_atomico
 from core.claude_orcamento import (
+    aplicar_saldo_console,
+    emitir_metricas_claude_datadog,
     gerar_graficos_consumo,
     montar_mensagem_telegram,
     ranking_consumo_por_agente,
@@ -27,7 +29,7 @@ from core.config import (
     CLAUDE_ORCAMENTO_USD,
     ROOT,
 )
-from core.datadog_metrics import gauge, incrementar
+from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, enviar_foto_gestor
 
 logger = logging.getLogger("agente_consumo_claude")
@@ -59,9 +61,7 @@ def executar(*, enviar_alerta: bool = True, reset: bool = False) -> dict[str, An
             "mensagem": msg,
         }
         escrever_json_atomico(SNAPSHOT_PATH, payload)
-        gauge("claude.orcamento_consumido_usd", float(r.get("consumido_usd") or 0))
-        gauge("claude.orcamento_restante_usd", float(r.get("restante_usd") or 0))
-        gauge("claude.assertividade_pct", float(r.get("assertividade_pct") or 0))
+        emitir_metricas_claude_datadog(r)
 
         enviado = False
         chave = chave_resumo_periodo("consumo_claude", horas_por_bucket=6)
@@ -112,7 +112,56 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Painel consumo Claude → Telegram + gráficos")
     p.add_argument("--sem-alerta", action="store_true")
     p.add_argument("--reset", action="store_true", help="Zera contadores locais")
+    p.add_argument(
+        "--creditos",
+        type=float,
+        default=None,
+        help="Saldo/créditos US$ do painel (console) → robo.claude.orcamento_restante_usd",
+    )
+    p.add_argument(
+        "--gasto-mes",
+        type=float,
+        default=None,
+        help="Gasto do mês US$ no painel → robo.claude.orcamento_consumido_usd",
+    )
+    p.add_argument("--tokens-7d", type=float, default=None, help="Volume de tokens (7 dias) do painel")
+    p.add_argument(
+        "--tokens-crescimento-pct",
+        type=float,
+        default=None,
+        help="Crescimento %% tokens 7d do painel",
+    )
+    p.add_argument("--limite-mes", type=float, default=None, help="Limite mensal US$ do painel")
+    p.add_argument(
+        "--prompt-cache",
+        action="store_true",
+        help="Marca prompt cache como ativo no Datadog",
+    )
     args = p.parse_args()
+    if args.creditos is not None:
+        r = aplicar_saldo_console(
+            args.creditos,
+            gasto_mes_usd=args.gasto_mes,
+            tokens_7d=args.tokens_7d,
+            tokens_7d_crescimento_pct=args.tokens_crescimento_pct,
+            prompt_cache_ativo=True if args.prompt_cache else False,
+            limite_mes_usd=args.limite_mes,
+            emitir_datadog=True,
+        )
+        print(
+            {
+                "ok": True,
+                "sync_painel": True,
+                "consumido": r.get("consumido_usd"),
+                "restante": r.get("restante_usd"),
+                "orcamento": r.get("orcamento_usd"),
+            }
+        )
+        if args.reset or not args.sem_alerta:
+            # ainda publica o painel Telegram se pedido
+            out = executar(enviar_alerta=not args.sem_alerta, reset=False)
+            print({"alerta_enviado": out.get("alerta_enviado")})
+        return 0
     out = executar(enviar_alerta=not args.sem_alerta, reset=args.reset)
     ranking = out.get("ranking_agentes") or []
     print(

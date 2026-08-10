@@ -29,7 +29,11 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
-from integracoes.esmaltes.analise_mercado import analisar_segmento, consolidar_mercado
+from integracoes.esmaltes.analise_mercado import (
+    analisar_segmento,
+    consolidar_mercado,
+    fmt_vendas_amostra,
+)
 from integracoes.ml import ml_client
 
 logger = logging.getLogger("agente_monitor_mercado_esmaltes")
@@ -64,14 +68,27 @@ def _fmt_brl(valor: Any) -> str:
         return "n/d"
 
 
+def _fmt_marca_volume(item: dict[str, Any]) -> str:
+    vend = int(item.get("vendidos") or 0)
+    if vend > 0:
+        return f"{vend} vendas"
+    anuncios = int(item.get("anuncios") or 0)
+    if anuncios > 0:
+        return f"{anuncios} anúncios (vendas n/d)"
+    return "vendas n/d"
+
+
 def _montar_secao_segmento(seg: dict[str, Any]) -> list[str]:
     linhas = [f"*{seg.get('nome', seg.get('id', '?'))}* ({seg.get('total_anuncios', 0)} anúncios)"]
 
     kits = seg.get("padroes_kits") or []
     if kits:
         k = kits[0]
+        vol = fmt_vendas_amostra(k.get("vendidos"))
+        if vol == "n/d":
+            vol = f"{int(k.get('anuncios') or 0)} anúnc. (vendas n/d)"
         linhas.append(
-            f"  Kit líder: {k['qtd']} un | {k['vendidos']} vend. | média {_fmt_brl(k.get('preco_medio'))}"
+            f"  Kit líder: {k['qtd']} un | {vol} | média {_fmt_brl(k.get('preco_medio'))}"
         )
 
     cores = seg.get("tendencia_cores") or []
@@ -80,9 +97,15 @@ def _montar_secao_segmento(seg: dict[str, Any]) -> list[str]:
 
     for dest in (seg.get("destaques") or [])[:2]:
         titulo = str(dest.get("titulo") or "")[:50]
+        vol = fmt_vendas_amostra(dest.get("quantidade_vendida"))
+        extra = ""
+        if vol == "n/d":
+            aval = dest.get("avaliacoes")
+            if aval:
+                extra = f" | {aval} aval."
         linhas.append(
             f"  • {titulo} — {_fmt_brl(dest.get('preco'))} | "
-            f"{dest.get('quantidade_vendida', 0)} vend. | {dest.get('descricao_kit', '')}"
+            f"{vol}{extra} | {dest.get('descricao_kit', '')}"
         )
     return linhas
 
@@ -101,9 +124,10 @@ def _montar_painel(resultados: list[dict[str, Any]], consolidado: dict[str, Any]
 
     ranking = consolidado.get("ranking_marcas_global") or []
     if ranking:
-        linhas.append("*Marcas que mais vendem:*")
+        tem_vendas = any(int(i.get("vendidos") or 0) > 0 for i in ranking)
+        linhas.append("*Marcas que mais vendem:*" if tem_vendas else "*Marcas mais presentes (vendas API n/d):*")
         for item in ranking[:5]:
-            linhas.append(f"  • {item['marca']}: {item['vendidos']} vendas")
+            linhas.append(f"  • {item['marca']}: {_fmt_marca_volume(item)}")
         linhas.append("")
 
     propostas = [p for p in (consolidado.get("propostas") or []) if p.get("prioridade") == "alta"]

@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-08-10T11:20:50.904942+00:00",
+  "fonte": "painel_manual_usuario",
+  "creditos_usd": 2.41,
+  "gasto_mes_usd": 3.44,
+  "limite_mes_usd": 1000.0,
+  "tokens_7d": 685600.0,
+  "tokens_7d_crescimento_pct": 174.0,
+  "prompt_cache_ativo": false,
+  "metricas": [
+    "robo.ia.billing.creditos_usd",
+    "robo.ia.billing.gasto_mes_usd",
+    "robo.ia.billing.limite_mes_usd",
+    "robo.ia.billing.gasto_mes_pct",
+    "robo.ia.billing.tokens_7d",
+    "robo.ia.billing.tokens_7d_crescimento_pct",
+    "robo.ia.billing.prompt_cache_ativo"
+  ]
+}

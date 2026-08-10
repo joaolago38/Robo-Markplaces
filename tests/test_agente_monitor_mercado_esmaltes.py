@@ -17,7 +17,7 @@ class AgenteMonitorMercadoEsmaltesTests(unittest.TestCase):
             "total_anuncios_unicos": 40,
             "total_segmentos": 3,
             "total_oportunidades_margem": 2,
-            "ranking_marcas_global": [{"marca": "Impala", "vendidos": 500}],
+            "ranking_marcas_global": [{"marca": "Impala", "vendidos": 500, "anuncios": 20}],
             "propostas": [
                 {"prioridade": "alta", "texto": "Competir com IMP-BAIL-005 em R$ 45,90"},
                 {"prioridade": "media", "texto": "Cores em alta — Nude, Rosa"},
@@ -29,7 +29,7 @@ class AgenteMonitorMercadoEsmaltesTests(unittest.TestCase):
                 "prioridade": 1,
                 "nome": "Kit 5",
                 "total_anuncios": 20,
-                "padroes_kits": [{"qtd": 5, "vendidos": 200, "preco_medio": 46.0}],
+                "padroes_kits": [{"qtd": 5, "vendidos": 200, "preco_medio": 46.0, "anuncios": 8}],
                 "tendencia_cores": [{"cor": "Nude"}],
                 "destaques": [
                     {
@@ -44,6 +44,44 @@ class AgenteMonitorMercadoEsmaltesTests(unittest.TestCase):
         painel = ag._montar_painel(resultados, consolidado)
         self.assertIn("Mercado esmaltes", painel)
         self.assertIn("IMP-BAIL-005", painel)
+        self.assertIn("100 vend.", painel)
+
+    def test_montar_painel_vendas_nd(self):
+        consolidado = {
+            "total_anuncios_unicos": 10,
+            "total_segmentos": 1,
+            "total_oportunidades_margem": 0,
+            "ranking_marcas_global": [{"marca": "Impala", "vendidos": 0, "anuncios": 6}],
+            "propostas": [
+                {
+                    "prioridade": "media",
+                    "texto": "Kit 3: kits de 3 un mais presentes na amostra — vendas API n/d",
+                }
+            ],
+        }
+        resultados = [
+            {
+                "ok": True,
+                "prioridade": 1,
+                "nome": "Kit 3 esmaltes",
+                "total_anuncios": 6,
+                "padroes_kits": [{"qtd": 3, "vendidos": 0, "preco_medio": 33.48, "anuncios": 6}],
+                "tendencia_cores": [{"cor": "Branco"}],
+                "destaques": [
+                    {
+                        "titulo": "Kit 3 Esmaltes Impala",
+                        "preco": 36.98,
+                        "quantidade_vendida": 0,
+                        "avaliacoes": 12,
+                        "descricao_kit": "3 esmalte(s)",
+                    }
+                ],
+            }
+        ]
+        painel = ag._montar_painel(resultados, consolidado)
+        self.assertIn("vendas n/d", painel)
+        self.assertNotIn("0 vend.", painel)
+        self.assertIn("12 aval.", painel)
 
     @patch.object(ag, "alertar_gestor", return_value=True)
     @patch("integracoes.ml.ml_client.buscar_concorrentes_por_termo", return_value=[])
