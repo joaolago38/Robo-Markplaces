@@ -83,11 +83,14 @@ def _linha_anuncio(
     modo: str = "rentavel",
     com_delta: bool = False,
 ) -> str:
-    """modo: rentavel | ganho | vendas — evita repetir os mesmos campos em toda seção."""
+    """modo: rentavel | ganho | vendas | visitas — evita repetir os mesmos campos em toda seção."""
     titulo = str(p.get("titulo") or "?")[:55]
     preco = _fmt_brl(p.get("preco"))
     vend_txt = _fmt_vendas(p.get("quantidade_vendida"))
-    if modo == "vendas":
+    vis7 = int(p.get("visitas_7d") or 0)
+    if modo == "visitas":
+        base = f"• {preco} | {vis7} vis/7d | {vend_txt} — {titulo}"
+    elif modo == "vendas":
         rec = p.get("receita_proxy")
         rec_txt = _fmt_brl(rec) if float(rec or 0) > 0 else "n/d"
         base = f"• {preco} | {vend_txt} | rec. {rec_txt} — {titulo}"
@@ -97,10 +100,11 @@ def _linha_anuncio(
         margem = p.get("margem_brl")
         custo = p.get("custo_unitario_brl")
         if margem is not None and custo is not None:
+            vis_extra = f" | {vis7} vis/7d" if vis7 > 0 else ""
             base = (
                 f"• {preco} | custo {_fmt_brl(custo)} | "
                 f"margem {_fmt_brl(margem)} ({p.get('margem_pct', '?')}%) | "
-                f"lucro {_fmt_brl(p.get('lucro_proxy'))} — {titulo}"
+                f"lucro {_fmt_brl(p.get('lucro_proxy'))}{vis_extra} — {titulo}"
             )
         else:
             base = f"• {preco} | {vend_txt} — {titulo}"
@@ -167,7 +171,7 @@ def montar_mensagem_telegram(
     if vendas_tot <= 0:
         linhas.append(
             "_Vendas/receita proxy zeradas: busca `/items` e reviews de terceiros "
-            "retornam 403 — use a seção de *margem* para decidir._"
+            "retornam 403 — use *margem* + *visitas rivais* + funil próprio._"
         )
     elif ganhos:
         if sem_historico:
@@ -182,6 +186,21 @@ def montar_mensagem_telegram(
         for p in (consolidado.get("mais_vendidos") or [])[:3]:
             linhas.append(_linha_anuncio(p, modo="vendas"))
 
+    from integracoes.ml.coleta_demanda_ml import (
+        formatar_secao_funil,
+        formatar_secao_pontos_cegos,
+        top_por_visitas,
+    )
+
+    rivais_vis = top_por_visitas(consolidado.get("produtos") or [], top_n=5)
+    if rivais_vis:
+        linhas.extend(["", "*3) DEMANDA — rivais com visitas*"])
+        for p in rivais_vis:
+            linhas.append(_linha_anuncio(p, modo="visitas"))
+
+    linhas.extend(formatar_secao_funil(consolidado.get("funil_proprio")))
+    linhas.extend(formatar_secao_pontos_cegos(consolidado.get("pontos_cegos")))
+
     secao_ia = formatar_secao_ia_masterprint(avaliacao_ia, com_tagline_ramo=False)
     if secao_ia:
         linhas.append(secao_ia)
@@ -189,8 +208,8 @@ def montar_mensagem_telegram(
     linhas.extend(
         [
             "",
-            "_Decisão:_ empurre o top de *margem*; Δ vendas só quando a API liberar "
-            "`sold_quantity` (hoje n/d para concorrentes).",
+            "_Decisão:_ empurre o top de *margem*; use visitas rivais como proxy de demanda; "
+            "Δ vendas só quando a API liberar `sold_quantity`.",
         ]
     )
     return "\n".join(linhas).strip()
@@ -235,6 +254,43 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             top_n=MASTERPRINT_PETG_TOP_N,
         )
 
+        from integracoes.ml.coleta_demanda_ml import (
+            coletar_funil_proprio,
+            emitir_metricas_demanda,
+            enriquecer_visitas_lista,
+            montar_pontos_cegos,
+        )
+
+        produtos = consolidado.get("produtos") or []
+        # Ordena por margem para priorizar amostra útil
+        amostra = sorted(
+            produtos,
+            key=lambda p: float(p.get("margem_brl") or 0),
+            reverse=True,
+        )
+        n_vis = enriquecer_visitas_lista(amostra, limite=12)
+        # Propaga visitas de volta à lista consolidada (mesmos dicts)
+        consolidado["visitas_enriquecidas"] = n_vis
+        consolidado["anuncios_com_visitas"] = sum(
+            1 for p in produtos if int(p.get("visitas_7d") or 0) > 0
+        )
+        funil = coletar_funil_proprio(
+            dias=7,
+            max_anuncios=20,
+            filtro_titulo=r"petg|masterprint|filamento",
+        )
+        consolidado["funil_proprio"] = funil
+        consolidado["pontos_cegos"] = montar_pontos_cegos(
+            consolidado={
+                **consolidado,
+                "anuncios_com_vendas_api": int(consolidado.get("vendas_totais") or 0),
+                "anuncios_com_avaliacoes": 0,
+            },
+            funil=funil,
+            visitas_enriquecidas=n_vis,
+            contexto="masterprint_petg",
+        )
+
         from integracoes.masterprint.avaliacao_ia_secundaria import avaliar_masterprint_secundario
 
         avaliacao_ia = avaliar_masterprint_secundario(escopo="petg", consolidado=consolidado)
@@ -276,6 +332,12 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             gauge("masterprint_petg.margem_media_brl", float(consolidado.get("margem_media_brl") or 0))
         if consolidado.get("preco_medio") is not None:
             gauge("masterprint_petg.preco_medio", float(consolidado.get("preco_medio") or 0))
+        emitir_metricas_demanda(
+            "masterprint_petg",
+            funil=consolidado.get("funil_proprio"),
+            pontos_cegos=consolidado.get("pontos_cegos"),
+            visitas_enriquecidas=int(consolidado.get("visitas_enriquecidas") or 0),
+        )
         try:
             from integracoes.filamentos.metricas_top_anuncios import (
                 emitir_top_anuncios,

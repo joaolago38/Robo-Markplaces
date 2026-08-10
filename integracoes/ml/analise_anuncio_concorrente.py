@@ -8,7 +8,7 @@ Fontes oficiais / estimativas:
   - avaliações / nota: /reviews/item/{item_id}
   - vendas: sold_quantity quando a API devolver (hoje costuma vir vazio)
   - vendas/dia, receita bruta/líquida: calculadas
-  - visitas: só dos *seus* anúncios (API /visits)
+  - visitas: /items/{id}/visits/time_window (próprios e, no app atual, rivais)
 
 Nunca lança exceção nas APIs públicas do módulo.
 """
@@ -153,41 +153,38 @@ def buscar_meta_catalogo(catalog_product_id: str) -> dict[str, Any]:
 
 def buscar_visitas_se_proprio(item_id: str, seller_id: str | None = None) -> dict[str, Any]:
     """
-    Visitas só quando o anúncio é da conta autenticada (ML_SELLER_ID).
-    Concorrente → indisponível via API oficial.
+    Visitas 7d/30d via API oficial (/visits/time_window).
+    Nome histórico: funciona para próprios e, no app atual, também rivais.
+    seller_id só marca se o anúncio é da conta autenticada.
     """
     iid = str(item_id or "").strip().upper()
     sid = str(seller_id or "").strip()
     self_id = str(ML_SELLER_ID or "").strip()
     if not iid:
         return {"ok": False, "motivo": "item_id vazio", "disponivel": False}
-    if self_id and sid and sid != self_id:
+    if not ml_client._enabled():
         return {
             "ok": True,
             "disponivel": False,
-            "motivo": "visitas de terceiros não disponíveis na API oficial",
+            "motivo": "ML não configurado",
             "visitas_7d": None,
             "visitas_30d": None,
         }
-    if not self_id or (sid and sid != self_id):
-        # sem seller no row: tenta mesmo assim; API falha se não for nosso
-        pass
-    metricas = ml_client.buscar_metricas_item(iid) if ml_client._enabled() else {}
-    if not metricas:
+    visitas = ml_client.buscar_visitas_item(iid)
+    if not visitas.get("disponivel"):
         return {
             "ok": True,
             "disponivel": False,
-            "motivo": "visitas indisponíveis (não é anúncio próprio ou API bloqueada)",
+            "motivo": str(visitas.get("motivo") or "visitas indisponíveis"),
             "visitas_7d": None,
             "visitas_30d": None,
         }
     return {
         "ok": True,
         "disponivel": True,
-        "visitas_7d": _i(metricas.get("visitas_7d")),
-        "visitas_30d": _i(metricas.get("visitas_30d")),
-        "estoque": metricas.get("estoque"),
-        "status": metricas.get("status"),
+        "visitas_7d": _i(visitas.get("visitas_7d")),
+        "visitas_30d": _i(visitas.get("visitas_30d")),
+        "proprio": bool(self_id and sid and sid == self_id),
     }
 
 
@@ -226,8 +223,8 @@ def montar_metricas(
         **rec,
         "fonte_metricas": "estimativa_oficial",
         "limitacao": (
-            "Vendas/visitas de terceiros dependem da API; "
-            "receita líquida usa taxa estimada; visitas só dos seus anúncios."
+            "sold_quantity/reviews de rivais costumam vir 403; "
+            "visitas via /visits costumam funcionar; receita líquida usa taxa estimada."
         ),
     }
 

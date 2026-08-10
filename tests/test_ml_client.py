@@ -273,6 +273,33 @@ class TestMlAnuncioStatus(unittest.TestCase):
 
     @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML20b_visitas_sem_item_publico(self, _en, mock_req):
+        """Rivais: /items 403, mas /visits pode responder."""
+        r403 = MagicMock()
+        r403.status_code = 403
+        r403.raise_for_status.side_effect = Exception("403")
+        r403.json.return_value = {"message": "forbidden"}
+        r_vis = _mock_resp({"total_visits": 158})
+        mock_req.side_effect = [r403, r_vis, r_vis]
+        out = ml_client.buscar_metricas_item("MLB7196424420")
+        self.assertEqual(out.get("visitas_7d"), 158)
+        self.assertEqual(out.get("visitas_30d"), 158)
+        self.assertEqual(out.get("item_id"), "MLB7196424420")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML20c_buscar_visitas_item(self, _en, mock_req):
+        mock_req.side_effect = [
+            _mock_resp({"total_visits": 10}),
+            _mock_resp({"total_visits": 40}),
+        ]
+        out = ml_client.buscar_visitas_item("MLB1")
+        self.assertTrue(out.get("disponivel"))
+        self.assertEqual(out.get("visitas_7d"), 10)
+        self.assertEqual(out.get("visitas_30d"), 40)
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML21_atualizar_preco_bloqueado_kill_switch(self, _en, mock_req):
         with patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "ROBO_PAUSAR_ESCRITA"}):
             self.assertFalse(ml_client.atualizar_preco_item("MLB1", 10.0))

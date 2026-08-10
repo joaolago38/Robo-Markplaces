@@ -87,10 +87,14 @@ def _fmt_brl(valor: Any) -> str:
 
 
 def _fmt_volume_ranking(item: dict[str, Any]) -> str:
-    """Texto de volume: vendas reais ou n/d (não imprime '0 vendas')."""
+    """Texto de volume: vendas reais, visitas ou n/d (não imprime '0 vendas')."""
     vend = int(item.get("vendidos") or 0)
     if vend > 0:
         return f"{vend} vendas"
+    fonte = str(item.get("fonte_volume") or "")
+    proxy = int(item.get("volume_proxy") or 0)
+    if fonte == "visitas" and proxy > 0:
+        return f"{proxy} vis (proxy)"
     return "vendas n/d"
 
 
@@ -151,8 +155,8 @@ def _montar_secao_decisao(consolidado: dict[str, Any]) -> list[str]:
                 f"• *Preço piso (~{decisao.get('margem_alvo_pct')}% alvo):* {_fmt_brl(piso)}"
             )
     linhas.append(
-        "• *Próximo passo:* validar 3–5 MLB da 1ª página (preço/frete/aval.) "
-        "e acompanhar visitas→vendas dos *seus* anúncios"
+        "• *Próximo passo:* comparar margem no preço médio e funil próprio "
+        "(visitas→pedidos); visitas de rivais são proxy, não vendas"
     )
     return linhas
 
@@ -300,13 +304,25 @@ def montar_mensagem_telegram(
             titulo = str(an.get("titulo") or "?")[:55]
             vol = fmt_vendas_amostra(an.get("quantidade_vendida"))
             extra = ""
-            if vol == "n/d" and an.get("avaliacoes"):
+            if vol == "n/d" and an.get("visitas_7d"):
+                extra = f" | {int(an.get('visitas_7d') or 0)} vis/7d"
+            elif vol == "n/d" and an.get("avaliacoes"):
                 extra = f" | {an.get('avaliacoes')} aval."
             linhas.append(
                 f"{i}. {titulo} — {_fmt_brl(an.get('preco'))} | "
                 f"{vol}{extra} | "
                 f"{an.get('marca', '?')} | {an.get('cor', '?')} | {an.get('material', '?')}"
             )
+
+    from integracoes.ml.coleta_demanda_ml import (
+        formatar_secao_funil,
+        formatar_secao_pontos_cegos,
+        formatar_secao_visitas_rivais,
+    )
+
+    linhas.extend(formatar_secao_visitas_rivais(consolidado.get("produtos_unicos") or top))
+    linhas.extend(formatar_secao_funil(consolidado.get("funil_proprio")))
+    linhas.extend(formatar_secao_pontos_cegos(consolidado.get("pontos_cegos")))
 
     if cruzamento is not None:
         linhas.extend(formatar_secao_cruzamento(cruzamento, fmt_brl=_fmt_brl))
@@ -366,6 +382,16 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
         n_aval = enriquecer_avaliacoes_amostra(resultados, limite=15)
         logger.info("Enriquecidos com avaliações: %s anúncio(s)", n_aval)
 
+        from integracoes.ml.coleta_demanda_ml import (
+            coletar_funil_proprio,
+            emitir_metricas_demanda,
+            enriquecer_visitas_amostra,
+            montar_pontos_cegos,
+        )
+
+        n_vis = enriquecer_visitas_amostra(resultados, limite=12)
+        logger.info("Enriquecidos com visitas: %s anúncio(s)", n_vis)
+
         consolidado = consolidar_varredura(resultados)
         from core.config import FILAMENTOS_SOURCING_TAXA_ML_PCT
 
@@ -375,6 +401,19 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
             taxa_ml_pct=FILAMENTOS_SOURCING_TAXA_ML_PCT,
         )
         consolidado["avaliacoes_enriquecidas"] = n_aval
+        consolidado["visitas_enriquecidas"] = n_vis
+        funil = coletar_funil_proprio(
+            dias=7,
+            max_anuncios=20,
+            filtro_titulo=r"filamento|pla|petg|tpu|abs|masterprint",
+        )
+        consolidado["funil_proprio"] = funil
+        consolidado["pontos_cegos"] = montar_pontos_cegos(
+            consolidado=consolidado,
+            funil=funil,
+            visitas_enriquecidas=n_vis,
+            contexto="filamentos_ml",
+        )
 
         cruzamento: dict[str, Any] | None = None
         if FILAMENTOS_ML_CRUZAR_ALIBABA:
@@ -499,6 +538,13 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
 
         gauge("filamentos.ml.total_unicos", float(consolidado.get("total_filamentos_unicos") or 0))
         gauge("filamentos.ml.total_vendas", float(consolidado.get("total_vendas") or 0))
+        gauge("filamentos.ml.visitas_amostra", float(consolidado.get("total_visitas_7d_amostra") or 0))
+        emitir_metricas_demanda(
+            "filamentos.ml",
+            funil=consolidado.get("funil_proprio"),
+            pontos_cegos=consolidado.get("pontos_cegos"),
+            visitas_enriquecidas=int(consolidado.get("visitas_enriquecidas") or 0),
+        )
         try:
             from integracoes.filamentos.metricas_top_anuncios import (
                 emitir_ranking_marcas,
