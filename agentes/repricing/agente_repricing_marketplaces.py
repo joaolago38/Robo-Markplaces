@@ -118,7 +118,12 @@ def _updater(canal: str):
 
 def _item_ref(canal: str, canal_data: dict, sku: str):
     if canal == "mercadolivre":
-        return canal_data.get("item_id") or sku
+        from core.produto_lookup import item_id_ml_valido
+
+        raw = canal_data.get("item_id")
+        if not item_id_ml_valido(str(raw or "")):
+            return None
+        return raw
     if canal == "shopee":
         return canal_data.get("item_id")
     return canal_data.get("sku") or sku
@@ -270,6 +275,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                 "ok": True,
                 "dry_run": False,
                 "congelado": True,
+                "executou_escrita": False,
                 "motivo_congelamento": motivo_cong,
                 "lucro_minimo_pct": float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT),
                 "total_itens": 0,

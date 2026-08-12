@@ -111,7 +111,11 @@ class TestEstoqueHeartbeat(unittest.TestCase):
             hb = Path(tmp) / "estoque_ultima.json"
             with patch.object(est, "HEARTBEAT_PATH", hb), patch.object(
                 est, "_carregar_catalogo", return_value=[]
-            ), patch.object(est, "listar_produtos_por_sku", return_value={}), patch(
+            ), patch.object(
+                est, "probe_produtos", return_value={"ok": True, "status": 200, "msg": "ok"}
+            ), patch.object(
+                est, "listar_produtos_por_sku_detalhado", return_value=({}, True)
+            ), patch(
                 "agentes.sincronizar_estoque_marketplaces.incrementar"
             ):
                 out = est.executar(produtos=[], dry_run=True)

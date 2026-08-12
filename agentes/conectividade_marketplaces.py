@@ -17,20 +17,14 @@ import logging
 from datetime import datetime, timezone
 
 from core.atomic_io import escrever_json_atomico
-from core.config import ROOT, SPEC
+from core.config import ROOT
 from core.datadog_metrics import gauge, incrementar
 from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.notificador import alertar_critico
 
 logger = logging.getLogger("conectividade_marketplaces")
 
-_MARKETPLACES_ATIVOS_SPEC: set[str] = {
-    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
-}
-
 _MARKETPLACES = ("mercadolivre", "magalu", "shopee", "amazon")
-if "magalu" not in _MARKETPLACES_ATIVOS_SPEC:
-    _MARKETPLACES = tuple(m for m in _MARKETPLACES if m != "magalu")
 
 
 def _probe(nome_marketplace: str) -> dict:
@@ -153,7 +147,15 @@ def executar() -> dict:
     try:
         escrever_json_atomico(
             ROOT / "logs" / "conectividade_ultima.json",
-            {"timestamp": datetime.now(timezone.utc).isoformat(), "ok": payload["falha"] == 0},
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": payload["falha"] == 0,
+                "total": payload["total"],
+                "ok_count": payload["ok"],
+                "falha": payload["falha"],
+                "pulado": payload["pulado"],
+                "resultados": resultados,
+            },
         )
     except Exception as exc:
         logger.warning("Conectividade: falha ao gravar heartbeat: %s", exc)

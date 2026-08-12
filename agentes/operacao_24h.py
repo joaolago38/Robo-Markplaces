@@ -212,17 +212,53 @@ def _formatar_notas_repricing(repricing: dict) -> str:
     return "Notas concorrência:\n" + "\n".join(f"• {n}" for n in notas[:5])
 
 
+def _gravar_heartbeat_operacao(payload: dict) -> None:
+    """Heartbeat com semântica de escrita (ok ≠ só 'rodou')."""
+    try:
+        bloqueado = bool(payload.get("bloqueado"))
+        repricing = payload.get("repricing") if isinstance(payload.get("repricing"), dict) else {}
+        faturamento = payload.get("faturamento") if isinstance(payload.get("faturamento"), dict) else {}
+        falhas_rep = int(repricing.get("total_falhas_aplicacao") or 0)
+        falhas_nfe = int(faturamento.get("falhas") or faturamento.get("erro") or 0)
+        if isinstance(faturamento.get("falhas"), list):
+            falhas_nfe = len(faturamento["falhas"])
+        ok = (not bloqueado) and falhas_rep == 0 and falhas_nfe == 0 and payload.get("ok") is not False
+        modo = payload.get("modo") if isinstance(payload.get("modo"), dict) else {}
+        escrever_json_atomico(
+            ROOT / "logs" / "operacao_24h_ultima.json",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": bool(ok),
+                "bloqueado": bloqueado,
+                "motivo": payload.get("erro") or payload.get("motivo"),
+                "dry_run_repricing": bool(modo.get("repricing_dry_run")),
+                "dry_run_nfe": bool(modo.get("nfe_dry_run")),
+                "total_ajustes_preco": int(repricing.get("total_ajustes") or 0),
+                "total_aplicados_preco": int(repricing.get("total_aplicados_sucesso") or 0),
+                "total_falhas_preco": falhas_rep,
+                "nfe_sucesso": int(faturamento.get("sucesso") or 0),
+                "nfe_total": int(faturamento.get("total") or 0),
+            },
+        )
+        incrementar("operacao_24h.rodadas", tags=[f"ok:{str(bool(ok)).lower()}"])
+    except Exception as exc:
+        logger.warning("Operacao24h: falha ao gravar heartbeat: %s", exc)
+
+
 def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     if not dry_run_repricing or not dry_run_nfe:
         from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
 
         if bloqueio := bloqueio_escrita_global():
             alertar_bloqueio_escrita_global()
-            return {
+            payload_bloqueio = {
                 **bloqueio,
+                "ok": False,
                 "bloqueado": True,
                 "modo": {"repricing_dry_run": dry_run_repricing, "nfe_dry_run": dry_run_nfe},
             }
+            _gravar_heartbeat_operacao(payload_bloqueio)
+            return payload_bloqueio
 
     produtos = listar_produtos()
     analytics = listar_resumo_vendas_24h()
@@ -284,24 +320,24 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
 
     resumo_ia = _sintetizar_claude_operacao(payload)
     bloco_notas = _formatar_notas_repricing(repricing)
+    aplicados = int(repricing.get("total_aplicados_sucesso") or 0)
+    candidatos = int(repricing.get("total_ajustes") or 0)
+    falhas_preco = int(repricing.get("total_falhas_aplicacao") or 0)
+    modo_rep = "dry-run" if dry_run_repricing else "live"
+    modo_nfe = "dry-run" if dry_run_nfe else "live"
     msg_bruta = (
         f"Operação 24h:\n"
         f"Receita: R$ {kpis['receita_24h']:.2f} | Lucro estimado: R$ {kpis['lucro_estimado_24h']:.2f}\n"
         f"Preço médio: R$ {kpis['preco_medio_cadastrado']:.2f} | Ticket médio: R$ {kpis['ticket_medio_24h']:.2f}\n"
-        f"NF geradas: {faturamento['sucesso']}/{faturamento['total']} | Ajustes preço: {repricing['total_ajustes']}"
+        f"NF ({modo_nfe}): {faturamento['sucesso']}/{faturamento['total']} | "
+        f"Preço ({modo_rep}): {aplicados}/{candidatos} aplicados"
+        + (f" | {falhas_preco} falha(s)" if falhas_preco else "")
     )
     if bloco_notas:
         msg_bruta = f"{msg_bruta}\n{bloco_notas}"
     alertar_gestor(f"📝 *Resumo IA*\n{resumo_ia}\n\n{msg_bruta}")
     logger.info("Operacao24h: %s", payload)
-    try:
-        escrever_json_atomico(
-            ROOT / "logs" / "operacao_24h_ultima.json",
-            {"timestamp": datetime.now(timezone.utc).isoformat(), "ok": True},
-        )
-        incrementar("operacao_24h.rodadas")
-    except Exception as exc:
-        logger.warning("Operacao24h: falha ao gravar heartbeat: %s", exc)
+    _gravar_heartbeat_operacao(payload)
     return payload
 
 

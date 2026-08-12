@@ -263,18 +263,19 @@ def executar() -> dict:
             logger.error("Erro ao buscar pedidos ML: %s", exc)
             resumo["mercadolivre"] = 0
 
-        try:
-            from integracoes.shopee.shopee_client import listar_pedidos_detalhado as shopee_pedidos_detalhado
+        if "shopee" in _MARKETPLACES_ATIVOS:
+            try:
+                from integracoes.shopee.shopee_client import listar_pedidos_detalhado as shopee_pedidos_detalhado
 
-            pedidos_shopee, ok_shopee = shopee_pedidos_detalhado(dias=1)
-            _checar_busca_falhou("Shopee", ok_shopee)
-            novos_shopee = _notificar_novos_pedidos("shopee", pedidos_shopee, notificados)
-            resumo["shopee"] = len(novos_shopee)
-            novos_total.update(novos_shopee)
-            notificados |= novos_shopee
-        except Exception as exc:
-            logger.error("Erro ao buscar pedidos Shopee: %s", exc)
-            resumo["shopee"] = 0
+                pedidos_shopee, ok_shopee = shopee_pedidos_detalhado(dias=1)
+                _checar_busca_falhou("Shopee", ok_shopee)
+                novos_shopee = _notificar_novos_pedidos("shopee", pedidos_shopee, notificados)
+                resumo["shopee"] = len(novos_shopee)
+                novos_total.update(novos_shopee)
+                notificados |= novos_shopee
+            except Exception as exc:
+                logger.error("Erro ao buscar pedidos Shopee: %s", exc)
+                resumo["shopee"] = 0
 
         if "magalu" in _MARKETPLACES_ATIVOS:
             try:
@@ -295,18 +296,19 @@ def executar() -> dict:
                 logger.error("Erro ao buscar pedidos Magalu: %s", exc)
                 resumo["magalu"] = 0
 
-        try:
-            from integracoes.amazon.amazon_client import listar_pedidos_detalhado as amazon_pedidos_detalhado
+        if "amazon" in _MARKETPLACES_ATIVOS:
+            try:
+                from integracoes.amazon.amazon_client import listar_pedidos_detalhado as amazon_pedidos_detalhado
 
-            pedidos_amazon, ok_amazon = amazon_pedidos_detalhado(dias=1)
-            _checar_busca_falhou("Amazon", ok_amazon)
-            novos_amazon = _notificar_novos_pedidos("amazon", pedidos_amazon, notificados)
-            resumo["amazon"] = len(novos_amazon)
-            novos_total.update(novos_amazon)
-            notificados |= novos_amazon
-        except Exception as exc:
-            logger.error("Erro ao buscar pedidos Amazon: %s", exc)
-            resumo["amazon"] = 0
+                pedidos_amazon, ok_amazon = amazon_pedidos_detalhado(dias=1)
+                _checar_busca_falhou("Amazon", ok_amazon)
+                novos_amazon = _notificar_novos_pedidos("amazon", pedidos_amazon, notificados)
+                resumo["amazon"] = len(novos_amazon)
+                novos_total.update(novos_amazon)
+                notificados |= novos_amazon
+            except Exception as exc:
+                logger.error("Erro ao buscar pedidos Amazon: %s", exc)
+                resumo["amazon"] = 0
 
         if novos_total:
             _salvar_notificados(notificados)

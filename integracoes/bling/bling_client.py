@@ -162,6 +162,15 @@ def buscar_produto(sku: str) -> dict | None:
         return None
 
 def listar_produtos() -> list[dict]:
+    produtos, _ok = listar_produtos_detalhado()
+    return produtos
+
+
+def listar_produtos_detalhado() -> tuple[list[dict], bool]:
+    """
+    Lista produtos ativos. Retorna (lista, sucesso_api).
+    Em falha HTTP/auth devolve ([], False) — não confundir com catálogo vazio.
+    """
     try:
         r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
         status = getattr(r, "status_code", 0)
@@ -171,14 +180,21 @@ def listar_produtos() -> list[dict]:
                 status,
                 (getattr(r, "text", "") or "")[:300],
             )
-            return []
-        return [_normalizar_produto(p) for p in r.json().get("data", [])]
+            try:
+                from core.datadog_metrics import incrementar
+
+                incrementar("bling.auth.falha", tags=[f"status_http:{status}"])
+            except Exception:
+                pass
+            return [], False
+        return [_normalizar_produto(p) for p in r.json().get("data", [])], True
     except ValueError as e:
         _erro_bling("Bling listar_produtos JSON inválido: %s", e)
-        return []
+        return [], False
     except Exception as e:
         _erro_bling("Bling listar_produtos erro: %s", e)
-        return []
+        return [], False
+
 
 def listar_produtos_por_sku() -> dict[str, dict]:
     """
@@ -187,6 +203,12 @@ def listar_produtos_por_sku() -> dict[str, dict]:
     buscar_produto(sku) por item.
     """
     return {p["codigo"]: p for p in listar_produtos() if p.get("codigo")}
+
+
+def listar_produtos_por_sku_detalhado() -> tuple[dict[str, dict], bool]:
+    """Indexado por SKU + flag de sucesso da API Bling."""
+    produtos, ok = listar_produtos_detalhado()
+    return {p["codigo"]: p for p in produtos if p.get("codigo")}, ok
 
 def estoques_criticos(limite: int = 20) -> list[dict]:
     # Só considera crítico quando o estoque é conhecido E está abaixo do limite.

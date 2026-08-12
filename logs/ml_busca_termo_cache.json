@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-08-10T15:05:01.566634+00:00",
+    "timestamp": "2026-08-12T19:04:44.459645+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-08-10T15:04:57.458745+00:00",
+    "timestamp": "2026-08-12T19:04:36.761050+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,20 +32,8 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-08-10T15:05:10.905397+00:00",
+    "timestamp": "2026-08-12T19:04:51.449563+00:00",
     "resultados": [
-      {
-        "item_id": "MLB4795826219",
-        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
-        "preco": 59.9,
-        "quantidade_vendida": 0,
-        "seller_id": "192161274",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4795826219",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB50257549",
-        "catalog_date_created": "2025-05-22T05:07:07Z",
-        "listing_type_id": "gold_special"
-      },
       {
         "item_id": "MLB4716057869",
         "titulo": "Kit Impala Paixão Vermelhos Vibrantes Vermelho",
@@ -59,9 +47,57 @@
         "listing_type_id": "gold_special"
       },
       {
+        "item_id": "MLB4795826219",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 59.9,
+        "quantidade_vendida": 0,
+        "seller_id": "192161274",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4795826219",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7381234948",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 59.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1213484158",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7381234948",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5399622062",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 68.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5399622062",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4180976933",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 73.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4180976933",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
         "item_id": "MLB7144006914",
         "titulo": "Kit Impala Disney Channel Hannah Montana Esmalte",
-        "preco": 29.9,
+        "preco": 19.9,
         "quantidade_vendida": 0,
         "seller_id": "260326852",
         "permalink": "https://produto.mercadolivre.com.br/MLB7144006914",
@@ -93,47 +129,11 @@
         "catalog_product_id": "MLB74725520",
         "catalog_date_created": "2026-07-01T00:13:11Z",
         "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7070371760",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 54.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7070371760",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7126974094",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 56.95,
-        "quantidade_vendida": 0,
-        "seller_id": "3032168384",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7126974094",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4832948581",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 58.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4832948581",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_pro"
       }
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-08-10T15:04:57.302467+00:00",
+    "timestamp": "2026-08-12T19:04:38.717074+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -149,7 +149,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-08-10T15:04:57.345543+00:00",
+    "timestamp": "2026-08-12T19:04:38.745218+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",

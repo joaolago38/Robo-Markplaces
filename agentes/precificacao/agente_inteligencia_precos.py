@@ -199,10 +199,11 @@ def _montar_painel_telegram(analises: list[dict[str, Any]], *, total_skus: int) 
     subir = sum(1 for a in analises if "subir" in str(a.get("acao", "")))
 
     return inserir_explicacao(
-        "💰 Inteligência de preços (comportamento + lucro operação)\n"
+        "💰 *SUGESTÃO (não aplicada)* — Inteligência de preços\n"
         f"SKUs no catálogo: {total_skus} | canais analisados: {len(analises)}\n"
         f"Lucro = preço − taxa marketplace − custo | mínimo por fase em spec\n"
-        f"Sugestões: ↓{reduzir} reduzir | 👀{monitorar} monitorar | ↑{subir} subir\n\n"
+        f"Sugestões: ↓{reduzir} reduzir | 👀{monitorar} monitorar | ↑{subir} subir\n"
+        "_Preço só muda no job de repricing (operação 24h / 2h), não neste ciclo._\n\n"
         + ("\n".join(linhas) if linhas else "Nenhum canal ativo no catálogo."),
         "inteligencia_precos",
     )

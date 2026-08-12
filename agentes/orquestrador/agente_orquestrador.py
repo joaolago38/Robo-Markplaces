@@ -76,7 +76,9 @@ def _executar_agente(registro: AgenteRegistrado) -> dict[str, Any]:
         raw = executar_registro(registro)
         resultado["ok"] = _interpretar_ok(raw)
         resumo = _extrair_resumo(raw)
-        if bool((registro.kwargs or {}).get("dry_run")):
+        if bool((registro.kwargs or {}).get("dry_run")) or bool(
+            (registro.kwargs or {}).get("dry_run_repricing")
+        ) or bool((registro.kwargs or {}).get("dry_run_nfe")):
             resumo = f"{resumo} (dry-run — sem escrita)"
             resultado["dry_run"] = True
         resultado["resumo"] = resumo
@@ -110,6 +112,7 @@ def _montar_resumo_telegram(ciclo: dict[str, Any], *, titulo: str) -> str:
     linhas = [
         cabecalho_agente("orquestrador", titulo),
         "",
+        "_Ciclo 30min = monitoramento + chat ML. Sem escrita de preço/estoque/NF-e._",
         (
             f"✅ {ciclo['ok']} ok | ❌ {ciclo['falhas']} falha | "
             f"⏱ {ciclo['duracao_seg']:.0f}s | {ciclo['total']} agentes"

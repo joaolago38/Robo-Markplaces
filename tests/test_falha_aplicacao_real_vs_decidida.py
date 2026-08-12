@@ -112,16 +112,22 @@ class TestEstoqueDistingueFalhaDeSucesso(unittest.TestCase):
         "agentes.sincronizar_estoque_marketplaces._CANAIS_ESTOQUE",
         {"mercadolivre": lambda ref, estoque: False},
     )
-    @patch("agentes.sincronizar_estoque_marketplaces.listar_produtos_por_sku")
+    @patch(
+        "agentes.sincronizar_estoque_marketplaces.listar_produtos_por_sku_detalhado",
+        return_value=({"SKU1": {"sku": "SKU1", "estoque": 50}}, True),
+    )
+    @patch(
+        "agentes.sincronizar_estoque_marketplaces.probe_produtos",
+        return_value={"ok": True, "status": 200, "msg": "ok"},
+    )
     def test_falha_na_api_nao_conta_como_aplicado(
-        self, mock_listar_bling, mock_alertar_gestor, mock_alertar_critico, mock_incrementar
+        self, _probe, _mock_listar_bling, mock_alertar_gestor, mock_alertar_critico, mock_incrementar
     ):
-        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "estoque": 50}}
         produtos = [
             {
                 "sku": "SKU1",
                 "canais": {
-                    "mercadolivre": {"ativo": True, "item_id": "MLB1", "estoque": 10}
+                    "mercadolivre": {"ativo": True, "item_id": "MLB123456", "estoque": 10}
                 },
             }
         ]
@@ -132,8 +138,10 @@ class TestEstoqueDistingueFalhaDeSucesso(unittest.TestCase):
         self.assertEqual(out["total_falhas_aplicacao"], 1)
         self.assertTrue(out["ajustes"][0]["falhou_aplicacao"])
 
-        mock_alertar_critico.assert_called_once()
-        self.assertIn("FALHARAM", mock_alertar_critico.call_args.args[0])
+        mock_alertar_critico.assert_called()
+        self.assertTrue(
+            any("FALHARAM" in str(c.args[0]) for c in mock_alertar_critico.call_args_list)
+        )
         mock_incrementar.assert_any_call("estoque.falha_aplicacao", tags=["canal:mercadolivre"])
 
         mensagem_gestor = mock_alertar_gestor.call_args.args[0]
@@ -146,16 +154,22 @@ class TestEstoqueDistingueFalhaDeSucesso(unittest.TestCase):
         {"mercadolivre": lambda ref, estoque: True},
     )
     @patch("agentes.sincronizar_estoque_marketplaces._salvar_catalogo")
-    @patch("agentes.sincronizar_estoque_marketplaces.listar_produtos_por_sku")
+    @patch(
+        "agentes.sincronizar_estoque_marketplaces.listar_produtos_por_sku_detalhado",
+        return_value=({"SKU1": {"sku": "SKU1", "estoque": 50}}, True),
+    )
+    @patch(
+        "agentes.sincronizar_estoque_marketplaces.probe_produtos",
+        return_value={"ok": True, "status": 200, "msg": "ok"},
+    )
     def test_sucesso_real_conta_corretamente_e_nao_alerta_falha(
-        self, mock_listar_bling, _mock_salvar_catalogo, mock_alertar_gestor, mock_alertar_critico
+        self, _probe, _mock_listar_bling, _mock_salvar_catalogo, mock_alertar_gestor, mock_alertar_critico
     ):
-        mock_listar_bling.return_value = {"SKU1": {"sku": "SKU1", "estoque": 50}}
         produtos = [
             {
                 "sku": "SKU1",
                 "canais": {
-                    "mercadolivre": {"ativo": True, "item_id": "MLB1", "estoque": 10}
+                    "mercadolivre": {"ativo": True, "item_id": "MLB123456", "estoque": 10}
                 },
             }
         ]
@@ -164,7 +178,9 @@ class TestEstoqueDistingueFalhaDeSucesso(unittest.TestCase):
         self.assertEqual(out["total_ajustes"], 1)
         self.assertEqual(out["total_aplicados_sucesso"], 1)
         self.assertEqual(out["total_falhas_aplicacao"], 0)
-        mock_alertar_critico.assert_not_called()
+        # Pode alertar placeholder/saldo — só não deve alertar FALHARAM
+        for c in mock_alertar_critico.call_args_list:
+            self.assertNotIn("FALHARAM", str(c.args[0]))
         self.assertIn("1/1", mock_alertar_gestor.call_args.args[0])
 
 

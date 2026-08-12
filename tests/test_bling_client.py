@@ -183,6 +183,14 @@ class TestBlingListar(unittest.TestCase):
         self.assertEqual(bling_client.listar_produtos(), [])
 
     @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
+    @patch.object(bling_client, "request")
+    def test_listar_produtos_detalhado_403_ok_false(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({}, 403)
+        produtos, ok = bling_client.listar_produtos_detalhado()
+        self.assertEqual(produtos, [])
+        self.assertFalse(ok)
+
+    @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
     @patch.object(bling_client, "request", side_effect=Exception("boom"))
     def test_BL05_listar_produtos_vazio_em_excecao(self, *_patches):
         self.assertEqual(bling_client.listar_produtos(), [])
