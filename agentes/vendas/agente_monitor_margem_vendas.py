@@ -77,13 +77,18 @@ def _buscar_pedidos(dias: int) -> tuple[dict[str, list[dict]], dict[str, bool]]:
     pedidos: dict[str, list[dict]] = {}
     ok_map: dict[str, bool] = {}
 
-    fontes: list[tuple[str, str, Any]] = [
+    # Só canais ativos no spec — evita alerta crítico em Shopee/Amazon inativos.
+    fontes: list[tuple[str, str, Any]] = []
+    mapa = (
         ("mercadolivre", "Mercado Livre", "integracoes.ml.ml_client"),
         ("shopee", "Shopee", "integracoes.shopee.shopee_client"),
+        ("magalu", "Magalu", "integracoes.magalu.magalu_client"),
         ("amazon", "Amazon", "integracoes.amazon.amazon_client"),
-    ]
-    if "magalu" in _MARKETPLACES_ATIVOS:
-        fontes.append(("magalu", "Magalu", "integracoes.magalu.magalu_client"))
+    )
+    for mp_id, nome, modulo in mapa:
+        if mp_id not in _MARKETPLACES_ATIVOS:
+            continue
+        fontes.append((mp_id, nome, modulo))
 
     for mp_id, nome, modulo in fontes:
         try:

@@ -64,7 +64,8 @@ def carregar_estado_ml(*, ao_vivo: bool = False) -> dict[str, Any]:
     if pendencias is None:
         pendencias = resumo_conta.get("pendencias") or resumo_conta.get("perguntas_pendentes")
     if claims is None:
-        claims = resumo_conta.get("claims_rate")
+        rep = resumo_conta.get("reputacao") if isinstance(resumo_conta.get("reputacao"), dict) else {}
+        claims = resumo_conta.get("claims_rate") or rep.get("claims_rate")
 
     if num(pendencias) >= 5:
         alertas.append(f"perguntas/pendências altas ({int(num(pendencias))})")
@@ -106,8 +107,16 @@ def carregar_estado_ml(*, ao_vivo: bool = False) -> dict[str, Any]:
         "alertas": alertas[:6],
         "sinais_recentes": {
             "margem_vendas": {
-                "margem_media_pct": margem.get("margem_media_pct") or margem.get("margem_media"),
-                "vendas": margem.get("total_vendas") or margem.get("vendas"),
+                "margem_media_pct": (
+                    margem.get("margem_media_pct")
+                    or margem.get("margem_media")
+                    or (margem.get("analise") or {}).get("margem_media_pct")
+                ),
+                "vendas": (
+                    margem.get("total_vendas")
+                    or margem.get("vendas")
+                    or (margem.get("analise") or {}).get("total_itens")
+                ),
                 "alerta": margem.get("alerta") or margem.get("status"),
             },
             "sem_venda": {

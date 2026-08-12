@@ -47,15 +47,22 @@ def _produto_magalu(sku: str, estoque_canal: int) -> dict:
     }
 
 
+def _patch_bling(return_map: dict):
+    """probe OK + listar detalhado (mapa, True)."""
+    return (
+        patch.object(sync, "probe_produtos", return_value={"ok": True, "status": 200, "msg": "ok"}),
+        patch.object(sync, "listar_produtos_por_sku_detalhado", return_value=(return_map, True)),
+    )
+
+
 class TestSincronizarEstoqueMarketplaces(unittest.TestCase):
     @patch.object(sync, "alertar_gestor")
-    @patch.object(sync, "listar_produtos_por_sku")
-    def test_dry_run_detecta_ajuste_sem_escrita(self, mock_listar_bling, mock_gestor):
-        mock_listar_bling.return_value = {"SKU-A": {"sku": "SKU-A", "estoque": 5}}
+    def test_dry_run_detecta_ajuste_sem_escrita(self, mock_gestor):
+        p1, p2 = _patch_bling({"SKU-A": {"sku": "SKU-A", "estoque": 5}})
         produtos = [_produto_ml("SKU-A", 2)]
         mock_ml = MagicMock(return_value=True)
 
-        with patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
+        with p1, p2, patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
             out = sync.executar(produtos=produtos, dry_run=True)
 
         self.assertTrue(out["dry_run"])
@@ -68,13 +75,12 @@ class TestSincronizarEstoqueMarketplaces(unittest.TestCase):
 
     @patch.object(sync, "_salvar_catalogo")
     @patch.object(sync, "alertar_gestor")
-    @patch.object(sync, "listar_produtos_por_sku")
-    def test_aplica_ajuste_ml_e_atualiza_catalogo(self, mock_listar_bling, mock_gestor, mock_salvar):
-        mock_listar_bling.return_value = {"SKU-B": {"sku": "SKU-B", "estoque": 8}}
+    def test_aplica_ajuste_ml_e_atualiza_catalogo(self, mock_gestor, mock_salvar):
+        p1, p2 = _patch_bling({"SKU-B": {"sku": "SKU-B", "estoque": 8}})
         produtos = [_produto_ml("SKU-B", 3)]
         mock_ml = MagicMock(return_value=True)
 
-        with patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
+        with p1, p2, patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
             out = sync.executar(produtos=produtos, dry_run=False)
 
         self.assertFalse(out["dry_run"])
@@ -85,13 +91,12 @@ class TestSincronizarEstoqueMarketplaces(unittest.TestCase):
 
     @patch.object(sync, "_salvar_catalogo")
     @patch.object(sync, "alertar_gestor")
-    @patch.object(sync, "listar_produtos_por_sku")
-    def test_aplica_ajuste_shopee(self, mock_listar_bling, mock_gestor, mock_salvar):
-        mock_listar_bling.return_value = {"SKU-S": {"sku": "SKU-S", "estoque": 4}}
+    def test_aplica_ajuste_shopee(self, mock_gestor, mock_salvar):
+        p1, p2 = _patch_bling({"SKU-S": {"sku": "SKU-S", "estoque": 4}})
         produtos = [_produto_shopee("SKU-S", 1)]
         mock_shopee = MagicMock(return_value=True)
 
-        with patch.dict(sync._CANAIS_ESTOQUE, {"shopee": mock_shopee}, clear=False):
+        with p1, p2, patch.dict(sync._CANAIS_ESTOQUE, {"shopee": mock_shopee}, clear=False):
             out = sync.executar(produtos=produtos, dry_run=False)
 
         mock_shopee.assert_called_once_with(999, 4)
@@ -99,49 +104,56 @@ class TestSincronizarEstoqueMarketplaces(unittest.TestCase):
 
     @patch.object(sync, "_salvar_catalogo")
     @patch.object(sync, "alertar_gestor")
-    @patch.object(sync, "listar_produtos_por_sku")
-    def test_aplica_ajuste_magalu(self, mock_listar_bling, mock_gestor, mock_salvar):
-        mock_listar_bling.return_value = {"SKU-M": {"sku": "SKU-M", "estoque": 6}}
+    def test_aplica_ajuste_magalu(self, mock_gestor, mock_salvar):
+        p1, p2 = _patch_bling({"SKU-M": {"sku": "SKU-M", "estoque": 6}})
         produtos = [_produto_magalu("SKU-M", 2)]
         mock_magalu = MagicMock(return_value=True)
 
-        with patch.dict(sync._CANAIS_ESTOQUE, {"magalu": mock_magalu}, clear=False):
+        with p1, p2, patch.dict(sync._CANAIS_ESTOQUE, {"magalu": mock_magalu}, clear=False):
             out = sync.executar(produtos=produtos, dry_run=False)
 
         mock_magalu.assert_called_once_with("SKU-M", 6)
         self.assertEqual(out["total_ajustes"], 1)
 
     @patch.object(sync, "alertar_gestor")
-    @patch.object(sync, "listar_produtos_por_sku")
-    def test_pula_produto_sem_estoque_bling(self, mock_listar_bling, mock_gestor):
-        mock_listar_bling.return_value = {"SKU-X": {"sku": "SKU-X", "estoque": None}}
+    def test_pula_produto_sem_estoque_bling(self, mock_gestor):
+        p1, p2 = _patch_bling({"SKU-X": {"sku": "SKU-X", "estoque": None}})
         produtos = [_produto_ml("SKU-X", 5)]
         mock_ml = MagicMock(return_value=True)
 
-        with patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
+        with p1, p2, patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
             out = sync.executar(produtos=produtos, dry_run=False)
 
         self.assertEqual(out["total_ajustes"], 0)
         self.assertIn("SKU-X", out["produtos_sem_estoque_bling"])
         mock_ml.assert_not_called()
-        mock_gestor.assert_not_called()
+
+    @patch.object(sync, "alertar_critico")
+    @patch.object(sync, "alertar_gestor")
+    def test_aborta_se_bling_indisponivel(self, mock_gestor, mock_critico):
+        with patch.object(
+            sync, "probe_produtos", return_value={"ok": False, "status": 403, "msg": "sem permissao"}
+        ):
+            out = sync.executar(produtos=[_produto_ml("SKU-A", 1)], dry_run=False)
+        self.assertFalse(out.get("ok", True))
+        self.assertEqual(out.get("erro"), "bling_indisponivel")
+        mock_critico.assert_called()
 
     @patch.object(sync, "_salvar_catalogo")
     @patch.object(sync, "alertar_critico")
-    @patch.object(sync, "pausar_anuncio", return_value=True)
+    @patch.object(sync, "pausar_anuncio", return_value={"ok": True})
     @patch.object(sync, "alertar_gestor")
-    @patch.object(sync, "listar_produtos_por_sku")
     def test_alerta_critico_quando_estoque_zero(
-        self, mock_listar_bling, mock_gestor, mock_pausar, mock_critico, mock_salvar
+        self, mock_gestor, mock_pausar, mock_critico, mock_salvar
     ):
-        mock_listar_bling.return_value = {"SKU-Z": {"sku": "SKU-Z", "estoque": 0}}
+        p1, p2 = _patch_bling({"SKU-Z": {"sku": "SKU-Z", "estoque": 0}})
         produtos = [_produto_ml("SKU-Z", 3)]
         mock_ml = MagicMock(return_value=True)
 
-        with patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
+        with p1, p2, patch.dict(sync._CANAIS_ESTOQUE, {"mercadolivre": mock_ml}, clear=False):
             sync.executar(produtos=produtos, dry_run=False)
 
-        mock_critico.assert_called_once()
+        mock_critico.assert_called()
         mock_pausar.assert_called_once_with("MLB123", dry_run=False, confirmar=True)
 
 

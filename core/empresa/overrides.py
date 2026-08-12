@@ -35,5 +35,11 @@ def aplicar_overrides_env(empresa: dict[str, Any]) -> dict[str, Any]:
         if prefer:
             out["cnpj"] = prefer
             out["cnpj_formatado"] = formatar_cnpj(prefer)
+        mp_seller = str(getattr(_cfg, "MASTERPRINT_ML_SELLER_ID", "") or flag("MASTERPRINT_ML_SELLER_ID", "")).strip()
+        mp_nick = str(getattr(_cfg, "MASTERPRINT_ML_NICKNAME", "") or flag("MASTERPRINT_ML_NICKNAME", "")).strip()
+        if mp_seller and not ml.get("seller_id"):
+            ml["seller_id"] = mp_seller
+        if mp_nick and not ml.get("nickname"):
+            ml["nickname"] = mp_nick
     out["ml"] = ml
     return out

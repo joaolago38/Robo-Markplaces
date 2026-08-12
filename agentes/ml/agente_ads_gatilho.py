@@ -59,13 +59,18 @@ def _metricas_e_heartbeat(resultado: dict) -> None:
         gasto_ev = float(resultado.get("gasto_diario_estimado_evitado") or 0)
         if gasto_ev > 0:
             gauge("ads.gasto_diario_evitado", gasto_ev)
+        falhas_aplicacao = sum(1 for a in aplicacoes if isinstance(a, dict) and not a.get("ok"))
+        probe_ok = True if not probe else bool(probe.get("ok"))
+        ok_hb = probe_ok and falhas_aplicacao == 0 and resultado.get("ok") is not False
         escrever_json_atomico(
             HEARTBEAT_PATH,
             {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "ok": True,
+                "ok": bool(ok_hb),
                 "decisao": decisao,
                 "confirmado_gestor": resultado.get("confirmado_gestor"),
+                "probe_escrita_ok": probe_ok,
+                "falhas_aplicacao": falhas_aplicacao,
             },
         )
     except Exception as exc:

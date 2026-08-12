@@ -29,6 +29,25 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
+      - name: Restaurar heartbeats de saude
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/ads_gatilho_ultima.json
+            logs/orquestrador_ultimo_ciclo.json
+            logs/operacao_24h_ultima.json
+            logs/conectividade_ultima.json
+            logs/renovacao_tokens_ultima.json
+            logs/relatorio_manha_ml_ultima.json
+            logs/esmaltes_mercado_history.json
+            logs/estoque_ultima.json
+            logs/chat_ultima.json
+            logs/nfe_ultima.json
+            logs/vendas_whatsapp_ultima.json
+          key: saude-heartbeats-${{ github.run_id }}
+          restore-keys: |
+            saude-heartbeats-
+
       - name: Rodar agente gatilho ads ML
         run: python -m agentes.ml.agente_ads_gatilho
         env:

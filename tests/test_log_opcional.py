@@ -75,7 +75,7 @@ class TestLogOpcional(unittest.TestCase):
             client = MagicMock()
             client.listar_pedidos_detalhado.return_value = ([], False)
             mock_imp.return_value = client
-            with patch.object(margem, "_MARKETPLACES_ATIVOS", set()):
+            with patch.object(margem, "_MARKETPLACES_ATIVOS", {"mercadolivre"}):
                 margem._buscar_pedidos(2)
             mock_err.assert_not_called()
             self.assertTrue(mock_dbg.called)

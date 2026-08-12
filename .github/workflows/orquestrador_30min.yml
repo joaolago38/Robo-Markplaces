@@ -226,3 +226,35 @@ jobs:
         with:
           path: logs/brave_uso_mensal.json
           key: brave-uso-mensal-${{ github.run_id }}
+      - name: Publicar historico concorrentes ML + precificacao
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/concorrentes_ml_history.json
+            logs/ml_busca_termo_cache.json
+            logs/sem_venda_ml_ultima.json
+            logs/precificacao_inteligencia_history.json
+          key: ml-concorrentes-history-${{ github.run_id }}
+      - name: Publicar historico leiloes
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/leilao_veiculos_history.json
+          key: leilao-veiculos-history-${{ github.run_id }}
+      - name: Publicar historico Alibaba
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/alibaba_importacao_history.json
+          key: alibaba-importacao-history-${{ github.run_id }}
+      - name: Publicar cooldown Telegram
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}

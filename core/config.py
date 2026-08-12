@@ -66,7 +66,7 @@ CLAUDE_ORCAMENTO_ALERTA = os.getenv("CLAUDE_ORCAMENTO_ALERTA", "1").strip().lowe
     "no",
 )
 # 1 = manda Telegram a cada chamada (monitoramento fino nesta fase)
-CLAUDE_ORCAMENTO_ALERTA_TODAS = os.getenv("CLAUDE_ORCAMENTO_ALERTA_TODAS", "1").strip().lower() not in (
+CLAUDE_ORCAMENTO_ALERTA_TODAS = os.getenv("CLAUDE_ORCAMENTO_ALERTA_TODAS", "0").strip().lower() not in (
     "0",
     "false",
     "no",

@@ -78,12 +78,24 @@ class TestNotificadorAlertar(unittest.TestCase):
         self.assertEqual(payload["chat_id"], "gestor-99")
 
     def test_NT05_alertar_critico_chama_ambos(self):
-        with patch.object(notificador, "alertar", MagicMock(return_value=True)) as m_alert, patch.object(
+        with patch.object(notificador, "TELEGRAM_CHAT_ID", "chat-geral"), patch.object(
+            notificador, "TELEGRAM_GESTOR_CHAT_ID", "gestor-99"
+        ), patch.object(notificador, "alertar", MagicMock(return_value=True)) as m_alert, patch.object(
             notificador, "alertar_gestor", MagicMock(return_value=True)
         ) as m_gestor:
             notificador.alertar_critico("URGENTE")
         m_gestor.assert_called_once()
         m_alert.assert_called_once()
+
+    def test_NT05b_alertar_critico_nao_duplica_mesmo_chat(self):
+        with patch.object(notificador, "TELEGRAM_CHAT_ID", "mesmo"), patch.object(
+            notificador, "TELEGRAM_GESTOR_CHAT_ID", "mesmo"
+        ), patch.object(notificador, "alertar", MagicMock(return_value=True)) as m_alert, patch.object(
+            notificador, "alertar_gestor", MagicMock(return_value=True)
+        ) as m_gestor:
+            notificador.alertar_critico("URGENTE-MESMO")
+        m_gestor.assert_called_once()
+        m_alert.assert_not_called()
 
     @patch("core.whatsapp.notificar_venda", return_value=True)
     def test_NT06_notificar_venda_whatsapp_delega_whatsapp(self, mock_nv):

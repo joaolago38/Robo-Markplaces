@@ -337,8 +337,13 @@ def alertar_critico(
     if _deve_suprimir(chave_final, cooldown):
         logger.info("Alerta crítico suprimido (cooldown %ss): %s", cooldown, chave_final)
         return False
-    alertar_gestor(f"🚨 CRÍTICO\n{msg}", _ignorar_cooldown=True)
-    ok = alertar(f"🚨 CRÍTICO\n{msg}", _ignorar_cooldown=True)
+    msg_c = f"🚨 CRÍTICO\n{msg}"
+    ok = alertar_gestor(msg_c, _ignorar_cooldown=True)
+    # Evita duplicar no mesmo chat quando gestor == chat geral
+    chat_geral = (TELEGRAM_CHAT_ID or "").strip()
+    chat_gestor = (TELEGRAM_GESTOR_CHAT_ID or "").strip()
+    if chat_geral and chat_geral != chat_gestor:
+        ok = alertar(msg_c, _ignorar_cooldown=True) or ok
     if ok:
         _marcar_enviado(chave_final)
     return ok

@@ -1,4 +1,40 @@
 {
-  "timestamp": "2026-08-10T15:04:59.939721+00:00",
-  "ok": true
+  "timestamp": "2026-08-12T19:04:38.825657+00:00",
+  "ok": true,
+  "total": 4,
+  "ok_count": 4,
+  "falha": 0,
+  "pulado": 2,
+  "resultados": [
+    {
+      "marketplace": "mercadolivre",
+      "ok": true,
+      "status_http": 200,
+      "msg": "",
+      "dias_sem_acesso": 0
+    },
+    {
+      "marketplace": "magalu",
+      "ok": true,
+      "skipped": true,
+      "status_http": 0,
+      "msg": "Magalu não configurado",
+      "dias_sem_acesso": 0
+    },
+    {
+      "marketplace": "shopee",
+      "ok": true,
+      "status_http": 200,
+      "msg": "",
+      "dias_sem_acesso": 0
+    },
+    {
+      "marketplace": "amazon",
+      "ok": true,
+      "skipped": true,
+      "status_http": 0,
+      "msg": "Amazon não configurado",
+      "dias_sem_acesso": 5
+    }
+  ]
 }

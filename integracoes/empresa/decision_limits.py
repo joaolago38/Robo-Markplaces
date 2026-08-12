@@ -196,9 +196,11 @@ def coletar_sinais_vendas() -> dict[str, Any]:
     margem = _ler_snap("margem_vendas_ultima.json")
     cfg = _cfg()
     min_pct = float(getattr(cfg, "MONITOR_MARGEM_VENDAS_MARGEM_MIN_PCT", 15.0))
+    analise = margem.get("analise") if isinstance(margem.get("analise"), dict) else {}
     media = _num(
         margem.get("margem_media_pct")
         or margem.get("margem_media")
+        or analise.get("margem_media_pct")
         or (margem.get("resumo") or {}).get("margem_media_pct"),
         default=-1.0,
     )
@@ -206,6 +208,7 @@ def coletar_sinais_vendas() -> dict[str, Any]:
         _num(
             margem.get("total_alertas")
             or margem.get("alertas")
+            or analise.get("total_alertas")
             or (margem.get("resumo") or {}).get("total_alertas")
         )
     )
@@ -213,6 +216,7 @@ def coletar_sinais_vendas() -> dict[str, Any]:
         _num(
             margem.get("total_vendas")
             or margem.get("vendas")
+            or analise.get("total_itens")
             or (margem.get("resumo") or {}).get("total_vendas")
         )
     )

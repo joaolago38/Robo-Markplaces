@@ -93,9 +93,17 @@ class TestAvaliarUm(unittest.TestCase):
 
 class TestExecutar(unittest.TestCase):
     @patch.object(agente, "_avaliar_um")
-    def test_executar_agrega_tres_marketplaces_sem_magalu_inativo(self, mock_avaliar):
+    def test_executar_agrega_quatro_marketplaces(self, mock_avaliar):
         mock_avaliar.side_effect = [
             {"marketplace": "mercadolivre", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
+            {
+                "marketplace": "magalu",
+                "ok": True,
+                "skipped": True,
+                "status_http": 0,
+                "msg": "Magalu não configurado",
+                "dias_sem_acesso": 0,
+            },
             {"marketplace": "shopee", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
             {
                 "marketplace": "amazon",
@@ -107,21 +115,22 @@ class TestExecutar(unittest.TestCase):
             },
         ]
         out = agente.executar()
-        self.assertEqual(out["total"], 3)
-        self.assertEqual(out["ok"], 3)
+        self.assertEqual(out["total"], 4)
+        self.assertEqual(out["ok"], 4)
         self.assertEqual(out["falha"], 0)
-        self.assertEqual(out["pulado"], 1)
-        self.assertEqual(mock_avaliar.call_count, 3)
+        self.assertEqual(out["pulado"], 2)
+        self.assertEqual(mock_avaliar.call_count, 4)
+        self.assertIn("resultados", out)
 
     @patch.object(agente, "incrementar")
     @patch.object(agente, "_avaliar_um", side_effect=RuntimeError("boom"))
     def test_excecao_inesperada_nao_propaga(self, _mock_avaliar, mock_incrementar):
         out = agente.executar()
-        self.assertEqual(out["total"], 3)
-        self.assertEqual(out["falha"], 3)
+        self.assertEqual(out["total"], 4)
+        self.assertEqual(out["falha"], 4)
         self.assertEqual(out["ok"], 0)
-        # 3 falhas + 1 rodada heartbeat
-        self.assertEqual(mock_incrementar.call_count, 4)
+        # 4 falhas + 1 rodada heartbeat
+        self.assertEqual(mock_incrementar.call_count, 5)
 
 
 if __name__ == "__main__":
