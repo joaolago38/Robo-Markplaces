@@ -24,10 +24,13 @@ def tentar_claim(
     *,
     agente: str,
     ttl_seg: int = TTL_PADRAO_SEG,
+    fail_closed: bool = True,
 ) -> bool:
     """
     True se este agente ficou com a pergunta (pode responder).
     False se outro agente já reservou e o claim ainda é válido.
+
+    fail_closed=True (padrão): erro de I/O → NÃO responde (evita resposta dupla no ML).
     """
     pid = str(pergunta_id or "").strip()
     if not pid:
@@ -61,6 +64,9 @@ def tentar_claim(
     try:
         ler_e_atualizar_json(CLAIM_PATH, _upd, default={"claims": {}})
     except Exception as exc:
-        logger.warning("chat_claim falhou (%s) — permite resposta (fail-open leitura)", exc)
+        if fail_closed:
+            logger.warning("chat_claim falhou (%s) — bloqueia resposta (fail-closed)", exc)
+            return False
+        logger.warning("chat_claim falhou (%s) — permite resposta (fail-open)", exc)
         return True
     return bool(resultado["ok"])

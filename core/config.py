@@ -1249,11 +1249,16 @@ def _env_bool(nome: str, default: str = "0") -> bool:
 
 CONVERSAO_MANICURES_ATIVO = _env_bool("CONVERSAO_MANICURES_ATIVO", "1")
 CONVERSAO_MANICURES_ALERTA = _env_bool("CONVERSAO_MANICURES_ALERTA", "1")
+# Master de escrita pública (WA/TG/FB/IG/reply/chat_ml). 0 = Claude só analisa + Telegram gestor.
+CONVERSAO_MANICURES_ESCRITA = _env_bool("CONVERSAO_MANICURES_ESCRITA", "0")
 CONVERSAO_MANICURES_COOLDOWN_SEG = int(os.getenv("CONVERSAO_MANICURES_COOLDOWN_SEG", "18000"))
 CONVERSAO_MANICURES_PUBLICAR_FB = _env_bool("CONVERSAO_MANICURES_PUBLICAR_FB", "0")
 CONVERSAO_MANICURES_PUBLICAR_IG = _env_bool("CONVERSAO_MANICURES_PUBLICAR_IG", "0")
 CONVERSAO_MANICURES_REPLY_META = _env_bool("CONVERSAO_MANICURES_REPLY_META", "0")
 CONVERSAO_MANICURES_REPLY_WA = _env_bool("CONVERSAO_MANICURES_REPLY_WA", "0")
+# Boost orgânico (exigem ESCRITA=1 também)
+CONVERSAO_MANICURES_ENVIAR_WA = _env_bool("CONVERSAO_MANICURES_ENVIAR_WA", "0")
+CONVERSAO_MANICURES_ENVIAR_TG = _env_bool("CONVERSAO_MANICURES_ENVIAR_TG", "0")
 # 0 = chat ML fica só com agentes.ml (evita resposta duplicada com conversão)
 CONVERSAO_MANICURES_CHAT_ML = _env_bool("CONVERSAO_MANICURES_CHAT_ML", "0")
 # 0 = auto_respostas_visuais não compete com chat_ml no Mercado Livre

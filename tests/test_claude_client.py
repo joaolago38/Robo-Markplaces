@@ -232,6 +232,22 @@ class TestClaudeResponderGerar(unittest.TestCase):
         self.assertIn("Kit 12", prompt)
         self.assertIn("59.90", prompt)
 
+    @patch("core.config.CLAUDE_ANALISE_FURA_TEMPLATE", False)
+    def test_CC04b_frete_nao_inventa_full_gratis(self):
+        from core.chat_seguro_ml import MSG_CONSULTAR_ANUNCIO
+
+        produto = {"nome": "Kit 12", "preco": 59.90, "estoque": 50}
+        out = claude_client.responder_chat("Tem frete full para meu CEP?", produto, "mercadolivre")
+        self.assertEqual(out, MSG_CONSULTAR_ANUNCIO)
+
+    @patch("core.config.CLAUDE_ANALISE_FURA_TEMPLATE", False)
+    def test_CC04c_atacado_sem_preco_especial(self):
+        from core.chat_seguro_ml import MSG_SEM_DESCONTO
+
+        produto = {"nome": "Kit 12", "preco": 59.90, "estoque": 50}
+        out = claude_client.responder_chat("Tem preço de atacado?", produto, "mercadolivre")
+        self.assertEqual(out, MSG_SEM_DESCONTO)
+
     @patch.object(claude_client, "perguntar", return_value="post")
     def test_CC05_gerar_post_prompt_contem_canal_e_nome(self, mock_perguntar):
         produto = {"nome": "Kit Impala", "preco": 49.90}

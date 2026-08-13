@@ -27,10 +27,11 @@ LEADS_PATH = ROOT / "logs" / "leads_manicures.json"
 MAX_LEADS = 500
 
 _SYSTEM_CONV = (
-    "Você é especialista em conversão de manicures profissionais para compra no "
-    "Mercado Livre (kits esmaltes Impala/Anita). Tom próximo de salão, curto, "
-    "sem inventar preço/estoque. Sempre incentive a compra pelo link do ML. "
-    "Nunca peça dados sensíveis (senha/cartão)."
+    "Você apoia fechamento de compra no Mercado Livre (kits Impala/Anita). "
+    "Tom neutro e factual, curto. "
+    "NUNCA invente preço, estoque, frete, prazo, Full ou desconto. "
+    "Para frete/prazo oriente a consultar o anúncio com o CEP. "
+    "Pode citar o link do ML. Nunca peça dados sensíveis (senha/cartão)."
 )
 
 _SCHEMA_OFERTA = {
@@ -378,9 +379,12 @@ def resposta_chat_ml_haiku(
     link_ml: str,
     produto_ctx: str = "",
     *,
+    produto: dict[str, Any] | None = None,
     sinal_ads: dict[str, Any] | None = None,
 ) -> str:
-    """Fechamento no ML = termômetro principal; Ads Meta aumenta a pressão/dosagem."""
+    """Fechamento no ML com travas: sem inventar frete/preço/desconto; sanitiza saída."""
+    from core.chat_seguro_ml import sanitizar_resposta_chat_ml
+
     if not pergunta_parece_manicure(pergunta):
         return ""
     if ANTHROPIC_API_KEY:
@@ -398,20 +402,23 @@ def resposta_chat_ml_haiku(
                 f"Termômetro: {analise.get('resumo') or 'n/d'}\n"
                 f"Captação Meta (se houver): {analise.get('captacao_meta') or {}}\n"
                 f"CTA compra. Link: {link_ml}\n"
-                "Resposta máx 300 chars, precisa e persuasiva, tom salão."
+                "Resposta máx 300 chars, factual e neutra. "
+                "Sem inventar frete, prazo, desconto ou preço."
             ),
             max_tokens=220,
             system=_SYSTEM_CONV,
             modelo=rota["modelo"],
             forcar_modelo=bool(rota.get("forcar_modelo")),
+            origem="social.conversao_manicures.chat_ml",
         )
         if out and not out.startswith("⚠️"):
             if link_ml and link_ml not in out:
                 out = f"{out} {link_ml}".strip()
-            return out[:500]
-    return (
-        f"Sim! É ideal para manicures profissionais. "
-        f"Finalize a compra pelo anúncio: {link_ml}"
+            return sanitizar_resposta_chat_ml(out[:500], produto)
+    return sanitizar_resposta_chat_ml(
+        f"Sim, o kit é indicado para manicures profissionais. "
+        f"Confira preço, frete e prazo no anúncio: {link_ml}",
+        produto,
     )
 
 
@@ -422,18 +429,23 @@ def pergunta_parece_manicure(texto: str) -> bool:
 def diagnosticar_canais(cfg: dict[str, Any]) -> dict[str, Any]:
     """
     Checklist de prontidão por canal.
-    cfg keys esperadas: wa, tg_manicures, fb, ig, ig_imagem, claude, ml, reply_meta, reply_wa, publicar_fb, publicar_ig
+    cfg keys: wa, tg_manicures, fb, ig, ig_imagem, claude, ml,
+    reply_meta, reply_wa, publicar_fb, publicar_ig, enviar_wa, enviar_tg, escrita
     """
     canais = {
         "whatsapp": {
             "pronto": bool(cfg.get("wa")),
             "status": "ok" if cfg.get("wa") else "config_pendente",
             "nota": "WHATSAPP_* + GRUPO_MANICURES_ID" if not cfg.get("wa") else "grupo ok",
+            "toggle": "CONVERSAO_MANICURES_ENVIAR_WA",
+            "toggle_ligado": bool(cfg.get("enviar_wa")),
         },
         "telegram_manicures": {
             "pronto": bool(cfg.get("tg_manicures")),
             "status": "ok" if cfg.get("tg_manicures") else "config_pendente",
             "nota": "TELEGRAM_MANICURES_CHAT_ID" if not cfg.get("tg_manicures") else "ok",
+            "toggle": "CONVERSAO_MANICURES_ENVIAR_TG",
+            "toggle_ligado": bool(cfg.get("enviar_tg")),
         },
         "facebook": {
             "pronto": bool(cfg.get("fb")),
@@ -443,6 +455,8 @@ def diagnosticar_canais(cfg: dict[str, Any]) -> dict[str, Any]:
                 if not cfg.get("fb")
                 else ("ligado" if cfg.get("publicar_fb") else "token ok — PUBLICAR_FB=0")
             ),
+            "toggle": "CONVERSAO_MANICURES_PUBLICAR_FB",
+            "toggle_ligado": bool(cfg.get("publicar_fb")),
         },
         "instagram": {
             "pronto": bool(cfg.get("ig") and cfg.get("ig_imagem")),
@@ -453,6 +467,8 @@ def diagnosticar_canais(cfg: dict[str, Any]) -> dict[str, Any]:
                 if not (cfg.get("ig") and cfg.get("ig_imagem"))
                 else ("ligado" if cfg.get("publicar_ig") else "ids ok — PUBLICAR_IG=0")
             ),
+            "toggle": "CONVERSAO_MANICURES_PUBLICAR_IG",
+            "toggle_ligado": bool(cfg.get("publicar_ig")),
         },
         "claude_haiku": {
             "pronto": bool(cfg.get("claude")),
@@ -462,27 +478,109 @@ def diagnosticar_canais(cfg: dict[str, Any]) -> dict[str, Any]:
         "chat_ml": {
             "pronto": bool(cfg.get("ml")),
             "status": "ok" if cfg.get("ml") else "config_pendente",
-            "nota": "token ML" if not cfg.get("ml") else "ok",
+            "nota": (
+                "token ML"
+                if not cfg.get("ml")
+                else ("ligado" if cfg.get("chat_ml") else "token ok — CHAT_ML=0 (dono: agentes.ml)")
+            ),
+            "toggle": "CONVERSAO_MANICURES_CHAT_ML",
+            "toggle_ligado": bool(cfg.get("chat_ml")),
         },
         "reply_meta": {
             "pronto": bool(cfg.get("reply_meta") and cfg.get("fb")),
             "status": "ok" if cfg.get("reply_meta") else "desligado",
             "nota": "CONVERSAO_MANICURES_REPLY_META=1 quando permissões fecharem",
+            "toggle": "CONVERSAO_MANICURES_REPLY_META",
+            "toggle_ligado": bool(cfg.get("reply_meta")),
         },
         "reply_wa": {
             "pronto": bool(cfg.get("reply_wa") and cfg.get("wa")),
             "status": "ok" if cfg.get("reply_wa") else "desligado",
             "nota": "CONVERSAO_MANICURES_REPLY_WA=1",
+            "toggle": "CONVERSAO_MANICURES_REPLY_WA",
+            "toggle_ligado": bool(cfg.get("reply_wa")),
         },
     }
     pendentes = [k for k, v in canais.items() if v.get("status") == "config_pendente"]
-    return {"canais": canais, "pendentes": pendentes, "checklist_meta": [
-        "Token long-lived Meta (META_ACCESS_TOKEN)",
-        "META_PAGE_ID + pages_manage_posts / pages_read_engagement",
-        "META_INSTAGRAM_ID + instagram_basic / instagram_content_publish",
-        "pages_manage_engagement / instagram_manage_comments (para REPLY_META)",
-        "CONVERSAO_MANICURES_IMAGEM_IG_URL (URL pública HTTPS da arte)",
-    ]}
+    return {
+        "canais": canais,
+        "pendentes": pendentes,
+        "escrita_habilitada": bool(cfg.get("escrita")),
+        "checklist_meta": [
+            "Token long-lived Meta (META_ACCESS_TOKEN)",
+            "META_PAGE_ID + pages_manage_posts / pages_read_engagement",
+            "META_INSTAGRAM_ID + instagram_basic / instagram_content_publish",
+            "pages_manage_engagement / instagram_manage_comments (para REPLY_META)",
+            "CONVERSAO_MANICURES_IMAGEM_IG_URL (URL pública HTTPS da arte)",
+        ],
+        "como_ativar": [
+            "1) Preencha item_id MLB real na campanha/catálogo (sem MLB_PREENCHER)",
+            "2) CONVERSAO_MANICURES_ESCRITA=1 (master)",
+            "3) Ligue só o canal pronto: ENVIAR_WA / ENVIAR_TG / PUBLICAR_FB / PUBLICAR_IG / REPLY_* / CHAT_ML",
+        ],
+    }
+
+
+def avaliar_prontidao(
+    *,
+    oferta: dict[str, Any] | None,
+    diagnostico: dict[str, Any] | None,
+    escrita: bool,
+) -> dict[str, Any]:
+    """
+    Decide se a rodada pode publicar/responder fora do Telegram gestor.
+    Claude continua escolhendo oferta/copy mesmo com escrita=False.
+    """
+    of = oferta if isinstance(oferta, dict) else {}
+    diag = diagnostico if isinstance(diagnostico, dict) else {}
+    canais = diag.get("canais") or {}
+    faltando: list[str] = []
+
+    link_ok = of.get("link_valido") is not False and bool(str(of.get("link_ml") or "").strip())
+    if of.get("link_valido") is False or not str(of.get("link_ml") or "").strip():
+        faltando.append("link_ml_invalido_ou_vazio")
+
+    claude_ok = bool((canais.get("claude_haiku") or {}).get("pronto"))
+    if not claude_ok:
+        faltando.append("ANTHROPIC_API_KEY")
+
+    if not escrita:
+        faltando.append("CONVERSAO_MANICURES_ESCRITA=0")
+
+    canais_armados = [
+        nome
+        for nome, meta in canais.items()
+        if isinstance(meta, dict) and meta.get("toggle_ligado") and meta.get("pronto")
+    ]
+    # chat_ml "pronto" = token; toggle separado
+    if escrita and not canais_armados:
+        # ainda pode armar só reply/publicar mesmo se status desligado — conta toggle+credencial
+        for nome, meta in canais.items():
+            if not isinstance(meta, dict) or not meta.get("toggle_ligado"):
+                continue
+            if nome == "chat_ml" and (canais.get("chat_ml") or {}).get("pronto"):
+                canais_armados.append(nome)
+            elif nome in ("reply_meta", "reply_wa") and meta.get("pronto"):
+                canais_armados.append(nome)
+            elif nome in ("whatsapp", "telegram_manicures", "facebook", "instagram") and meta.get("pronto"):
+                canais_armados.append(nome)
+        canais_armados = sorted(set(canais_armados))
+        if not canais_armados:
+            faltando.append("nenhum_canal_com_toggle_e_credencial")
+
+    pronta = bool(escrita and link_ok and claude_ok and canais_armados)
+    return {
+        "pronta_para_escrita": pronta,
+        "escrita_habilitada": bool(escrita),
+        "link_ok": link_ok,
+        "claude_ok": claude_ok,
+        "canais_armados": canais_armados,
+        "faltando": faltando,
+        "como_ativar": diag.get("como_ativar")
+        or [
+            "CONVERSAO_MANICURES_ESCRITA=1 + link MLB real + toggle do canal",
+        ],
+    }
 
 
 def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
@@ -493,6 +591,8 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
     envios = payload.get("envios") or {}
     inbox = payload.get("inbox") or {}
     chat_ml = payload.get("chat_ml") or {}
+    pront = payload.get("prontidao") or {}
+    toggles = payload.get("toggles") or {}
     sust = payload.get("sustentabilidade") or (payload.get("ads") or {}).get("sustentabilidade") or {}
 
     linhas = [
@@ -514,6 +614,24 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
         if aviso:
             msg = f"{msg} {aviso}"
         linhas.append(msg)
+
+    escrita_on = bool(toggles.get("escrita") or pront.get("escrita_habilitada"))
+    if not escrita_on:
+        linhas.extend(
+            [
+                "",
+                "🔒 *Escrita pública OFF* (`CONVERSAO_MANICURES_ESCRITA=0`)",
+                "_Claude escolhe oferta/copy; nada é postado/respondido fora do alerta gestor._",
+                "_Quando tudo OK: ESCRITA=1 + toggle do canal (ENVIAR_WA/TG, PUBLICAR_*, REPLY_*, CHAT_ML)._",
+            ]
+        )
+    elif pront.get("pronta_para_escrita"):
+        armados = ", ".join(pront.get("canais_armados") or []) or "—"
+        linhas.extend(["", f"🟢 *Escrita armada* — canais: {armados}"])
+    else:
+        falt = ", ".join(pront.get("faltando") or []) or "checklist incompleto"
+        linhas.extend(["", f"🟡 *Escrita ON mas bloqueada:* {falt}"])
+
     linhas.extend(["", "*Sustentabilidade Ads × ML*"])
     if sust:
         emoji = {
@@ -552,6 +670,11 @@ def montar_mensagem_gestor(payload: dict[str, Any]) -> str:
             f"{int(inbox.get('respondidos') or 0)} respondidos · "
             f"{int(inbox.get('enfileirados') or 0)} na fila",
             f"*Chat ML manicure:* {int(chat_ml.get('respondidas') or 0)} respostas",
+            "",
+            "*Toggles*",
+            f"• ESCRITA={1 if escrita_on else 0} · WA={1 if toggles.get('enviar_wa') else 0} · "
+            f"TG={1 if toggles.get('enviar_tg') else 0} · FB={1 if toggles.get('publicar_fb') else 0} · "
+            f"IG={1 if toggles.get('publicar_ig') else 0} · CHAT_ML={1 if toggles.get('chat_ml') else 0}",
         ]
     )
     pend = diag.get("pendentes") or []

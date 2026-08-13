@@ -382,6 +382,14 @@ def responder_chat(
     sinal_ads: dict | None = None,
     oferta_ctx: dict | None = None,
 ) -> str:
+    from core.chat_seguro_ml import (
+        MSG_CONSULTAR_ANUNCIO,
+        MSG_INDISPONIVEL,
+        MSG_SEM_DESCONTO,
+        prompt_sistema_chat_ml,
+        sanitizar_resposta_chat_ml,
+    )
+
     pergunta_txt = (pergunta or "").strip()
     if len(pergunta_txt) < 3:
         return ""
@@ -391,7 +399,7 @@ def responder_chat(
 
     estoque = int(produto.get("estoque", produto.get("estoque_total", 0)) or 0)
     if estoque <= 0:
-        return "Produto indisponível no momento"
+        return MSG_INDISPONIVEL
 
     try:
         preco = float(produto.get("preco") or 0)
@@ -461,16 +469,21 @@ def responder_chat(
             )
         if "foto" in pergunta_lower or "real" in pergunta_lower:
             return "Sim, as fotos mostram as cores reais. Cada frasco está identificado pelo nome Impala. O que você vê é o que recebe."
-        if "entrega" in pergunta_lower or "cep" in pergunta_lower or "full" in pergunta_lower:
-            return "Com Full ativo chegará grátis amanhã para a maioria das regiões. Confirme seu CEP para verificar disponibilidade."
-        if "atacado" in pergunta_lower or "revendedor" in pergunta_lower:
-            return "Temos preço especial para kits a partir de 3 unidades. Qual quantidade você precisa? Posso calcular o melhor preço."
+        # Frete/prazo/CEP: nunca inventar — orientar anúncio
+        if any(k in pergunta_lower for k in ("entrega", "cep", "full", "frete", "prazo")):
+            return MSG_CONSULTAR_ANUNCIO
+        # Atacado/desconto: sem preço especial inventado
+        if any(k in pergunta_lower for k in ("atacado", "revendedor", "desconto", "promo")):
+            return MSG_SEM_DESCONTO
         if "profissional" in pergunta_lower:
             return "Sim, usado por manicures profissionais. Secagem rápida, alta pigmentação, sem tolueno, sem formaldeído."
         if "alicate" in pergunta_lower or "mundial 777" in contexto:
             return "Alicate Mundial 777 em aço inox cirúrgico. Pode ser autoclavado para uso em clínicas e salões. Corte preciso sem necessidade de afiar."
         if "validade" in pergunta_lower:
-            return "Validade de 24 a 30 meses a partir da fabricação. Lote e validade impressos em cada frasco."
+            # Só afirma se estiver na descrição do produto
+            if "validade" in descricao or "meses" in descricao:
+                return str(produto.get("descricao") or "")[:280]
+            return "A validade e o lote vêm impressos em cada frasco. Confira também na descrição do anúncio."
 
     oferta_txt = ""
     if isinstance(oferta_ctx, dict) and oferta_ctx.get("link_ml"):
@@ -483,8 +496,8 @@ def responder_chat(
     ctx = f"""
 Canal: {canal.upper()}
 Produto: {produto.get('nome','N/D')}
-Preço: R$ {produto.get('preco',0):.2f}
-Estoque: {estoque} unidades
+Preço (único permitido citar): R$ {preco:.2f}
+Estoque informado: {estoque} unidades
 Descrição: {produto.get('descricao','')}
 Análise oportunidade: {analise.get('resumo')} (fatores: {', '.join(analise.get('fatores') or [])})
 {oferta_txt}
@@ -492,18 +505,19 @@ Captação Meta (resumo): {analise.get('captacao_meta') or {}}
 
 Pergunta do cliente: {pergunta_txt}
 
-Responda para maximizar chance de compra no Mercado Livre. Seja específico e próximo.
-Se houver link de oferta ativa e couber, cite sutilmente o CTA sem inventar preço.
+Responda de forma factual e neutra. Se couber, cite o link da oferta sem inventar preço/frete/prazo/desconto.
 """
     resposta = perguntar(
         ctx,
         max_tokens=320,
         modelo=rota["modelo"],
         forcar_modelo=bool(rota.get("forcar_modelo")),
+        system=prompt_sistema_chat_ml(),
+        origem="ml.chat.responder_chat",
     )
     if resposta.startswith("⚠️"):
         return "Já vou te responder melhor"
-    return resposta
+    return sanitizar_resposta_chat_ml(resposta, produto)
 
 
 def gerar_post(produto: dict, canal: str) -> str:

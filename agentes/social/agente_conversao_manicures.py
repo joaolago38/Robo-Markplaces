@@ -29,6 +29,9 @@ from core.config import (
     CONVERSAO_MANICURES_BLOQUEAR_SE_INSUSTENTAVEL,
     CONVERSAO_MANICURES_CHAT_ML,
     CONVERSAO_MANICURES_COOLDOWN_SEG,
+    CONVERSAO_MANICURES_ENVIAR_TG,
+    CONVERSAO_MANICURES_ENVIAR_WA,
+    CONVERSAO_MANICURES_ESCRITA,
     CONVERSAO_MANICURES_GASTO_MIN_AVALIAR,
     CONVERSAO_MANICURES_IMAGEM_IG_URL,
     CONVERSAO_MANICURES_PUBLICAR_FB,
@@ -63,6 +66,7 @@ from integracoes.meta.meta_inbox import coletar_inbox_meta, responder_comentario
 from integracoes.social.conversao_manicures import (
     append_lead,
     atualizar_lead,
+    avaliar_prontidao,
     classificar_e_responder_lead,
     diagnosticar_canais,
     escolher_oferta_haiku,
@@ -272,6 +276,8 @@ def _chat_ml_manicures(
     if not CONVERSAO_MANICURES_CHAT_ML or not ML_ACCESS_TOKEN:
         return {"respondidas": 0, "motivo": "chat_ml_desligado_ou_sem_token"}
     try:
+        from agentes.ml.agente_ml import validar_resposta
+        from core.produto_lookup import buscar_produto_por_ref
         from integracoes.ml.ml_client import listar_perguntas_nao_respondidas, responder_pergunta
     except Exception as exc:
         return {"respondidas": 0, "erro": str(exc)[:120]}
@@ -289,17 +295,27 @@ def _chat_ml_manicures(
         if not pergunta_parece_manicure(texto):
             continue
         pid = str(p.get("id") or "")
-        if not tentar_claim("mercadolivre", pid, agente="conversao_manicures"):
+        if not tentar_claim("mercadolivre", pid, agente="conversao_manicures", fail_closed=True):
             continue
         vistos += 1
+        item_id = str(p.get("item_id") or "")
+        produto = buscar_produto_por_ref(item_id, canal="mercadolivre") or {
+            "nome": oferta.get("campanha_nome") or "kit Impala",
+            "sku": oferta.get("sku") or "",
+            "preco": float(oferta.get("preco_brl") or 0),
+            "estoque": 0,
+            "_fonte": "oferta_conversao_snapshot",
+        }
         resp = resposta_chat_ml_haiku(
             texto,
             link,
-            produto_ctx=str(oferta.get("campanha_nome") or ""),
+            produto_ctx=str(oferta.get("campanha_nome") or produto.get("nome") or ""),
+            produto=produto if isinstance(produto, dict) else None,
             sinal_ads=sinal_ads,
         )
         if not resp:
             continue
+        resp = validar_resposta(resp, produto)
         if enviar:
             if responder_pergunta(str(p.get("id") or ""), resp):
                 ok += 1
@@ -346,10 +362,10 @@ def _envios_ativos(
     fb_txt = str(oferta.get("copy_facebook") or "")
     ig_txt = str(oferta.get("copy_instagram") or "")
 
-    if whatsapp_grupo_manicures_configurado() and wa_txt:
+    if whatsapp_grupo_manicures_configurado() and wa_txt and CONVERSAO_MANICURES_ENVIAR_WA:
         out["whatsapp"] = bool(enviar_grupo_manicures(wa_txt))
 
-    if manicures_telegram_configurado() and wa_txt:
+    if manicures_telegram_configurado() and wa_txt and CONVERSAO_MANICURES_ENVIAR_TG:
         # telegram aceita markdown leve — usa facebook copy
         out["telegram"] = bool(
             enviar_telegram_manicures(
@@ -406,10 +422,14 @@ def executar(
                 "ig_imagem": bool((CONVERSAO_MANICURES_IMAGEM_IG_URL or "").strip()),
                 "claude": bool(ANTHROPIC_API_KEY),
                 "ml": bool(ML_ACCESS_TOKEN),
+                "chat_ml": CONVERSAO_MANICURES_CHAT_ML,
                 "reply_meta": CONVERSAO_MANICURES_REPLY_META,
                 "reply_wa": CONVERSAO_MANICURES_REPLY_WA,
                 "publicar_fb": CONVERSAO_MANICURES_PUBLICAR_FB,
                 "publicar_ig": CONVERSAO_MANICURES_PUBLICAR_IG,
+                "enviar_wa": CONVERSAO_MANICURES_ENVIAR_WA,
+                "enviar_tg": CONVERSAO_MANICURES_ENVIAR_TG,
+                "escrita": CONVERSAO_MANICURES_ESCRITA,
             }
         )
 
@@ -427,6 +447,24 @@ def executar(
                 "alerta_enviado": False,
             }
 
+        toggles = {
+            "escrita": CONVERSAO_MANICURES_ESCRITA,
+            "enviar_wa": CONVERSAO_MANICURES_ENVIAR_WA,
+            "enviar_tg": CONVERSAO_MANICURES_ENVIAR_TG,
+            "publicar_fb": CONVERSAO_MANICURES_PUBLICAR_FB,
+            "publicar_ig": CONVERSAO_MANICURES_PUBLICAR_IG,
+            "reply_meta": CONVERSAO_MANICURES_REPLY_META,
+            "reply_wa": CONVERSAO_MANICURES_REPLY_WA,
+            "chat_ml": CONVERSAO_MANICURES_CHAT_ML,
+        }
+        prontidao = avaliar_prontidao(
+            oferta=oferta,
+            diagnostico=diag,
+            escrita=CONVERSAO_MANICURES_ESCRITA,
+        )
+        # Escrita pública só com master + checklist; Claude/copy sempre rodam
+        enviar_efetivo = bool(enviar and prontidao.get("pronta_para_escrita"))
+
         inbox: dict[str, Any] = {"novos": 0, "respondidos": 0, "enfileirados": 0}
         envios: dict[str, Any] = {}
         chat_ml: dict[str, Any] = {}
@@ -436,17 +474,26 @@ def executar(
         permitir_boost, motivo_boost = _pode_impulsionar_ativo(ads, oferta=oferta)
 
         if fazer_inbox:
-            # Inbox/reply Meta: só com flag REPLY_META (padrão 0) — você decide no .env
-            inbox = _processar_inbox(oferta, enviar=enviar, sinal_ads=ads)
+            inbox = _processar_inbox(oferta, enviar=enviar_efetivo, sinal_ads=ads)
         if fazer_ativo:
             envios = _envios_ativos(
                 oferta,
-                enviar=enviar,
+                enviar=enviar_efetivo,
                 permitir_boost=permitir_boost,
                 motivo_bloqueio=motivo_boost,
             )
-            # Chat ML = termômetro de fechamento; Ads sobe a pressão da dosagem de IA
-            chat_ml = _chat_ml_manicures(oferta, enviar=enviar, sinal_ads=ads)
+            if not enviar_efetivo:
+                if not CONVERSAO_MANICURES_ESCRITA:
+                    envios = {**envios, "motivo": envios.get("motivo") or "escrita_desligada"}
+                elif not enviar:
+                    envios = {**envios, "motivo": envios.get("motivo") or "dry_run"}
+                else:
+                    envios = {
+                        **envios,
+                        "motivo": envios.get("motivo") or "prontidao_incompleta",
+                        "faltando": prontidao.get("faltando") or [],
+                    }
+            chat_ml = _chat_ml_manicures(oferta, enviar=enviar_efetivo, sinal_ads=ads)
         elif so_inbox:
             envios = {"motivo": "so_inbox"}
             chat_ml = {"respondidas": 0, "motivo": "so_inbox"}
@@ -457,6 +504,8 @@ def executar(
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "modelo": MODELO_RAPIDO,
             "diagnostico": diag,
+            "toggles": toggles,
+            "prontidao": prontidao,
             "ads": ads,
             "sustentabilidade": sust,
             "oferta": {
@@ -486,13 +535,17 @@ def executar(
             "envios": envios,
             "inbox": inbox,
             "chat_ml": chat_ml,
-            "modo": "dry_run" if not enviar else "envio",
+            "modo": "envio" if enviar_efetivo else "armado_sem_escrita",
         }
         payload["mensagem"] = montar_mensagem_gestor(payload)
         escrever_json_atomico(SNAPSHOT_PATH, payload)
 
         gauge("conversao_manicures.leads_novos", float(inbox.get("novos") or 0))
         gauge("conversao_manicures.chat_ml", float(chat_ml.get("respondidas") or 0))
+        gauge(
+            "conversao_manicures.escrita_pronta",
+            1.0 if prontidao.get("pronta_para_escrita") else 0.0,
+        )
         if sust.get("roas_real") is not None:
             gauge("conversao_manicures.roas_real", float(sust.get("roas_real") or 0))
         if sust.get("status") == "critico":
@@ -518,6 +571,9 @@ def executar(
             "inbox": inbox,
             "chat_ml": chat_ml,
             "pendentes": diag.get("pendentes"),
+            "prontidao": prontidao,
+            "toggles": toggles,
+            "modo": payload["modo"],
             "sustentabilidade": sust.get("status"),
             "roas_real": sust.get("roas_real"),
         }
@@ -547,6 +603,8 @@ def main() -> int:
             "erro": out.get("erro") or out.get("motivo"),
             "alerta_enviado": out.get("alerta_enviado"),
             "campanha_id": out.get("campanha_id"),
+            "modo": out.get("modo"),
+            "prontidao": out.get("prontidao"),
             "pendentes": out.get("pendentes"),
             "sustentabilidade": out.get("sustentabilidade"),
             "roas_real": out.get("roas_real"),
