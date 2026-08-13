@@ -9,6 +9,12 @@ import time
 
 from core.atomic_io import escrever_json_atomico
 from core.chat_claim import tentar_claim
+from core.chat_seguro_ml import (
+    MSG_CONFIRMAR,
+    MSG_ESTOQUE_INCERTO,
+    MSG_INDISPONIVEL,
+    sanitizar_resposta_chat_ml,
+)
 from core.claude_client import responder_chat
 from core.config import MARGEM_MINIMA, ROOT
 from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
@@ -35,23 +41,36 @@ def pergunta_valida(texto: str) -> bool:
 
 
 def validar_resposta(resposta: str, produto: dict) -> str:
+    """
+    Porta única antes de publicar no ML:
+    estoque Bling (fail-closed), sem inventar frete/prazo/preço/desconto.
+    """
     if not produto:
-        return "Vou confirmar os detalhes e já te respondo 😊"
+        return MSG_CONFIRMAR
 
-    sku = produto.get("sku") or produto.get("codigo") or ""
-    if sku and produto.get("_fonte") != "catalogo_local":
-        produto_bling = buscar_produto(str(sku)) or {}
-        estoque = int(produto_bling.get("estoque", produto.get("estoque", 0)) or 0)
+    fonte = str(produto.get("_fonte") or "")
+    # Snapshot de conversão: estoque desconhecido — não afirmar disponibilidade
+    if fonte == "oferta_conversao_snapshot":
+        return sanitizar_resposta_chat_ml(resposta, produto)
+
+    sku = str(produto.get("sku") or produto.get("codigo") or "").strip()
+    if sku:
+        try:
+            produto_bling = buscar_produto(sku)
+        except Exception as exc:
+            logger.warning("validar_resposta: Bling falhou sku=%s: %s", sku, exc)
+            return MSG_ESTOQUE_INCERTO
+        if not produto_bling:
+            return MSG_ESTOQUE_INCERTO
+        estoque = int(produto_bling.get("estoque", 0) or 0)
+        produto = {**produto, "estoque": estoque, "preco": produto_bling.get("preco") or produto.get("preco")}
     else:
         estoque = int(produto.get("estoque", 0) or 0)
 
-    if estoque <= 0 and produto.get("_fonte") not in (
-        "oferta_conversao_snapshot",
-        "catalogo_local",
-    ):
-        return "Produto indisponível no momento 😊"
+    if estoque <= 0:
+        return MSG_INDISPONIVEL
 
-    return resposta
+    return sanitizar_resposta_chat_ml(resposta, produto)
 
 
 def calcular_preco(preco_atual, preco_concorrente, custo):
@@ -129,7 +148,7 @@ def ciclo_chat():
         if not pergunta_valida(texto):
             continue
 
-        if not tentar_claim("mercadolivre", pid, agente="chat_ml"):
+        if not tentar_claim("mercadolivre", pid, agente="chat_ml", fail_closed=True):
             logger.info("Pergunta %s já claimed por outro agente — skip", pid)
             continue
 
@@ -150,6 +169,7 @@ def ciclo_chat():
                         or produto.get("nome")
                         or "kit Impala"
                     ),
+                    produto=produto if isinstance(produto, dict) else None,
                     sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
                 )
                 if not resposta:
@@ -168,12 +188,12 @@ def ciclo_chat():
                     sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
                     oferta_ctx=oferta if isinstance(oferta, dict) else None,
                 )
-            if produto.get("_fonte") != "oferta_conversao_snapshot":
-                resposta = validar_resposta(resposta, produto)
+            # Sempre: Bling + anti-invenção antes de publicar
+            resposta = validar_resposta(resposta, produto)
 
         except Exception as e:
             logger.error(f"Erro IA: {e}")
-            resposta = "Já vou te responder melhor 😊"
+            resposta = MSG_CONFIRMAR
 
         if responder(p["id"], resposta):
             ok += 1

@@ -423,6 +423,91 @@ class TestHelpers(unittest.TestCase):
     def test_primeira_sugestao_vazia(self):
         self.assertEqual(opt._primeira_sugestao("⚠️ erro"), "")
 
+    def test_titulo_aplicavel_rejeita_placeholder(self):
+        self.assertIsNone(opt._titulo_aplicavel("Bom título", "MLB_PREENCHER"))
+        self.assertEqual(opt._titulo_aplicavel("Kit Impala 12 cores", "MLB123"), "Kit Impala 12 cores")
+
+
+class TestAplicarTituloComTravas(unittest.TestCase):
+    @patch("core.config.OTIMIZADOR_LISTING_APLICAR", False)
+    @patch("core.notificador.alertar_gestor", return_value=True)
+    @patch.object(opt.ml_client, "atualizar_titulo_item")
+    @patch.object(
+        opt,
+        "analisar_item",
+        return_value={
+            "ok": True,
+            "item_id": "MLB-A",
+            "titulo_atual": "A",
+            "visitas_7d": 3,
+            "sugestoes_texto": "Novo",
+            "sugestoes_estruturadas": [{"titulo": "Titulo Novo ML", "motivo": "kw"}],
+            "concorrentes_analisados": 1,
+        },
+    )
+    @patch.object(opt, "_carregar_catalogo", return_value=[
+        {"sku": "S", "nome": "N", "canais": {"mercadolivre": {"ativo": True, "item_id": "MLB-A"}}},
+    ])
+    def test_flag_off_nunca_aplica(self, _cat, _analisar, mock_upd, mock_alertar):
+        out = opt.analisar_catalogo(limite_itens=1)
+        self.assertEqual(out["modo"], "sugestao")
+        self.assertFalse(out["aplicacao_habilitada"])
+        self.assertTrue(out["descricao_nunca_aplicada"])
+        self.assertEqual(out["titulos_aplicados"], [])
+        mock_upd.assert_not_called()
+        self.assertIn("somente sugestão", mock_alertar.call_args[0][0])
+
+    @patch("core.config.OTIMIZADOR_LISTING_APLICAR", True)
+    @patch("core.notificador.perguntar_gestor_e_aguardar", return_value=False)
+    @patch("core.notificador.alertar_gestor", return_value=True)
+    @patch.object(opt.ml_client, "atualizar_titulo_item")
+    @patch.object(
+        opt,
+        "analisar_item",
+        return_value={
+            "ok": True,
+            "item_id": "MLB-A",
+            "titulo_atual": "A",
+            "visitas_7d": 3,
+            "sugestoes_texto": "Novo",
+            "sugestoes_estruturadas": [{"titulo": "Titulo Novo ML", "motivo": "kw"}],
+            "concorrentes_analisados": 1,
+        },
+    )
+    @patch.object(opt, "_carregar_catalogo", return_value=[
+        {"sku": "S", "nome": "N", "canais": {"mercadolivre": {"ativo": True, "item_id": "MLB-A"}}},
+    ])
+    def test_gestor_recusa_nao_aplica(self, _cat, _analisar, mock_upd, *_):
+        out = opt.analisar_catalogo(limite_itens=1)
+        self.assertEqual(out["titulos_aplicados"], [])
+        self.assertIn("MLB-A", out["titulos_recusados"])
+        mock_upd.assert_not_called()
+
+    @patch("core.config.OTIMIZADOR_LISTING_APLICAR", True)
+    @patch("core.notificador.perguntar_gestor_e_aguardar", return_value=True)
+    @patch("core.notificador.alertar_gestor", return_value=True)
+    @patch.object(opt.ml_client, "atualizar_titulo_item", return_value=True)
+    @patch.object(
+        opt,
+        "analisar_item",
+        return_value={
+            "ok": True,
+            "item_id": "MLB-A",
+            "titulo_atual": "A",
+            "visitas_7d": 3,
+            "sugestoes_texto": "Novo",
+            "sugestoes_estruturadas": [{"titulo": "Titulo Novo ML", "motivo": "kw"}],
+            "concorrentes_analisados": 1,
+        },
+    )
+    @patch.object(opt, "_carregar_catalogo", return_value=[
+        {"sku": "S", "nome": "N", "canais": {"mercadolivre": {"ativo": True, "item_id": "MLB-A"}}},
+    ])
+    def test_gestor_sim_aplica_titulo(self, _cat, _analisar, mock_upd, *_):
+        out = opt.analisar_catalogo(limite_itens=1)
+        self.assertEqual(out["titulos_aplicados"], ["MLB-A"])
+        mock_upd.assert_called_once_with("MLB-A", "Titulo Novo ML")
+
 
 if __name__ == "__main__":
     unittest.main()

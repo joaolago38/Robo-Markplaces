@@ -27,10 +27,11 @@ LEADS_PATH = ROOT / "logs" / "leads_manicures.json"
 MAX_LEADS = 500
 
 _SYSTEM_CONV = (
-    "Você é especialista em conversão de manicures profissionais para compra no "
-    "Mercado Livre (kits esmaltes Impala/Anita). Tom próximo de salão, curto, "
-    "sem inventar preço/estoque. Sempre incentive a compra pelo link do ML. "
-    "Nunca peça dados sensíveis (senha/cartão)."
+    "Você apoia fechamento de compra no Mercado Livre (kits Impala/Anita). "
+    "Tom neutro e factual, curto. "
+    "NUNCA invente preço, estoque, frete, prazo, Full ou desconto. "
+    "Para frete/prazo oriente a consultar o anúncio com o CEP. "
+    "Pode citar o link do ML. Nunca peça dados sensíveis (senha/cartão)."
 )
 
 _SCHEMA_OFERTA = {
@@ -378,9 +379,12 @@ def resposta_chat_ml_haiku(
     link_ml: str,
     produto_ctx: str = "",
     *,
+    produto: dict[str, Any] | None = None,
     sinal_ads: dict[str, Any] | None = None,
 ) -> str:
-    """Fechamento no ML = termômetro principal; Ads Meta aumenta a pressão/dosagem."""
+    """Fechamento no ML com travas: sem inventar frete/preço/desconto; sanitiza saída."""
+    from core.chat_seguro_ml import sanitizar_resposta_chat_ml
+
     if not pergunta_parece_manicure(pergunta):
         return ""
     if ANTHROPIC_API_KEY:
@@ -398,20 +402,23 @@ def resposta_chat_ml_haiku(
                 f"Termômetro: {analise.get('resumo') or 'n/d'}\n"
                 f"Captação Meta (se houver): {analise.get('captacao_meta') or {}}\n"
                 f"CTA compra. Link: {link_ml}\n"
-                "Resposta máx 300 chars, precisa e persuasiva, tom salão."
+                "Resposta máx 300 chars, factual e neutra. "
+                "Sem inventar frete, prazo, desconto ou preço."
             ),
             max_tokens=220,
             system=_SYSTEM_CONV,
             modelo=rota["modelo"],
             forcar_modelo=bool(rota.get("forcar_modelo")),
+            origem="social.conversao_manicures.chat_ml",
         )
         if out and not out.startswith("⚠️"):
             if link_ml and link_ml not in out:
                 out = f"{out} {link_ml}".strip()
-            return out[:500]
-    return (
-        f"Sim! É ideal para manicures profissionais. "
-        f"Finalize a compra pelo anúncio: {link_ml}"
+            return sanitizar_resposta_chat_ml(out[:500], produto)
+    return sanitizar_resposta_chat_ml(
+        f"Sim, o kit é indicado para manicures profissionais. "
+        f"Confira preço, frete e prazo no anúncio: {link_ml}",
+        produto,
     )
 
 

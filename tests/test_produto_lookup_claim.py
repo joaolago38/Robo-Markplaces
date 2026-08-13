@@ -67,6 +67,11 @@ class TestChatClaim(unittest.TestCase):
                 )
                 self.assertTrue(chat_claim.tentar_claim("mercadolivre", "q1", agente="chat_ml"))
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_fail_closed_em_erro_io(self):
+        with patch.object(chat_claim, "ler_e_atualizar_json", side_effect=OSError("disk")):
+            self.assertFalse(
+                chat_claim.tentar_claim("mercadolivre", "q2", agente="chat_ml", fail_closed=True)
+            )
+            self.assertTrue(
+                chat_claim.tentar_claim("mercadolivre", "q2", agente="chat_ml", fail_closed=False)
+            )

@@ -1,7 +1,11 @@
 """
 agentes/ml/agente_otimizador_listing.py
 Sugestões de título e descrição para anúncios do Mercado Livre via Claude.
-Somente leitura + recomendação — NÃO altera título nem descrição no ML.
+
+Travas de escrita no ML:
+- Descrição: NUNCA publicada (só preview no Telegram).
+- Título: só se OTIMIZADOR_LISTING_APLICAR=1 E confirmação SIM no Telegram
+  (fail-closed se token/gestor indisponível). Placeholder MLB_PREENCHER nunca aplica.
 """
 from __future__ import annotations
 
@@ -284,10 +288,24 @@ def _montar_resumo_telegram(resultados: list[dict]) -> str:
     return "\n".join(linhas).strip()
 
 
+def _titulo_aplicavel(titulo: str, item_id: str) -> str | None:
+    """Valida título sugerido antes de qualquer escrita no ML."""
+    novo = str(titulo or "").strip()[:60]
+    iid = str(item_id or "").strip()
+    if not novo or not iid:
+        return None
+    if not _item_id_valido(iid):
+        return None
+    if "PREENCHER" in novo.upper():
+        return None
+    return novo
+
+
 def analisar_catalogo(limite_itens: int = 10) -> dict:
     """
     Analisa até `limite_itens` anúncios ML ativos no catálogo e envia resumo ao gestor.
     Prioriza item_ids liberados pelo contrato de impulso (SKUs guerra).
+    Escrita de título só com flag + SIM Telegram; descrição nunca é aplicada.
     Nunca lança exceção.
     """
     limite = max(1, int(limite_itens or 10))
@@ -324,45 +342,72 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
         from core.config import OTIMIZADOR_LISTING_APLICAR
         from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
 
-        aplicados = []
+        aplicados: list[str] = []
+        recusados: list[str] = []
+        modo = "sugestao"
         if OTIMIZADOR_LISTING_APLICAR:
+            modo = "sugestao_com_confirmacao_telegram"
             for r in resultados:
                 if not r.get("ok"):
                     continue
-                sug = (r.get("sugestoes_estruturadas") or [])
+                sug = r.get("sugestoes_estruturadas") or []
                 if not sug or not isinstance(sug[0], dict):
                     continue
-                novo = str(sug[0].get("titulo") or "").strip()[:60]
                 item_id = str(r.get("item_id") or "")
-                if not novo or not item_id:
+                novo = _titulo_aplicavel(str(sug[0].get("titulo") or ""), item_id)
+                if not novo:
                     continue
                 ok_g = perguntar_gestor_e_aguardar(
-                    f"Aplicar novo título no ML?\n\n"
+                    f"⚠️ Aplicar novo título no ML? (Claude só sugeriu)\n\n"
                     f"Item: `{item_id}`\n"
                     f"Atual: {r.get('titulo_atual')}\n"
                     f"Novo: {novo}\n\n"
-                    f"Motivo: {sug[0].get('motivo')}",
+                    f"Motivo: {sug[0].get('motivo')}\n\n"
+                    f"Descrição sugerida NÃO será publicada — só o título se você responder SIM.",
                     timeout_segundos=300,
                     contexto_decisao={
                         "decisao": "aplicar_titulo_listing",
                         "item_id": item_id,
                         "titulo_novo": novo,
+                        "descricao_nunca_aplicada": True,
                     },
                 )
-                if ok_g and ml_client.atualizar_titulo_item(item_id, novo):
+                if not ok_g:
+                    recusados.append(item_id)
+                    r["titulo_recusado_gestor"] = True
+                    continue
+                if ml_client.atualizar_titulo_item(item_id, novo):
                     aplicados.append(item_id)
                     r["titulo_aplicado"] = novo
+                else:
+                    r["titulo_aplicacao_falhou"] = True
 
         msg = _montar_resumo_telegram(resultados)
+        if OTIMIZADOR_LISTING_APLICAR:
+            msg += (
+                "\n\n_Modo:_ flag `OTIMIZADOR_LISTING_APLICAR=1` — "
+                "título só com SIM no Telegram; descrição nunca publicada."
+            )
+        else:
+            msg += (
+                "\n\n_Modo:_ somente sugestão "
+                "(defina `OTIMIZADOR_LISTING_APLICAR=1` + SIM no Telegram para publicar título)."
+            )
         if aplicados:
             msg += f"\n\n✅ Títulos aplicados: {', '.join(aplicados)}"
+        if recusados:
+            msg += f"\n⏭ Sem confirmação / recusados: {', '.join(recusados)}"
         alerta_enviado = bool(alertar_gestor(msg, agente_id="otimizador_listing"))
 
         return {
             "ok": True,
+            "modo": modo,
+            "aplicacao_habilitada": bool(OTIMIZADOR_LISTING_APLICAR),
+            "descricao_nunca_aplicada": True,
             "total_analisados": len(resultados),
             "limite_itens": limite,
             "titulos_aplicados": aplicados,
+            "titulos_recusados": recusados,
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
         }

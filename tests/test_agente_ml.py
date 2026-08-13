@@ -1,5 +1,5 @@
 """
-tests/test_agente_ml.py — AML01–AML09
+tests/test_agente_ml.py — AML01–AML09 + travas chat seguro
 """
 import os
 import sys
@@ -9,6 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agentes.ml import agente_ml
+from core.chat_seguro_ml import MSG_CONSULTAR_ANUNCIO, MSG_ESTOQUE_INCERTO, MSG_INDISPONIVEL
 
 
 class TestAgenteMlValidacao(unittest.TestCase):
@@ -24,6 +25,39 @@ class TestAgenteMlValidacao(unittest.TestCase):
         self.assertFalse(agente_ml.pergunta_valida("ok"))
 
 
+class TestAgenteMlValidarResposta(unittest.TestCase):
+    def test_sem_produto_confirma(self):
+        out = agente_ml.validar_resposta("qualquer", {})
+        self.assertIn("confirmar", out.lower())
+
+    @patch.object(agente_ml, "buscar_produto", return_value={"sku": "S", "estoque": 0, "preco": 50})
+    def test_estoque_zero_indisponivel(self, _):
+        out = agente_ml.validar_resposta("Temos sim!", {"sku": "S", "estoque": 5, "preco": 50})
+        self.assertEqual(out, MSG_INDISPONIVEL)
+
+    @patch.object(agente_ml, "buscar_produto", return_value=None)
+    def test_bling_ausente_fail_closed(self, _):
+        out = agente_ml.validar_resposta("ok", {"sku": "S", "estoque": 5, "preco": 50})
+        self.assertEqual(out, MSG_ESTOQUE_INCERTO)
+
+    @patch.object(agente_ml, "buscar_produto", return_value={"sku": "S", "estoque": 3, "preco": 59.9})
+    def test_frete_inventado_sanitizado(self, _):
+        out = agente_ml.validar_resposta(
+            "Chegará grátis amanhã com Full",
+            {"sku": "S", "estoque": 3, "preco": 59.9},
+        )
+        self.assertEqual(out, MSG_CONSULTAR_ANUNCIO)
+
+    def test_snapshot_sem_bling_ainda_sanitiza(self):
+        from core.chat_seguro_ml import MSG_SEM_DESCONTO
+
+        out = agente_ml.validar_resposta(
+            "Temos desconto especial hoje",
+            {"nome": "Kit", "preco": 44.9, "estoque": 0, "_fonte": "oferta_conversao_snapshot"},
+        )
+        self.assertEqual(out, MSG_SEM_DESCONTO)
+
+
 class TestAgenteMlPreco(unittest.TestCase):
     @patch.object(agente_ml, "MARGEM_MINIMA", 0.10)
     def test_AML04_calcular_preco_respeita_margem_minima(self, *_patches):
@@ -36,9 +70,15 @@ class TestAgenteMlPreco(unittest.TestCase):
 
 class TestAgenteMlCiclo(unittest.TestCase):
     @patch.object(agente_ml, "time")
+    @patch.object(agente_ml, "tentar_claim", return_value=True)
+    @patch.object(agente_ml, "validar_resposta", side_effect=lambda r, p: r)
     @patch.object(agente_ml, "responder", return_value=True)
     @patch.object(agente_ml, "responder_chat", return_value="Resposta")
-    @patch.object(agente_ml, "buscar_produto", return_value={"sku": "S", "estoque": 5})
+    @patch.object(
+        agente_ml,
+        "_montar_produto_resposta",
+        return_value={"sku": "S", "estoque": 5, "preco": 50, "nome": "Kit"},
+    )
     @patch.object(
         agente_ml,
         "buscar_perguntas",
@@ -52,9 +92,15 @@ class TestAgenteMlCiclo(unittest.TestCase):
         self.assertEqual(agente_ml.ciclo_chat(), 3)
 
     @patch.object(agente_ml, "time")
+    @patch.object(agente_ml, "tentar_claim", return_value=True)
+    @patch.object(agente_ml, "validar_resposta", side_effect=lambda r, p: r)
     @patch.object(agente_ml, "responder", side_effect=[True, False, True])
     @patch.object(agente_ml, "responder_chat", return_value="Resposta")
-    @patch.object(agente_ml, "buscar_produto", return_value={"sku": "S", "estoque": 5})
+    @patch.object(
+        agente_ml,
+        "_montar_produto_resposta",
+        return_value={"sku": "S", "estoque": 5, "preco": 50, "nome": "Kit"},
+    )
     @patch.object(
         agente_ml,
         "buscar_perguntas",
@@ -66,6 +112,19 @@ class TestAgenteMlCiclo(unittest.TestCase):
     )
     def test_AML06_ciclo_chat_conta_sucesso(self, *_patches):
         self.assertEqual(agente_ml.ciclo_chat(), 2)
+
+    @patch.object(agente_ml, "time")
+    @patch.object(agente_ml, "tentar_claim", return_value=False)
+    @patch.object(agente_ml, "responder")
+    @patch.object(
+        agente_ml,
+        "buscar_perguntas",
+        return_value=[{"id": "1", "text": "Pergunta um?", "item_id": "SKU-A"}],
+    )
+    def test_claim_bloqueia_resposta(self, _perguntas, mock_responder, *_):
+        self.assertEqual(agente_ml.ciclo_chat(), 0)
+        mock_responder.assert_not_called()
+
 
 
 class TestAgenteMlReputacao(unittest.TestCase):
