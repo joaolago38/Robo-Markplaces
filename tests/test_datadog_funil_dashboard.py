@@ -28,6 +28,20 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_MP_FUNIL_ID)
 
+    def test_batalha_tem_agir_e_conversao(self):
+        grupo = dd._grupo_batalha_impala()
+        blob = str(grupo)
+        for metric in (
+            "robo.impala.batalha.agir_preco",
+            "robo.impala.batalha.agir_listing",
+            "robo.impala.batalha.agir_criticas",
+            "robo.mercado.gap_preco_pct",
+            "robo.conversao_manicures.leads_novos",
+            "robo.conversao_manicures.escrita_pronta",
+            "robo.conversao_manicures.roas_real",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+
     def test_impala_tem_ads_probe(self):
         # Grupo Impala é montado por função que precisa de helpers; busca no source
         src = Path(dd.__file__).read_text(encoding="utf-8")

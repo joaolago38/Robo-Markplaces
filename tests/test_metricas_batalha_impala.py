@@ -159,19 +159,22 @@ class TestBatalhaImpala(unittest.TestCase):
         self.assertFalse(out["ok"])
         mock_inc.assert_any_call("impala.batalha.erro")
 
+    @patch("integracoes.esmaltes.decisao_batalha_agir.processar_agir_batalha", return_value={"criticas": 0, "top": [], "por_acao": {}})
     @patch("integracoes.esmaltes.metricas_batalha_impala.emitir_metricas_batalha_impala")
     @patch("integracoes.esmaltes.metricas_batalha_impala.escrever_json_atomico")
     @patch("integracoes.esmaltes.metricas_batalha_impala.montar_batalha")
     @patch("integracoes.esmaltes.metricas_batalha_impala.extrair_anuncios_impala")
-    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit):
+    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir):
         mock_ext.return_value = [{"item_id": "MLB1"}]
-        mock_mont.return_value = {"anuncios_unicos": 1}
+        mock_mont.return_value = {"anuncios_unicos": 1, "comparacoes": []}
         mock_emit.return_value = {"ok": True}
         out = b.processar_e_persistir([{"item_id": "MLB1"}], origem="teste")
         self.assertEqual(out["origem"], "teste")
         self.assertEqual(out["amostra_impala"], 1)
-        mock_w.assert_called_once()
+        self.assertGreaterEqual(mock_w.call_count, 1)
         mock_emit.assert_called_once()
+        mock_agir.assert_called_once()
+        self.assertIn("agir", out)
 
     @patch("integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir")
     def test_processar_de_snapshot_kits(self, mock_proc):
