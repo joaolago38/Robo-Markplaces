@@ -28,6 +28,31 @@ def carregar_spec() -> dict:
 SPEC = carregar_spec()
 REGRAS = SPEC.get("regras_negocio", {})
 
+
+def marketplace_spec_ativo(marketplace_id: str) -> bool:
+    """True só se o canal está `ativo: true` no spec.yaml."""
+    mid = (marketplace_id or "").strip().lower()
+    if not mid:
+        return False
+    for item in SPEC.get("marketplaces") or []:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("id") or "").strip().lower() == mid:
+            return bool(item.get("ativo", False))
+    return False
+
+
+def skip_se_spec_inativo(marketplace_id: str) -> dict | None:
+    """Retorna payload de pulo (sem chamar API) quando o canal está desligado no spec."""
+    if marketplace_spec_ativo(marketplace_id):
+        return None
+    return {
+        "ok": True,
+        "skipped": True,
+        "motivo": "spec.inativo",
+        "marketplace": marketplace_id,
+    }
+
 # IA
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
 # Toggle mestre: 0 = pausa TODAS as chamadas Claude (sem gastar token/USD)

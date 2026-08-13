@@ -39,11 +39,13 @@ class TestAgenteMagaluFluxo(unittest.TestCase):
         agente_magalu.processar_perguntas()
         self.assertEqual(agente_magalu.responder_pergunta.call_count, 2)
 
+    @patch.object(agente_magalu, "skip_se_spec_inativo", return_value=None)
     @patch.object(agente_magalu, "monitorar_metricas", return_value={"devolucao": 0.01})
     @patch.object(agente_magalu, "processar_perguntas", return_value=0)
     def test_AMG06_executar_dict(self, *_patches):
         out = agente_magalu.executar()
         self.assertIsInstance(out, dict)
+        self.assertIn("respostas", out)
 
 
 class TestAgenteMagaluMetricas(unittest.TestCase):

@@ -16,7 +16,7 @@ from core.chat_seguro_ml import (
     sanitizar_resposta_chat_ml,
 )
 from core.claude_client import responder_chat
-from core.config import MARGEM_MINIMA, ROOT
+from core.config import MARGEM_MINIMA, ROOT, skip_se_spec_inativo
 from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_critico, alertar_gestor
@@ -266,6 +266,10 @@ def gerenciar_status_anuncio(
 
 
 def executar():
+    pulado = skip_se_spec_inativo("mercadolivre")
+    if pulado:
+        logger.info("Chat ML pulado — spec.inativo")
+        return pulado
     logger.info("Agente ML iniciado")
 
     ctx = carregar_contexto_fechamento_ml()
