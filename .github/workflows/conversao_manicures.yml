@@ -1,7 +1,9 @@
 ﻿name: Conversão manicures (WA / IG / FB / ML)
 
 # Haiku escolhe oferta, divulga canais, lê inbox Meta/WA.
+# Escrita pública OFF por padrão (CONVERSAO_MANICURES_ESCRITA=0).
 # Chat ML de fechamento = agentes.ml (CONVERSAO_MANICURES_CHAT_ML=0 padrão).
+# Quando pronto: Variables ESCRITA=1 + canal (ENVIAR_WA/TG, PUBLICAR_*, REPLY_*, CHAT_ML).
 
 on:
   workflow_dispatch:
@@ -84,6 +86,9 @@ jobs:
           META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
           META_INSTAGRAM_ID: ${{ secrets.META_INSTAGRAM_ID }}
           META_API_VERSION: ${{ secrets.META_API_VERSION }}
+          CONVERSAO_MANICURES_ESCRITA: ${{ vars.CONVERSAO_MANICURES_ESCRITA || '0' }}
+          CONVERSAO_MANICURES_ENVIAR_WA: ${{ vars.CONVERSAO_MANICURES_ENVIAR_WA || '0' }}
+          CONVERSAO_MANICURES_ENVIAR_TG: ${{ vars.CONVERSAO_MANICURES_ENVIAR_TG || '0' }}
           CONVERSAO_MANICURES_PUBLICAR_FB: ${{ vars.CONVERSAO_MANICURES_PUBLICAR_FB || '0' }}
           CONVERSAO_MANICURES_PUBLICAR_IG: ${{ vars.CONVERSAO_MANICURES_PUBLICAR_IG || '0' }}
           CONVERSAO_MANICURES_REPLY_META: ${{ vars.CONVERSAO_MANICURES_REPLY_META || '0' }}

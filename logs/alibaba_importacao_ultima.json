@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-12T23:58:49.838688+00:00",
+  "timestamp": "2026-08-13T00:07:57.426661+00:00",
   "cotacao": {
     "ok": true,
     "usd_brl": 5.5,
@@ -19,7 +19,7 @@
           "preco_usd": 3.2,
           "moq": 50,
           "distribuidor": "Shenzhen ABC Technology Co., Ltd.",
-          "visto_em": "2026-08-12T23:58:49.833387+00:00"
+          "visto_em": "2026-08-13T00:07:57.420294+00:00"
         }
       ],
       "ok": true
