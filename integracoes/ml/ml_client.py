@@ -122,21 +122,15 @@ def _http_error_from_response(response: Any) -> Exception:
 
 
 def _log_erro_leitura_termo(acao: str, termo: str, exc: Exception) -> None:
-    """Busca por termo: 403 = bloqueio ML (sem token ou PolicyAgent) → warning."""
+    """Busca por termo: 403/404 são operacionais (PolicyAgent / sem resultado)."""
     status = _status_http_exc(exc)
     if status in (404, 403):
-        dica = ""
-        if status == 403:
-            dica = (
-                " — verifique ML_ACCESS_TOKEN/refresh, app no DevCenter e se a busca "
-                "/sites/search está habilitada para a conta"
-            )
-        logger.warning(
-            "ML %s termo=%s HTTP %s — busca bloqueada ou sem resultados%s: %s",
+        # 403 em /sites/search é o padrão desde ~2025 — não é incidente.
+        logger.info(
+            "ML %s termo=%s HTTP %s — busca bloqueada ou sem resultados: %s",
             acao,
             termo,
             status,
-            dica,
             exc,
         )
     else:
@@ -989,8 +983,8 @@ def buscar_concorrentes_por_termo(
     Pesquisa o Mercado Livre por palavra-chave.
 
     Desde ~2025 o endpoint /sites/{site}/search costuma retornar HTTP 403 mesmo
-    autenticado. Neste caso usa fallbacks: catálogo (/products/.../items) e
-    DuckDuckGo + enriquecimento via /items/{id}.
+    autenticado. Por padrão não chama esse endpoint: usa /products/search e,
+    se vazio, catálogo / Brave / DuckDuckGo. Opt-in: ML_BUSCA_TERMO_SITES_SEARCH=1.
 
     Exclui resultados do próprio vendedor (ML_SELLER_ID) quando configurado.
     Retorna lista vazia em caso de termo vazio ou erro. Nunca lança exceção.

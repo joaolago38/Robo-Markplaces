@@ -46,6 +46,10 @@ class TestBuscarConcorrentesPorTermo(unittest.TestCase):
             busca_termo_ml,
             "ML_BUSCA_TERMO_FALLBACK_DDG",
             False,
+        ), patch.object(
+            busca_termo_ml,
+            "ML_BUSCA_TERMO_SITES_SEARCH",
+            True,
         ):
             mock_req.return_value = _mock_resp({
                 "results": [
@@ -101,6 +105,10 @@ class TestBuscarConcorrentesPorTermo(unittest.TestCase):
             busca_termo_ml,
             "ML_BUSCA_TERMO_FALLBACK_BRAVE",
             False,
+        ), patch.object(
+            busca_termo_ml,
+            "ML_BUSCA_TERMO_SITES_SEARCH",
+            True,
         ):
             mock_req.side_effect = [
                 _mock_resp({}, status=403),

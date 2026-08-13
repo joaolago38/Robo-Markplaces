@@ -261,6 +261,13 @@ RESUMO_CONTA_ML_ALERTA = os.getenv("RESUMO_CONTA_ML_ALERTA", "1").strip().lower(
 RESUMO_CONTA_ML_COOLDOWN_SEG = int(os.getenv("RESUMO_CONTA_ML_COOLDOWN_SEG", "72000"))
 RESUMO_CONTA_ML_MAX_PERFORMANCE = int(os.getenv("RESUMO_CONTA_ML_MAX_PERFORMANCE", "80"))
 # Fallback quando /sites/search retorna 403 (comum desde ~2025)
+# O endpoint público /sites/{site}/search costuma 403 mesmo autenticado (PolicyAgent).
+# Desligado por padrão: a busca vai direto em /products/search. Ligue só para probe.
+ML_BUSCA_TERMO_SITES_SEARCH = os.getenv("ML_BUSCA_TERMO_SITES_SEARCH", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
 ML_BUSCA_TERMO_FALLBACK_DDG = os.getenv("ML_BUSCA_TERMO_FALLBACK_DDG", "1").strip().lower() not in (
     "0",
     "false",

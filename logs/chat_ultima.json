@@ -1,7 +1,8 @@
 {
-  "timestamp": "2026-08-13T12:07:54.232347+00:00",
+  "timestamp": "2026-08-13T14:24:15.855043+00:00",
   "ok": true,
-  "marketplace": "magalu",
-  "respondidas": 2,
-  "falhas": 0
+  "marketplace": "mercadolivre",
+  "respondidas": 0,
+  "falhas": 0,
+  "fila": 1
 }

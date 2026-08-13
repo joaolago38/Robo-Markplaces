@@ -2,8 +2,8 @@
 integracoes/ml/busca_termo_ml.py
 Busca por termo no ML com fallbacks quando /sites/search retorna 403.
 
-Ordem: API autenticada → products/search (catálogo oficial) → catálogo multi-ref
-→ Brave Search (opcional) → DuckDuckGo → cache recente.
+Ordem: products/search (catálogo oficial) → /sites/search (opt-in, costuma 403)
+→ catálogo multi-ref → Brave Search (opcional) → DuckDuckGo → cache recente.
 """
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ from core.config import (
     ML_BUSCA_TERMO_FALLBACK_CATALOGO,
     ML_BUSCA_TERMO_FALLBACK_DDG,
     ML_BUSCA_TERMO_FALLBACK_PRODUCTS,
+    ML_BUSCA_TERMO_SITES_SEARCH,
     ML_BUSCA_TERMO_MAX_PRODUCTS,
     ML_BUSCA_TERMO_MAX_REFS_CATALOGO,
     ML_SITE_ID,
@@ -204,10 +205,11 @@ def _buscar_via_api(termo: str, limite: int) -> list[dict[str, Any]]:
             incrementar("ml.busca.sites_search_403")
         except Exception:
             pass
-        ml_client._log_erro_leitura_termo(
-            "buscar_concorrentes_por_termo",
+        # Conhecido desde ~2025 (PolicyAgent). Não é incidente — fallback cobre.
+        # Antes era WARNING e gerava centenas de warns/dia no Datadog.
+        logger.info(
+            "ML busca /sites/search HTTP 403 termo=%r — endpoint bloqueado; usando fallbacks",
             termo,
-            ml_client._http_error_from_response(r),
         )
         return []
 
@@ -524,16 +526,7 @@ def executar_busca_termo(
 
     limite = max(1, min(50, limite))
 
-    try:
-        api = _buscar_via_api(termo, limite)
-        if api:
-            logger.info("ML busca termo=%r fonte=api resultados=%d", termo, len(api))
-            _gravar_cache(termo, api)
-            return api
-    except Exception as exc:
-        ml_client._log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
-
-    # Preferir products API: funciona com token mesmo quando /sites/search e /items dão 403
+    # /products/search funciona com token; /sites/search costuma 403 (PolicyAgent).
     try:
         via_products = _buscar_via_products_api(termo, limite)
         if via_products:
@@ -541,6 +534,16 @@ def executar_busca_termo(
             return via_products
     except Exception as exc:
         logger.warning("ML products fallback erro termo=%r: %s", termo[:60], exc)
+
+    if ML_BUSCA_TERMO_SITES_SEARCH:
+        try:
+            api = _buscar_via_api(termo, limite)
+            if api:
+                logger.info("ML busca termo=%r fonte=api resultados=%d", termo, len(api))
+                _gravar_cache(termo, api)
+                return api
+        except Exception as exc:
+            ml_client._log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
 
     combinado: list[dict[str, Any]] = []
     combinado.extend(_buscar_via_catalogo(termo, limite, item_id_referencia))
