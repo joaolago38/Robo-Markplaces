@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-08-13T00:26:54.725228+00:00",
+    "timestamp": "2026-08-13T12:08:01.889547+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-08-13T00:26:48.730759+00:00",
+    "timestamp": "2026-08-13T12:08:06.172122+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,7 +32,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-08-13T00:27:02.100225+00:00",
+    "timestamp": "2026-08-13T12:08:10.955240+00:00",
     "resultados": [
       {
         "item_id": "MLB4716057869",
@@ -133,72 +133,23 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-08-13T02:59:39.933734+00:00",
+    "timestamp": "2026-08-13T12:08:06.051594+00:00",
     "resultados": [
       {
-        "item_id": "MLB4725075303",
-        "titulo": "Impala Tiresmalt Removedor De Esmalte 100ml",
-        "preco": 16.4,
-        "quantidade_vendida": 0,
-        "seller_id": "2167058434",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4725075303",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB53781572",
-        "catalog_date_created": "2025-08-12T06:19:38Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB5450918364",
-        "titulo": "Esmalte Impala 7,5ml Branco",
-        "preco": 8.0,
-        "quantidade_vendida": 0,
-        "seller_id": "1349450961",
-        "permalink": "https://produto.mercadolivre.com.br/MLB5450918364",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB36420639",
-        "catalog_date_created": "2024-05-01T04:42:32Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7143931308",
-        "titulo": "Esmalte Impala Cor Preto",
-        "preco": 12.99,
-        "quantidade_vendida": 0,
-        "seller_id": "3197547641",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7143931308",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB19639319",
-        "catalog_date_created": "2022-09-27T23:04:30Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4579518324",
-        "titulo": "Esmalte Impala Cor Preto",
-        "preco": 13.03,
-        "quantidade_vendida": 0,
-        "seller_id": "3798708",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4579518324",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB19639319",
-        "catalog_date_created": "2022-09-27T23:04:30Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4635167910",
-        "titulo": "Esmalte Impala Cor Preto",
-        "preco": 17.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4635167910",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB19639319",
-        "catalog_date_created": "2022-09-27T23:04:30Z",
-        "listing_type_id": "gold_special"
+        "item_id": "MLB123",
+        "titulo": "Kit Impala 5 esmaltes",
+        "preco": 29.9,
+        "frete_gratis": false,
+        "condicao": "new",
+        "quantidade_vendida": 12,
+        "seller_id": "888",
+        "permalink": "",
+        "fonte_busca": "ddg"
       }
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-08-13T00:26:48.550240+00:00",
+    "timestamp": "2026-08-13T12:08:06.080863+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",

@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-08-13T00:26:53.671418+00:00",
+  "timestamp": "2026-08-13T12:07:57.833191+00:00",
   "origem": "monitor_concorrentes",
   "batalha": {
     "anuncios_unicos": 1,
     "sellers_unicos": 0,
-    "vendas_proxy": 1,
+    "vendas_proxy": 0,
     "preco_min": 40.0,
     "preco_mediano": 40.0,
     "preco_medio": 40.0,
@@ -259,7 +259,7 @@
         "item_id": "MLB2",
         "titulo": "Kit Impala Teste",
         "preco": 40.0,
-        "quantidade_vendida": 1,
+        "quantidade_vendida": null,
         "qtd_kit": null,
         "seller_id": null
       }
