@@ -36,11 +36,22 @@ class TestAgenteShopee(unittest.TestCase):
         agente_shopee.responder_perguntas()
         agente_shopee.responder_pergunta.assert_called_once()
 
+    @patch.object(agente_shopee, "skip_se_spec_inativo", return_value=None)
     @patch("agentes.vendas_notificador.notificar_pedidos_novos_marketplace", return_value={})
     @patch.object(agente_shopee, "responder_perguntas", return_value=0)
     def test_ASH03_executar_retorna_dict(self, *_patches):
         out = agente_shopee.executar()
         self.assertIsInstance(out, dict)
+        self.assertIn("respostas", out)
+
+    @patch.object(
+        agente_shopee,
+        "skip_se_spec_inativo",
+        return_value={"ok": True, "skipped": True, "motivo": "spec.inativo"},
+    )
+    def test_ASH04_executar_pula_se_spec_inativo(self, *_patches):
+        out = agente_shopee.executar()
+        self.assertTrue(out.get("skipped"))
 
 
 if __name__ == "__main__":

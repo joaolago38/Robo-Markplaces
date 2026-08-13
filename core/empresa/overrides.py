@@ -42,4 +42,30 @@ def aplicar_overrides_env(empresa: dict[str, Any]) -> dict[str, Any]:
         if mp_nick and not ml.get("nickname"):
             ml["nickname"] = mp_nick
     out["ml"] = ml
+    shopee = dict(out.get("shopee") or {})
+    magalu = dict(out.get("magalu") or {})
+    amazon = dict(out.get("amazon") or {})
+    if eid == "esmaltes_impala":
+        shop = flag("SHOPEE_SHOP_ID", "")
+        if shop and not shopee.get("shop_id"):
+            shopee["shop_id"] = shop
+        mag_seller = str(getattr(_cfg, "MAGALU_SELLER_ID", "") or flag("MAGALU_SELLER_ID", "")).strip()
+        if mag_seller and not magalu.get("seller_id"):
+            magalu["seller_id"] = mag_seller
+        amz = str(getattr(_cfg, "AMAZON_SELLER_ID", "") or flag("AMAZON_SELLER_ID", "")).strip()
+        if amz and not amazon.get("seller_id"):
+            amazon["seller_id"] = amz
+    elif eid == "masterprint":
+        shop = str(getattr(_cfg, "MASTERPRINT_SHOPEE_SHOP_ID", "") or flag("MASTERPRINT_SHOPEE_SHOP_ID", "")).strip()
+        if shop and not shopee.get("shop_id"):
+            shopee["shop_id"] = shop
+        mag_seller = str(getattr(_cfg, "MASTERPRINT_MAGALU_SELLER_ID", "") or "").strip()
+        if mag_seller and not magalu.get("seller_id"):
+            magalu["seller_id"] = mag_seller
+        amz = str(getattr(_cfg, "MASTERPRINT_AMAZON_SELLER_ID", "") or "").strip()
+        if amz and not amazon.get("seller_id"):
+            amazon["seller_id"] = amz
+    out["shopee"] = shopee
+    out["magalu"] = magalu
+    out["amazon"] = amazon
     return out

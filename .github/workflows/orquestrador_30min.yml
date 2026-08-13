@@ -81,6 +81,7 @@ jobs:
           path: |
             logs/claude_uso_orcamento.json
             logs/claude_toggle.json
+            logs/marketplaces_operacao.json
             logs/conversao_manicures_ultima.json
             logs/chat_perguntas_claimed.json
             logs/brave_uso_mensal.json
@@ -215,6 +216,7 @@ jobs:
           path: |
             logs/claude_uso_orcamento.json
             logs/claude_toggle.json
+            logs/marketplaces_operacao.json
             logs/conversao_manicures_ultima.json
             logs/chat_perguntas_claimed.json
             logs/brave_uso_mensal.json

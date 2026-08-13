@@ -241,30 +241,16 @@ def avaliar_momento_ads(
             resultado["decisao"] = "aguardar"
 
     elif decisao == "pausar":
-        pergunta = (
-            f"🔴 *ADS ML — PAUSAR Product Ads*\n\n"
-            f"📈 ACOS atual: {acos_atual*100:.0f}% (limite: {ACOS_MAXIMO*100:.0f}%)\n"
-            f"📋 Motivo: {motivos[0] if motivos else 'ACOS acima do limite'}\n\n"
-            f"Deseja PAUSAR o Product Ads agora?"
+        # ACOS acima do teto: pausa sozinha. Ligar/escalar continua com aprovação.
+        resultado["confirmado_gestor"] = True
+        resultado["auto_pausar_acos"] = True
+        alertar_gestor(
+            f"🛑 ADS ML: PAUSA AUTOMÁTICA — ACOS {acos_atual*100:.0f}% "
+            f"(teto {ACOS_MAXIMO*100:.0f}%)\n"
+            + "\n".join(motivos)
+            + "\nNão esperei confirmação no Telegram para estancar o gasto."
         )
-        confirmado = perguntar_gestor_e_aguardar(
-            pergunta, timeout_segundos=600,
-            contexto_decisao=_contexto_decisao_ads(
-                decisao, avaliacoes, nota_media, acos_atual, full_ativo, budget_sugerido, motivos
-            ),
-        )
-        resultado["confirmado_gestor"] = confirmado
-        if confirmado:
-            alertar_gestor(
-                f"✅ ADS ML: PAUSANDO — aprovado pelo gestor\n"
-                f"ACOS: {acos_atual*100:.0f}%\n"
-                + "\n".join(motivos)
-            )
-            logger.info("Gestor APROVOU pausar ads — ACOS %.0f%%", acos_atual * 100)
-        else:
-            alertar_gestor("⏸ ADS ML: ação de PAUSAR cancelada ou sem resposta do gestor.")
-            logger.info("Gestor RECUSOU ou não respondeu — ads não pausado")
-            resultado["decisao"] = "manter"
+        logger.info("Ads: pausa automática ACOS %.0f%% (sem Telegram)", acos_atual * 100)
 
     elif decisao == "escalar":
         pergunta = (

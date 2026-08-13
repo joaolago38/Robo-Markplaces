@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from core.atomic_io import escrever_json_atomico
 from core.claude_client import responder_chat
-from core.config import ROOT
+from core.config import ROOT, skip_se_spec_inativo
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar
 from integracoes.amazon.amazon_client import (
@@ -73,6 +73,10 @@ def processar_mensagens() -> int:
 
 
 def executar() -> dict:
+    pulado = skip_se_spec_inativo("amazon")
+    if pulado:
+        logger.info("Chat Amazon pulado — spec.inativo")
+        return pulado
     logger.info("=== Agente Amazon iniciado ===")
     respostas = processar_mensagens()
     vendas_wpp: dict = {}

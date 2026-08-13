@@ -48,29 +48,20 @@ class TestAdsConfirmacao(unittest.TestCase):
     @patch("agentes.ml.agente_ads_gatilho.probe_escrita_product_ads", return_value={"ok": True, "codigo": "ok"})
     @patch("agentes.ml.agente_ads_gatilho.campanhas_acos_acima_limite", return_value=[{"id": "C1"}])
     @patch("agentes.ml.agente_ads_gatilho.aplicar_decisao_campanhas", return_value=[{"ok": True}])
-    @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar", return_value=True)
+    @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar")
     @patch("agentes.ml.agente_ads_gatilho.alertar_gestor")
     @patch("integracoes.ml.contrato_impulso_ml.montar_contrato", return_value={"ok": True, "skus_liberados": ["IMP-MIMO-003"]})
     @patch("integracoes.ml.contrato_impulso_ml.ads_pode_ligar", return_value=(True, "teste"))
-    def test_pausar_ads_gestor_aprova(self, mock_ads, mock_montar, mock_alerta, mock_pergunta, mock_api, *_):
-        """ACOS alto + gestor aprova: decisão permanece 'pausar' e chama API"""
+    def test_pausar_ads_automatico_sem_telegram(self, mock_ads, mock_montar, mock_alerta, mock_pergunta, mock_api, *_):
+        """ACOS alto: pausa sozinha, sem perguntar ao gestor."""
         resultado = avaliar_momento_ads(avaliacoes=30, nota_media=4.9, acos_atual=0.30)
         self.assertEqual(resultado["decisao"], "pausar")
         self.assertTrue(resultado["confirmado_gestor"])
+        self.assertTrue(resultado.get("auto_pausar_acos"))
+        mock_pergunta.assert_not_called()
         mock_api.assert_called_once()
         kwargs = mock_api.call_args.kwargs
         self.assertEqual(kwargs.get("campaign_ids"), ["C1"])
-
-    @patch("agentes.ml.agente_ads_gatilho.probe_escrita_product_ads", return_value={"ok": True, "codigo": "ok"})
-    @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar", return_value=False)
-    @patch("agentes.ml.agente_ads_gatilho.alertar_gestor")
-    @patch("integracoes.ml.contrato_impulso_ml.montar_contrato", return_value={"ok": True, "skus_liberados": ["IMP-MIMO-003"]})
-    @patch("integracoes.ml.contrato_impulso_ml.ads_pode_ligar", return_value=(True, "teste"))
-    def test_pausar_ads_gestor_recusa(self, *_):
-        """ACOS alto + gestor recusa: decisão vira 'manter'"""
-        resultado = avaliar_momento_ads(avaliacoes=30, nota_media=4.9, acos_atual=0.30)
-        self.assertEqual(resultado["decisao"], "manter")
-        self.assertFalse(resultado["confirmado_gestor"])
 
     @patch("agentes.ml.agente_ads_gatilho.perguntar_gestor_e_aguardar")
     def test_aguardar_nao_pergunta(self, mock_pergunta):

@@ -21,11 +21,14 @@ logger = logging.getLogger("agente_orquestrador")
 
 def _interpretar_ok(raw: Any) -> bool:
     if isinstance(raw, dict):
-        if raw.get("erro") and raw.get("ok") is not False:
-            pass
         if "ok" in raw:
             return bool(raw["ok"])
-        if raw.get("erro"):
+        if raw.get("erro") or raw.get("error"):
+            return False
+        falhas = raw.get("falhas")
+        if isinstance(falhas, (int, float)) and falhas > 0:
+            return False
+        if raw.get("falha") is True:
             return False
         return True
     if isinstance(raw, bool):
@@ -56,6 +59,19 @@ def _extrair_resumo(raw: Any) -> str:
         elif raw.get("resumo_claude"):
             partes.append(str(raw["resumo_claude"])[:60])
         if not partes:
+            extras: list[str] = []
+            if raw.get("skipped") or raw.get("pulado"):
+                extras.append("pulado")
+            if raw.get("executou_escrita") is False:
+                extras.append("sem escrita")
+            if raw.get("ajustes") == 0:
+                extras.append("0 ajustes")
+            if raw.get("dry_run"):
+                extras.append("dry-run")
+            if extras:
+                return ", ".join(extras)
+            if "ok" not in raw:
+                return "rodou (sem ok explícito)"
             return "ok"
         return ", ".join(partes)
     if isinstance(raw, bool):
@@ -115,6 +131,7 @@ def _montar_resumo_telegram(ciclo: dict[str, Any], *, titulo: str) -> str:
         "_Ciclo 30min = monitoramento + chat ML. Sem escrita de preço/estoque/NF-e._",
         (
             f"✅ {ciclo['ok']} ok | ❌ {ciclo['falhas']} falha | "
+            f"⏸ {ciclo.get('pulados', 0)} pulado | "
             f"⏱ {ciclo['duracao_seg']:.0f}s | {ciclo['total']} agentes"
         ),
         "",
@@ -180,6 +197,12 @@ def executar_ciclo(
 
     ok_count = sum(1 for r in resultados if r.get("ok"))
     falhas = len(resultados) - ok_count
+    pulados = sum(
+        1
+        for r in resultados
+        if isinstance(r.get("payload"), dict)
+        and (r["payload"].get("skipped") or r["payload"].get("motivo") == "spec.inativo")
+    )
     duracao_ms = (time.monotonic() - inicio_ciclo) * 1000
 
     ciclo = {
@@ -188,6 +211,7 @@ def executar_ciclo(
         "total": len(resultados),
         "ok": ok_count,
         "falhas": falhas,
+        "pulados": pulados,
         "duracao_ms": duracao_ms,
         "duracao_seg": duracao_ms / 1000,
         "agentes": resultados,
@@ -206,6 +230,7 @@ def executar_ciclo(
                 "timestamp": ciclo["timestamp"],
                 "ok": ok_count == len(resultados),
                 "falhas": falhas,
+                "pulados": pulados,
                 "total": len(resultados),
                 "agentes_falha": [
                     {

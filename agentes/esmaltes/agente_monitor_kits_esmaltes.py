@@ -109,6 +109,7 @@ def montar_mensagem_telegram(
     *,
     serie: list[dict[str, Any]] | None = None,
     deltas: list[str] | None = None,
+    agir: dict[str, Any] | None = None,
 ) -> str:
     from core.telegram_explicacao import cabecalho_agente
 
@@ -187,6 +188,15 @@ def montar_mensagem_telegram(
             f"• {r.get('nome', '?')}: `{r.get('termo_busca', '')}` → "
             f"{r.get('total_kits', 0)} kit(s) de {r.get('total_bruto', 0)} anúncio(s)"
         )
+
+    try:
+        from integracoes.esmaltes.decisao_batalha_agir import formatar_secao_agir
+
+        linhas.extend(formatar_secao_agir(agir))
+        if isinstance(agir, dict) and agir.get("resumo_claude"):
+            linhas.extend(["", f"_IA:_ {agir.get('resumo_claude')}"])
+    except Exception:
+        pass
 
     linhas.extend(
         [
@@ -282,10 +292,25 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         historico["deltas_ultima"] = deltas
         escrever_json_atomico(HISTORY_PATH, historico)
 
+        batalha_out: dict[str, Any] = {}
+        try:
+            from integracoes.esmaltes.metricas_batalha_impala import processar_e_persistir
+
+            batalha_out = processar_e_persistir(
+                list(consolidado.get("kits_unicos") or []),
+                origem="kits_monitor",
+            )
+        except Exception as exc:
+            logger.warning("batalha Impala métricas: %s", exc)
+
         alerta_enviado = False
         if enviar_alerta and ESMALTES_KITS_MONITOR_ALERTA_RESUMO and pode_alertar:
             msg = montar_mensagem_telegram(
-                consolidado, resultados, serie=serie, deltas=deltas
+                consolidado,
+                resultados,
+                serie=serie,
+                deltas=deltas,
+                agir=batalha_out.get("agir") if isinstance(batalha_out, dict) else None,
             )
             chave = chave_resumo_periodo("esmaltes:kits_monitor", horas_por_bucket=6)
             alerta_enviado = bool(
@@ -311,17 +336,6 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("esmaltes.kits.total_vendas", float(consolidado.get("total_vendas") or 0))
         incrementar("esmaltes.kits.rodadas")
 
-        batalha_out: dict[str, Any] = {}
-        try:
-            from integracoes.esmaltes.metricas_batalha_impala import processar_e_persistir
-
-            batalha_out = processar_e_persistir(
-                list(consolidado.get("kits_unicos") or []),
-                origem="kits_monitor",
-            )
-        except Exception as exc:
-            logger.warning("batalha Impala métricas: %s", exc)
-
         return {
             "ok": True,
             "total_termos": len(resultados),
@@ -332,6 +346,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             "batalha_impala": {
                 "anuncios_unicos": (batalha_out.get("batalha") or {}).get("anuncios_unicos"),
                 "sellers_unicos": (batalha_out.get("batalha") or {}).get("sellers_unicos"),
+                "agir_criticas": (batalha_out.get("agir") or {}).get("criticas"),
             },
         }
     except Exception as exc:

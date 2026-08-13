@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from core.atomic_io import escrever_json_atomico
 from core.claude_client import responder_chat
-from core.config import ROOT
+from core.config import ROOT, skip_se_spec_inativo
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar
 from integracoes.bling.bling_client import buscar_produto
@@ -78,6 +78,10 @@ def responder_perguntas():
 
 
 def executar() -> dict:
+    pulado = skip_se_spec_inativo("shopee")
+    if pulado:
+        logger.info("Chat Shopee pulado — spec.inativo")
+        return pulado
     respostas = responder_perguntas()
     vendas_wpp: dict = {}
     try:

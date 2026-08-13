@@ -28,6 +28,38 @@ def carregar_spec() -> dict:
 SPEC = carregar_spec()
 REGRAS = SPEC.get("regras_negocio", {})
 
+
+def marketplace_spec_ativo(marketplace_id: str) -> bool:
+    """True só se o canal está `ativo: true` no spec.yaml."""
+    mid = (marketplace_id or "").strip().lower()
+    if not mid:
+        return False
+    for item in SPEC.get("marketplaces") or []:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("id") or "").strip().lower() == mid:
+            return bool(item.get("ativo", False))
+    return False
+
+
+def skip_se_spec_inativo(marketplace_id: str) -> dict | None:
+    """Pula API se o canal não está no spec nem no toggle de operação."""
+    if marketplace_spec_ativo(marketplace_id):
+        return None
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        if canal_em_operacao(marketplace_id):
+            return None
+    except Exception:
+        pass
+    return {
+        "ok": True,
+        "skipped": True,
+        "motivo": "spec.inativo",
+        "marketplace": marketplace_id,
+    }
+
 # IA
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
 # Toggle mestre: 0 = pausa TODAS as chamadas Claude (sem gastar token/USD)
@@ -229,6 +261,13 @@ RESUMO_CONTA_ML_ALERTA = os.getenv("RESUMO_CONTA_ML_ALERTA", "1").strip().lower(
 RESUMO_CONTA_ML_COOLDOWN_SEG = int(os.getenv("RESUMO_CONTA_ML_COOLDOWN_SEG", "72000"))
 RESUMO_CONTA_ML_MAX_PERFORMANCE = int(os.getenv("RESUMO_CONTA_ML_MAX_PERFORMANCE", "80"))
 # Fallback quando /sites/search retorna 403 (comum desde ~2025)
+# O endpoint público /sites/{site}/search costuma 403 mesmo autenticado (PolicyAgent).
+# Desligado por padrão: a busca vai direto em /products/search. Ligue só para probe.
+ML_BUSCA_TERMO_SITES_SEARCH = os.getenv("ML_BUSCA_TERMO_SITES_SEARCH", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
 ML_BUSCA_TERMO_FALLBACK_DDG = os.getenv("ML_BUSCA_TERMO_FALLBACK_DDG", "1").strip().lower() not in (
     "0",
     "false",
@@ -504,6 +543,9 @@ MASTERPRINT_RAZAO_SOCIAL = os.getenv("MASTERPRINT_RAZAO_SOCIAL", "").strip()
 MASTERPRINT_NOME_FANTASIA = os.getenv("MASTERPRINT_NOME_FANTASIA", "").strip()
 MASTERPRINT_ML_SELLER_ID = os.getenv("MASTERPRINT_ML_SELLER_ID", "").strip()
 MASTERPRINT_ML_NICKNAME = os.getenv("MASTERPRINT_ML_NICKNAME", "").strip()
+MASTERPRINT_SHOPEE_SHOP_ID = os.getenv("MASTERPRINT_SHOPEE_SHOP_ID", "").strip()
+MASTERPRINT_MAGALU_SELLER_ID = os.getenv("MASTERPRINT_MAGALU_SELLER_ID", "").strip()
+MASTERPRINT_AMAZON_SELLER_ID = os.getenv("MASTERPRINT_AMAZON_SELLER_ID", "").strip()
 # Se vazio, usa TELEGRAM_GESTOR_CHAT_ID (mesmo chat dos esmaltes)
 MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID = os.getenv("MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID", "").strip()
 
@@ -1161,6 +1203,8 @@ MAGALU_CHANNEL_ID = (
 ).strip()
 # Alias legado — o valor é o channel id, não um identificador de conta do seller.
 MAGALU_MERCHANT_ID = MAGALU_CHANNEL_ID
+# ID da conta Magalu do seller (por CNPJ). Distinto do channel id.
+MAGALU_SELLER_ID = os.getenv("MAGALU_SELLER_ID", "").strip()
 
 # Amazon
 AMAZON_LWA_CLIENT_ID     = os.getenv("AMAZON_LWA_CLIENT_ID", "").strip()

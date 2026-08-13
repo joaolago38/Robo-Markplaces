@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-08-13T00:08:04.519618+00:00",
+  "timestamp": "2026-08-13T14:24:19.752584+00:00",
   "origem": "monitor_concorrentes",
   "batalha": {
     "anuncios_unicos": 1,
     "sellers_unicos": 0,
-    "vendas_proxy": 1,
+    "vendas_proxy": 0,
     "preco_min": 40.0,
     "preco_mediano": 40.0,
     "preco_medio": 40.0,
@@ -259,11 +259,98 @@
         "item_id": "MLB2",
         "titulo": "Kit Impala Teste",
         "preco": 40.0,
-        "quantidade_vendida": 1,
+        "quantidade_vendida": null,
         "qtd_kit": null,
         "seller_id": null
       }
     ]
   },
-  "amostra_impala": 1
+  "amostra_impala": 1,
+  "agir": {
+    "criticas": 15,
+    "por_acao": {
+      "revisar_preco": 0,
+      "melhorar_listing": 0,
+      "publicar_mlb": 15,
+      "observar": 0
+    },
+    "top": [
+      {
+        "sku": "IMP-PERL-004",
+        "kit_tag": "kit:perl004",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "score": 40.0,
+        "gap_pct": -5.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 39.9,
+        "rival_min": 42.0,
+        "papel": "entrada",
+        "prio": "p0",
+        "mlb_ok": false,
+        "critica": true
+      },
+      {
+        "sku": "IMP-VR-015",
+        "kit_tag": "kit:vr015",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "score": 40.0,
+        "gap_pct": -4.12,
+        "rivais_no_tam": 0,
+        "nosso_preco": 69.9,
+        "rival_min": 72.9,
+        "papel": "giro",
+        "prio": "p0",
+        "mlb_ok": false,
+        "critica": true
+      },
+      {
+        "sku": "IMP-SORT-010",
+        "kit_tag": "kit:sort010",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "score": 40.0,
+        "gap_pct": 0.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 48.0,
+        "rival_min": 48.0,
+        "papel": "atacado",
+        "prio": "p0",
+        "mlb_ok": false,
+        "critica": true
+      },
+      {
+        "sku": "BUNDLE-777-5ESM",
+        "kit_tag": "kit:b7775esm",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "score": 40.0,
+        "gap_pct": -6.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 79.9,
+        "rival_min": 85.0,
+        "papel": "catalogo",
+        "prio": "p0",
+        "mlb_ok": false,
+        "critica": true
+      },
+      {
+        "sku": "IMP-NUDE-010",
+        "kit_tag": "kit:nude010",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "score": 40.0,
+        "gap_pct": -4.04,
+        "rivais_no_tam": 0,
+        "nosso_preco": 49.9,
+        "rival_min": 52.0,
+        "papel": "catalogo",
+        "prio": "p1",
+        "mlb_ok": false,
+        "critica": true
+      }
+    ],
+    "resumo_claude": null
+  }
 }

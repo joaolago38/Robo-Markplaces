@@ -141,6 +141,9 @@ class TestOrquestrador(unittest.TestCase):
         self.assertTrue(orq._interpretar_ok({"ok": True}))
         self.assertFalse(orq._interpretar_ok({"ok": False}))
         self.assertTrue(orq._interpretar_ok(True))
+        self.assertFalse(orq._interpretar_ok({"erro": "boom"}))
+        self.assertFalse(orq._interpretar_ok({"falhas": 2}))
+        self.assertTrue(orq._interpretar_ok({"total": 3}))
 
     def test_extrair_resumo(self):
         self.assertIn("2 novos", orq._extrair_resumo({"com_novos": 2}))
@@ -148,6 +151,10 @@ class TestOrquestrador(unittest.TestCase):
             "Impala líder",
             orq._extrair_resumo({"resumo_orquestrador": "7 produtos, Impala líder em 4/7 termos"}),
         )
+        self.assertIn("sem escrita", orq._extrair_resumo({"executou_escrita": False}))
+        self.assertIn("0 ajustes", orq._extrair_resumo({"ajustes": 0}))
+        self.assertIn("pulado", orq._extrair_resumo({"skipped": True}))
+        self.assertIn("sem ok explícito", orq._extrair_resumo({"foo": 1}))
 
     @patch.object(orq, "alertar_gestor", return_value=True)
     @patch.object(orq, "executar_registro", return_value={"ok": True})

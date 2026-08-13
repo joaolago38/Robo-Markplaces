@@ -12,7 +12,7 @@ https://developers.magalu.com/docs/first-steps/create-an-application/authenticat
 import logging
 from datetime import datetime, timedelta, timezone
 
-from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN
+from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN, MAGALU_SELLER_ID
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
@@ -194,7 +194,14 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
 
 def obter_saude_conta() -> dict:
     if not _enabled():
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": None,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": str(MAGALU_SELLER_ID or "").strip(),
+        }
 
     perguntas, ok = _listar_perguntas_nao_respondidas_detalhado(limit=50)
     if ok:
@@ -204,8 +211,11 @@ def obter_saude_conta() -> dict:
         "configurado": True,
         "api_ok": ok,
         "pendencias": len(perguntas),
-        "claims_rate": 0.0,
+        "claims_rate": None,
+        "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("magalu") or 0,
+        "conta_id": str(MAGALU_SELLER_ID or "").strip(),
+        "modelo": "sla_magalu",
     }
 
 

@@ -296,7 +296,24 @@ def processar_e_persistir(
     except Exception as exc:
         logger.warning("snapshot batalha: %s", exc)
     emit = emitir_metricas_batalha_impala(batalha)
-    return {**payload, "emit": emit}
+    agir: dict[str, Any] = {}
+    try:
+        from integracoes.esmaltes.decisao_batalha_agir import processar_agir_batalha
+
+        agir = processar_agir_batalha(batalha)
+        payload["agir"] = {
+            "criticas": agir.get("criticas"),
+            "por_acao": agir.get("por_acao"),
+            "top": agir.get("top"),
+            "resumo_claude": agir.get("resumo_claude"),
+        }
+        try:
+            escrever_json_atomico(SNAPSHOT_PATH, payload)
+        except Exception as exc:
+            logger.warning("snapshot batalha+agir: %s", exc)
+    except Exception as exc:
+        logger.warning("agir batalha: %s", exc)
+    return {**payload, "emit": emit, "agir": agir}
 
 
 def processar_de_snapshot_kits(caminho: str | None = None) -> dict[str, Any]:

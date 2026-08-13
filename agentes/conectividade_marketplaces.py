@@ -17,7 +17,7 @@ import logging
 from datetime import datetime, timezone
 
 from core.atomic_io import escrever_json_atomico
-from core.config import ROOT
+from core.config import ROOT, marketplace_spec_ativo
 from core.datadog_metrics import gauge, incrementar
 from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.notificador import alertar_critico
@@ -111,6 +111,17 @@ def _avaliar_um(nome_marketplace: str) -> dict:
     }
 
 
+def _canal_a_sondar(nome: str) -> bool:
+    if marketplace_spec_ativo(nome):
+        return True
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao(nome)
+    except Exception:
+        return False
+
+
 def executar() -> dict:
     """
     Testa conectividade real (não apenas renovação de token) de todos os
@@ -118,6 +129,25 @@ def executar() -> dict:
     """
     resultados: list[dict] = []
     for nome in _MARKETPLACES:
+        if not _canal_a_sondar(nome):
+            logger.info("Conectividade %s pulada — spec.inativo", nome)
+            incrementar("conectividade.pulado", tags=[f"marketplace:{nome}", "motivo:spec_inativo"])
+            gauge(
+                "conectividade.status",
+                1.0,
+                tags=[f"marketplace:{nome}", "estado:pulado"],
+            )
+            resultados.append(
+                {
+                    "marketplace": nome,
+                    "ok": True,
+                    "skipped": True,
+                    "status_http": 0,
+                    "msg": "spec.inativo",
+                    "dias_sem_acesso": 0,
+                }
+            )
+            continue
         try:
             resultados.append(_avaliar_um(nome))
         except Exception as exc:

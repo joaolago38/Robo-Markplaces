@@ -94,6 +94,9 @@ def enriquecer_empresa(raw: dict[str, Any], cat: dict[str, Any] | None = None) -
         ativos = [foco, *ativos]
     secundarios = [norm_marketplace(x) for x in (mk.get("secundarios") or [])]
     ml = raw.get("ml") if isinstance(raw.get("ml"), dict) else {}
+    shopee = raw.get("shopee") if isinstance(raw.get("shopee"), dict) else {}
+    magalu = raw.get("magalu") if isinstance(raw.get("magalu"), dict) else {}
+    amazon = raw.get("amazon") if isinstance(raw.get("amazon"), dict) else {}
 
     return {
         "id": eid,
@@ -116,6 +119,15 @@ def enriquecer_empresa(raw: dict[str, Any], cat: dict[str, Any] | None = None) -
             "seller_id": str(ml.get("seller_id") or "").strip(),
             "nickname": str(ml.get("nickname") or "").strip(),
             "site_id": str(ml.get("site_id") or ML_SITE_ID or "MLB").strip() or "MLB",
+        },
+        "shopee": {
+            "shop_id": str(shopee.get("shop_id") or "").strip(),
+        },
+        "magalu": {
+            "seller_id": str(magalu.get("seller_id") or magalu.get("merchant_id") or "").strip(),
+        },
+        "amazon": {
+            "seller_id": str(amazon.get("seller_id") or "").strip(),
         },
         "telegram_gestor_chat_id": str(raw.get("telegram_gestor_chat_id") or "").strip(),
         "ramos": [str(r).strip() for r in (raw.get("ramos") or []) if str(r).strip()],

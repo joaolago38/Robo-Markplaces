@@ -92,8 +92,9 @@ class TestAvaliarUm(unittest.TestCase):
 
 
 class TestExecutar(unittest.TestCase):
+    @patch.object(agente, "marketplace_spec_ativo", return_value=True)
     @patch.object(agente, "_avaliar_um")
-    def test_executar_agrega_quatro_marketplaces(self, mock_avaliar):
+    def test_executar_agrega_quatro_marketplaces(self, mock_avaliar, _spec):
         mock_avaliar.side_effect = [
             {"marketplace": "mercadolivre", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
             {
@@ -122,15 +123,31 @@ class TestExecutar(unittest.TestCase):
         self.assertEqual(mock_avaliar.call_count, 4)
         self.assertIn("resultados", out)
 
+    @patch.object(agente, "marketplace_spec_ativo", return_value=True)
     @patch.object(agente, "incrementar")
     @patch.object(agente, "_avaliar_um", side_effect=RuntimeError("boom"))
-    def test_excecao_inesperada_nao_propaga(self, _mock_avaliar, mock_incrementar):
+    def test_excecao_inesperada_nao_propaga(self, _mock_avaliar, mock_incrementar, _spec):
         out = agente.executar()
         self.assertEqual(out["total"], 4)
         self.assertEqual(out["falha"], 4)
         self.assertEqual(out["ok"], 0)
         # 4 falhas + 1 rodada heartbeat
         self.assertEqual(mock_incrementar.call_count, 5)
+
+    @patch.object(agente, "_avaliar_um")
+    def test_executar_pula_canais_inativos_no_spec(self, mock_avaliar):
+        mock_avaliar.return_value = {
+            "marketplace": "mercadolivre",
+            "ok": True,
+            "status_http": 200,
+            "msg": "",
+            "dias_sem_acesso": 0,
+        }
+        out = agente.executar()
+        self.assertEqual(out["total"], 4)
+        self.assertGreaterEqual(out["pulado"], 3)
+        self.assertEqual(mock_avaliar.call_count, 1)
+        mock_avaliar.assert_called_once_with("mercadolivre")
 
 
 if __name__ == "__main__":

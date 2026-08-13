@@ -49,11 +49,62 @@ class TestExecutarBuscaTermo(unittest.TestCase):
         }
         with patch.object(ml_client, "_enabled", return_value=True), patch.object(
             ml_client, "_request_ml"
-        ) as mock_req:
+        ) as mock_req, patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_SITES_SEARCH", True
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
+        ):
             mock_req.return_value = _mock_resp({"results": [item]})
             out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["fonte_busca"], "api")
+
+    def test_padrao_nao_chama_sites_search(self):
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            ml_client, "_request_ml"
+        ) as mock_req, patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CACHE", False
+        ):
+            mock_req.side_effect = [
+                _mock_resp(
+                    {
+                        "results": [
+                            {"id": "MLB41490081", "name": "Kit Impala"}
+                        ]
+                    }
+                ),
+                _mock_resp(
+                    {
+                        "id": "MLB41490081",
+                        "name": "Kit Impala",
+                        "date_created": "2024-10-04T03:32:02Z",
+                    }
+                ),
+                _mock_resp(
+                    {
+                        "results": [
+                            {
+                                "item_id": "MLB1",
+                                "seller_id": 888,
+                                "price": 35.0,
+                                "sold_quantity": 5,
+                            }
+                        ]
+                    }
+                ),
+            ]
+            out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["fonte_busca"], "products_api")
+        urls = [str(c.args[1]) for c in mock_req.call_args_list]
+        self.assertTrue(any("/products/search" in u for u in urls))
+        self.assertFalse(any("/sites/" in u and "/search" in u for u in urls))
 
     def test_403_usa_fallback_ddg(self):
         item_body = {
@@ -79,6 +130,8 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
         ), patch.object(
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_SITES_SEARCH", True
         ):
             mock_req.side_effect = [
                 _mock_resp({}, status=403),
@@ -110,6 +163,8 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False
         ), patch.object(
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CACHE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_SITES_SEARCH", True
         ):
             out = busca_termo_ml.executar_busca_termo("kit x", limite=3)
         self.assertEqual(out, [])
@@ -126,7 +181,6 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False
         ):
             mock_req.side_effect = [
-                _mock_resp({}, status=403),  # sites/search
                 _mock_resp(
                     {
                         "results": [
@@ -256,7 +310,6 @@ class TestExecutarBuscaTermo(unittest.TestCase):
             "core.brave_search.request"
         ) as mock_http:
             mock_req.side_effect = [
-                _mock_resp({}, status=403),
                 _mock_resp(item_body),
             ]
             mock_http.return_value = _mock_resp(

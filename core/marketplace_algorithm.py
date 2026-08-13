@@ -30,14 +30,34 @@ def _save_history(history: dict) -> None:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
 
-def _score_from_metrics(metrics: dict) -> tuple[int, list[str], str | None]:
+def _perfil(nome: str) -> str:
+    n = (nome or "").strip().lower()
+    if n in ("mercadolivre", "shopee", "magalu", "amazon"):
+        return n
+    return "generico"
+
+
+def _claims_conhecido(metrics: dict) -> bool:
+    if "claims_conhecido" in metrics:
+        return bool(metrics.get("claims_conhecido"))
+    return metrics.get("claims_rate") is not None
+
+
+def _score_from_metrics(metrics: dict, nome: str = "") -> tuple[int, list[str], str | None]:
     """Retorna (score, penalidades, status_forcado).
 
     status_forcado='inativo' quando o canal não está configurado — não é
     incidente de algoritmo; alerta/Telegram ficam suspensos até ativar.
+
+    Perfil por canal:
+      ML — fila, claims reais, acesso (ranking + reputação).
+      Shopee — chat/SLA mais pesado; claims só se medido.
+      Magalu — fila + SLA; claims só se medido.
+      Amazon — fila de mensagens pesa pouco (Buy Box ≠ Q&A); claims só se medido.
     """
     penalidades = []
     score = 100
+    perfil = _perfil(nome)
 
     if not metrics.get("configurado", False):
         return 0, ["canal não configurado — alerta suspenso até ativar"], "inativo"
@@ -46,25 +66,50 @@ def _score_from_metrics(metrics: dict) -> tuple[int, list[str], str | None]:
         return 65, ["falha na API de saúde (credenciais presentes; verifique token/conectividade)"], None
 
     pendencias = int(metrics.get("pendencias", 0) or 0)
-    claims_rate = float(metrics.get("claims_rate", 0) or 0)
+    claims_rate = metrics.get("claims_rate")
+    try:
+        claims_val = float(claims_rate) if claims_rate is not None else 0.0
+    except (TypeError, ValueError):
+        claims_val = 0.0
     dias_sem_acesso = int(metrics.get("dias_sem_acesso", 0) or 0)
 
-    if pendencias >= 40:
-        score -= 35
-        penalidades.append(f"fila de pendências muito alta ({pendencias})")
-    elif pendencias >= 15:
-        score -= 20
-        penalidades.append(f"fila de pendências elevada ({pendencias})")
-    elif pendencias >= 5:
-        score -= 8
-        penalidades.append(f"fila de pendências moderada ({pendencias})")
+    if perfil == "shopee":
+        if pendencias >= 25:
+            score -= 40
+            penalidades.append(f"chat Shopee parado ({pendencias}) — ranking pune resposta lenta")
+        elif pendencias >= 10:
+            score -= 22
+            penalidades.append(f"fila de chat Shopee elevada ({pendencias})")
+        elif pendencias >= 3:
+            score -= 10
+            penalidades.append(f"chat Shopee com {pendencias} pendência(s)")
+    elif perfil == "amazon":
+        if pendencias >= 40:
+            score -= 15
+            penalidades.append(f"mensagens Amazon sem resposta ({pendencias}) — não é Buy Box")
+        elif pendencias >= 15:
+            score -= 8
+            penalidades.append(f"fila de mensagens Amazon ({pendencias})")
+    else:
+        if pendencias >= 40:
+            score -= 35
+            penalidades.append(f"fila de pendências muito alta ({pendencias})")
+        elif pendencias >= 15:
+            score -= 20
+            penalidades.append(f"fila de pendências elevada ({pendencias})")
+        elif pendencias >= 5:
+            score -= 8
+            penalidades.append(f"fila de pendências moderada ({pendencias})")
 
-    if claims_rate >= 0.02:
-        score -= 30
-        penalidades.append(f"taxa de reclamação alta ({claims_rate * 100:.2f}%)")
-    elif claims_rate >= 0.01:
-        score -= 15
-        penalidades.append(f"taxa de reclamação em atenção ({claims_rate * 100:.2f}%)")
+    if _claims_conhecido(metrics):
+        if claims_val >= 0.02:
+            score -= 30
+            penalidades.append(f"taxa de reclamação alta ({claims_val * 100:.2f}%)")
+        elif claims_val >= 0.01:
+            score -= 15
+            penalidades.append(f"taxa de reclamação em atenção ({claims_val * 100:.2f}%)")
+    elif perfil in ("shopee", "magalu", "amazon"):
+        penalidades.append("claims não medido neste canal — score não assume 0% saudável")
 
     if dias_sem_acesso >= 7:
         score -= 25
@@ -72,6 +117,10 @@ def _score_from_metrics(metrics: dict) -> tuple[int, list[str], str | None]:
     elif dias_sem_acesso >= 3:
         score -= 12
         penalidades.append(f"{dias_sem_acesso} dias sem acesso")
+
+    if perfil == "amazon" and metrics.get("estoque_sync") is False:
+        score -= 20
+        penalidades.append("estoque Amazon fora do sync Bling — risco de oversell / perder Buy Box")
 
     return max(0, min(100, score)), penalidades, None
 
@@ -136,21 +185,35 @@ def _ajustes_finos_vendas(variacoes: list[dict], score_atual: int) -> list[str]:
     return list(dict.fromkeys(acoes))
 
 
-def _ajustes_recomendados(metrics: dict, score_atual: int, media_historica: float | None, variacoes: list[dict]) -> list[str]:
+def _ajustes_recomendados(metrics: dict, score_atual: int, media_historica: float | None, variacoes: list[dict], nome: str = "") -> list[str]:
     if not metrics.get("configurado", False):
         return ["canal inativo/não configurado — sem alerta Telegram até ativar credenciais"]
 
+    perfil = _perfil(nome)
     acoes = []
     pendencias = int(metrics.get("pendencias", 0) or 0)
-    claims_rate = float(metrics.get("claims_rate", 0) or 0)
+    claims_val = 0.0
+    try:
+        if metrics.get("claims_rate") is not None:
+            claims_val = float(metrics.get("claims_rate") or 0)
+    except (TypeError, ValueError):
+        claims_val = 0.0
     dias_sem_acesso = int(metrics.get("dias_sem_acesso", 0) or 0)
 
     if dias_sem_acesso >= 2:
         acoes.append("executar keepalive imediato e validar token")
-    if pendencias >= 15:
+    if perfil == "shopee" and pendencias >= 3:
+        acoes.append("priorizar chat Shopee nas próximas 2h — SLA de resposta entra no ranking")
+    elif perfil == "amazon" and pendencias >= 15:
+        acoes.append("responder mensagens Amazon (pós-venda); ranking segue Buy Box/preço/estoque")
+    elif pendencias >= 15:
         acoes.append("priorizar respostas de perguntas/mensagens nas próximas 2h")
-    if claims_rate >= 0.01:
+    if _claims_conhecido(metrics) and claims_val >= 0.01:
         acoes.append("reduzir promessas nos anúncios e revisar SLAs para conter reclamações")
+    if perfil == "amazon":
+        acoes.append("Buy Box: conferir preço, estoque e prazo — fila de chat não substitui isso")
+        if metrics.get("estoque_sync") is False:
+            acoes.append("incluir Amazon no sync de estoque Bling antes de operar anúncio")
     if score_atual < 60:
         acoes.append("reduzir mudanças agressivas de preço por 24h e estabilizar atendimento")
 
@@ -162,14 +225,14 @@ def _ajustes_recomendados(metrics: dict, score_atual: int, media_historica: floa
 
     if not acoes:
         acoes.append("manter estratégia atual e seguir monitoramento")
-    return acoes
+    return list(dict.fromkeys(acoes))
 
 
 def avaliar_marketplace(nome: str, metrics: dict) -> dict:
     historico = _load_history()
     pontos = historico.get(nome, [])
 
-    score_atual, penalidades, status_forcado = _score_from_metrics(metrics)
+    score_atual, penalidades, status_forcado = _score_from_metrics(metrics, nome)
     metrics_com_score = {**metrics, "score_atual": score_atual}
     media_historica = None
     if pontos and status_forcado is None:
@@ -187,8 +250,9 @@ def avaliar_marketplace(nome: str, metrics: dict) -> dict:
         "status": status_forcado or _classificar(score_atual),
         "penalidades": penalidades,
         "variacoes_relevantes": variacoes,
-        "acoes_recomendadas": _ajustes_recomendados(metrics, score_atual, media_historica, variacoes),
+        "acoes_recomendadas": _ajustes_recomendados(metrics, score_atual, media_historica, variacoes, nome),
         "metrics": metrics,
+        "modelo": _perfil(nome),
         "media_historica": round(media_historica, 1) if media_historica is not None else None,
     }
 

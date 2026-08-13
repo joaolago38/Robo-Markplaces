@@ -63,12 +63,15 @@ class TestPausaSeletiva(unittest.TestCase):
     @patch.object(gatilho, "campanhas_acos_acima_limite", return_value=[
         {"id": "C1", "cost": 30.0},
     ])
-    @patch.object(gatilho, "perguntar_gestor_e_aguardar", return_value=False)
+    @patch.object(gatilho, "aplicar_decisao_campanhas", return_value=[{"ok": True}])
+    @patch.object(gatilho, "perguntar_gestor_e_aguardar")
     @patch.object(gatilho, "alertar_gestor")
-    def test_pausar_inclui_gasto_diario_estimado(self, *_mocks):
+    def test_pausar_inclui_gasto_diario_estimado(self, mock_alerta, mock_pergunta, *_mocks):
         out = gatilho.avaliar_momento_ads(avaliacoes=30, nota_media=4.9, acos_atual=0.35)
-        self.assertEqual(out["decisao"], "manter")
+        self.assertEqual(out["decisao"], "pausar")
+        self.assertTrue(out.get("auto_pausar_acos"))
         self.assertGreater(out.get("gasto_diario_estimado_evitado", 0), 0)
+        mock_pergunta.assert_not_called()
 
 
 class TestContextoDecisaoAds(unittest.TestCase):

@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-08-13T00:08:07.380000+00:00",
+    "timestamp": "2026-08-13T14:24:21.373324+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -16,7 +16,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-08-13T00:07:58.154914+00:00",
+    "timestamp": "2026-08-13T14:24:16.911434+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -32,7 +32,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-08-13T00:08:12.190410+00:00",
+    "timestamp": "2026-08-13T14:24:32.598088+00:00",
     "resultados": [
       {
         "item_id": "MLB4716057869",
@@ -133,7 +133,7 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-08-13T00:07:58.033312+00:00",
+    "timestamp": "2026-08-13T14:24:16.797920+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -149,7 +149,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-08-13T00:07:58.065459+00:00",
+    "timestamp": "2026-08-13T14:24:16.827706+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
@@ -3485,8 +3485,32 @@
     ]
   },
   "filamento pla 1kg impressora 3d": {
-    "timestamp": "2026-08-10T12:40:41.726128+00:00",
+    "timestamp": "2026-08-13T03:00:07.800747+00:00",
     "resultados": [
+      {
+        "item_id": "MLB4465516775",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 109.9,
+        "quantidade_vendida": 0,
+        "seller_id": "2320236118",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4465516775",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB58692679",
+        "catalog_date_created": "2025-10-02T22:33:09Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7285923854",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.0,
+        "quantidade_vendida": 0,
+        "seller_id": "5475069",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7285923854",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB58692679",
+        "catalog_date_created": "2025-10-02T22:33:09Z",
+        "listing_type_id": "gold_special"
+      },
       {
         "item_id": "MLB5005617771",
         "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
@@ -3521,390 +3545,6 @@
         "fonte_busca": "products_api",
         "catalog_product_id": "MLB58692679",
         "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7285923854",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 113.9,
-        "quantidade_vendida": 0,
-        "seller_id": "5475069",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7285923854",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4772198423",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 114.97,
-        "quantidade_vendida": 0,
-        "seller_id": "2457539550",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4772198423",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7046051528",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 114.97,
-        "quantidade_vendida": 0,
-        "seller_id": "1592921",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7046051528",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB4888486269",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 115.0,
-        "quantidade_vendida": 0,
-        "seller_id": "3539188725",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4888486269",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB5026413551",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 118.0,
-        "quantidade_vendida": 0,
-        "seller_id": "2608520874",
-        "permalink": "https://produto.mercadolivre.com.br/MLB5026413551",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7285923856",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 118.9,
-        "quantidade_vendida": 0,
-        "seller_id": "5475069",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7285923856",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB4781925327",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 119.0,
-        "quantidade_vendida": 0,
-        "seller_id": "3297304957",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4781925327",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB6416675616",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 119.8,
-        "quantidade_vendida": 0,
-        "seller_id": "97307092",
-        "permalink": "https://produto.mercadolivre.com.br/MLB6416675616",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4979925689",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 119.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3261849928",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4979925689",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB5780820188",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 119.9,
-        "quantidade_vendida": 0,
-        "seller_id": "50934253",
-        "permalink": "https://produto.mercadolivre.com.br/MLB5780820188",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7264362928",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 119.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3294274368",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7264362928",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7328863510",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 119.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3304676198",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7328863510",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4852893817",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 122.9,
-        "quantidade_vendida": 0,
-        "seller_id": "2453535536",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4852893817",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB6482659908",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 124.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3106965341",
-        "permalink": "https://produto.mercadolivre.com.br/MLB6482659908",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7143206804",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 125.0,
-        "quantidade_vendida": 0,
-        "seller_id": "1837123710",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7143206804",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB4470093539",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 125.99,
-        "quantidade_vendida": 0,
-        "seller_id": "152359821",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4470093539",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB4866641215",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 126.5,
-        "quantidade_vendida": 0,
-        "seller_id": "272381845",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4866641215",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB6917539858",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 128.9,
-        "quantidade_vendida": 0,
-        "seller_id": "29867897",
-        "permalink": "https://produto.mercadolivre.com.br/MLB6917539858",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7048390744",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 129.49,
-        "quantidade_vendida": 0,
-        "seller_id": "42197283",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7048390744",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4786700413",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 129.9,
-        "quantidade_vendida": 0,
-        "seller_id": "236495217",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4786700413",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7023268212",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 129.9,
-        "quantidade_vendida": 0,
-        "seller_id": "1411541812",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7023268212",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7060838998",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 129.9,
-        "quantidade_vendida": 0,
-        "seller_id": "2716248969",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7060838998",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB4776831627",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 132.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3055406212",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4776831627",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB6482730838",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 134.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3106965341",
-        "permalink": "https://produto.mercadolivre.com.br/MLB6482730838",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7058482586",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 139.9,
-        "quantidade_vendida": 0,
-        "seller_id": "2515518898",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7058482586",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4776795131",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 142.9,
-        "quantidade_vendida": 0,
-        "seller_id": "3055406212",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4776795131",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB6989144382",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 149.9,
-        "quantidade_vendida": 0,
-        "seller_id": "1074101726",
-        "permalink": "https://produto.mercadolivre.com.br/MLB6989144382",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7126297100",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 159.77,
-        "quantidade_vendida": 0,
-        "seller_id": "1860742865",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7126297100",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7153965446",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 114.9,
-        "quantidade_vendida": 0,
-        "seller_id": "268350771",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7153965446",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB6224771800",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 131.9,
-        "quantidade_vendida": 0,
-        "seller_id": "2255099398",
-        "permalink": "https://produto.mercadolivre.com.br/MLB6224771800",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7184390386",
-        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
-        "preco": 149.0,
-        "quantidade_vendida": 0,
-        "seller_id": "2020113661",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7184390386",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB58692679",
-        "catalog_date_created": "2025-10-02T22:33:09Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB5831827964",
-        "titulo": "Filamento Pla Para Impressora 3d Creality Hyper Pla 1kg",
-        "preco": 156.0,
-        "quantidade_vendida": 0,
-        "seller_id": "106186702",
-        "permalink": "https://produto.mercadolivre.com.br/MLB5831827964",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB62868025",
-        "catalog_date_created": "2025-12-05T10:14:46Z",
         "listing_type_id": "gold_special"
       }
     ]
@@ -4508,6 +4148,189 @@
         "fonte_busca": "products_api",
         "catalog_product_id": "MLB58285884",
         "catalog_date_created": "2025-09-28T23:33:24Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit 5 esmaltes manicure": {
+    "timestamp": "2026-08-13T02:59:13.583373+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB7118516086",
+        "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+        "preco": 41.4,
+        "quantidade_vendida": 0,
+        "seller_id": "593091353",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7118516086",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB74833563",
+        "catalog_date_created": "2026-07-01T21:56:24Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7338966240",
+        "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+        "preco": 43.25,
+        "quantidade_vendida": 0,
+        "seller_id": "415070729",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7338966240",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB74833563",
+        "catalog_date_created": "2026-07-01T21:56:24Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7177598310",
+        "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+        "preco": 44.0,
+        "quantidade_vendida": 0,
+        "seller_id": "1310401851",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7177598310",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB74833563",
+        "catalog_date_created": "2026-07-01T21:56:24Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7079117314",
+        "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+        "preco": 44.17,
+        "quantidade_vendida": 0,
+        "seller_id": "694929293",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7079117314",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB74833563",
+        "catalog_date_created": "2026-07-01T21:56:24Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7390064402",
+        "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+        "preco": 58.9,
+        "quantidade_vendida": 0,
+        "seller_id": "244913061",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7390064402",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB74833563",
+        "catalog_date_created": "2026-07-01T21:56:24Z",
+        "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "filamento petg 1kg": {
+    "timestamp": "2026-08-13T03:00:30.759806+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB7382114342",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 79.9,
+        "quantidade_vendida": 0,
+        "seller_id": "7708821",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7382114342",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB70022790",
+        "catalog_date_created": "2026-05-19T18:41:29Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7196424420",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 99.9,
+        "quantidade_vendida": 0,
+        "seller_id": "243119384",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7196424420",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB70022790",
+        "catalog_date_created": "2026-05-19T18:41:29Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7296860416",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 99.98,
+        "quantidade_vendida": 0,
+        "seller_id": "768280796",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7296860416",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB70022790",
+        "catalog_date_created": "2026-05-19T18:41:29Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB7324006826",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 104.08,
+        "quantidade_vendida": 0,
+        "seller_id": "454984459",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7324006826",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB70022790",
+        "catalog_date_created": "2026-05-19T18:41:29Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4840028423",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 110.0,
+        "quantidade_vendida": 0,
+        "seller_id": "3242094464",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4840028423",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB70022790",
+        "catalog_date_created": "2026-05-19T18:41:29Z",
+        "listing_type_id": "gold_pro"
+      }
+    ]
+  },
+  "kit acetona manicure": {
+    "timestamp": "2026-08-13T03:01:01.635587+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB3589311017",
+        "titulo": "Kit Acetona Removedor De Esmalte 480ml Butterfly 2 Unidades",
+        "preco": 58.99,
+        "quantidade_vendida": 0,
+        "seller_id": "456794404",
+        "permalink": "https://produto.mercadolivre.com.br/MLB3589311017",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB32113102",
+        "catalog_date_created": "2024-02-04T14:41:27Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB6840882120",
+        "titulo": "Kit Acetona Removedor De Esmalte 480ml Butterfly 2 Unidades",
+        "preco": 62.99,
+        "quantidade_vendida": 0,
+        "seller_id": "330834147",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6840882120",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB32113102",
+        "catalog_date_created": "2024-02-04T14:41:27Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB6236271416",
+        "titulo": "Kit Acetona Removedor De Esmaltes De Unha Monaly 500ml",
+        "preco": 78.84,
+        "quantidade_vendida": 0,
+        "seller_id": "553853039",
+        "permalink": "https://produto.mercadolivre.com.br/MLB6236271416",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB65359329",
+        "catalog_date_created": "2026-02-06T19:50:52Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5896869388",
+        "titulo": "Kit Manicure Dosador De Acetona Com Porta Algodão Lilás",
+        "preco": 26.6,
+        "quantidade_vendida": 0,
+        "seller_id": "26904256",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5896869388",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB61673368",
+        "catalog_date_created": "2025-11-04T14:37:20Z",
         "listing_type_id": "gold_special"
       }
     ]

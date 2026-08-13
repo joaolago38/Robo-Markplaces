@@ -1,10 +1,9 @@
 # GitHub Actions — Orquestrador do Robo-Markplaces
 #
 # SERIALIZAÇÃO DE RENOVAÇÃO DE TOKENS:
-# Jobs como chat_marketplaces renovam tokens via get_token_* durante a execução.
-# O cron deste workflow coincide com renovar_tokens.yml (*/30). Sem concurrency
-# compartilhado, dois runners podem consumir o mesmo refresh_token de uso único
-# em paralelo. Ver grupo `robo-markplaces-token-renewal` nos workflows de token.
+# Chat ML não roda neste workflow (dono: orquestrador_30min). Chat Shopee/Magalu/Amazon
+# só chama API se spec.ativo. Relatorio/algoritmo ficam em fila própria para não
+# bloquear o cadeado `robo-markplaces-token-renewal`.
 name: Robo-Markplaces
 
 # Agendamento: expressões cron em UTC (padrão GitHub). BRT = UTC−3 (sem horário de verão no BR).
@@ -36,7 +35,9 @@ on:
           - algoritmo
 
 concurrency:
-  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  # Fila propria: relatorio/algoritmo nao devem filar o cadeado OAuth.
+  # Chat ML nao roda aqui (dono: orquestrador_30min). Canais inativos no spec
+  # nao chamam API neste job — reduz corrida de refresh enquanto o ML e consertado.
   group: robo-markplaces-${{ github.workflow }}
   cancel-in-progress: true
 
@@ -127,6 +128,7 @@ jobs:
           path: |
             logs/claude_uso_orcamento.json
             logs/claude_toggle.json
+            logs/marketplaces_operacao.json
             logs/conversao_manicures_ultima.json
             logs/chat_perguntas_claimed.json
             logs/alertas_cooldown.json
@@ -138,7 +140,7 @@ jobs:
             telegram-cooldown-
       - name: Rodar agentes de chat
         run: |
-          python -c "from agentes.ml.agente_ml import executar; print(executar())"
+          # Chat ML 24h fica no orquestrador_30min — um dono só, sem refresh paralelo.
           python -c "from agentes.shopee.agente_shopee import executar; print(executar())"
           python -c "from agentes.magalu.agente_magalu import executar; print(executar())"
           python -c "from agentes.amazon.agente_amazon import executar; print(executar())"
@@ -172,6 +174,11 @@ jobs:
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
           AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
+          AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}
+          AMAZON_REFRESH_TOKEN: ${{ secrets.AMAZON_REFRESH_TOKEN }}
+          AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
+          AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
@@ -179,6 +186,15 @@ jobs:
         if: always()
         continue-on-error: true
         uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/claude_toggle.json
+            logs/marketplaces_operacao.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+            logs/alertas_cooldown.json
+          key: estado-vendas-ia-${{ github.run_id }}
       - name: Publicar cota Brave
         if: always()
         continue-on-error: true
@@ -186,14 +202,6 @@ jobs:
         with:
           path: logs/brave_uso_mensal.json
           key: brave-uso-mensal-${{ github.run_id }}
-        with:
-          path: |
-            logs/claude_uso_orcamento.json
-            logs/claude_toggle.json
-            logs/conversao_manicures_ultima.json
-            logs/chat_perguntas_claimed.json
-            logs/alertas_cooldown.json
-          key: estado-vendas-ia-${{ github.run_id }}
 
   vendas_whatsapp:
     name: Notificações de vendas WhatsApp

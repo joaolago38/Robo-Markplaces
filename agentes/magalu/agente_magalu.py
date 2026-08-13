@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from core.atomic_io import escrever_json_atomico
 from core.claude_client import responder_chat
-from core.config import ROOT
+from core.config import ROOT, skip_se_spec_inativo
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar
 from integracoes.bling.bling_client import buscar_produto
@@ -103,6 +103,10 @@ def monitorar_metricas():
 
 
 def executar():
+    pulado = skip_se_spec_inativo("magalu")
+    if pulado:
+        logger.info("Chat Magalu pulado — spec.inativo")
+        return pulado
     logger.info("=== Agente Magalu iniciado ===")
 
     resultado = {
