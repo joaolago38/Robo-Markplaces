@@ -35,7 +35,7 @@ class TestAlgoritmoMarketplaces(unittest.TestCase):
     @patch.object(algo, "alertar_gestor")
     @patch.object(algo, "avaliar_marketplace", return_value=_av_saudavel())
     @patch.object(algo, "saude_ml", return_value={"configurado": True})
-    @patch.object(algo, "_MARKETPLACES_ATIVOS", {"mercadolivre"})
+    @patch.object(algo, "canal_em_operacao", side_effect=lambda n: n == "mercadolivre")
     def test_ALG01_somente_ativos_no_spec(self, *_mocks):
         out = algo.executar()
         self.assertEqual(out["resumo"]["saudavel"], 1)
@@ -46,8 +46,8 @@ class TestAlgoritmoMarketplaces(unittest.TestCase):
     @patch.object(algo, "alertar_gestor")
     @patch.object(algo, "avaliar_marketplace")
     @patch.object(algo, "saude_ml", return_value={"configurado": True})
-    @patch.object(algo, "_MARKETPLACES_ATIVOS", {"mercadolivre"})
-    def test_ALG02_executar_alerta_critico(self, _ml, mock_aval, mock_alert):
+    @patch.object(algo, "canal_em_operacao", side_effect=lambda n: n == "mercadolivre")
+    def test_ALG02_executar_alerta_critico(self, _op, _ml, mock_aval, mock_alert):
         mock_aval.return_value = {
             "status": "critico",
             "score": 10,
@@ -62,8 +62,8 @@ class TestAlgoritmoMarketplaces(unittest.TestCase):
     @patch.object(algo, "avaliar_marketplace")
     @patch.object(algo, "saude_ml", return_value={"configurado": True})
     @patch.object(algo, "saude_shopee", return_value={"configurado": False})
-    @patch.object(algo, "_MARKETPLACES_ATIVOS", {"mercadolivre", "shopee"})
-    def test_ALG03_executar_contagem_status(self, _sh, _ml, mock_aval, _mock_alert):
+    @patch.object(algo, "canal_em_operacao", side_effect=lambda n: n in {"mercadolivre", "shopee"})
+    def test_ALG03_executar_contagem_status(self, _op, _sh, _ml, mock_aval, _mock_alert):
         mock_aval.side_effect = [
             {"status": "saudavel", "score": 90, "acoes_recomendadas": [], "variacoes_relevantes": [], "metrics": {"configurado": True}},
             {"status": "critico", "score": 20, "acoes_recomendadas": [], "variacoes_relevantes": [], "metrics": {"configurado": True}},
@@ -76,8 +76,8 @@ class TestAlgoritmoMarketplaces(unittest.TestCase):
     @patch.object(algo, "alertar_gestor")
     @patch.object(algo, "avaliar_marketplace", return_value=_av_inativo())
     @patch.object(algo, "saude_shopee", return_value={"configurado": False})
-    @patch.object(algo, "_MARKETPLACES_ATIVOS", {"shopee"})
-    def test_ALG04_inativo_nao_alerta_telegram(self, _sh, _aval, mock_alert):
+    @patch.object(algo, "canal_em_operacao", side_effect=lambda n: n == "shopee")
+    def test_ALG04_inativo_nao_alerta_telegram(self, _op, _sh, _aval, mock_alert):
         out = algo.executar()
         self.assertEqual(out["resumo"]["inativo"], 1)
         self.assertEqual(out["resumo"]["critico"], 0)

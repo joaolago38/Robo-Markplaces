@@ -514,7 +514,14 @@ def contar_claims_abertos() -> dict:
 def obter_saude_conta() -> dict:
     configurado = _enabled()
     if not configurado:
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": 0.0,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": "",
+        }
 
     perguntas, ok = _listar_perguntas_nao_respondidas_detalhado()
     reputacao = buscar_reputacao_vendedor()
@@ -527,7 +534,10 @@ def obter_saude_conta() -> dict:
         "api_ok": ok,
         "pendencias": len(perguntas),
         "claims_rate": float(claims_rate),
+        "claims_conhecido": True,
         "dias_sem_acesso": dias_sem_acesso("mercadolivre") or 0,
+        "conta_id": str(ML_SELLER_ID or "").strip(),
+        "modelo": "ranking_ml",
     }
 
 

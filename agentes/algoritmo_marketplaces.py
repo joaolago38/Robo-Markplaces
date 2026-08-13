@@ -8,8 +8,9 @@ não disparam Telegram nem eventos de congelar/priorizar.
 import logging
 
 from core.algoritmo_eventos import emitir_de_avaliacao, persistir_eventos
-from core.config import SPEC
 from core.marketplace_algorithm import avaliar_marketplace
+from core.marketplace_cnpj import identificar_cnpj_conectado, linha_cnpj_telegram
+from core.marketplace_toggle import canal_em_operacao
 from core.notificador import alertar_gestor
 from integracoes.amazon.amazon_client import obter_saude_conta as saude_amazon
 from integracoes.magalu.magalu_client import obter_saude_conta as saude_magalu
@@ -25,21 +26,21 @@ _COLETORES = {
     "amazon": saude_amazon,
 }
 
-_MARKETPLACES_ATIVOS: set[str] = {
-    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
-}
-
 
 def _marketplaces_a_avaliar() -> list[str]:
-    """Só canais ativos no spec e com coletor. Ordem estável."""
+    """Spec ativo OU toggle de operação. Ordem estável."""
     ordem = ("mercadolivre", "shopee", "magalu", "amazon")
-    return [n for n in ordem if n in _MARKETPLACES_ATIVOS and n in _COLETORES]
+    return [n for n in ordem if n in _COLETORES and canal_em_operacao(n)]
 
 
 def executar(alertar_quando_atencao: bool = False) -> dict:
     nomes = _marketplaces_a_avaliar()
     saude = {nome: _COLETORES[nome]() for nome in nomes}
     avaliacoes = {nome: avaliar_marketplace(nome, metrics) for nome, metrics in saude.items()}
+    for nome, avaliacao in avaliacoes.items():
+        metrics = saude.get(nome) or {}
+        ident = identificar_cnpj_conectado(nome, metrics.get("conta_id"))
+        avaliacao["cnpj_conectado"] = ident
 
     # Eventos só para canais configurados (emitir_de_avaliacao também ignora inativo).
     eventos = emitir_de_avaliacao(avaliacoes)
@@ -66,6 +67,7 @@ def executar(alertar_quando_atencao: bool = False) -> dict:
             bloco_ev = f"\nEventos: {', '.join(ev_mp)}" if ev_mp else ""
             alertar_gestor(
                 f"Saúde {nome}: {status.upper()} (score {avaliacao['score']})\n"
+                f"{linha_cnpj_telegram(avaliacao.get('cnpj_conectado') or {})}\n"
                 f"Ajustes: {'; '.join(avaliacao['acoes_recomendadas'][:3])}"
                 f"{bloco_variacoes}{bloco_ev}",
                 chave=f"saude:{nome}:{status}",

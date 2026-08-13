@@ -111,6 +111,17 @@ def _avaliar_um(nome_marketplace: str) -> dict:
     }
 
 
+def _canal_a_sondar(nome: str) -> bool:
+    if marketplace_spec_ativo(nome):
+        return True
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao(nome)
+    except Exception:
+        return False
+
+
 def executar() -> dict:
     """
     Testa conectividade real (não apenas renovação de token) de todos os
@@ -118,7 +129,7 @@ def executar() -> dict:
     """
     resultados: list[dict] = []
     for nome in _MARKETPLACES:
-        if not marketplace_spec_ativo(nome):
+        if not _canal_a_sondar(nome):
             logger.info("Conectividade %s pulada — spec.inativo", nome)
             incrementar("conectividade.pulado", tags=[f"marketplace:{nome}", "motivo:spec_inativo"])
             gauge(

@@ -42,6 +42,9 @@
         "nickname": "",
         "site_id": "MLB"
       },
+      "shopee": { "shop_id": "" },
+      "magalu": { "seller_id": "" },
+      "amazon": { "seller_id": "" },
       "telegram_gestor_chat_id": "",
       "ramos": ["esmaltes", "manicures", "acetona", "removedores", "impala", "anita"],
       "agentes_prioritarios": [
@@ -89,6 +92,9 @@
         "nickname": "",
         "site_id": "MLB"
       },
+      "shopee": { "shop_id": "" },
+      "magalu": { "seller_id": "" },
+      "amazon": { "seller_id": "" },
       "telegram_gestor_chat_id": "",
       "ramos": ["filamentos", "escritorio", "masterprint", "petg", "demais_produtos"],
       "agentes_prioritarios": [

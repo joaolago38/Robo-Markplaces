@@ -260,7 +260,14 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
 
 def obter_saude_conta() -> dict:
     if not _enabled():
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": None,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": str(SHOPEE_SHOP_ID or "").strip(),
+        }
 
     pendencias, ok = _listar_perguntas_nao_respondidas_detalhado(page_size=50, max_pages=4)
     if ok:
@@ -270,8 +277,11 @@ def obter_saude_conta() -> dict:
         "configurado": True,
         "api_ok": ok,
         "pendencias": len(pendencias),
-        "claims_rate": 0.0,
+        "claims_rate": None,
+        "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("shopee") or 0,
+        "conta_id": str(SHOPEE_SHOP_ID or "").strip(),
+        "modelo": "chat_sla_shopee",
     }
 
 

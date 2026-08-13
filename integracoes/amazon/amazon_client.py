@@ -11,6 +11,7 @@ from core.config import (
     AMAZON_LWA_CLIENT_SECRET,
     AMAZON_MARKETPLACE_ID,
     AMAZON_REFRESH_TOKEN,
+    AMAZON_SELLER_ID,
 )
 from core.datadog_metrics import incrementar
 from core.http_client import request
@@ -109,7 +110,15 @@ def responder_mensagem(thread_id: str, texto: str) -> bool:
 
 def obter_saude_conta() -> dict:
     if not _enabled():
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": None,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": str(AMAZON_SELLER_ID or "").strip(),
+            "estoque_sync": False,
+        }
 
     mensagens, ok = listar_mensagens_nao_respondidas_detalhado(limit=50)
     if ok:
@@ -118,8 +127,12 @@ def obter_saude_conta() -> dict:
         "configurado": True,
         "api_ok": ok,
         "pendencias": len(mensagens),
-        "claims_rate": 0.0,
+        "claims_rate": None,
+        "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("amazon") or 0,
+        "conta_id": str(AMAZON_SELLER_ID or "").strip(),
+        "estoque_sync": False,
+        "modelo": "buybox_amazon",
     }
 
 
