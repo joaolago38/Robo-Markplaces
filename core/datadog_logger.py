@@ -74,6 +74,7 @@ _LOGGER_META = {
     "claude_ml_enriquecedor": ("mercadolivre", "core"),
     "claude_orcamento": ("infra", "core"),
     "claude_toggle": ("infra", "core"),
+    "marketplace_toggle": ("infra", "core"),
     "chat_claim": ("mercadolivre", "core"),
     "contexto_fechamento_ml": ("mercadolivre", "core"),
     "produto_lookup": ("mercadolivre", "core"),
