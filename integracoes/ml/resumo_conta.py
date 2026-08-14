@@ -11,6 +11,7 @@ from typing import Any
 
 from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from integracoes.ml import ml_client
+from integracoes.ml.filtro_anuncios_conta import ultimo_filtro_anuncios
 
 logger = logging.getLogger("resumo_conta_ml")
 
@@ -100,6 +101,8 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
 
         perguntas = ml_client.listar_perguntas_nao_respondidas()
         anuncios = ml_client.listar_meus_anuncios(statuses=("active", "paused"))
+        filtro = ultimo_filtro_anuncios()
+        ignorados_fora_foco = int(filtro.get("ignorados") or 0)
         ativos = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "active")
         pausados = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "paused")
         sugestoes_preco_ids = ml_client.listar_itens_com_sugestao_preco()
@@ -153,7 +156,7 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
         anuncios_por_id = {str(a.get("item_id")): a for a in anuncios}
         for item_id in sugestoes_preco_ids:
             item_id = str(item_id).strip()
-            if not item_id:
+            if not item_id or item_id not in anuncios_por_id:
                 continue
             sug = ml_client.buscar_sugestao_preco(item_id)
             if not sug or not (sug.get("preco_sugerido") or sug.get("aplicavel")):
@@ -194,6 +197,7 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             "anuncios_ativos": ativos,
             "anuncios_pausados": pausados,
             "anuncios_total": len(anuncios),
+            "anuncios_ignorados_fora_foco": ignorados_fora_foco,
             "anuncios_a_melhorar": a_melhorar,
             "anuncios_a_melhorar_total": len(a_melhorar),
             "precos_pendencias": preco_com_sugestao,
@@ -246,6 +250,19 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
     gauge("ml.saude.sem_cor", 1.0 if rep.get("sem_cor") else 0.0)
     gauge("ml.saude.anuncios_ativos", float(resumo.get("anuncios_ativos") or 0))
     gauge("ml.saude.anuncios_pausados", float(resumo.get("anuncios_pausados") or 0))
+    gauge(
+        "ml.saude.anuncios_ignorados_fora_foco",
+        float(resumo.get("anuncios_ignorados_fora_foco") or 0),
+    )
+    gauge(
+        "ml.saude.catalogo_foco_vazio",
+        1.0
+        if (
+            int(resumo.get("anuncios_total") or 0) == 0
+            and int(resumo.get("anuncios_ignorados_fora_foco") or 0) > 0
+        )
+        else 0.0,
+    )
     gauge("ml.saude.anuncios_a_melhorar", float(resumo.get("anuncios_a_melhorar_total") or 0))
     gauge("ml.saude.perguntas_pendentes", float(resumo.get("perguntas_pendentes") or 0))
     gauge("ml.saude.envios_pendentes", float(resumo.get("envios_pendentes") or 0))
@@ -279,8 +296,8 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
         f"  • Perguntas: *{int(resumo.get('perguntas_pendentes') or 0)}*",
         f"  • Anúncios a melhorar: *{int(resumo.get('anuncios_a_melhorar_total') or 0)}* "
         f"(de {int(resumo.get('anuncios_total') or resumo.get('anuncios_ativos') or 0)} listados)",
-        f"  • Ativos: *{int(resumo.get('anuncios_ativos') or 0)}* · "
-        f"Pausados: *{int(resumo.get('anuncios_pausados') or 0)}*",
+        f"  • Ativos (foco): *{int(resumo.get('anuncios_ativos') or 0)}* · "
+        f"Pausados (foco): *{int(resumo.get('anuncios_pausados') or 0)}*",
         f"  • Preços c/ sugestão ML: *{int(resumo.get('precos_pendencias_total') or 0)}*",
         f"  • Publicidade (campanhas idle/pausadas): *{int(resumo.get('publicidade_recomendacoes') or 0)}*",
         "",
@@ -303,8 +320,18 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
     ]
     if rep.get("sem_cor"):
         linhas.append("  _Ao alcançar 10 vendas você terá cor de reputação._")
-    if int(resumo.get("anuncios_pausados") or 0) > 0 and int(resumo.get("anuncios_ativos") or 0) == 0:
-        linhas.append("  ⚠️ *Todos os anúncios estão pausados* — reative para voltar a vender.")
+    ignorados = int(resumo.get("anuncios_ignorados_fora_foco") or 0)
+    if ignorados > 0:
+        linhas.append(
+            f"  _{ignorados} anúncio(s) de bolsas/legado ignorados. "
+            "Radar só vê Impala/Masterprint. Reputação da conta continua valendo._"
+        )
+    if int(resumo.get("anuncios_total") or 0) == 0 and ignorados > 0:
+        linhas.append("  _Nenhum anúncio do foco no ar. Publique os kits Impala quando estiver pronto._")
+    elif int(resumo.get("anuncios_pausados") or 0) > 0 and int(resumo.get("anuncios_ativos") or 0) == 0:
+        linhas.append(
+            "  ⚠️ *Todos os anúncios do foco estão pausados* — reative para voltar a vender."
+        )
 
     linhas.extend(
         [

@@ -80,6 +80,7 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.saude.claims_rate_pct",
             "robo.ml.saude.anuncios_ativos",
             "robo.ml.saude.todos_pausados",
+            "robo.ml.saude.anuncios_ignorados_fora_foco",
             "robo.vendas.receita_bruta",
             "robo.ads.acos_atual",
         ):

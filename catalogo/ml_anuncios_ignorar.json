@@ -1,0 +1,19 @@
+{
+  "versao": 1,
+  "ativo": true,
+  "descricao": "Anúncios da conta ML que não são Impala/Masterprint (bolsas Mariart e legado). A reputação/cor da conta continua valendo; só o catálogo operacional é filtrado.",
+  "sku_prefixos_foco": ["IMP-", "CRZ-", "BUNDLE-"],
+  "titulo_contem": [
+    "bolsa",
+    "carteira",
+    "mariart",
+    "shopper",
+    "transversal",
+    "couro legitimo",
+    "couro legítimo",
+    "couro bovino"
+  ],
+  "sku_contem": ["mariart"],
+  "category_ids": [],
+  "titulo_legado": ["controle remoto ppa", "ppa tok"]
+}

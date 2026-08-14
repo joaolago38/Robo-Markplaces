@@ -286,6 +286,12 @@ RESUMO_CONTA_ML_ALERTA = os.getenv("RESUMO_CONTA_ML_ALERTA", "1").strip().lower(
 )
 RESUMO_CONTA_ML_COOLDOWN_SEG = int(os.getenv("RESUMO_CONTA_ML_COOLDOWN_SEG", "72000"))
 RESUMO_CONTA_ML_MAX_PERFORMANCE = int(os.getenv("RESUMO_CONTA_ML_MAX_PERFORMANCE", "80"))
+# 1 = ignora bolsas/legado na listagem de anúncios; reputação da conta segue valendo
+ML_IGNORAR_ANUNCIOS_FORA_FOCO = os.getenv("ML_IGNORAR_ANUNCIOS_FORA_FOCO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 # Fallback quando /sites/search retorna 403 (comum desde ~2025)
 # O endpoint público /sites/{site}/search costuma 403 mesmo autenticado (PolicyAgent).
 # Desligado por padrão: a busca vai direto em /products/search. Ligue só para probe.

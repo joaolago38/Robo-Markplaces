@@ -8,6 +8,10 @@ from integracoes.ml import resumo_conta as rc
 
 
 class TestResumoContaMl(unittest.TestCase):
+    def setUp(self):
+        from integracoes.ml.filtro_anuncios_conta import reset_ultimo_filtro
+
+        reset_ultimo_filtro()
     def test_texto_reputacao_sem_cor(self):
         out = rc._texto_reputacao({"level_id": None, "transactions": {"completed": 3}})
         self.assertTrue(out["sem_cor"])
@@ -58,6 +62,8 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertIn("ml.saude.avaliacoes", nomes)
         self.assertIn("ml.saude.anuncios_ativos", nomes)
         self.assertIn("ml.saude.todos_pausados", nomes)
+        self.assertIn("ml.saude.anuncios_ignorados_fora_foco", nomes)
+        self.assertIn("ml.saude.catalogo_foco_vazio", nomes)
         pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
         self.assertEqual(pares["ml.saude.ok"], 1.0)
         self.assertEqual(pares["ml.saude.vendas_completadas"], 12.0)
@@ -158,7 +164,41 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertEqual(resumo["anuncios_a_melhorar_total"], 1)
         self.assertEqual(resumo["anuncios_a_melhorar"][0]["acoes"], ["Reativar anúncio"])
         msg = rc.montar_mensagem_telegram(resumo)
-        self.assertIn("Todos os anúncios estão pausados", msg)
+        self.assertIn("Todos os anúncios do foco estão pausados", msg)
+
+    def test_mensagem_bolsas_ignoradas_nao_pede_reativar(self):
+        resumo = {
+            "ok": True,
+            "nickname": "LOJA",
+            "seller_id": "1",
+            "perguntas_pendentes": 0,
+            "anuncios_a_melhorar_total": 0,
+            "anuncios_total": 0,
+            "anuncios_ativos": 0,
+            "anuncios_pausados": 0,
+            "anuncios_ignorados_fora_foco": 38,
+            "precos_pendencias_total": 0,
+            "publicidade_recomendacoes": 0,
+            "envios_pendentes": 0,
+            "envios_ok": True,
+            "pos_venda_claims": 0,
+            "pos_venda_ok": True,
+            "faturamento_nota": "ok",
+            "reputacao": {
+                "cor": "Verde",
+                "vendas_completadas": 50,
+                "avaliacoes": 20,
+                "nota": 4.9,
+                "claims_rate": 0,
+                "power_seller": "—",
+                "sem_cor": False,
+            },
+        }
+        msg = rc.montar_mensagem_telegram(resumo)
+        self.assertIn("38 anúncio(s) de bolsas/legado ignorados", msg)
+        self.assertIn("Reputação da conta continua valendo", msg)
+        self.assertIn("Nenhum anúncio do foco no ar", msg)
+        self.assertNotIn("reative para voltar a vender", msg)
 
     def test_mensagem_erro(self):
         msg = rc.montar_mensagem_telegram({"ok": False, "erro": "ml_nao_configurado"})

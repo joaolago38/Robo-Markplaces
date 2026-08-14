@@ -6,6 +6,7 @@ Lista os anúncios da conta Mercado Livre (item_id, preço, status, SKU, título
 
 Uso:
     .venv\\Scripts\\python.exe scripts\\diagnostico_ml_produtos.py
+    .venv\\Scripts\\python.exe scripts\\diagnostico_ml_produtos.py --todos
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ try:
 except Exception:
     pass
 
+from integracoes.ml.filtro_anuncios_conta import ultimo_filtro_anuncios
 from integracoes.ml.ml_client import listar_meus_anuncios, obter_status_anuncio, pausar_anuncio
 from integracoes.ml.ml_product_ads import listar_campanhas, obter_advertiser
 
@@ -37,8 +39,18 @@ def main() -> int:
         print("Configure ML_ACCESS_TOKEN e ML_SELLER_ID no .env e rode de novo.")
         return 1
 
-    anuncios = listar_meus_anuncios()
+    aplicar_foco = "--todos" not in sys.argv
+    anuncios = listar_meus_anuncios(aplicar_foco=aplicar_foco)
     if not anuncios:
+        filtro = ultimo_filtro_anuncios()
+        ignorados = int(filtro.get("ignorados") or 0)
+        if ignorados:
+            print(
+                f"Nenhum anúncio do foco (Impala/Masterprint). "
+                f"{ignorados} bolsa(s)/legado ignorado(s). "
+                "Use --todos para listar a conta inteira."
+            )
+            return 0
         print("Nenhum anúncio retornado (conta vazia ou token inválido).")
         return 1
 
@@ -59,6 +71,10 @@ def main() -> int:
 
     print("\n--- Resumo ---")
     print(f"Total: {len(anuncios)} anúncio(s)")
+    if aplicar_foco:
+        ignorados = int(ultimo_filtro_anuncios().get("ignorados") or 0)
+        if ignorados:
+            print(f"  Ignorados (bolsas/legado): {ignorados}  (use --todos para ver)")
     for status, qtd in sorted(por_status.items()):
         print(f"  {status}: {qtd}")
     print(f"  Sem SKU: {sem_sku}")
