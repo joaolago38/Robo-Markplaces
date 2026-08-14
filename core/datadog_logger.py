@@ -63,6 +63,8 @@ _LOGGER_META = {
     "rotas_regionais_china": ("multi", "integracao"),
     "agente_comparar_portos_alibaba": ("multi", "agente"),
     "agente_monitor_cnpj_cnae": ("multi", "agente"),
+    "ponto_ruptura_segundo_cnpj": ("multi", "integracao"),
+    "agente_ponto_ruptura_segundo_cnpj": ("multi", "agente"),
     "contexto_importacao_cnpj": ("multi", "integracao"),
     "corredor_paraguai_terrestre": ("multi", "integracao"),
     "hub_paraguai_marketplace": ("multi", "integracao"),

@@ -25,6 +25,49 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertEqual(out["cor"], "Verde")
         self.assertFalse(out["sem_cor"])
         self.assertEqual(out["claims_rate"], 0.01)
+        self.assertEqual(out["nivel_num"], 5)
+        self.assertEqual(out["power_num"], 2)
+
+    def test_emitir_metricas_saude_conta(self):
+        resumo = {
+            "ok": True,
+            "anuncios_ativos": 2,
+            "anuncios_pausados": 0,
+            "anuncios_a_melhorar_total": 1,
+            "perguntas_pendentes": 3,
+            "envios_pendentes": 0,
+            "pos_venda_claims": 0,
+            "precos_pendencias_total": 0,
+            "reputacao": {
+                "vendas_completadas": 12,
+                "vendas_60d": 4,
+                "avaliacoes": 8,
+                "nota": 4.9,
+                "claims_rate": 0.01,
+                "atraso_rate": 0,
+                "cancelamentos_rate": 0,
+                "nivel_num": 5,
+                "power_num": 2,
+                "sem_cor": False,
+            },
+        }
+        with patch("core.datadog_metrics.gauge") as mock_g:
+            rc.emitir_metricas_saude_conta(resumo)
+        nomes = [c.args[0] for c in mock_g.call_args_list]
+        self.assertIn("ml.saude.vendas_completadas", nomes)
+        self.assertIn("ml.saude.avaliacoes", nomes)
+        self.assertIn("ml.saude.anuncios_ativos", nomes)
+        self.assertIn("ml.saude.todos_pausados", nomes)
+        pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
+        self.assertEqual(pares["ml.saude.ok"], 1.0)
+        self.assertEqual(pares["ml.saude.vendas_completadas"], 12.0)
+        self.assertEqual(pares["ml.saude.claims_rate_pct"], 1.0)
+        self.assertEqual(pares["ml.saude.todos_pausados"], 0.0)
+
+    def test_emitir_metricas_saude_falha(self):
+        with patch("core.datadog_metrics.gauge") as mock_g:
+            rc.emitir_metricas_saude_conta({"ok": False})
+        self.assertEqual(mock_g.call_args.args, ("ml.saude.ok", 0.0))
 
     @patch("integracoes.ml.ml_product_ads.listar_campanhas", return_value=[{"status": "IDLE"}])
     @patch.object(rc.ml_client, "buscar_sugestao_preco", return_value={})

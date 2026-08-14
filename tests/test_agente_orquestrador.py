@@ -59,6 +59,8 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("comparativo_anita_impala", ids)
         self.assertNotIn("monitor_busca_kit_esmaltes", ids)
         self.assertNotIn("relatorio_manha_ml", ids)
+        self.assertNotIn("ponto_ruptura_segundo_cnpj", ids)
+        self.assertNotIn("monitor_cnpj_cnae", ids)
         self.assertIn("chat_ml", ids)
         self.assertIn("monitor_mercado_esmaltes", ids)
 
@@ -92,6 +94,8 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("repricing", ids)
         self.assertNotIn("repricing_impala", ids)
         self.assertIn("operacao_24h", ids)
+        self.assertIn("ponto_ruptura_segundo_cnpj", ids)
+        self.assertIn("monitor_cnpj_cnae", ids)
         self.assertIn("sumare_leiloes", ids)
         self.assertIn("chat_shopee", ids)
 

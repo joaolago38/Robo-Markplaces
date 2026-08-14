@@ -55,6 +55,8 @@ GROUP_MP_CATALOGO_ID = 760001
 GROUP_MP_MERCADO_ID = 760002
 GROUP_MP_COMERCIAL_ID = 760003
 GROUP_MP_FUNIL_ID = 760004
+GROUP_PONTO_RUPTURA_ID = 700012
+GROUP_SAUDE_CONTA_ML_ID = 700013
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -2990,6 +2992,347 @@ def atualizar_dashboard_saude() -> None:
     print(f"OK dashboard robo/saude: {_url_dash(DASH_SAUDE)}")
 
 
+def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
+    """Impala → 2º CNPJ: progresso da ruptura + gaps de CNAE/KYC Masterprint."""
+    return {
+        "id": GROUP_PONTO_RUPTURA_ID,
+        "definition": {
+            "title": "[CNAE / 2o CNPJ] Prepare agora · ruptura Impala depois",
+            "type": "group",
+            "background_color": "purple",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Gaps CNAE/KYC",
+                        "avg:robo.cnae_preparacao.gaps{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 770001,
+                },
+                {
+                    **_qv(
+                        "Seller Masterprint",
+                        "avg:robo.cnae_preparacao.seller_masterprint{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 770002,
+                },
+                {
+                    **_qv(
+                        "CNAE pronto (0/1)",
+                        "avg:robo.cnae_preparacao.pronto{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 770003,
+                },
+                {
+                    **_qv(
+                        "Aproximando (0/1)",
+                        "avg:robo.ponto_ruptura.aproximando{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 770004,
+                },
+                {
+                    **_qv(
+                        "Liberado 2o CNPJ",
+                        "avg:robo.ponto_ruptura.liberado{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 770005,
+                },
+                {
+                    **_qv(
+                        "Progresso ruptura %",
+                        "avg:robo.ponto_ruptura.progresso_pct{*}",
+                        aggregator="avg",
+                        green_gt=80,
+                        yellow_gt=40,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 770006,
+                },
+                {
+                    **_qv(
+                        "Avaliacoes Impala",
+                        "avg:robo.ponto_ruptura.avaliacoes{*}",
+                        aggregator="avg",
+                        green_gt=19,
+                        yellow_gt=9,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 770007,
+                },
+                {
+                    **_qv(
+                        "Checks ok",
+                        "avg:robo.ponto_ruptura.checks_ok{*}",
+                        aggregator="avg",
+                        green_gt=6,
+                        yellow_gt=3,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 770008,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
+    }
+
+
+def _grupo_saude_conta_ml() -> dict[str, Any]:
+    """Reputação + anúncios + pós-venda da conta ML autenticada (não é radar de concorrente)."""
+    return {
+        "id": GROUP_SAUDE_CONTA_ML_ID,
+        "definition": {
+            "title": "[Saude conta ML] Reputacao / anuncios / pos-venda",
+            "type": "group",
+            "background_color": "vivid_green",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Vendas completadas",
+                        "avg:robo.ml.saude.vendas_completadas{*}",
+                        aggregator="avg",
+                        green_gt=9,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 780001,
+                },
+                {
+                    **_qv(
+                        "Avaliacoes",
+                        "avg:robo.ml.saude.avaliacoes{*}",
+                        aggregator="avg",
+                        green_gt=19,
+                        yellow_gt=9,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 780002,
+                },
+                {
+                    **_qv(
+                        "Nota media",
+                        "avg:robo.ml.saude.nota{*}",
+                        aggregator="avg",
+                        green_gt=4.7,
+                        yellow_gt=4.0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 780003,
+                },
+                {
+                    **_qv(
+                        "Nivel reputacao (0-5)",
+                        "avg:robo.ml.saude.nivel{*}",
+                        aggregator="avg",
+                        green_gt=4,
+                        yellow_gt=2,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 780004,
+                },
+                {
+                    **_qv(
+                        "Claims rate %",
+                        "avg:robo.ml.saude.claims_rate_pct{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=1,
+                        red_gt=2,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 780005,
+                },
+                {
+                    **_qv(
+                        "Mercado Lider (0-3)",
+                        "avg:robo.ml.saude.power_seller{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 780006,
+                },
+                {
+                    **_qv(
+                        "Anuncios ativos",
+                        "avg:robo.ml.saude.anuncios_ativos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+                    "id": 780007,
+                },
+                {
+                    **_qv(
+                        "Anuncios pausados",
+                        "avg:robo.ml.saude.anuncios_pausados{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
+                    "id": 780008,
+                },
+                {
+                    **_qv(
+                        "Todos pausados (0/1)",
+                        "avg:robo.ml.saude.todos_pausados{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
+                    "id": 780009,
+                },
+                {
+                    **_qv(
+                        "Anuncios a melhorar",
+                        "avg:robo.ml.saude.anuncios_a_melhorar{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "id": 780010,
+                },
+                {
+                    **_qv(
+                        "Perguntas pendentes",
+                        "avg:robo.ml.saude.perguntas_pendentes{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
+                    "id": 780011,
+                },
+                {
+                    **_qv(
+                        "Claims abertos",
+                        "avg:robo.ml.saude.claims_abertos{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "id": 780012,
+                },
+                {
+                    **_qv(
+                        "Receita bruta R$ (pedidos)",
+                        "avg:robo.vendas.receita_bruta{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 4},
+                    "id": 780013,
+                },
+                {
+                    **_qv(
+                        "Lucro pedidos R$",
+                        "avg:robo.vendas.lucro_reais{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 4},
+                    "id": 780014,
+                },
+                {
+                    **_qv(
+                        "Margem pedidos %",
+                        "avg:robo.vendas.margem_media_pct{*}",
+                        aggregator="avg",
+                        green_gt=10,
+                        yellow_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 4},
+                    "id": 780015,
+                },
+                {
+                    **_qv(
+                        "ACOS Ads",
+                        "avg:robo.ads.acos_atual{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.15,
+                        red_gt=0.20,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 4},
+                    "id": 780016,
+                },
+                {
+                    **_qv(
+                        "Envios pendentes",
+                        "avg:robo.ml.saude.envios_pendentes{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 4},
+                    "id": 780017,
+                },
+                {
+                    **_qv(
+                        "Sem cor reputacao (0/1)",
+                        "avg:robo.ml.saude.sem_cor{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 4},
+                    "id": 780018,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_ecommerce() -> None:
     """Dashboard Ecommerce: catalogo, batalha, ads/vendas/decisao."""
     ecom_id = _resolver_dash_ecommerce()
@@ -3003,12 +3346,16 @@ def atualizar_dashboard_ecommerce() -> None:
             "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
             "**invest. validacao**, **kits Cruzeiro**, **oportunidades/Livia**, "
             "**taxa de crescimento** e **custo/Ads**.\n\n"
+            "**2o CNPJ / CNAE:** grupo [CNAE / 2o CNPJ] — gaps de KYC agora; "
+            "liberado só quando Impala bater a checklist (20 reviews / 4.8 / MLB / estoque).\n\n"
+            "**Saude da conta ML:** grupo [Saude conta ML] — reputação, anúncios, "
+            "claims e receita dos *seus* pedidos (não é radar de concorrente).\n\n"
             f"**Robo / plataforma:** [Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
             f"**Masterprint (filamentos / pinceis / apagadores):** "
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="orange",
-        height=2,
+        height=3,
     )
     cat = _grupo_catalogo_impala()
     cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
@@ -3016,15 +3363,19 @@ def atualizar_dashboard_ecommerce() -> None:
     bat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     com = _grupo_operacao_comercial()
     com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+    saude = _grupo_saude_conta_ml()
+    saude["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
+    ruptura = _grupo_ponto_ruptura_cnae()
+    ruptura["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
-            "ABA ECOMMERCE: catalogo Impala, batalha, ads e vendas. "
+            "ABA ECOMMERCE: catalogo Impala, batalha, ads, saude da conta ML, CNAE/2o CNPJ. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
             f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
-        "widgets": [note, com, cat, bat],
+        "widgets": [note, com, cat, bat, saude, ruptura],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -3066,6 +3417,8 @@ def atualizar_dashboard_masterprint() -> None:
     merc["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     com = _grupo_operacao_masterprint()
     com["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
+    ruptura = _grupo_ponto_ruptura_cnae()
+    ruptura["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_MASTERPRINT_TITLE,
@@ -3074,7 +3427,7 @@ def atualizar_dashboard_masterprint() -> None:
             "(custos, mercado ML, margem). "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, funil, com, cat, merc],
+        "widgets": [note, funil, com, cat, merc, ruptura],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -3492,6 +3845,67 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p2"],
             "options": {
                 "thresholds": {"critical": 10},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] CNAE segundo CNPJ — prepare (gaps)",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.cnae_preparacao.gaps{*} > 0",
+            "message": (
+                "Ainda falta preparar o 2o CNPJ (Masterprint 23.811.261/0001-97) "
+                "antes da ruptura do Impala.\n"
+                "Gaps tipicos: seller_id ML vazio (KYC) ou CNAE 4751-2/01 / "
+                "4689-3/02 / 4761-0/03 ausente.\n"
+                "Acao: Junta/Receita + KYC ML; preencher MASTERPRINT_ML_SELLER_ID. "
+                "Nao publique o catalogo nem ligue CNPJ_DONO_PRODUTOS_USAR_ALVO.\n"
+                "Telegram semanal: agente ponto_ruptura_segundo_cnpj (08:05 BRT).\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:cnae_prep", "severity:p3"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 3,
+        },
+        {
+            "name": "[Robo] Ponto ruptura — Impala aproximando",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.ponto_ruptura.aproximando{*} > 0.5",
+            "message": (
+                "Impala esta se aproximando do ponto de ruptura (reviews/estoque/MLB). "
+                "Acelere CNAE/KYC do Masterprint agora — ainda NAO ligue o 2o CNPJ.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:ponto_ruptura", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0.5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Ponto ruptura — segundo CNPJ liberado",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.ponto_ruptura.liberado{*} > 0.5",
+            "message": (
+                "Checklist Impala completa (20 reviews / 4.8 / MLB kits / estoque / "
+                "pedido / ACOS). Segundo CNPJ pode entrar em acao: 1 filamento "
+                "PLA/PETG preto, Bling + token ML deste CNPJ, chat separado. "
+                "Ads Masterprint so depois. Nao ligue CNPJ_DONO_PRODUTOS_USAR_ALVO ainda.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:ponto_ruptura", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0.5},
                 "notify_no_data": False,
                 "require_full_window": False,
                 "include_tags": True,

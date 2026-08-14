@@ -51,6 +51,41 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         nomes = [m["name"] for m in dd._monitores_desejados()]
         self.assertTrue(any("Funil ML" in n for n in nomes))
 
+    def test_monitores_cnae_e_ponto_ruptura(self):
+        nomes = [m["name"] for m in dd._monitores_desejados()]
+        self.assertTrue(any("CNAE segundo CNPJ" in n for n in nomes))
+        self.assertTrue(any("Ponto ruptura — Impala aproximando" in n for n in nomes))
+        self.assertTrue(any("segundo CNPJ liberado" in n for n in nomes))
+        grupo = dd._grupo_ponto_ruptura_cnae()
+        blob = str(grupo)
+        for metric in (
+            "robo.cnae_preparacao.gaps",
+            "robo.cnae_preparacao.seller_masterprint",
+            "robo.cnae_preparacao.pronto",
+            "robo.ponto_ruptura.liberado",
+            "robo.ponto_ruptura.aproximando",
+            "robo.ponto_ruptura.progresso_pct",
+            "robo.ponto_ruptura.avaliacoes",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_PONTO_RUPTURA_ID)
+
+    def test_grupo_saude_conta_ml(self):
+        grupo = dd._grupo_saude_conta_ml()
+        blob = str(grupo)
+        for metric in (
+            "robo.ml.saude.vendas_completadas",
+            "robo.ml.saude.avaliacoes",
+            "robo.ml.saude.nota",
+            "robo.ml.saude.claims_rate_pct",
+            "robo.ml.saude.anuncios_ativos",
+            "robo.ml.saude.todos_pausados",
+            "robo.vendas.receita_bruta",
+            "robo.ads.acos_atual",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_SAUDE_CONTA_ML_ID)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,103 @@
+name: Ponto de ruptura 2º CNPJ + CNAE
+
+# Todo dia: avalia se o Impala liberou o segundo CNPJ (Masterprint)
+# e alerta gaps de CNAE/KYC para preparar com antecedência.
+# Métricas Datadog: robo.ponto_ruptura.* e robo.cnae_preparacao.*
+
+on:
+  workflow_dispatch:
+    inputs:
+      forcar:
+        description: "Enviar Telegram mesmo em cooldown (1/0)"
+        required: false
+        default: "0"
+  schedule:
+    # 08:05 BRT = 11:05 UTC — logo após ads_gatilho (11:00)
+    - cron: "5 11 * * *"
+
+concurrency:
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  PONTO_RUPTURA_ATIVO: "1"
+  PONTO_RUPTURA_ALERTA: "1"
+
+jobs:
+  avaliar:
+    name: Ruptura Impala → 2º CNPJ + CNAE
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar snapshots
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/ponto_ruptura_segundo_cnpj_ultima.json
+            logs/margem_vendas_ultima.json
+            logs/ads_gatilho_ultima.json
+            logs/resumo_conta_ml_ultima.json
+          key: ponto-ruptura-${{ github.run_id }}
+          restore-keys: |
+            ponto-ruptura-
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Avaliar ponto de ruptura + CNAE
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.forcar }}" = "1" ]; then
+            ARGS="--forcar"
+          fi
+          python -m agentes.empresa.agente_ponto_ruptura_segundo_cnpj $ARGS
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          MASTERPRINT_ML_SELLER_ID: ${{ secrets.MASTERPRINT_ML_SELLER_ID }}
+          MASTERPRINT_ML_NICKNAME: ${{ secrets.MASTERPRINT_ML_NICKNAME }}
+          ESMALTES_CNPJ: ${{ vars.ESMALTES_CNPJ || '52668583000127' }}
+          DEMAIS_PRODUTOS_CNPJ: ${{ vars.DEMAIS_PRODUTOS_CNPJ || '23811261000197' }}
+          MASTERPRINT_CNPJ: ${{ secrets.MASTERPRINT_CNPJ }}
+          PONTO_RUPTURA_ATIVO: "1"
+          PONTO_RUPTURA_ALERTA: "1"
+      - name: Publicar snapshot
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/ponto_ruptura_segundo_cnpj_ultima.json
+            logs/alertas_cooldown.json
+            logs/margem_vendas_ultima.json
+            logs/ads_gatilho_ultima.json
+            logs/resumo_conta_ml_ultima.json
+          key: ponto-ruptura-${{ github.run_id }}
+      - name: Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ponto-ruptura-segundo-cnpj
+          path: logs/ponto_ruptura_segundo_cnpj_ultima.json
+          retention-days: 30
+          if-no-files-found: ignore

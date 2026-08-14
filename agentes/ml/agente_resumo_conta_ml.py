@@ -22,7 +22,11 @@ from core.config import (
 )
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
-from integracoes.ml.resumo_conta import coletar_resumo_conta, montar_mensagem_telegram
+from integracoes.ml.resumo_conta import (
+    coletar_resumo_conta,
+    emitir_metricas_saude_conta,
+    montar_mensagem_telegram,
+)
 
 logger = logging.getLogger("agente_resumo_conta_ml")
 
@@ -36,6 +40,7 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             logger.warning("Telegram gestor não configurado — resumo conta sem envio")
 
         resumo = coletar_resumo_conta(max_anuncios_performance=RESUMO_CONTA_ML_MAX_PERFORMANCE)
+        emitir_metricas_saude_conta(resumo)
         msg = montar_mensagem_telegram(resumo)
         escrever_json_atomico(
             SNAPSHOT_PATH,
@@ -79,10 +84,14 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             "perguntas": resumo.get("perguntas_pendentes"),
             "mensagem": msg,
         }
-    except Exception as exc:
-        logger.error("agente_resumo_conta_ml erro: %s", exc)
-        incrementar("ml.resumo_conta.erro")
-        return {"ok": False, "erro": str(exc), "alerta_enviado": False}
+        except Exception as exc:
+            logger.error("agente_resumo_conta_ml erro: %s", exc)
+            incrementar("ml.resumo_conta.erro")
+            try:
+                emitir_metricas_saude_conta({"ok": False})
+            except Exception:
+                pass
+            return {"ok": False, "erro": str(exc), "alerta_enviado": False}
 
 
 def main() -> int:

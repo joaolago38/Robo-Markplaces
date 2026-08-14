@@ -84,16 +84,26 @@
     "critico": true,
     "ignorar_ausente": true
   },
-  {
-    "id": "ads_gatilho",
-    "ativo": true,
-    "nome": "Gatilho Product Ads ML",
-    "path": "logs/ads_gatilho_ultima.json",
-    "campo": "timestamp",
-    "max_horas": 30,
-    "critico": true,
-    "ignorar_ausente": true
-  },
+    {
+      "id": "ads_gatilho",
+      "ativo": true,
+      "nome": "Gatilho Product Ads ML",
+      "path": "logs/ads_gatilho_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": true,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "ponto_ruptura_segundo_cnpj",
+      "ativo": true,
+      "nome": "Ponto de ruptura 2º CNPJ + CNAE",
+      "path": "logs/ponto_ruptura_segundo_cnpj_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 26,
+      "critico": false,
+      "ignorar_ausente": true
+    },
   {
     "id": "chat",
     "ativo": true,

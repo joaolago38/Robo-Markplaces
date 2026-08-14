@@ -240,6 +240,32 @@ MONITOR_CNPJ_CNAE_COOLDOWN_SEG = int(
         str(MONITOR_CNPJ_CNAE_INTERVALO_DIAS * 24 * 3600),
     )
 )
+# Ponto de ruptura Impala → segundo CNPJ (Masterprint) + alerta CNAE
+PONTO_RUPTURA_ATIVO = os.getenv("PONTO_RUPTURA_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+PONTO_RUPTURA_ALERTA = os.getenv("PONTO_RUPTURA_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+PONTO_RUPTURA_APROXIMANDO_AVALIACOES = int(
+    os.getenv("PONTO_RUPTURA_APROXIMANDO_AVALIACOES", "10")
+)
+PONTO_RUPTURA_ESTOQUE_MIN = int(
+    os.getenv(
+        "PONTO_RUPTURA_ESTOQUE_MIN",
+        str(REGRAS.get("estoque_critico_unidades", 30)),
+    )
+)
+PONTO_RUPTURA_COOLDOWN_LIBERADO_SEG = int(
+    os.getenv("PONTO_RUPTURA_COOLDOWN_LIBERADO_SEG", str(7 * 24 * 3600))
+)
+PONTO_RUPTURA_COOLDOWN_CNAE_SEG = int(
+    os.getenv("PONTO_RUPTURA_COOLDOWN_CNAE_SEG", str(7 * 24 * 3600))
+)
 # Limites de decisão do ecossistema (Alibaba + USD + vendas + saúde ML × CNAE/CNPJ)
 DECISION_LIMITS_ATIVO = os.getenv("DECISION_LIMITS_ATIVO", "1").strip().lower() not in (
     "0",
@@ -1109,7 +1135,7 @@ ORQUESTRADOR_EXCLUIR = {
         "montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,"
         "leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,"
         "alibaba_sourcing,comparar_portos_alibaba,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,"
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,"
         "sincronizar_estoque,repricing,repricing_impala,operacao_24h,"
         "chat_shopee,chat_magalu,chat_amazon,auto_respostas",
     ).split(",")
