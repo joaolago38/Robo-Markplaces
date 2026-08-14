@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-13T14:24:15.973936+00:00",
+  "timestamp": "2026-08-14T22:53:09.635679+00:00",
   "cotacao": {
     "ok": true,
     "usd_brl": 5.5,
@@ -9,8 +9,8 @@
   "resultados": [
     {
       "id": "p1",
-      "produto": "Frasco",
-      "oportunidades_total": 1,
+      "produto": "Filamento 3D",
+      "oportunidades_total": 0,
       "novos": [],
       "ok": true
     }

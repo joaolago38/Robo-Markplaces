@@ -1,8 +1,7 @@
 {
-  "timestamp": "2026-08-13T14:24:15.855043+00:00",
+  "timestamp": "2026-08-14T22:53:12.303464+00:00",
   "ok": true,
-  "marketplace": "mercadolivre",
-  "respondidas": 0,
-  "falhas": 0,
-  "fila": 1
+  "marketplace": "shopee",
+  "respondidas": 1,
+  "falhas": 0
 }
