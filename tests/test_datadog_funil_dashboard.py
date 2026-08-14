@@ -67,6 +67,10 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ponto_ruptura.aproximando",
             "robo.ponto_ruptura.progresso_pct",
             "robo.ponto_ruptura.avaliacoes",
+            "robo.ruptura.impala.saude_score",
+            "robo.ruptura.impala.produtos_seguros",
+            "robo.ruptura.impala.margem_media_segura_pct",
+            "robo.ruptura.impala.esforco_faltando",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_PONTO_RUPTURA_ID)

@@ -190,15 +190,16 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "ecossistema repetir o mesmo tema. Demais marketplaces ficam abertos no perfil."
     ),
     "ponto_ruptura_segundo_cnpj": (
-        "Cruza reputação, MLB, estoque, pedido e ACOS do Impala para dizer se o "
-        "segundo CNPJ (Masterprint) pode entrar em ação. Enquanto isso, alerta "
-        "CNAE/KYC que ainda faltam para você ir preparando. Não publica anúncio "
-        "nem liga a flag de dono de produto."
+        "Cruza reputação, MLB, estoque, pedido e ACOS do Impala e, quando a ruptura "
+        "está perto ou liberada, o Claude resume esforço, atitudes já tomadas e "
+        "quais kits Impala têm margem segura no ML. Também alerta CNAE/KYC do "
+        "segundo CNPJ (Masterprint). Não publica anúncio nem liga a flag de dono."
     ),
     "ponto_ruptura_outra_marca": (
         "Diz se o CNPJ Impala (52.668.583/0001-27) já pode entrar com outra marca "
-        "de esmalte. Mercado Livre é o referente de demanda; o mesmo CNPJ é a "
-        "identidade em Shopee/Magalu/Amazon. Não publica anúncio e não troca de CNPJ."
+        "de esmalte. Inclui prévia da saúde Impala no ML, esforço restante e "
+        "produtos com margem segura (Claude no veredito aproximando/liberado). "
+        "Não publica anúncio e não troca de CNPJ."
     ),
     "monitor_acetona_cruzeiro": (
         "Anexo: acetona Cruzeiro no ML. Digest semanal (sexta) — "
@@ -365,11 +366,11 @@ HORARIOS_AGENTES: dict[str, str] = {
     ),
     "ponto_ruptura_segundo_cnpj": (
         "Todo dia às 08:05 BRT (Actions); fora do orquestrador 30 min. "
-        "Telegram só no veredito (CNAE semanal / aproximando / liberado)."
+        "Telegram no veredito (CNAE semanal / aproximando 24h / liberado) com briefing Impala."
     ),
     "ponto_ruptura_outra_marca": (
         "Todo dia às 08:05 BRT (mesmo workflow do 2º CNPJ); fora do orquestrador 30 min. "
-        "Telegram só no veredito (aproximando / radar cego / liberado)."
+        "Telegram no veredito (aproximando 24h / radar cego / liberado) com briefing Impala."
     ),
     "monitor_acetona_cruzeiro": "1x/semana sexta 09:00 BRT (anexo)",
     "descoberta_produtos": "Debug manual (sem Telegram) — fora do foco Impala",

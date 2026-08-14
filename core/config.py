@@ -266,6 +266,15 @@ PONTO_RUPTURA_COOLDOWN_LIBERADO_SEG = int(
 PONTO_RUPTURA_COOLDOWN_CNAE_SEG = int(
     os.getenv("PONTO_RUPTURA_COOLDOWN_CNAE_SEG", str(7 * 24 * 3600))
 )
+PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG = int(
+    os.getenv("PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG", str(24 * 3600))
+)
+# Claude no briefing de ruptura Impala (análise; não publica anúncio).
+RUPTURA_CLAUDE = os.getenv("RUPTURA_CLAUDE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 # Limites de decisão do ecossistema (Alibaba + USD + vendas + saúde ML × CNAE/CNPJ)
 DECISION_LIMITS_ATIVO = os.getenv("DECISION_LIMITS_ATIVO", "1").strip().lower() not in (
     "0",

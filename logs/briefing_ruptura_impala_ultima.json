@@ -1,0 +1,248 @@
+{
+  "ok": true,
+  "veredito": "liberado",
+  "saude_score": 30.0,
+  "esforco": {
+    "faltando_n": 0,
+    "feitos_n": 6,
+    "faltando": [],
+    "feitos": [
+      {
+        "id": "impala_fase1",
+        "rotulo": "Impala passou na checklist (reviews/MLB/estoque/pedido)",
+        "atual": "liberado",
+        "minimo": "liberado",
+        "atitude": "Fechar a checklist Impala (reviews / MLB / estoque / pedido) antes de outra marca."
+      },
+      {
+        "id": "anuncios_foco",
+        "rotulo": "Há anúncio Impala ativo no ML",
+        "atual": 2,
+        "minimo": ">=1",
+        "atitude": "Há anúncio Impala ativo no ML."
+      },
+      {
+        "id": "cnpj_ml",
+        "rotulo": "CNPJ 52.668.583/0001-27 identificado no ML",
+        "atual": "1651424153",
+        "minimo": "seller_id",
+        "atitude": "Confirmar seller_id do CNPJ 52.668.583/0001-27 no ML."
+      },
+      {
+        "id": "cnae_cosmetico",
+        "rotulo": "CNAE 4772500 (cosméticos) neste CNPJ",
+        "atual": "ok",
+        "minimo": "4772500",
+        "atitude": "Manter CNAE 4772-5/00 neste CNPJ."
+      },
+      {
+        "id": "radar_ml",
+        "rotulo": "Amostra ML suficiente para ranquear marcas",
+        "atual": "anuncios_outras=8",
+        "minimo": ">=5",
+        "atitude": "Radar de concorrentes precisa de amostra (≥5 anúncios) — busca 403 deixa o ranking cego."
+      },
+      {
+        "id": "candidata",
+        "rotulo": "Há marca candidata (não Impala) no referente ML",
+        "atual": "Anita",
+        "minimo": "top1",
+        "atitude": "Só ranquear outra marca quando houver anúncios/vendas na amostra."
+      }
+    ]
+  },
+  "produtos": {
+    "piso_pct": 15.0,
+    "seguros": [],
+    "seguros_n": 0,
+    "risco_n": 14,
+    "risco_top": [
+      {
+        "sku": "IMP-PERL-004",
+        "kit_tag": "kit:perl004",
+        "papel": "entrada",
+        "preco": 39.9,
+        "margem_real_pct": 16.26,
+        "lucro_ref_ml": 17.96,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": true,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ]
+      },
+      {
+        "sku": "IMP-VR-015",
+        "kit_tag": "kit:vr015",
+        "papel": "giro",
+        "preco": 69.9,
+        "margem_real_pct": -20.86,
+        "lucro_ref_ml": 11.73,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": true,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-20.86%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-SORT-010",
+        "kit_tag": "kit:sort010",
+        "papel": "atacado",
+        "preco": 48.0,
+        "margem_real_pct": -28.73,
+        "lucro_ref_ml": 5.66,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": true,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-28.73%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-NUDE-010",
+        "kit_tag": "kit:nude010",
+        "papel": "catalogo",
+        "preco": 49.9,
+        "margem_real_pct": -24.51,
+        "lucro_ref_ml": 8.94,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-24.51%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-CLAS-012",
+        "kit_tag": "kit:clas012",
+        "papel": "catalogo",
+        "preco": 54.9,
+        "margem_real_pct": -30.11,
+        "lucro_ref_ml": 9.68,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-30.11%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-ATAC-030",
+        "kit_tag": "kit:atac030",
+        "papel": "catalogo",
+        "preco": 119.9,
+        "margem_real_pct": -23.63,
+        "lucro_ref_ml": 16.57,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-23.63%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-MIMO-003",
+        "kit_tag": "kit:mimo003",
+        "papel": "catalogo",
+        "preco": 44.9,
+        "margem_real_pct": 19.35,
+        "lucro_ref_ml": 10.48,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ]
+      },
+      {
+        "sku": "IMP-BAIL-005",
+        "kit_tag": "kit:bail005",
+        "papel": "catalogo",
+        "preco": 48.9,
+        "margem_real_pct": 10.88,
+        "lucro_ref_ml": 7.27,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_10.88%_abaixo_15.0%"
+        ]
+      }
+    ],
+    "margem_media_segura_pct": 0.0
+  },
+  "previa_ml": {
+    "anuncios_ativos_foco": 0,
+    "anuncios_pausados_foco": 0,
+    "legado_ignorado": 38,
+    "foco_vazio": true,
+    "reputacao_cor": "Sem cor ainda",
+    "avaliacoes": 0,
+    "nota": 0.0,
+    "vendas_completadas": 0,
+    "claims": 0,
+    "receita_bruta_24h": 0.0,
+    "itens_margem_24h": 0,
+    "acos": 0.0,
+    "acoes_batalha": [
+      {
+        "sku": "IMP-PERL-004",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "IMP-VR-015",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "IMP-SORT-010",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "BUNDLE-777-5ESM",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "IMP-NUDE-010",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      }
+    ]
+  },
+  "resumo_deterministico": "Veredito *liberado* · saúde Impala ML `30.0/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nJá encaminhado: Impala passou na checklist (reviews/MLB/estoque/pedido), Há anúncio Impala ativo no ML, CNPJ 52.668.583/0001-27 identificado no ML, CNAE 4772500 (cosméticos) neste CNPJ.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
+  "resumo_claude": "",
+  "claude_ok": false,
+  "cnpj": "52.668.583/0001-27",
+  "timestamp": "2026-08-14T23:36:46.686786+00:00"
+}

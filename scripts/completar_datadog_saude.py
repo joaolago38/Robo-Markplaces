@@ -3098,6 +3098,53 @@ def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
                     "id": 770008,
                 },
+                {
+                    **_qv(
+                        "Saude Impala (0-100)",
+                        "avg:robo.ruptura.impala.saude_score{*}",
+                        aggregator="avg",
+                        green_gt=70,
+                        yellow_gt=40,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 4},
+                    "id": 770009,
+                },
+                {
+                    **_qv(
+                        "Kits margem segura",
+                        "avg:robo.ruptura.impala.produtos_seguros{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 4},
+                    "id": 770010,
+                },
+                {
+                    **_qv(
+                        "Margem media segura %",
+                        "avg:robo.ruptura.impala.margem_media_segura_pct{*}",
+                        aggregator="avg",
+                        green_gt=14,
+                        yellow_gt=9,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 4},
+                    "id": 770011,
+                },
+                {
+                    **_qv(
+                        "Esforco faltando / Claude",
+                        "avg:robo.ruptura.impala.esforco_faltando{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 4},
+                    "id": 770012,
+                },
             ],
         },
         "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
@@ -3589,7 +3636,8 @@ def atualizar_dashboard_ecommerce() -> None:
             "**Outra marca de esmalte:** grupo [Ruptura outra marca] — mesmo CNPJ "
             "52.668.583/0001-27 em todos os canais; Mercado Livre é o referente de "
             "demanda (Anita / Risque / Colorama / …). Liberado só com checklist Impala "
-            "+ anúncio ativo + radar ML com amostra.\n\n"
+            "+ anúncio ativo + radar ML com amostra. Claude entra no veredito "
+            "aproximando/liberado com esforço, produtos de margem segura e prévia ML.\n\n"
             "**Marca × kit × tendência:** grupo [Marca x kit x tendencia] — o robô "
             "identifica no ML marcas e tamanhos de kit que oferecem condição e cruzam "
             "com tendência (confirmada/oportunidade).\n\n"
@@ -4132,7 +4180,9 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "query": "avg(last_2d):avg:robo.ponto_ruptura.aproximando{*} > 0.5",
             "message": (
                 "Impala esta se aproximando do ponto de ruptura (reviews/estoque/MLB). "
-                "Acelere CNAE/KYC do Masterprint agora — ainda NAO ligue o 2o CNPJ.\n"
+                "Claude + briefing: esforco restante, kits com margem segura e previa do ML. "
+                "Nao escale Ads nem outra marca ate a checklist fechar. "
+                "Nao ligue o 2o CNPJ nem CNPJ_DONO_PRODUTOS_USAR_ALVO.\n"
                 + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:ponto_ruptura", "severity:p2"],

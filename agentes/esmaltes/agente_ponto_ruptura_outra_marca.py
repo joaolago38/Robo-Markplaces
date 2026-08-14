@@ -19,6 +19,7 @@ from core.atomic_io import escrever_json_atomico
 from core.config import (
     PONTO_RUPTURA_ALERTA,
     PONTO_RUPTURA_ATIVO,
+    PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG,
     PONTO_RUPTURA_COOLDOWN_CNAE_SEG,
     PONTO_RUPTURA_COOLDOWN_LIBERADO_SEG,
     ROOT,
@@ -26,6 +27,7 @@ from core.config import (
 from core.datadog_metrics import gauge, incrementar
 from core.horario import agora_brasil
 from core.notificador import alertar_gestor, gestor_telegram_configurado
+from integracoes.esmaltes.briefing_ruptura_impala import anexar_briefing, formatar_secao_briefing
 from integracoes.esmaltes.ponto_ruptura_outra_marca import avaliar_ruptura_outra_marca
 
 logger = logging.getLogger("agente_ponto_ruptura_outra_marca")
@@ -95,10 +97,11 @@ def montar_mensagem(resultado: dict[str, Any], *, modo: str) -> str:
         linhas.extend(
             [
                 "",
-                "*Ação:* fechar a checklist Impala (reviews / MLB / estoque / anúncio ativo) "
-                "antes de comprar outra marca.",
+                "*Ação:* a ruptura Impala está perto. Feche MLB/estoque/anúncio "
+                "ativo com os kits de margem segura abaixo, antes de comprar outra marca.",
             ]
         )
+    linhas.extend(formatar_secao_briefing(resultado.get("briefing")))
     return "\n".join(linhas)
 
 
@@ -140,6 +143,7 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             return {"ok": False, "motivo": "agente_desligado", "alerta_enviado": False}
 
         resultado = avaliar_ruptura_outra_marca()
+        resultado = anexar_briefing(resultado)
         resultado["timestamp"] = datetime.now(timezone.utc).isoformat()
         resultado["gerado_em"] = agora_brasil().isoformat()
         _emitir_metricas(resultado)
@@ -157,10 +161,12 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
         elif resultado.get("radar_cego") and ver == "aproximando":
             modo = "radar"
             chave = "marca_esmalte:radar"
+            cooldown = PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG
             deve = True
         elif ver == "aproximando":
             modo = "aproximando"
             chave = "marca_esmalte:aproximando"
+            cooldown = PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG
             deve = True
         if forcar:
             deve = True

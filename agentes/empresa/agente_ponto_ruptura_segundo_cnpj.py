@@ -19,6 +19,7 @@ from core.atomic_io import escrever_json_atomico
 from core.config import (
     PONTO_RUPTURA_ALERTA,
     PONTO_RUPTURA_ATIVO,
+    PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG,
     PONTO_RUPTURA_COOLDOWN_CNAE_SEG,
     PONTO_RUPTURA_COOLDOWN_LIBERADO_SEG,
     ROOT,
@@ -27,6 +28,7 @@ from core.datadog_metrics import gauge, incrementar
 from core.horario import agora_brasil
 from core.notificador import alertar_gestor, gestor_telegram_configurado
 from integracoes.empresa.ponto_ruptura_segundo_cnpj import avaliar_ponto_ruptura
+from integracoes.esmaltes.briefing_ruptura_impala import anexar_briefing, formatar_secao_briefing
 
 logger = logging.getLogger("agente_ponto_ruptura_segundo_cnpj")
 
@@ -91,10 +93,11 @@ def montar_mensagem(resultado: dict[str, Any], *, modo: str) -> str:
         linhas.extend(
             [
                 "",
-                "*Ação:* acelerar CNAE/KYC do segundo CNPJ. Impala ainda não "
-                "liberou operação Masterprint.",
+                "*Ação:* a ruptura Impala está perto. Use a prévia ML e os kits "
+                "com margem segura abaixo — não escale Ads nem outra marca ainda.",
             ]
         )
+    linhas.extend(formatar_secao_briefing(resultado.get("briefing")))
     return "\n".join(linhas)
 
 
@@ -125,6 +128,7 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             return {"ok": False, "motivo": "agente_desligado", "alerta_enviado": False}
 
         resultado = avaliar_ponto_ruptura()
+        resultado = anexar_briefing(resultado)
         resultado["timestamp"] = datetime.now(timezone.utc).isoformat()
         resultado["gerado_em"] = agora_brasil().isoformat()
         _emitir_metricas(resultado)
@@ -149,7 +153,7 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             deve = True
         elif ver == "aproximando":
             modo = "aproximando"
-            cooldown = PONTO_RUPTURA_COOLDOWN_CNAE_SEG
+            cooldown = PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG
             chave = "ponto_ruptura:aproximando"
             deve = True
         if forcar:

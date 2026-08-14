@@ -3,46 +3,46 @@
     {
       "fingerprint": "816423eaab464acaca7c",
       "primeira_vez": "2026-08-14T23:09:02.012708+00:00",
-      "ultima_vez": "2026-08-14T23:14:04.936182+00:00",
+      "ultima_vez": "2026-08-14T23:35:55.174523+00:00",
       "logger": "ml_client",
       "mensagem": "ML buscar_perfil_vendedor erro: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 3
+      "ocorrencias": 5
     },
     {
       "fingerprint": "beeab7357ef6bd50c2e0",
       "primeira_vez": "2026-08-14T23:09:02.002418+00:00",
-      "ultima_vez": "2026-08-14T23:14:04.482182+00:00",
+      "ultima_vez": "2026-08-14T23:35:55.167134+00:00",
       "logger": "http_client",
       "mensagem": "HTTP GET api.mercadolibre.com falhou: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
       "status": "error",
       "error_kind": "OSError",
       "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
-      "ocorrencias": 3
+      "ocorrencias": 5
     },
     {
       "fingerprint": "a2bdd030e3e2c7f1e9ac",
       "primeira_vez": "2026-08-14T23:09:01.989044+00:00",
-      "ultima_vez": "2026-08-14T23:14:03.360923+00:00",
+      "ultima_vez": "2026-08-14T23:35:55.157264+00:00",
       "logger": "token_manager",
       "mensagem": "Erro ao renovar token ML: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 3
+      "ocorrencias": 5
     },
     {
       "fingerprint": "10ee29bd9833d27b02e4",
       "primeira_vez": "2026-08-14T23:09:01.972983+00:00",
-      "ultima_vez": "2026-08-14T23:14:02.517375+00:00",
+      "ultima_vez": "2026-08-14T23:35:55.145253+00:00",
       "logger": "http_client",
       "mensagem": "HTTP POST api.mercadolibre.com falhou: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
       "status": "error",
       "error_kind": "OSError",
       "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
-      "ocorrencias": 3
+      "ocorrencias": 5
     },
     {
       "fingerprint": "6bd386e0e78d2a0affac",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-08-14T23:14:04.936182+00:00"
+  "atualizado_em": "2026-08-14T23:35:55.174523+00:00"
 }
