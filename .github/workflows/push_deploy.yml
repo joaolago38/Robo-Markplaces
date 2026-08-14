@@ -72,7 +72,7 @@ jobs:
             --mensagem "${{ inputs.mensagem_commit }}" \
             $ARGS
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,alibaba_sourcing,comparar_portos_alibaba,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,ads_gatilho,ponto_ruptura_segundo_cnpj,relatorio_estrategia_ml,relatorio_manha_ml,vigia_datadog,promocoes_manicures,resumo_conta_ml,montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,sincronizar_estoque,repricing,repricing_impala,operacao_24h,chat_shopee,chat_magalu,chat_amazon,auto_respostas
+          ORQUESTRADOR_EXCLUIR: leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,alibaba_sourcing,comparar_portos_alibaba,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,ads_gatilho,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,relatorio_estrategia_ml,relatorio_manha_ml,vigia_datadog,promocoes_manicures,resumo_conta_ml,montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,sincronizar_estoque,repricing,repricing_impala,operacao_24h,chat_shopee,chat_magalu,chat_amazon,auto_respostas
           ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG: "0.4"
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}

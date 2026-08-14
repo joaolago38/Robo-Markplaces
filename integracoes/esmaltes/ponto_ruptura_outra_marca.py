@@ -30,7 +30,7 @@ CNPJ_IMPALA = "52668583000127"
 CATALOGO_PATH = ROOT / "catalogo" / "marcas_esmalte_candidatas.json"
 SNAPSHOT_MERCADO = ROOT / "logs" / "esmaltes_mercado_ultima.json"
 SNAPSHOT_ANITA = ROOT / "logs" / "anita_esmaltes_ultima.json"
-SNAPSHOT_KITS = ROOT / "logs" / "kits_esmaltes_ultima.json"
+SNAPSHOT_KITS = ROOT / "logs" / "esmaltes_kits_monitor_ultima.json"
 SNAPSHOT_RESUMO = ROOT / "logs" / "resumo_conta_ml_ultima.json"
 
 CANAIS = ("mercadolivre", "shopee", "magalu", "amazon")

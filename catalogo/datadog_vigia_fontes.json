@@ -104,6 +104,16 @@
       "critico": false,
       "ignorar_ausente": true
     },
+    {
+      "id": "ponto_ruptura_outra_marca",
+      "ativo": true,
+      "nome": "Ponto de ruptura outra marca de esmalte",
+      "path": "logs/ponto_ruptura_outra_marca_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 26,
+      "critico": false,
+      "ignorar_ausente": true
+    },
   {
     "id": "chat",
     "ativo": true,

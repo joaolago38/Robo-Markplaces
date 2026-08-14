@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-08-14T23:25:00.269695+00:00",
+  "total": 2,
+  "boas_performance": 0,
+  "ranking": [
+    {
+      "marca": "Impala",
+      "slug": "impala",
+      "qtd_kit": 5,
+      "vendidos": 200,
+      "volume_proxy": 200,
+      "anuncios": 1,
+      "preco_medio": 42.0,
+      "preco_por_unidade": 8.4,
+      "cores_tendencia": [],
+      "status_tendencia": "sem_tendencia",
+      "condicao_ok": true,
+      "performance_boa": false,
+      "score": 2217
+    },
+    {
+      "marca": "Anita",
+      "slug": "anita",
+      "qtd_kit": 5,
+      "vendidos": 120,
+      "volume_proxy": 120,
+      "anuncios": 1,
+      "preco_medio": 45.0,
+      "preco_por_unidade": 9.0,
+      "cores_tendencia": [],
+      "status_tendencia": "sem_tendencia",
+      "condicao_ok": true,
+      "performance_boa": false,
+      "score": 1337
+    }
+  ],
+  "marca_kit_boas": []
+}

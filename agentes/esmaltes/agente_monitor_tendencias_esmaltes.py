@@ -29,7 +29,12 @@ from core.graficos import grafico_evolucao
 from core.notificador import alertar_gestor, chave_resumo_periodo, enviar_foto_gestor
 from core.prontidao import pode_alertar_esmaltes
 from core.series_historica import formatar_comparativo, registrar_ponto
-from integracoes.esmaltes.cruzamento_tendencias_mercado import consolidar_varredura, processar_segmento
+from integracoes.esmaltes.cruzamento_tendencias_mercado import (
+    consolidar_varredura,
+    cruzar_marca_kit_de_snapshots,
+    emitir_metricas_marca_kit,
+    processar_segmento,
+)
 from integracoes.marketplaces.busca_multi_marketplace import resolver_fn_busca_esmaltes
 
 logger = logging.getLogger("agente_monitor_tendencias_esmaltes")
@@ -220,6 +225,20 @@ def montar_mensagem_telegram(
         for t in saturadas[:4]:
             linhas.append(f"• {t.get('cor', '?')} — {t.get('peso_vendas_mp', 0)} vendas (proxy)")
 
+    marca_kit = consolidado.get("marca_kit_boas") or consolidado.get("top_marca_kit") or []
+    if marca_kit:
+        linhas.extend(["", "*Marcas × kits no ML (condição + tendência)*"])
+        for row in marca_kit[:6]:
+            kit = row.get("qtd_kit")
+            st = row.get("status_tendencia") or "—"
+            cores = ", ".join(row.get("cores_tendencia") or []) or "—"
+            preco = _fmt_brl(row.get("preco_medio"))
+            flag = "boa performance" if row.get("performance_boa") else "só presença"
+            linhas.append(
+                f"• *{row.get('marca')}* kit {kit} — {flag} | {st} | {preco} "
+                f"({row.get('anuncios', 0)} anúnc.) | cores: {cores}"
+            )
+
     return "\n".join(linhas).strip()
 
 
@@ -263,6 +282,10 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                 time.sleep(ESMALTES_TENDENCIAS_PAUSA_SEG)
 
         consolidado = consolidar_varredura(resultados)
+        if not consolidado.get("top_marca_kit"):
+            extra = cruzar_marca_kit_de_snapshots()
+            consolidado["top_marca_kit"] = extra[:12]
+            consolidado["marca_kit_boas"] = [x for x in extra if x.get("performance_boa")][:8]
         diag_coleta = diagnosticar_fontes_vazias(resultados)
         if diag_coleta:
             logger.warning(
@@ -327,6 +350,7 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
 
         gauge("esmaltes.tendencias.oportunidades", float(len(consolidado.get("top_oportunidades") or [])))
         gauge("esmaltes.tendencias.confirmadas", float(len(consolidado.get("top_confirmadas") or [])))
+        emitir_metricas_marca_kit(consolidado.get("top_marca_kit") or [])
         incrementar("esmaltes.tendencias.rodadas")
 
         return {

@@ -56,6 +56,7 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         self.assertTrue(any("CNAE segundo CNPJ" in n for n in nomes))
         self.assertTrue(any("Ponto ruptura — Impala aproximando" in n for n in nomes))
         self.assertTrue(any("segundo CNPJ liberado" in n for n in nomes))
+        self.assertTrue(any("outra marca de esmalte liberada" in n for n in nomes))
         grupo = dd._grupo_ponto_ruptura_cnae()
         blob = str(grupo)
         for metric in (
@@ -87,6 +88,37 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_SAUDE_CONTA_ML_ID)
+
+    def test_grupo_ruptura_outra_marca(self):
+        grupo = dd._grupo_ruptura_outra_marca()
+        blob = str(grupo)
+        for metric in (
+            "robo.marca_esmalte.ruptura.liberado",
+            "robo.marca_esmalte.ruptura.aproximando",
+            "robo.marca_esmalte.ruptura.progresso_pct",
+            "robo.marca_esmalte.ruptura.radar_cego",
+            "robo.marca_esmalte.ruptura.anuncios_foco",
+            "robo.marca_esmalte.cnpj_canal{marketplace:mercadolivre}",
+            "robo.marca_esmalte.cnpj_canal{marketplace:shopee}",
+            "robo.marca_esmalte.cnpj_canal{marketplace:magalu}",
+            "robo.marca_esmalte.cnpj_canal{marketplace:amazon}",
+            "robo.marca_esmalte.candidata.score{*} by {marca}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_RUPTURA_OUTRA_MARCA_ID)
+        self.assertIn("52.668.583/0001-27", blob)
+
+    def test_grupo_marca_kit_tendencia(self):
+        grupo = dd._grupo_marca_kit_tendencia()
+        blob = str(grupo)
+        for metric in (
+            "robo.esmaltes.marca_kit.total",
+            "robo.esmaltes.marca_kit.boas_performance",
+            "robo.esmaltes.marca_kit.score{*} by {marca}",
+            "robo.esmaltes.marca_kit.score{*} by {kit}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_MARCA_KIT_TENDENCIA_ID)
 
 
 if __name__ == "__main__":

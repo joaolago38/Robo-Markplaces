@@ -1,8 +1,8 @@
-name: Ponto de ruptura 2º CNPJ + CNAE
+name: Ponto de ruptura 2º CNPJ + outra marca
 
-# Todo dia: avalia se o Impala liberou o segundo CNPJ (Masterprint)
-# e alerta gaps de CNAE/KYC para preparar com antecedência.
-# Métricas Datadog: robo.ponto_ruptura.* e robo.cnae_preparacao.*
+# Todo dia: (1) Impala libera o segundo CNPJ (Masterprint)?
+#           (2) Mesmo CNPJ Impala pode entrar com outra marca de esmalte?
+# Métricas: robo.ponto_ruptura.* / robo.cnae_preparacao.* / robo.marca_esmalte.*
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ env:
 
 jobs:
   avaliar:
-    name: Ruptura Impala → 2º CNPJ + CNAE
+    name: Ruptura 2º CNPJ + outra marca
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -48,9 +48,13 @@ jobs:
           path: |
             logs/alertas_cooldown.json
             logs/ponto_ruptura_segundo_cnpj_ultima.json
+            logs/ponto_ruptura_outra_marca_ultima.json
             logs/margem_vendas_ultima.json
             logs/ads_gatilho_ultima.json
             logs/resumo_conta_ml_ultima.json
+            logs/esmaltes_mercado_ultima.json
+            logs/anita_esmaltes_ultima.json
+            logs/kits_esmaltes_ultima.json
           key: ponto-ruptura-${{ github.run_id }}
           restore-keys: |
             ponto-ruptura-
@@ -82,6 +86,27 @@ jobs:
           MASTERPRINT_CNPJ: ${{ secrets.MASTERPRINT_CNPJ }}
           PONTO_RUPTURA_ATIVO: "1"
           PONTO_RUPTURA_ALERTA: "1"
+      - name: Avaliar ruptura outra marca de esmalte
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.forcar }}" = "1" ]; then
+            ARGS="--forcar"
+          fi
+          python -m agentes.esmaltes.agente_ponto_ruptura_outra_marca $ARGS
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
+          ESMALTES_CNPJ: ${{ vars.ESMALTES_CNPJ || '52668583000127' }}
+          PONTO_RUPTURA_ATIVO: "1"
+          PONTO_RUPTURA_ALERTA: "1"
       - name: Publicar snapshot
         if: always()
         continue-on-error: true
@@ -89,6 +114,7 @@ jobs:
         with:
           path: |
             logs/ponto_ruptura_segundo_cnpj_ultima.json
+            logs/ponto_ruptura_outra_marca_ultima.json
             logs/alertas_cooldown.json
             logs/margem_vendas_ultima.json
             logs/ads_gatilho_ultima.json
@@ -97,7 +123,9 @@ jobs:
       - name: Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ponto-ruptura-segundo-cnpj
-          path: logs/ponto_ruptura_segundo_cnpj_ultima.json
+          name: ponto-ruptura
+          path: |
+            logs/ponto_ruptura_segundo_cnpj_ultima.json
+            logs/ponto_ruptura_outra_marca_ultima.json
           retention-days: 30
           if-no-files-found: ignore

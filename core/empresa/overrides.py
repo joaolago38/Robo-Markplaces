@@ -16,7 +16,7 @@ def aplicar_overrides_env(empresa: dict[str, Any]) -> dict[str, Any]:
     if eid == "esmaltes_impala":
         ml_seller = flag("ML_SELLER_ID", "")
         tg = flag("TELEGRAM_GESTOR_CHAT_ID", "")
-        if ml_seller and not ml.get("seller_id"):
+        if ml_seller:
             ml["seller_id"] = ml_seller
         if tg and not out.get("telegram_gestor_chat_id"):
             out["telegram_gestor_chat_id"] = tg

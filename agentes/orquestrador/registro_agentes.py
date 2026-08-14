@@ -288,6 +288,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
         notas="Impala fase 2? Libera Masterprint. Enquanto isso alerta CNAE/KYC para preparar.",
     ),
+    AgenteRegistrado(
+        "ponto_ruptura_outra_marca",
+        "Ponto de ruptura outra marca de esmalte",
+        "monitor",
+        "agentes.esmaltes.agente_ponto_ruptura_outra_marca:executar",
+        {"enviar_alerta": True},
+        notas="Mesmo CNPJ Impala: quando entrar com Anita/Risque/etc. Referente ML.",
+    ),
     # descoberta_produtos NÃO entra no registro — amplo demais no foco Impala; CLI/debug.
     AgenteRegistrado("ads_gatilho", "Gatilho Ads ML", "monitor", "agentes.ml.agente_ads_gatilho:executar"),
     AgenteRegistrado(

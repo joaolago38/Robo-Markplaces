@@ -57,6 +57,8 @@ GROUP_MP_COMERCIAL_ID = 760003
 GROUP_MP_FUNIL_ID = 760004
 GROUP_PONTO_RUPTURA_ID = 700012
 GROUP_SAUDE_CONTA_ML_ID = 700013
+GROUP_RUPTURA_OUTRA_MARCA_ID = 700014
+GROUP_MARCA_KIT_TENDENCIA_ID = 700015
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -3357,6 +3359,218 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
     }
 
 
+def _grupo_ruptura_outra_marca() -> dict[str, Any]:
+    """Mesmo CNPJ Impala: quando entrar com outra marca. Referente ML."""
+    return {
+        "id": GROUP_RUPTURA_OUTRA_MARCA_ID,
+        "definition": {
+            "title": "[Ruptura outra marca] CNPJ 52.668.583/0001-27 · referente ML",
+            "type": "group",
+            "background_color": "orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Liberado outra marca",
+                        "avg:robo.marca_esmalte.ruptura.liberado{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 790001,
+                },
+                {
+                    **_qv(
+                        "Aproximando (0/1)",
+                        "avg:robo.marca_esmalte.ruptura.aproximando{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 790002,
+                },
+                {
+                    **_qv(
+                        "Progresso %",
+                        "avg:robo.marca_esmalte.ruptura.progresso_pct{*}",
+                        aggregator="avg",
+                        green_gt=80,
+                        yellow_gt=40,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 790003,
+                },
+                {
+                    **_qv(
+                        "Radar ML cego",
+                        "avg:robo.marca_esmalte.ruptura.radar_cego{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 790004,
+                },
+                {
+                    **_qv(
+                        "Checks ok",
+                        "avg:robo.marca_esmalte.ruptura.checks_ok{*}",
+                        aggregator="avg",
+                        green_gt=5,
+                        yellow_gt=2,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 790005,
+                },
+                {
+                    **_qv(
+                        "Anuncios foco Impala",
+                        "avg:robo.marca_esmalte.ruptura.anuncios_foco{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 790006,
+                },
+                {
+                    **_qv(
+                        "CNPJ no ML",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:mercadolivre}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 790007,
+                },
+                {
+                    **_qv(
+                        "CNPJ na Shopee",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:shopee}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 790008,
+                },
+                {
+                    **_qv(
+                        "CNPJ no Magalu",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:magalu}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 4},
+                    "id": 790009,
+                },
+                {
+                    **_qv(
+                        "CNPJ na Amazon",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:amazon}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 4},
+                    "id": 790010,
+                },
+                {
+                    **_qv(
+                        "Top score (ML)",
+                        "avg:robo.marca_esmalte.ruptura.top_score{*}",
+                        aggregator="avg",
+                        green_gt=20,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 4},
+                    "id": 790011,
+                },
+                {
+                    **_toplist_metric(
+                        "Marcas candidatas (score ML, sem Impala)",
+                        "avg:robo.marca_esmalte.candidata.score{*} by {marca}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 12, "x": 0, "y": 6},
+                    "id": 790012,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 12, "width": 12, "height": 1},
+    }
+
+
+def _grupo_marca_kit_tendencia() -> dict[str, Any]:
+    """Marcas e tamanhos de kit no ML cruzados com tendência."""
+    return {
+        "id": GROUP_MARCA_KIT_TENDENCIA_ID,
+        "definition": {
+            "title": "[Marca x kit x tendencia] Condicao no ML + desempenho",
+            "type": "group",
+            "background_color": "vivid_orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Combos marca/kit",
+                        "avg:robo.esmaltes.marca_kit.total{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 791001,
+                },
+                {
+                    **_qv(
+                        "Boa performance (tendencia)",
+                        "avg:robo.esmaltes.marca_kit.boas_performance{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 791002,
+                },
+                {
+                    **_toplist_metric(
+                        "Score por marca (ML x tendencia)",
+                        "avg:robo.esmaltes.marca_kit.score{*} by {marca}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 6, "y": 0},
+                    "id": 791003,
+                },
+                {
+                    **_toplist_metric(
+                        "Score por tamanho de kit",
+                        "avg:robo.esmaltes.marca_kit.score{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 0, "y": 2},
+                    "id": 791004,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 14, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_ecommerce() -> None:
     """Dashboard Ecommerce: catalogo, batalha, ads/vendas/decisao."""
     ecom_id = _resolver_dash_ecommerce()
@@ -3372,6 +3586,13 @@ def atualizar_dashboard_ecommerce() -> None:
             "**taxa de crescimento** e **custo/Ads**.\n\n"
             "**2o CNPJ / CNAE:** grupo [CNAE / 2o CNPJ] — gaps de KYC agora; "
             "liberado só quando Impala bater a checklist (20 reviews / 4.8 / MLB / estoque).\n\n"
+            "**Outra marca de esmalte:** grupo [Ruptura outra marca] — mesmo CNPJ "
+            "52.668.583/0001-27 em todos os canais; Mercado Livre é o referente de "
+            "demanda (Anita / Risque / Colorama / …). Liberado só com checklist Impala "
+            "+ anúncio ativo + radar ML com amostra.\n\n"
+            "**Marca × kit × tendência:** grupo [Marca x kit x tendencia] — o robô "
+            "identifica no ML marcas e tamanhos de kit que oferecem condição e cruzam "
+            "com tendência (confirmada/oportunidade).\n\n"
             "**Saude da conta ML:** grupo [Saude conta ML] — reputação/cor da *conta*, "
             "anúncios do foco Impala (kits), claims e receita dos *seus* pedidos. "
             "Bolsas Mariart/legado ficam fora do radar "
@@ -3381,7 +3602,7 @@ def atualizar_dashboard_ecommerce() -> None:
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="orange",
-        height=3,
+        height=4,
     )
     cat = _grupo_catalogo_impala()
     cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
@@ -3393,15 +3614,20 @@ def atualizar_dashboard_ecommerce() -> None:
     saude["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
     ruptura = _grupo_ponto_ruptura_cnae()
     ruptura["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
+    outra = _grupo_ruptura_outra_marca()
+    outra["layout"] = {"x": 0, "y": 12, "width": 12, "height": 1}
+    marca_kit = _grupo_marca_kit_tendencia()
+    marca_kit["layout"] = {"x": 0, "y": 14, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
-            "ABA ECOMMERCE: catalogo Impala, batalha, ads, saude da conta ML, CNAE/2o CNPJ. "
+            "ABA ECOMMERCE: catalogo Impala, batalha, ads, saude da conta ML, "
+            "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
             f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
-        "widgets": [note, com, cat, bat, saude, ruptura],
+        "widgets": [note, com, cat, bat, saude, ruptura, outra, marca_kit],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -3930,6 +4156,27 @@ def _monitores_desejados() -> list[dict[str, Any]]:
                 + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:ponto_ruptura", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0.5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Ponto ruptura — outra marca de esmalte liberada",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.marca_esmalte.ruptura.liberado{*} > 0.5",
+            "message": (
+                "Checklist Impala + anuncio ativo + radar ML com amostra. "
+                "CNPJ 52.668.583/0001-27 pode entrar com a top marca do ranking ML "
+                "(Anita/Risque/Colorama/…). Comecar no Mercado Livre; "
+                "Shopee/Magalu/Amazon usam o mesmo CNPJ quando o canal ligar.\n"
+                "Nao e o 2o CNPJ Masterprint.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:marca_esmalte", "severity:p2"],
             "options": {
                 "thresholds": {"critical": 0.5},
                 "notify_no_data": False,

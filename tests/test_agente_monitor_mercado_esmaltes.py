@@ -46,6 +46,40 @@ class AgenteMonitorMercadoEsmaltesTests(unittest.TestCase):
         self.assertIn("IMP-BAIL-005", painel)
         self.assertIn("100 vend.", painel)
 
+    def test_montar_painel_marca_kit(self):
+        consolidado = {
+            "total_anuncios_unicos": 8,
+            "total_segmentos": 1,
+            "total_oportunidades_margem": 0,
+            "ranking_marcas_global": [],
+            "propostas": [],
+            "marca_kit_boas": [
+                {
+                    "marca": "Anita",
+                    "qtd_kit": 5,
+                    "status_tendencia": "confirmada",
+                    "preco_medio": 45.0,
+                    "anuncios": 3,
+                    "performance_boa": True,
+                }
+            ],
+        }
+        resultados = [
+            {
+                "ok": True,
+                "prioridade": 1,
+                "nome": "Kit 5",
+                "total_anuncios": 8,
+                "padroes_kits": [],
+                "tendencia_cores": [],
+                "destaques": [],
+            }
+        ]
+        painel = ag._montar_painel(resultados, consolidado)
+        self.assertIn("Anita", painel)
+        self.assertIn("kit 5", painel)
+        self.assertIn("boa performance", painel)
+
     def test_montar_painel_vendas_nd(self):
         consolidado = {
             "total_anuncios_unicos": 10,

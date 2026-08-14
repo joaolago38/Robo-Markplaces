@@ -195,6 +195,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "CNAE/KYC que ainda faltam para você ir preparando. Não publica anúncio "
         "nem liga a flag de dono de produto."
     ),
+    "ponto_ruptura_outra_marca": (
+        "Diz se o CNPJ Impala (52.668.583/0001-27) já pode entrar com outra marca "
+        "de esmalte. Mercado Livre é o referente de demanda; o mesmo CNPJ é a "
+        "identidade em Shopee/Magalu/Amazon. Não publica anúncio e não troca de CNPJ."
+    ),
     "monitor_acetona_cruzeiro": (
         "Anexo: acetona Cruzeiro no ML. Digest semanal (sexta) — "
         "fora do foco diário de kits."
@@ -362,6 +367,10 @@ HORARIOS_AGENTES: dict[str, str] = {
         "Todo dia às 08:05 BRT (Actions); fora do orquestrador 30 min. "
         "Telegram só no veredito (CNAE semanal / aproximando / liberado)."
     ),
+    "ponto_ruptura_outra_marca": (
+        "Todo dia às 08:05 BRT (mesmo workflow do 2º CNPJ); fora do orquestrador 30 min. "
+        "Telegram só no veredito (aproximando / radar cego / liberado)."
+    ),
     "monitor_acetona_cruzeiro": "1x/semana sexta 09:00 BRT (anexo)",
     "descoberta_produtos": "Debug manual (sem Telegram) — fora do foco Impala",
     "ads_gatilho": "Todo dia às 08:00 BRT (fora do orquestrador)",
@@ -467,6 +476,9 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("cnpj_cnae", "monitor_cnpj_cnae"),
     ("monitor_cnpj", "monitor_cnpj_cnae"),
     ("vinculo_cnae", "monitor_cnpj_cnae"),
+    ("outra_marca", "ponto_ruptura_outra_marca"),
+    ("marca_esmalte", "ponto_ruptura_outra_marca"),
+    ("ruptura_marca", "ponto_ruptura_outra_marca"),
     ("ponto_ruptura", "ponto_ruptura_segundo_cnpj"),
     ("segundo_cnpj", "ponto_ruptura_segundo_cnpj"),
     ("cnae_prep", "ponto_ruptura_segundo_cnpj"),

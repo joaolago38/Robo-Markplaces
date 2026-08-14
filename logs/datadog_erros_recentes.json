@@ -1,6 +1,50 @@
 {
   "erros": [
     {
+      "fingerprint": "816423eaab464acaca7c",
+      "primeira_vez": "2026-08-14T23:09:02.012708+00:00",
+      "ultima_vez": "2026-08-14T23:14:04.936182+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML buscar_perfil_vendedor erro: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "beeab7357ef6bd50c2e0",
+      "primeira_vez": "2026-08-14T23:09:02.002418+00:00",
+      "ultima_vez": "2026-08-14T23:14:04.482182+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "status": "error",
+      "error_kind": "OSError",
+      "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "a2bdd030e3e2c7f1e9ac",
+      "primeira_vez": "2026-08-14T23:09:01.989044+00:00",
+      "ultima_vez": "2026-08-14T23:14:03.360923+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token ML: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "10ee29bd9833d27b02e4",
+      "primeira_vez": "2026-08-14T23:09:01.972983+00:00",
+      "ultima_vez": "2026-08-14T23:14:02.517375+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.mercadolibre.com falhou: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "status": "error",
+      "error_kind": "OSError",
+      "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "6bd386e0e78d2a0affac",
       "primeira_vez": "2026-08-01T19:21:48.172963+00:00",
       "ultima_vez": "2026-08-10T12:51:28.925208+00:00",
@@ -1605,51 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "470eaa40f58337fcc3fd",
-      "primeira_vez": "2026-07-05T20:44:28.778831+00:00",
-      "ultima_vez": "2026-07-05T21:19:08.467786+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu responder_pergunta erro question_id=q1: HTTP 500",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "d78bd3fb9ec3e0a8f1d5",
-      "primeira_vez": "2026-07-05T20:44:29.133367+00:00",
-      "ultima_vez": "2026-07-05T21:19:07.838021+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu atualizar_estoque_item erro sku=SKU1: rede",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "1fdda93baee79ab4b227",
-      "primeira_vez": "2026-07-05T20:44:29.091107+00:00",
-      "ultima_vez": "2026-07-05T21:19:07.587990+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_perguntas_nao_respondidas erro: rede",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "efc85c67bbd281d69927",
-      "primeira_vez": "2026-07-05T20:44:29.622425+00:00",
-      "ultima_vez": "2026-07-05T21:19:07.251391+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token ML: 400 Client Error: Bad Request for url: https://api.mercadolibre.com/oauth/token",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 15
     }
   ],
-  "atualizado_em": "2026-08-10T12:51:28.925208+00:00"
+  "atualizado_em": "2026-08-14T23:14:04.936182+00:00"
 }

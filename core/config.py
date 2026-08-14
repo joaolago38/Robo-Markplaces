@@ -1141,7 +1141,7 @@ ORQUESTRADOR_EXCLUIR = {
         "montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,"
         "leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,"
         "alibaba_sourcing,comparar_portos_alibaba,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,"
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,"
         "sincronizar_estoque,repricing,repricing_impala,operacao_24h,"
         "chat_shopee,chat_magalu,chat_amazon,auto_respostas",
     ).split(",")

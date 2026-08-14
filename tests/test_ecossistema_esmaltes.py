@@ -87,6 +87,43 @@ class TestEcossistemaEsmaltes(unittest.TestCase):
         msg = eco.montar_mensagem_telegram(plano)
         self.assertIn("kits", msg.lower() + str(plano.get("top_7d")))
 
+    def test_marca_kit_vira_acao_7d(self):
+        fontes = {
+            k: {"disponivel": False, "timestamp": None, "dados": {}}
+            for k in eco._PATHS
+        }
+        fontes["anita"] = {
+            "disponivel": True,
+            "timestamp": "2026-08-14T12:00:00+00:00",
+            "dados": {
+                "resultados": [
+                    {
+                        "analises": [
+                            {
+                                "titulo": "Kit 5 Esmaltes Anita Nude",
+                                "preco": 45.0,
+                                "quantidade_vendida": 120,
+                            },
+                            {
+                                "titulo": "Kit 5 Esmaltes Anita Nude Rosa",
+                                "preco": 46.0,
+                                "quantidade_vendida": 80,
+                            },
+                        ]
+                    }
+                ]
+            },
+        }
+        fontes["tendencias"] = {
+            "disponivel": True,
+            "timestamp": "2026-08-14T12:00:00+00:00",
+            "dados": {"consolidado": {"todas_tendencias": [{"cor": "Nude", "status": "confirmada"}]}},
+        }
+        plano = eco.montar_plano(fontes)
+        titulos = " ".join(a.get("titulo") or "" for a in plano["acoes"])
+        self.assertIn("Anita kit 5", titulos)
+        self.assertTrue(any(a.get("horizonte") == "7d" and "Anita" in (a.get("titulo") or "") for a in plano["acoes"]))
+
     @patch("integracoes.esmaltes.ecossistema_esmaltes.ler_json", return_value={})
     def test_coletar_fontes(self, _mock):
         fontes = eco.coletar_fontes()

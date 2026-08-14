@@ -193,6 +193,7 @@ class TestVigiaFiltrosNotificador(unittest.TestCase):
         self.assertIn("estoque", ids)
         self.assertIn("ads_gatilho", ids)
         self.assertIn("ponto_ruptura_segundo_cnpj", ids)
+        self.assertIn("ponto_ruptura_outra_marca", ids)
         self.assertIn("chat", ids)
         self.assertIn("nfe", ids)
         self.assertIn("vendas_whatsapp", ids)
