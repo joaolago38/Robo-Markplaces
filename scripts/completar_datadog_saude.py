@@ -3329,7 +3329,7 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Anuncios legado ignorados",
+                        "Bolsas/legado ignorados",
                         "avg:robo.ml.saude.anuncios_ignorados_fora_foco{*}",
                         aggregator="avg",
                         green_gt=None,
@@ -3341,7 +3341,7 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Catalogo foco vazio (0/1)",
+                        "Foco Impala vazio (0/1)",
                         "avg:robo.ml.saude.catalogo_foco_vazio{*}",
                         aggregator="avg",
                         green_gt=None,
@@ -3372,8 +3372,10 @@ def atualizar_dashboard_ecommerce() -> None:
             "**taxa de crescimento** e **custo/Ads**.\n\n"
             "**2o CNPJ / CNAE:** grupo [CNAE / 2o CNPJ] — gaps de KYC agora; "
             "liberado só quando Impala bater a checklist (20 reviews / 4.8 / MLB / estoque).\n\n"
-            "**Saude da conta ML:** grupo [Saude conta ML] — reputação, anúncios, "
-            "claims e receita dos *seus* pedidos (não é radar de concorrente).\n\n"
+            "**Saude da conta ML:** grupo [Saude conta ML] — reputação/cor da *conta*, "
+            "anúncios do foco Impala (kits), claims e receita dos *seus* pedidos. "
+            "Bolsas Mariart/legado ficam fora do radar "
+            "(widgets Bolsas/legado ignorados e Foco Impala vazio).\n\n"
             f"**Robo / plataforma:** [Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
             f"**Masterprint (filamentos / pinceis / apagadores):** "
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"

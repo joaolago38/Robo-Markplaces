@@ -14,7 +14,7 @@ from integracoes.ml.filtro_anuncios_conta import (
 REGRAS = {
     "ativo": True,
     "sku_prefixos_foco": ["IMP-", "CRZ-", "BUNDLE-"],
-    "titulo_contem": ["bolsa", "carteira", "mariart", "shopper"],
+    "titulo_contem": ["bolsa", "carteira", "mariart", "shopper", "scarpin", "sapato"],
     "sku_contem": ["mariart"],
     "category_ids": [],
     "titulo_legado": ["controle remoto ppa"],
@@ -66,6 +66,13 @@ class TestFiltroAnunciosConta(unittest.TestCase):
                 REGRAS,
             )
         )
+
+    def test_ignora_scarpin_legado(self):
+        motivo = anuncio_fora_do_foco(
+            {"titulo": "Sapato Feminino Scarpin Vermelho 37", "sku": ""},
+            REGRAS,
+        )
+        self.assertIsNotNone(motivo)
 
     def test_ignora_legado_ppa(self):
         motivo = anuncio_fora_do_foco(

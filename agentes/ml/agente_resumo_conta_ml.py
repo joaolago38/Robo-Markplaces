@@ -84,14 +84,14 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             "perguntas": resumo.get("perguntas_pendentes"),
             "mensagem": msg,
         }
-        except Exception as exc:
-            logger.error("agente_resumo_conta_ml erro: %s", exc)
-            incrementar("ml.resumo_conta.erro")
-            try:
-                emitir_metricas_saude_conta({"ok": False})
-            except Exception:
-                pass
-            return {"ok": False, "erro": str(exc), "alerta_enviado": False}
+    except Exception as exc:
+        logger.error("agente_resumo_conta_ml erro: %s", exc)
+        incrementar("ml.resumo_conta.erro")
+        try:
+            emitir_metricas_saude_conta({"ok": False})
+        except Exception:
+            pass
+        return {"ok": False, "erro": str(exc), "alerta_enviado": False}
 
 
 def main() -> int:
