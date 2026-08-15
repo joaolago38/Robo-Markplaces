@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json
-from core.config import MARGEM_MINIMA, ROOT
+from core.config import MARGEM_MINIMA, ROOT, RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA
 from core.datadog_metrics import gauge, incrementar
 from integracoes.esmaltes.metricas_catalogo_impala import kit_tag, montar_snapshot_catalogo
 
@@ -159,6 +159,22 @@ def produtos_com_margem_segura(
         "risco_n": len(risco),
         "risco_top": risco[:8],
         "margem_media_segura_pct": round(sum(margens) / len(margens), 1) if margens else 0.0,
+        "candidatos_margem": [
+            {
+                "sku": r["sku"],
+                "margem_real_pct": r.get("margem_real_pct"),
+                "preco": r.get("preco"),
+                "mlb_ok": r.get("mlb_ok"),
+                "estoque_zero": r.get("estoque_zero"),
+                "bloqueios": r.get("bloqueios") or [],
+                "veredito": r.get("veredito"),
+            }
+            for r in sorted(
+                [x for x in (seguros + risco) if x.get("margem_real_pct") is not None and float(x.get("margem_real_pct") or 0) >= piso_pct],
+                key=lambda x: float(x.get("margem_real_pct") or 0),
+                reverse=True,
+            )[:6]
+        ],
     }
 
 
@@ -223,6 +239,93 @@ def saude_score(previa: dict[str, Any], esforco: dict[str, Any], checks_ok: int,
     return round(min(100.0, score), 1)
 
 
+def _kits_manicure_compacto() -> dict[str, Any]:
+    data = ler_json(ROOT / "logs" / "kits_compativeis_manicures_ultima.json", default={})
+    if not isinstance(data, dict):
+        return {"ok": False, "condicao_n": 0, "ofertas_condicao": []}
+    ofertas = []
+    for o in (data.get("ofertas_condicao") or data.get("ofertas") or [])[:6]:
+        if not isinstance(o, dict):
+            continue
+        eco = o.get("economia") or {}
+        ofertas.append(
+            {
+                "sku": o.get("sku"),
+                "qtd_kit": o.get("qtd_kit"),
+                "indice_compra": o.get("indice_compra"),
+                "margem_pct": o.get("margem_pct"),
+                "condicao_ok": bool(o.get("condicao_ok")),
+                "economia_pct": eco.get("economia_pct"),
+                "preco": o.get("preco"),
+            }
+        )
+    return {
+        "ok": bool(data.get("ok")),
+        "condicao_n": _i(data.get("condicao_n")),
+        "preco_unitario_ref": _f(data.get("preco_unitario_ref")),
+        "preco_unitario_ml": _f(data.get("preco_unitario_ml")),
+        "ofertas_condicao": [x for x in ofertas if x.get("condicao_ok")][:4],
+        "ofertas_top": ofertas[:4],
+    }
+
+
+def ancora_numerica(
+    *,
+    veredito: str,
+    saude: float,
+    previa: dict[str, Any],
+    produtos: dict[str, Any],
+    esforco: dict[str, Any],
+    kits_manicure: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Números que o Claude pode citar — com margem de erro explícita."""
+    radar_cego = _i(previa.get("anuncios_ativos_foco")) <= 0
+    km = kits_manicure if isinstance(kits_manicure, dict) else {}
+    return {
+        "veredito": veredito,
+        "saude_score": saude,
+        "saude_erro_pct": 5.0 if radar_cego else 2.0,
+        "margem_piso_pct": _f(produtos.get("piso_pct"), 15.0),
+        "margem_fonte": "catalogo_custo_mais_taxa_ml",
+        "margem_erro_pp": 0.5,
+        "vd_dia_fonte": "ref_catalogo_nao_venda_live",
+        "radar_ml": "cego" if radar_cego else "amostra",
+        "mlb_live": False,
+        "reviews": _i(previa.get("avaliacoes")),
+        "nota": _f(previa.get("nota")),
+        "anuncios_foco": _i(previa.get("anuncios_ativos_foco")),
+        "legado_ignorado": _i(previa.get("legado_ignorado")),
+        "seguros_n": _i(produtos.get("seguros_n")),
+        "faltando_n": _i(esforco.get("faltando_n")),
+        "candidatos_margem": produtos.get("candidatos_margem") or [],
+        "kits_manicure_condicao_n": _i(km.get("condicao_n")),
+        "kits_manicure": (km.get("ofertas_condicao") or km.get("ofertas_top") or [])[:4],
+        "preco_avulso_ref": _f(km.get("preco_unitario_ref"), 12.0),
+        "cnpj": "52.668.583/0001-27",
+        "regra": "cite só estes números; ausente = n/d; não invente venda ao vivo",
+    }
+
+
+def _fingerprint(
+    veredito: str,
+    saude: float,
+    esforco: dict[str, Any],
+    produtos: dict[str, Any],
+    previa: dict[str, Any],
+) -> str:
+    return "|".join(
+        [
+            str(veredito),
+            str(saude),
+            str(esforco.get("faltando_n")),
+            str(produtos.get("seguros_n")),
+            str(previa.get("anuncios_ativos_foco")),
+            str(previa.get("avaliacoes")),
+            str(produtos.get("candidatos_margem") and produtos["candidatos_margem"][0].get("sku") or ""),
+        ]
+    )
+
+
 def _resumo_deterministico(
     *,
     veredito: str,
@@ -269,27 +372,59 @@ def _resumo_deterministico(
     return "\n".join(linhas)
 
 
-def _claude_ruptura(contexto: dict[str, Any], fallback: str) -> str:
-    from core.config import RUPTURA_CLAUDE
+def _claude_ruptura(contexto: dict[str, Any], fallback: str, *, fase: str | None = None) -> str:
+    from core.claude_ml.dosagem import SYSTEM_RUPTURA
+    from core.config import (
+        CLAUDE_MODELO,
+        RUPTURA_CLAUDE,
+        RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA,
+        RUPTURA_CLAUDE_IGNORAR_TOGGLE,
+    )
     from core.resumo_ia import sintetizar_claude
+    from integracoes.esmaltes.claude_ciclo_ruptura import (
+        fase_claude_ruptura,
+        registrar_pulso_maxima,
+    )
 
     if not RUPTURA_CLAUDE:
         return ""
+    fase_atual = (fase or fase_claude_ruptura()).strip().lower()
+    maxima = fase_atual == "maxima" and bool(RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA)
+    if maxima:
+        registrar_pulso_maxima()
+    prompt = (
+        "Analista de ruptura Impala no Mercado Livre. Assertividade máxima. "
+        "Em até 8 linhas: (1) esforço que falta, com o número âncora; "
+        "(2) o que já está ok; (3) SKU para a manicure com margem e economia "
+        "do JSON (não invente); (4) prévia ML. "
+        "Use FAZER / NÃO FAZER / OBSERVAR. "
+        "Não publicar anúncio automático nem trocar CNPJ "
+        "(52.668.583/0001-27 permanece o dono dos esmaltes)."
+        if maxima
+        else (
+            "Analista de ruptura Impala. Uso moderado e seguro. "
+            "Em até 6 linhas cite SOMENTE números do JSON (âncora). "
+            "(1) esforço que falta; (2) o que já está ok; "
+            "(3) SKU da manicure se estiver no JSON; (4) prévia ML. "
+            "FAZER / NÃO FAZER / OBSERVAR. Não invente vd/dia nem ranking. "
+            "Não publicar anúncio nem trocar CNPJ 52.668.583/0001-27."
+        )
+    )
     return sintetizar_claude(
-        (
-            "Você é o analista de ruptura Impala no Mercado Livre. "
-            "Em até 8 linhas: (1) o que falta de esforço para a ruptura ficar tranquila, "
-            "considerando o produto; (2) atitudes já tomadas; (3) quais SKUs escolher "
-            "agora com margem segura; (4) prévia do que está acontecendo no ML. "
-            "Use FAZER / NÃO FAZER / OBSERVAR. Não invente número. "
-            "Não sugira publicar anúncio automaticamente nem trocar CNPJ "
-            "(52.668.583/0001-27 permanece o dono dos esmaltes)."
-        ),
+        prompt,
         contexto,
         fallback,
-        max_tokens=280,
+        max_tokens=500 if maxima else 220,
         origem="ruptura_impala",
         enriquecer_ml=True,
+        proposito="ruptura_impala" if maxima else "ruptura_impala_moderada",
+        forcar_profundidade="ampliada" if maxima else "padrao",
+        forcar_modelo=maxima,
+        modelo=CLAUDE_MODELO if maxima else None,
+        forcar_chamada=bool(RUPTURA_CLAUDE_IGNORAR_TOGGLE) if maxima else False,
+        temperature=0.0 if maxima else None,
+        system=SYSTEM_RUPTURA,
+        somente_ia=True,
     )
 
 
@@ -303,7 +438,31 @@ def emitir_metricas_briefing(briefing: dict[str, Any]) -> None:
     gauge("ruptura.impala.esforco_faltando", float(esforco.get("faltando_n") or 0))
     gauge("ruptura.impala.anuncios_ativos", float(previa.get("anuncios_ativos_foco") or 0))
     gauge("ruptura.impala.claude_ok", 1.0 if briefing.get("claude_ok") else 0.0)
+    gauge(
+        "ruptura.impala.claude_assertividade_maxima",
+        1.0 if briefing.get("claude_assertividade_maxima") else 0.0,
+    )
     incrementar("ruptura.impala.briefing_rodadas")
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+    try:
+        from integracoes.datadog.oscilacao_decisao import registrar_e_avaliar
+
+        kits = briefing.get("kits_manicure") or {}
+        registrar_e_avaliar(
+            {
+                "saude_score": float(briefing.get("saude_score") or 0),
+                "produtos_seguros": float(produtos.get("seguros_n") or 0),
+                "esforco_faltando": float(esforco.get("faltando_n") or 0),
+                "kit_condicao_ok": float(kits.get("condicao_n") or 0),
+                "progresso_pct": float(briefing.get("progresso_pct") or 0),
+                "claude_ok": 1.0 if briefing.get("claude_ok") else 0.0,
+                "aproximando": 1.0 if str(briefing.get("veredito") or "") == "aproximando" else 0.0,
+                "anuncios_foco": float(previa.get("anuncios_ativos_foco") or 0),
+            }
+        )
+    except Exception as exc:
+        logger.info("oscilação briefing: %s", exc)
 
 
 def formatar_secao_briefing(briefing: dict[str, Any] | None) -> list[str]:
@@ -347,9 +506,31 @@ def formatar_secao_briefing(briefing: dict[str, Any] | None) -> list[str]:
             )
     else:
         linhas.append("• nenhum kit no piso — não escolha volume até haver lucro protegido")
+    cand = produtos.get("candidatos_margem") or []
+    if cand and not seguros:
+        linhas.append("_Mais perto do piso (ainda bloqueados):_")
+        for p in cand[:3]:
+            bloq = ", ".join(str(b) for b in (p.get("bloqueios") or [])[:3]) or "ok"
+            linhas.append(
+                f"• `{p.get('sku')}` margem `{p.get('margem_real_pct')}%` ±0,5 p.p. — {bloq}"
+            )
+    ancora = data.get("ancora_numerica") or {}
+    if ancora:
+        linhas.extend(
+            [
+                "",
+                f"*Números âncora* · margem ±`{ancora.get('margem_erro_pp')}` p.p. · "
+                f"saúde ±`{ancora.get('saude_erro_pct')}%` · radar `{ancora.get('radar_ml')}`",
+            ]
+        )
     texto_ia = str(data.get("resumo_claude") or "").strip()
     if texto_ia and not texto_ia.startswith("⚠️"):
-        linhas.extend(["", "*Claude (ruptura)*", texto_ia])
+        flag = (
+            "assertividade máxima"
+            if data.get("claude_assertividade_maxima")
+            else "uso moderado"
+        )
+        linhas.extend(["", f"*Claude ({flag})*", texto_ia])
     elif data.get("resumo_deterministico"):
         linhas.extend(["", "*Leitura para decidir*", str(data.get("resumo_deterministico"))])
     return linhas
@@ -403,17 +584,43 @@ def montar_briefing_ruptura(
             previa, esforco, _i(rup.get("checks_ok")), _i(rup.get("checks_total"), 7)
         )
         veredito = str(rup.get("veredito") or "ainda_nao")
+        kits_m = _kits_manicure_compacto()
+        ancora = ancora_numerica(
+            veredito=veredito,
+            saude=saude,
+            previa=previa,
+            produtos=prods,
+            esforco=esforco,
+            kits_manicure=kits_m,
+        )
         det = _resumo_deterministico(
             veredito=veredito, esforco=esforco, produtos=prods, previa=previa, saude=saude
         )
+        fp = _fingerprint(veredito, saude, esforco, prods, previa)
         texto_ia = ""
         claude_ok = False
+        claude_reused = False
+        from integracoes.esmaltes.claude_ciclo_ruptura import (
+            fase_claude_ruptura,
+            marcar_exposto_datadog,
+        )
+
+        fase = fase_claude_ruptura()
+        maxima = fase == "maxima" and bool(RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA)
         if chamar_claude and not os.environ.get("PYTEST_CURRENT_TEST"):
             antigo = ler_json(SNAPSHOT_PATH, default={})
             ts_ant = str((antigo or {}).get("timestamp") or "")
             claude_ant = str((antigo or {}).get("resumo_claude") or "")
+            fp_ant = str((antigo or {}).get("fingerprint") or "")
             reused = False
-            if claude_ant and not claude_ant.startswith("⚠️") and ts_ant:
+            if (
+                not maxima
+                and claude_ant
+                and not claude_ant.startswith("⚠️")
+                and ts_ant
+                and fp_ant == fp
+                and (antigo or {}).get("claude_ok")
+            ):
                 try:
                     idade_h = (
                         datetime.now(timezone.utc)
@@ -423,6 +630,7 @@ def montar_briefing_ruptura(
                         texto_ia = claude_ant
                         claude_ok = True
                         reused = True
+                        claude_reused = True
                 except Exception:
                     reused = False
             if not reused:
@@ -434,11 +642,16 @@ def montar_briefing_ruptura(
                             "saude_score": saude,
                             "esforco": esforco,
                             "produtos_seguros": prods.get("seguros"),
+                            "candidatos_margem": prods.get("candidatos_margem"),
                             "piso_margem_pct": piso,
                             "previa_ml": previa,
+                            "ancora_numerica": ancora,
+                            "kits_manicure": kits_m,
                             "cnpj": "52.668.583/0001-27",
+                            "claude_fase": fase,
                         },
                         det,
+                        fase=fase,
                     )
                     claude_ok = bool(texto_ia) and not str(texto_ia).startswith("⚠️")
                 except Exception as exc:
@@ -449,16 +662,34 @@ def montar_briefing_ruptura(
             "ok": True,
             "veredito": veredito,
             "saude_score": saude,
+            "progresso_pct": _f(rup.get("progresso_pct")),
             "esforco": esforco,
             "produtos": prods,
             "previa_ml": previa,
+            "ancora_numerica": ancora,
+            "kits_manicure": kits_m,
             "resumo_deterministico": det,
             "resumo_claude": texto_ia if claude_ok else "",
             "claude_ok": claude_ok,
+            "claude_fase": fase,
+            "claude_assertividade_maxima": maxima and claude_ok,
+            "claude_reused": claude_reused,
+            "fingerprint": fp,
             "cnpj": "52.668.583/0001-27",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+        from core.datadog_metrics import falhas_envio as _falhas_dd
+
+        falhas_antes = _falhas_dd()
         emitir_metricas_briefing(briefing)
+        if not os.environ.get("PYTEST_CURRENT_TEST"):
+            if _falhas_dd() == falhas_antes:
+                marcar_exposto_datadog()
+            else:
+                logger.warning(
+                    "Datadog ingest falhou (%s) — Claude permanece em pulso máximo até os gauges chegarem",
+                    _falhas_dd(),
+                )
         try:
             escrever_json_atomico(SNAPSHOT_PATH, briefing)
         except Exception:

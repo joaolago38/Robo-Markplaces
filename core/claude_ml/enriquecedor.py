@@ -18,6 +18,7 @@ def enriquecer_contexto_claude(
     produto: dict[str, Any] | None = None,
     proposito: str = "analise_ml",
     ao_vivo: bool = False,
+    forcar_profundidade: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Devolve (contexto_enriquecido, dosagem)."""
     if isinstance(contexto, str):
@@ -28,7 +29,9 @@ def enriquecer_contexto_claude(
         base = {}
 
     if not cfg_bool("CLAUDE_ML_CONTEXTO_ATIVO", True):
-        dosagem = dosar_analise_para_decisao(proposito=proposito)
+        dosagem = dosar_analise_para_decisao(
+            proposito=proposito, forcar_profundidade=forcar_profundidade
+        )
         return base, dosagem
 
     try:
@@ -42,7 +45,10 @@ def enriquecer_contexto_claude(
 
     st = stress_produto(consolidado, produto=produto)
     dosagem = dosar_analise_para_decisao(
-        estado_ml=estado, stress=st, proposito=proposito
+        estado_ml=estado,
+        stress=st,
+        proposito=proposito,
+        forcar_profundidade=forcar_profundidade,
     )
 
     empresa_bloco: dict[str, Any] = {}

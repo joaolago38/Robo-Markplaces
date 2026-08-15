@@ -71,6 +71,8 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ruptura.impala.produtos_seguros",
             "robo.ruptura.impala.margem_media_segura_pct",
             "robo.ruptura.impala.esforco_faltando",
+            "robo.decisao.oscilacao",
+            "robo.ruptura.impala.claude_assertividade_maxima",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_PONTO_RUPTURA_ID)
@@ -123,6 +125,53 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_MARCA_KIT_TENDENCIA_ID)
+
+    def test_grupo_kits_manicure(self):
+        grupo = dd._grupo_kits_manicure_impala()
+        blob = str(grupo)
+        for metric in (
+            "robo.esmaltes.kit_manicure.total",
+            "robo.esmaltes.kit_manicure.condicao_ok",
+            "robo.esmaltes.kit_manicure.economia_media_pct",
+            "robo.esmaltes.kit_manicure.indice_compra{*} by {kit}",
+            "robo.esmaltes.kit_manicure.economia_pct{*} by {kit}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_KITS_MANICURE_ID)
+
+    def test_grupo_decisao_oscilacao(self):
+        grupo = dd._grupo_decisao_oscilacao()
+        blob = str(grupo)
+        for metric in (
+            "robo.decisao.oscilacao",
+            "robo.decisao.cuidado",
+            "robo.claude.ciclo.fase_maxima",
+            "robo.claude.ciclo.exposto_datadog",
+            "robo.vigia_datadog.saudavel",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_DECISAO_OSCILACAO_ID)
+        fmts = grupo["definition"]["widgets"][0]["definition"]["requests"][0]["conditional_formats"]
+        self.assertEqual(fmts[0]["palette"], "white_on_red")
+        self.assertEqual(fmts[0]["comparator"], ">")
+
+    def test_qv_saude_baixa_fica_vermelha(self):
+        w = dd._qv(
+            "Saude",
+            "avg:robo.ruptura.impala.saude_score{*}",
+            red_lt=40,
+            yellow_lt=70,
+            green_gt=70,
+        )
+        fmts = w["definition"]["requests"][0]["conditional_formats"]
+        self.assertEqual(fmts[0], {"comparator": "<", "palette": "white_on_red", "value": 40})
+        self.assertFalse(
+            any(f.get("comparator") == ">=" and f.get("value") == 0 for f in fmts)
+        )
+
+    def test_monitor_oscilacao(self):
+        nomes = [m["name"] for m in dd._monitores_desejados()]
+        self.assertTrue(any("Oscilacao Datadog" in n for n in nomes))
 
 
 if __name__ == "__main__":

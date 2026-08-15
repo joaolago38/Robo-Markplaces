@@ -34,6 +34,7 @@ _PATHS = {
     "necessidade": ROOT / "logs" / "necessidade_manicures_ultima.json",
     "conversao": ROOT / "logs" / "conversao_manicures_ultima.json",
     "mercado": ROOT / "logs" / "esmaltes_mercado_ultima.json",
+    "kits_manicure": ROOT / "logs" / "kits_compativeis_manicures_ultima.json",
 }
 
 _CAMADAS = ("core", "anexos", "kits", "b2b", "conteudo", "marca")
@@ -241,6 +242,36 @@ def _acoes_kits(fontes: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _acoes_b2b(fontes: dict[str, Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
+    km = (fontes.get("kits_manicure") or {}).get("dados") or {}
+    ofertas = km.get("ofertas_condicao") or km.get("ofertas") or []
+    top_kit = ofertas[0] if ofertas and isinstance(ofertas[0], dict) else None
+    if isinstance(top_kit, dict) and top_kit.get("sku"):
+        eco = top_kit.get("economia") or {}
+        cond_ok = bool(top_kit.get("condicao_ok"))
+        out.append(
+            _acao(
+                camada="b2b",
+                titulo=(
+                    f"Kit Impala manicure: {top_kit.get('sku')} "
+                    f"({top_kit.get('perfil_manicure') or 'kit'})"
+                ),
+                detalhe=(
+                    f"Índice de compra {top_kit.get('indice_compra')} · "
+                    f"economia {eco.get('economia_pct')}% vs avulso "
+                    f"(R$ {float(eco.get('economia_brl') or 0):.2f}) · "
+                    f"{'condição ok, padrão Impala' if cond_ok else 'montar condição'} "
+                    f"kit {top_kit.get('qtd_kit')}."
+                ),
+                prioridade=1 if cond_ok else 2,
+                horizonte="7d" if cond_ok else "30d",
+                score=min(95.0, 50.0 + float(top_kit.get("indice_compra") or 0) / 20.0),
+                evidencias=[
+                    f"sku={top_kit.get('sku')}",
+                    f"economia_pct={eco.get('economia_pct')}",
+                    f"condicao_ok={cond_ok}",
+                ],
+            )
+        )
     nec = (fontes.get("necessidade") or {}).get("dados") or {}
     escolhida = nec.get("escolhida") or (nec.get("plano") or {}).get("escolhida")
     if isinstance(escolhida, dict) and escolhida:
@@ -259,7 +290,7 @@ def _acoes_b2b(fontes: dict[str, Any]) -> list[dict[str, Any]]:
                 evidencias=[f"angulo={(escolhida.get('condicoes') or {}).get('angulo')}"],
             )
         )
-    else:
+    elif not (isinstance(top_kit, dict) and top_kit.get("sku")):
         out.append(
             _acao(
                 camada="b2b",

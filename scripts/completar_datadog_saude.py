@@ -59,6 +59,8 @@ GROUP_PONTO_RUPTURA_ID = 700012
 GROUP_SAUDE_CONTA_ML_ID = 700013
 GROUP_RUPTURA_OUTRA_MARCA_ID = 700014
 GROUP_MARCA_KIT_TENDENCIA_ID = 700015
+GROUP_KITS_MANICURE_ID = 700016
+GROUP_DECISAO_OSCILACAO_ID = 700017
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -100,21 +102,29 @@ def _api(path: str) -> str:
     return f"https://api.{DD_SITE}{path}"
 
 
+def _ssl_verify() -> bool:
+    return os.getenv("DD_SSL_VERIFY", "1").strip().lower() not in ("0", "false", "no")
+
+
 def _get(path: str) -> Any:
-    r = requests.get(_api(path), headers=_headers(), timeout=45)
+    r = requests.get(_api(path), headers=_headers(), timeout=45, verify=_ssl_verify())
     r.raise_for_status()
     return r.json()
 
 
 def _post(path: str, body: dict[str, Any]) -> Any:
-    r = requests.post(_api(path), headers=_headers(), data=json.dumps(body), timeout=45)
+    r = requests.post(
+        _api(path), headers=_headers(), data=json.dumps(body), timeout=45, verify=_ssl_verify()
+    )
     if r.status_code >= 300:
         raise RuntimeError(f"POST {path} HTTP {r.status_code}: {(r.text or '')[:800]}")
     return r.json()
 
 
 def _put(path: str, body: dict[str, Any]) -> Any:
-    r = requests.put(_api(path), headers=_headers(), data=json.dumps(body), timeout=60)
+    r = requests.put(
+        _api(path), headers=_headers(), data=json.dumps(body), timeout=60, verify=_ssl_verify()
+    )
     if r.status_code >= 300:
         raise RuntimeError(f"PUT {path} HTTP {r.status_code}: {(r.text or '')[:800]}")
     return r.json() if r.text else {}
@@ -246,18 +256,25 @@ def _qv(
     *,
     aggregator: str = "sum",
     red_gt: float | None = None,
+    red_lt: float | None = None,
     yellow_gt: float | None = None,
+    yellow_lt: float | None = None,
     green_gt: float | None = 0,
     precision: int = 0,
 ) -> dict[str, Any]:
     formats: list[dict[str, Any]] = []
     if red_gt is not None:
         formats.append({"comparator": ">", "palette": "white_on_red", "value": red_gt})
+    if red_lt is not None:
+        formats.append({"comparator": "<", "palette": "white_on_red", "value": red_lt})
     if yellow_gt is not None:
         formats.append({"comparator": ">", "palette": "white_on_yellow", "value": yellow_gt})
+    if yellow_lt is not None:
+        formats.append({"comparator": "<", "palette": "white_on_yellow", "value": yellow_lt})
     if green_gt is not None:
         formats.append({"comparator": ">", "palette": "white_on_green", "value": green_gt})
-    formats.append({"comparator": ">=", "palette": "white_on_green", "value": 0})
+    if red_lt is None:
+        formats.append({"comparator": ">=", "palette": "white_on_green", "value": 0})
     return {
         "definition": {
             "title": title,
@@ -3104,7 +3121,8 @@ def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
                         "avg:robo.ruptura.impala.saude_score{*}",
                         aggregator="avg",
                         green_gt=70,
-                        yellow_gt=40,
+                        yellow_lt=70,
+                        red_lt=40,
                         precision=0,
                     ),
                     "layout": {"height": 2, "width": 3, "x": 0, "y": 4},
@@ -3144,6 +3162,30 @@ def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
                     ),
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 4},
                     "id": 770012,
+                },
+                {
+                    **_qv(
+                        "OSCILACAO — cuidado (0/1)",
+                        "avg:robo.decisao.oscilacao{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 6},
+                    "id": 770013,
+                },
+                {
+                    **_qv(
+                        "Claude max pulso (0=moderado)",
+                        "avg:robo.ruptura.impala.claude_assertividade_maxima{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 6},
+                    "id": 770014,
                 },
             ],
         },
@@ -3618,6 +3660,176 @@ def _grupo_marca_kit_tendencia() -> dict[str, Any]:
     }
 
 
+def _grupo_kits_manicure_impala() -> dict[str, Any]:
+    """Kits Impala para manicure: condição, economia vs avulso, índice de compra."""
+    return {
+        "id": GROUP_KITS_MANICURE_ID,
+        "definition": {
+            "title": "[Kits Impala manicure] Condicao + economia + indice de compra",
+            "type": "group",
+            "background_color": "vivid_blue",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Kits avaliados",
+                        "avg:robo.esmaltes.kit_manicure.total{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 791011,
+                },
+                {
+                    **_qv(
+                        "Com condicao (economia + margem)",
+                        "avg:robo.esmaltes.kit_manicure.condicao_ok{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 791012,
+                },
+                {
+                    **_qv(
+                        "Economia media vs avulso %",
+                        "avg:robo.esmaltes.kit_manicure.economia_media_pct{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 791013,
+                },
+                {
+                    **_qv(
+                        "OSCILACAO — cuidado (0/1)",
+                        "avg:robo.decisao.oscilacao{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 791016,
+                },
+                {
+                    **_toplist_metric(
+                        "Indice de compra Impala por kit",
+                        "avg:robo.esmaltes.kit_manicure.indice_compra{*} by {kit}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 0, "y": 2},
+                    "id": 791014,
+                },
+                {
+                    **_toplist_metric(
+                        "Economia % vs avulso por kit",
+                        "avg:robo.esmaltes.kit_manicure.economia_pct{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 6, "y": 2},
+                    "id": 791015,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 16, "width": 12, "height": 1},
+    }
+
+
+def _grupo_decisao_oscilacao() -> dict[str, Any]:
+    """Qualquer oscilação além da margem âncora → vermelho + cuidado para decidir."""
+    return {
+        "id": GROUP_DECISAO_OSCILACAO_ID,
+        "definition": {
+            "title": "[Decisao] Oscilacao Datadog · cuidado · Claude moderado",
+            "type": "group",
+            "background_color": "vivid_red",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "OSCILACAO (0/1) — widget vermelho",
+                        "avg:robo.decisao.oscilacao{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 791021,
+                },
+                {
+                    **_qv(
+                        "CUIDADO para decidir (0/1)",
+                        "avg:robo.decisao.cuidado{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 791022,
+                },
+                {
+                    **_qv(
+                        "Metricas que oscilaram",
+                        "avg:robo.decisao.oscilacao.n{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 791023,
+                },
+                {
+                    **_qv(
+                        "Claude pulso maximo (0=moderado)",
+                        "avg:robo.claude.ciclo.fase_maxima{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 791024,
+                },
+                {
+                    **_qv(
+                        "Dados expostos no Datadog",
+                        "avg:robo.claude.ciclo.exposto_datadog{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 791025,
+                },
+                {
+                    **_qv(
+                        "Vigia Datadog saudavel",
+                        "avg:robo.vigia_datadog.saudavel{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 791026,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 18, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_ecommerce() -> None:
     """Dashboard Ecommerce: catalogo, batalha, ads/vendas/decisao."""
     ecom_id = _resolver_dash_ecommerce()
@@ -3641,6 +3853,13 @@ def atualizar_dashboard_ecommerce() -> None:
             "**Marca × kit × tendência:** grupo [Marca x kit x tendencia] — o robô "
             "identifica no ML marcas e tamanhos de kit que oferecem condição e cruzam "
             "com tendência (confirmada/oportunidade).\n\n"
+            "**Kits manicure Impala:** grupo [Kits Impala manicure] — kits do catálogo "
+            "compatíveis com o que o ML oferece, com índice de compra Impala, economia "
+            "vs avulso e condição (qtd≥3 + margem ≥ piso + padrão Impala).\n\n"
+            "**Decisão / oscilação:** grupo [Decisao] — Claude pulsa assertividade "
+            "máxima só para expor âncoras no Datadog e volta a uso moderado. "
+            "Qualquer oscilação além da margem de erro deixa o widget **vermelho** "
+            "e dispara Telegram: cuidado para tomar decisão (não escalar Ads/volume).\n\n"
             "**Saude da conta ML:** grupo [Saude conta ML] — reputação/cor da *conta*, "
             "anúncios do foco Impala (kits), claims e receita dos *seus* pedidos. "
             "Bolsas Mariart/legado ficam fora do radar "
@@ -3666,16 +3885,21 @@ def atualizar_dashboard_ecommerce() -> None:
     outra["layout"] = {"x": 0, "y": 12, "width": 12, "height": 1}
     marca_kit = _grupo_marca_kit_tendencia()
     marca_kit["layout"] = {"x": 0, "y": 14, "width": 12, "height": 1}
+    kits_m = _grupo_kits_manicure_impala()
+    kits_m["layout"] = {"x": 0, "y": 16, "width": 12, "height": 1}
+    decisao = _grupo_decisao_oscilacao()
+    decisao["layout"] = {"x": 0, "y": 18, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
             "ABA ECOMMERCE: catalogo Impala, batalha, ads, saude da conta ML, "
-            "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia. "
+            "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
+            "kits Impala manicure, oscilacao/cuidado para decidir. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
             f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
-        "widgets": [note, com, cat, bat, saude, ruptura, outra, marca_kit],
+        "widgets": [note, com, cat, bat, saude, ruptura, outra, marca_kit, kits_m, decisao],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -4229,6 +4453,26 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "tags": [TAG_MONITOR, "monitor:marca_esmalte", "severity:p2"],
             "options": {
                 "thresholds": {"critical": 0.5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Oscilacao Datadog — cuidado para decidir",
+            "type": "query alert",
+            "query": "avg(last_15m):avg:robo.decisao.oscilacao{*} > 0",
+            "message": (
+                "Widget vermelho: metrica de decisao oscilou alem da margem de erro "
+                "(saude ±2, margem ±0,5 p.p., kits/Claude/anuncios). "
+                "CUIDADO para tomar decisao — nao escale Ads, volume nem 2o CNPJ "
+                "ate o widget sair do vermelho. Telegram tambem alerta.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:oscilacao_decisao", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0},
                 "notify_no_data": False,
                 "require_full_window": False,
                 "include_tags": True,

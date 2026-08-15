@@ -14,6 +14,10 @@ class TestResumoIa(unittest.TestCase):
     def test_sem_api_key_retorna_fallback(self):
         self.assertEqual(sintetizar_claude("prompt", {"a": 1}, "fb"), "fb")
 
+    @patch("core.resumo_ia.cfg.ANTHROPIC_API_KEY", "")
+    def test_somente_ia_sem_key_nao_mascara_fallback(self):
+        self.assertEqual(sintetizar_claude("prompt", {"a": 1}, "fb", somente_ia=True), "")
+
     @patch("core.resumo_ia.perguntar", return_value="ok")
     @patch("core.resumo_ia.cfg.ANTHROPIC_API_KEY", "sk")
     def test_guardrail_no_prompt(self, mock_perguntar):

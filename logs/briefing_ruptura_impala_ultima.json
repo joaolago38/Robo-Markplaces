@@ -1,53 +1,62 @@
 {
   "ok": true,
-  "veredito": "liberado",
-  "saude_score": 30.0,
+  "veredito": "ainda_nao",
+  "saude_score": 21.4,
+  "progresso_pct": 42.9,
   "esforco": {
-    "faltando_n": 0,
-    "feitos_n": 6,
-    "faltando": [],
+    "faltando_n": 4,
+    "feitos_n": 3,
+    "faltando": [
+      {
+        "id": "avaliacoes",
+        "rotulo": "Avaliações Impala",
+        "atual": 0,
+        "minimo": 20,
+        "atitude": "Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8)."
+      },
+      {
+        "id": "mlb",
+        "rotulo": "MLB dos kits MIMO-003 e SORT-006",
+        "atual": "IMP-MIMO-003=falta,IMP-SORT-006=falta",
+        "minimo": "ambos MLB",
+        "atitude": "Preencher MLB válido de IMP-MIMO-003 e IMP-SORT-006 — sem MLB não há venda rastreável."
+      },
+      {
+        "id": "estoque",
+        "rotulo": "Estoque ≥ 20 nos dois kits",
+        "atual": "IMP-MIMO-003=0,IMP-SORT-006=0",
+        "minimo": 20,
+        "atitude": "Abastecer estoque dos kits de validação (mínimo do ponto de ruptura)."
+      },
+      {
+        "id": "pedidos",
+        "rotulo": "Pedido próprio (margem 24h ou vendas completadas)",
+        "atual": "itens=0 completadas=0",
+        "minimo": "≥1",
+        "atitude": "Concluir 1 pedido próprio com margem registrada (não contar bolsa/legado)."
+      }
+    ],
     "feitos": [
       {
-        "id": "impala_fase1",
-        "rotulo": "Impala passou na checklist (reviews/MLB/estoque/pedido)",
-        "atual": "liberado",
-        "minimo": "liberado",
-        "atitude": "Fechar a checklist Impala (reviews / MLB / estoque / pedido) antes de outra marca."
+        "id": "nota",
+        "rotulo": "Nota média",
+        "atual": 0.0,
+        "minimo": 4.8,
+        "atitude": "Nota média no piso (ou sem reviews ainda)."
       },
       {
-        "id": "anuncios_foco",
-        "rotulo": "Há anúncio Impala ativo no ML",
-        "atual": 2,
-        "minimo": ">=1",
-        "atitude": "Há anúncio Impala ativo no ML."
+        "id": "ads_acos",
+        "rotulo": "ACOS ≤ teto (ou ads desligado)",
+        "atual": 0.0,
+        "minimo": 0.2,
+        "atitude": "ACOS dentro do teto (ou Ads desligado)."
       },
       {
-        "id": "cnpj_ml",
-        "rotulo": "CNPJ 52.668.583/0001-27 identificado no ML",
-        "atual": "1651424153",
-        "minimo": "seller_id",
-        "atitude": "Confirmar seller_id do CNPJ 52.668.583/0001-27 no ML."
-      },
-      {
-        "id": "cnae_cosmetico",
-        "rotulo": "CNAE 4772500 (cosméticos) neste CNPJ",
-        "atual": "ok",
-        "minimo": "4772500",
-        "atitude": "Manter CNAE 4772-5/00 neste CNPJ."
-      },
-      {
-        "id": "radar_ml",
-        "rotulo": "Amostra ML suficiente para ranquear marcas",
-        "atual": "anuncios_outras=8",
-        "minimo": ">=5",
-        "atitude": "Radar de concorrentes precisa de amostra (≥5 anúncios) — busca 403 deixa o ranking cego."
-      },
-      {
-        "id": "candidata",
-        "rotulo": "Há marca candidata (não Impala) no referente ML",
-        "atual": "Anita",
-        "minimo": "top1",
-        "atitude": "Só ranquear outra marca quando houver anúncios/vendas na amostra."
+        "id": "claims",
+        "rotulo": "Claims baixos",
+        "atual": 0,
+        "minimo": "<2",
+        "atitude": "Claims baixos."
       }
     ]
   },
@@ -192,7 +201,45 @@
         ]
       }
     ],
-    "margem_media_segura_pct": 0.0
+    "margem_media_segura_pct": 0.0,
+    "candidatos_margem": [
+      {
+        "sku": "IMP-MIMO-003",
+        "margem_real_pct": 19.35,
+        "preco": 44.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "margem_real_pct": 18.18,
+        "preco": 64.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-PERL-004",
+        "margem_real_pct": 16.26,
+        "preco": 39.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      }
+    ]
   },
   "previa_ml": {
     "anuncios_ativos_foco": 0,
@@ -240,9 +287,138 @@
       }
     ]
   },
-  "resumo_deterministico": "Veredito *liberado* · saúde Impala ML `30.0/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nJá encaminhado: Impala passou na checklist (reviews/MLB/estoque/pedido), Há anúncio Impala ativo no ML, CNPJ 52.668.583/0001-27 identificado no ML, CNAE 4772500 (cosméticos) neste CNPJ.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
+  "ancora_numerica": {
+    "veredito": "ainda_nao",
+    "saude_score": 21.4,
+    "saude_erro_pct": 5.0,
+    "margem_piso_pct": 15.0,
+    "margem_fonte": "catalogo_custo_mais_taxa_ml",
+    "margem_erro_pp": 0.5,
+    "vd_dia_fonte": "ref_catalogo_nao_venda_live",
+    "radar_ml": "cego",
+    "mlb_live": false,
+    "reviews": 0,
+    "nota": 0.0,
+    "anuncios_foco": 0,
+    "legado_ignorado": 38,
+    "seguros_n": 0,
+    "faltando_n": 4,
+    "candidatos_margem": [
+      {
+        "sku": "IMP-MIMO-003",
+        "margem_real_pct": 19.35,
+        "preco": 44.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "margem_real_pct": 18.18,
+        "preco": 64.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-PERL-004",
+        "margem_real_pct": 16.26,
+        "preco": 39.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      }
+    ],
+    "kits_manicure_condicao_n": 2,
+    "kits_manicure": [
+      {
+        "sku": "IMP-PERL-004",
+        "qtd_kit": 4,
+        "indice_compra": 278,
+        "margem_pct": 16.26,
+        "condicao_ok": true,
+        "economia_pct": 16.9,
+        "preco": 39.9
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "qtd_kit": 6,
+        "indice_compra": 22,
+        "margem_pct": 18.18,
+        "condicao_ok": true,
+        "economia_pct": 9.9,
+        "preco": 64.9
+      }
+    ],
+    "preco_avulso_ref": 12.0,
+    "cnpj": "52.668.583/0001-27",
+    "regra": "cite só estes números; ausente = n/d; não invente venda ao vivo"
+  },
+  "kits_manicure": {
+    "ok": true,
+    "condicao_n": 2,
+    "preco_unitario_ref": 12.0,
+    "preco_unitario_ml": 9.0,
+    "ofertas_condicao": [
+      {
+        "sku": "IMP-PERL-004",
+        "qtd_kit": 4,
+        "indice_compra": 278,
+        "margem_pct": 16.26,
+        "condicao_ok": true,
+        "economia_pct": 16.9,
+        "preco": 39.9
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "qtd_kit": 6,
+        "indice_compra": 22,
+        "margem_pct": 18.18,
+        "condicao_ok": true,
+        "economia_pct": 9.9,
+        "preco": 64.9
+      }
+    ],
+    "ofertas_top": [
+      {
+        "sku": "IMP-PERL-004",
+        "qtd_kit": 4,
+        "indice_compra": 278,
+        "margem_pct": 16.26,
+        "condicao_ok": true,
+        "economia_pct": 16.9,
+        "preco": 39.9
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "qtd_kit": 6,
+        "indice_compra": 22,
+        "margem_pct": 18.18,
+        "condicao_ok": true,
+        "economia_pct": 9.9,
+        "preco": 64.9
+      }
+    ]
+  },
+  "resumo_deterministico": "Veredito *ainda_nao* · saúde Impala ML `21.4/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nEsforço para ruptura tranquila:\n• Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8).\n• Preencher MLB válido de IMP-MIMO-003 e IMP-SORT-006 — sem MLB não há venda rastreável.\n• Abastecer estoque dos kits de validação (mínimo do ponto de ruptura).\n• Concluir 1 pedido próprio com margem registrada (não contar bolsa/legado).\nJá encaminhado: Nota média, ACOS ≤ teto (ou ads desligado), Claims baixos.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
   "resumo_claude": "",
   "claude_ok": false,
+  "claude_fase": "moderada",
+  "claude_assertividade_maxima": false,
+  "claude_reused": false,
+  "fingerprint": "ainda_nao|21.4|4|0|0|0|IMP-MIMO-003",
   "cnpj": "52.668.583/0001-27",
-  "timestamp": "2026-08-14T23:36:46.686786+00:00"
+  "timestamp": "2026-08-15T00:17:17.602734+00:00"
 }

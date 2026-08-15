@@ -216,17 +216,24 @@ def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
     }
 
 
-def pode_chamar() -> tuple[bool, str]:
-    """Fail-closed: qualquer erro no toggle/orçamento bloqueia a chamada."""
-    try:
-        from core.claude_toggle import claude_esta_ativo
+def pode_chamar(*, origem: str | None = None, forcar: bool = False) -> tuple[bool, str]:
+    """Fail-closed: qualquer erro no toggle/orçamento bloqueia a chamada.
 
-        ok_t, motivo_t = claude_esta_ativo()
-        if not ok_t:
-            return False, f"Claude desligado: {motivo_t}"
-    except Exception as exc:
-        logger.warning("toggle Claude indisponível — bloqueando chamadas: %s", exc)
-        return False, f"Claude desligado: toggle_indisponivel ({exc})"
+    `forcar=True` ignora CLAUDE_ATIVO / toggle de arquivo (ruptura Impala).
+    Orçamento esgotado continua bloqueando.
+    """
+    if not forcar:
+        try:
+            from core.claude_toggle import claude_esta_ativo
+
+            ok_t, motivo_t = claude_esta_ativo()
+            if not ok_t:
+                return False, f"Claude desligado: {motivo_t}"
+        except Exception as exc:
+            logger.warning("toggle Claude indisponível — bloqueando chamadas: %s", exc)
+            return False, f"Claude desligado: toggle_indisponivel ({exc})"
+    elif origem:
+        logger.info("Claude forçado na origem=%s (toggle ignorado)", origem)
 
     try:
         c = _cfg()

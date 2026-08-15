@@ -23,15 +23,26 @@ SYSTEM_DECISAO = (
     "Nunca invente métricas de saúde, vendas ou preços ausentes no JSON."
 )
 
+SYSTEM_RUPTURA = (
+    "Ponto de ruptura Impala: assertividade máxima e margem de erro pequena. "
+    "Cite SOMENTE números do JSON, com a faixa em ancora_numerica. "
+    "Não arredonde margem além de 0,1 p.p. Não invente vd/dia, reviews, MLB ou ranking. "
+    "Se fonte=ref_catalogo, não trate como venda ao vivo. "
+    "Se radar_ml=cego, escreva que a amostra está cega — não invente concorrente. "
+    "Número ausente = n/d. Decisão em FAZER / NÃO FAZER / OBSERVAR com SKU explícito. "
+    "Não publicar anúncio. Não trocar CNPJ 52.668.583/0001-27."
+)
+
 
 def dosar_analise_para_decisao(
     *,
     estado_ml: dict[str, Any] | None = None,
     stress: dict[str, Any] | None = None,
     proposito: str = "analise_ml",
+    forcar_profundidade: str | None = None,
 ) -> dict[str, Any]:
     """Strategy: minima | padrao | ampliada conforme ML × produto."""
-    if not cfg_bool("CLAUDE_ML_DOSAGEM_ATIVA", True):
+    if not cfg_bool("CLAUDE_ML_DOSAGEM_ATIVA", True) and not forcar_profundidade:
         return {
             "profundidade": "padrao",
             "fator_tokens": 1.0,
@@ -45,11 +56,20 @@ def dosar_analise_para_decisao(
     nivel_ml = str(estado.get("nivel") or "desconhecido")
     stress_n = str(st.get("nivel") or "baixo")
     prop = (proposito or "").lower()
+    forcada = str(forcar_profundidade or "").strip().lower()
+    ruptura = "ruptura" in prop
 
     profundidade = "padrao"
     motivos: list[str] = []
+    instrucoes = SYSTEM_DECISAO
 
-    if nivel_ml == "critico" or (nivel_ml == "atencao" and stress_n == "alto"):
+    if forcada in PROFUNDIDADE_TOKENS:
+        profundidade = forcada
+        motivos.append(f"forcada_{forcada}")
+    elif ruptura and "moderada" not in prop:
+        profundidade = "ampliada"
+        motivos.append("ruptura_assertividade_maxima")
+    elif nivel_ml == "critico" or (nivel_ml == "atencao" and stress_n == "alto"):
         profundidade = "ampliada"
         motivos.append("ml_sob_pressao_ou_stress_alto")
     elif nivel_ml == "ok" and stress_n == "baixo" and "listing" not in prop:
@@ -61,8 +81,18 @@ def dosar_analise_para_decisao(
     else:
         motivos.append("equilibrio_padrao")
 
+    if ruptura or forcada == "ampliada":
+        instrucoes = SYSTEM_RUPTURA
+
     foco = ["FAZER", "NAO_FAZER", "OBSERVAR"]
-    if nivel_ml in ("atencao", "critico"):
+    if ruptura:
+        foco = [
+            "PROTEGER_MARGEM",
+            "NAO_ESCALAR_ADS",
+            "PUBLICAR_SO_COM_MLB",
+            "NAO_TROCAR_CNPJ",
+        ]
+    elif nivel_ml in ("atencao", "critico"):
         foco = [
             "DEFENDER_REPUTACAO",
             "PROTEGER_MARGEM",
@@ -79,7 +109,9 @@ def dosar_analise_para_decisao(
         "nivel_ml": nivel_ml,
         "stress_produto": stress_n,
         "foco_decisao": foco,
-        "instrucoes": SYSTEM_DECISAO,
+        "instrucoes": instrucoes,
+        "assertividade_maxima": profundidade == "ampliada"
+        and (ruptura or forcada == "ampliada"),
     }
 
 

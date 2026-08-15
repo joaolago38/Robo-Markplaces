@@ -31,6 +31,10 @@ from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegr
 from core.prontidao import pode_alertar_esmaltes
 from integracoes.esmaltes.analise_kits_esmaltes import consolidar_varredura, processar_termo
 from integracoes.esmaltes.cruzamento_kits_planilha import cruzar_planilha_com_mercado
+from integracoes.esmaltes.kits_compativeis_manicures import (
+    formatar_secao_manicure,
+    montar_ofertas_manicure,
+)
 from integracoes.esmaltes.planilha_impala import carregar_kits_planilha, carregar_produtos_planilha
 from integracoes.marketplaces.busca_multi_marketplace import resolver_fn_busca_esmaltes
 
@@ -113,6 +117,13 @@ def montar_mensagem_telegram(cruzamento: dict[str, Any], consolidado: dict[str, 
         ]
         linhas.extend(["", "*Tamanhos quentes no ML:* " + " · ".join(partes)])
 
+    ofertas_m = cruzamento.get("ofertas_manicure") or {}
+    linhas.extend(
+        formatar_secao_manicure(
+            ofertas_m.get("ofertas_condicao") or ofertas_m.get("ofertas") or []
+        )
+    )
+
     linhas.extend(
         [
             "",
@@ -182,6 +193,8 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             kits_cadastrados=kits_p,
             top_kits=MONTAR_KITS_IMPALA_TOP_KITS,
         )
+        ofertas_m = montar_ofertas_manicure(anuncios=kits_ml)
+        cruzamento["ofertas_manicure"] = ofertas_m
         msg = montar_mensagem_telegram(cruzamento, consolidado)
 
         payload = {

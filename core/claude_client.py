@@ -113,6 +113,8 @@ def perguntar(
     forcar_modelo: bool = False,
     origem: str | None = None,
     exigir_contexto: bool = False,
+    forcar_chamada: bool = False,
+    temperature: float | None = None,
 ) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
@@ -123,7 +125,7 @@ def perguntar(
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso
 
-        ok_orc, motivo_orc = pode_chamar()
+        ok_orc, motivo_orc = pode_chamar(origem=origem, forcar=forcar_chamada)
         if not ok_orc:
             logger.warning("Claude bloqueado por orçamento: %s", motivo_orc)
             registrar_uso(
@@ -157,24 +159,27 @@ def perguntar(
 
     _tags = [f"modelo:{modelo_efetivo}", f"com_imagem:{bool(imagens)}"]
     inicio = time.monotonic()
+    payload: dict = {
+        "model": modelo_efetivo,
+        "max_tokens": max_tokens,
+        "system": [
+            {
+                "type": "text",
+                "text": system or SYSTEM,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        "messages": [{"role": "user", "content": content}],
+    }
+    if temperature is not None:
+        payload["temperature"] = max(0.0, min(1.0, float(temperature)))
     try:
         r = request("POST", API_URL, headers={
             "x-api-key": ANTHROPIC_API_KEY,
             "anthropic-version": "2023-06-01",
             "anthropic-beta": "prompt-caching-2024-07-31",
             "content-type": "application/json",
-        }, json={
-            "model": modelo_efetivo,
-            "max_tokens": max_tokens,
-            "system": [
-                {
-                    "type": "text",
-                    "text": system or SYSTEM,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
-            "messages": [{"role": "user", "content": content}],
-        }, timeout=30)
+        }, json=payload, timeout=30)
         r.raise_for_status()
         data = r.json()
         duracao_ms = (time.monotonic() - inicio) * 1000

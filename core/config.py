@@ -275,6 +275,16 @@ RUPTURA_CLAUDE = os.getenv("RUPTURA_CLAUDE", "1").strip().lower() not in (
     "false",
     "no",
 )
+# Pulso máximo (Sonnet, temp 0) só até os dados da ruptura irem ao Datadog.
+# Depois o ciclo em logs/claude_ciclo_ruptura.json volta a uso moderado.
+RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA = os.getenv(
+    "RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA", "1"
+).strip().lower() not in ("0", "false", "no")
+# No pulso máximo, ruptura chama Claude mesmo com CLAUDE_ATIVO=0
+# (ainda respeita orçamento e API key). No modo moderado o toggle vale.
+RUPTURA_CLAUDE_IGNORAR_TOGGLE = os.getenv(
+    "RUPTURA_CLAUDE_IGNORAR_TOGGLE", "1"
+).strip().lower() not in ("0", "false", "no")
 # Limites de decisão do ecossistema (Alibaba + USD + vendas + saúde ML × CNAE/CNPJ)
 DECISION_LIMITS_ATIVO = os.getenv("DECISION_LIMITS_ATIVO", "1").strip().lower() not in (
     "0",

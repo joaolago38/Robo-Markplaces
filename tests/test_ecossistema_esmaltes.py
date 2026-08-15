@@ -124,6 +124,38 @@ class TestEcossistemaEsmaltes(unittest.TestCase):
         self.assertIn("Anita kit 5", titulos)
         self.assertTrue(any(a.get("horizonte") == "7d" and "Anita" in (a.get("titulo") or "") for a in plano["acoes"]))
 
+    def test_kit_manicure_vira_acao_7d(self):
+        fontes = {
+            k: {"disponivel": False, "timestamp": None, "dados": {}}
+            for k in eco._PATHS
+        }
+        fontes["kits_manicure"] = {
+            "disponivel": True,
+            "timestamp": "2026-08-14T12:00:00+00:00",
+            "dados": {
+                "ok": True,
+                "ofertas_condicao": [
+                    {
+                        "sku": "IMP-PERL-004",
+                        "qtd_kit": 4,
+                        "perfil_manicure": "manicure_autonoma",
+                        "indice_compra": 278,
+                        "condicao_ok": True,
+                        "economia": {"economia_pct": 16.9, "economia_brl": 8.1},
+                    }
+                ],
+            },
+        }
+        plano = eco.montar_plano(fontes)
+        titulos = " ".join(a.get("titulo") or "" for a in plano["acoes"])
+        self.assertIn("IMP-PERL-004", titulos)
+        self.assertTrue(
+            any(
+                a.get("horizonte") == "7d" and "IMP-PERL-004" in (a.get("titulo") or "")
+                for a in plano["acoes"]
+            )
+        )
+
     @patch("integracoes.esmaltes.ecossistema_esmaltes.ler_json", return_value={})
     def test_coletar_fontes(self, _mock):
         fontes = eco.coletar_fontes()

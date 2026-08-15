@@ -115,6 +115,54 @@ class TestNecessidadeCore(unittest.TestCase):
         self.assertIn("preencher MLB", msg)
 
 
+    @patch.object(nec, "carregar_campanhas")
+    @patch.object(nec, "montar_mensagem_campanha")
+    @patch.object(nec, "coletar_sinais")
+    @patch.object(nec, "_estoque_campanha", return_value=(10, True))
+    @patch.object(
+        nec,
+        "_status_sustentabilidade",
+        return_value={"status": "sustentavel", "permitido_impulsionar": True},
+    )
+    @patch.object(
+        nec,
+        "_indice_compra_sku",
+        return_value={
+            "sku": "IMP-ATAC-010",
+            "condicao_ok": True,
+            "indice_compra": 200,
+            "perfil_manicure": "salao_estoque",
+            "economia": {"economia_pct": 25.0},
+        },
+    )
+    def test_boost_indice_compra_e_economia(
+        self, _idx, _sust, _est, mock_sinais, mock_montar, mock_camp
+    ):
+        mock_sinais.return_value = [
+            {"fonte": "leads", "rotulo": "lead:atacado", "texto": "quero atacado kit 10", "peso": 40}
+        ]
+        mock_camp.return_value = [
+            {"id": "kit-10-atacado-manicure", "nome": "Kit 10", "sku": "IMP-ATAC-010", "ativo": True}
+        ]
+        mock_montar.return_value = {
+            "ok": True,
+            "campanha_nome": "Kit 10",
+            "sku": "IMP-ATAC-010",
+            "preco_brl": 69.9,
+            "link_ml": "https://produto.mercadolivre.com.br/MLB1234567890",
+            "link_valido": True,
+            "texto": "Oferta Kit 10",
+            "texto_whatsapp": "Oferta Kit 10",
+            "texto_telegram": "Oferta Kit 10",
+        }
+        out = nec.casar_necessidades_com_ml()
+        cond = out["escolhida"]["condicoes"]
+        self.assertEqual(cond["economia_pct"], 25.0)
+        self.assertEqual(cond["indice_compra"], 200)
+        self.assertTrue(cond["condicao_kit"])
+        self.assertGreaterEqual(out["escolhida"]["score"], 40 + 25 + 15 + 10 + 18)
+
+
 class TestAgenteNecessidade(unittest.TestCase):
     @patch("agentes.social.agente_necessidade_manicures.escrever_json_atomico")
     @patch("agentes.social.agente_necessidade_manicures.alertar_gestor", return_value=True)

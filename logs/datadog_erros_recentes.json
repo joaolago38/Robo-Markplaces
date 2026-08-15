@@ -1,6 +1,39 @@
 {
   "erros": [
     {
+      "fingerprint": "c450164066d6d0ddefb1",
+      "primeira_vez": "2026-08-15T00:14:38.608751+00:00",
+      "ultima_vez": "2026-08-15T00:17:22.546372+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram erro: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "b5f913d8a0182eca5669",
+      "primeira_vez": "2026-08-15T00:14:38.601886+00:00",
+      "ultima_vez": "2026-08-15T00:17:22.539249+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.telegram.org falhou: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "status": "error",
+      "error_kind": "OSError",
+      "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "d8ecf8b59d698f0ee61d",
+      "primeira_vez": "2026-08-15T00:14:38.579946+00:00",
+      "ultima_vez": "2026-08-15T00:17:16.175199+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.anthropic.com falhou: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "status": "error",
+      "error_kind": "OSError",
+      "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
+      "ocorrencias": 2
+    },
+    {
       "fingerprint": "816423eaab464acaca7c",
       "primeira_vez": "2026-08-14T23:09:02.012708+00:00",
       "ultima_vez": "2026-08-14T23:35:55.174523+00:00",
@@ -1616,40 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "d088e66772c59b59c29c",
-      "primeira_vez": "2026-07-05T21:19:09.249025+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.249025+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token Shopee: 403 Client Error: Forbidden for url: https://partner.shopeemobile.com/api/v2/auth/access_token/get?partner_id=1&timestamp=1783286348&sign=eae972099b7b85e2b4c8edd61435cb2f93837c0fed9026adf852f87fc88ee130",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "c3f1c213423e3405d0db",
-      "primeira_vez": "2026-07-05T21:19:08.676634+00:00",
-      "ultima_vez": "2026-07-05T21:19:08.676634+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token Shopee: 403 Client Error: Forbidden for url: https://partner.shopeemobile.com/api/v2/auth/access_token/get?partner_id=1&timestamp=1783286347&sign=95eace644079b2c1a38cba2344a3e80f692145cb3bba1b258f85842e117b7645",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "5dd1c92e8fb0128b0cce",
-      "primeira_vez": "2026-07-05T20:44:29.910416+00:00",
-      "ultima_vez": "2026-07-05T21:19:08.492427+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos erro: rede",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-08-14T23:35:55.174523+00:00"
+  "atualizado_em": "2026-08-15T00:17:22.546372+00:00"
 }

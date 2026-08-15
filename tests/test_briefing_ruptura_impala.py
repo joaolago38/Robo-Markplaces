@@ -119,6 +119,32 @@ class TestMontarBriefing(unittest.TestCase):
         self.assertIn("Prévia ML Impala", blob)
         self.assertIn("IMP-MIMO-003", blob)
         self.assertIn("Esforço para ruptura tranquila", blob)
+        self.assertIn("Números âncora", blob)
+        self.assertIn("±", blob)
+
+    def test_ancora_expõe_margem_de_erro_e_candidatos(self):
+        catalogo = {
+            "kits": [
+                _kit("IMP-PERL-004", mlb_ok=False, margem=16.26),
+                _kit("IMP-MIMO-003", mlb_ok=False, estoque_zero=True, margem=19.35),
+            ]
+        }
+        out = br.montar_briefing_ruptura(
+            {"veredito": "ainda_nao", "checks_ok": 3, "checks_total": 7, "checks": [], "sinais": {}},
+            resumo={"anuncios_ativos": 0, "anuncios_ignorados_fora_foco": 38},
+            catalogo=catalogo,
+            batalha={},
+            margem={},
+            chamar_claude=False,
+        )
+        ancora = out["ancora_numerica"]
+        self.assertEqual(ancora["margem_erro_pp"], 0.5)
+        self.assertEqual(ancora["radar_ml"], "cego")
+        self.assertGreaterEqual(ancora["saude_erro_pct"], 5.0)
+        skus = {c["sku"] for c in out["produtos"]["candidatos_margem"]}
+        self.assertIn("IMP-PERL-004", skus)
+        self.assertFalse(out["claude_ok"])
+        self.assertFalse(out["claude_assertividade_maxima"])
 
     @patch.object(br, "_claude_ruptura", return_value="FAZER: publicar MIMO-003. NÃO FAZER: Ads.")
     def test_claude_quando_pedido(self, mock_ia):
@@ -135,6 +161,40 @@ class TestMontarBriefing(unittest.TestCase):
         self.assertTrue(out["claude_ok"])
         self.assertIn("FAZER", out["resumo_claude"])
         mock_ia.assert_called_once()
+        ctx = mock_ia.call_args[0][0]
+        self.assertIn("ancora_numerica", ctx)
+        self.assertEqual(ctx["ancora_numerica"]["margem_erro_pp"], 0.5)
+
+    @patch("core.resumo_ia.sintetizar_claude", return_value="FAZER: PERL-004. NÃO FAZER: Ads.")
+    @patch("integracoes.esmaltes.claude_ciclo_ruptura.fase_claude_ruptura", return_value="maxima")
+    def test_claude_ruptura_forca_assertividade_maxima(self, _fase, mock_sint):
+        from core.config import CLAUDE_MODELO
+
+        out = br._claude_ruptura({"veredito": "ainda_nao", "ancora_numerica": {"margem_erro_pp": 0.5}}, "fb")
+        self.assertIn("FAZER", out)
+        kwargs = mock_sint.call_args.kwargs
+        self.assertEqual(kwargs.get("temperature"), 0.0)
+        self.assertTrue(kwargs.get("forcar_chamada"))
+        self.assertTrue(kwargs.get("forcar_modelo"))
+        self.assertEqual(kwargs.get("forcar_profundidade"), "ampliada")
+        self.assertTrue(kwargs.get("somente_ia"))
+        self.assertEqual(kwargs.get("proposito"), "ruptura_impala")
+        self.assertEqual(kwargs.get("origem"), "ruptura_impala")
+        self.assertEqual(kwargs.get("modelo"), CLAUDE_MODELO)
+
+    @patch("core.resumo_ia.sintetizar_claude", return_value="OBSERVAR: saude 21. NÃO FAZER: Ads.")
+    @patch("integracoes.esmaltes.claude_ciclo_ruptura.fase_claude_ruptura", return_value="moderada")
+    def test_claude_ruptura_volta_moderado_depois_datadog(self, _fase, mock_sint):
+        out = br._claude_ruptura({"veredito": "ainda_nao"}, "fb")
+        self.assertIn("OBSERVAR", out)
+        kwargs = mock_sint.call_args.kwargs
+        self.assertIsNone(kwargs.get("temperature"))
+        self.assertFalse(kwargs.get("forcar_chamada"))
+        self.assertFalse(kwargs.get("forcar_modelo"))
+        self.assertEqual(kwargs.get("forcar_profundidade"), "padrao")
+        self.assertEqual(kwargs.get("proposito"), "ruptura_impala_moderada")
+        self.assertEqual(kwargs.get("max_tokens"), 220)
+        self.assertTrue(kwargs.get("somente_ia"))
 
 
 class TestAgenteMensagem(unittest.TestCase):
