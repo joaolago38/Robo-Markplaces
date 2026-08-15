@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-15T18:37:12.191816+00:00",
+  "timestamp": "2026-08-15T18:47:54.371897+00:00",
   "origem": "monitor_concorrentes",
   "batalha": {
     "anuncios_unicos": 0,
@@ -301,5 +301,121 @@
   "batalha_sim": null,
   "amostra_impala": 0,
   "visao_operacional": false,
-  "anuncios_reais": []
+  "anuncios_reais": [],
+  "agir": {
+    "criticas": 7,
+    "por_acao": {
+      "revisar_preco": 0,
+      "melhorar_listing": 0,
+      "publicar_mlb": 7,
+      "observar": 13
+    },
+    "top": [
+      {
+        "sku": "BUNDLE-777-5ESM",
+        "kit_tag": "kit:b7775esm",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "score": 40.0,
+        "gap_pct": 0.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 79.9,
+        "rival_min": null,
+        "papel": "catalogo",
+        "prio": "p0",
+        "mlb_ok": false,
+        "fonte_rival": "ausente",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-103",
+        "kit_tag": "kit:crzkit103",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "score": 40.0,
+        "gap_pct": 0.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 45.9,
+        "rival_min": null,
+        "papel": "catalogo",
+        "prio": "p0",
+        "mlb_ok": false,
+        "fonte_rival": "ausente",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-002",
+        "kit_tag": "kit:crzkit002",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "score": 40.0,
+        "gap_pct": 0.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 49.9,
+        "rival_min": null,
+        "papel": "catalogo",
+        "prio": "p1",
+        "mlb_ok": false,
+        "fonte_rival": "ausente",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-001",
+        "kit_tag": "kit:crzkit001",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "score": 40.0,
+        "gap_pct": 0.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 39.9,
+        "rival_min": null,
+        "papel": "catalogo",
+        "prio": "p1",
+        "mlb_ok": false,
+        "fonte_rival": "ausente",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-003",
+        "kit_tag": "kit:crzkit003",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "score": 40.0,
+        "gap_pct": 0.0,
+        "rivais_no_tam": 0,
+        "nosso_preco": 54.9,
+        "rival_min": null,
+        "papel": "catalogo",
+        "prio": "p1",
+        "mlb_ok": false,
+        "fonte_rival": "ausente",
+        "critica": true
+      }
+    ],
+    "resumo_claude": null
+  },
+  "golpe": {
+    "disparar": false,
+    "classificacao": "ignorar",
+    "sku": "IMP-PERL-004",
+    "arma": "observar"
+  },
+  "radar_diferencial": {
+    "n_comparaveis": 0,
+    "n_nao_comparaveis": 18,
+    "fazer": "Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure; estoque 10 (validacao) depois 30",
+    "extras": {
+      "francesinha": 8,
+      "tratamento": 5,
+      "outra_marca": 2,
+      "nenhum": 3,
+      "carmed": 0,
+      "brinde": 0,
+      "alicate": 0,
+      "removedor": 0,
+      "full": 0
+    },
+    "mercado_confiavel": false,
+    "fonte": "cache_busca"
+  }
 }
