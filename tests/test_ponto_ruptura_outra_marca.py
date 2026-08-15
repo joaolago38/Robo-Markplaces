@@ -214,6 +214,7 @@ class TestAvaliacao(unittest.TestCase):
             resumo={"anuncios_ativos": 3},
             catalogo=_CATALOGO,
             cnae=_cnae(),
+            condicoes={"ok": True, "fase": 5},
         )
         self.assertEqual(out["veredito"], "liberado")
         self.assertTrue(out["liberado"])
@@ -304,6 +305,7 @@ class TestAgente(unittest.TestCase):
             resumo={"anuncios_ativos": 2},
             catalogo=_CATALOGO,
             cnae=_cnae(),
+            condicoes={"ok": True, "fase": 5},
         )
         with tempfile.TemporaryDirectory() as tmp:
             snap = Path(tmp) / "ponto.json"

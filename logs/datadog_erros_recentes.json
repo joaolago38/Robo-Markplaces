@@ -1,6 +1,116 @@
 {
   "erros": [
     {
+      "fingerprint": "cecaf1fe419184e2b12c",
+      "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
+      "ultima_vez": "2026-08-15T15:45:22.020902+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 50
+    },
+    {
+      "fingerprint": "932ec7d3ef9c57e06c2d",
+      "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
+      "ultima_vez": "2026-08-15T15:45:22.014184+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 50
+    },
+    {
+      "fingerprint": "e63c0748e350061fd4ad",
+      "primeira_vez": "2026-08-15T15:38:31.150926+00:00",
+      "ultima_vez": "2026-08-15T15:38:46.469557+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML buscar_perfil_vendedor erro: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "a7ea68badaf6ffd59517",
+      "primeira_vez": "2026-08-15T15:38:30.640007+00:00",
+      "ultima_vez": "2026-08-15T15:38:45.950507+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "9c4d23823377e5494a83",
+      "primeira_vez": "2026-07-28T17:02:29.076270+00:00",
+      "ultima_vez": "2026-08-15T15:38:39.452568+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token ML: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "10b423f688e9d2288334",
+      "primeira_vez": "2026-07-28T17:02:28.112038+00:00",
+      "ultima_vez": "2026-08-15T15:38:38.301471+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "3c8afe3961ceba0bfac9",
+      "primeira_vez": "2026-08-15T11:47:27.418071+00:00",
+      "ultima_vez": "2026-08-15T15:34:05.675955+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.anthropic.com falhou: HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 15
+    },
+    {
+      "fingerprint": "5b3e3ad32aa0d6ed8be2",
+      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
+      "ultima_vez": "2026-08-15T15:22:56.414762+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 31
+    },
+    {
+      "fingerprint": "1713569a528f808a5d1b",
+      "primeira_vez": "2026-08-15T15:17:01.155486+00:00",
+      "ultima_vez": "2026-08-15T15:21:13.519438+00:00",
+      "logger": "agente_orquestrador",
+      "mensagem": "Orquestrador: falha em x\nTraceback (most recent call last):\n  File \"C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\tests\\..\\agentes\\orquestrador\\agente_orquestrador.py\", line 92, in _executar_agente\n    raw = executar_registro(registro)\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1179, in _mock_c",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 2
+    },
+    {
+      "fingerprint": "6bd386e0e78d2a0affac",
+      "primeira_vez": "2026-08-01T19:21:48.172963+00:00",
+      "ultima_vez": "2026-08-15T15:21:13.507129+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 14
+    },
+    {
       "fingerprint": "f8f8a4d6839d615ab87b",
       "primeira_vez": "2026-07-05T20:44:37.197647+00:00",
       "ultima_vez": "2026-08-15T13:19:59.317166+00:00",
@@ -166,17 +276,6 @@
       "ocorrencias": 9
     },
     {
-      "fingerprint": "5b3e3ad32aa0d6ed8be2",
-      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-08-15T13:19:59.047678+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 25
-    },
-    {
       "fingerprint": "8f4e62c3e4fd79e1be9d",
       "primeira_vez": "2026-07-28T17:02:37.340783+00:00",
       "ultima_vez": "2026-08-15T12:19:25.482584+00:00",
@@ -196,28 +295,6 @@
       "status": "error",
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153/items/search?status=active&limit=100&offset=0 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certifica",
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "9c4d23823377e5494a83",
-      "primeira_vez": "2026-07-28T17:02:29.076270+00:00",
-      "ultima_vez": "2026-08-15T12:19:18.956250+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token ML: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "10b423f688e9d2288334",
-      "primeira_vez": "2026-07-28T17:02:28.112038+00:00",
-      "ultima_vez": "2026-08-15T12:19:17.954727+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": "SSLError",
-      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "ocorrencias": 3
     },
     {
@@ -241,39 +318,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 6
-    },
-    {
-      "fingerprint": "cecaf1fe419184e2b12c",
-      "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
-      "ultima_vez": "2026-08-15T12:18:58.673092+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 40
-    },
-    {
-      "fingerprint": "932ec7d3ef9c57e06c2d",
-      "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
-      "ultima_vez": "2026-08-15T12:18:58.666408+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": "SSLError",
-      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 40
-    },
-    {
-      "fingerprint": "3c8afe3961ceba0bfac9",
-      "primeira_vez": "2026-08-15T11:47:27.418071+00:00",
-      "ultima_vez": "2026-08-15T12:18:42.670281+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.anthropic.com falhou: HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": "SSLError",
-      "error_message": "HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 11
     },
     {
       "fingerprint": "1a8d3b371933e3493647",
@@ -373,17 +417,6 @@
       "error_kind": "OSError",
       "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
       "ocorrencias": 5
-    },
-    {
-      "fingerprint": "6bd386e0e78d2a0affac",
-      "primeira_vez": "2026-08-01T19:21:48.172963+00:00",
-      "ultima_vez": "2026-08-10T12:51:28.925208+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — formato de token inválido (esperado 123456:ABC...). Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 12
     },
     {
       "fingerprint": "7835a6676fa701a6460f",
@@ -1616,40 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 1
-    },
-    {
-      "fingerprint": "17c7d25830e2a244879c",
-      "primeira_vez": "2026-07-05T20:44:30.037395+00:00",
-      "ultima_vez": "2026-07-05T21:19:34.402883+00:00",
-      "logger": "claude",
-      "mensagem": "Claude erro: 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "status": "error",
-      "error_kind": "HTTPError",
-      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "ocorrencias": 15
-    },
-    {
-      "fingerprint": "b96a474f5835a7b0f532",
-      "primeira_vez": "2026-07-05T20:44:34.121867+00:00",
-      "ultima_vez": "2026-07-05T21:19:11.774700+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML buscar_sugestao_preco erro item_id=MLB-MON: 400 Client Error: Bad Request for url: https://api.mercadolibre.com/suggestions/items/MLB-MON/details",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "d324e51dba858acad17a",
-      "primeira_vez": "2026-07-05T20:44:29.046951+00:00",
-      "ultima_vez": "2026-07-05T21:19:10.139172+00:00",
-      "logger": "meta_ads_client",
-      "mensagem": "Meta Ads listar_metricas_campanhas erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 6
     }
   ],
-  "atualizado_em": "2026-08-15T13:19:59.317166+00:00"
+  "atualizado_em": "2026-08-15T15:45:22.020902+00:00"
 }

@@ -1,20 +1,23 @@
 [
   {
-    "sku": "IMP-PERL-004",
+    "sku": "IMP-MIMO-003",
     "papel": "entrada",
+    "arma": "diferenciar",
+    "nome": "Kit 3 Mimo + Carmed",
+    "diferencial_obrigatorio": "kit compacto + Carmed no combo — margem real ~19% (não copiar vd/dia de kit no prejuízo)"
+  },
+  {
+    "sku": "IMP-PERL-004",
+    "papel": "preco",
+    "arma": "igualar_faixa",
     "nome": "Kit 4 Perolado Tendência",
-    "diferencial_obrigatorio": "melhor margem de trabalho (~43%) + 15 vd/dia — Sonho/Polar/Lua/Dengo"
+    "diferencial_obrigatorio": "Sonho/Polar/Lua/Dengo — margem real ~16%; só baixar preço com rival AO VIVO no mesmo tamanho"
   },
   {
-    "sku": "IMP-VR-015",
+    "sku": "IMP-JUPAES-006",
     "papel": "giro",
-    "nome": "Kit 15 Vermelho e Rosa",
-    "diferencial_obrigatorio": "líder absoluto ML (~30 vd/dia) — Tomate/Le Rose + Full"
-  },
-  {
-    "sku": "IMP-SORT-010",
-    "papel": "atacado",
-    "nome": "Kit 10 Sortido Atacado",
-    "diferencial_obrigatorio": "volume manicure (+5.000) — cores top ML; subir preço após 20 avaliações"
+    "arma": "listing",
+    "nome": "Kit 6 Ju Paes — Virando o Jogo",
+    "diferencial_obrigatorio": "margem real ~18% — segundo kit no ML depois do primeiro pedido MIMO/PERL"
   }
 ]

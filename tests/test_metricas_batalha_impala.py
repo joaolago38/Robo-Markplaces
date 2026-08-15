@@ -50,6 +50,15 @@ class TestBatalhaImpala(unittest.TestCase):
                 "seller_id": "S9",
             },
             {
+                "item_id": "MLB1",
+                "titulo": "Kit Impala X",
+                "marca": "Impala",
+                "qtd_kit": 10,
+                "preco": 10.0,
+                "quantidade_vendida": 999,
+                "seller_id": "S0",
+            },
+            {
                 "item_id": "MLB_PREENCHER",
                 "titulo": "Kit Impala placeholder",
                 "marca": "Impala",
@@ -117,6 +126,7 @@ class TestBatalhaImpala(unittest.TestCase):
         self.assertIn("MLB111", ids)
         self.assertNotIn("MLB999", ids)
         self.assertNotIn("MLB_PREENCHER", ids)
+        self.assertNotIn("MLB1", ids)
 
     @patch("integracoes.esmaltes.metricas_batalha_impala.carregar_skus_guerra")
     @patch("integracoes.esmaltes.metricas_batalha_impala.carregar_produtos_catalogo")
@@ -131,9 +141,16 @@ class TestBatalhaImpala(unittest.TestCase):
         self.assertEqual(bat["sellers_unicos"], 2)
         by = {c["sku"]: c for c in bat["comparacoes"]}
         self.assertGreater(by["IMP-SORT-010"]["gap_pct"], 0)
+        self.assertEqual(by["IMP-SORT-010"]["fonte_rival"], "ao_vivo")
         self.assertEqual(by["IMP-SORT-010"]["rivais_no_tam"], 2)
         self.assertEqual(by["IMP-VR-015"]["rivais_no_tam"], 1)
         self.assertEqual(by["KIT-SEM-NUM"]["tam"], 12)
+        self.assertIsNone(by["KIT-SEM-NUM"]["gap_pct"])
+        self.assertIsNone(by["KIT-SEM-NUM"]["rival_min"])
+        self.assertEqual(by["KIT-SEM-NUM"]["fonte_rival"], "ausente")
+        self.assertEqual(by["KIT-SEM-NUM"]["rival_ref_catalogo"], 59.9)
+        self.assertGreaterEqual(bat["comparacoes_ao_vivo"], 2)
+        self.assertGreaterEqual(bat["comparacoes_sem_rival"], 1)
 
     @patch("integracoes.esmaltes.metricas_batalha_impala.incrementar")
     @patch("integracoes.esmaltes.metricas_batalha_impala.gauge")
@@ -159,12 +176,14 @@ class TestBatalhaImpala(unittest.TestCase):
         self.assertFalse(out["ok"])
         mock_inc.assert_any_call("impala.batalha.erro")
 
+    @patch("integracoes.esmaltes.radar_diferencial_impala.processar_radar", return_value={"n_comparaveis": 0})
+    @patch("integracoes.esmaltes.golpe_guerra_impala.processar_golpe_batalha", return_value={"disparar": False})
     @patch("integracoes.esmaltes.decisao_batalha_agir.processar_agir_batalha", return_value={"criticas": 0, "top": [], "por_acao": {}})
     @patch("integracoes.esmaltes.metricas_batalha_impala.emitir_metricas_batalha_impala")
     @patch("integracoes.esmaltes.metricas_batalha_impala.escrever_json_atomico")
     @patch("integracoes.esmaltes.metricas_batalha_impala.montar_batalha")
     @patch("integracoes.esmaltes.metricas_batalha_impala.extrair_anuncios_impala")
-    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir):
+    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir, _golpe, _radar):
         mock_ext.return_value = [{"item_id": "MLB1"}]
         mock_mont.return_value = {"anuncios_unicos": 1, "comparacoes": []}
         mock_emit.return_value = {"ok": True}
@@ -175,6 +194,43 @@ class TestBatalhaImpala(unittest.TestCase):
         mock_emit.assert_called_once()
         mock_agir.assert_called_once()
         self.assertIn("agir", out)
+
+    @patch("integracoes.esmaltes.simulacao_guerra_impala.aplicar_visao_operacional")
+    @patch("core.config.SIMULACAO_GUERRA_IMPALA_OPERACIONAL", True)
+    @patch("integracoes.esmaltes.radar_diferencial_impala.processar_radar", return_value={"n_comparaveis": 0})
+    @patch("integracoes.esmaltes.golpe_guerra_impala.processar_golpe_batalha", return_value={"disparar": False})
+    @patch("integracoes.esmaltes.decisao_batalha_agir.processar_agir_batalha", return_value={"criticas": 0, "top": [], "por_acao": {}})
+    @patch("integracoes.esmaltes.metricas_batalha_impala.emitir_metricas_batalha_impala")
+    @patch("integracoes.esmaltes.metricas_batalha_impala.escrever_json_atomico")
+    @patch("integracoes.esmaltes.metricas_batalha_impala.montar_batalha")
+    @patch("integracoes.esmaltes.metricas_batalha_impala.extrair_anuncios_impala")
+    def test_datadog_emite_batalha_real_nao_overlay(
+        self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir, _golpe, _radar, mock_aplicar
+    ):
+        reais = [{"item_id": "MLB1", "titulo": "Kit Impala real"}]
+        mock_ext.return_value = reais
+        mock_aplicar.return_value = (
+            [{"sku": "IMP-MIMO-003"}],
+            [{"item_id": "MLB9000110003", "titulo": "sim", "qtd_kit": 3}],
+            True,
+        )
+        mock_mont.return_value = {"anuncios_unicos": 0, "comparacoes": []}
+        mock_emit.return_value = {"ok": True}
+        out = b.processar_e_persistir(reais, origem="teste")
+        real_calls = [
+            c for c in mock_mont.call_args_list
+            if (c.kwargs.get("anuncios_impala") or [{}])[0].get("item_id") == "MLB1"
+        ]
+        sim_calls = [
+            c for c in mock_mont.call_args_list
+            if (c.kwargs.get("anuncios_impala") or [{}])[0].get("item_id") == "MLB9000110003"
+        ]
+        self.assertEqual(len(real_calls), 1)
+        self.assertEqual(len(sim_calls), 1)
+        mock_emit.assert_called_once()
+        mock_agir.assert_called_once()
+        self.assertTrue(out.get("visao_operacional"))
+        self.assertIsNotNone(out.get("batalha_sim"))
 
     @patch("integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir")
     def test_processar_de_snapshot_kits(self, mock_proc):

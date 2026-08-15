@@ -1,0 +1,92 @@
+{
+  "versao": 1,
+  "nome": "guerra_por_faixa",
+  "cnpj": "52668583000127",
+  "piso_margem_pct": 15,
+  "taxa_ml": 0.18,
+  "gap_igualar_pct": 3,
+  "sku_preco": "IMP-PERL-004",
+  "sku_entrada": "IMP-MIMO-003",
+  "sku_giro": "IMP-JUPAES-006",
+  "skus_frente": ["IMP-MIMO-003", "IMP-PERL-004", "IMP-JUPAES-006"],
+  "preco_congelado": ["IMP-MIMO-003", "IMP-JUPAES-006"],
+  "margem_por_fase": {
+    "1": 0.10,
+    "2": 0.18,
+    "3": 0.25
+  },
+  "kits": {
+    "IMP-MIMO-003": {
+      "papel": "entrada",
+      "arma": "diferenciar",
+      "preco_fase1": 44.9
+    },
+    "IMP-PERL-004": {
+      "papel": "preco",
+      "arma": "igualar_faixa",
+      "preco_fase1": 39.9
+    },
+    "IMP-JUPAES-006": {
+      "papel": "giro",
+      "arma": "listing",
+      "exige_pedido_vencedor": true,
+      "preco_fase1": 64.9
+    }
+  },
+  "classificacoes": ["ignorar", "diferenciar", "igualar_faixa", "nao_perseguir"],
+  "gatilhos": {
+    "gap_pct_min": 3,
+    "estoque_ml_min": 30,
+    "estoque_validacao": 10,
+    "estoque_ideal": 60,
+    "reviews_ads": 20,
+    "nota_ads": 4.8,
+    "acos_max": 0.2
+  },
+  "cenario_mais_possivel": "abrir_frente_mimo_carmed",
+  "fases": [
+    {
+      "id": 0,
+      "nome": "abrir_frente",
+      "fazer": "Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30",
+      "agentes": ["radar_diferencial", "monitor_concorrentes", "contrato_impulso", "ads_gatilho"]
+    },
+    {
+      "id": 1,
+      "nome": "no_ar",
+      "fazer": "PERL no ar no mesmo ciclo (R$39,90 congelado). Ads off. Chat/perguntas em dia.",
+      "agentes": ["golpe_guerra", "monitor_concorrentes", "resumo_conta_ml"]
+    },
+    {
+      "id": 2,
+      "nome": "primeiro_pedido",
+      "fazer": "Com 1 pedido vencedor: publicar JUPAES R$64,90. Combo removedor no copy.",
+      "agentes": ["esmaltes_operacao", "promocoes_manicures", "crescimento"]
+    },
+    {
+      "id": 3,
+      "nome": "ads",
+      "fazer": "Ligar Ads so com 20 reviews, nota 4.8, MLB guerra e ACOS<=20%. Budget R$10/dia.",
+      "agentes": ["ads_gatilho", "contrato_impulso"]
+    },
+    {
+      "id": 4,
+      "nome": "guerra_preco",
+      "fazer": "So PERL iguala se mercado_confiavel=1, rival kit 4 perolado ao vivo, gap>=3% e preco >= piso 15% (R$39,15).",
+      "agentes": ["golpe_guerra", "radar_diferencial", "repricing_impala"]
+    },
+    {
+      "id": 5,
+      "nome": "ruptura",
+      "fazer": "Outra marca / 2o CNPJ so com frente viva, reviews, estoque 30+ e radar nao cego.",
+      "agentes": ["ponto_ruptura_outra_marca", "ponto_ruptura_segundo_cnpj"]
+    }
+  ],
+  "nao_fazer_global": [
+    "Igualar francesinha/tratamento",
+    "Ligar Ads sem MLB da frente",
+    "Publicar JUPAES antes do 1o pedido",
+    "Baixar MIMO abaixo de R$41,99 (piso 15%)",
+    "Tratar cache STALE como rival ao vivo"
+  ]
+}

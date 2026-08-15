@@ -1,0 +1,361 @@
+{
+  "ok": true,
+  "timestamp": "2026-08-15T16:13:53.830385+00:00",
+  "piso_op_pct": 15.0,
+  "taxa_pct": 18.0,
+  "n_anuncios": 18,
+  "n_comparaveis": 0,
+  "n_nao_comparaveis": 18,
+  "extras": {
+    "francesinha": 8,
+    "tratamento": 5,
+    "outra_marca": 2,
+    "nenhum": 3,
+    "carmed": 0,
+    "brinde": 0,
+    "alicate": 0,
+    "removedor": 0,
+    "full": 0
+  },
+  "margens": [
+    {
+      "sku": "IMP-MIMO-003",
+      "kit_tag": "kit:mimo003",
+      "papel": "entrada",
+      "margem_op_pct": 19.35,
+      "acima_piso15": true,
+      "diferencial": "kit compacto + Carmed no combo — margem real ~19% (não copiar vd/dia de kit no prejuízo)",
+      "nossos_extras": [
+        "carmed"
+      ],
+      "rivais_comparaveis": 0,
+      "mlb_ok": false,
+      "estoque": 0
+    },
+    {
+      "sku": "IMP-PERL-004",
+      "kit_tag": "kit:perl004",
+      "papel": "preco",
+      "margem_op_pct": 16.26,
+      "acima_piso15": true,
+      "diferencial": "Sonho/Polar/Lua/Dengo — margem real ~16%; só baixar preço com rival AO VIVO no mesmo tamanho",
+      "nossos_extras": [
+        "nenhum"
+      ],
+      "rivais_comparaveis": 0,
+      "mlb_ok": false,
+      "estoque": 0
+    },
+    {
+      "sku": "IMP-JUPAES-006",
+      "kit_tag": "kit:jupaes006",
+      "papel": "giro",
+      "margem_op_pct": 18.18,
+      "acima_piso15": true,
+      "diferencial": "margem real ~18% — segundo kit no ML depois do primeiro pedido MIMO/PERL",
+      "nossos_extras": [
+        "nenhum"
+      ],
+      "rivais_comparaveis": 0,
+      "mlb_ok": false,
+      "estoque": 0
+    }
+  ],
+  "fazer": "Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30",
+  "nao_fazer": "Igualar kit 3 francesinha/tratamento; perseguir dump abaixo do piso 15%",
+  "rivais": [
+    {
+      "item_id": "MLB3715746005",
+      "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+      "preco": 22.54,
+      "qtd_kit": 3,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB5106097646",
+      "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+      "preco": 23.19,
+      "qtd_kit": 3,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB4056949611",
+      "titulo": "Kit 3 Esmaltes Impala Base Verniz Vermelho Intensificador",
+      "preco": 36.06,
+      "qtd_kit": 3,
+      "extras": [
+        "tratamento"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB5975566072",
+      "titulo": "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
+      "preco": 22.3,
+      "qtd_kit": 3,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB4087433501",
+      "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+      "preco": 30.71,
+      "qtd_kit": 3,
+      "extras": [
+        "tratamento"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB6688504570",
+      "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+      "preco": 33.75,
+      "qtd_kit": 3,
+      "extras": [
+        "tratamento"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB7071399990",
+      "titulo": "Kit 3 Esmalte Risque Tons Nude Glitter Impala Atacado 3 Esmaltes",
+      "preco": 22.49,
+      "qtd_kit": 3,
+      "extras": [
+        "outra_marca"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB7069274460",
+      "titulo": "Kit 3 Esmalte Impala Tratamento Incolor 7,5ml",
+      "preco": 26.99,
+      "qtd_kit": 3,
+      "extras": [
+        "tratamento"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB6599892614",
+      "titulo": "Kit 3 Esmalte Impala Tratamento Incolor 7,5ml",
+      "preco": 45.99,
+      "qtd_kit": 3,
+      "extras": [
+        "tratamento"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB7286297590",
+      "titulo": "Kit 3 Esmaltes Impala Perolado Neném 7,5ml Kit 3 Neném",
+      "preco": 24.99,
+      "qtd_kit": 3,
+      "extras": [
+        "nenhum"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB7153021930",
+      "titulo": "Kit 3 Esmaltes Misturinha Impala + Risqué Roxo Glitter 3 Cores",
+      "preco": 22.89,
+      "qtd_kit": 3,
+      "extras": [
+        "outra_marca"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB4823282217",
+      "titulo": "Impala Nude - Kit 6 Esmaltes Tons Nudes",
+      "preco": 38.09,
+      "qtd_kit": 6,
+      "extras": [
+        "nenhum"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB5317556912",
+      "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+      "preco": 33.05,
+      "qtd_kit": 6,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB4127676627",
+      "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+      "preco": 36.9,
+      "qtd_kit": 6,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB5134223528",
+      "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+      "preco": 37.99,
+      "qtd_kit": 6,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB5681635654",
+      "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+      "preco": 43.75,
+      "qtd_kit": 6,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB7047776690",
+      "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+      "preco": 35.9,
+      "qtd_kit": 6,
+      "extras": [
+        "francesinha"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    },
+    {
+      "item_id": "MLB2",
+      "titulo": "Kit Impala Concorrente",
+      "preco": 35.0,
+      "qtd_kit": null,
+      "extras": [
+        "nenhum"
+      ],
+      "comparavel": {
+        "IMP-MIMO-003": false,
+        "IMP-PERL-004": false,
+        "IMP-JUPAES-006": false
+      }
+    }
+  ],
+  "fonte": "cache_busca",
+  "cache_idade_h": 863.3,
+  "cache_stale": true,
+  "mlb_frente": 0,
+  "estoque_frente": 0,
+  "amostra_viva": false,
+  "mercado_confiavel": false,
+  "condicoes": {
+    "fase": 0,
+    "fase_nome": "abrir_frente",
+    "cenario": "abrir_frente_mimo_carmed",
+    "fazer": "Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30",
+    "proximo": "Publicar MIMO R$44,90 com titulo Mimo + Carmed (estoque 10)",
+    "agentes": [
+      "radar_diferencial",
+      "monitor_concorrentes",
+      "contrato_impulso",
+      "ads_gatilho"
+    ],
+    "checks": {
+      "mlb_mimo": false,
+      "mlb_perl": false,
+      "mlb_jupaes": false,
+      "estoque_mimo": 0,
+      "carmed_titulo": true,
+      "mercado_confiavel": false,
+      "reviews": 0,
+      "nota": 0.0
+    },
+    "liberar": {
+      "mimo": true,
+      "perl": false,
+      "jupaes": false,
+      "ads": false,
+      "golpe_preco": false,
+      "ruptura": false
+    }
+  },
+  "mensagem": "*VISAO ATUACAO* Impala — diferencial + margem\n\n_O que este agente faz:_\n_Lê títulos Impala no ML: o que o rival oferece a mais (Carmed, brinde, tratamento, francesinha) vs o nosso combo, se a margem operacional está acima de 15%, se há MLB publicado e se a amostra é ao vivo ou cache velho. Telegram com o FAZER e o link do Datadog._\n\n_Quando roda:_\n_No monitor concorrentes (30 min) + orquestrador visao atuacao; cooldown 6h no Telegram_\n*Fase guerra 0/5* `abrir_frente` · proximo: Publicar MIMO R$44,90 com titulo Mimo + Carmed (estoque 10)\n*FAZER:* Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30\n*NAO FAZER:* Igualar kit 3 francesinha/tratamento; perseguir dump abaixo do piso 15%\nFonte: cache_busca (863h) STALE · MLB frente 0/3 · estoque 0\nAmostra ML: 18 · comparaveis 0 · nao comparaveis 18 (Datadog=0, cache nao e mercado de hoje)\nExtras nos titulos rivais: francesinha 8, tratamento 5, nenhum 3, outra_marca 2\n*Margem operacional de catalogo (preco planejado - taxa 18% - custo) / preco — nao e listing no ar*\n  `IMP-MIMO-003` 19.4% (ok) · sem MLB · rivais comparaveis 0\n  `IMP-PERL-004` 16.3% (ok) · sem MLB · rivais comparaveis 0\n  `IMP-JUPAES-006` 18.2% (ok) · sem MLB · rivais comparaveis 0\n\nVer serie no Datadog (Ecommerce Impala → grupo Decisao guerra): https://us5.datadoghq.com/dashboard/j53-h48-8ea\n_Alerta para abrir o Datadog: margem, extras do rival, MLB publicado e se o kit e comparavel._",
+  "alerta_enviado": false,
+  "alerta_motivo": "envio_ou_cooldown"
+}

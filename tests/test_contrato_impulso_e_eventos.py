@@ -138,6 +138,14 @@ class TestContratoImpulso(unittest.TestCase):
             "contrato_desligado",
         )
 
+    def test_ads_bloqueado_antes_fase_3(self):
+        fake = {"ok": True, "ativo": True, "skus_liberados": ["IMP-MIMO-003"]}
+        ok, motivo = contrato.ads_pode_ligar(contrato=fake, condicoes={"ok": True, "fase": 0})
+        self.assertFalse(ok)
+        self.assertIn("fase_guerra=0", motivo)
+        ok3, _ = contrato.ads_pode_ligar(contrato=fake, condicoes={"ok": True, "fase": 3})
+        self.assertTrue(ok3)
+
     def test_campanha_exige_link(self):
         fake = {"ok": True, "ativo": True, "skus_liberados": ["IMP-MIMO-003"], "bloqueados": []}
         ok, motivo = contrato.campanha_pode_enviar("IMP-MIMO-003", link_valido=False, contrato=fake)
@@ -258,8 +266,8 @@ class TestRepricingImpalaApplyPath(unittest.TestCase):
     def test_dry_run_nao_aplica(self, mock_cat, _cong):
         mock_cat.return_value = [
             {
-                "sku": "IMP-MIMO-003",
-                "nome": "Kit Impala",
+                "sku": "IMP-PERL-004",
+                "nome": "Kit Impala Perolado",
                 "custo_total": 27.0,
                 "fase_atual": 1,
                 "preco": 30.0,

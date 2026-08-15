@@ -1,0 +1,79 @@
+{
+  "ok": true,
+  "timestamp": "2026-08-15T16:13:53.825793+00:00",
+  "doutrina": "guerra_por_faixa",
+  "frente": [
+    "IMP-JUPAES-006",
+    "IMP-MIMO-003",
+    "IMP-PERL-004"
+  ],
+  "disparar": false,
+  "golpe": {
+    "sku": "IMP-PERL-004",
+    "classificacao": "ignorar",
+    "arma": "observar",
+    "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+    "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+    "motivo": "sem MLB — guerra de preço ainda não começou",
+    "disparar": false,
+    "score": 0.0,
+    "gap_pct": 0.0,
+    "rival_min": null,
+    "piso_preco": 36.43,
+    "nosso_preco": 39.9,
+    "mlb_ok": false,
+    "kit_tag": "kit:perl004"
+  },
+  "golpes": [
+    {
+      "sku": "IMP-PERL-004",
+      "classificacao": "ignorar",
+      "arma": "observar",
+      "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+      "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+      "motivo": "sem MLB — guerra de preço ainda não começou",
+      "disparar": false,
+      "score": 0.0,
+      "gap_pct": 0.0,
+      "rival_min": null,
+      "piso_preco": 36.43,
+      "nosso_preco": 39.9,
+      "mlb_ok": false,
+      "kit_tag": "kit:perl004"
+    },
+    {
+      "sku": "IMP-MIMO-003",
+      "classificacao": "ignorar",
+      "arma": "observar",
+      "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+      "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+      "motivo": "sem MLB — guerra de preço ainda não começou",
+      "disparar": false,
+      "score": 0.0,
+      "gap_pct": 0.0,
+      "rival_min": null,
+      "piso_preco": 39.07,
+      "nosso_preco": 44.9,
+      "mlb_ok": false,
+      "kit_tag": "kit:mimo003"
+    },
+    {
+      "sku": "IMP-JUPAES-006",
+      "classificacao": "ignorar",
+      "arma": "observar",
+      "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+      "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+      "motivo": "sem MLB — guerra de preço ainda não começou",
+      "disparar": false,
+      "score": 0.0,
+      "gap_pct": 0.0,
+      "rival_min": null,
+      "piso_preco": 57.53,
+      "nosso_preco": 64.9,
+      "mlb_ok": false,
+      "kit_tag": "kit:jupaes006"
+    }
+  ],
+  "n_frente": 3,
+  "mensagem": "⚔ *Impala — golpe da guerra*\n\n_O que este agente faz:_\n_Classifica o golpe da frente Impala (ignorar, diferenciar, igualar na faixa ou nao perseguir). Telegram só no disparo. Nao altera preco sozinho._\n\n_Quando roda:_\n_No golpe (monitor concorrentes 30 min); cooldown 6h por SKU+classe_\nClassificação: *ignorar*\nSKU: `IMP-PERL-004` · arma *observar*\nFAZER: Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica\nNÃO FAZER: Reagir a rival sem anúncio próprio; Ads; 2º CNPJ\n_Não altera preço sozinho. PERL é o único kit que iguala na faixa._"
+}

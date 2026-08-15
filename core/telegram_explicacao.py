@@ -152,6 +152,21 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Único card Impala do dia: roda crescimento + decisão + ecossistema "
         "e envia um Telegram consolidado."
     ),
+    "golpe_guerra_impala": (
+        "Classifica o golpe da frente Impala (ignorar, diferenciar, igualar na faixa "
+        "ou nao perseguir). Telegram só no disparo. Nao altera preco sozinho."
+    ),
+    "simulacao_guerra_impala": (
+        "Sala de guerra operacional: trata MIMO/PERL/JUPAES como no ar "
+        "(estoque 60, rivais ao vivo). Overlay em memória — não grava item id. "
+        "Quando existir MLB real, o overlay desliga sozinho."
+    ),
+    "radar_diferencial_impala": (
+        "Lê títulos Impala no ML: o que o rival oferece a mais (Carmed, brinde, "
+        "tratamento, francesinha) vs o nosso combo, se a margem operacional está "
+        "acima de 15%, se há MLB publicado e se a amostra é ao vivo ou cache velho. "
+        "Telegram com o FAZER e o link do Datadog."
+    ),
     "monitor_removedores_unha": (
         "Anexo: ranking de removedores no ML. Digest semanal (quarta) — "
         "fora do foco diário de kits."
@@ -350,6 +365,9 @@ HORARIOS_AGENTES: dict[str, str] = {
     "crescimento_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
     "decisao_dia_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
     "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT — único Telegram Impala",
+    "golpe_guerra_impala": "No golpe (monitor concorrentes 30 min); cooldown 6h por SKU+classe",
+    "simulacao_guerra_impala": "Sob demanda / CLI — nao entra no cron",
+    "radar_diferencial_impala": "No monitor concorrentes (30 min) + orquestrador visao atuacao; cooldown 6h no Telegram",
     "monitor_removedores_unha": "1x/semana quarta 09:00 BRT (anexo)",
     "monitor_tendencias_esmaltes": "Debug manual (sem Telegram) — produção via busca_kit",
     "comparativo_anita_impala": "Segundas e quintas às 08:00 BRT (Actions); fora do orquestrador 30 min",
@@ -461,6 +479,12 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("decisao_dia", "decisao_dia_esmaltes"),
     ("esmaltes_operacao", "esmaltes_operacao"),
     ("operacao_esmaltes", "esmaltes_operacao"),
+    ("golpe_guerra_impala", "golpe_guerra_impala"),
+    ("golpe_guerra", "golpe_guerra_impala"),
+    ("simulacao_guerra_impala", "simulacao_guerra_impala"),
+    ("simulacao_guerra", "simulacao_guerra_impala"),
+    ("radar_diferencial_impala", "radar_diferencial_impala"),
+    ("visao_atuacao_impala", "radar_diferencial_impala"),
     ("removedores", "monitor_removedores_unha"),
     ("tendencias_esmaltes", "monitor_tendencias_esmaltes"),
     ("esmaltes:tendencias", "monitor_tendencias_esmaltes"),

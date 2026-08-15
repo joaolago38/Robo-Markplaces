@@ -78,7 +78,11 @@ def _item_id_ml_valido(valor: Any) -> bool:
     texto = str(valor or "").strip()
     if not texto or "PREENCHER" in texto.upper():
         return False
-    return texto.upper().startswith("MLB")
+    up = texto.upper().replace("-", "")
+    if not up.startswith("MLB"):
+        return False
+    digits = up[3:]
+    return digits.isdigit() and len(digits) >= 6
 
 
 def _rotulo_preco_referencia(origem: str) -> str:
@@ -618,8 +622,9 @@ def executar(
             amostra: list[dict[str, Any]] = []
             for r in resultados:
                 amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
-            if amostra:
-                processar_e_persistir(amostra, origem="monitor_concorrentes")
+            # Amostra vazia (403/busca cega) ainda precisa do radar: senão
+            # os gauges de guerra ficam congelados no último valor.
+            processar_e_persistir(amostra, origem="monitor_concorrentes")
         except Exception as exc:
             logger.warning("batalha Impala apos concorrentes: %s", exc)
 

@@ -140,6 +140,12 @@ class TestDecisaoDia(unittest.TestCase):
         self.assertEqual(len(dec["skus_guerra"]), 2)
 
 
+    def test_arquivo_guerra_so_kits_com_margem(self):
+        guerra = dia.carregar_skus_guerra()
+        skus = {str(g.get("sku") or "").upper() for g in guerra}
+        self.assertEqual(skus, {"IMP-MIMO-003", "IMP-PERL-004", "IMP-JUPAES-006"})
+
+
 class TestAgenteDecisao(unittest.TestCase):
     @patch("agentes.esmaltes.agente_decisao_dia_esmaltes.alertar_gestor", return_value=True)
     @patch(

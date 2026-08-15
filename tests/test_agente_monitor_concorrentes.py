@@ -160,6 +160,7 @@ class TestResolverPrecoReferencia(unittest.TestCase):
 
     def test_ignora_mlb_preencher(self):
         self.assertFalse(mon._item_id_ml_valido("MLB_PREENCHER"))
+        self.assertFalse(mon._item_id_ml_valido("MLB1"))
         self.assertTrue(mon._item_id_ml_valido("MLB123456789"))
 
     @patch.object(mon.ml_client, "buscar_metricas_item", return_value={"preco": 47.5})

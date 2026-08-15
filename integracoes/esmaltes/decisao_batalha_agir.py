@@ -36,7 +36,18 @@ def _prio_peso(prio: str) -> float:
 
 
 def _papel_peso(papel: str) -> float:
-    return 1.6 if str(papel or "").lower() == "guerra" else 1.0
+    p = str(papel or "").lower()
+    return 1.6 if p in ("guerra", "entrada", "giro", "preco") else 1.0
+
+
+def _rival_ao_vivo(comp: dict[str, Any]) -> bool:
+    fonte = str(comp.get("fonte_rival") or "").strip().lower()
+    if fonte == "ao_vivo":
+        return True
+    if fonte in ("ausente", "catalogo"):
+        return False
+    # snapshots antigos sem fonte: só vale se havia rivais amostrados
+    return comp.get("gap_pct") is not None and int(comp.get("rivais_no_tam") or 0) > 0
 
 
 def classificar_acao(comp: dict[str, Any]) -> dict[str, Any] | None:
@@ -47,25 +58,55 @@ def classificar_acao(comp: dict[str, Any]) -> dict[str, Any] | None:
     if not sku:
         return None
     gap = comp.get("gap_pct")
-    if gap is None:
-        return None
-    gap_f = _f(gap)
+    gap_f = _f(gap) if gap is not None else 0.0
     rivais = int(comp.get("rivais_no_tam") or 0)
     mlb_ok = bool(comp.get("mlb_ok"))
     papel = str(comp.get("papel") or "catalogo")
     prio = str(comp.get("prio") or "p?")
+    ao_vivo = _rival_ao_vivo(comp)
 
     if not mlb_ok:
-        acao = "publicar_mlb"
-        motivo = "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir"
-        score = 40.0 + max(0.0, gap_f)
+        try:
+            from integracoes.esmaltes.doutrina_guerra_impala import sku_pode_publicar_agora
+
+            pode_pub, motivo_pub = sku_pode_publicar_agora(sku)
+        except Exception:
+            pode_pub, motivo_pub = True, "SKU sem MLB válido"
+        if not pode_pub:
+            acao = "observar"
+            motivo = motivo_pub
+            score = 2.0
+        else:
+            acao = "publicar_mlb"
+            motivo = motivo_pub or "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço"
+            score = 40.0 + max(0.0, gap_f)
+    elif not ao_vivo:
+        acao = "observar"
+        motivo = "Sem rival ao vivo no tamanho — não reagir a preço de planilha"
+        score = 1.0
+    elif gap is None:
+        return None
     elif gap_f >= _GAP_PRECO_MIN:
-        acao = "revisar_preco"
-        motivo = (
-            f"Preço ~{gap_f:.1f}% acima do rival min "
-            f"(R$ {_f(comp.get('nosso_preco')):.2f} vs R$ {_f(comp.get('rival_min')):.2f})"
-        )
-        score = gap_f * _prio_peso(prio) * _papel_peso(papel)
+        try:
+            from integracoes.esmaltes.doutrina_guerra_impala import sku_pode_mexer_preco
+
+            pode_preco = sku_pode_mexer_preco(sku)
+        except Exception:
+            pode_preco = True
+        if not pode_preco:
+            acao = "melhorar_listing"
+            motivo = (
+                f"Gap {gap_f:.1f}% — doutrina: diferenciar `{sku}` "
+                "(só PERL iguala preço na faixa)"
+            )
+            score = 10.0 + gap_f * 0.3 * _prio_peso(prio)
+        else:
+            acao = "revisar_preco"
+            motivo = (
+                f"Preço ~{gap_f:.1f}% acima do rival min "
+                f"(R$ {_f(comp.get('nosso_preco')):.2f} vs R$ {_f(comp.get('rival_min')):.2f})"
+            )
+            score = gap_f * _prio_peso(prio) * _papel_peso(papel)
     elif gap_f <= 0 and rivais >= _RIVAIS_MUITOS:
         acao = "melhorar_listing"
         motivo = (
@@ -91,6 +132,7 @@ def classificar_acao(comp: dict[str, Any]) -> dict[str, Any] | None:
         "papel": papel,
         "prio": prio,
         "mlb_ok": mlb_ok,
+        "fonte_rival": "ao_vivo" if ao_vivo else "ausente",
         "critica": acao in ("revisar_preco", "publicar_mlb"),
     }
 

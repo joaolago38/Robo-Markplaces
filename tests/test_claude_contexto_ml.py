@@ -59,6 +59,18 @@ class TestClaudeContextoMl(unittest.TestCase):
         self.assertIn("NAO_TROCAR_CNPJ", d["foco_decisao"])
         self.assertIn("margem de erro", d["instrucoes"].lower())
 
+    def test_dosagem_guerra_por_faixa(self):
+        d = ccm.dosar_analise_para_decisao(
+            estado_ml={"nivel": "ok"},
+            stress={"nivel": "baixo", "score": 0},
+            proposito="guerra_impala",
+        )
+        self.assertEqual(d["profundidade"], "padrao")
+        self.assertIn("IGUALAR_FAIXA", d["foco_decisao"])
+        self.assertIn("NAO_PERSEGUIR", d["foco_decisao"])
+        self.assertIn("faixa", d["instrucoes"].lower())
+        self.assertNotIn("NAO_TROCAR_CNPJ", d["foco_decisao"])
+
     def test_forcar_profundidade_ampliada(self):
         d = ccm.dosar_analise_para_decisao(
             estado_ml={"nivel": "ok"},

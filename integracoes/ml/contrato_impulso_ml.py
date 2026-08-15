@@ -150,15 +150,32 @@ def campanha_pode_enviar(sku: str, *, link_valido: bool, contrato: dict[str, Any
     return False, motivo
 
 
-def ads_pode_ligar(*, contrato: dict[str, Any] | None = None) -> tuple[bool, str]:
-    """Product Ads só se houver ao menos 1 SKU guerra liberado."""
+def ads_pode_ligar(
+    *,
+    contrato: dict[str, Any] | None = None,
+    condicoes: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    """Product Ads só com SKU guerra+MLB e fase 3+ (reviews/nota)."""
+    loaded_live = contrato is None
     c = contrato if contrato is not None else carregar_contrato()
     if not c.get("ativo", True):
         return True, "contrato_desligado"
     liberados = c.get("skus_liberados") or []
-    if liberados:
-        return True, f"liberados={len(liberados)}"
-    return False, "nenhum_sku_guerra_liberado"
+    if not liberados:
+        return False, "nenhum_sku_guerra_liberado"
+    if loaded_live or condicoes is not None:
+        try:
+            if condicoes is None:
+                from integracoes.esmaltes.doutrina_guerra_impala import avaliar_condicoes_guerra
+
+                condicoes = avaliar_condicoes_guerra()
+            fase = int((condicoes or {}).get("fase") or 0)
+            if fase < 3:
+                return False, f"fase_guerra={fase} (ads so fase 3+)"
+        except Exception as exc:
+            logger.warning("ads_pode_ligar fase: %s", exc)
+            return False, "fase_guerra_indisponivel"
+    return True, f"liberados={len(liberados)}"
 
 
 def listar_item_ids_para_otimizacao(*, contrato: dict[str, Any] | None = None) -> list[str]:

@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from integracoes.ml import referencia_copy_legado as ref
 
-
 _BOLSAS = [
     {
         "item_id": "MLB-B1",
