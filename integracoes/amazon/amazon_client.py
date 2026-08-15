@@ -23,11 +23,22 @@ logger = logging.getLogger("amazon_client")
 BASE = "https://sellingpartnerapi-na.amazon.com"
 
 
+def _canal_operando() -> bool:
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao("amazon")
+    except Exception:
+        return True
+
+
 def _enabled() -> bool:
     tem_refresh = bool(
         AMAZON_LWA_CLIENT_ID and AMAZON_LWA_CLIENT_SECRET and AMAZON_REFRESH_TOKEN
     )
-    return bool(AMAZON_ACCESS_TOKEN or tem_refresh)
+    if not (AMAZON_ACCESS_TOKEN or tem_refresh):
+        return False
+    return _canal_operando()
 
 
 def _h():

@@ -242,6 +242,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertTrue(all(out.values()))
         self.assertIn("amazon", out)
 
+    @patch.object(tm, "_canal_marketplace_operando", return_value=True)
     @patch.object(tm, "_renovar_token_ml", return_value="ml")
     @patch.object(tm, "_renovar_token_shopee", return_value="sp")
     @patch.object(tm, "_renovar_token_magalu", return_value="mg")
@@ -252,6 +253,22 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertTrue(out["shopee"]["ok"])
         self.assertTrue(out["magalu"]["ok"])
         self.assertTrue(out["amazon"]["ok"])
+
+    @patch.object(tm, "_canal_marketplace_operando", return_value=False)
+    @patch.object(tm, "_renovar_token_ml", return_value="ml")
+    @patch.object(tm, "_renovar_token_shopee", return_value="sp")
+    @patch.object(tm, "_renovar_token_magalu", return_value="mg")
+    @patch.object(tm, "_renovar_token_amazon", return_value="amz")
+    def test_renovar_todos_tokens_pula_canais_inativos(self, mock_amz, mock_mg, mock_sp, mock_ml, _canal):
+        out = tm.renovar_todos_tokens()
+        mock_ml.assert_called_once()
+        mock_sp.assert_not_called()
+        mock_mg.assert_not_called()
+        mock_amz.assert_not_called()
+        self.assertTrue(out["mercadolivre"]["ok"])
+        self.assertFalse(out["shopee"]["ok"])
+        self.assertFalse(out["magalu"]["ok"])
+        self.assertFalse(out["amazon"]["ok"])
 
     @patch.object(tm, "_renovar_token_bling", return_value=None)
     @patch.multiple(cfg, BLING_CLIENT_ID="c", BLING_CLIENT_SECRET="s", BLING_REFRESH_TOKEN="r")
@@ -291,6 +308,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertEqual(tm.tokens_shopee_atuais()["access_token"], "sp_at")
         self.assertEqual(tm.tokens_magalu_atuais()["refresh_token"], "mg_rt")
 
+    @patch.object(tm, "_canal_marketplace_operando", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(cfg, SHOPEE_PARTNER_ID="1", SHOPEE_PARTNER_KEY="k", SHOPEE_SHOP_ID="2", SHOPEE_REFRESH_TOKEN="")
     def test_get_token_shopee_sem_refresh_retorna_env(self, *_):

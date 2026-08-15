@@ -95,6 +95,12 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         tm._magalu_refresh_efetivo["valor"] = None
         self.assertIsNone(tm._renovar_token_magalu())
 
+    @patch.object(tm, "_magalu_canal_operando", return_value=False)
+    @patch.object(tm, "_renovar_token_magalu")
+    def test_get_token_magalu_nao_renova_canal_inativo(self, mock_renovar, _):
+        self.assertIsNone(tm.get_token_magalu())
+        mock_renovar.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

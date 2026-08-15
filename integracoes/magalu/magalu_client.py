@@ -34,8 +34,19 @@ BASE_SERVICES = "https://services.magalu.com"
 _MAGALU_CHANNEL_ID = MAGALU_CHANNEL_ID
 
 
+def _canal_operando() -> bool:
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao("magalu")
+    except Exception:
+        return True
+
+
 def _enabled() -> bool:
-    return bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
+    if not (MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN):
+        return False
+    return _canal_operando()
 
 
 def _h():

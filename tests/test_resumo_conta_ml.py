@@ -75,6 +75,7 @@ class TestResumoContaMl(unittest.TestCase):
             rc.emitir_metricas_saude_conta({"ok": False})
         self.assertEqual(mock_g.call_args.args, ("ml.saude.ok", 0.0))
 
+    @patch("integracoes.ml.integridade_dados_ml.executar", return_value={"pct": 100.0, "atinge_meta": True, "espelho_confiavel": True, "meta_pct": 99.99, "corrigidos": 0})
     @patch("integracoes.ml.ml_product_ads.listar_campanhas", return_value=[{"status": "IDLE"}])
     @patch.object(rc.ml_client, "buscar_sugestao_preco", return_value={})
     @patch.object(rc.ml_client, "listar_itens_com_sugestao_preco", return_value=[])
@@ -128,8 +129,10 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertIn("LOJA_TESTE", msg)
         self.assertIn("MLB1", msg)
         self.assertIn("API claims indisponivel", msg)
-        self.assertIn("Ao alcançar 10 vendas", msg)
+        self.assertIn("Integridade ML", msg)
+        self.assertIn("99.99", msg)
 
+    @patch("integracoes.ml.integridade_dados_ml.executar", return_value={"pct": 100.0, "atinge_meta": True, "espelho_confiavel": True, "meta_pct": 99.99, "corrigidos": 0})
     @patch("integracoes.ml.ml_product_ads.listar_campanhas", return_value=[])
     @patch.object(rc.ml_client, "buscar_sugestao_preco", return_value={})
     @patch.object(rc.ml_client, "listar_itens_com_sugestao_preco", return_value=[])

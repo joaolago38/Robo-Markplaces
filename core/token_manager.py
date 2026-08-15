@@ -474,6 +474,10 @@ def _renovar_token_shopee():
 
 
 def get_token_shopee():
+    if not _canal_marketplace_operando("shopee"):
+        logger.info("Token Shopee não renovado — canal fora de operação (spec.inativo).")
+        return None
+
     if not _shopee_refresh_disponivel():
         return cfg.SHOPEE_ACCESS_TOKEN or None
 
@@ -559,6 +563,20 @@ def _magalu_refresh_disponivel() -> str | None:
     return _magalu_refresh_efetivo["valor"]
 
 
+def _canal_marketplace_operando(canal: str) -> bool:
+    """False quando spec/toggle deixa o canal fora — não renovar token morto."""
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao(canal)
+    except Exception:
+        return True
+
+
+def _magalu_canal_operando() -> bool:
+    return _canal_marketplace_operando("magalu")
+
+
 def _renovar_token_magalu():
     rt = _magalu_refresh_disponivel()
     if not all([cfg.MAGALU_CLIENT_ID, cfg.MAGALU_CLIENT_SECRET, rt]):
@@ -642,6 +660,10 @@ def _renovar_token_magalu():
 
 
 def get_token_magalu():
+    if not _magalu_canal_operando():
+        logger.info("Token Magalu não renovado — canal fora de operação (spec.inativo).")
+        return None
+
     _hidratar_cache_magalu_do_store()
 
     if not _magalu_refresh_disponivel():
@@ -1037,6 +1059,10 @@ def get_token_amazon(forcar: bool = False):
     - sem refresh configurado → devolve AMAZON_ACCESS_TOKEN estático.
     """
     _hidratar_cache_amazon_do_store()
+    if not _canal_marketplace_operando("amazon"):
+        logger.info("Token Amazon não renovado — canal fora de operação (spec.inativo).")
+        return None
+
     now = time.time()
 
     if not forcar:
@@ -1088,9 +1114,9 @@ def renovar_todos_tokens() -> dict[str, dict]:
     Usado pelo script CLI / Actions para validar credenciais.
     """
     ml = _renovar_token_ml()
-    sp = _renovar_token_shopee()
-    mg = _renovar_token_magalu()
-    amz = _renovar_token_amazon()
+    sp = _renovar_token_shopee() if _canal_marketplace_operando("shopee") else None
+    mg = _renovar_token_magalu() if _magalu_canal_operando() else None
+    amz = _renovar_token_amazon() if _canal_marketplace_operando("amazon") else None
     # Bling NÃO entra aqui: é renovado separadamente (renovar_token_bling_detalhado),
     # pois o refresh_token rotaciona e seria consumido duas vezes.
 

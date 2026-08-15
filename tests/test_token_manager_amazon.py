@@ -77,6 +77,7 @@ class TestRenovarTokenAmazon(unittest.TestCase):
         with self.assertLogs("token_manager", level="ERROR"):
             self.assertIsNone(tm._renovar_token_amazon())
 
+    @patch.object(tm, "_canal_marketplace_operando", return_value=True)
     @patch.object(tm, "_renovar_token_amazon")
     @patch.multiple(
         cfg,
@@ -85,7 +86,7 @@ class TestRenovarTokenAmazon(unittest.TestCase):
         AMAZON_REFRESH_TOKEN="refresh_amz",
         AMAZON_ACCESS_TOKEN="static",
     )
-    def test_get_token_amazon_usa_cache(self, mock_renovar):
+    def test_get_token_amazon_usa_cache(self, mock_renovar, _canal):
         tm._token_cache_amazon["access_token"] = "cached"
         tm._token_cache_amazon["expires_at"] = time.time() + 9999
         self.assertEqual(tm.get_token_amazon(), "cached")

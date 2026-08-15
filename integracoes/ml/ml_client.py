@@ -1115,67 +1115,84 @@ def buscar_acos_ads(item_id: str, dias: int = 14) -> float:
         return 0.0
 
 
-def listar_meus_anuncios(
-    *,
-    statuses: tuple[str, ...] | list[str] | None = None,
-    aplicar_foco: bool | None = None,
-) -> list[dict]:
-    """
-    Lista anúncios do vendedor com item_id, título, preço e SKU.
-    Por padrão só `active`. Passe statuses=('active','paused') para incluir pausados.
-    Com aplicar_foco (default ML_IGNORAR_ANUNCIOS_FORA_FOCO) ignora bolsas/legado;
-    a reputação da conta continua valendo. Nunca lança exceção.
-    """
-    from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco, reset_ultimo_filtro
+_ULTIMA_LISTAGEM_ANUNCIOS: dict[str, Any] = {
+    "ok": False,
+    "ids_busca": 0,
+    "ids_ok": 0,
+    "ids_faltando": [],
+    "paging_total": 0,
+    "motivo": "",
+}
 
-    if not _enabled():
-        logger.info("Mercado Livre não configurado para listar anúncios.")
-        reset_ultimo_filtro()
-        return []
-    status_list = tuple(statuses) if statuses else ("active",)
+
+def ultima_listagem_anuncios() -> dict[str, Any]:
+    """Metadados da última listar_meus_anuncios — distingue falha de catálogo vazio."""
+    return dict(_ULTIMA_LISTAGEM_ANUNCIOS)
+
+
+def _set_listagem_anuncios(**kwargs: Any) -> None:
+    global _ULTIMA_LISTAGEM_ANUNCIOS
+    base = {
+        "ok": False,
+        "ids_busca": 0,
+        "ids_ok": 0,
+        "ids_faltando": [],
+        "paging_total": 0,
+        "motivo": "",
+    }
+    _ULTIMA_LISTAGEM_ANUNCIOS = {**base, **kwargs}
+
+
+def _normalizar_corpo_item_ml(b: dict) -> dict:
     try:
-        item_ids: list[str] = []
-        seen: set[str] = set()
-        for status in status_list:
-            offset = 0
-            while True:
-                r = request(
+        estoque = int(b.get("available_quantity", 0) or 0)
+    except (TypeError, ValueError):
+        estoque = int(float(b.get("available_quantity") or 0))
+    return {
+        "item_id": str(b.get("id", "")),
+        "titulo": str(b.get("title", "") or ""),
+        "preco": float(b.get("price", 0) or 0),
+        "sku": str(b.get("seller_sku", "") or ""),
+        "status": str(b.get("status", "") or ""),
+        "sold_quantity": int(b.get("sold_quantity", 0) or 0),
+        "estoque": estoque,
+        "date_created": str(b.get("date_created", "") or ""),
+        "user_product_id": str(b.get("user_product_id", "") or ""),
+        "family_name": str(b.get("family_name", "") or ""),
+        "category_id": str(b.get("category_id", "") or ""),
+    }
+
+
+def _hidratar_anuncios_por_ids(item_ids: list[str]) -> tuple[list[dict], list[str]]:
+    """GET /items em lote; retenta IDs que não vieram 200. Devolve (itens, faltando)."""
+    attrs = (
+        "id,title,price,seller_sku,status,sold_quantity,available_quantity,"
+        "date_created,user_product_id,family_name,category_id"
+    )
+    por_id: dict[str, dict] = {}
+
+    def _puxar(ids: list[str]) -> None:
+        batch_size = 20
+        for i in range(0, len(ids), batch_size):
+            batch = ids[i : i + batch_size]
+            try:
+                rm = _request_ml(
                     "GET",
-                    f"{BASE}/users/{ML_SELLER_ID}/items/search",
-                    headers=_h(),
-                    params={"status": status, "limit": 100, "offset": offset},
+                    f"{BASE}/items",
+                    params={"ids": ",".join(batch), "attributes": attrs},
                     timeout=20,
                 )
-                r.raise_for_status()
-                chunk = r.json().get("results", []) or []
-                if not chunk:
-                    break
-                for raw_id in chunk:
-                    sid = str(raw_id)
-                    if sid not in seen:
-                        seen.add(sid)
-                        item_ids.append(sid)
-                if len(chunk) < 100:
-                    break
-                offset += 100
-
-        normalized: list[dict] = []
-        batch_size = 20
-        attrs = (
-            "id,title,price,seller_sku,status,sold_quantity,"
-            "date_created,user_product_id,family_name,category_id"
-        )
-        for i in range(0, len(item_ids), batch_size):
-            batch = item_ids[i : i + batch_size]
-            rm = request(
-                "GET",
-                f"{BASE}/items",
-                headers=_h(),
-                params={"ids": ",".join(batch), "attributes": attrs},
-                timeout=20,
-            )
-            rm.raise_for_status()
-            payload = rm.json()
+                if status_http(rm) != 200:
+                    logger.warning(
+                        "ML hidratar lote HTTP %s ids=%s",
+                        status_http(rm),
+                        ",".join(batch[:4]),
+                    )
+                    continue
+                payload = rm.json()
+            except Exception as exc:
+                logger.warning("ML hidratar lote: %s", exc)
+                continue
             if not isinstance(payload, list):
                 continue
             for entry in payload:
@@ -1184,20 +1201,120 @@ def listar_meus_anuncios(
                 b = entry.get("body")
                 if not isinstance(b, dict):
                     continue
-                normalized.append(
-                    {
-                        "item_id": str(b.get("id", "")),
-                        "titulo": str(b.get("title", "") or ""),
-                        "preco": float(b.get("price", 0) or 0),
-                        "sku": str(b.get("seller_sku", "") or ""),
-                        "status": str(b.get("status", "") or ""),
-                        "sold_quantity": int(b.get("sold_quantity", 0) or 0),
-                        "date_created": str(b.get("date_created", "") or ""),
-                        "user_product_id": str(b.get("user_product_id", "") or ""),
-                        "family_name": str(b.get("family_name", "") or ""),
-                        "category_id": str(b.get("category_id", "") or ""),
-                    }
+                iid = str(b.get("id") or "")
+                if iid:
+                    por_id[iid] = _normalizar_corpo_item_ml(b)
+
+    _puxar(item_ids)
+    faltando = [i for i in item_ids if i not in por_id]
+    if faltando:
+        _puxar(faltando)
+        faltando = [i for i in item_ids if i not in por_id]
+    ordenados = [por_id[i] for i in item_ids if i in por_id]
+    return ordenados, faltando
+
+
+def listar_meus_anuncios(
+    *,
+    statuses: tuple[str, ...] | list[str] | None = None,
+    aplicar_foco: bool | None = None,
+) -> list[dict]:
+    """
+    Lista anúncios do vendedor com item_id, título, preço, SKU e estoque.
+    Por padrão só `active`. Passe statuses=('active','paused') para incluir pausados.
+    Com aplicar_foco (default ML_IGNORAR_ANUNCIOS_FORA_FOCO) ignora bolsas/legado;
+    a reputação da conta continua valendo. Nunca lança exceção.
+
+    Falha de API NÃO é catálogo vazio: veja ultima_listagem_anuncios()["ok"].
+    """
+    from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco, reset_ultimo_filtro
+
+    if not _enabled():
+        logger.info("Mercado Livre não configurado para listar anúncios.")
+        reset_ultimo_filtro()
+        _set_listagem_anuncios(ok=False, motivo="nao_configurado")
+        return []
+    status_list = tuple(statuses) if statuses else ("active",)
+    try:
+        item_ids: list[str] = []
+        seen: set[str] = set()
+        paging_total = 0
+        for status in status_list:
+            offset = 0
+            total_status = 0
+            while True:
+                r = None
+                for tentativa in range(2):
+                    try:
+                        r = _request_ml(
+                            "GET",
+                            f"{BASE}/users/{ML_SELLER_ID}/items/search",
+                            params={"status": status, "limit": 100, "offset": offset},
+                            timeout=20,
+                        )
+                        if status_http(r) == 200:
+                            break
+                        logger.warning(
+                            "ML listar_meus_anuncios search HTTP %s (tentativa %s)",
+                            status_http(r),
+                            tentativa + 1,
+                        )
+                    except Exception:
+                        if tentativa == 0:
+                            continue
+                        raise
+                if r is None or status_http(r) != 200:
+                    if r is not None:
+                        log_http_erro_listagem(logger, "ML listar_meus_anuncios", r)
+                    reset_ultimo_filtro()
+                    _set_listagem_anuncios(
+                        ok=False,
+                        ids_busca=len(item_ids),
+                        paging_total=paging_total,
+                        motivo=f"search_http_{status_http(r) if r is not None else 0}",
+                    )
+                    return []
+                body = r.json() or {}
+                chunk = body.get("results", []) or []
+                total_status = max(
+                    total_status,
+                    int((body.get("paging") or {}).get("total", 0) or 0),
                 )
+                if not chunk:
+                    break
+                for raw_id in chunk:
+                    sid = str(raw_id)
+                    if sid not in seen:
+                        seen.add(sid)
+                        item_ids.append(sid)
+                offset += len(chunk)
+                if total_status and offset >= total_status:
+                    break
+                if len(chunk) < 100:
+                    break
+            paging_total += total_status
+
+        normalized, faltando = _hidratar_anuncios_por_ids(item_ids)
+        ok = not faltando
+        if faltando:
+            incrementar(
+                "dados.degradado",
+                tags=["contexto:ML_listar_meus_anuncios", "motivo:itens_incompletos"],
+            )
+            logger.error(
+                "ML listar_meus_anuncios incompleto: busca=%s hidratados=%s faltando=%s",
+                len(item_ids),
+                len(normalized),
+                ",".join(faltando[:8]),
+            )
+        _set_listagem_anuncios(
+            ok=ok,
+            ids_busca=len(item_ids),
+            ids_ok=len(normalized),
+            ids_faltando=faltando,
+            paging_total=paging_total,
+            motivo="" if ok else "itens_incompletos",
+        )
         usar_foco = ML_IGNORAR_ANUNCIOS_FORA_FOCO if aplicar_foco is None else bool(aplicar_foco)
         if usar_foco:
             normalized, _ = filtrar_anuncios_foco(normalized)
@@ -1205,6 +1322,8 @@ def listar_meus_anuncios(
             reset_ultimo_filtro()
         return normalized
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:ML_listar_meus_anuncios", "motivo:excecao"])
         logger.error("ML listar_meus_anuncios erro: %s", exc)
         reset_ultimo_filtro()
+        _set_listagem_anuncios(ok=False, motivo="excecao")
         return []

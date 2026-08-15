@@ -4,7 +4,9 @@ Testes mockados do controle real de Product Ads no Mercado Livre.
 """
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -74,8 +76,10 @@ class TestListarCampanhas(unittest.TestCase):
         err.response = MagicMock(status_code=404)
         mock_req.side_effect = err
         ads._ULTIMO_AVISO_404_TS = 0.0
-        with self.assertLogs("ml_product_ads", level="WARNING") as cm:
-            out = ads.listar_campanhas(advertiser_id="421764")
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(ads, "_COOLDOWN_404_PATH", Path(tmp) / "ads_404.json"):
+                with self.assertLogs("ml_product_ads", level="WARNING") as cm:
+                    out = ads.listar_campanhas(advertiser_id="421764")
         self.assertEqual(out, [])
         self.assertEqual(ads.ultima_listagem_codigo(), "http_404")
         self.assertTrue(any("HTTP 404" in m for m in cm.output))
@@ -89,13 +93,16 @@ class TestListarCampanhas(unittest.TestCase):
         err.response = MagicMock(status_code=404)
         mock_req.side_effect = err
         ads._ULTIMO_AVISO_404_TS = 0.0
-        with self.assertLogs("ml_product_ads", level="WARNING") as cm1:
-            ads.listar_campanhas(advertiser_id="421764")
-        self.assertEqual(len(cm1.output), 1)
-        # Segunda chamada no mesmo processo: sem novo WARNING
-        with self.assertRaises(AssertionError):
-            with self.assertLogs("ml_product_ads", level="WARNING"):
-                ads.listar_campanhas(advertiser_id="421764")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ads_404.json"
+            with patch.object(ads, "_COOLDOWN_404_PATH", path):
+                with self.assertLogs("ml_product_ads", level="WARNING") as cm1:
+                    ads.listar_campanhas(advertiser_id="421764")
+                self.assertEqual(len(cm1.output), 1)
+                ads._ULTIMO_AVISO_404_TS = 0.0
+                with self.assertRaises(AssertionError):
+                    with self.assertLogs("ml_product_ads", level="WARNING"):
+                        ads.listar_campanhas(advertiser_id="421764")
 
 
 class TestProbeEscrita404(unittest.TestCase):

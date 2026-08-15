@@ -89,6 +89,7 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.saude.todos_pausados",
             "robo.ml.saude.anuncios_ignorados_fora_foco",
             "robo.ml.saude.catalogo_foco_vazio",
+            "robo.ml.integridade.pct",
             "robo.vendas.receita_bruta",
             "robo.ads.acos_atual",
         ):
@@ -169,9 +170,18 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             any(f.get("comparator") == ">=" and f.get("value") == 0 for f in fmts)
         )
 
+    def test_monitor_integridade_ml(self):
+        nomes = [m["name"] for m in dd._monitores_desejados()]
+        self.assertTrue(any("Integridade dados ML" in n for n in nomes))
+
     def test_monitor_oscilacao(self):
         nomes = [m["name"] for m in dd._monitores_desejados()]
         self.assertTrue(any("Oscilacao Datadog" in n for n in nomes))
+
+    def test_monitor_magalu_query_pega_magazine_luiza_e_http_400(self):
+        src = Path(dd.__file__).read_text(encoding="utf-8")
+        self.assertIn("Magazine Luiza", src)
+        self.assertIn("401 OR 400 OR invalid_grant", src)
 
 
 if __name__ == "__main__":

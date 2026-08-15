@@ -504,18 +504,20 @@ def emitir_metricas_briefing(briefing: dict[str, Any]) -> None:
         from integracoes.datadog.oscilacao_decisao import registrar_e_avaliar
 
         kits = briefing.get("kits_manicure") or {}
-        registrar_e_avaliar(
-            {
-                "saude_score": float(briefing.get("saude_score") or 0),
-                "produtos_seguros": float(produtos.get("seguros_n") or 0),
-                "esforco_faltando": float(esforco.get("faltando_n") or 0),
-                "kit_condicao_ok": float(kits.get("condicao_n") or 0),
-                "progresso_pct": float(briefing.get("progresso_pct") or 0),
-                "claude_ok": 1.0 if briefing.get("claude_ok") else 0.0,
-                "aproximando": 1.0 if str(briefing.get("veredito") or "") == "aproximando" else 0.0,
-                "anuncios_foco": float(previa.get("anuncios_ativos_foco") or 0),
-            }
-        )
+        amostra: dict[str, float] = {
+            "saude_score": float(briefing.get("saude_score") or 0),
+            "produtos_seguros": float(produtos.get("seguros_n") or 0),
+            "esforco_faltando": float(esforco.get("faltando_n") or 0),
+            "claude_ok": 1.0 if briefing.get("claude_ok") else 0.0,
+            "anuncios_foco": float(previa.get("anuncios_ativos_foco") or 0),
+        }
+        if isinstance(kits, dict) and kits:
+            amostra["kit_condicao_ok"] = float(kits.get("condicao_n") or 0)
+        if briefing.get("progresso_pct") is not None:
+            amostra["progresso_pct"] = float(briefing.get("progresso_pct") or 0)
+        if briefing.get("veredito") is not None:
+            amostra["aproximando"] = 1.0 if str(briefing.get("veredito") or "") == "aproximando" else 0.0
+        registrar_e_avaliar(amostra)
     except Exception as exc:
         logger.info("oscilação briefing: %s", exc)
 

@@ -40,7 +40,11 @@ def _f(val: Any, default: float = 0.0) -> float:
 
 
 def comparar(anterior: dict[str, Any] | None, atual: dict[str, Any]) -> dict[str, Any]:
-    """Compara amostras. Primeira amostra não é oscilação."""
+    """Compara amostras. Primeira amostra / chave nova não é oscilação.
+
+    Ausência não vira 0 — senão o vigia no Actions (checkout sem snapshot)
+    zera saude/progresso e o gauge fica preso em 1.
+    """
     if not anterior:
         return {
             "oscilacao": False,
@@ -50,7 +54,7 @@ def comparar(anterior: dict[str, Any] | None, atual: dict[str, Any]) -> dict[str
         }
     mudancas: list[dict[str, Any]] = []
     for chave, limiar in LIMIARES.items():
-        if chave not in atual and chave not in anterior:
+        if chave not in atual or chave not in anterior:
             continue
         a = _f(anterior.get(chave))
         b = _f(atual.get(chave))
@@ -84,8 +88,14 @@ def registrar_e_avaliar(
     if not isinstance(prev, dict):
         prev = {}
     anterior = prev.get("atual") if isinstance(prev.get("atual"), dict) else {}
-    merged = {**anterior, **{k: _f(v) for k, v in atualizacao.items()}}
-    result = comparar(anterior or None, merged)
+    delta = {k: _f(v) for k, v in atualizacao.items() if k in LIMIARES}
+    merged = {**anterior, **delta}
+    # Só compara o que esta rodada trouxe — update parcial (kits) não
+    # reavalia saude/progresso como se tivessem ido a zero.
+    result = comparar(
+        {k: anterior[k] for k in delta if k in anterior} or None,
+        delta,
+    )
     agora = datetime.now(timezone.utc).isoformat()
     out = {
         "timestamp": agora,
@@ -151,8 +161,9 @@ def _alertar_cuidado(mudancas: list[dict[str, Any]]) -> None:
         logger.info("alerta oscilação: %s", exc)
 
 
-def avaliar_de_snapshots() -> dict[str, Any]:
-    """Lê snapshots de ruptura/kits e avalia (uso no vigia)."""
+def _amostra_de_snapshots() -> dict[str, float]:
+    """Só inclui chaves cujo arquivo-fonte existe e tem dado — não zera o resto."""
+    amostra: dict[str, float] = {}
     briefing = ler_json(ROOT / "logs" / "briefing_ruptura_impala_ultima.json", default={})
     kits = ler_json(ROOT / "logs" / "kits_compativeis_manicures_ultima.json", default={})
     rup = ler_json(ROOT / "logs" / "ponto_ruptura_segundo_cnpj_ultima.json", default={})
@@ -162,19 +173,30 @@ def avaliar_de_snapshots() -> dict[str, Any]:
         kits = {}
     if not isinstance(rup, dict):
         rup = {}
-    previa = briefing.get("previa_ml") or {}
-    produtos = briefing.get("produtos") or {}
-    esforco = briefing.get("esforco") or {}
-    return registrar_e_avaliar(
-        {
-            "saude_score": _f(briefing.get("saude_score")),
-            "produtos_seguros": _f(produtos.get("seguros_n")),
-            "esforco_faltando": _f(esforco.get("faltando_n")),
-            "kit_condicao_ok": _f(kits.get("condicao_n")),
-            "progresso_pct": _f(rup.get("progresso_pct")),
-            "claude_ok": 1.0 if briefing.get("claude_ok") else 0.0,
-            "aproximando": 1.0 if str(rup.get("veredito") or "") == "aproximando" else 0.0,
-            "anuncios_foco": _f(previa.get("anuncios_ativos_foco")),
-        },
-        alertar=True,
-    )
+    previa = briefing.get("previa_ml") if isinstance(briefing.get("previa_ml"), dict) else {}
+    produtos = briefing.get("produtos") if isinstance(briefing.get("produtos"), dict) else {}
+    esforco = briefing.get("esforco") if isinstance(briefing.get("esforco"), dict) else {}
+    if briefing:
+        if "saude_score" in briefing:
+            amostra["saude_score"] = _f(briefing.get("saude_score"))
+        if "seguros_n" in produtos:
+            amostra["produtos_seguros"] = _f(produtos.get("seguros_n"))
+        if "faltando_n" in esforco:
+            amostra["esforco_faltando"] = _f(esforco.get("faltando_n"))
+        if "claude_ok" in briefing:
+            amostra["claude_ok"] = 1.0 if briefing.get("claude_ok") else 0.0
+        if "anuncios_ativos_foco" in previa:
+            amostra["anuncios_foco"] = _f(previa.get("anuncios_ativos_foco"))
+    if kits and "condicao_n" in kits:
+        amostra["kit_condicao_ok"] = _f(kits.get("condicao_n"))
+    if rup:
+        if "progresso_pct" in rup:
+            amostra["progresso_pct"] = _f(rup.get("progresso_pct"))
+        if "veredito" in rup:
+            amostra["aproximando"] = 1.0 if str(rup.get("veredito") or "") == "aproximando" else 0.0
+    return amostra
+
+
+def avaliar_de_snapshots() -> dict[str, Any]:
+    """Lê snapshots de ruptura/kits e avalia (uso no vigia)."""
+    return registrar_e_avaliar(_amostra_de_snapshots(), alertar=True)

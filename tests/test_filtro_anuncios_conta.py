@@ -6,6 +6,8 @@ import unittest
 from integracoes.ml.filtro_anuncios_conta import (
     anuncio_fora_do_foco,
     filtrar_anuncios_foco,
+    filtrar_anuncios_legado,
+    palavras_nao_transferir,
     reset_ultimo_filtro,
     sku_do_foco,
     ultimo_filtro_anuncios,
@@ -101,6 +103,23 @@ class TestFiltroAnunciosConta(unittest.TestCase):
         mantidos, stats = filtrar_anuncios_foco(itens, regras=regras)
         self.assertEqual(len(mantidos), 1)
         self.assertEqual(stats["ignorados"], 0)
+
+    def test_filtrar_legado_inverso_do_foco(self):
+        legado, stats = filtrar_anuncios_legado(
+            [
+                {"item_id": "MLB-B", "titulo": "Carteira Mariart", "sku": ""},
+                {"item_id": "MLB-K", "titulo": "Kit MIMO Impala", "sku": "IMP-MIMO-003"},
+            ],
+            regras=REGRAS,
+        )
+        self.assertEqual([a["item_id"] for a in legado], ["MLB-B"])
+        self.assertEqual(stats["legado"], 1)
+        self.assertEqual(stats["foco"], 1)
+
+    def test_palavras_nao_transferir(self):
+        palavras = palavras_nao_transferir(REGRAS)
+        self.assertIn("bolsa", palavras)
+        self.assertIn("mariart", palavras)
 
     def test_ignora_por_categoria(self):
         regras = {**REGRAS, "category_ids": ["MLB1924"]}

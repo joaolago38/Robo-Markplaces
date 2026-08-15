@@ -59,9 +59,14 @@ jobs:
             logs/esmaltes_mercado_history.json
             logs/estoque_ultima.json
             logs/ads_gatilho_ultima.json
+            logs/ads_product_ads_404.json
             logs/chat_ultima.json
             logs/nfe_ultima.json
             logs/vendas_whatsapp_ultima.json
+            logs/decisao_oscilacao_ultima.json
+            logs/briefing_ruptura_impala_ultima.json
+            logs/kits_compativeis_manicures_ultima.json
+            logs/ponto_ruptura_segundo_cnpj_ultima.json
           key: saude-heartbeats-${{ github.run_id }}
           restore-keys: |
             saude-heartbeats-
@@ -204,9 +209,14 @@ jobs:
             logs/esmaltes_mercado_history.json
             logs/estoque_ultima.json
             logs/ads_gatilho_ultima.json
+            logs/ads_product_ads_404.json
             logs/chat_ultima.json
             logs/nfe_ultima.json
             logs/vendas_whatsapp_ultima.json
+            logs/decisao_oscilacao_ultima.json
+            logs/briefing_ruptura_impala_ultima.json
+            logs/kits_compativeis_manicures_ultima.json
+            logs/ponto_ruptura_segundo_cnpj_ultima.json
           key: saude-heartbeats-${{ github.run_id }}
       - name: Publicar estado vendas/IA
         if: always()

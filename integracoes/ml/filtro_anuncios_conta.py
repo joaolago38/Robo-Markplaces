@@ -135,3 +135,36 @@ def filtrar_anuncios_foco(
             stats["mantidos"],
         )
     return mantidos, stats
+
+
+def filtrar_anuncios_legado(
+    anuncios: list[dict[str, Any]] | None,
+    *,
+    regras: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Inverso do foco: só bolsas/legado. Não altera o filtro operacional."""
+    regras = regras if regras is not None else carregar_regras_ignorar()
+    origem = [a for a in (anuncios or []) if isinstance(a, dict)]
+    legado: list[dict[str, Any]] = []
+    for a in origem:
+        if anuncio_fora_do_foco(a, regras):
+            legado.append(a)
+    stats = {
+        "legado": len(legado),
+        "foco": len(origem) - len(legado),
+    }
+    return legado, stats
+
+
+def palavras_nao_transferir(regras: dict[str, Any] | None = None) -> list[str]:
+    """Palavras de bolsa/legado que não podem ir para título Impala."""
+    regras = regras if regras is not None else carregar_regras_ignorar()
+    out: list[str] = []
+    seen: set[str] = set()
+    for chave in ("titulo_contem", "sku_contem", "titulo_legado"):
+        for raw in regras.get(chave) or []:
+            n = _norm(raw)
+            if n and n not in seen:
+                seen.add(n)
+                out.append(n)
+    return out
