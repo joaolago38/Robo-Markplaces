@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "timestamp": "2026-08-15T18:36:09.337647+00:00",
+  "timestamp": "2026-08-15T18:52:29.965600+00:00",
   "pct": 50.0,
   "meta_pct": 99.99,
   "atinge_meta": false,
@@ -13,7 +13,7 @@
   "ids_ok": 0,
   "faltando": [],
   "falhas": [
-    "listagem:excecao"
+    "listagem:falhou"
   ],
-  "motivo_listagem": "excecao"
+  "motivo_listagem": ""
 }

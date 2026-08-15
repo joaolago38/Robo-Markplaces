@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "timestamp": "2026-08-15T18:48:05.506344+00:00",
+  "timestamp": "2026-08-15T18:52:16.320695+00:00",
   "piso_op_pct": 15.0,
   "taxa_pct": 18.0,
   "n_anuncios": 18,
@@ -318,7 +318,7 @@
     }
   ],
   "fonte": "cache_busca",
-  "cache_idade_h": 865.9,
+  "cache_idade_h": 866.0,
   "cache_stale": true,
   "mlb_frente": 0,
   "estoque_frente": 0,
