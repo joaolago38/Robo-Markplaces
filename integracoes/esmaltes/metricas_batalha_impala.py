@@ -25,6 +25,8 @@ from integracoes.esmaltes.metricas_catalogo_impala import kit_tag
 logger = logging.getLogger("metricas_batalha_impala")
 
 SNAPSHOT_PATH = ROOT / "logs" / "impala_batalha_ultima.json"
+# MLB + 1–2 dígitos (ex.: MLB1) é lixo de amostra, não anúncio real.
+_ITEM_ID_LIXO = re.compile(r"^MLB\d{1,2}$", re.I)
 
 
 def _f(val: Any, default: float = 0.0) -> float:
@@ -70,6 +72,13 @@ def _preco_nosso(produto: dict[str, Any]) -> float:
     return _f(ml.get("preco") or produto.get("preco"))
 
 
+def _item_id_amostra_ok(item_id: str) -> bool:
+    iid = (item_id or "").strip().upper()
+    if not iid.startswith("MLB") or "PREENCHER" in iid:
+        return False
+    return _ITEM_ID_LIXO.fullmatch(iid) is None
+
+
 def extrair_anuncios_impala(kits_unicos: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Filtra/dedupe anúncios Impala da amostra de kits."""
     por_id: dict[str, dict[str, Any]] = {}
@@ -77,7 +86,7 @@ def extrair_anuncios_impala(kits_unicos: list[dict[str, Any]]) -> list[dict[str,
         if not isinstance(a, dict) or not _eh_impala(a):
             continue
         iid = str(a.get("item_id") or "").strip().upper()
-        if not iid or iid.startswith("MLB_PREENCHER"):
+        if not _item_id_amostra_ok(iid):
             continue
         atual = por_id.get(iid)
         vend = int(a.get("quantidade_vendida") or 0)
@@ -144,19 +153,18 @@ def montar_batalha(
         nosso = _preco_nosso(p)
         rival_min = None
         rival_n = 0
+        fonte_rival = "ausente"
         if tam and tam in por_tam:
             ps = [_f(x.get("preco")) for x in por_tam[tam] if _f(x.get("preco")) > 0]
             rival_n = len(por_tam[tam])
             if ps:
                 rival_min = round(min(ps), 2)
-        # fallback: preco_ml_mercado do catálogo
-        if rival_min is None:
-            mercado = _f(p.get("preco_ml_mercado"))
-            if mercado > 0:
-                rival_min = mercado
+                fonte_rival = "ao_vivo"
+        mercado = _f(p.get("preco_ml_mercado"))
+        rival_ref_catalogo = round(mercado, 2) if mercado > 0 else None
 
         gap = None
-        if nosso > 0 and rival_min and rival_min > 0:
+        if fonte_rival == "ao_vivo" and nosso > 0 and rival_min and rival_min > 0:
             gap = round(100.0 * (nosso - rival_min) / rival_min, 2)
             if gap > 0:
                 acima += 1
@@ -172,6 +180,8 @@ def montar_batalha(
                 "tam": tam,
                 "nosso_preco": nosso,
                 "rival_min": rival_min,
+                "rival_ref_catalogo": rival_ref_catalogo,
+                "fonte_rival": fonte_rival,
                 "rivais_no_tam": rival_n,
                 "gap_pct": gap,
                 "mlb_ok": str(
@@ -207,6 +217,8 @@ def montar_batalha(
         "comparacoes": comparacoes,
         "nossos_acima_rival": acima,
         "nossos_abaixo_ou_igual": abaixo_ou_igual,
+        "comparacoes_ao_vivo": sum(1 for c in comparacoes if c.get("fonte_rival") == "ao_vivo"),
+        "comparacoes_sem_rival": sum(1 for c in comparacoes if c.get("fonte_rival") != "ao_vivo"),
         "top_anuncios": [
             {
                 "item_id": t.get("item_id"),
@@ -244,6 +256,8 @@ def emitir_metricas_batalha_impala(
             "impala.batalha.nossos_abaixo_ou_igual",
             float(batalha.get("nossos_abaixo_ou_igual") or 0),
         )
+        gauge("impala.batalha.comparacoes_ao_vivo", float(batalha.get("comparacoes_ao_vivo") or 0))
+        gauge("impala.batalha.comparacoes_sem_rival", float(batalha.get("comparacoes_sem_rival") or 0))
 
         for b in batalha.get("por_tamanho") or []:
             tags = [f"tam:{int(b.get('tam') or 0)}"]
@@ -260,10 +274,11 @@ def emitir_metricas_batalha_impala(
             ]
             if c.get("tam"):
                 tags.append(f"tam:{int(c['tam'])}")
+            tags.append(f"fonte:{c.get('fonte_rival') or 'ausente'}")
             gauge("impala.batalha.nosso_preco", float(c.get("nosso_preco") or 0), tags=tags)
-            if c.get("rival_min") is not None:
+            if c.get("fonte_rival") == "ao_vivo" and c.get("rival_min") is not None:
                 gauge("impala.batalha.rival_min", float(c["rival_min"]), tags=tags)
-            if c.get("gap_pct") is not None:
+            if c.get("fonte_rival") == "ao_vivo" and c.get("gap_pct") is not None:
                 gauge("impala.batalha.gap_vs_rival_pct", float(c["gap_pct"]), tags=tags)
             gauge("impala.batalha.rivais_no_tam", float(c.get("rivais_no_tam") or 0), tags=tags)
 

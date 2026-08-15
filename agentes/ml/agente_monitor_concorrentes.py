@@ -78,7 +78,11 @@ def _item_id_ml_valido(valor: Any) -> bool:
     texto = str(valor or "").strip()
     if not texto or "PREENCHER" in texto.upper():
         return False
-    return texto.upper().startswith("MLB")
+    up = texto.upper().replace("-", "")
+    if not up.startswith("MLB"):
+        return False
+    digits = up[3:]
+    return digits.isdigit() and len(digits) >= 6
 
 
 def _rotulo_preco_referencia(origem: str) -> str:

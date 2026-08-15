@@ -20,10 +20,10 @@ logger = logging.getLogger("analise_loja_concorrente")
 BASE = "https://api.mercadolibre.com"
 
 _TERMOS_PADRAO_ESMALTES: tuple[str, ...] = (
-    "kit 5 esmaltes impala bailarina",
     "kit 3 esmaltes impala mimo",
-    "kit 6 esmaltes impala sortidos",
-    "kit 10 esmaltes impala atacado",
+    "kit 4 esmaltes impala perolado",
+    "kit 6 esmaltes impala ju paes",
+    "kit 5 esmaltes impala bailarina",
     "kit esmalte impala",
     "kit esmalte risque atacado",
     "kit esmalte colorama",

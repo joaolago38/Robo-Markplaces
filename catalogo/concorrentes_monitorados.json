@@ -1,75 +1,59 @@
 [
   {
+    "id": "kit3-mimo-carmed",
+    "ativo": true,
+    "nome": "Kit 3 Impala Mimo + Carmed",
+    "termo_busca": "kit 3 esmaltes impala mimo carmed",
+    "sku": "IMP-MIMO-003",
+    "meu_preco": 44.90,
+    "limite_resultados": 20
+  },
+  {
     "id": "kit4-perolado",
     "ativo": true,
     "nome": "Kit 4 Impala Perolado Tendência",
     "termo_busca": "kit 4 esmaltes impala perolado",
     "sku": "IMP-PERL-004",
     "meu_preco": 39.90,
-    "limite_resultados": 15
-  },
-  {
-    "id": "kit15-verm-rosa",
-    "ativo": true,
-    "nome": "Kit 15 Impala Vermelho e Rosa",
-    "termo_busca": "kit 15 esmaltes impala vermelho rosa",
-    "sku": "IMP-VR-015",
-    "meu_preco": 69.90,
     "limite_resultados": 20
   },
   {
-    "id": "kit10-sortido",
+    "id": "kit6-ju-paes",
     "ativo": true,
-    "nome": "Kit 10 Impala Sortido Atacado",
-    "termo_busca": "kit 10 esmaltes impala sortidos atacado",
-    "sku": "IMP-SORT-010",
-    "meu_preco": 48.00,
-    "limite_resultados": 20
-  },
-  {
-    "id": "bundle-777-5esm",
-    "ativo": true,
-    "nome": "Bundle Alicate Mundial 777 + 5 Impala",
-    "termo_busca": "kit alicate manicure mundial 777 esmaltes impala",
-    "sku": "BUNDLE-777-5ESM",
-    "meu_preco": 79.90,
-    "limite_resultados": 12
-  },
-  {
-    "id": "kit10-nude",
-    "ativo": true,
-    "nome": "Kit 10 Impala Nude e Claro",
-    "termo_busca": "kit 10 esmaltes impala nude",
-    "sku": "IMP-NUDE-010",
-    "meu_preco": 49.90,
-    "limite_resultados": 15
-  },
-  {
-    "id": "kit12-classicos",
-    "ativo": true,
-    "nome": "Kit 12 Impala Clássicos",
-    "termo_busca": "kit 12 esmaltes impala classicos",
-    "sku": "IMP-CLAS-012",
-    "meu_preco": 54.90,
-    "limite_resultados": 15
-  },
-  {
-    "id": "kit30-atacado",
-    "ativo": true,
-    "nome": "Kit 30 Impala Atacado",
-    "termo_busca": "kit 30 esmaltes impala atacado manicure",
-    "sku": "IMP-ATAC-030",
-    "meu_preco": 119.90,
+    "nome": "Kit 6 Impala Ju Paes",
+    "termo_busca": "kit 6 esmaltes impala ju paes",
+    "sku": "IMP-JUPAES-006",
+    "meu_preco": 64.90,
     "limite_resultados": 15
   },
   {
     "id": "impala-kit-geral",
     "ativo": true,
-    "nome": "Radar geral kits Impala",
-    "termo_busca": "esmalte impala kit manicure",
+    "nome": "Radar geral kits Impala (foco MIMO)",
+    "termo_busca": "kit esmaltes impala mimo manicure",
+    "sku": "IMP-MIMO-003",
+    "meu_preco": 44.90,
+    "limite_resultados": 30
+  },
+  {
+    "id": "kit15-verm-rosa",
+    "ativo": false,
+    "nome": "Kit 15 Impala Vermelho e Rosa (fora da frente — margem real negativa)",
+    "termo_busca": "kit 15 esmaltes impala vermelho rosa",
+    "sku": "IMP-VR-015",
+    "meu_preco": 69.90,
+    "limite_resultados": 10,
+    "notas": "Não é linha de guerra. Margem real ~−21%."
+  },
+  {
+    "id": "kit10-sortido",
+    "ativo": false,
+    "nome": "Kit 10 Impala Sortido Atacado (fora da frente — margem real negativa)",
+    "termo_busca": "kit 10 esmaltes impala sortidos atacado",
     "sku": "IMP-SORT-010",
     "meu_preco": 48.00,
-    "limite_resultados": 30
+    "limite_resultados": 10,
+    "notas": "Não é linha de guerra. Margem real ~−29%."
   },
   {
     "id": "loja-novamix-comercial",
@@ -80,26 +64,26 @@
     "nickname": "NOVAMIX_COMERCIAL",
     "url_loja": "https://lista.mercadolivre.com.br/pagina/novamix_comercial",
     "termos_busca": [
+      "kit 3 esmaltes impala mimo",
       "kit 4 esmaltes impala perolado",
-      "kit 15 esmaltes impala",
-      "kit 10 esmaltes impala",
+      "kit 6 esmaltes impala ju paes",
       "kit esmalte impala",
       "kit esmalte risque atacado",
-      "kit esmalte colorama",
-      "kit 30 esmaltes atacado"
+      "kit esmalte colorama"
     ],
     "limite_resultados": 20,
-    "meu_preco": 39.90,
-    "notas": "SP — Mercado Líder Platinum. Concorrente de kits esmalte/manicure."
+    "meu_preco": 44.90,
+    "sku": "IMP-MIMO-003",
+    "notas": "SP — Mercado Líder Platinum. Radar de loja; filtrar pelo seller_id."
   },
   {
-    "id": "watch-template-kit15-impala",
+    "id": "watch-template-kit-mimo",
     "ativo": false,
     "tipo": "item",
-    "nome": "Watchlist — Kit 15 Impala rival (preencher MLB)",
+    "nome": "Watchlist — Kit 3 Mimo rival (preencher MLB ao vivo)",
     "item_id_concorrente": "MLB_PREENCHER",
-    "sku": "IMP-VR-015",
-    "meu_preco": 69.90,
-    "notas": "Troque MLB_PREENCHER pelo MLB do anúncio rival e ative (ativo:true)."
+    "sku": "IMP-MIMO-003",
+    "meu_preco": 44.90,
+    "notas": "Quando o radar trouxer um MLB real do rival, grave aqui e ative. GET /items de rival pode 403; visits às vezes responde."
   }
 ]
