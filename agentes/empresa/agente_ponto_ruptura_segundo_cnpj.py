@@ -97,6 +97,11 @@ def montar_mensagem(resultado: dict[str, Any], *, modo: str) -> str:
                 "com margem segura abaixo — não escale Ads nem outra marca ainda.",
             ]
         )
+        if not cnae.get("pronto"):
+            linhas.append(
+                "_CNAE/KYC Masterprint ainda tem gap — prepare o seller agora, "
+                "sem esperar o Telegram semanal de CNAE._"
+            )
     linhas.extend(formatar_secao_briefing(resultado.get("briefing")))
     return "\n".join(linhas)
 
@@ -113,6 +118,12 @@ def _emitir_metricas(resultado: dict[str, Any]) -> None:
     gauge("ponto_ruptura.checks_total", float(resultado.get("checks_total") or 0))
     gauge("ponto_ruptura.avaliacoes", float(sinais.get("avaliacoes") or 0))
     gauge("ponto_ruptura.nota", float(sinais.get("nota") or 0))
+    gauge("ponto_ruptura.ads_fonte_ok", 1.0 if sinais.get("ads_fonte_ok") else 0.0)
+    try:
+        foco_n = int(float(sinais.get("anuncios_ativos_foco") or 0))
+    except (TypeError, ValueError):
+        foco_n = 0
+    gauge("ponto_ruptura.foco_vazio", 1.0 if foco_n <= 0 else 0.0)
     gauge("cnae_preparacao.pronto", 1.0 if cnae.get("pronto") else 0.0)
     gauge("cnae_preparacao.gaps", float(cnae.get("gaps_n") or 0))
     gauge(
@@ -146,15 +157,15 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             cooldown = PONTO_RUPTURA_COOLDOWN_LIBERADO_SEG
             chave = "ponto_ruptura:liberado"
             deve = True
-        elif gaps_n > 0:
-            modo = "cnae"
-            cooldown = PONTO_RUPTURA_COOLDOWN_CNAE_SEG
-            chave = "ponto_ruptura:cnae_prep"
-            deve = True
         elif ver == "aproximando":
             modo = "aproximando"
             cooldown = PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG
             chave = "ponto_ruptura:aproximando"
+            deve = True
+        elif gaps_n > 0:
+            modo = "cnae"
+            cooldown = PONTO_RUPTURA_COOLDOWN_CNAE_SEG
+            chave = "ponto_ruptura:cnae_prep"
             deve = True
         if forcar:
             deve = True

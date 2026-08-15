@@ -285,6 +285,13 @@ RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA = os.getenv(
 RUPTURA_CLAUDE_IGNORAR_TOGGLE = os.getenv(
     "RUPTURA_CLAUDE_IGNORAR_TOGGLE", "1"
 ).strip().lower() not in ("0", "false", "no")
+# Nos momentos de lucro (SKU com margem ≥ piso travado só em MLB/estoque),
+# Claude moderado analisa o ML mesmo com toggle off (orçamento/API key valem).
+CLAUDE_LUCRO_ML_MOMENTOS = os.getenv("CLAUDE_LUCRO_ML_MOMENTOS", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 # Limites de decisão do ecossistema (Alibaba + USD + vendas + saúde ML × CNAE/CNPJ)
 DECISION_LIMITS_ATIVO = os.getenv("DECISION_LIMITS_ATIVO", "1").strip().lower() not in (
     "0",

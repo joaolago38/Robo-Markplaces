@@ -84,8 +84,8 @@ class TestRankingMl(unittest.TestCase):
         slugs = [r["slug"] for r in ranking]
         self.assertNotIn("impala", slugs)
         anita = next(r for r in ranking if r["slug"] == "anita")
-        self.assertEqual(anita["vendidos"], 200)
-        self.assertEqual(anita["anuncios"], 7)
+        self.assertEqual(anita["vendidos"], 120)
+        self.assertEqual(anita["anuncios"], 6)
         self.assertGreater(anita["score"], 0)
         self.assertEqual(ranking[0]["slug"], "anita")
 
@@ -99,6 +99,14 @@ class TestRankingMl(unittest.TestCase):
         risque = next(c for c in out if c["slug"] == "risque")
         self.assertFalse(risque["elegivel"])
         self.assertEqual(risque["score"], 0)
+
+    def test_um_anuncio_viral_nao_e_elegivel(self):
+        out = om.pontuar_candidatas(
+            [{"marca": "Anita", "slug": "anita", "vendidos": 120, "anuncios": 1, "score": 1202}],
+            catalogo=_CATALOGO,
+        )
+        anita = next(c for c in out if c["slug"] == "anita")
+        self.assertFalse(anita["elegivel"])
 
 
 class TestCnpjCanais(unittest.TestCase):
@@ -152,6 +160,32 @@ class TestAvaliacao(unittest.TestCase):
         self.assertEqual(out["marketplace_referente"], "mercadolivre")
         self.assertFalse(out["liberado"])
 
+    def test_radar_cego_nao_e_aproximando(self):
+        out = om.avaliar_ruptura_outra_marca(
+            ruptura_impala={"liberado": False, "aproximando": True, "veredito": "aproximando"},
+            candidatas=[_candidata("anita", score=1202, anuncios=1, vendidos=120)],
+            canais=_canais(ml="1651424153"),
+            resumo={"anuncios_ativos": 0},
+            catalogo=_CATALOGO,
+            cnae=_cnae(),
+        )
+        self.assertTrue(out["radar_cego"])
+        self.assertNotEqual(out["veredito"], "aproximando")
+        self.assertFalse(out["liberado"])
+
+    def test_cnae_ausente_nao_passa(self):
+        out = om.avaliar_ruptura_outra_marca(
+            ruptura_impala={"liberado": True, "aproximando": False, "veredito": "liberado"},
+            candidatas=[_candidata("anita", score=200, anuncios=8, vendidos=12)],
+            canais=_canais(),
+            resumo={"anuncios_ativos": 3},
+            catalogo=_CATALOGO,
+            cnae={"itens": []},
+        )
+        cnae = next(c for c in out["checks"] if c["id"] == "cnae_cosmetico")
+        self.assertFalse(cnae["ok"])
+        self.assertFalse(out["liberado"])
+
     def test_aproximando_com_impala_quase(self):
         out = om.avaliar_ruptura_outra_marca(
             ruptura_impala={"liberado": False, "aproximando": True, "veredito": "aproximando"},
@@ -202,15 +236,48 @@ class TestAgente(unittest.TestCase):
         self.assertIn("Anita", msg)
         self.assertIn("referente *ML*", msg)
 
-    def test_agente_ainda_nao_sem_telegram(self):
+    def test_agente_radar_cego_telegram(self):
         resultado = om.avaliar_ruptura_outra_marca(
             ruptura_impala={"liberado": False, "aproximando": False, "veredito": "ainda_nao"},
-            candidatas=[_candidata("anita")],
+            candidatas=[_candidata("anita", score=1202, anuncios=1, vendidos=120)],
             canais=_canais(),
             resumo={"anuncios_ativos": 0},
             catalogo=_CATALOGO,
             cnae=_cnae(),
         )
+        self.assertTrue(resultado["radar_cego"])
+        with tempfile.TemporaryDirectory() as tmp:
+            snap = Path(tmp) / "ponto.json"
+            with (
+                patch.object(agente, "avaliar_ruptura_outra_marca", return_value=resultado),
+                patch.object(agente, "PONTO_RUPTURA_ATIVO", True),
+                patch.object(agente, "PONTO_RUPTURA_ALERTA", True),
+                patch.object(agente, "SNAPSHOT_PATH", snap),
+                patch.object(agente, "gauge"),
+                patch.object(agente, "incrementar"),
+                patch.object(agente, "gestor_telegram_configurado", return_value=True),
+                patch.object(agente, "alertar_gestor", return_value=True) as mock_tg,
+                patch.object(agente, "escrever_json_atomico"),
+            ):
+                out = agente.executar()
+        self.assertEqual(out["modo_alerta"], "radar")
+        self.assertTrue(out["alerta_enviado"])
+        self.assertEqual(mock_tg.call_args.kwargs["chave"], "marca_esmalte:radar")
+
+    def test_agente_ainda_nao_sem_telegram(self):
+        resultado = om.avaliar_ruptura_outra_marca(
+            ruptura_impala={"liberado": False, "aproximando": False, "veredito": "ainda_nao"},
+            candidatas=[
+                _candidata("anita", anuncios=0),
+                _candidata("risque", score=40, anuncios=6, vendidos=2),
+            ],
+            canais=_canais(ml=""),
+            resumo={"anuncios_ativos": 0},
+            catalogo=_CATALOGO,
+            cnae=_cnae(ok=False),
+        )
+        self.assertFalse(resultado["radar_cego"])
+        self.assertEqual(resultado["veredito"], "ainda_nao")
         with tempfile.TemporaryDirectory() as tmp:
             snap = Path(tmp) / "ponto.json"
             with (

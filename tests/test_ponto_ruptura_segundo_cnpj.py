@@ -25,7 +25,7 @@ def _kits(*, mlb_ok: bool = True, estoque: int = 60) -> list[dict]:
             "encontrado": True,
         },
         {
-            "sku": "IMP-SORT-006",
+            "sku": "IMP-PERL-004",
             "mlb": "MLB456" if mlb_ok else "",
             "mlb_ok": mlb_ok,
             "estoque": estoque,
@@ -96,7 +96,7 @@ class TestColetarSinais(unittest.TestCase):
                 "canais": {"mercadolivre": {"item_id": "MLB1", "estoque": 40}},
             },
             {
-                "sku": "IMP-SORT-006",
+                "sku": "IMP-PERL-004",
                 "canais": {"mercadolivre": {"item_id": "MLB_PREENCHER", "estoque": 0}},
             },
         ]
@@ -121,6 +121,30 @@ class TestColetarSinais(unittest.TestCase):
         self.assertTrue(s["kits"][0]["mlb_ok"])
         self.assertFalse(s["kits"][1]["mlb_ok"])
         self.assertEqual(s["kits"][0]["estoque"], 40)
+        self.assertTrue(s["ads_fonte_ok"])
+
+    def test_estoque_ml_zero_nao_usa_catalogo(self):
+        produtos = [
+            {
+                "sku": "IMP-MIMO-003",
+                "estoque_total": 80,
+                "canais": {"mercadolivre": {"item_id": "MLB1", "estoque": 0}},
+            },
+            {
+                "sku": "IMP-PERL-004",
+                "estoque_total": 80,
+                "canais": {"mercadolivre": {"item_id": "MLB2", "estoque": 10}},
+            },
+        ]
+        s = pr.coletar_sinais_impala(
+            reputacao={},
+            produtos=produtos,
+            margem={},
+            ads={"decisao": "aguardar", "acos_atual": 0.0},
+            resumo={"pos_venda_ok": True, "anuncios_ativos": 1},
+        )
+        self.assertEqual(s["kits"][0]["estoque"], 0)
+        self.assertEqual(s["kits"][1]["estoque"], 10)
 
 
 class TestAvaliacao(unittest.TestCase):
@@ -137,10 +161,36 @@ class TestAvaliacao(unittest.TestCase):
         self.assertFalse(out["liberado"])
         self.assertFalse(out["aproximando"])
         self.assertEqual(out["cnae_preparacao"]["gaps_n"], 1)
+        nota = next(c for c in out["checks"] if c["id"] == "nota")
+        self.assertFalse(nota["ok"])
 
-    def test_aproximando_por_avaliacoes(self):
+    def test_claims_api_cega_nao_conta(self):
         out = pr.avaliar_ponto_ruptura(
-            sinais=_sinais(avaliacoes=12, nota=4.5),
+            sinais=_sinais(claims=0, claims_fonte_ok=False),
+            cnae=_cnae(pronto=True),
+        )
+        claims = next(c for c in out["checks"] if c["id"] == "claims")
+        self.assertFalse(claims["ok"])
+        self.assertEqual(claims["atual"], "n/d")
+
+    def test_reviews_legado_sem_foco_nao_aproximam(self):
+        out = pr.avaliar_ponto_ruptura(
+            sinais=_sinais(avaliacoes=12, nota=4.9, vendas_completadas=8),
+            cnae=_cnae(pronto=True),
+            avaliacoes_min=20,
+            nota_min=4.8,
+            estoque_min=30,
+            aproximando_avaliacoes=10,
+        )
+        self.assertEqual(out["veredito"], "ainda_nao")
+        self.assertFalse(out["aproximando"])
+        av = next(c for c in out["checks"] if c["id"] == "avaliacoes")
+        self.assertFalse(av["ok"])
+        self.assertIn("legado", str(av["atual"]))
+
+    def test_aproximando_por_avaliacoes_com_foco(self):
+        out = pr.avaliar_ponto_ruptura(
+            sinais=_sinais(avaliacoes=12, nota=4.5, anuncios_ativos_foco=1),
             cnae=_cnae(pronto=True),
             avaliacoes_min=20,
             nota_min=4.8,
@@ -150,6 +200,23 @@ class TestAvaliacao(unittest.TestCase):
         self.assertEqual(out["veredito"], "aproximando")
         self.assertTrue(out["aproximando"])
         self.assertFalse(out["liberado"])
+
+    def test_ads_vazio_nao_passa(self):
+        out = pr.avaliar_ponto_ruptura(
+            sinais=_sinais(acos=0.0, decisao_ads="", ads_fonte_ok=False),
+            cnae=_cnae(pronto=True),
+        )
+        ads = next(c for c in out["checks"] if c["id"] == "ads_acos")
+        self.assertFalse(ads["ok"])
+        self.assertEqual(ads["atual"], "n/d")
+
+    def test_saude_conta_laranja_bloqueia(self):
+        out = pr.avaliar_ponto_ruptura(
+            sinais=_sinais(reputacao_cor="Laranja", anuncios_ativos_foco=1),
+            cnae=_cnae(pronto=True),
+        )
+        saude = next(c for c in out["checks"] if c["id"] == "saude_conta")
+        self.assertFalse(saude["ok"])
 
     def test_liberado(self):
         out = pr.avaliar_ponto_ruptura(
@@ -161,6 +228,10 @@ class TestAvaliacao(unittest.TestCase):
                 kits=_kits(mlb_ok=True, estoque=60),
                 itens_margem=1,
                 acos=0.12,
+                decisao_ads="aguardar",
+                ads_fonte_ok=True,
+                claims_fonte_ok=True,
+                anuncios_ativos_foco=1,
             ),
             cnae=_cnae(pronto=True),
             avaliacoes_min=20,
@@ -284,6 +355,33 @@ class TestMensagemEAgente(unittest.TestCase):
         mock_tg.assert_called_once()
         self.assertEqual(mock_tg.call_args.kwargs["chave"], "ponto_ruptura:cnae_prep")
 
+    def test_agente_aproximando_nao_e_tapado_por_cnae(self):
+        resultado = pr.avaliar_ponto_ruptura(
+            sinais=_sinais(avaliacoes=12, nota=4.5, anuncios_ativos_foco=1),
+            cnae=_cnae(pronto=False),
+            avaliacoes_min=20,
+            aproximando_avaliacoes=10,
+        )
+        self.assertEqual(resultado["veredito"], "aproximando")
+        with tempfile.TemporaryDirectory() as tmp:
+            snap = Path(tmp) / "ponto.json"
+            with (
+                patch.object(agente, "avaliar_ponto_ruptura", return_value=resultado),
+                patch.object(agente, "PONTO_RUPTURA_ATIVO", True),
+                patch.object(agente, "PONTO_RUPTURA_ALERTA", True),
+                patch.object(agente, "SNAPSHOT_PATH", snap),
+                patch.object(agente, "gauge"),
+                patch.object(agente, "incrementar"),
+                patch.object(agente, "gestor_telegram_configurado", return_value=True),
+                patch.object(agente, "alertar_gestor", return_value=True) as mock_tg,
+                patch.object(agente, "escrever_json_atomico"),
+            ):
+                out = agente.executar()
+        self.assertEqual(out["modo_alerta"], "aproximando")
+        self.assertTrue(out["alerta_enviado"])
+        self.assertEqual(mock_tg.call_args.kwargs["chave"], "ponto_ruptura:aproximando")
+        self.assertIn("CNAE/KYC", out["mensagem"])
+
     def test_agente_ainda_nao_sem_gap_nao_telegram(self):
         resultado = pr.avaliar_ponto_ruptura(
             sinais=_sinais(),
@@ -315,6 +413,10 @@ class TestMensagemEAgente(unittest.TestCase):
                 vendas_completadas=3,
                 kits=_kits(mlb_ok=True, estoque=60),
                 itens_margem=1,
+                claims_fonte_ok=True,
+                anuncios_ativos_foco=1,
+                decisao_ads="aguardar",
+                ads_fonte_ok=True,
             ),
             cnae=_cnae(pronto=True),
         )
@@ -398,6 +500,10 @@ class TestMensagemEAgente(unittest.TestCase):
                 vendas_completadas=3,
                 kits=_kits(mlb_ok=True, estoque=60),
                 itens_margem=1,
+                claims_fonte_ok=True,
+                anuncios_ativos_foco=1,
+                decisao_ads="aguardar",
+                ads_fonte_ok=True,
             ),
             cnae=_cnae(pronto=True),
         )
@@ -413,6 +519,10 @@ class TestMensagemEAgente(unittest.TestCase):
                 avaliacoes=0,
                 kits=_kits(mlb_ok=True, estoque=60),
                 itens_margem=1,
+                claims_fonte_ok=True,
+                anuncios_ativos_foco=1,
+                decisao_ads="aguardar",
+                ads_fonte_ok=True,
             ),
             cnae=_cnae(pronto=True),
             avaliacoes_min=20,

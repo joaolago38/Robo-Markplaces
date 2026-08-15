@@ -27,11 +27,12 @@ SNAPSHOT_MARGEM = ROOT / "logs" / "margem_vendas_ultima.json"
 _ATITUDES = {
     "avaliacoes": "Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8).",
     "nota": "Tratar reclamações e qualidade do anúncio até a nota média ≥ 4.8.",
-    "mlb": "Preencher MLB válido de IMP-MIMO-003 e IMP-SORT-006 — sem MLB não há venda rastreável.",
-    "estoque": "Abastecer estoque dos kits de validação (mínimo do ponto de ruptura).",
+    "mlb": "Preencher MLB válido de IMP-MIMO-003 e IMP-PERL-004 — kits com margem ≥ piso; SORT-006 fica para fase 2.",
+    "estoque": "Abastecer estoque dos kits de validação MIMO-003 e PERL-004 (mínimo do ponto de ruptura).",
     "pedidos": "Concluir 1 pedido próprio com margem registrada (não contar bolsa/legado).",
-    "ads_acos": "Manter Ads desligado ou ACOS abaixo do teto até a saúde Impala firmar.",
+    "ads_acos": "Manter Ads desligado ou ACOS abaixo do teto — snapshot Ads precisa existir (vazio não é ok).",
     "claims": "Zerar claims abertos antes de escalar anúncio ou Ads.",
+    "saude_conta": "Reputação laranja/vermelha ou atraso/cancelamento ≥5% bloqueia a ruptura.",
     "impala_fase1": "Fechar a checklist Impala (reviews / MLB / estoque / pedido) antes de outra marca.",
     "anuncios_foco": "Colocar no ar pelo menos 1 anúncio Impala (kit) no ML.",
     "cnpj_ml": "Confirmar seller_id do CNPJ 52.668.583/0001-27 no ML.",
@@ -42,13 +43,14 @@ _ATITUDES = {
 
 _ATITUDES_FEITAS = {
     "avaliacoes": "Reviews no caminho da meta.",
-    "nota": "Nota média no piso (ou sem reviews ainda).",
-    "mlb": "Kits de validação com MLB.",
+    "nota": "Nota média no piso (com reviews reais).",
+    "mlb": "Kits de validação MIMO-003 e PERL-004 com MLB.",
     "estoque": "Estoque dos kits de validação no mínimo.",
     "pedidos": "Já existe pedido próprio ou venda completada.",
-    "ads_acos": "ACOS dentro do teto (ou Ads desligado).",
+    "ads_acos": "ACOS dentro do teto (snapshot Ads visível).",
     "claims": "Claims baixos.",
     "anuncios_foco": "Há anúncio Impala ativo no ML.",
+    "saude_conta": "Reputação e taxas da conta no piso.",
 }
 
 
@@ -64,6 +66,34 @@ def _i(val: Any, default: int = 0) -> int:
         return int(float(val))
     except (TypeError, ValueError):
         return default
+
+
+def _alinhar_kits_com_sinais(
+    kits: list[dict[str, Any]],
+    sinais: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """MLB/estoque da checklist de ruptura prevalece sobre o snapshot do catálogo."""
+    por_sku = {
+        str(k.get("sku") or "").upper(): k
+        for k in (sinais.get("kits") or [])
+        if isinstance(k, dict) and k.get("sku")
+    }
+    if not por_sku:
+        return kits
+    saida: list[dict[str, Any]] = []
+    for kit in kits:
+        if not isinstance(kit, dict):
+            continue
+        sku = str(kit.get("sku") or "").upper()
+        ref = por_sku.get(sku)
+        if not ref:
+            saida.append(kit)
+            continue
+        row = dict(kit)
+        row["mlb_ok"] = bool(ref.get("mlb_ok"))
+        row["estoque_zero"] = _i(ref.get("estoque")) <= 0
+        saida.append(row)
+    return saida
 
 
 def esforco_da_checklist(checks: list[dict[str, Any]] | None) -> dict[str, Any]:
@@ -217,6 +247,11 @@ def previa_ml(
             sinais.get("vendas_completadas"), _i(reputacao.get("vendas_completadas"))
         ),
         "claims": _i(sinais.get("claims"), _i(resumo.get("pos_venda_claims"))),
+        "claims_fonte_ok": bool(
+            sinais["claims_fonte_ok"]
+            if "claims_fonte_ok" in sinais
+            else resumo.get("pos_venda_ok", True)
+        ),
         "receita_bruta_24h": _f(analise.get("receita_bruta"), _f(sinais.get("receita_bruta"))),
         "itens_margem_24h": _i(analise.get("total_itens"), _i(sinais.get("itens_margem"))),
         "acos": _f(sinais.get("acos")),
@@ -228,12 +263,20 @@ def saude_score(previa: dict[str, Any], esforco: dict[str, Any], checks_ok: int,
     """0–100: saúde Impala no ML para decidir com segurança."""
     av_min = 20.0
     nota_min = 4.8
-    av = min(1.0, _f(previa.get("avaliacoes")) / av_min) * 25.0
+    foco = _i(previa.get("anuncios_ativos_foco")) > 0
+    av = min(1.0, _f(previa.get("avaliacoes")) / av_min) * 25.0 if foco else 0.0
     nota = _f(previa.get("nota"))
-    nota_pts = min(1.0, nota / nota_min) * 15.0 if _i(previa.get("avaliacoes")) > 0 else 5.0
-    anun = 20.0 if _i(previa.get("anuncios_ativos_foco")) > 0 else 0.0
-    pedidos = 15.0 if _i(previa.get("vendas_completadas")) > 0 or _i(previa.get("itens_margem_24h")) > 0 else 0.0
-    claims = 10.0 if _i(previa.get("claims")) < 2 else 0.0
+    nota_pts = (
+        min(1.0, nota / nota_min) * 15.0 if foco and _i(previa.get("avaliacoes")) > 0 else 0.0
+    )
+    anun = 20.0 if foco else 0.0
+    pedidos = 15.0 if _i(previa.get("itens_margem_24h")) > 0 or (
+        foco and _i(previa.get("vendas_completadas")) > 0
+    ) else 0.0
+    claims_visivel = previa.get("claims_fonte_ok")
+    if claims_visivel is None:
+        claims_visivel = True
+    claims = 10.0 if bool(claims_visivel) and _i(previa.get("claims")) < 2 else 0.0
     check_pts = (100.0 * checks_ok / max(1, checks_total)) * 0.15
     score = av + nota_pts + anun + pedidos + claims + check_pts
     return round(min(100.0, score), 1)
@@ -372,9 +415,16 @@ def _resumo_deterministico(
     return "\n".join(linhas)
 
 
-def _claude_ruptura(contexto: dict[str, Any], fallback: str, *, fase: str | None = None) -> str:
+def _claude_ruptura(
+    contexto: dict[str, Any],
+    fallback: str,
+    *,
+    fase: str | None = None,
+    momento_lucro: bool = False,
+) -> str:
     from core.claude_ml.dosagem import SYSTEM_RUPTURA
     from core.config import (
+        CLAUDE_LUCRO_ML_MOMENTOS,
         CLAUDE_MODELO,
         RUPTURA_CLAUDE,
         RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA,
@@ -392,6 +442,8 @@ def _claude_ruptura(contexto: dict[str, Any], fallback: str, *, fase: str | None
     maxima = fase_atual == "maxima" and bool(RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA)
     if maxima:
         registrar_pulso_maxima()
+    lucro = bool(momento_lucro) and bool(CLAUDE_LUCRO_ML_MOMENTOS) and not maxima
+    forcar = (maxima and bool(RUPTURA_CLAUDE_IGNORAR_TOGGLE)) or lucro
     prompt = (
         "Analista de ruptura Impala no Mercado Livre. Assertividade máxima. "
         "Em até 8 linhas: (1) esforço que falta, com o número âncora; "
@@ -402,10 +454,11 @@ def _claude_ruptura(contexto: dict[str, Any], fallback: str, *, fase: str | None
         "(52.668.583/0001-27 permanece o dono dos esmaltes)."
         if maxima
         else (
-            "Analista de ruptura Impala. Uso moderado e seguro. "
+            "Analista de lucro Impala no ML. Uso moderado e seguro. "
             "Em até 6 linhas cite SOMENTE números do JSON (âncora). "
-            "(1) esforço que falta; (2) o que já está ok; "
-            "(3) SKU da manicure se estiver no JSON; (4) prévia ML. "
+            "(1) SKU com margem ≥ piso para MLB+estoque; "
+            "(2) NÃO FAZER Ads / SORT-006 se margem < piso / 2º CNPJ; "
+            "(3) esforço que falta para ruptura segura; (4) prévia ML. "
             "FAZER / NÃO FAZER / OBSERVAR. Não invente vd/dia nem ranking. "
             "Não publicar anúncio nem trocar CNPJ 52.668.583/0001-27."
         )
@@ -421,7 +474,7 @@ def _claude_ruptura(contexto: dict[str, Any], fallback: str, *, fase: str | None
         forcar_profundidade="ampliada" if maxima else "padrao",
         forcar_modelo=maxima,
         modelo=CLAUDE_MODELO if maxima else None,
-        forcar_chamada=bool(RUPTURA_CLAUDE_IGNORAR_TOGGLE) if maxima else False,
+        forcar_chamada=forcar,
         temperature=0.0 if maxima else None,
         system=SYSTEM_RUPTURA,
         somente_ia=True,
@@ -442,6 +495,8 @@ def emitir_metricas_briefing(briefing: dict[str, Any]) -> None:
         "ruptura.impala.claude_assertividade_maxima",
         1.0 if briefing.get("claude_assertividade_maxima") else 0.0,
     )
+    momento = briefing.get("momento_lucro") or {}
+    gauge("ruptura.impala.claude_lucro_momento", 1.0 if momento.get("momento") else 0.0)
     incrementar("ruptura.impala.briefing_rodadas")
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return
@@ -560,9 +615,9 @@ def montar_briefing_ruptura(
         if catalogo is None:
             if produtos is None:
                 try:
-                    from core.catalogo_produtos import carregar_produtos_catalogo
+                    from core.catalogo_produtos import carregar_produtos_para_operacao
 
-                    produtos = carregar_produtos_catalogo()
+                    produtos = carregar_produtos_para_operacao(merge_bling=False)
                 except Exception:
                     produtos = []
             if guerra is None:
@@ -578,10 +633,12 @@ def montar_briefing_ruptura(
         checks = list(rup.get("checks") or [])
         sinais = rup.get("sinais") if isinstance(rup.get("sinais"), dict) else {}
         esforco = esforco_da_checklist(checks)
-        prods = produtos_com_margem_segura(catalogo.get("kits") if isinstance(catalogo, dict) else [], piso_pct=piso)
+        kits_cat = list(catalogo.get("kits") or []) if isinstance(catalogo, dict) else []
+        kits_cat = _alinhar_kits_com_sinais(kits_cat, sinais)
+        prods = produtos_com_margem_segura(kits_cat, piso_pct=piso)
         previa = previa_ml(resumo=resumo, sinais=sinais, batalha=batalha, margem=margem)
         saude = saude_score(
-            previa, esforco, _i(rup.get("checks_ok")), _i(rup.get("checks_total"), 7)
+            previa, esforco, _i(rup.get("checks_ok")), _i(rup.get("checks_total"), 8)
         )
         veredito = str(rup.get("veredito") or "ainda_nao")
         kits_m = _kits_manicure_compacto()
@@ -597,6 +654,14 @@ def montar_briefing_ruptura(
             veredito=veredito, esforco=esforco, produtos=prods, previa=previa, saude=saude
         )
         fp = _fingerprint(veredito, saude, esforco, prods, previa)
+        from integracoes.esmaltes.claude_lucro_ml import momento_lucro_ml
+
+        momento = momento_lucro_ml(
+            produtos=prods,
+            kits_manicure=kits_m,
+            acoes=(batalha or {}).get("agir") if isinstance(batalha, dict) else None,
+            veredito=veredito,
+        )
         texto_ia = ""
         claude_ok = False
         claude_reused = False
@@ -649,9 +714,11 @@ def montar_briefing_ruptura(
                             "kits_manicure": kits_m,
                             "cnpj": "52.668.583/0001-27",
                             "claude_fase": fase,
+                            "momento_lucro": momento,
                         },
                         det,
                         fase=fase,
+                        momento_lucro=bool(momento.get("momento")),
                     )
                     claude_ok = bool(texto_ia) and not str(texto_ia).startswith("⚠️")
                 except Exception as exc:
@@ -674,6 +741,7 @@ def montar_briefing_ruptura(
             "claude_fase": fase,
             "claude_assertividade_maxima": maxima and claude_ok,
             "claude_reused": claude_reused,
+            "momento_lucro": momento,
             "fingerprint": fp,
             "cnpj": "52.668.583/0001-27",
             "timestamp": datetime.now(timezone.utc).isoformat(),

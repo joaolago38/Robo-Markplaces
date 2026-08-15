@@ -244,6 +244,7 @@ _LOGGER_META = {
     "agente_vigia_datadog": ("infra", "agente"),
     "oscilacao_decisao": ("infra", "integracao"),
     "claude_ciclo_ruptura": ("mercadolivre", "integracao"),
+    "claude_lucro_ml": ("mercadolivre", "integracao"),
     "briefing_ruptura_impala": ("mercadolivre", "integracao"),
     "kits_compativeis_manicures": ("mercadolivre", "integracao"),
     "agente_consumo_claude": ("infra", "agente"),

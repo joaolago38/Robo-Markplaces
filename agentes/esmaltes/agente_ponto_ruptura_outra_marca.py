@@ -101,6 +101,14 @@ def montar_mensagem(resultado: dict[str, Any], *, modo: str) -> str:
                 "ativo com os kits de margem segura abaixo, antes de comprar outra marca.",
             ]
         )
+    elif modo == "radar":
+        linhas.extend(
+            [
+                "",
+                "*Ação:* radar ML cego — não use o ranking (Anita/etc.) para decidir. "
+                "Espere amostra ≥5 anúncios de outras marcas. Não compre outra marca agora.",
+            ]
+        )
     linhas.extend(formatar_secao_briefing(resultado.get("briefing")))
     return "\n".join(linhas)
 
@@ -158,7 +166,7 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
             cooldown = PONTO_RUPTURA_COOLDOWN_LIBERADO_SEG
             chave = "marca_esmalte:liberado"
             deve = True
-        elif resultado.get("radar_cego") and ver == "aproximando":
+        elif resultado.get("radar_cego"):
             modo = "radar"
             chave = "marca_esmalte:radar"
             cooldown = PONTO_RUPTURA_COOLDOWN_APROXIMANDO_SEG

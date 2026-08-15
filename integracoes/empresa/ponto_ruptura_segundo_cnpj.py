@@ -24,7 +24,8 @@ from core.empresa.cnpj_utils import formatar_cnpj, norm_cnae
 
 logger = logging.getLogger("ponto_ruptura_segundo_cnpj")
 
-KITS_VALIDACAO = ("IMP-MIMO-003", "IMP-SORT-006")
+# Kits de validação com margem real ≥ piso (~15%). SORT-006 (~8%) fica para fase 2.
+KITS_VALIDACAO = ("IMP-MIMO-003", "IMP-PERL-004")
 CNAE_IMPALA_COSMETICO = "4772500"  # 4772-5/00
 CNAES_MASTERPRINT = {
     "informatica": "4751201",  # 4751-2/01
@@ -56,10 +57,37 @@ def mlb_preenchido(item_id: Any) -> bool:
     return bool(s) and s != "MLB_PREENCHER" and s.startswith("MLB")
 
 
+_CORES_RUINS = frozenset({"laranja", "vermelho", "2_orange", "1_red"})
+
+
 def _estoque_produto(produto: dict[str, Any]) -> int:
+    """Estoque do anúncio ML quando há MLB; catálogo não mascara ML=0."""
     canais = produto.get("canais") if isinstance(produto.get("canais"), dict) else {}
     ml = canais.get("mercadolivre") if isinstance(canais.get("mercadolivre"), dict) else {}
-    return max(_i(produto.get("estoque_total")), _i(ml.get("estoque")))
+    mlb = str(ml.get("item_id") or produto.get("item_id") or "")
+    if mlb_preenchido(mlb):
+        return _i(ml.get("estoque"))
+    return _i(produto.get("estoque_total"))
+
+
+def _saude_conta_ok(
+    *,
+    cor: str,
+    atraso_rate: float,
+    cancelamentos_rate: float,
+    claims_rate: float,
+) -> tuple[bool, str]:
+    """Cor laranja/vermelha ou taxa ≥5% bloqueia. Sem cor / taxa 0 passa."""
+    cor_l = str(cor or "").strip().lower()
+    if any(tok in cor_l for tok in _CORES_RUINS) or cor_l in _CORES_RUINS:
+        return False, cor or "cor ruim"
+    if atraso_rate >= 0.05:
+        return False, f"atraso {atraso_rate:.1%}"
+    if cancelamentos_rate >= 0.05:
+        return False, f"cancel {cancelamentos_rate:.1%}"
+    if claims_rate >= 0.05:
+        return False, f"claims_rate {claims_rate:.1%}"
+    return True, cor or "sem cor"
 
 
 def _mlb_produto(produto: dict[str, Any]) -> str:
@@ -162,12 +190,31 @@ def coletar_sinais_impala(
 
     if ads is None:
         ads = ler_json(SNAPSHOT_ADS, default={})
-    acos = _f((ads or {}).get("acos_atual"))
-    decisao_ads = str((ads or {}).get("decisao") or "")
+    ads = ads if isinstance(ads, dict) else {}
+    acos = _f(ads.get("acos_atual"))
+    decisao_ads = str(ads.get("decisao") or "").strip()
+    ads_fonte_ok = bool(decisao_ads) or "acos_atual" in ads
 
     if resumo is None:
         resumo = ler_json(SNAPSHOT_RESUMO, default={})
-    claims = _i((resumo or {}).get("pos_venda_claims"))
+    resumo = resumo if isinstance(resumo, dict) else {}
+    claims = _i(resumo.get("pos_venda_claims"))
+    claims_fonte_ok = bool(resumo.get("pos_venda_ok"))
+    anuncios_ativos_foco = _i(resumo.get("anuncios_ativos"))
+    rep_resumo = resumo.get("reputacao") if isinstance(resumo.get("reputacao"), dict) else {}
+    delayed = (
+        metrics.get("delayed_handling_time")
+        if isinstance(metrics.get("delayed_handling_time"), dict)
+        else {}
+    )
+    cancel = (
+        metrics.get("cancellations") if isinstance(metrics.get("cancellations"), dict) else {}
+    )
+    atraso_rate = _f(delayed.get("rate"), _f(rep_resumo.get("atraso_rate")))
+    cancelamentos_rate = _f(cancel.get("rate"), _f(rep_resumo.get("cancelamentos_rate")))
+    if claims_rate <= 0:
+        claims_rate = _f(rep_resumo.get("claims_rate"))
+    cor = str(reputacao.get("cor") or rep_resumo.get("cor") or reputacao.get("level_id") or "")
 
     return {
         "avaliacoes": avaliacoes,
@@ -175,11 +222,17 @@ def coletar_sinais_impala(
         "vendas_completadas": vendas_completadas,
         "claims_rate": claims_rate,
         "claims": claims,
+        "claims_fonte_ok": claims_fonte_ok,
+        "anuncios_ativos_foco": anuncios_ativos_foco,
         "kits": kits,
         "itens_margem": itens_margem,
         "receita_bruta": receita,
         "acos": acos,
         "decisao_ads": decisao_ads,
+        "ads_fonte_ok": ads_fonte_ok,
+        "reputacao_cor": cor,
+        "atraso_rate": atraso_rate,
+        "cancelamentos_rate": cancelamentos_rate,
     }
 
 
@@ -298,20 +351,45 @@ def avaliar_ponto_ruptura(
     )
     avaliacoes = _i(sinais.get("avaliacoes"))
     nota = _f(sinais.get("nota"))
-    pedidos_ok = _i(sinais.get("itens_margem")) > 0 or _i(sinais.get("vendas_completadas")) > 0
+    ativos_foco = _i(sinais.get("anuncios_ativos_foco"))
+    foco_ok = ativos_foco >= 1
+    # Review/venda da conta só conta como Impala com anúncio foco no ar (senão é bolsa/legado).
+    pedidos_ok = _i(sinais.get("itens_margem")) > 0 or (
+        _i(sinais.get("vendas_completadas")) > 0 and foco_ok
+    )
     acos = _f(sinais.get("acos"))
-    ads_ok = acos <= ac_max  # 0 = ads off / orgânico
+    if "ads_fonte_ok" in sinais:
+        fonte_ads = bool(sinais.get("ads_fonte_ok"))
+    else:
+        fonte_ads = bool(str(sinais.get("decisao_ads") or "").strip())
+    ads_ok = fonte_ads and acos <= ac_max
     claims = _i(sinais.get("claims"))
-    claims_ok = claims < 2
-    nota_ok = avaliacoes <= 0 or nota >= nt_min
+    fonte_claims = sinais.get("claims_fonte_ok")
+    if fonte_claims is None:
+        fonte_claims = True
+    claims_ok = claims < 2 and bool(fonte_claims)
+    nota_ok = foco_ok and avaliacoes > 0 and nota >= nt_min
+    avaliacoes_ok = foco_ok and avaliacoes >= av_min
+    saude_ok, saude_atual = _saude_conta_ok(
+        cor=str(sinais.get("reputacao_cor") or ""),
+        atraso_rate=_f(sinais.get("atraso_rate")),
+        cancelamentos_rate=_f(sinais.get("cancelamentos_rate")),
+        claims_rate=_f(sinais.get("claims_rate")),
+    )
 
     checks = [
-        _check("avaliacoes", avaliacoes >= av_min, "Avaliações Impala", avaliacoes, av_min),
-        _check("nota", nota_ok, "Nota média", round(nota, 2), nt_min),
+        _check(
+            "avaliacoes",
+            avaliacoes_ok,
+            "Avaliações Impala (com anúncio foco)",
+            avaliacoes if foco_ok else f"{avaliacoes} conta/legado",
+            av_min,
+        ),
+        _check("nota", nota_ok, "Nota média (≥1 review no foco)", round(nota, 2), nt_min),
         _check(
             "mlb",
             mlb_ok,
-            "MLB dos kits MIMO-003 e SORT-006",
+            "MLB dos kits MIMO-003 e PERL-004 (margem ≥ piso)",
             ",".join(f"{k.get('sku')}={'ok' if k.get('mlb_ok') else 'falta'}" for k in kits),
             "ambos MLB",
         ),
@@ -325,25 +403,46 @@ def avaliar_ponto_ruptura(
         _check(
             "pedidos",
             pedidos_ok,
-            "Pedido próprio (margem 24h ou vendas completadas)",
+            "Pedido próprio (margem 24h Impala; venda da conta só com foco)",
             f"itens={sinais.get('itens_margem')} completadas={sinais.get('vendas_completadas')}",
             ">=1",
         ),
         _check(
             "ads_acos",
             ads_ok,
-            "ACOS ≤ teto (ou ads desligado)",
-            round(acos, 3),
+            "ACOS ≤ teto (snapshot Ads visível)",
+            round(acos, 3) if fonte_ads else "n/d",
             ac_max,
         ),
-        _check("claims", claims_ok, "Claims baixos", claims, "<2"),
+        _check(
+            "claims",
+            claims_ok,
+            "Claims baixos (API visível)",
+            claims if fonte_claims else "n/d",
+            "<2",
+        ),
+        _check(
+            "anuncios_foco",
+            foco_ok,
+            "Há anúncio Impala (kit) ativo no ML",
+            ativos_foco,
+            ">=1",
+        ),
+        _check(
+            "saude_conta",
+            saude_ok,
+            "Reputação sem laranja/vermelho e taxas <5%",
+            saude_atual,
+            "ok",
+        ),
     ]
     ok_n = sum(1 for c in checks if c["ok"])
     total = len(checks)
     liberado = ok_n == total
-    # ads/claims/nota-sem-review passam no zero; 5/7 exige sinal real (MLB, estoque, pedido)
-    aproximando = (not liberado) and (
-        avaliacoes >= aprox_av or ok_n >= max(5, (total // 2) + 1)
+    # Reviews da conta sem anúncio foco não são progresso Impala (bolsas/legado).
+    aproximando = (not liberado) and foco_ok and (
+        avaliacoes >= aprox_av
+        or (ok_n >= 5 and mlb_ok and estoque_ok)
     )
     if liberado:
         veredito = "liberado"

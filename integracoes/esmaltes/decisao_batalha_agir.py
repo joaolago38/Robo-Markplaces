@@ -204,11 +204,26 @@ def resumo_claude_opcional(acoes: dict[str, Any] | None) -> str:
 
 
 def processar_agir_batalha(batalha: dict[str, Any] | None, *, limite: int = 5) -> dict[str, Any]:
-    """Gera ações, emite métricas, opcional Claude. Nunca lança."""
+    """Gera ações, emite métricas, Claude só no momento de lucro. Nunca lança."""
     try:
         acoes = gerar_acoes_batalha(batalha, limite=limite)
         emitir_metricas_agir(acoes)
         texto_ia = resumo_claude_opcional(acoes)
+        if not texto_ia:
+            try:
+                from integracoes.esmaltes.claude_lucro_ml import (
+                    momento_lucro_ml,
+                    sintetizar_lucro_ml,
+                )
+
+                momento = momento_lucro_ml(acoes=acoes)
+                texto_ia = sintetizar_lucro_ml(
+                    {"acoes": acoes.get("top"), "cnpj": "52.668.583/0001-27"},
+                    "",
+                    momento=momento,
+                )
+            except Exception as exc:
+                logger.info("Claude lucro batalha: %s", exc)
         if texto_ia:
             acoes["resumo_claude"] = texto_ia
         return acoes

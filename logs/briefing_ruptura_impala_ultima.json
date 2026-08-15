@@ -1,62 +1,76 @@
 {
   "ok": true,
   "veredito": "ainda_nao",
-  "saude_score": 21.4,
-  "progresso_pct": 42.9,
+  "saude_score": 3.3,
+  "progresso_pct": 22.2,
   "esforco": {
-    "faltando_n": 4,
-    "feitos_n": 3,
+    "faltando_n": 7,
+    "feitos_n": 2,
     "faltando": [
       {
         "id": "avaliacoes",
-        "rotulo": "Avaliações Impala",
-        "atual": 0,
+        "rotulo": "Avaliações Impala (com anúncio foco)",
+        "atual": "0 conta/legado",
         "minimo": 20,
         "atitude": "Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8)."
       },
       {
+        "id": "nota",
+        "rotulo": "Nota média (≥1 review no foco)",
+        "atual": 0.0,
+        "minimo": 4.8,
+        "atitude": "Tratar reclamações e qualidade do anúncio até a nota média ≥ 4.8."
+      },
+      {
         "id": "mlb",
-        "rotulo": "MLB dos kits MIMO-003 e SORT-006",
-        "atual": "IMP-MIMO-003=falta,IMP-SORT-006=falta",
+        "rotulo": "MLB dos kits MIMO-003 e PERL-004 (margem ≥ piso)",
+        "atual": "IMP-MIMO-003=falta,IMP-PERL-004=falta",
         "minimo": "ambos MLB",
-        "atitude": "Preencher MLB válido de IMP-MIMO-003 e IMP-SORT-006 — sem MLB não há venda rastreável."
+        "atitude": "Preencher MLB válido de IMP-MIMO-003 e IMP-PERL-004 — kits com margem ≥ piso; SORT-006 fica para fase 2."
       },
       {
         "id": "estoque",
-        "rotulo": "Estoque ≥ 20 nos dois kits",
-        "atual": "IMP-MIMO-003=0,IMP-SORT-006=0",
-        "minimo": 20,
-        "atitude": "Abastecer estoque dos kits de validação (mínimo do ponto de ruptura)."
+        "rotulo": "Estoque >= 30 nos dois kits",
+        "atual": "IMP-MIMO-003=0,IMP-PERL-004=0",
+        "minimo": 30,
+        "atitude": "Abastecer estoque dos kits de validação MIMO-003 e PERL-004 (mínimo do ponto de ruptura)."
       },
       {
         "id": "pedidos",
-        "rotulo": "Pedido próprio (margem 24h ou vendas completadas)",
+        "rotulo": "Pedido próprio (margem 24h Impala; venda da conta só com foco)",
         "atual": "itens=0 completadas=0",
-        "minimo": "≥1",
+        "minimo": ">=1",
         "atitude": "Concluir 1 pedido próprio com margem registrada (não contar bolsa/legado)."
+      },
+      {
+        "id": "ads_acos",
+        "rotulo": "ACOS ≤ teto (snapshot Ads visível)",
+        "atual": "n/d",
+        "minimo": 0.2,
+        "atitude": "Manter Ads desligado ou ACOS abaixo do teto — snapshot Ads precisa existir (vazio não é ok)."
+      },
+      {
+        "id": "anuncios_foco",
+        "rotulo": "Há anúncio Impala (kit) ativo no ML",
+        "atual": 0,
+        "minimo": ">=1",
+        "atitude": "Colocar no ar pelo menos 1 anúncio Impala (kit) no ML."
       }
     ],
     "feitos": [
       {
-        "id": "nota",
-        "rotulo": "Nota média",
-        "atual": 0.0,
-        "minimo": 4.8,
-        "atitude": "Nota média no piso (ou sem reviews ainda)."
-      },
-      {
-        "id": "ads_acos",
-        "rotulo": "ACOS ≤ teto (ou ads desligado)",
-        "atual": 0.0,
-        "minimo": 0.2,
-        "atitude": "ACOS dentro do teto (ou Ads desligado)."
-      },
-      {
         "id": "claims",
-        "rotulo": "Claims baixos",
+        "rotulo": "Claims baixos (API visível)",
         "atual": 0,
         "minimo": "<2",
         "atitude": "Claims baixos."
+      },
+      {
+        "id": "saude_conta",
+        "rotulo": "Reputação sem laranja/vermelho e taxas <5%",
+        "atual": "sem cor",
+        "minimo": "ok",
+        "atitude": "Reputação e taxas da conta no piso."
       }
     ]
   },
@@ -251,6 +265,7 @@
     "nota": 0.0,
     "vendas_completadas": 0,
     "claims": 0,
+    "claims_fonte_ok": false,
     "receita_bruta_24h": 0.0,
     "itens_margem_24h": 0,
     "acos": 0.0,
@@ -289,7 +304,7 @@
   },
   "ancora_numerica": {
     "veredito": "ainda_nao",
-    "saude_score": 21.4,
+    "saude_score": 3.3,
     "saude_erro_pct": 5.0,
     "margem_piso_pct": 15.0,
     "margem_fonte": "catalogo_custo_mais_taxa_ml",
@@ -302,7 +317,7 @@
     "anuncios_foco": 0,
     "legado_ignorado": 38,
     "seguros_n": 0,
-    "faltando_n": 4,
+    "faltando_n": 7,
     "candidatos_margem": [
       {
         "sku": "IMP-MIMO-003",
@@ -412,13 +427,20 @@
       }
     ]
   },
-  "resumo_deterministico": "Veredito *ainda_nao* · saúde Impala ML `21.4/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nEsforço para ruptura tranquila:\n• Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8).\n• Preencher MLB válido de IMP-MIMO-003 e IMP-SORT-006 — sem MLB não há venda rastreável.\n• Abastecer estoque dos kits de validação (mínimo do ponto de ruptura).\n• Concluir 1 pedido próprio com margem registrada (não contar bolsa/legado).\nJá encaminhado: Nota média, ACOS ≤ teto (ou ads desligado), Claims baixos.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
+  "resumo_deterministico": "Veredito *ainda_nao* · saúde Impala ML `3.3/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nEsforço para ruptura tranquila:\n• Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8).\n• Tratar reclamações e qualidade do anúncio até a nota média ≥ 4.8.\n• Preencher MLB válido de IMP-MIMO-003 e IMP-PERL-004 — kits com margem ≥ piso; SORT-006 fica para fase 2.\n• Abastecer estoque dos kits de validação MIMO-003 e PERL-004 (mínimo do ponto de ruptura).\nJá encaminhado: Claims baixos (API visível), Reputação sem laranja/vermelho e taxas <5%.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
   "resumo_claude": "",
   "claude_ok": false,
   "claude_fase": "moderada",
   "claude_assertividade_maxima": false,
   "claude_reused": false,
-  "fingerprint": "ainda_nao|21.4|4|0|0|0|IMP-MIMO-003",
+  "momento_lucro": {
+    "momento": true,
+    "motivo": "kit_manicure_condicao",
+    "sku_lucro": "IMP-PERL-004",
+    "margem_pct": 16.26,
+    "piso_pct": 15.0
+  },
+  "fingerprint": "ainda_nao|3.3|7|0|0|0|IMP-MIMO-003",
   "cnpj": "52.668.583/0001-27",
-  "timestamp": "2026-08-15T00:17:17.602734+00:00"
+  "timestamp": "2026-08-15T11:48:00.782209+00:00"
 }

@@ -110,15 +110,16 @@ def consolidar_ranking_ml(
                     "_precos": [],
                 },
             )
-            b["vendidos"] += _i(row.get("vendidos") or row.get("unidades_vendidas"))
+            vendidos = _i(row.get("vendidos") or row.get("unidades_vendidas"))
             n_anuncios = _i(row.get("anuncios") or row.get("total_anuncios"))
             if n_anuncios <= 0 and (
-                _i(row.get("vendidos") or row.get("unidades_vendidas")) > 0
-                or _f(row.get("preco_medio") or row.get("preco")) > 0
+                vendidos > 0 or _f(row.get("preco_medio") or row.get("preco")) > 0
             ):
                 n_anuncios = 1
-            b["anuncios"] += n_anuncios
-            b["volume_proxy"] += _i(row.get("volume_proxy"))
+            # max: mercado+anita+kits repetem o mesmo listing — soma infla a top1.
+            b["vendidos"] = max(b["vendidos"], vendidos)
+            b["anuncios"] = max(b["anuncios"], n_anuncios)
+            b["volume_proxy"] = max(b["volume_proxy"], _i(row.get("volume_proxy")))
             preco = _f(row.get("preco_medio") or row.get("preco"))
             if preco > 0:
                 b["_precos"].append(preco)
@@ -154,8 +155,7 @@ def pontuar_candidatas(
             "score": 0,
         }
         anuncios = _i(base.get("anuncios"))
-        vendidos = _i(base.get("vendidos"))
-        base["elegivel"] = anuncios >= 2 or vendidos > 0
+        base["elegivel"] = anuncios >= 2
         saida.append(base)
     saida.sort(key=lambda x: (x["score"], x["vendidos"], x["anuncios"]), reverse=True)
     return saida
@@ -214,11 +214,11 @@ def _radar_cego(candidatas: list[dict[str, Any]], amostra_min: int) -> bool:
 def _cnae_cosmetico_ok(cnae: dict[str, Any]) -> bool:
     itens = cnae.get("itens") or []
     if not itens:
-        return True
+        return False
     for item in itens:
         if str(item.get("id") or "") == "impala_cnae_cosmetico":
             return bool(item.get("ok"))
-    return True
+    return False
 
 
 def avaliar_ruptura_outra_marca(
@@ -295,9 +295,10 @@ def avaliar_ruptura_outra_marca(
     ]
     ok_n = sum(1 for c in checks if c["ok"])
     total = len(checks)
-    liberado = ok_n == total
-    aproximando = (not liberado) and (
-        bool(ruptura_impala.get("aproximando") or ruptura_impala.get("liberado")) or ok_n >= 3
+    liberado = ok_n == total and not cego
+    # Radar cego não é "aproximando" — ranking de outra marca não é decisão.
+    aproximando = (not liberado) and (not cego) and (
+        bool(ruptura_impala.get("aproximando") or ruptura_impala.get("liberado")) or ok_n >= 4
     )
     if liberado:
         veredito = "liberado"

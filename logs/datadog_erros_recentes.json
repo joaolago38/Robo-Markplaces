@@ -1,26 +1,59 @@
 {
   "erros": [
     {
+      "fingerprint": "cecaf1fe419184e2b12c",
+      "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
+      "ultima_vez": "2026-08-15T11:48:12.070650+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 21
+    },
+    {
+      "fingerprint": "932ec7d3ef9c57e06c2d",
+      "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
+      "ultima_vez": "2026-08-15T11:48:12.063787+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 21
+    },
+    {
+      "fingerprint": "3c8afe3961ceba0bfac9",
+      "primeira_vez": "2026-08-15T11:47:27.418071+00:00",
+      "ultima_vez": "2026-08-15T11:48:05.636552+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.anthropic.com falhou: HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "c450164066d6d0ddefb1",
       "primeira_vez": "2026-08-15T00:14:38.608751+00:00",
-      "ultima_vez": "2026-08-15T00:17:22.546372+00:00",
+      "ultima_vez": "2026-08-15T00:28:22.638593+00:00",
       "logger": "notificador",
       "mensagem": "Telegram erro: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 5
+      "ocorrencias": 6
     },
     {
       "fingerprint": "b5f913d8a0182eca5669",
       "primeira_vez": "2026-08-15T00:14:38.601886+00:00",
-      "ultima_vez": "2026-08-15T00:17:22.539249+00:00",
+      "ultima_vez": "2026-08-15T00:28:22.624069+00:00",
       "logger": "http_client",
       "mensagem": "HTTP POST api.telegram.org falhou: Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
       "status": "error",
       "error_kind": "OSError",
       "error_message": "Could not find a suitable TLS CA certificate bundle, invalid path: C:\\Users\\Usußrio\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\.venv\\Lib\\site-packages\\certifi\\cacert.pem",
-      "ocorrencias": 5
+      "ocorrencias": 6
     },
     {
       "fingerprint": "d8ecf8b59d698f0ee61d",
@@ -780,28 +813,6 @@
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "cecaf1fe419184e2b12c",
-      "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
-      "ultima_vez": "2026-07-28T17:03:29.193571+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 17
-    },
-    {
-      "fingerprint": "932ec7d3ef9c57e06c2d",
-      "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
-      "ultima_vez": "2026-07-28T17:03:28.710054+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": "SSLError",
-      "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 17
     },
     {
       "fingerprint": "9b96db47ef26d9d95913",
@@ -1638,18 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "251801083f8bf5d4d917",
-      "primeira_vez": "2026-07-05T20:44:30.674142+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.428262+00:00",
-      "logger": "shopee_client",
-      "mensagem": "Shopee manter_conta_ativa erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
     }
   ],
-  "atualizado_em": "2026-08-15T00:17:22.546372+00:00"
+  "atualizado_em": "2026-08-15T11:48:12.070650+00:00"
 }

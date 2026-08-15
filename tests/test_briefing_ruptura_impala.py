@@ -78,6 +78,32 @@ class TestEsforcoEProdutos(unittest.TestCase):
         self.assertLess(fraca, 40)
         self.assertGreater(forte, 80)
 
+    def test_saude_ignora_review_sem_foco(self):
+        com_legado = br.saude_score(
+            {
+                "avaliacoes": 12,
+                "nota": 4.9,
+                "anuncios_ativos_foco": 0,
+                "vendas_completadas": 8,
+                "itens_margem_24h": 0,
+                "claims": 0,
+            },
+            {},
+            3,
+            8,
+        )
+        self.assertLess(com_legado, 25)
+
+    def test_alinhar_kits_sinais_prevalece(self):
+        kits = [_kit("IMP-MIMO-003", mlb_ok=True, margem=22.0)]
+        alinhado = br._alinhar_kits_com_sinais(
+            kits,
+            {"kits": [{"sku": "IMP-MIMO-003", "mlb_ok": False, "estoque": 0}]},
+        )
+        out = br.produtos_com_margem_segura(alinhado, piso_pct=15.0)
+        self.assertEqual(out["seguros_n"], 0)
+        self.assertIn("sem_mlb", out["risco_top"][0]["bloqueios"])
+
 
 class TestMontarBriefing(unittest.TestCase):
     def test_briefing_sem_claude_traz_previa_e_esforco(self):
@@ -195,6 +221,16 @@ class TestMontarBriefing(unittest.TestCase):
         self.assertEqual(kwargs.get("proposito"), "ruptura_impala_moderada")
         self.assertEqual(kwargs.get("max_tokens"), 220)
         self.assertTrue(kwargs.get("somente_ia"))
+
+    @patch("core.resumo_ia.sintetizar_claude", return_value="FAZER: PERL-004 MLB+estoque. NÃO FAZER: Ads.")
+    @patch("integracoes.esmaltes.claude_ciclo_ruptura.fase_claude_ruptura", return_value="moderada")
+    def test_claude_momento_lucro_forca_chamada_moderada(self, _fase, mock_sint):
+        out = br._claude_ruptura({"veredito": "ainda_nao"}, "fb", momento_lucro=True)
+        self.assertIn("FAZER", out)
+        kwargs = mock_sint.call_args.kwargs
+        self.assertTrue(kwargs.get("forcar_chamada"))
+        self.assertEqual(kwargs.get("forcar_profundidade"), "padrao")
+        self.assertFalse(kwargs.get("forcar_modelo"))
 
 
 class TestAgenteMensagem(unittest.TestCase):
