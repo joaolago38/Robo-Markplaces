@@ -88,6 +88,11 @@ def _enviar(nome: str, valor: float, tipo: int, tags: list[str] | None = None) -
 
     if not DD_METRICS_ENABLED or not DD_API_KEY:
         return
+    # Suíte local não deve POST na API (SSL/timeout trava pytest). O cliente
+    # em si é coberto em tests/test_datadog_metrics.py com requests mockado.
+    pytest_atual = os.environ.get("PYTEST_CURRENT_TEST") or ""
+    if pytest_atual and "test_datadog_metrics.py" not in pytest_atual:
+        return
     try:
         url = f"https://api.{DD_SITE}/api/v2/series"
         ponto = {

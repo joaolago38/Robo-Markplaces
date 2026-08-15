@@ -32,6 +32,34 @@ def carregar_campanhas() -> list[dict[str, Any]]:
     return [c for c in data if isinstance(c, dict) and c.get("ativo")]
 
 
+def _fase_minima_campanha(campanha: dict[str, Any]) -> int:
+    raw = campanha.get("fase_minima")
+    if raw is None:
+        return 2
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return 2
+
+
+def campanhas_liberadas(
+    campanhas: list[dict[str, Any]] | None = None,
+    *,
+    fase: int | None = None,
+) -> list[dict[str, Any]]:
+    """WA/TG só na fase da doutrina: MIMO=0, PERL=1, resto≥2."""
+    rows = campanhas if campanhas is not None else carregar_campanhas()
+    if fase is None:
+        try:
+            from integracoes.esmaltes.doutrina_guerra_impala import avaliar_condicoes_guerra
+
+            fase = int(avaliar_condicoes_guerra().get("fase") or 0)
+        except Exception:
+            fase = 0
+    fase_n = int(fase or 0)
+    return [c for c in rows if _fase_minima_campanha(c) <= fase_n]
+
+
 def _fmt_brl(valor: Any) -> str:
     try:
         return f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -85,6 +113,9 @@ def link_ml_valido(link: str) -> bool:
         return False
     # Lista genérica = anúncio ainda não cadastrado no catálogo
     if "lista.mercadolivre" in link.lower() and "/lista/" in link.lower():
+        return False
+    mlb = re.search(r"MLB-?(\d+)", link, re.I)
+    if mlb and len(mlb.group(1)) < 8:
         return False
     return True
 

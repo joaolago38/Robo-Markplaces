@@ -20,6 +20,8 @@ SYSTEM_DECISAO = (
     "(reputação, perguntas, margem, exposição). "
     "Se ML estiver ok e o produto sem stress, seja breve: só aponte decisão "
     "clara (FAZER / NÃO FAZER / OBSERVAR) com 1–2 ações no máximo. "
+    "Shopee, Magalu e Amazon só depois da saúde ML (20 reviews / 4.8); "
+    "não copie preço do ML para outro canal sem recalcular o piso da taxa. "
     "Nunca invente métricas de saúde, vendas ou preços ausentes no JSON."
 )
 
@@ -41,6 +43,7 @@ SYSTEM_GUERRA = (
     "Se rival_min < piso_preco, NAO_PERSEGUIR — não fure margem da fase. "
     "Só IMP-PERL-004 iguala preço; MIMO diferencia; JUPAES não disputa kit 3/4. "
     "Não invente concorrente, vd/dia nem ranking. Não publicar anúncio. "
+    "Não publicar Impala em Shopee/Magalu/Amazon neste golpe. "
     "Não trocar CNPJ 52.668.583/0001-27. Não ligar Ads neste golpe."
 )
 

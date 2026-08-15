@@ -5,6 +5,7 @@ Regra de engajamento: guerra por faixa. Só PERL iguala preço.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from core.atomic_io import ler_json
@@ -27,6 +28,39 @@ _PRIORIDADE = {
 
 _TAXA_ML_PADRAO = 0.18
 _MARGEM_FASE_PADRAO = {1: 0.10, 2: 0.18, 3: 0.25}
+CANAIS = ("mercadolivre", "shopee", "magalu", "amazon")
+CANAL_REFERENTE = "mercadolivre"
+
+# Título ML da entrada (≤60): busca + marca + coleção + extra + público.
+TITULO_MIMO_ML = "Kit 3 Esmaltes Impala Mimo + Carmed Manicure"
+_PECAS_TITULO_MIMO = (
+    "kit3",
+    "esmaltes",
+    "impala",
+    "mimo",
+    "carmed",
+    "manicure",
+    "sem_francesinha",
+)
+
+
+def pecas_titulo_mimo(titulo: str) -> dict[str, bool]:
+    """O que o listing MIMO precisa para atrair manicure (não kit 3 genérico)."""
+    t = str(titulo or "").lower()
+    return {
+        "kit3": bool(re.search(r"\bkit\s*3\b", t)),
+        "esmaltes": "esmalte" in t,
+        "impala": "impala" in t,
+        "mimo": "mimo" in t,
+        "carmed": "carmed" in t,
+        "manicure": "manicure" in t,
+        "sem_francesinha": "francesinha" not in t,
+    }
+
+
+def titulo_mimo_atracao_ok(titulo: str) -> bool:
+    pecas = pecas_titulo_mimo(titulo)
+    return all(bool(pecas.get(k)) for k in _PECAS_TITULO_MIMO)
 
 
 def _f(val: Any, default: float = 0.0) -> float:
@@ -287,7 +321,7 @@ def _reviews_nota(conta: dict[str, Any]) -> tuple[int, float]:
 def _proximo_gate(fase: int, checks: dict[str, Any], gat: dict[str, Any]) -> str:
     if fase <= 0:
         if not checks.get("mlb_mimo"):
-            return "Publicar MIMO R$44,90 com titulo Mimo + Carmed (estoque 10)"
+            return f"Publicar MIMO R$44,90 com titulo {TITULO_MIMO_ML} (estoque 10)"
         return "Entrar estoque MIMO (10 validacao, depois 30)"
     if fase == 1:
         if not checks.get("mlb_perl"):
@@ -351,6 +385,34 @@ def sku_pode_publicar_agora(
     return False, "fora_frente_nao_abrir_4o_sku"
 
 
+def canal_pode_entrar(
+    marketplace: str,
+    *,
+    condicoes: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    """ML é o referente. Shopee/Magalu/Amazon só depois da fase 3 (saúde ML)."""
+    canal = str(marketplace or "").strip().lower()
+    if canal not in CANAIS:
+        return False, "canal_desconhecido"
+    cond = (
+        condicoes
+        if isinstance(condicoes, dict) and condicoes.get("fase") is not None
+        else avaliar_condicoes_guerra()
+    )
+    if canal == CANAL_REFERENTE:
+        return sku_pode_publicar_agora("IMP-MIMO-003", condicoes=cond)
+    d = carregar_doutrina()
+    canais_cfg = d.get("canais") if isinstance(d.get("canais"), dict) else {}
+    try:
+        fase_min = int(canais_cfg.get("fase_minima_secundario") or 3)
+    except (TypeError, ValueError):
+        fase_min = 3
+    fase = int(cond.get("fase") or 0)
+    if fase < fase_min:
+        return False, f"aguardar_ml_fase_{fase_min}"
+    return True, "ml_referente_saudavel"
+
+
 def avaliar_condicoes_guerra(
     *,
     produtos: list[dict[str, Any]] | None = None,
@@ -391,6 +453,8 @@ def avaliar_condicoes_guerra(
         "mlb_jupaes": _mlb_ok(jupaes),
         "estoque_mimo": _estoque(mimo),
         "carmed_titulo": "carmed" in titulo_mimo and "mimo" in titulo_mimo,
+        "titulo_pecas": pecas_titulo_mimo(titulo_mimo),
+        "titulo_atracao": titulo_mimo_atracao_ok(titulo_mimo),
         "mercado_confiavel": bool(radar.get("mercado_confiavel")),
         "reviews": reviews,
         "nota": nota,
@@ -466,6 +530,29 @@ def emitir_metricas_condicoes(condicoes: dict[str, Any] | None = None) -> dict[s
                 n_pub += 1.0
             gauge("impala.guerra.publicar_sku", 1.0 if ok else 0.0, tags=[tag])
         gauge("impala.guerra.publicar_agora", n_pub)
+        checks = cond.get("checks") if isinstance(cond.get("checks"), dict) else {}
+        gauge(
+            "impala.guerra.titulo_atracao",
+            1.0 if checks.get("titulo_atracao") else 0.0,
+        )
+        gauge(
+            "impala.guerra.carmed_titulo",
+            1.0 if checks.get("carmed_titulo") else 0.0,
+        )
+        pecas = checks.get("titulo_pecas") if isinstance(checks.get("titulo_pecas"), dict) else {}
+        for peca in _PECAS_TITULO_MIMO:
+            gauge(
+                "impala.guerra.titulo_peca",
+                1.0 if pecas.get(peca) else 0.0,
+                tags=[f"peca:{peca}"],
+            )
+        for canal in CANAIS:
+            ok, _motivo = canal_pode_entrar(canal, condicoes=cond)
+            gauge(
+                "impala.guerra.canal_liberado",
+                1.0 if ok else 0.0,
+                tags=[f"marketplace:{canal}"],
+            )
         return cond
     except Exception as exc:
         logger.warning("emitir_metricas_condicoes: %s", exc)

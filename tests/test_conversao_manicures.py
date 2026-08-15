@@ -100,12 +100,15 @@ class TestConversaoCore(unittest.TestCase):
         self.assertIn("whatsapp", out["canais_armados"])
 
     @patch.object(conv, "ANTHROPIC_API_KEY", "")
+    @patch.object(conv, "campanhas_liberadas")
     @patch.object(conv, "carregar_campanhas")
     @patch.object(conv, "montar_mensagem_campanha")
-    def test_escolher_oferta_fallback(self, mock_montar, mock_camp):
-        mock_camp.return_value = [
+    def test_escolher_oferta_fallback(self, mock_montar, mock_camp, mock_lib):
+        camps = [
             {"id": "kit-3", "nome": "Kit 3", "ativo": True, "sku": "X", "prioridade": 1}
         ]
+        mock_lib.return_value = camps
+        mock_camp.return_value = camps
         mock_montar.return_value = {
             "ok": True,
             "campanha_id": "kit-3",

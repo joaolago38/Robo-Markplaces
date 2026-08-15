@@ -3,24 +3,24 @@
     {
       "fingerprint": "cecaf1fe419184e2b12c",
       "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
-      "ultima_vez": "2026-08-15T15:45:22.020902+00:00",
+      "ultima_vez": "2026-08-15T18:20:59.395340+00:00",
       "logger": "notificador",
       "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 50
+      "ocorrencias": 51
     },
     {
       "fingerprint": "932ec7d3ef9c57e06c2d",
       "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
-      "ultima_vez": "2026-08-15T15:45:22.014184+00:00",
+      "ultima_vez": "2026-08-15T18:20:58.892673+00:00",
       "logger": "http_client",
       "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "status": "error",
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 50
+      "ocorrencias": 51
     },
     {
       "fingerprint": "e63c0748e350061fd4ad",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-08-15T15:45:22.020902+00:00"
+  "atualizado_em": "2026-08-15T18:20:59.395340+00:00"
 }

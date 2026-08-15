@@ -140,6 +140,23 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_KITS_MANICURE_ID)
 
+    def test_grupo_decisao_guerra_titulo_atracao(self):
+        grupo = dd._grupo_decisao_guerra_impala()
+        blob = str(grupo)
+        for metric in (
+            "robo.impala.guerra.fase",
+            "robo.impala.guerra.publicar_agora",
+            "robo.impala.guerra.titulo_atracao",
+            "robo.impala.guerra.carmed_titulo",
+            "robo.impala.guerra.nosso_carmed",
+            "robo.esmaltes.kit_manicure.entrada_ok",
+            "robo.impala.guerra.canal_liberado{marketplace:mercadolivre}",
+            "robo.impala.guerra.canal_liberado{marketplace:shopee}",
+            "robo.impala.guerra.canal_liberado{marketplace:magalu}",
+            "robo.impala.guerra.canal_liberado{marketplace:amazon}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+
     def test_grupo_decisao_oscilacao(self):
         grupo = dd._grupo_decisao_oscilacao()
         blob = str(grupo)

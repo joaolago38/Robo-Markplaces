@@ -391,7 +391,7 @@ def responder_chat(
         MSG_CONSULTAR_ANUNCIO,
         MSG_INDISPONIVEL,
         MSG_SEM_DESCONTO,
-        prompt_sistema_chat_ml,
+        prompt_sistema_chat,
         sanitizar_resposta_chat_ml,
     )
 
@@ -465,7 +465,7 @@ def responder_chat(
             if isinstance(cores, list) and cores:
                 return (
                     f"As cores deste kit são: {', '.join(str(c) for c in cores)}. "
-                    "Todas com alta pigmentação e secagem rápida. Posso confirmar mais detalhes se precisar!"
+                    "Todas as cores estão identificadas no anúncio. Posso confirmar mais detalhes se precisar!"
                 )
         if "escolher" in pergunta_lower or "escolho" in pergunta_lower or "montar" in pergunta_lower:
             return (
@@ -481,7 +481,10 @@ def responder_chat(
         if any(k in pergunta_lower for k in ("atacado", "revendedor", "desconto", "promo")):
             return MSG_SEM_DESCONTO
         if "profissional" in pergunta_lower:
-            return "Sim, usado por manicures profissionais. Secagem rápida, alta pigmentação, sem tolueno, sem formaldeído."
+            return (
+                "Sim, usado por manicures profissionais. "
+                "As cores do kit estão na foto e na descrição do anúncio."
+            )
         if "alicate" in pergunta_lower or "mundial 777" in contexto:
             return "Alicate Mundial 777 em aço inox cirúrgico. Pode ser autoclavado para uso em clínicas e salões. Corte preciso sem necessidade de afiar."
         if "validade" in pergunta_lower:
@@ -491,7 +494,12 @@ def responder_chat(
             return "A validade e o lote vêm impressos em cada frasco. Confira também na descrição do anúncio."
 
     oferta_txt = ""
-    if isinstance(oferta_ctx, dict) and oferta_ctx.get("link_ml"):
+    canal_norm = str(canal or "mercadolivre").strip().lower()
+    if (
+        canal_norm in {"", "mercadolivre", "ml"}
+        and isinstance(oferta_ctx, dict)
+        and oferta_ctx.get("link_ml")
+    ):
         oferta_txt = (
             f"Oferta ativa (captação Meta→ML): {oferta_ctx.get('campanha_nome') or 'kit'} "
             f"| link {oferta_ctx.get('link_ml')} "
@@ -517,8 +525,8 @@ Responda de forma factual e neutra. Se couber, cite o link da oferta sem inventa
         max_tokens=320,
         modelo=rota["modelo"],
         forcar_modelo=bool(rota.get("forcar_modelo")),
-        system=prompt_sistema_chat_ml(),
-        origem="ml.chat.responder_chat",
+        system=prompt_sistema_chat(canal_norm if canal_norm not in {"", "ml"} else "mercadolivre"),
+        origem=f"{canal_norm or 'mercadolivre'}.chat.responder_chat",
     )
     if resposta.startswith("⚠️"):
         return "Já vou te responder melhor"

@@ -24,6 +24,7 @@ from core.notificador import alertar_gestor, enviar_telegram_manicures, gestor_t
 from core.prontidao import pode_divulgar_promocoes_manicures
 from core.whatsapp import enviar_grupo_manicures, whatsapp_grupo_manicures_configurado
 from integracoes.social.promocoes_manicures import (
+    campanhas_liberadas,
     carregar_campanhas,
     escolher_campanha,
     montar_mensagem_campanha,
@@ -138,7 +139,7 @@ def executar(
         logger.warning("Promoções manicures bloqueadas: %s", motivo_prontidao)
         return {"ok": False, "motivo": motivo_prontidao, "enviado": False}
 
-    campanhas = carregar_campanhas()
+    campanhas = carregar_campanhas() if campanha_id else campanhas_liberadas()
     if not campanhas:
         logger.warning("Nenhuma campanha ativa em promocoes_manicures_ml.json")
         return {"ok": False, "motivo": "catalogo_vazio", "enviado": False}

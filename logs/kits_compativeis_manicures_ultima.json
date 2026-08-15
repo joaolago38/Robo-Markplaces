@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "timestamp": "2026-08-15T00:17:15.038199+00:00",
+  "timestamp": "2026-08-15T18:23:02.557827+00:00",
   "preco_unitario_ref": 12.0,
   "preco_unitario_ml": 9.0,
   "piso_margem_pct": 15.0,
@@ -24,6 +24,7 @@
         "economia_pct": 16.9,
         "preco_por_unidade": 9.97
       },
+      "motivo_condicao": "economia",
       "padrao_impala": true,
       "condicao_ok": true,
       "atende_clientes": true,
@@ -49,6 +50,33 @@
         "economia_pct": 9.9,
         "preco_por_unidade": 10.82
       },
+      "motivo_condicao": "economia",
+      "padrao_impala": true,
+      "condicao_ok": true,
+      "atende_clientes": true,
+      "compativeis_ml": [],
+      "taxa_canal_pct": 18.0
+    },
+    {
+      "sku": "IMP-MIMO-003",
+      "kit_tag": "kit:mimo003",
+      "nome": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+      "qtd_kit": 3,
+      "perfil_manicure": "manicure_autonoma",
+      "preco": 44.9,
+      "margem_pct": 19.35,
+      "vd_dia_ml_ref": 0.0,
+      "score_alavancagem": 69.0,
+      "indice_compra": 13,
+      "economia": {
+        "preco_kit": 44.9,
+        "preco_avulso_ref": 12.0,
+        "custo_n_avulsos": 36.0,
+        "economia_brl": -8.9,
+        "economia_pct": -24.7,
+        "preco_por_unidade": 14.97
+      },
+      "motivo_condicao": "entrada_carmed",
       "padrao_impala": true,
       "condicao_ok": true,
       "atende_clientes": true,
@@ -74,6 +102,7 @@
         "economia_pct": 61.2,
         "preco_por_unidade": 4.66
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -99,6 +128,7 @@
         "economia_pct": 18.5,
         "preco_por_unidade": 9.78
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -151,6 +181,7 @@
         "economia_pct": 60.0,
         "preco_por_unidade": 4.8
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -176,6 +207,7 @@
         "economia_pct": 66.7,
         "preco_por_unidade": 4.0
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": false,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -201,6 +233,7 @@
         "economia_pct": 58.4,
         "preco_por_unidade": 4.99
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -226,6 +259,7 @@
         "economia_pct": 61.9,
         "preco_por_unidade": 4.58
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -251,6 +285,7 @@
         "economia_pct": 22.0,
         "preco_por_unidade": 9.36
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -276,31 +311,7 @@
         "economia_pct": 41.8,
         "preco_por_unidade": 6.99
       },
-      "padrao_impala": true,
-      "condicao_ok": false,
-      "atende_clientes": true,
-      "compativeis_ml": [],
-      "taxa_canal_pct": 18.0
-    },
-    {
-      "sku": "IMP-MIMO-003",
-      "kit_tag": "kit:mimo003",
-      "nome": "Kit 3 Mimo + Carmed",
-      "qtd_kit": 3,
-      "perfil_manicure": "manicure_autonoma",
-      "preco": 44.9,
-      "margem_pct": 19.35,
-      "vd_dia_ml_ref": 0.0,
-      "score_alavancagem": 69.0,
-      "indice_compra": 13,
-      "economia": {
-        "preco_kit": 44.9,
-        "preco_avulso_ref": 12.0,
-        "custo_n_avulsos": 36.0,
-        "economia_brl": -8.9,
-        "economia_pct": -24.7,
-        "preco_por_unidade": 14.97
-      },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -326,6 +337,7 @@
         "economia_pct": 40.6,
         "preco_por_unidade": 7.13
       },
+      "motivo_condicao": "sem_condicao",
       "padrao_impala": true,
       "condicao_ok": false,
       "atende_clientes": true,
@@ -353,6 +365,7 @@
         "economia_pct": 16.9,
         "preco_por_unidade": 9.97
       },
+      "motivo_condicao": "economia",
       "padrao_impala": true,
       "condicao_ok": true,
       "atende_clientes": true,
@@ -378,6 +391,33 @@
         "economia_pct": 9.9,
         "preco_por_unidade": 10.82
       },
+      "motivo_condicao": "economia",
+      "padrao_impala": true,
+      "condicao_ok": true,
+      "atende_clientes": true,
+      "compativeis_ml": [],
+      "taxa_canal_pct": 18.0
+    },
+    {
+      "sku": "IMP-MIMO-003",
+      "kit_tag": "kit:mimo003",
+      "nome": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+      "qtd_kit": 3,
+      "perfil_manicure": "manicure_autonoma",
+      "preco": 44.9,
+      "margem_pct": 19.35,
+      "vd_dia_ml_ref": 0.0,
+      "score_alavancagem": 69.0,
+      "indice_compra": 13,
+      "economia": {
+        "preco_kit": 44.9,
+        "preco_avulso_ref": 12.0,
+        "custo_n_avulsos": 36.0,
+        "economia_brl": -8.9,
+        "economia_pct": -24.7,
+        "preco_por_unidade": 14.97
+      },
+      "motivo_condicao": "entrada_carmed",
       "padrao_impala": true,
       "condicao_ok": true,
       "atende_clientes": true,
@@ -386,5 +426,5 @@
     }
   ],
   "total": 14,
-  "condicao_n": 2
+  "condicao_n": 3
 }

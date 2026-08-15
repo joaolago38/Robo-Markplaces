@@ -8,6 +8,17 @@ from agentes.esmaltes.agente_montar_kits_impala import montar_mensagem_telegram
 from integracoes.esmaltes import kits_compativeis_manicures as km
 
 
+def _kit_mimo():
+    return {
+        "sku": "IMP-MIMO-003",
+        "nome": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+        "preco": 44.9,
+        "custo_total": 28.13,
+        "cores": [{"nome": "Admire"}, {"nome": "Sutileza"}, {"nome": "Amor Profundo"}],
+        "canais": {"mercadolivre": {"preco": 44.9, "taxa_canal_pct": 18.0}},
+    }
+
+
 def _kit_perl(**kwargs):
     base = {
         "sku": "IMP-PERL-004",
@@ -79,6 +90,13 @@ class TestOfertaImpala(unittest.TestCase):
         self.assertIsNotNone(row)
         self.assertFalse(row["condicao_ok"])
         self.assertLess(float(row["margem_pct"]), 15.0)
+
+    def test_mimo_tem_condicao_por_extra_carmed(self):
+        row = km.avaliar_oferta_impala(_kit_mimo(), anuncios=[], preco_unitario_ref=12.0)
+        self.assertIsNotNone(row)
+        self.assertTrue(row["condicao_ok"])
+        self.assertEqual(row["motivo_condicao"], "entrada_carmed")
+        self.assertLess(float(row["economia"]["economia_pct"]), 0)
 
     def test_sku_nao_impala_ignorado(self):
         self.assertIsNone(

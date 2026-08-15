@@ -18,6 +18,14 @@ mon = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(mon)
 
 
+def _isolar_batalha():
+    """Monitor unitário não dispara radar/golpe/Telegram/Datadog de guerra."""
+    return patch(
+        "integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir",
+        return_value={},
+    )
+
+
 _LISTA_ALERTA = [
     {
         "id": "kit1",
@@ -44,6 +52,11 @@ _CONC = {"item_id": "MLB2", "titulo": "Kit Impala Teste", "preco": 40.0, "quanti
 
 
 class TestMonitorConcorrentes(unittest.TestCase):
+    def setUp(self):
+        p = _isolar_batalha()
+        p.start()
+        self.addCleanup(p.stop)
+
     @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
     @patch.object(mon, "alertar_gestor", return_value=True)
     @patch.object(mon, "_salvar_historico")
@@ -176,6 +189,11 @@ class TestResolverPrecoReferencia(unittest.TestCase):
 class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
     """Garante que as métricas são enviadas ao Datadog a cada ciclo do agente."""
 
+    def setUp(self):
+        p = _isolar_batalha()
+        p.start()
+        self.addCleanup(p.stop)
+
     @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
         {"item_id": "MLB1", "titulo": "Kit Impala X", "preco": 38.0, "quantidade_vendida": 5},
         {"item_id": "MLB2", "titulo": "Kit Impala Y", "preco": 42.0, "quantidade_vendida": 2},
@@ -231,6 +249,11 @@ class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
 
 
 class TestWatchlistItem(unittest.TestCase):
+    def setUp(self):
+        p = _isolar_batalha()
+        p.start()
+        self.addCleanup(p.stop)
+
     @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
     @patch.object(mon, "alertar_gestor", return_value=True)
     @patch.object(mon, "_salvar_historico")

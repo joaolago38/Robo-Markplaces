@@ -204,7 +204,7 @@ def _decidir_fazer(
     estoque_frente: int,
 ) -> str:
     if mlb_frente <= 0:
-        return "Publicar MIMO no ML (sem item id) com titulo Mimo + Carmed — nao igualar francesinha"
+        return "Publicar MIMO no ML (sem item id) com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure — nao igualar francesinha"
     if estoque_frente <= 0:
         return "Entrar estoque da frente (catalogo 0) antes de guerra de preco"
     mimo = next((m for m in margens if m.get("sku") == "IMP-MIMO-003"), {})
@@ -212,7 +212,7 @@ def _decidir_fazer(
         return "Nao baixar MIMO — margem operacional abaixo de 15%"
     if any(int(m.get("rivais_comparaveis") or 0) > 0 for m in margens):
         return "Diferenciar no listing (extra nosso vs rival comparavel) — preco so no PERL se gap >= 3% e >= piso"
-    return "Manter MIMO com Carmed no titulo — nao igualar francesinha"
+    return "Manter MIMO com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure — nao igualar francesinha"
 
 
 def montar_radar(

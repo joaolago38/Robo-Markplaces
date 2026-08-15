@@ -2,7 +2,7 @@
 scripts/preparar_guerra_impala.py
 Executa o FAZER possível sem criar anúncio no ML:
   1) tenta vincular MLB existentes (SKU/título)
-  2) gera ficha de publicação dos 3 SKUs de guerra
+  2) gera ficha de publicação só do SKU liberado pela doutrina (fase 0 = MIMO)
   3) revalida decisão do dia
 
 Uso:
@@ -136,18 +136,31 @@ def tentar_vincular_mlb() -> dict:
 
 
 def montar_fichas_publicacao(pendentes: list[dict]) -> list[dict]:
+    from integracoes.esmaltes.doutrina_guerra_impala import (
+        TITULO_MIMO_ML,
+        sku_pode_publicar_agora,
+    )
+
     fichas = []
     for p in pendentes:
+        sku = str(p.get("sku") or "")
+        pode, motivo = sku_pode_publicar_agora(sku)
+        if not pode:
+            continue
+        titulo = p.get("titulo_sugerido")
+        if sku.upper() == "IMP-MIMO-003":
+            titulo = TITULO_MIMO_ML
         fichas.append(
             {
                 "acao": "criar_anuncio_ml_manual",
-                "seller_sku": p.get("seller_sku") or p.get("sku"),
-                "title": p.get("titulo_sugerido"),
+                "seller_sku": p.get("seller_sku") or sku,
+                "title": titulo,
                 "price": p.get("preco"),
                 "category_id": p.get("categoria_ml") or "MLB1430",
+                "motivo_gate": motivo,
                 "depois": (
                     f"Colar o MLB gerado em catalogo/produtos.json -> "
-                    f"canais.mercadolivre.item_id do SKU {p.get('sku')}"
+                    f"canais.mercadolivre.item_id do SKU {sku}"
                 ),
             }
         )
@@ -169,8 +182,10 @@ def main() -> int:
             "bloqueados": dec.get("bloqueados"),
         },
         "instrucao": (
-            "Conta ML sem kits Impala: publique os 3 SKUs com seller_sku = SKU do catálogo, "
-            "depois rode de novo este script para vincular o MLB automaticamente."
+            "Conta ML sem kits Impala: publique SÓ IMP-MIMO-003 "
+            "(título Kit 3 Esmaltes Impala Mimo + Carmed Manicure, seller_sku = SKU, estoque 10). "
+            "PERL no mesmo ciclo depois do MIMO no ar. Não publique os 3 SKUs de uma vez. "
+            "Rode de novo este script para vincular o MLB."
         ),
     }
     escrever_json_atomico(OUT_PATH, payload)

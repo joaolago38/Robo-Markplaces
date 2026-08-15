@@ -48,7 +48,7 @@
     {
       "id": 0,
       "nome": "abrir_frente",
-      "fazer": "Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30",
+      "fazer": "Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure; estoque 10 (validacao) depois 30",
       "agentes": ["radar_diferencial", "monitor_concorrentes", "contrato_impulso", "ads_gatilho"]
     },
     {
@@ -82,11 +82,22 @@
       "agentes": ["ponto_ruptura_outra_marca", "ponto_ruptura_segundo_cnpj"]
     }
   ],
+  "canais": {
+    "referente": "mercadolivre",
+    "todos": ["mercadolivre", "shopee", "magalu", "amazon"],
+    "fase_minima_secundario": 3,
+    "taxa_pct": {
+      "mercadolivre": 18.0,
+      "shopee": 14.0
+    }
+  },
   "nao_fazer_global": [
     "Igualar francesinha/tratamento",
     "Ligar Ads sem MLB da frente",
     "Publicar JUPAES antes do 1o pedido",
     "Baixar MIMO abaixo de R$41,99 (piso 15%)",
-    "Tratar cache STALE como rival ao vivo"
+    "Tratar cache STALE como rival ao vivo",
+    "Publicar Impala em Shopee/Magalu/Amazon antes da fase 3 (20 reviews / 4.8 no ML)",
+    "Copiar preco do ML para outro canal sem recalcular piso pela taxa do canal"
   ]
 }
