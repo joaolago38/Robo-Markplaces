@@ -269,7 +269,38 @@
     "receita_bruta_24h": 0.0,
     "itens_margem_24h": 0,
     "acos": 0.0,
-    "acoes_batalha": []
+    "acoes_batalha": [
+      {
+        "sku": "BUNDLE-777-5ESM",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-103",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-002",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-001",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "critica": true
+      },
+      {
+        "sku": "CRZ-KIT-003",
+        "acao": "publicar_mlb",
+        "motivo": "fora_impala",
+        "critica": true
+      }
+    ]
   },
   "ancora_numerica": {
     "veredito": "ainda_nao",
@@ -438,5 +469,5 @@
   },
   "fingerprint": "ainda_nao|3.3|7|0|0|0|IMP-MIMO-003",
   "cnpj": "52.668.583/0001-27",
-  "timestamp": "2026-08-15T18:35:17.924494+00:00"
+  "timestamp": "2026-08-15T19:15:24.414531+00:00"
 }
