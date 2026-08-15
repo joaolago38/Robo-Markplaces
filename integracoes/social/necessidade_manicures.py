@@ -23,6 +23,7 @@ ANITA_PATH = ROOT / "logs" / "anita_esmaltes_ultima.json"
 LEADS_PATH = ROOT / "logs" / "leads_manicures.json"
 CONVERSAO_PATH = ROOT / "logs" / "conversao_manicures_ultima.json"
 KITS_PATH = ROOT / "logs" / "esmaltes_kits_monitor_ultima.json"
+KITS_MANICURE_PATH = ROOT / "logs" / "kits_compativeis_manicures_ultima.json"
 
 _KW_ATACADO = re.compile(r"atacado|revend|estoque|kit\s*10|kit\s*15|kit\s*30", re.I)
 _KW_KIT_PEQ = re.compile(r"kit\s*[3-6]\b|entrada|mimo|bailarina|sortido", re.I)
@@ -213,7 +214,32 @@ def _score_campanha_vs_sinal(campanha: dict[str, Any], montado: dict[str, Any], 
     elif est == 0 and montado.get("_estoque_conhecido"):
         score -= 15
 
+    oferta = _indice_compra_sku(str(campanha.get("sku") or montado.get("sku") or ""))
+    if oferta:
+        if oferta.get("condicao_ok"):
+            score += 18
+        score += min(20, int(oferta.get("indice_compra") or 0) // 50)
+        try:
+            eco_pct = float((oferta.get("economia") or {}).get("economia_pct") or 0)
+        except (TypeError, ValueError):
+            eco_pct = 0.0
+        if eco_pct >= 20:
+            score += 10
+        elif eco_pct > 0:
+            score += 4
+
     return score
+
+
+def _indice_compra_sku(sku: str) -> dict[str, Any]:
+    sku_u = (sku or "").strip().upper()
+    data = ler_json(KITS_MANICURE_PATH, default={})
+    if not isinstance(data, dict) or not sku_u:
+        return {}
+    for o in (data.get("ofertas") or []) + (data.get("ofertas_condicao") or []):
+        if str(o.get("sku") or "").upper() == sku_u:
+            return o if isinstance(o, dict) else {}
+    return {}
 
 
 def _estoque_campanha(sku: str) -> tuple[int | None, bool]:
@@ -337,6 +363,12 @@ def casar_necessidades_com_ml(
             ),
             "sust_ads": sust.get("status"),
         }
+        oferta = _indice_compra_sku(sku)
+        if oferta:
+            condicoes["economia_pct"] = (oferta.get("economia") or {}).get("economia_pct")
+            condicoes["indice_compra"] = oferta.get("indice_compra")
+            condicoes["perfil_manicure"] = oferta.get("perfil_manicure")
+            condicoes["condicao_kit"] = bool(oferta.get("condicao_ok"))
 
         copy = str(montado.get("texto_whatsapp") or montado.get("texto") or "").strip()
         if link_ok and montado.get("link_ml") and montado["link_ml"] not in copy:

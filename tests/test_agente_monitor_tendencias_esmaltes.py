@@ -104,6 +104,32 @@ class AgenteMonitorTendenciasEsmaltesTests(unittest.TestCase):
         self.assertIn("Perolado", msg)
         self.assertIn("viral", msg)
 
+    def test_montar_mensagem_marca_kit(self):
+        msg = agente.montar_mensagem_telegram(
+            {
+                "segmentos_varridos": 1,
+                "total_web_hits": 4,
+                "total_anuncios_mp": 6,
+                "top_oportunidades": [],
+                "top_confirmadas": [],
+                "marca_kit_boas": [
+                    {
+                        "marca": "Anita",
+                        "qtd_kit": 5,
+                        "status_tendencia": "confirmada",
+                        "preco_medio": 45.0,
+                        "anuncios": 3,
+                        "performance_boa": True,
+                        "cores_tendencia": ["Nude"],
+                    }
+                ],
+            },
+            [{"ok": True, "nome": "Kit 5", "total_web_hits": 4, "total_anuncios_mp": 6}],
+        )
+        self.assertIn("Anita", msg)
+        self.assertIn("kit 5", msg)
+        self.assertIn("boa performance", msg)
+
     def test_montar_mensagem_aviso_coleta_vazia(self):
         diag = {
             "coleta_vazia": True,

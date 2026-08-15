@@ -166,6 +166,65 @@ class TestListarMeusAnuncios(unittest.TestCase):
         self.assertEqual(out[1]["item_id"], "MLB2")
         self.assertEqual(out[1]["status"], "paused")
 
+    @patch.object(ml_client, "get_token_ml", return_value="tok")
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_listar_meus_anuncios_ignora_bolsas(self, _en, mock_request, _gt):
+        search_resp = _mock_resp({"results": ["MLB1", "MLB2"]})
+        items_resp = _mock_resp(
+            [
+                {
+                    "code": 200,
+                    "body": {
+                        "id": "MLB1",
+                        "title": "Bolsa Feminina Couro Mariart Shopper",
+                        "price": 199.0,
+                        "seller_sku": "",
+                        "status": "paused",
+                    },
+                },
+                {
+                    "code": 200,
+                    "body": {
+                        "id": "MLB2",
+                        "title": "Kit Esmalte Impala MIMO",
+                        "price": 44.9,
+                        "seller_sku": "IMP-MIMO-003",
+                        "status": "active",
+                    },
+                },
+            ]
+        )
+        mock_request.side_effect = [search_resp, items_resp]
+        out = ml_client.listar_meus_anuncios()
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["item_id"], "MLB2")
+        self.assertEqual(out[0]["sku"], "IMP-MIMO-003")
+
+    @patch.object(ml_client, "get_token_ml", return_value="tok")
+    @patch.object(ml_client, "request")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_listar_meus_anuncios_aplicar_foco_false(self, _en, mock_request, _gt):
+        search_resp = _mock_resp({"results": ["MLB1"]})
+        items_resp = _mock_resp(
+            [
+                {
+                    "code": 200,
+                    "body": {
+                        "id": "MLB1",
+                        "title": "Bolsa Mariart",
+                        "price": 10.0,
+                        "seller_sku": "",
+                        "status": "paused",
+                    },
+                }
+            ]
+        )
+        mock_request.side_effect = [search_resp, items_resp]
+        out = ml_client.listar_meus_anuncios(aplicar_foco=False)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["item_id"], "MLB1")
+
     @patch.object(ml_client, "_enabled", return_value=False)
     def test_listar_meus_anuncios_sem_credenciais(self, *_):
         self.assertEqual(ml_client.listar_meus_anuncios(), [])

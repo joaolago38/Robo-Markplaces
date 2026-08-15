@@ -60,6 +60,17 @@ class TestPodeChamarToggle(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("desligado", motivo.lower())
 
+    @patch("core.claude_toggle.claude_esta_ativo", return_value=(False, "CLAUDE_ATIVO=0"))
+    def test_pode_chamar_forcar_ignora_toggle(self, _):
+        from core import claude_orcamento as o
+
+        with patch.object(o, "resumo", return_value={"bloqueado": False, "restante_usd": 4.0, "consumido_usd": 1.0, "orcamento_usd": 8.99}):
+            with patch.object(o, "_cfg") as cfg:
+                cfg.return_value.CLAUDE_ORCAMENTO_ATIVO = True
+                ok, motivo = o.pode_chamar(origem="ruptura_impala", forcar=True)
+        self.assertTrue(ok)
+        self.assertEqual(motivo, "")
+
 
 if __name__ == "__main__":
     unittest.main()

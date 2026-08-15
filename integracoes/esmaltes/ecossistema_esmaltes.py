@@ -34,6 +34,7 @@ _PATHS = {
     "necessidade": ROOT / "logs" / "necessidade_manicures_ultima.json",
     "conversao": ROOT / "logs" / "conversao_manicures_ultima.json",
     "mercado": ROOT / "logs" / "esmaltes_mercado_ultima.json",
+    "kits_manicure": ROOT / "logs" / "kits_compativeis_manicures_ultima.json",
 }
 
 _CAMADAS = ("core", "anexos", "kits", "b2b", "conteudo", "marca")
@@ -241,6 +242,36 @@ def _acoes_kits(fontes: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _acoes_b2b(fontes: dict[str, Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
+    km = (fontes.get("kits_manicure") or {}).get("dados") or {}
+    ofertas = km.get("ofertas_condicao") or km.get("ofertas") or []
+    top_kit = ofertas[0] if ofertas and isinstance(ofertas[0], dict) else None
+    if isinstance(top_kit, dict) and top_kit.get("sku"):
+        eco = top_kit.get("economia") or {}
+        cond_ok = bool(top_kit.get("condicao_ok"))
+        out.append(
+            _acao(
+                camada="b2b",
+                titulo=(
+                    f"Kit Impala manicure: {top_kit.get('sku')} "
+                    f"({top_kit.get('perfil_manicure') or 'kit'})"
+                ),
+                detalhe=(
+                    f"Índice de compra {top_kit.get('indice_compra')} · "
+                    f"economia {eco.get('economia_pct')}% vs avulso "
+                    f"(R$ {float(eco.get('economia_brl') or 0):.2f}) · "
+                    f"{'condição ok, padrão Impala' if cond_ok else 'montar condição'} "
+                    f"kit {top_kit.get('qtd_kit')}."
+                ),
+                prioridade=1 if cond_ok else 2,
+                horizonte="7d" if cond_ok else "30d",
+                score=min(95.0, 50.0 + float(top_kit.get("indice_compra") or 0) / 20.0),
+                evidencias=[
+                    f"sku={top_kit.get('sku')}",
+                    f"economia_pct={eco.get('economia_pct')}",
+                    f"condicao_ok={cond_ok}",
+                ],
+            )
+        )
     nec = (fontes.get("necessidade") or {}).get("dados") or {}
     escolhida = nec.get("escolhida") or (nec.get("plano") or {}).get("escolhida")
     if isinstance(escolhida, dict) and escolhida:
@@ -259,7 +290,7 @@ def _acoes_b2b(fontes: dict[str, Any]) -> list[dict[str, Any]]:
                 evidencias=[f"angulo={(escolhida.get('condicoes') or {}).get('angulo')}"],
             )
         )
-    else:
+    elif not (isinstance(top_kit, dict) and top_kit.get("sku")):
         out.append(
             _acao(
                 camada="b2b",
@@ -386,6 +417,57 @@ def _acoes_marca(fontes: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+def _acoes_marca_kit(fontes: dict[str, Any]) -> list[dict[str, Any]]:
+    """Marca × kit × tendência no ML — o que oferece condição e pode performar."""
+    from integracoes.esmaltes.cruzamento_tendencias_mercado import cruzar_marca_kit_de_snapshots
+
+    ranking = cruzar_marca_kit_de_snapshots(
+        mercado=(fontes.get("mercado") or {}).get("dados"),
+        anita=(fontes.get("anita") or {}).get("dados"),
+        kits=(fontes.get("kits") or {}).get("dados"),
+        tendencias=(fontes.get("tendencias") or {}).get("dados"),
+    )
+    if not ranking:
+        return []
+    boas = [r for r in ranking if r.get("performance_boa")]
+    top = (boas or ranking)[0]
+    cores = ", ".join(top.get("cores_tendencia") or []) or "sem cor de tendência"
+    if boas:
+        return [
+            _acao(
+                camada="marca",
+                titulo=f"{top.get('marca')} kit {top.get('qtd_kit')} — tendência {top.get('status_tendencia')}",
+                detalhe=(
+                    f"Oferece condição no ML (média R$ {float(top.get('preco_medio') or 0):.0f}, "
+                    f"{top.get('anuncios')} anúncios) e cruza com tendência {top.get('status_tendencia')} "
+                    f"({cores}). Priorize este formato de kit."
+                ),
+                prioridade=1,
+                horizonte="7d",
+                score=min(95.0, 55.0 + float(top.get("score") or 0) / 25.0),
+                evidencias=[
+                    f"score={top.get('score')}",
+                    f"vendidos={top.get('vendidos')}",
+                    f"status={top.get('status_tendencia')}",
+                ],
+            )
+        ]
+    return [
+        _acao(
+            camada="marca",
+            titulo=f"{top.get('marca')} kit {top.get('qtd_kit')} no ML — tendência ainda fraca",
+            detalhe=(
+                "Há oferta/condição no Mercado Livre, mas o cruzamento com tendência web "
+                "ainda não confirma desempenho. Não compre volume até o radar sair do cego."
+            ),
+            prioridade=2,
+            horizonte="30d",
+            score=48,
+            evidencias=[f"score={top.get('score')}", "performance_boa=false"],
+        )
+    ]
+
+
 def montar_plano(fontes: dict[str, Any] | None = None) -> dict[str, Any]:
     """Gera plano completo do ecossistema com ações priorizadas."""
     fontes = fontes or coletar_fontes()
@@ -396,6 +478,7 @@ def montar_plano(fontes: dict[str, Any] | None = None) -> dict[str, Any]:
     acoes.extend(_acoes_b2b(fontes))
     acoes.extend(_acoes_conteudo(fontes))
     acoes.extend(_acoes_marca(fontes))
+    acoes.extend(_acoes_marca_kit(fontes))
 
     acoes.sort(key=lambda a: (int(a.get("prioridade") or 9), -float(a.get("score") or 0)))
 

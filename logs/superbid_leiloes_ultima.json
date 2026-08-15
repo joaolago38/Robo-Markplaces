@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-08-13T14:24:23.390913+00:00",
+  "timestamp": "2026-08-15T11:57:10.409719+00:00",
   "diagnostico": {
     "ativo": true,
     "fonte": "superbid",
-    "leiloes_ok": 1,
-    "leiloes_falha": 0,
+    "leiloes_ok": 0,
+    "leiloes_falha": 1,
     "lotes_veiculo": 0,
-    "modo_coleta": "direto",
+    "modo_coleta": "ddg",
     "erro": null,
     "lotes_com_documento": 0,
     "lotes_sem_documento": 0,
@@ -15,8 +15,8 @@
   "lotes": [],
   "resultado": {
     "leiloes_encontrados": 1,
-    "leiloes_coletados_ok": 1,
-    "modo_coleta": "direto",
+    "leiloes_coletados_ok": 0,
+    "modo_coleta": "ddg",
     "lotes_veiculo_documento": 0
   }
 }

@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-15T11:53:49.520462+00:00",
+  "atual": {
+    "saude_score": 20.7,
+    "produtos_seguros": 0.0,
+    "esforco_faltando": 0.0,
+    "kit_condicao_ok": 2.0,
+    "progresso_pct": 0.0,
+    "claude_ok": 1.0,
+    "aproximando": 1.0,
+    "anuncios_foco": 0.0
+  },
+  "anterior": {
+    "saude_score": 20.7,
+    "produtos_seguros": 0.0,
+    "esforco_faltando": 0.0,
+    "kit_condicao_ok": 2.0,
+    "progresso_pct": 0.0,
+    "claude_ok": 1.0,
+    "aproximando": 1.0,
+    "anuncios_foco": 0.0
+  },
+  "oscilacao": false,
+  "cuidado": false,
+  "primeira_amostra": false,
+  "mudancas": []
+}

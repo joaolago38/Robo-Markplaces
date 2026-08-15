@@ -189,6 +189,18 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Limites Datadog (Alibaba + USD + vendas + saúde do produto) evitam o "
         "ecossistema repetir o mesmo tema. Demais marketplaces ficam abertos no perfil."
     ),
+    "ponto_ruptura_segundo_cnpj": (
+        "Cruza reputação, MLB, estoque, pedido e ACOS do Impala e, quando a ruptura "
+        "está perto ou liberada, o Claude resume esforço, atitudes já tomadas e "
+        "quais kits Impala têm margem segura no ML. Também alerta CNAE/KYC do "
+        "segundo CNPJ (Masterprint). Não publica anúncio nem liga a flag de dono."
+    ),
+    "ponto_ruptura_outra_marca": (
+        "Diz se o CNPJ Impala (52.668.583/0001-27) já pode entrar com outra marca "
+        "de esmalte. Inclui prévia da saúde Impala no ML, esforço restante e "
+        "produtos com margem segura (Claude no veredito aproximando/liberado). "
+        "Não publica anúncio e não troca de CNPJ."
+    ),
     "monitor_acetona_cruzeiro": (
         "Anexo: acetona Cruzeiro no ML. Digest semanal (sexta) — "
         "fora do foco diário de kits."
@@ -352,6 +364,14 @@ HORARIOS_AGENTES: dict[str, str] = {
         "A cada ~10 dias (1, 11 e 21 do mês, 09:00 BRT via Actions); "
         "alteração de CNPJ dispara ML + Telegram de decisão; fora do orquestrador 30 min"
     ),
+    "ponto_ruptura_segundo_cnpj": (
+        "Todo dia às 08:05 BRT (Actions); fora do orquestrador 30 min. "
+        "Telegram no veredito (CNAE semanal / aproximando 24h / liberado) com briefing Impala."
+    ),
+    "ponto_ruptura_outra_marca": (
+        "Todo dia às 08:05 BRT (mesmo workflow do 2º CNPJ); fora do orquestrador 30 min. "
+        "Telegram no veredito (aproximando 24h / radar cego / liberado) com briefing Impala."
+    ),
     "monitor_acetona_cruzeiro": "1x/semana sexta 09:00 BRT (anexo)",
     "descoberta_produtos": "Debug manual (sem Telegram) — fora do foco Impala",
     "ads_gatilho": "Todo dia às 08:00 BRT (fora do orquestrador)",
@@ -457,6 +477,12 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("cnpj_cnae", "monitor_cnpj_cnae"),
     ("monitor_cnpj", "monitor_cnpj_cnae"),
     ("vinculo_cnae", "monitor_cnpj_cnae"),
+    ("outra_marca", "ponto_ruptura_outra_marca"),
+    ("marca_esmalte", "ponto_ruptura_outra_marca"),
+    ("ruptura_marca", "ponto_ruptura_outra_marca"),
+    ("ponto_ruptura", "ponto_ruptura_segundo_cnpj"),
+    ("segundo_cnpj", "ponto_ruptura_segundo_cnpj"),
+    ("cnae_prep", "ponto_ruptura_segundo_cnpj"),
     ("acetona", "monitor_acetona_cruzeiro"),
     ("descoberta", "descoberta_produtos"),
     ("ads_ml", "ads_gatilho"),

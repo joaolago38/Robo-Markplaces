@@ -1,0 +1,446 @@
+{
+  "ok": true,
+  "veredito": "ainda_nao",
+  "saude_score": 3.3,
+  "progresso_pct": 22.2,
+  "esforco": {
+    "faltando_n": 7,
+    "feitos_n": 2,
+    "faltando": [
+      {
+        "id": "avaliacoes",
+        "rotulo": "Avaliações Impala (com anúncio foco)",
+        "atual": "0 conta/legado",
+        "minimo": 20,
+        "atitude": "Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8)."
+      },
+      {
+        "id": "nota",
+        "rotulo": "Nota média (≥1 review no foco)",
+        "atual": 0.0,
+        "minimo": 4.8,
+        "atitude": "Tratar reclamações e qualidade do anúncio até a nota média ≥ 4.8."
+      },
+      {
+        "id": "mlb",
+        "rotulo": "MLB dos kits MIMO-003 e PERL-004 (margem ≥ piso)",
+        "atual": "IMP-MIMO-003=falta,IMP-PERL-004=falta",
+        "minimo": "ambos MLB",
+        "atitude": "Preencher MLB válido de IMP-MIMO-003 e IMP-PERL-004 — kits com margem ≥ piso; SORT-006 fica para fase 2."
+      },
+      {
+        "id": "estoque",
+        "rotulo": "Estoque >= 30 nos dois kits",
+        "atual": "IMP-MIMO-003=0,IMP-PERL-004=0",
+        "minimo": 30,
+        "atitude": "Abastecer estoque dos kits de validação MIMO-003 e PERL-004 (mínimo do ponto de ruptura)."
+      },
+      {
+        "id": "pedidos",
+        "rotulo": "Pedido próprio (margem 24h Impala; venda da conta só com foco)",
+        "atual": "itens=0 completadas=0",
+        "minimo": ">=1",
+        "atitude": "Concluir 1 pedido próprio com margem registrada (não contar bolsa/legado)."
+      },
+      {
+        "id": "ads_acos",
+        "rotulo": "ACOS ≤ teto (snapshot Ads visível)",
+        "atual": "n/d",
+        "minimo": 0.2,
+        "atitude": "Manter Ads desligado ou ACOS abaixo do teto — snapshot Ads precisa existir (vazio não é ok)."
+      },
+      {
+        "id": "anuncios_foco",
+        "rotulo": "Há anúncio Impala (kit) ativo no ML",
+        "atual": 0,
+        "minimo": ">=1",
+        "atitude": "Colocar no ar pelo menos 1 anúncio Impala (kit) no ML."
+      }
+    ],
+    "feitos": [
+      {
+        "id": "claims",
+        "rotulo": "Claims baixos (API visível)",
+        "atual": 0,
+        "minimo": "<2",
+        "atitude": "Claims baixos."
+      },
+      {
+        "id": "saude_conta",
+        "rotulo": "Reputação sem laranja/vermelho e taxas <5%",
+        "atual": "sem cor",
+        "minimo": "ok",
+        "atitude": "Reputação e taxas da conta no piso."
+      }
+    ]
+  },
+  "produtos": {
+    "piso_pct": 15.0,
+    "seguros": [],
+    "seguros_n": 0,
+    "risco_n": 14,
+    "risco_top": [
+      {
+        "sku": "IMP-PERL-004",
+        "kit_tag": "kit:perl004",
+        "papel": "entrada",
+        "preco": 39.9,
+        "margem_real_pct": 16.26,
+        "lucro_ref_ml": 17.96,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": true,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ]
+      },
+      {
+        "sku": "IMP-VR-015",
+        "kit_tag": "kit:vr015",
+        "papel": "giro",
+        "preco": 69.9,
+        "margem_real_pct": -20.86,
+        "lucro_ref_ml": 11.73,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": true,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-20.86%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-SORT-010",
+        "kit_tag": "kit:sort010",
+        "papel": "atacado",
+        "preco": 48.0,
+        "margem_real_pct": -28.73,
+        "lucro_ref_ml": 5.66,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": true,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-28.73%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-NUDE-010",
+        "kit_tag": "kit:nude010",
+        "papel": "catalogo",
+        "preco": 49.9,
+        "margem_real_pct": -24.51,
+        "lucro_ref_ml": 8.94,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-24.51%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-CLAS-012",
+        "kit_tag": "kit:clas012",
+        "papel": "catalogo",
+        "preco": 54.9,
+        "margem_real_pct": -30.11,
+        "lucro_ref_ml": 9.68,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-30.11%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-ATAC-030",
+        "kit_tag": "kit:atac030",
+        "papel": "catalogo",
+        "preco": 119.9,
+        "margem_real_pct": -23.63,
+        "lucro_ref_ml": 16.57,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_-23.63%_abaixo_15.0%"
+        ]
+      },
+      {
+        "sku": "IMP-MIMO-003",
+        "kit_tag": "kit:mimo003",
+        "papel": "catalogo",
+        "preco": 44.9,
+        "margem_real_pct": 19.35,
+        "lucro_ref_ml": 10.48,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ]
+      },
+      {
+        "sku": "IMP-BAIL-005",
+        "kit_tag": "kit:bail005",
+        "papel": "catalogo",
+        "preco": 48.9,
+        "margem_real_pct": 10.88,
+        "lucro_ref_ml": 7.27,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "guerra": false,
+        "veredito": "risco",
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero",
+          "margem_10.88%_abaixo_15.0%"
+        ]
+      }
+    ],
+    "margem_media_segura_pct": 0.0,
+    "candidatos_margem": [
+      {
+        "sku": "IMP-MIMO-003",
+        "margem_real_pct": 19.35,
+        "preco": 44.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "margem_real_pct": 18.18,
+        "preco": 64.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-PERL-004",
+        "margem_real_pct": 16.26,
+        "preco": 39.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      }
+    ]
+  },
+  "previa_ml": {
+    "anuncios_ativos_foco": 0,
+    "anuncios_pausados_foco": 0,
+    "legado_ignorado": 38,
+    "foco_vazio": true,
+    "reputacao_cor": "Sem cor ainda",
+    "avaliacoes": 0,
+    "nota": 0.0,
+    "vendas_completadas": 0,
+    "claims": 0,
+    "claims_fonte_ok": false,
+    "receita_bruta_24h": 0.0,
+    "itens_margem_24h": 0,
+    "acos": 0.0,
+    "acoes_batalha": [
+      {
+        "sku": "IMP-PERL-004",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "IMP-VR-015",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "IMP-SORT-010",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "BUNDLE-777-5ESM",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      },
+      {
+        "sku": "IMP-NUDE-010",
+        "acao": "publicar_mlb",
+        "motivo": "SKU sem MLB válido — gap de mercado sem anúncio próprio para reagir",
+        "critica": true
+      }
+    ]
+  },
+  "ancora_numerica": {
+    "veredito": "ainda_nao",
+    "saude_score": 3.3,
+    "saude_erro_pct": 5.0,
+    "margem_piso_pct": 15.0,
+    "margem_fonte": "catalogo_custo_mais_taxa_ml",
+    "margem_erro_pp": 0.5,
+    "vd_dia_fonte": "ref_catalogo_nao_venda_live",
+    "radar_ml": "cego",
+    "mlb_live": false,
+    "reviews": 0,
+    "nota": 0.0,
+    "anuncios_foco": 0,
+    "legado_ignorado": 38,
+    "seguros_n": 0,
+    "faltando_n": 7,
+    "candidatos_margem": [
+      {
+        "sku": "IMP-MIMO-003",
+        "margem_real_pct": 19.35,
+        "preco": 44.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "margem_real_pct": 18.18,
+        "preco": 64.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      },
+      {
+        "sku": "IMP-PERL-004",
+        "margem_real_pct": 16.26,
+        "preco": 39.9,
+        "mlb_ok": false,
+        "estoque_zero": true,
+        "bloqueios": [
+          "sem_mlb",
+          "estoque_zero"
+        ],
+        "veredito": "risco"
+      }
+    ],
+    "kits_manicure_condicao_n": 2,
+    "kits_manicure": [
+      {
+        "sku": "IMP-PERL-004",
+        "qtd_kit": 4,
+        "indice_compra": 278,
+        "margem_pct": 16.26,
+        "condicao_ok": true,
+        "economia_pct": 16.9,
+        "preco": 39.9
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "qtd_kit": 6,
+        "indice_compra": 22,
+        "margem_pct": 18.18,
+        "condicao_ok": true,
+        "economia_pct": 9.9,
+        "preco": 64.9
+      }
+    ],
+    "preco_avulso_ref": 12.0,
+    "cnpj": "52.668.583/0001-27",
+    "regra": "cite só estes números; ausente = n/d; não invente venda ao vivo"
+  },
+  "kits_manicure": {
+    "ok": true,
+    "condicao_n": 2,
+    "preco_unitario_ref": 12.0,
+    "preco_unitario_ml": 9.0,
+    "ofertas_condicao": [
+      {
+        "sku": "IMP-PERL-004",
+        "qtd_kit": 4,
+        "indice_compra": 278,
+        "margem_pct": 16.26,
+        "condicao_ok": true,
+        "economia_pct": 16.9,
+        "preco": 39.9
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "qtd_kit": 6,
+        "indice_compra": 22,
+        "margem_pct": 18.18,
+        "condicao_ok": true,
+        "economia_pct": 9.9,
+        "preco": 64.9
+      }
+    ],
+    "ofertas_top": [
+      {
+        "sku": "IMP-PERL-004",
+        "qtd_kit": 4,
+        "indice_compra": 278,
+        "margem_pct": 16.26,
+        "condicao_ok": true,
+        "economia_pct": 16.9,
+        "preco": 39.9
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "qtd_kit": 6,
+        "indice_compra": 22,
+        "margem_pct": 18.18,
+        "condicao_ok": true,
+        "economia_pct": 9.9,
+        "preco": 64.9
+      }
+    ]
+  },
+  "resumo_deterministico": "Veredito *ainda_nao* · saúde Impala ML `3.3/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nEsforço para ruptura tranquila:\n• Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8).\n• Tratar reclamações e qualidade do anúncio até a nota média ≥ 4.8.\n• Preencher MLB válido de IMP-MIMO-003 e IMP-PERL-004 — kits com margem ≥ piso; SORT-006 fica para fase 2.\n• Abastecer estoque dos kits de validação MIMO-003 e PERL-004 (mínimo do ponto de ruptura).\nJá encaminhado: Claims baixos (API visível), Reputação sem laranja/vermelho e taxas <5%.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
+  "resumo_claude": "",
+  "claude_ok": false,
+  "claude_fase": "moderada",
+  "claude_assertividade_maxima": false,
+  "claude_reused": false,
+  "momento_lucro": {
+    "momento": true,
+    "motivo": "kit_manicure_condicao",
+    "sku_lucro": "IMP-PERL-004",
+    "margem_pct": 16.26,
+    "piso_pct": 15.0
+  },
+  "fingerprint": "ainda_nao|3.3|7|0|0|0|IMP-MIMO-003",
+  "cnpj": "52.668.583/0001-27",
+  "timestamp": "2026-08-15T11:54:44.401127+00:00"
+}

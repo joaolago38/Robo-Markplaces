@@ -55,6 +55,12 @@ GROUP_MP_CATALOGO_ID = 760001
 GROUP_MP_MERCADO_ID = 760002
 GROUP_MP_COMERCIAL_ID = 760003
 GROUP_MP_FUNIL_ID = 760004
+GROUP_PONTO_RUPTURA_ID = 700012
+GROUP_SAUDE_CONTA_ML_ID = 700013
+GROUP_RUPTURA_OUTRA_MARCA_ID = 700014
+GROUP_MARCA_KIT_TENDENCIA_ID = 700015
+GROUP_KITS_MANICURE_ID = 700016
+GROUP_DECISAO_OSCILACAO_ID = 700017
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -96,21 +102,29 @@ def _api(path: str) -> str:
     return f"https://api.{DD_SITE}{path}"
 
 
+def _ssl_verify() -> bool:
+    return os.getenv("DD_SSL_VERIFY", "1").strip().lower() not in ("0", "false", "no")
+
+
 def _get(path: str) -> Any:
-    r = requests.get(_api(path), headers=_headers(), timeout=45)
+    r = requests.get(_api(path), headers=_headers(), timeout=45, verify=_ssl_verify())
     r.raise_for_status()
     return r.json()
 
 
 def _post(path: str, body: dict[str, Any]) -> Any:
-    r = requests.post(_api(path), headers=_headers(), data=json.dumps(body), timeout=45)
+    r = requests.post(
+        _api(path), headers=_headers(), data=json.dumps(body), timeout=45, verify=_ssl_verify()
+    )
     if r.status_code >= 300:
         raise RuntimeError(f"POST {path} HTTP {r.status_code}: {(r.text or '')[:800]}")
     return r.json()
 
 
 def _put(path: str, body: dict[str, Any]) -> Any:
-    r = requests.put(_api(path), headers=_headers(), data=json.dumps(body), timeout=60)
+    r = requests.put(
+        _api(path), headers=_headers(), data=json.dumps(body), timeout=60, verify=_ssl_verify()
+    )
     if r.status_code >= 300:
         raise RuntimeError(f"PUT {path} HTTP {r.status_code}: {(r.text or '')[:800]}")
     return r.json() if r.text else {}
@@ -242,18 +256,25 @@ def _qv(
     *,
     aggregator: str = "sum",
     red_gt: float | None = None,
+    red_lt: float | None = None,
     yellow_gt: float | None = None,
+    yellow_lt: float | None = None,
     green_gt: float | None = 0,
     precision: int = 0,
 ) -> dict[str, Any]:
     formats: list[dict[str, Any]] = []
     if red_gt is not None:
         formats.append({"comparator": ">", "palette": "white_on_red", "value": red_gt})
+    if red_lt is not None:
+        formats.append({"comparator": "<", "palette": "white_on_red", "value": red_lt})
     if yellow_gt is not None:
         formats.append({"comparator": ">", "palette": "white_on_yellow", "value": yellow_gt})
+    if yellow_lt is not None:
+        formats.append({"comparator": "<", "palette": "white_on_yellow", "value": yellow_lt})
     if green_gt is not None:
         formats.append({"comparator": ">", "palette": "white_on_green", "value": green_gt})
-    formats.append({"comparator": ">=", "palette": "white_on_green", "value": 0})
+    if red_lt is None:
+        formats.append({"comparator": ">=", "palette": "white_on_green", "value": 0})
     return {
         "definition": {
             "title": title,
@@ -2990,6 +3011,825 @@ def atualizar_dashboard_saude() -> None:
     print(f"OK dashboard robo/saude: {_url_dash(DASH_SAUDE)}")
 
 
+def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
+    """Impala → 2º CNPJ: progresso da ruptura + gaps de CNAE/KYC Masterprint."""
+    return {
+        "id": GROUP_PONTO_RUPTURA_ID,
+        "definition": {
+            "title": "[CNAE / 2o CNPJ] Prepare agora · ruptura Impala depois",
+            "type": "group",
+            "background_color": "purple",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Gaps CNAE/KYC",
+                        "avg:robo.cnae_preparacao.gaps{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 770001,
+                },
+                {
+                    **_qv(
+                        "Seller Masterprint",
+                        "avg:robo.cnae_preparacao.seller_masterprint{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 770002,
+                },
+                {
+                    **_qv(
+                        "CNAE pronto (0/1)",
+                        "avg:robo.cnae_preparacao.pronto{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 770003,
+                },
+                {
+                    **_qv(
+                        "Aproximando (0/1)",
+                        "avg:robo.ponto_ruptura.aproximando{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 770004,
+                },
+                {
+                    **_qv(
+                        "Liberado 2o CNPJ",
+                        "avg:robo.ponto_ruptura.liberado{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 770005,
+                },
+                {
+                    **_qv(
+                        "Progresso ruptura %",
+                        "avg:robo.ponto_ruptura.progresso_pct{*}",
+                        aggregator="avg",
+                        green_gt=80,
+                        yellow_gt=40,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 770006,
+                },
+                {
+                    **_qv(
+                        "Avaliacoes Impala",
+                        "avg:robo.ponto_ruptura.avaliacoes{*}",
+                        aggregator="avg",
+                        green_gt=19,
+                        yellow_gt=9,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 770007,
+                },
+                {
+                    **_qv(
+                        "Checks ok",
+                        "avg:robo.ponto_ruptura.checks_ok{*}",
+                        aggregator="avg",
+                        green_gt=6,
+                        yellow_gt=3,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 770008,
+                },
+                {
+                    **_qv(
+                        "Saude Impala (0-100)",
+                        "avg:robo.ruptura.impala.saude_score{*}",
+                        aggregator="avg",
+                        green_gt=70,
+                        yellow_lt=70,
+                        red_lt=40,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 4},
+                    "id": 770009,
+                },
+                {
+                    **_qv(
+                        "Kits margem segura",
+                        "avg:robo.ruptura.impala.produtos_seguros{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 4},
+                    "id": 770010,
+                },
+                {
+                    **_qv(
+                        "Margem media segura %",
+                        "avg:robo.ruptura.impala.margem_media_segura_pct{*}",
+                        aggregator="avg",
+                        green_gt=14,
+                        yellow_gt=9,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 4},
+                    "id": 770011,
+                },
+                {
+                    **_qv(
+                        "Esforco faltando / Claude",
+                        "avg:robo.ruptura.impala.esforco_faltando{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 4},
+                    "id": 770012,
+                },
+                {
+                    **_qv(
+                        "OSCILACAO — cuidado (0/1)",
+                        "avg:robo.decisao.oscilacao{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 6},
+                    "id": 770013,
+                },
+                {
+                    **_qv(
+                        "Claude max pulso (0=moderado)",
+                        "avg:robo.ruptura.impala.claude_assertividade_maxima{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 6},
+                    "id": 770014,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
+    }
+
+
+def _grupo_saude_conta_ml() -> dict[str, Any]:
+    """Reputação + anúncios + pós-venda da conta ML autenticada (não é radar de concorrente)."""
+    return {
+        "id": GROUP_SAUDE_CONTA_ML_ID,
+        "definition": {
+            "title": "[Saude conta ML] Reputacao / anuncios / pos-venda",
+            "type": "group",
+            "background_color": "vivid_green",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Vendas completadas",
+                        "avg:robo.ml.saude.vendas_completadas{*}",
+                        aggregator="avg",
+                        green_gt=9,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 780001,
+                },
+                {
+                    **_qv(
+                        "Avaliacoes",
+                        "avg:robo.ml.saude.avaliacoes{*}",
+                        aggregator="avg",
+                        green_gt=19,
+                        yellow_gt=9,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 780002,
+                },
+                {
+                    **_qv(
+                        "Nota media",
+                        "avg:robo.ml.saude.nota{*}",
+                        aggregator="avg",
+                        green_gt=4.7,
+                        yellow_gt=4.0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 780003,
+                },
+                {
+                    **_qv(
+                        "Nivel reputacao (0-5)",
+                        "avg:robo.ml.saude.nivel{*}",
+                        aggregator="avg",
+                        green_gt=4,
+                        yellow_gt=2,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 780004,
+                },
+                {
+                    **_qv(
+                        "Claims rate %",
+                        "avg:robo.ml.saude.claims_rate_pct{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=1,
+                        red_gt=2,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 780005,
+                },
+                {
+                    **_qv(
+                        "Mercado Lider (0-3)",
+                        "avg:robo.ml.saude.power_seller{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 780006,
+                },
+                {
+                    **_qv(
+                        "Anuncios ativos",
+                        "avg:robo.ml.saude.anuncios_ativos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+                    "id": 780007,
+                },
+                {
+                    **_qv(
+                        "Anuncios pausados",
+                        "avg:robo.ml.saude.anuncios_pausados{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
+                    "id": 780008,
+                },
+                {
+                    **_qv(
+                        "Todos pausados (0/1)",
+                        "avg:robo.ml.saude.todos_pausados{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
+                    "id": 780009,
+                },
+                {
+                    **_qv(
+                        "Anuncios a melhorar",
+                        "avg:robo.ml.saude.anuncios_a_melhorar{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "id": 780010,
+                },
+                {
+                    **_qv(
+                        "Perguntas pendentes",
+                        "avg:robo.ml.saude.perguntas_pendentes{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
+                    "id": 780011,
+                },
+                {
+                    **_qv(
+                        "Claims abertos",
+                        "avg:robo.ml.saude.claims_abertos{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "id": 780012,
+                },
+                {
+                    **_qv(
+                        "Receita bruta R$ (pedidos)",
+                        "avg:robo.vendas.receita_bruta{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 4},
+                    "id": 780013,
+                },
+                {
+                    **_qv(
+                        "Lucro pedidos R$",
+                        "avg:robo.vendas.lucro_reais{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 4},
+                    "id": 780014,
+                },
+                {
+                    **_qv(
+                        "Margem pedidos %",
+                        "avg:robo.vendas.margem_media_pct{*}",
+                        aggregator="avg",
+                        green_gt=10,
+                        yellow_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 4},
+                    "id": 780015,
+                },
+                {
+                    **_qv(
+                        "ACOS Ads",
+                        "avg:robo.ads.acos_atual{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.15,
+                        red_gt=0.20,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 4},
+                    "id": 780016,
+                },
+                {
+                    **_qv(
+                        "Envios pendentes",
+                        "avg:robo.ml.saude.envios_pendentes{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 4},
+                    "id": 780017,
+                },
+                {
+                    **_qv(
+                        "Sem cor reputacao (0/1)",
+                        "avg:robo.ml.saude.sem_cor{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 4},
+                    "id": 780018,
+                },
+                {
+                    **_qv(
+                        "Bolsas/legado ignorados",
+                        "avg:robo.ml.saude.anuncios_ignorados_fora_foco{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 6},
+                    "id": 780019,
+                },
+                {
+                    **_qv(
+                        "Foco Impala vazio (0/1)",
+                        "avg:robo.ml.saude.catalogo_foco_vazio{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 6},
+                    "id": 780020,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
+    }
+
+
+def _grupo_ruptura_outra_marca() -> dict[str, Any]:
+    """Mesmo CNPJ Impala: quando entrar com outra marca. Referente ML."""
+    return {
+        "id": GROUP_RUPTURA_OUTRA_MARCA_ID,
+        "definition": {
+            "title": "[Ruptura outra marca] CNPJ 52.668.583/0001-27 · referente ML",
+            "type": "group",
+            "background_color": "orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Liberado outra marca",
+                        "avg:robo.marca_esmalte.ruptura.liberado{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 790001,
+                },
+                {
+                    **_qv(
+                        "Aproximando (0/1)",
+                        "avg:robo.marca_esmalte.ruptura.aproximando{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 790002,
+                },
+                {
+                    **_qv(
+                        "Progresso %",
+                        "avg:robo.marca_esmalte.ruptura.progresso_pct{*}",
+                        aggregator="avg",
+                        green_gt=80,
+                        yellow_gt=40,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 790003,
+                },
+                {
+                    **_qv(
+                        "Radar ML cego",
+                        "avg:robo.marca_esmalte.ruptura.radar_cego{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 790004,
+                },
+                {
+                    **_qv(
+                        "Checks ok",
+                        "avg:robo.marca_esmalte.ruptura.checks_ok{*}",
+                        aggregator="avg",
+                        green_gt=5,
+                        yellow_gt=2,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 790005,
+                },
+                {
+                    **_qv(
+                        "Anuncios foco Impala",
+                        "avg:robo.marca_esmalte.ruptura.anuncios_foco{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 790006,
+                },
+                {
+                    **_qv(
+                        "CNPJ no ML",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:mercadolivre}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 790007,
+                },
+                {
+                    **_qv(
+                        "CNPJ na Shopee",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:shopee}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 790008,
+                },
+                {
+                    **_qv(
+                        "CNPJ no Magalu",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:magalu}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 4},
+                    "id": 790009,
+                },
+                {
+                    **_qv(
+                        "CNPJ na Amazon",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:amazon}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 4},
+                    "id": 790010,
+                },
+                {
+                    **_qv(
+                        "Top score (ML)",
+                        "avg:robo.marca_esmalte.ruptura.top_score{*}",
+                        aggregator="avg",
+                        green_gt=20,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 4},
+                    "id": 790011,
+                },
+                {
+                    **_toplist_metric(
+                        "Marcas candidatas (score ML, sem Impala)",
+                        "avg:robo.marca_esmalte.candidata.score{*} by {marca}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 12, "x": 0, "y": 6},
+                    "id": 790012,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 12, "width": 12, "height": 1},
+    }
+
+
+def _grupo_marca_kit_tendencia() -> dict[str, Any]:
+    """Marcas e tamanhos de kit no ML cruzados com tendência."""
+    return {
+        "id": GROUP_MARCA_KIT_TENDENCIA_ID,
+        "definition": {
+            "title": "[Marca x kit x tendencia] Condicao no ML + desempenho",
+            "type": "group",
+            "background_color": "vivid_orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Combos marca/kit",
+                        "avg:robo.esmaltes.marca_kit.total{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 791001,
+                },
+                {
+                    **_qv(
+                        "Boa performance (tendencia)",
+                        "avg:robo.esmaltes.marca_kit.boas_performance{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 791002,
+                },
+                {
+                    **_toplist_metric(
+                        "Score por marca (ML x tendencia)",
+                        "avg:robo.esmaltes.marca_kit.score{*} by {marca}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 6, "y": 0},
+                    "id": 791003,
+                },
+                {
+                    **_toplist_metric(
+                        "Score por tamanho de kit",
+                        "avg:robo.esmaltes.marca_kit.score{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 0, "y": 2},
+                    "id": 791004,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 14, "width": 12, "height": 1},
+    }
+
+
+def _grupo_kits_manicure_impala() -> dict[str, Any]:
+    """Kits Impala para manicure: condição, economia vs avulso, índice de compra."""
+    return {
+        "id": GROUP_KITS_MANICURE_ID,
+        "definition": {
+            "title": "[Kits Impala manicure] Condicao + economia + indice de compra",
+            "type": "group",
+            "background_color": "vivid_blue",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Kits avaliados",
+                        "avg:robo.esmaltes.kit_manicure.total{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 791011,
+                },
+                {
+                    **_qv(
+                        "Com condicao (economia + margem)",
+                        "avg:robo.esmaltes.kit_manicure.condicao_ok{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 791012,
+                },
+                {
+                    **_qv(
+                        "Economia media vs avulso %",
+                        "avg:robo.esmaltes.kit_manicure.economia_media_pct{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 791013,
+                },
+                {
+                    **_qv(
+                        "OSCILACAO — cuidado (0/1)",
+                        "avg:robo.decisao.oscilacao{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 791016,
+                },
+                {
+                    **_toplist_metric(
+                        "Indice de compra Impala por kit",
+                        "avg:robo.esmaltes.kit_manicure.indice_compra{*} by {kit}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 0, "y": 2},
+                    "id": 791014,
+                },
+                {
+                    **_toplist_metric(
+                        "Economia % vs avulso por kit",
+                        "avg:robo.esmaltes.kit_manicure.economia_pct{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 4, "width": 6, "x": 6, "y": 2},
+                    "id": 791015,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 16, "width": 12, "height": 1},
+    }
+
+
+def _grupo_decisao_oscilacao() -> dict[str, Any]:
+    """Qualquer oscilação além da margem âncora → vermelho + cuidado para decidir."""
+    return {
+        "id": GROUP_DECISAO_OSCILACAO_ID,
+        "definition": {
+            "title": "[Decisao] Oscilacao Datadog · cuidado · Claude moderado",
+            "type": "group",
+            "background_color": "vivid_red",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "OSCILACAO (0/1) — widget vermelho",
+                        "avg:robo.decisao.oscilacao{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 0},
+                    "id": 791021,
+                },
+                {
+                    **_qv(
+                        "CUIDADO para decidir (0/1)",
+                        "avg:robo.decisao.cuidado{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 0},
+                    "id": 791022,
+                },
+                {
+                    **_qv(
+                        "Metricas que oscilaram",
+                        "avg:robo.decisao.oscilacao.n{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 0},
+                    "id": 791023,
+                },
+                {
+                    **_qv(
+                        "Claude pulso maximo (0=moderado)",
+                        "avg:robo.claude.ciclo.fase_maxima{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 0},
+                    "id": 791024,
+                },
+                {
+                    **_qv(
+                        "Dados expostos no Datadog",
+                        "avg:robo.claude.ciclo.exposto_datadog{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 0},
+                    "id": 791025,
+                },
+                {
+                    **_qv(
+                        "Vigia Datadog saudavel",
+                        "avg:robo.vigia_datadog.saudavel{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 0},
+                    "id": 791026,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 18, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_ecommerce() -> None:
     """Dashboard Ecommerce: catalogo, batalha, ads/vendas/decisao."""
     ecom_id = _resolver_dash_ecommerce()
@@ -3003,12 +3843,33 @@ def atualizar_dashboard_ecommerce() -> None:
             "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
             "**invest. validacao**, **kits Cruzeiro**, **oportunidades/Livia**, "
             "**taxa de crescimento** e **custo/Ads**.\n\n"
+            "**2o CNPJ / CNAE:** grupo [CNAE / 2o CNPJ] — gaps de KYC agora; "
+            "liberado só quando Impala bater a checklist (20 reviews / 4.8 / MLB / estoque).\n\n"
+            "**Outra marca de esmalte:** grupo [Ruptura outra marca] — mesmo CNPJ "
+            "52.668.583/0001-27 em todos os canais; Mercado Livre é o referente de "
+            "demanda (Anita / Risque / Colorama / …). Liberado só com checklist Impala "
+            "+ anúncio ativo + radar ML com amostra. Claude entra no veredito "
+            "aproximando/liberado com esforço, produtos de margem segura e prévia ML.\n\n"
+            "**Marca × kit × tendência:** grupo [Marca x kit x tendencia] — o robô "
+            "identifica no ML marcas e tamanhos de kit que oferecem condição e cruzam "
+            "com tendência (confirmada/oportunidade).\n\n"
+            "**Kits manicure Impala:** grupo [Kits Impala manicure] — kits do catálogo "
+            "compatíveis com o que o ML oferece, com índice de compra Impala, economia "
+            "vs avulso e condição (qtd≥3 + margem ≥ piso + padrão Impala).\n\n"
+            "**Decisão / oscilação:** grupo [Decisao] — Claude pulsa assertividade "
+            "máxima só para expor âncoras no Datadog e volta a uso moderado. "
+            "Qualquer oscilação além da margem de erro deixa o widget **vermelho** "
+            "e dispara Telegram: cuidado para tomar decisão (não escalar Ads/volume).\n\n"
+            "**Saude da conta ML:** grupo [Saude conta ML] — reputação/cor da *conta*, "
+            "anúncios do foco Impala (kits), claims e receita dos *seus* pedidos. "
+            "Bolsas Mariart/legado ficam fora do radar "
+            "(widgets Bolsas/legado ignorados e Foco Impala vazio).\n\n"
             f"**Robo / plataforma:** [Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
             f"**Masterprint (filamentos / pinceis / apagadores):** "
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="orange",
-        height=2,
+        height=4,
     )
     cat = _grupo_catalogo_impala()
     cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
@@ -3016,15 +3877,29 @@ def atualizar_dashboard_ecommerce() -> None:
     bat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     com = _grupo_operacao_comercial()
     com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+    saude = _grupo_saude_conta_ml()
+    saude["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
+    ruptura = _grupo_ponto_ruptura_cnae()
+    ruptura["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
+    outra = _grupo_ruptura_outra_marca()
+    outra["layout"] = {"x": 0, "y": 12, "width": 12, "height": 1}
+    marca_kit = _grupo_marca_kit_tendencia()
+    marca_kit["layout"] = {"x": 0, "y": 14, "width": 12, "height": 1}
+    kits_m = _grupo_kits_manicure_impala()
+    kits_m["layout"] = {"x": 0, "y": 16, "width": 12, "height": 1}
+    decisao = _grupo_decisao_oscilacao()
+    decisao["layout"] = {"x": 0, "y": 18, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
-            "ABA ECOMMERCE: catalogo Impala, batalha, ads e vendas. "
+            "ABA ECOMMERCE: catalogo Impala, batalha, ads, saude da conta ML, "
+            "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
+            "kits Impala manicure, oscilacao/cuidado para decidir. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
             f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
-        "widgets": [note, com, cat, bat],
+        "widgets": [note, com, cat, bat, saude, ruptura, outra, marca_kit, kits_m, decisao],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -3066,6 +3941,8 @@ def atualizar_dashboard_masterprint() -> None:
     merc["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     com = _grupo_operacao_masterprint()
     com["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
+    ruptura = _grupo_ponto_ruptura_cnae()
+    ruptura["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_MASTERPRINT_TITLE,
@@ -3074,7 +3951,7 @@ def atualizar_dashboard_masterprint() -> None:
             "(custos, mercado ML, margem). "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, funil, com, cat, merc],
+        "widgets": [note, funil, com, cat, merc, ruptura],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -3492,6 +4369,110 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p2"],
             "options": {
                 "thresholds": {"critical": 10},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] CNAE segundo CNPJ — prepare (gaps)",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.cnae_preparacao.gaps{*} > 0",
+            "message": (
+                "Ainda falta preparar o 2o CNPJ (Masterprint 23.811.261/0001-97) "
+                "antes da ruptura do Impala.\n"
+                "Gaps tipicos: seller_id ML vazio (KYC) ou CNAE 4751-2/01 / "
+                "4689-3/02 / 4761-0/03 ausente.\n"
+                "Acao: Junta/Receita + KYC ML; preencher MASTERPRINT_ML_SELLER_ID. "
+                "Nao publique o catalogo nem ligue CNPJ_DONO_PRODUTOS_USAR_ALVO.\n"
+                "Telegram semanal: agente ponto_ruptura_segundo_cnpj (08:05 BRT).\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:cnae_prep", "severity:p3"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 3,
+        },
+        {
+            "name": "[Robo] Ponto ruptura — Impala aproximando",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.ponto_ruptura.aproximando{*} > 0.5",
+            "message": (
+                "Impala esta se aproximando do ponto de ruptura (reviews/estoque/MLB). "
+                "Claude + briefing: esforco restante, kits com margem segura e previa do ML. "
+                "Nao escale Ads nem outra marca ate a checklist fechar. "
+                "Nao ligue o 2o CNPJ nem CNPJ_DONO_PRODUTOS_USAR_ALVO.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:ponto_ruptura", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0.5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Ponto ruptura — segundo CNPJ liberado",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.ponto_ruptura.liberado{*} > 0.5",
+            "message": (
+                "Checklist Impala completa (20 reviews / 4.8 / MLB kits / estoque / "
+                "pedido / ACOS). Segundo CNPJ pode entrar em acao: 1 filamento "
+                "PLA/PETG preto, Bling + token ML deste CNPJ, chat separado. "
+                "Ads Masterprint so depois. Nao ligue CNPJ_DONO_PRODUTOS_USAR_ALVO ainda.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:ponto_ruptura", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0.5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Ponto ruptura — outra marca de esmalte liberada",
+            "type": "query alert",
+            "query": "avg(last_2d):avg:robo.marca_esmalte.ruptura.liberado{*} > 0.5",
+            "message": (
+                "Checklist Impala + anuncio ativo + radar ML com amostra. "
+                "CNPJ 52.668.583/0001-27 pode entrar com a top marca do ranking ML "
+                "(Anita/Risque/Colorama/…). Comecar no Mercado Livre; "
+                "Shopee/Magalu/Amazon usam o mesmo CNPJ quando o canal ligar.\n"
+                "Nao e o 2o CNPJ Masterprint.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:marca_esmalte", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0.5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Oscilacao Datadog — cuidado para decidir",
+            "type": "query alert",
+            "query": "avg(last_15m):avg:robo.decisao.oscilacao{*} > 0",
+            "message": (
+                "Widget vermelho: metrica de decisao oscilou alem da margem de erro "
+                "(saude ±2, margem ±0,5 p.p., kits/Claude/anuncios). "
+                "CUIDADO para tomar decisao — nao escale Ads, volume nem 2o CNPJ "
+                "ate o widget sair do vermelho. Telegram tambem alerta.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:oscilacao_decisao", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0},
                 "notify_no_data": False,
                 "require_full_window": False,
                 "include_tags": True,

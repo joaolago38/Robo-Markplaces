@@ -192,6 +192,8 @@ class TestVigiaFiltrosNotificador(unittest.TestCase):
         ids = {f.get("id") for f in fontes}
         self.assertIn("estoque", ids)
         self.assertIn("ads_gatilho", ids)
+        self.assertIn("ponto_ruptura_segundo_cnpj", ids)
+        self.assertIn("ponto_ruptura_outra_marca", ids)
         self.assertIn("chat", ids)
         self.assertIn("nfe", ids)
         self.assertIn("vendas_whatsapp", ids)

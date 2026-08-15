@@ -78,6 +78,22 @@ class TestClaudePerguntar(unittest.TestCase):
 
     @patch.object(claude_client, "request")
     @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_perguntar_temperature_zero(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("pergunta", temperature=0.0)
+        payload = mock_request.call_args.kwargs["json"]
+        self.assertEqual(payload["temperature"], 0.0)
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_perguntar_sem_temperature_nao_envia_campo(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        claude_client.perguntar("pergunta")
+        payload = mock_request.call_args.kwargs["json"]
+        self.assertNotIn("temperature", payload)
+
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
     def test_CC08_pergunta_com_imagens_envia_blocos_multimodal(self, mock_request, *_patches):
         mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
         claude_client.perguntar("pergunta", imagens=["https://x/foto.jpg"])

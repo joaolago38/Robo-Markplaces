@@ -40,20 +40,32 @@ def sintetizar_claude(
     consolidado: dict[str, Any] | None = None,
     origem: str | None = None,
     exigir_contexto: bool = True,
+    proposito: str | None = None,
+    forcar_profundidade: str | None = None,
+    forcar_modelo: bool = False,
+    forcar_chamada: bool = False,
+    temperature: float | None = None,
+    system: str | None = None,
+    somente_ia: bool = False,
 ) -> str:
     """
     Chama Claude com guardrail obrigatório. Nunca propaga exceção — retorna fallback.
     Se o prompt/contexto fala de Mercado Livre, injeta estado_ml e dosa profundidade.
     Sem contexto útil (padrão), não chama a API — preserva assertividade.
+    `somente_ia=True` devolve string vazia se a API não responder (não mascara fallback).
     """
     if not (cfg.ANTHROPIC_API_KEY or "").strip():
-        return fallback
+        return "" if somente_ia else fallback
+
+    def _falha() -> str:
+        return "" if somente_ia else fallback
 
     try:
         from core.claude_client import contexto_suficiente
 
         ctx_obj: dict[str, Any] | str = contexto
         dosagem = None
+        system_api = system
         usar_ml = enriquecer_ml
         if usar_ml is None:
             blob = f"{prompt} {contexto if isinstance(contexto, str) else json.dumps(contexto, ensure_ascii=False)}"
@@ -69,7 +81,8 @@ def sintetizar_claude(
                 ctx_obj, dosagem = enriquecer_contexto_claude(
                     contexto if isinstance(contexto, dict) else {"contexto_texto": contexto},
                     consolidado=consolidado,
-                    proposito="sintese_ml",
+                    proposito=proposito or "sintese_ml",
+                    forcar_profundidade=forcar_profundidade,
                 )
                 max_tokens = max_tokens_dosados(max_tokens, dosagem)
                 prompt = (
@@ -77,15 +90,15 @@ def sintetizar_claude(
                     f"Profundidade={dosagem.get('profundidade')}. "
                     "Priorize decisão (FAZER/NÃO FAZER/OBSERVAR)."
                 )
-                # system via perguntar: embute no prompt com guardrail
-                prompt = f"{system_com_decisao('', dosagem)}\n\n{prompt}"
+                prompt = f"{system_com_decisao(system or '', dosagem)}\n\n{prompt}"
+                system_api = dosagem.get("instrucoes") or system
             except Exception as exc:
                 logger.warning("enriquecer_ml falhou: %s", exc)
 
         ctx_str = _contexto_json(ctx_obj)
         if exigir_contexto and not contexto_suficiente(ctx_str):
             logger.info("sintetizar_claude: contexto insuficiente — fallback (origem=%s)", origem or "?")
-            return fallback
+            return _falha()
         prompt_completo = f"{GUARDRAIL}\n\n{prompt}\n\n{GUARDRAIL}"
         resposta = perguntar(
             prompt_completo,
@@ -94,10 +107,14 @@ def sintetizar_claude(
             modelo=modelo,
             origem=origem or "resumo_ia",
             exigir_contexto=exigir_contexto,
+            forcar_modelo=forcar_modelo,
+            forcar_chamada=forcar_chamada,
+            temperature=temperature,
+            system=system_api,
         )
         if not resposta or resposta.startswith("⚠️") or "API" in resposta:
-            return fallback
+            return _falha()
         return resposta.strip()
     except Exception as exc:
         logger.error("resumo_ia claude: %s", exc)
-        return fallback
+        return _falha()

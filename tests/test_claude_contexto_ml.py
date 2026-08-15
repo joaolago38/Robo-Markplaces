@@ -36,6 +36,39 @@ class TestClaudeContextoMl(unittest.TestCase):
         self.assertEqual(d["profundidade"], "ampliada")
         self.assertIn("DEFENDER_REPUTACAO", d["foco_decisao"])
 
+    def test_dosagem_ruptura_forca_ampliada_mesmo_ml_ok(self):
+        d = ccm.dosar_analise_para_decisao(
+            estado_ml={"nivel": "ok"},
+            stress={"nivel": "baixo", "score": 0},
+            proposito="ruptura_impala",
+        )
+        self.assertEqual(d["profundidade"], "ampliada")
+        self.assertTrue(d["assertividade_maxima"])
+        self.assertIn("NAO_TROCAR_CNPJ", d["foco_decisao"])
+        self.assertIn("margem de erro", d["instrucoes"].lower())
+
+    def test_dosagem_ruptura_moderada_padrao_com_guardrail(self):
+        d = ccm.dosar_analise_para_decisao(
+            estado_ml={"nivel": "ok"},
+            stress={"nivel": "baixo", "score": 0},
+            proposito="ruptura_impala_moderada",
+            forcar_profundidade="padrao",
+        )
+        self.assertEqual(d["profundidade"], "padrao")
+        self.assertFalse(d["assertividade_maxima"])
+        self.assertIn("NAO_TROCAR_CNPJ", d["foco_decisao"])
+        self.assertIn("margem de erro", d["instrucoes"].lower())
+
+    def test_forcar_profundidade_ampliada(self):
+        d = ccm.dosar_analise_para_decisao(
+            estado_ml={"nivel": "ok"},
+            stress={"nivel": "baixo", "score": 0},
+            proposito="sintese_ml",
+            forcar_profundidade="ampliada",
+        )
+        self.assertEqual(d["profundidade"], "ampliada")
+        self.assertIn("forcada_ampliada", d["motivo"])
+
     def test_max_tokens_dosados(self):
         self.assertEqual(ccm.max_tokens_dosados(1000, {"fator_tokens": 0.55}), 550)
         self.assertGreater(ccm.max_tokens_dosados(1000, {"fator_tokens": 1.35}), 1000)

@@ -34,6 +34,12 @@ from integracoes.esmaltes.analise_mercado import (
     consolidar_mercado,
     fmt_vendas_amostra,
 )
+from integracoes.esmaltes.cruzamento_tendencias_mercado import (
+    cruzar_marca_kit_de_snapshots,
+    cruzar_marca_kit_tendencia,
+    emitir_metricas_marca_kit,
+    tendencias_de_snapshot,
+)
 from integracoes.ml import ml_client
 
 logger = logging.getLogger("agente_monitor_mercado_esmaltes")
@@ -147,6 +153,18 @@ def _montar_painel(resultados: list[dict[str, Any]], consolidado: dict[str, Any]
             linhas.append(f"  • {p.get('texto', '')}")
         linhas.append("")
 
+    marca_kit = consolidado.get("marca_kit_boas") or consolidado.get("oportunidades_marca_kit") or []
+    if marca_kit:
+        linhas.append("*Marcas × kits com tendência (referente ML)*")
+        for row in marca_kit[:6]:
+            flag = "boa performance" if row.get("performance_boa") else "presença"
+            linhas.append(
+                f"  • {row.get('marca')} kit {row.get('qtd_kit')} — {flag} | "
+                f"{row.get('status_tendencia')} | {_fmt_brl(row.get('preco_medio'))} | "
+                f"{row.get('anuncios', 0)} anúnc."
+            )
+        linhas.append("")
+
     linhas.append("🔎 *Por segmento*")
     for seg in sorted(resultados, key=lambda x: int(x.get("prioridade") or 99))[:6]:
         if not seg.get("ok"):
@@ -212,6 +230,15 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
             resultados.append(_monitorar_segmento(segmento, produtos_por_sku))
 
         consolidado = consolidar_mercado(resultados)
+        anuncios_mk: list[dict[str, Any]] = []
+        for r in resultados:
+            anuncios_mk.extend(r.get("destaques") or [])
+        ranking_mk = cruzar_marca_kit_tendencia(anuncios_mk, tendencias_de_snapshot())
+        if not ranking_mk:
+            ranking_mk = cruzar_marca_kit_de_snapshots()
+        consolidado["oportunidades_marca_kit"] = ranking_mk[:12]
+        consolidado["marca_kit_boas"] = [x for x in ranking_mk if x.get("performance_boa")][:8]
+        emitir_metricas_marca_kit(ranking_mk)
 
         snapshot = {
             "timestamp": agora,
@@ -223,6 +250,23 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
                     "total_anuncios": r.get("total_anuncios"),
                     "oportunidades": len(r.get("oportunidades_margem") or []),
                     "propostas": r.get("propostas"),
+                    "padroes_kits": r.get("padroes_kits"),
+                    "ranking_marcas": r.get("ranking_marcas"),
+                    "tendencia_cores": r.get("tendencia_cores"),
+                    "destaques": [
+                        {
+                            "titulo": d.get("titulo"),
+                            "preco": d.get("preco"),
+                            "quantidade_vendida": d.get("quantidade_vendida"),
+                            "item_id": d.get("item_id"),
+                            "marca": d.get("marca"),
+                            "qtd_kit": d.get("qtd_kit"),
+                            "cores_detectadas": d.get("cores_detectadas"),
+                            "avaliacoes": d.get("avaliacoes"),
+                        }
+                        for d in (r.get("destaques") or [])[:6]
+                        if isinstance(d, dict)
+                    ],
                 }
                 for r in resultados
                 if r.get("ok")

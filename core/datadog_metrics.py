@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import os
 import time
 
 import requests
@@ -104,6 +105,7 @@ def _enviar(nome: str, valor: float, tipo: int, tags: list[str] | None = None) -
             headers={"DD-API-KEY": DD_API_KEY, "Content-Type": "application/json"},
             data=json.dumps({"series": [ponto]}),
             timeout=3,
+            verify=os.getenv("DD_SSL_VERIFY", "1").strip().lower() not in ("0", "false", "no"),
         )
         status = getattr(resp, "status_code", 0)
         if isinstance(status, int) and status >= 300:

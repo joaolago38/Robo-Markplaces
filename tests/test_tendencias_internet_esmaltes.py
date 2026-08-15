@@ -111,6 +111,106 @@ class CruzamentoTendenciasTests(unittest.TestCase):
         self.assertTrue(r["ok"])
         self.assertGreaterEqual(r["total_anuncios_mp"], 1)
         self.assertTrue(r["tendencias"])
+        self.assertIn("oportunidades_marca_kit", r)
+
+
+class CruzamentoMarcaKitTests(unittest.TestCase):
+    def test_identifica_kit_com_tendencia_confirmada(self):
+        anuncios = [
+            {"titulo": "Kit 5 Esmaltes Anita Nude Rosa", "preco": 45.0, "quantidade_vendida": 80},
+            {"titulo": "Kit 5 Esmaltes Anita Nude", "preco": 42.0, "quantidade_vendida": 40},
+            {"titulo": "Esmalte unitario Colorama vermelho", "preco": 8.0, "quantidade_vendida": 500},
+        ]
+        tendencias = [
+            {"cor": "Nude", "status": "confirmada", "score_web": 70, "score_mp": 60},
+            {"cor": "Rosa", "status": "emergente", "score_web": 25, "score_mp": 20},
+        ]
+        out = cruz.cruzar_marca_kit_tendencia(anuncios, tendencias)
+        self.assertTrue(out)
+        top = out[0]
+        self.assertEqual(top["slug"], "anita")
+        self.assertEqual(top["qtd_kit"], 5)
+        self.assertEqual(top["status_tendencia"], "confirmada")
+        self.assertTrue(top["condicao_ok"])
+        self.assertTrue(top["performance_boa"])
+        self.assertNotIn(1, [x["qtd_kit"] for x in out])
+
+    def test_sem_tendencia_nao_marca_performance_boa(self):
+        anuncios = [
+            {"titulo": "Kit 10 Esmaltes Risque Vermelho", "preco": 70.0, "quantidade_vendida": 12},
+            {"titulo": "Kit 10 Esmaltes Risque", "preco": 68.0, "quantidade_vendida": 8},
+        ]
+        out = cruz.cruzar_marca_kit_tendencia(anuncios, [])
+        self.assertEqual(out[0]["slug"], "risque")
+        self.assertTrue(out[0]["condicao_ok"])
+        self.assertFalse(out[0]["performance_boa"])
+        self.assertEqual(out[0]["status_tendencia"], "sem_tendencia")
+
+    def test_de_snapshots_anita(self):
+        anita = {
+            "resultados": [
+                {
+                    "analises": [
+                        {
+                            "titulo": "Kit 5 Esmaltes Impala Nude",
+                            "preco": 42.0,
+                            "quantidade_vendida": 200,
+                        },
+                        {
+                            "titulo": "Kit 5 Esmaltes Anita Nude",
+                            "preco": 45.0,
+                            "quantidade_vendida": 120,
+                        },
+                    ]
+                }
+            ]
+        }
+        tendencias = {
+            "consolidado": {
+                "todas_tendencias": [{"cor": "Nude", "status": "oportunidade"}],
+            }
+        }
+        out = cruz.cruzar_marca_kit_de_snapshots(
+            mercado={},
+            anita=anita,
+            kits={},
+            tendencias=tendencias,
+        )
+        slugs = {r["slug"] for r in out}
+        self.assertIn("anita", slugs)
+        self.assertIn("impala", slugs)
+        anita_kit = next(r for r in out if r["slug"] == "anita")
+        self.assertEqual(anita_kit["qtd_kit"], 5)
+        self.assertTrue(anita_kit["performance_boa"])
+
+    def test_overlay_marca_detectada_sem_cor_no_titulo(self):
+        anita = {
+            "resultados": [
+                {
+                    "analises": [
+                        {
+                            "titulo": "Kit 5 Impala Bailarina",
+                            "preco": 42.0,
+                            "quantidade_vendida": 200,
+                            "marca_detectada": "Impala",
+                            "qtd_kit_detectada": 5,
+                            "cores_encontradas": ["Nude"],
+                        }
+                    ]
+                }
+            ]
+        }
+        tendencias = {"consolidado": {"todas_tendencias": [{"cor": "Nude", "status": "confirmada"}]}}
+        out = cruz.cruzar_marca_kit_de_snapshots(
+            mercado={},
+            anita=anita,
+            kits={},
+            tendencias=tendencias,
+        )
+        self.assertEqual(out[0]["slug"], "impala")
+        self.assertEqual(out[0]["qtd_kit"], 5)
+        self.assertTrue(out[0]["performance_boa"])
+        self.assertIn("Nude", out[0]["cores_tendencia"])
 
 
 if __name__ == "__main__":

@@ -83,12 +83,10 @@ class TestParsersHtml(unittest.TestCase):
         with patch.object(copart, "listar_leiloes_home", return_value=[]), patch.object(
             copart, "coletar_via_ddg_site", return_value=[]
         ), patch.object(copart, "criar_sessao"):
-            # força parse via mock de request na varredura
-            pass
-        out = copart.varredura_copart(
-            {"ativo": True, "lance_minimo_brl": 500, "exigir_documento": False},
-            usar_ddg_fallback=False,
-        )
+            out = copart.varredura_copart(
+                {"ativo": True, "lance_minimo_brl": 500, "exigir_documento": False},
+                usar_ddg_fallback=False,
+            )
         # sem HTML live pode vir vazio — testa parser isolado acima
         self.assertIn("lotes", out)
         self.assertEqual(out["fonte"], "copart")

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Any
 
@@ -66,6 +67,14 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("vigia_datadog.inatividades", float(analise.get("total_inatividades") or 0))
         gauge("vigia_datadog.erros_abertos", float(analise.get("total_erros") or 0))
         gauge("vigia_datadog.saudavel", 1.0 if analise.get("ok") else 0.0)
+
+        if not os.environ.get("PYTEST_CURRENT_TEST"):
+            try:
+                from integracoes.datadog.oscilacao_decisao import avaliar_de_snapshots
+
+                avaliar_de_snapshots()
+            except Exception as exc:
+                logger.info("oscilação decisão: %s", exc)
 
         alerta_enviado = False
         msg = analise.get("mensagem_critica") or ""

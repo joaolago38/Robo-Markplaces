@@ -1,0 +1,159 @@
+{
+  "ok": true,
+  "veredito": "ainda_nao",
+  "liberado": false,
+  "aproximando": false,
+  "progresso_pct": 42.9,
+  "checks": [
+    {
+      "id": "avaliacoes",
+      "ok": false,
+      "rotulo": "Avaliações Impala",
+      "atual": 0,
+      "minimo": 20
+    },
+    {
+      "id": "nota",
+      "ok": true,
+      "rotulo": "Nota média",
+      "atual": 0.0,
+      "minimo": 4.8
+    },
+    {
+      "id": "mlb",
+      "ok": false,
+      "rotulo": "MLB dos kits MIMO-003 e SORT-006",
+      "atual": "IMP-MIMO-003=falta,IMP-SORT-006=falta",
+      "minimo": "ambos MLB"
+    },
+    {
+      "id": "estoque",
+      "ok": false,
+      "rotulo": "Estoque ≥ 20 nos dois kits",
+      "atual": "IMP-MIMO-003=0,IMP-SORT-006=0",
+      "minimo": 20
+    },
+    {
+      "id": "pedidos",
+      "ok": false,
+      "rotulo": "Pedido próprio (margem 24h ou vendas completadas)",
+      "atual": "itens=0 completadas=0",
+      "minimo": "≥1"
+    },
+    {
+      "id": "ads_acos",
+      "ok": true,
+      "rotulo": "ACOS ≤ teto (ou ads desligado)",
+      "atual": 0.0,
+      "minimo": 0.2
+    },
+    {
+      "id": "claims",
+      "ok": true,
+      "rotulo": "Claims baixos",
+      "atual": 0,
+      "minimo": "<2"
+    }
+  ],
+  "checks_ok": 3,
+  "checks_total": 7,
+  "sinais": {
+    "avaliacoes": 0,
+    "nota": 0.0,
+    "vendas_completadas": 0,
+    "claims_rate": 0.0,
+    "claims": 0,
+    "kits": [
+      {
+        "sku": "IMP-MIMO-003",
+        "mlb": "MLB_PREENCHER",
+        "mlb_ok": false,
+        "estoque": 0,
+        "encontrado": true
+      },
+      {
+        "sku": "IMP-SORT-006",
+        "mlb": "MLB_PREENCHER",
+        "mlb_ok": false,
+        "estoque": 0,
+        "encontrado": true
+      }
+    ],
+    "itens_margem": 0,
+    "receita_bruta": 0.0,
+    "acos": 0.0,
+    "decisao_ads": ""
+  },
+  "cnae_preparacao": {
+    "itens": [
+      {
+        "id": "impala_cnae_cosmetico",
+        "ok": true,
+        "rotulo": "Impala CNAE 4772-5/00 (cosmético)",
+        "atual": "4646001,4772500",
+        "minimo": "4772500"
+      },
+      {
+        "id": "masterprint_cnae_informatica",
+        "ok": true,
+        "rotulo": "Masterprint CNAE 4751-2/01 (informática / filamento)",
+        "atual": "4689302,4751201,4761003",
+        "minimo": "4751201"
+      },
+      {
+        "id": "masterprint_cnae_resinas",
+        "ok": true,
+        "rotulo": "Masterprint CNAE 4689-3/02 (resinas / PETG)",
+        "atual": "4689302,4751201,4761003",
+        "minimo": "4689302"
+      },
+      {
+        "id": "masterprint_cnae_papelaria",
+        "ok": true,
+        "rotulo": "Masterprint CNAE 4761-0/03 (papelaria / apagador)",
+        "atual": "4689302,4751201,4761003",
+        "minimo": "4761003"
+      },
+      {
+        "id": "masterprint_seller_ml",
+        "ok": false,
+        "rotulo": "Seller ML do CNPJ 23.811.261/0001-97 (KYC)",
+        "atual": "vazio",
+        "minimo": "preenchido"
+      },
+      {
+        "id": "cnpjs_nao_ambiguos",
+        "ok": true,
+        "rotulo": "Sellers Impala e Masterprint distintos",
+        "atual": "ok ou Masterprint ainda sem seller",
+        "minimo": "IDs diferentes"
+      }
+    ],
+    "gaps": [
+      {
+        "id": "masterprint_seller_ml",
+        "ok": false,
+        "rotulo": "Seller ML do CNPJ 23.811.261/0001-97 (KYC)",
+        "atual": "vazio",
+        "minimo": "preenchido"
+      }
+    ],
+    "gaps_n": 1,
+    "pronto": false,
+    "seller_masterprint": "",
+    "cnpj_masterprint": "23.811.261/0001-97",
+    "cnpj_impala": "52.668.583/0001-27"
+  },
+  "limites": {
+    "avaliacoes_min": 20,
+    "nota_min": 4.8,
+    "estoque_min": 20,
+    "acos_max": 0.2,
+    "aproximando_avaliacoes": 10
+  },
+  "timestamp": "2026-08-14T22:13:01.002028+00:00",
+  "gerado_em": "2026-08-14T19:13:01.002038-03:00",
+  "mensagem": "*CNAE / seller — prepare o segundo CNPJ*\n\n_O que este agente faz:_\n_Cruza reputação, MLB, estoque, pedido e ACOS do Impala para dizer se o segundo CNPJ (Masterprint) pode entrar em ação. Enquanto isso, alerta CNAE/KYC que ainda faltam para você ir preparando. Não publica anúncio nem liga a flag de dono de produto._\n\n_Quando roda:_\n_Todo dia às 08:05 BRT (Actions); fora do orquestrador 30 min. Telegram só no veredito (CNAE semanal / aproximando / liberado)._\n\nVeredito Impala: *ainda_nao* · progresso *42.9%* (3/7 checks)\n_CNAE Masterprint: 1 gap(s)_\n\n*Checklist Impala*\n• falta — Avaliações Impala: `0` (mín `20`)\n• ok — Nota média: `0.0` (mín `4.8`)\n• falta — MLB dos kits MIMO-003 e SORT-006: `IMP-MIMO-003=falta,IMP-SORT-006=falta` (mín `ambos MLB`)\n• falta — Estoque ≥ 20 nos dois kits: `IMP-MIMO-003=0,IMP-SORT-006=0` (mín `20`)\n• falta — Pedido próprio (margem 24h ou vendas completadas): `itens=0 completadas=0` (mín `≥1`)\n• ok — ACOS ≤ teto (ou ads desligado): `0.0` (mín `0.2`)\n• ok — Claims baixos: `0` (mín `<2`)\n\n*Preparar CNAE / KYC (23.811.261/0001-97)*\n• ok — Impala CNAE 4772-5/00 (cosmético)\n• ok — Masterprint CNAE 4751-2/01 (informática / filamento)\n• ok — Masterprint CNAE 4689-3/02 (resinas / PETG)\n• ok — Masterprint CNAE 4761-0/03 (papelaria / apagador)\n• falta — Seller ML do CNPJ 23.811.261/0001-97 (KYC)\n• ok — Sellers Impala e Masterprint distintos\n\n*Ação agora:* confirmar CNAEs na Junta/Receita, KYC do seller Masterprint no ML (seller_id no catálogo/env). Isso é preparação — não publicar 192 SKUs.",
+  "modo_alerta": "cnae",
+  "alerta_enviado": false
+}

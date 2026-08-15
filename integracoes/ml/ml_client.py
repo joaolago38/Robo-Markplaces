@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
+from core.config import ML_ACCESS_TOKEN, ML_IGNORAR_ANUNCIOS_FORA_FOCO, ML_SELLER_ID
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
@@ -1115,14 +1115,22 @@ def buscar_acos_ads(item_id: str, dias: int = 14) -> float:
         return 0.0
 
 
-def listar_meus_anuncios(*, statuses: tuple[str, ...] | list[str] | None = None) -> list[dict]:
+def listar_meus_anuncios(
+    *,
+    statuses: tuple[str, ...] | list[str] | None = None,
+    aplicar_foco: bool | None = None,
+) -> list[dict]:
     """
     Lista anúncios do vendedor com item_id, título, preço e SKU.
     Por padrão só `active`. Passe statuses=('active','paused') para incluir pausados.
-    Nunca lança exceção.
+    Com aplicar_foco (default ML_IGNORAR_ANUNCIOS_FORA_FOCO) ignora bolsas/legado;
+    a reputação da conta continua valendo. Nunca lança exceção.
     """
+    from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco, reset_ultimo_filtro
+
     if not _enabled():
         logger.info("Mercado Livre não configurado para listar anúncios.")
+        reset_ultimo_filtro()
         return []
     status_list = tuple(statuses) if statuses else ("active",)
     try:
@@ -1153,7 +1161,10 @@ def listar_meus_anuncios(*, statuses: tuple[str, ...] | list[str] | None = None)
 
         normalized: list[dict] = []
         batch_size = 20
-        attrs = "id,title,price,seller_sku,status,sold_quantity,date_created,user_product_id,family_name"
+        attrs = (
+            "id,title,price,seller_sku,status,sold_quantity,"
+            "date_created,user_product_id,family_name,category_id"
+        )
         for i in range(0, len(item_ids), batch_size):
             batch = item_ids[i : i + batch_size]
             rm = request(
@@ -1184,9 +1195,16 @@ def listar_meus_anuncios(*, statuses: tuple[str, ...] | list[str] | None = None)
                         "date_created": str(b.get("date_created", "") or ""),
                         "user_product_id": str(b.get("user_product_id", "") or ""),
                         "family_name": str(b.get("family_name", "") or ""),
+                        "category_id": str(b.get("category_id", "") or ""),
                     }
                 )
+        usar_foco = ML_IGNORAR_ANUNCIOS_FORA_FOCO if aplicar_foco is None else bool(aplicar_foco)
+        if usar_foco:
+            normalized, _ = filtrar_anuncios_foco(normalized)
+        else:
+            reset_ultimo_filtro()
         return normalized
     except Exception as exc:
         logger.error("ML listar_meus_anuncios erro: %s", exc)
+        reset_ultimo_filtro()
         return []
