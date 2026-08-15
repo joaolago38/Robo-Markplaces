@@ -324,6 +324,17 @@ class TestCondicoesGuerra(unittest.TestCase):
         self.assertEqual(nomes["impala.guerra.liberar_mimo"], 1.0)
         self.assertEqual(nomes["impala.guerra.liberar_ads"], 0.0)
         self.assertEqual(nomes["impala.guerra.publicar_agora"], 1.0)
+        self.assertEqual(nomes["impala.guerra.titulo_atracao"], 0.0)
+
+    def test_titulo_mimo_atracao(self):
+        fraco = "Kit 3 Mimo + Carmed"
+        cheio = dg.TITULO_MIMO_ML
+        self.assertFalse(dg.titulo_mimo_atracao_ok(fraco))
+        self.assertTrue(dg.titulo_mimo_atracao_ok(cheio))
+        self.assertLessEqual(len(cheio), 60)
+        pecas = dg.pecas_titulo_mimo(cheio)
+        self.assertTrue(all(pecas.values()))
+        self.assertFalse(dg.pecas_titulo_mimo("Kit 3 Francesinha Impala")["sem_francesinha"])
 
 
 if __name__ == "__main__":

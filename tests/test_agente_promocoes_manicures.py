@@ -15,6 +15,7 @@ _CAMPANHA = {
     "id": "kit-3-mimo-manicure",
     "ativo": True,
     "prioridade": 1,
+    "fase_minima": 0,
     "sku": "IMP-MIMO-003",
     "template": "{produto} {preco}",
 }
@@ -41,7 +42,7 @@ class AgentePromocoesManicuresTests(unittest.TestCase):
 
     @patch.object(agente, "escrever_json_atomico")
     @patch.object(agente, "montar_mensagem_campanha", return_value=_MONTADO)
-    @patch.object(agente, "carregar_campanhas", return_value=[_CAMPANHA])
+    @patch.object(agente, "campanhas_liberadas", return_value=[_CAMPANHA])
     @patch.object(agente, "pode_divulgar_promocoes_manicures", return_value=(True, "ok"))
     @patch(
         "integracoes.ml.contrato_impulso_ml.campanha_pode_enviar",
@@ -62,7 +63,7 @@ class AgentePromocoesManicuresTests(unittest.TestCase):
             "ultimo_envio_em": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
         },
     )
-    @patch.object(agente, "carregar_campanhas", return_value=[_CAMPANHA])
+    @patch.object(agente, "campanhas_liberadas", return_value=[_CAMPANHA])
     @patch.object(agente, "pode_divulgar_promocoes_manicures", return_value=(True, "ok"))
     def test_respeita_intervalo_minimo(self, *_mocks):
         out = agente.executar(enviar=True)
@@ -76,7 +77,7 @@ class AgentePromocoesManicuresTests(unittest.TestCase):
     @patch.object(agente, "whatsapp_grupo_manicures_configurado", return_value=True)
     @patch.object(agente, "_carregar_historico", return_value={})
     @patch.object(agente, "montar_mensagem_campanha", return_value=_MONTADO)
-    @patch.object(agente, "carregar_campanhas", return_value=[_CAMPANHA])
+    @patch.object(agente, "campanhas_liberadas", return_value=[_CAMPANHA])
     @patch.object(agente, "pode_divulgar_promocoes_manicures", return_value=(True, "ok"))
     @patch(
         "integracoes.ml.contrato_impulso_ml.campanha_pode_enviar",

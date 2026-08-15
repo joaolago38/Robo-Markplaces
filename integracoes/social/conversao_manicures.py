@@ -17,6 +17,7 @@ from core.claude_roteador import resolver_modelo_vendas
 from core.config import ANTHROPIC_API_KEY, ROOT
 from integracoes.social.promocoes_manicures import (
     _para_whatsapp,
+    campanhas_liberadas,
     carregar_campanhas,
     montar_mensagem_campanha,
 )
@@ -27,11 +28,14 @@ LEADS_PATH = ROOT / "logs" / "leads_manicures.json"
 MAX_LEADS = 500
 
 _SYSTEM_CONV = (
-    "Você apoia fechamento de compra no Mercado Livre (kits Impala/Anita). "
+    "Você apoia fechamento de compra no Mercado Livre (kits Impala para manicure). "
     "Tom neutro e factual, curto. "
-    "NUNCA invente preço, estoque, frete, prazo, Full ou desconto. "
+    "NUNCA invente preço, estoque, frete, prazo, Full, desconto, tolueno ou formaldeído. "
     "Para frete/prazo oriente a consultar o anúncio com o CEP. "
-    "Pode citar o link do ML. Nunca peça dados sensíveis (senha/cartão)."
+    "Pode citar o link do ML. Nunca peça dados sensíveis (senha/cartão). "
+    "Fase 0: só campanha MIMO (Kit 3 Impala Mimo + Carmed). "
+    "Não escolha SORT, Bailarina ou atacado 10 antes da fase 2. "
+    "Não use francesinha, sortidas ou ‘kit mais barato’ no copy."
 )
 
 _SCHEMA_OFERTA = {
@@ -160,7 +164,7 @@ def atualizar_lead(lid: str, patch: dict[str, Any]) -> bool:
 
 def _resumo_campanhas() -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    for c in carregar_campanhas():
+    for c in campanhas_liberadas():
         montado = montar_mensagem_campanha(c)
         if not montado.get("ok"):
             continue
@@ -249,10 +253,12 @@ def escolher_oferta_haiku(
         "Escolha a melhor campanha do catálogo para converter manicures AGORA "
         f"e gere textos curtos por canal.\n"
         f"Última campanha enviada: {ultimo_campanha_id or 'nenhuma'}\n"
-        f"Campanhas disponíveis (JSON): {campanhas}\n"
+        f"Campanhas disponíveis nesta fase (JSON): {campanhas}\n"
         f"{ctx_ads}\n"
         "Regras: copy_whatsapp sem markdown pesado; facebook/instagram com emoji leve; "
-        "inclua o link_ml da campanha escolhida no cta_ml; máximo ~500 caracteres por copy."
+        "inclua o link_ml da campanha escolhida no cta_ml; máximo ~500 caracteres por copy. "
+        "Se houver kit-3-mimo-manicure na lista, prefira ela na abertura da frente. "
+        "Não invente Full/frete grátis."
     )
     rota = resolver_modelo_vendas(
         proposito="oferta_conversao",
@@ -305,8 +311,8 @@ def classificar_e_responder_lead(
         "intencao": "interesse",
         "converter": True,
         "resposta": (
-            f"Oi! Temos {oferta_nome or 'kits Impala para manicure'} no Mercado Livre "
-            f"com frete Full. Confira e compre aqui: {link_ml}"
+            f"Oi! Temos {oferta_nome or 'kits Impala para manicure'} no Mercado Livre. "
+            f"Confira o anúncio e compre aqui: {link_ml}"
         ).strip(),
         "motivo": "fallback",
     }

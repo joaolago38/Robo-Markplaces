@@ -188,12 +188,14 @@ def avaliar_oferta_impala(
     indice = indice_compra_impala(produto, comp)
     perfil = perfil_manicure(qtd)
     padrao = bool(cores_do_produto(produto)) and qtd >= 3
+    entrada_carmed = sku == "IMP-MIMO-003"
+    # MIMO perde em R$/frasco (Carmed no custo). Condição da manicure = extra, não economia.
     condicao = (
         qtd >= 3
         and preco > 0
-        and eco["economia_pct"] > 0
         and (margem is None or float(margem) >= piso)
         and padrao
+        and (eco["economia_pct"] > 0 or entrada_carmed)
     )
     return {
         "sku": sku,
@@ -207,6 +209,9 @@ def avaliar_oferta_impala(
         "score_alavancagem": _f(produto.get("score_alavancagem")),
         "indice_compra": indice,
         "economia": eco,
+        "motivo_condicao": "entrada_carmed" if entrada_carmed and condicao else (
+            "economia" if condicao else "sem_condicao"
+        ),
         "padrao_impala": padrao,
         "condicao_ok": condicao,
         "atende_clientes": perfil in ("manicure_autonoma", "salao_giro", "salao_estoque"),
@@ -224,6 +229,14 @@ def emitir_metricas_kits_manicure(ofertas: list[dict[str, Any]]) -> None:
     gauge("esmaltes.kit_manicure.condicao_ok", float(len(boas)))
     ecos = [float((o.get("economia") or {}).get("economia_pct") or 0) for o in boas]
     gauge("esmaltes.kit_manicure.economia_media_pct", float(sum(ecos) / len(ecos)) if ecos else 0.0)
+    entrada = next(
+        (o for o in ofertas if str(o.get("sku") or "").upper() == "IMP-MIMO-003"),
+        None,
+    )
+    gauge(
+        "esmaltes.kit_manicure.entrada_ok",
+        1.0 if entrada and entrada.get("condicao_ok") else 0.0,
+    )
     for o in ofertas[:10]:
         tags = [str(o.get("kit_tag") or "kit:x"), f"perfil:{o.get('perfil_manicure') or 'x'}"]
         gauge("esmaltes.kit_manicure.indice_compra", float(o.get("indice_compra") or 0), tags=tags)

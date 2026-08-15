@@ -947,7 +947,8 @@
   },
   {
     "sku": "IMP-MIMO-003",
-    "nome": "Kit 3 Mimo + Carmed",
+    "nome": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+    "titulo_sugerido_ml": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
     "ncm": "3304.10.00",
     "prioridade": "P0",
     "score_alavancagem": 69,
@@ -978,7 +979,7 @@
     "invest_validacao_reais": 281.3,
     "valida_unidades": 10,
     "meta_avaliacoes": 20,
-    "acao_pos_validar": "Subir para R$49,90 (Fase 2) + lançar Kit 6 Sortido",
+    "acao_pos_validar": "PERL no mesmo ciclo a R$39,90. JUPAES só após 1º pedido. Não lançar SORT.",
     "cores": [
       {
         "nome": "Admire",
@@ -1005,7 +1006,7 @@
       "mercadolivre": {
         "ativo": true,
         "item_id": "MLB_PREENCHER",
-        "titulo_anuncio": "Kit 3 Mimo + Carmed",
+        "titulo_anuncio": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
         "categoria_ml": "MLB1430",
         "preco": 44.9,
         "estoque": 0,

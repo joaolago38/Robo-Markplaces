@@ -1602,6 +1602,51 @@ def _grupo_decisao_guerra_impala() -> dict[str, Any]:
                     "layout": {"height": 3, "width": 6, "x": 6, "y": 14},
                     "id": 741035,
                 },
+                {
+                    **_qv(
+                        "Titulo MIMO atracao (Impala+esmalte+Carmed+manicure)",
+                        "avg:robo.impala.guerra.titulo_atracao{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 17},
+                    "id": 741036,
+                },
+                {
+                    **_qv(
+                        "Carmed no titulo catalogo (0/1)",
+                        "avg:robo.impala.guerra.carmed_titulo{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 17},
+                    "id": 741037,
+                },
+                {
+                    **_qv(
+                        "Carmed no ar (MLB + titulo)",
+                        "avg:robo.impala.guerra.nosso_carmed{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 17},
+                    "id": 741038,
+                },
+                {
+                    **_qv(
+                        "MIMO entrada manicure (extra, nao economia)",
+                        "avg:robo.esmaltes.kit_manicure.entrada_ok{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 17},
+                    "id": 741039,
+                },
             ],
         },
         "layout": {"x": 0, "y": 26, "width": 12, "height": 1},
@@ -3998,7 +4043,7 @@ def _grupo_kits_manicure_impala() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Com condicao (economia + margem)",
+                        "Com condicao (economia ou MIMO extra)",
                         "avg:robo.esmaltes.kit_manicure.condicao_ok{*}",
                         aggregator="avg",
                         green_gt=0,
@@ -4169,9 +4214,12 @@ def atualizar_dashboard_ecommerce() -> None:
             "com tendência (confirmada/oportunidade).\n\n"
             "**Kits manicure Impala:** grupo [Kits Impala manicure] — kits do catálogo "
             "compatíveis com o que o ML oferece, com índice de compra Impala, economia "
-            "vs avulso e condição (qtd≥3 + margem ≥ piso + padrão Impala).\n\n"
+            "vs avulso e condição (qtd≥3 + margem ≥ piso + padrão Impala). "
+            "MIMO entra por extra Carmed (economia vs avulso pode ser negativa).\n\n"
             "**Decisão guerra Impala:** grupo [Decisao guerra Impala] — fase 0–5 "
             "(0=abrir MIMO, não é erro), publicar_agora (gate, não os 20 kits), "
+            "título de atração (Impala+esmalte+Carmed+manicure), Carmed no ar, "
+            "MIMO como entrada da manicure (não economia vs avulso), "
             "margem/lucro do catálogo + Cruzeiro spa + pipeline onda 2. "
             "Rivais comparáveis só com amostra viva. Telegram aponta "
             "para este grupo. Cache STALE não entra como mercado.\n\n"

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -30,16 +31,22 @@ SYSTEM_OTIMIZADOR = (
     "atributo, marca, público, preencher ~60 caracteres sem emoji. "
     "NUNCA copie palavras de bolsa/couro/mariart/shopper/transversal/carteira/"
     "scarpin/sapato para kit Impala. "
+    "NUNCA sugira francesinha, sortidas, tratamento/incolor ou ‘mais barato’ no título "
+    "do kit MIMO (IMP-MIMO-003). Título alvo da entrada: "
+    "'Kit 3 Esmaltes Impala Mimo + Carmed Manicure'. "
+    "Público é manicure profissional, não presente. "
     "Nunca invente especificações, certificações ou características do produto "
     "que não estejam no contexto fornecido. Seja objetivo: até 3 sugestões de "
     "título alternativo (respeitando o limite de 60 caracteres do Mercado Livre) "
     "e um motivo curto para cada sugestão, baseado em padrões dos concorrentes "
-    "e da copy que já impulsiona esta conta."
+    "comparáveis (mesmo tamanho, Carmed/Mimo) — ignore rivais de francesinha."
 )
 
 _PROMPT_SUGESTOES = (
     "Com base nos dados acima, sugira até 3 títulos alternativos (máx. 60 caracteres cada) "
-    "e um motivo curto para cada um, observando padrões dos concorrentes com mais vendas."
+    "e um motivo curto para cada um. "
+    "Não copie o padrão do rival mais vendido se ele for francesinha/tratamento. "
+    "Para MIMO, preserve Impala + Esmaltes + Carmed + Manicure."
 )
 
 _SCHEMA_SUGESTOES_TITULO = {
@@ -265,12 +272,18 @@ def _pedir_sugestoes_claude(
     try:
         from integracoes.ml.referencia_copy_legado import titulo_tem_palavra_bolsa
 
+        def _titulo_listing_ok(titulo: str) -> bool:
+            t = str(titulo or "")
+            if not t or titulo_tem_palavra_bolsa(t):
+                return False
+            if re.search(r"francesinha|sortidas|tratamento|incolor", t, re.I):
+                return False
+            return True
+
         lista_sugestoes = [
             s
             for s in lista_sugestoes
-            if isinstance(s, dict)
-            and s.get("titulo")
-            and not titulo_tem_palavra_bolsa(str(s.get("titulo") or ""))
+            if isinstance(s, dict) and _titulo_listing_ok(str(s.get("titulo") or ""))
         ]
     except Exception:
         lista_sugestoes = [

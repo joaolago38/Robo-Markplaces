@@ -465,7 +465,7 @@ def responder_chat(
             if isinstance(cores, list) and cores:
                 return (
                     f"As cores deste kit são: {', '.join(str(c) for c in cores)}. "
-                    "Todas com alta pigmentação e secagem rápida. Posso confirmar mais detalhes se precisar!"
+                    "Todas as cores estão identificadas no anúncio. Posso confirmar mais detalhes se precisar!"
                 )
         if "escolher" in pergunta_lower or "escolho" in pergunta_lower or "montar" in pergunta_lower:
             return (
@@ -481,7 +481,10 @@ def responder_chat(
         if any(k in pergunta_lower for k in ("atacado", "revendedor", "desconto", "promo")):
             return MSG_SEM_DESCONTO
         if "profissional" in pergunta_lower:
-            return "Sim, usado por manicures profissionais. Secagem rápida, alta pigmentação, sem tolueno, sem formaldeído."
+            return (
+                "Sim, usado por manicures profissionais. "
+                "As cores do kit estão na foto e na descrição do anúncio."
+            )
         if "alicate" in pergunta_lower or "mundial 777" in contexto:
             return "Alicate Mundial 777 em aço inox cirúrgico. Pode ser autoclavado para uso em clínicas e salões. Corte preciso sem necessidade de afiar."
         if "validade" in pergunta_lower:

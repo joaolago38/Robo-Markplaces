@@ -63,12 +63,26 @@ class PromocoesManicuresTests(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["id"], "c1")
 
+    def test_campanhas_liberadas_fase_0_so_mimo(self):
+        camps = [
+            {"id": "mimo", "fase_minima": 0},
+            {"id": "perl", "fase_minima": 1},
+            {"id": "sort", "fase_minima": 2},
+        ]
+        lib = pm.campanhas_liberadas(camps, fase=0)
+        self.assertEqual([c["id"] for c in lib], ["mimo"])
+        self.assertEqual([c["id"] for c in pm.campanhas_liberadas(camps, fase=1)], ["mimo", "perl"])
+
+    def test_link_ml_rejeita_mlb_curto(self):
+        self.assertFalse(pm.link_ml_valido("https://produto.mercadolivre.com.br/MLB-123"))
+        self.assertTrue(pm.link_ml_valido("https://produto.mercadolivre.com.br/MLB1234567890"))
+
 
 class AgentePromocoesManicuresTests(unittest.TestCase):
     @patch("agentes.social.agente_promocoes_manicures.alertar_gestor", return_value=True)
     @patch("agentes.social.agente_promocoes_manicures.gestor_telegram_configurado", return_value=True)
     @patch("agentes.social.agente_promocoes_manicures.pode_divulgar_promocoes_manicures", return_value=(True, "ok"))
-    @patch("agentes.social.agente_promocoes_manicures.carregar_campanhas")
+    @patch("agentes.social.agente_promocoes_manicures.campanhas_liberadas")
     @patch("agentes.social.agente_promocoes_manicures._montar_com_fallback")
     def test_sem_mlb_pula_sem_falhar(self, mock_montar, mock_camps, *_):
         from agentes.social import agente_promocoes_manicures as ag

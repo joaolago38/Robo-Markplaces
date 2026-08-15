@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-08-15T16:05:32.838295+00:00",
+  "timestamp": "2026-08-15T18:23:00.758224+00:00",
   "atual": {
     "saude_score": 20.7,
     "produtos_seguros": 0.0,
     "esforco_faltando": 0.0,
-    "kit_condicao_ok": 2.0,
+    "kit_condicao_ok": 3.0,
     "progresso_pct": 0.0,
     "claude_ok": 1.0,
     "aproximando": 1.0,
@@ -14,7 +14,7 @@
     "saude_score": 20.7,
     "produtos_seguros": 0.0,
     "esforco_faltando": 0.0,
-    "kit_condicao_ok": 2.0,
+    "kit_condicao_ok": 3.0,
     "progresso_pct": 0.0,
     "claude_ok": 1.0,
     "aproximando": 1.0,
