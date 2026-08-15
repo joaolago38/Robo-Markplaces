@@ -325,7 +325,7 @@
         "veredito": "risco"
       }
     ],
-    "kits_manicure_condicao_n": 2,
+    "kits_manicure_condicao_n": 3,
     "kits_manicure": [
       {
         "sku": "IMP-PERL-004",
@@ -344,6 +344,15 @@
         "condicao_ok": true,
         "economia_pct": 9.9,
         "preco": 64.9
+      },
+      {
+        "sku": "IMP-MIMO-003",
+        "qtd_kit": 3,
+        "indice_compra": 13,
+        "margem_pct": 19.35,
+        "condicao_ok": true,
+        "economia_pct": -24.7,
+        "preco": 44.9
       }
     ],
     "preco_avulso_ref": 12.0,
@@ -352,7 +361,7 @@
   },
   "kits_manicure": {
     "ok": true,
-    "condicao_n": 2,
+    "condicao_n": 3,
     "preco_unitario_ref": 12.0,
     "preco_unitario_ml": 9.0,
     "ofertas_condicao": [
@@ -373,6 +382,15 @@
         "condicao_ok": true,
         "economia_pct": 9.9,
         "preco": 64.9
+      },
+      {
+        "sku": "IMP-MIMO-003",
+        "qtd_kit": 3,
+        "indice_compra": 13,
+        "margem_pct": 19.35,
+        "condicao_ok": true,
+        "economia_pct": -24.7,
+        "preco": 44.9
       }
     ],
     "ofertas_top": [
@@ -393,6 +411,15 @@
         "condicao_ok": true,
         "economia_pct": 9.9,
         "preco": 64.9
+      },
+      {
+        "sku": "IMP-MIMO-003",
+        "qtd_kit": 3,
+        "indice_compra": 13,
+        "margem_pct": 19.35,
+        "condicao_ok": true,
+        "economia_pct": -24.7,
+        "preco": 44.9
       }
     ]
   },
@@ -411,5 +438,5 @@
   },
   "fingerprint": "ainda_nao|3.3|7|0|0|0|IMP-MIMO-003",
   "cnpj": "52.668.583/0001-27",
-  "timestamp": "2026-08-15T16:06:04.225482+00:00"
+  "timestamp": "2026-08-15T18:35:17.924494+00:00"
 }

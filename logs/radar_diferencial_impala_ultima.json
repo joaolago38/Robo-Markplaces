@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "timestamp": "2026-08-15T16:13:53.830385+00:00",
+  "timestamp": "2026-08-15T18:36:36.315701+00:00",
   "piso_op_pct": 15.0,
   "taxa_pct": 18.0,
   "n_anuncios": 18,
@@ -61,7 +61,7 @@
       "estoque": 0
     }
   ],
-  "fazer": "Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30",
+  "fazer": "Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure; estoque 10 (validacao) depois 30",
   "nao_fazer": "Igualar kit 3 francesinha/tratamento; perseguir dump abaixo do piso 15%",
   "rivais": [
     {
@@ -318,7 +318,7 @@
     }
   ],
   "fonte": "cache_busca",
-  "cache_idade_h": 863.3,
+  "cache_idade_h": 865.7,
   "cache_stale": true,
   "mlb_frente": 0,
   "estoque_frente": 0,
@@ -328,8 +328,8 @@
     "fase": 0,
     "fase_nome": "abrir_frente",
     "cenario": "abrir_frente_mimo_carmed",
-    "fazer": "Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30",
-    "proximo": "Publicar MIMO R$44,90 com titulo Mimo + Carmed (estoque 10)",
+    "fazer": "Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure; estoque 10 (validacao) depois 30",
+    "proximo": "Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure (estoque 10)",
     "agentes": [
       "radar_diferencial",
       "monitor_concorrentes",
@@ -342,6 +342,16 @@
       "mlb_jupaes": false,
       "estoque_mimo": 0,
       "carmed_titulo": true,
+      "titulo_pecas": {
+        "kit3": true,
+        "esmaltes": true,
+        "impala": true,
+        "mimo": true,
+        "carmed": true,
+        "manicure": true,
+        "sem_francesinha": true
+      },
+      "titulo_atracao": true,
       "mercado_confiavel": false,
       "reviews": 0,
       "nota": 0.0
@@ -355,7 +365,7 @@
       "ruptura": false
     }
   },
-  "mensagem": "*VISAO ATUACAO* Impala — diferencial + margem\n\n_O que este agente faz:_\n_Lê títulos Impala no ML: o que o rival oferece a mais (Carmed, brinde, tratamento, francesinha) vs o nosso combo, se a margem operacional está acima de 15%, se há MLB publicado e se a amostra é ao vivo ou cache velho. Telegram com o FAZER e o link do Datadog._\n\n_Quando roda:_\n_No monitor concorrentes (30 min) + orquestrador visao atuacao; cooldown 6h no Telegram_\n*Fase guerra 0/5* `abrir_frente` · proximo: Publicar MIMO R$44,90 com titulo Mimo + Carmed (estoque 10)\n*FAZER:* Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30\n*NAO FAZER:* Igualar kit 3 francesinha/tratamento; perseguir dump abaixo do piso 15%\nFonte: cache_busca (863h) STALE · MLB frente 0/3 · estoque 0\nAmostra ML: 18 · comparaveis 0 · nao comparaveis 18 (Datadog=0, cache nao e mercado de hoje)\nExtras nos titulos rivais: francesinha 8, tratamento 5, nenhum 3, outra_marca 2\n*Margem operacional de catalogo (preco planejado - taxa 18% - custo) / preco — nao e listing no ar*\n  `IMP-MIMO-003` 19.4% (ok) · sem MLB · rivais comparaveis 0\n  `IMP-PERL-004` 16.3% (ok) · sem MLB · rivais comparaveis 0\n  `IMP-JUPAES-006` 18.2% (ok) · sem MLB · rivais comparaveis 0\n\nVer serie no Datadog (Ecommerce Impala → grupo Decisao guerra): https://us5.datadoghq.com/dashboard/j53-h48-8ea\n_Alerta para abrir o Datadog: margem, extras do rival, MLB publicado e se o kit e comparavel._",
+  "mensagem": "*VISAO ATUACAO* Impala — diferencial + margem\n\n_O que este agente faz:_\n_Lê títulos Impala no ML: o que o rival oferece a mais (Carmed, brinde, tratamento, francesinha) vs o nosso combo, se a margem operacional está acima de 15%, se há MLB publicado e se a amostra é ao vivo ou cache velho. Telegram com o FAZER e o link do Datadog._\n\n_Quando roda:_\n_No monitor concorrentes (30 min) + orquestrador visao atuacao; cooldown 6h no Telegram_\n*Fase guerra 0/5* `abrir_frente` · proximo: Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure (estoque 10)\n*FAZER:* Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure; estoque 10 (validacao) depois 30\n*NAO FAZER:* Igualar kit 3 francesinha/tratamento; perseguir dump abaixo do piso 15%\nFonte: cache_busca (866h) STALE · MLB frente 0/3 · estoque 0\nAmostra ML: 18 · comparaveis 0 · nao comparaveis 18 (Datadog=0, cache nao e mercado de hoje)\nExtras nos titulos rivais: francesinha 8, tratamento 5, nenhum 3, outra_marca 2\n*Margem operacional de catalogo (preco planejado - taxa 18% - custo) / preco — nao e listing no ar*\n  `IMP-MIMO-003` 19.4% (ok) · sem MLB · rivais comparaveis 0\n  `IMP-PERL-004` 16.3% (ok) · sem MLB · rivais comparaveis 0\n  `IMP-JUPAES-006` 18.2% (ok) · sem MLB · rivais comparaveis 0\n\nVer serie no Datadog (Ecommerce Impala → grupo Decisao guerra): https://us5.datadoghq.com/dashboard/j53-h48-8ea\n_Alerta para abrir o Datadog: margem, extras do rival, MLB publicado e se o kit e comparavel._",
   "alerta_enviado": false,
   "alerta_motivo": "envio_ou_cooldown"
 }
