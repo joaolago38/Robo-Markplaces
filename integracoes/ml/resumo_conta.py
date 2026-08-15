@@ -38,6 +38,20 @@ def _fmt_brl(valor: float) -> str:
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _linha_integridade(integ: Any) -> str:
+    if not isinstance(integ, dict):
+        return "*Integridade ML:* `_sem auditoria_`"
+    pct = float(integ.get("pct") or 0)
+    meta = float(integ.get("meta_pct") or 99.99)
+    if integ.get("atinge_meta"):
+        extra = f" · {int(integ.get('corrigidos') or 0)} campo(s) alinhados ao vivo" if integ.get("corrigidos") else ""
+        return f"*Integridade ML:* *{pct:.2f}%* (meta {meta:.2f}%){extra}"
+    return (
+        f"*Integridade ML:* *{pct:.2f}%* — abaixo da meta {meta:.2f}% "
+        f"(espelho não confiável)"
+    )
+
+
 def _data_brt() -> str:
     brt = timezone(timedelta(hours=-3))
     return datetime.now(brt).strftime("%d/%m/%Y %H:%M")
@@ -101,6 +115,13 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
 
         perguntas = ml_client.listar_perguntas_nao_respondidas()
         anuncios = ml_client.listar_meus_anuncios(statuses=("active", "paused"))
+        try:
+            from integracoes.ml.integridade_dados_ml import executar as auditar_ml
+
+            integridade = auditar_ml(anuncios=anuncios)
+        except Exception as exc:
+            logger.info("integridade ML: %s", exc)
+            integridade = {"pct": 0.0, "atinge_meta": False, "espelho_confiavel": False}
         filtro = ultimo_filtro_anuncios()
         ignorados_fora_foco = int(filtro.get("ignorados") or 0)
         ativos = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "active")
@@ -209,6 +230,7 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             "pos_venda_ok": bool(claims.get("ok")),
             "pos_venda_motivo": str(claims.get("motivo") or ""),
             "reputacao": reputacao,
+            "integridade": integridade,
             "faturamento_nota": (
                 "Fatura/saldo Mercado Pago não disponíveis só com token ML — "
                 "confira no painel ou configure token MP."
@@ -291,6 +313,7 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
         "",
         f"_Espelho do painel Resumo · {_data_brt()} BRT_",
         f"*Loja:* `{nick}` (seller `{resumo.get('seller_id') or '—'}`)",
+        _linha_integridade(resumo.get("integridade")),
         "",
         "*Pendências nos anúncios*",
         f"  • Perguntas: *{int(resumo.get('perguntas_pendentes') or 0)}*",

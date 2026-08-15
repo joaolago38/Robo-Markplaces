@@ -56,6 +56,29 @@ class TestOscilacaoDecisao(unittest.TestCase):
         self.assertTrue(b["oscilacao"])
         self.assertTrue(any(c.args[0] == "decisao.oscilacao" and c.args[1] == 1.0 for c in g.call_args_list))
 
+    def test_chave_nova_nao_e_oscilacao(self):
+        out = osc.comparar({"saude_score": 21.4}, {"saude_score": 21.4, "kit_condicao_ok": 2})
+        self.assertFalse(out["oscilacao"])
+
+    def test_ausencia_nao_vira_zero(self):
+        out = osc.comparar({"saude_score": 21.4}, {"kit_condicao_ok": 2})
+        self.assertFalse(out["oscilacao"])
+
+    def test_update_parcial_nao_zera_outras_metricas(self):
+        with patch.object(osc, "gauge"):
+            osc.registrar_e_avaliar({"saude_score": 21.4, "kit_condicao_ok": 2})
+            out = osc.registrar_e_avaliar({"kit_condicao_ok": 2})
+        self.assertFalse(out["oscilacao"])
+        self.assertEqual(out["atual"]["saude_score"], 21.4)
+
+    def test_snapshot_vazio_nao_oscila(self):
+        with patch.object(osc, "gauge"):
+            primeiro = osc.registrar_e_avaliar({"saude_score": 21.4})
+            vazio = osc.registrar_e_avaliar({})
+        self.assertFalse(primeiro["oscilacao"])
+        self.assertFalse(vazio["oscilacao"])
+        self.assertEqual(vazio["atual"]["saude_score"], 21.4)
+
 
 if __name__ == "__main__":
     unittest.main()

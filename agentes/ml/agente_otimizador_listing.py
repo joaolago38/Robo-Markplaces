@@ -24,12 +24,17 @@ CATALOGO_PATH = ROOT / "catalogo" / "produtos.json"
 
 SYSTEM_OTIMIZADOR = (
     "Você analisa anúncios do Mercado Livre e sugere melhorias de título "
-    "com base em dados reais fornecidos (próprio anúncio e concorrentes). "
+    "com base em dados reais (próprio anúncio, concorrentes e, quando houver, "
+    "anúncios de bolsas/legado DESTA MESMA CONTA que já vendem). "
+    "Use as bolsas só como REFERÊNCIA DE ESTRUTURA: substantivo de busca na frente, "
+    "atributo, marca, público, preencher ~60 caracteres sem emoji. "
+    "NUNCA copie palavras de bolsa/couro/mariart/shopper/transversal/carteira/"
+    "scarpin/sapato para kit Impala. "
     "Nunca invente especificações, certificações ou características do produto "
     "que não estejam no contexto fornecido. Seja objetivo: até 3 sugestões de "
     "título alternativo (respeitando o limite de 60 caracteres do Mercado Livre) "
-    "e um motivo curto para cada sugestão, baseado em padrões observados nos "
-    "concorrentes com mais vendas/visitas."
+    "e um motivo curto para cada sugestão, baseado em padrões dos concorrentes "
+    "e da copy que já impulsiona esta conta."
 )
 
 _PROMPT_SUGESTOES = (
@@ -124,7 +129,46 @@ def _listar_itens_ml_ativos(catalogo: list[dict]) -> list[dict]:
     return itens
 
 
-def _montar_contexto(metricas: dict, concorrentes: list[dict], descricao_atual: str = "") -> str:
+def _listar_itens_pre_publicacao(catalogo: list[dict]) -> list[dict]:
+    """Kits Impala ativos no catálogo ainda sem MLB — título proposto."""
+    itens: list[dict] = []
+    for produto in catalogo:
+        if not isinstance(produto, dict):
+            continue
+        canais = produto.get("canais") or {}
+        if not isinstance(canais, dict):
+            continue
+        ml = canais.get("mercadolivre") or {}
+        if not isinstance(ml, dict) or not ml.get("ativo"):
+            continue
+        item_id = ml.get("item_id")
+        if _item_id_valido(item_id):
+            continue
+        titulo = str(
+            ml.get("titulo_anuncio")
+            or produto.get("titulo_sugerido_ml")
+            or produto.get("nome")
+            or ""
+        ).strip()
+        if not titulo:
+            continue
+        itens.append(
+            {
+                "sku": str(produto.get("sku") or "").strip(),
+                "nome": str(produto.get("nome") or "").strip(),
+                "titulo": titulo,
+                "preco": ml.get("preco") or produto.get("preco") or 0,
+            }
+        )
+    return itens
+
+
+def _montar_contexto(
+    metricas: dict,
+    concorrentes: list[dict],
+    descricao_atual: str = "",
+    referencia_copy: str = "",
+) -> str:
     linhas = [
         "=== ANÚNCIO PRÓPRIO ===",
         f"Título atual: {metricas.get('titulo', '')}",
@@ -148,6 +192,9 @@ def _montar_contexto(metricas: dict, concorrentes: list[dict], descricao_atual: 
                 f"Frete grátis: {'sim' if c.get('frete_gratis') else 'não'} | "
                 f"Condição: {c.get('condicao', '')}"
             )
+    ref = str(referencia_copy or "").strip()
+    if ref:
+        linhas.extend(["", ref])
     return "\n".join(linhas)
 
 
@@ -163,13 +210,98 @@ def _primeira_sugestao(resposta: str) -> str:
     return ""
 
 
-def analisar_item(item_id: str) -> dict:
+def _referencia_copy_txt(referencia_copy: str = "") -> str:
+    txt = str(referencia_copy or "").strip()
+    if txt:
+        return txt
+    try:
+        from integracoes.ml.referencia_copy_legado import bloco_contexto_salvo
+
+        return bloco_contexto_salvo()
+    except Exception:
+        return ""
+
+
+def _pedir_sugestoes_claude(
+    *,
+    contexto_txt: str,
+    metricas: dict,
+    origem: str,
+) -> tuple[list[dict], str, str, bool, bool]:
+    from core.claude_client import perguntar_estruturado
+    from core.claude_contexto_ml import (
+        enriquecer_contexto_claude,
+        max_tokens_dosados,
+        system_com_decisao,
+    )
+
+    ctx, dosagem = enriquecer_contexto_claude(
+        {"anuncio_e_concorrentes": contexto_txt},
+        produto={
+            "titulo": metricas.get("titulo"),
+            "preco": metricas.get("preco"),
+            "quantidade_vendida": metricas.get("quantidade_vendida"),
+        },
+        proposito="otimizar_listing",
+    )
+    contexto = json.dumps(ctx, ensure_ascii=False, indent=2)
+    sugestoes_estruturadas = perguntar_estruturado(
+        (
+            f"{_PROMPT_SUGESTOES}\n"
+            f"Considere estado_ml (nivel={dosagem.get('nivel_ml')}) e "
+            f"profundidade={dosagem.get('profundidade')}. "
+            "Se houver referência de copy das bolsas da conta, aplique a estrutura "
+            "sem copiar palavras de bolsa."
+        ),
+        _SCHEMA_SUGESTOES_TITULO,
+        tool_name="registrar_sugestoes_titulo",
+        max_tokens=max_tokens_dosados(600, dosagem),
+        contexto=contexto,
+        system=system_com_decisao(SYSTEM_OTIMIZADOR, dosagem),
+        origem=origem,
+        exigir_contexto=True,
+    )
+    lista_sugestoes = (sugestoes_estruturadas or {}).get("sugestoes") or []
+    try:
+        from integracoes.ml.referencia_copy_legado import titulo_tem_palavra_bolsa
+
+        lista_sugestoes = [
+            s
+            for s in lista_sugestoes
+            if isinstance(s, dict)
+            and s.get("titulo")
+            and not titulo_tem_palavra_bolsa(str(s.get("titulo") or ""))
+        ]
+    except Exception:
+        lista_sugestoes = [
+            s for s in lista_sugestoes if isinstance(s, dict) and s.get("titulo")
+        ]
+    sugestoes_titulo = "\n".join(
+        f"{s.get('titulo', '')} — {s.get('motivo', '')}" for s in lista_sugestoes
+    )
+    sugestao_descricao = perguntar(
+        (
+            f"{_PROMPT_DESCRICAO}\n"
+            f"ML={dosagem.get('nivel_ml')}; foque decisão de listing."
+        ),
+        max_tokens=max_tokens_dosados(900, dosagem),
+        contexto=contexto,
+        system=system_com_decisao(SYSTEM_DESCRICAO, dosagem),
+        origem=origem,
+        exigir_contexto=True,
+    )
+    ia_titulo = sugestoes_estruturadas is None
+    ia_desc = _ia_falhou(sugestao_descricao)
+    return lista_sugestoes, sugestoes_titulo, sugestao_descricao, ia_titulo, ia_desc
+
+
+def analisar_item(item_id: str, *, referencia_copy: str = "") -> dict:
     """
     Busca métricas do próprio item + concorrentes, pede ao Claude sugestões
     de título, e retorna um dict estruturado. Nunca lança exceção.
     """
     item_id = str(item_id or "").strip()
-    from core.claude_client import mlb_invalido, perguntar_estruturado
+    from core.claude_client import mlb_invalido
 
     if mlb_invalido(item_id):
         return {
@@ -186,56 +318,17 @@ def analisar_item(item_id: str) -> dict:
 
         descricao_atual = ml_client.buscar_descricao_item(item_id)
         concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
-        contexto_txt = _montar_contexto(metricas, concorrentes, descricao_atual)
-
-        from core.claude_contexto_ml import (
-            enriquecer_contexto_claude,
-            max_tokens_dosados,
-            system_com_decisao,
+        ref_txt = _referencia_copy_txt(referencia_copy)
+        contexto_txt = _montar_contexto(
+            metricas, concorrentes, descricao_atual, referencia_copy=ref_txt
         )
-
-        ctx, dosagem = enriquecer_contexto_claude(
-            {"anuncio_e_concorrentes": contexto_txt},
-            produto={
-                "titulo": metricas.get("titulo"),
-                "preco": metricas.get("preco"),
-                "quantidade_vendida": metricas.get("quantidade_vendida"),
-            },
-            proposito="otimizar_listing",
-        )
-        contexto = json.dumps(ctx, ensure_ascii=False, indent=2)
         _origem = "ml.agente_otimizador_listing"
-
-        sugestoes_estruturadas = perguntar_estruturado(
-            (
-                f"{_PROMPT_SUGESTOES}\n"
-                f"Considere estado_ml (nivel={dosagem.get('nivel_ml')}) e "
-                f"profundidade={dosagem.get('profundidade')}."
-            ),
-            _SCHEMA_SUGESTOES_TITULO,
-            tool_name="registrar_sugestoes_titulo",
-            max_tokens=max_tokens_dosados(600, dosagem),
-            contexto=contexto,
-            system=system_com_decisao(SYSTEM_OTIMIZADOR, dosagem),
-            origem=_origem,
-            exigir_contexto=True,
-        )
-        lista_sugestoes = (sugestoes_estruturadas or {}).get("sugestoes") or []
-        sugestoes_titulo = "\n".join(
-            f"{s.get('titulo', '')} — {s.get('motivo', '')}"
-            for s in lista_sugestoes
-            if isinstance(s, dict) and s.get("titulo")
-        )
-        sugestao_descricao = perguntar(
-            (
-                f"{_PROMPT_DESCRICAO}\n"
-                f"ML={dosagem.get('nivel_ml')}; foque decisão de listing."
-            ),
-            max_tokens=max_tokens_dosados(900, dosagem),
-            contexto=contexto,
-            system=system_com_decisao(SYSTEM_DESCRICAO, dosagem),
-            origem=_origem,
-            exigir_contexto=True,
+        lista_sugestoes, sugestoes_titulo, sugestao_descricao, ia_titulo, ia_desc = (
+            _pedir_sugestoes_claude(
+                contexto_txt=contexto_txt,
+                metricas=metricas,
+                origem=_origem,
+            )
         )
 
         resultado: dict[str, Any] = {
@@ -249,15 +342,79 @@ def analisar_item(item_id: str) -> dict:
             "sugestoes_estruturadas": lista_sugestoes,
             "sugestao_descricao": sugestao_descricao,
             "concorrentes_analisados": len(concorrentes),
+            "usou_referencia_legado": bool(ref_txt),
         }
-        if sugestoes_estruturadas is None:
+        if ia_titulo:
             resultado["ia_falhou"] = True
-        if _ia_falhou(sugestao_descricao):
+        if ia_desc:
             resultado["ia_falhou_descricao"] = True
         return resultado
     except Exception as exc:
         logger.error("analisar_item erro item_id=%s: %s", item_id, exc)
         return {"ok": False, "erro": str(exc)}
+
+
+def analisar_titulo_proposto(
+    *,
+    sku: str,
+    nome: str,
+    titulo: str,
+    preco: Any = 0,
+    referencia_copy: str = "",
+) -> dict:
+    """Claude no título de catálogo ainda sem MLB. Nunca publica."""
+    titulo = str(titulo or "").strip()
+    if not titulo:
+        return {"ok": False, "erro": "título de catálogo vazio", "pre_publicacao": True}
+    try:
+        metricas = {
+            "titulo": titulo,
+            "preco": preco or 0,
+            "estoque": 0,
+            "visitas_7d": 0,
+            "visitas_30d": 0,
+            "status": "pre_publicacao",
+        }
+        ref_txt = _referencia_copy_txt(referencia_copy)
+        contexto_txt = _montar_contexto(
+            metricas,
+            [],
+            "",
+            referencia_copy=ref_txt,
+        )
+        contexto_txt = (
+            "ANÚNCIO AINDA SEM MLB — título proposto no catálogo Impala.\n"
+            + contexto_txt
+        )
+        lista_sugestoes, sugestoes_titulo, sugestao_descricao, ia_titulo, ia_desc = (
+            _pedir_sugestoes_claude(
+                contexto_txt=contexto_txt,
+                metricas=metricas,
+                origem="ml.agente_otimizador_listing",
+            )
+        )
+        resultado: dict[str, Any] = {
+            "ok": True,
+            "item_id": "",
+            "sku": sku,
+            "nome": nome,
+            "pre_publicacao": True,
+            "titulo_atual": titulo,
+            "visitas_7d": 0,
+            "sugestoes_texto": sugestoes_titulo,
+            "sugestoes_estruturadas": lista_sugestoes,
+            "sugestao_descricao": sugestao_descricao,
+            "concorrentes_analisados": 1 if ref_txt else 0,
+            "usou_referencia_legado": bool(ref_txt),
+        }
+        if ia_titulo:
+            resultado["ia_falhou"] = True
+        if ia_desc:
+            resultado["ia_falhou_descricao"] = True
+        return resultado
+    except Exception as exc:
+        logger.error("analisar_titulo_proposto sku=%s: %s", sku, exc)
+        return {"ok": False, "erro": str(exc), "pre_publicacao": True}
 
 
 def _montar_resumo_telegram(resultados: list[dict]) -> str:
@@ -266,14 +423,17 @@ def _montar_resumo_telegram(resultados: list[dict]) -> str:
     for r in resultados:
         if not r.get("ok"):
             continue
-        if int(r.get("concorrentes_analisados") or 0) < 1:
+        if int(r.get("concorrentes_analisados") or 0) < 1 and not r.get("usou_referencia_legado"):
             continue
         sugestao = _primeira_sugestao(str(r.get("sugestoes_texto") or ""))
         if not sugestao:
             continue
         incluidos += 1
         descricao_preview = str(r.get("sugestao_descricao") or "").strip().replace("\n", " ")[:120]
-        linhas.append(f"• {r.get('item_id')} — {r.get('titulo_atual', '')[:50]}")
+        rotulo = r.get("item_id") or r.get("sku") or "?"
+        if r.get("pre_publicacao"):
+            rotulo = f"[pré-pub] {r.get('sku') or rotulo}"
+        linhas.append(f"• {rotulo} — {r.get('titulo_atual', '')[:50]}")
         linhas.append(f"  Visitas 7d: {r.get('visitas_7d', 0)}")
         linhas.append(f"  Sugestão título: {sugestao}")
         if descricao_preview:
@@ -312,6 +472,17 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
     try:
         catalogo = _carregar_catalogo()
         itens_ml = _listar_itens_ml_ativos(catalogo)
+        ref_txt = ""
+        try:
+            from integracoes.ml.referencia_copy_legado import (
+                coletar_referencia_copy_legado,
+                montar_bloco_contexto,
+            )
+
+            ref = coletar_referencia_copy_legado()
+            ref_txt = montar_bloco_contexto(ref)
+        except Exception as exc:
+            logger.warning("referencia copy legado: %s", exc)
 
         # Prioriza guerra liberados + itens do funil (visitas sem conversão / listing)
         try:
@@ -334,10 +505,22 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
 
         for entrada in itens_ml:
             item_id = entrada["item_id"]
-            resultado = analisar_item(item_id)
+            resultado = analisar_item(item_id, referencia_copy=ref_txt)
             resultado["sku"] = entrada.get("sku", "")
             resultado["nome"] = entrada.get("nome", "")
             resultados.append(resultado)
+
+        vagas = max(0, limite - len(itens_ml))
+        if vagas:
+            for entrada in _listar_itens_pre_publicacao(catalogo)[:vagas]:
+                resultado = analisar_titulo_proposto(
+                    sku=str(entrada.get("sku") or ""),
+                    nome=str(entrada.get("nome") or ""),
+                    titulo=str(entrada.get("titulo") or ""),
+                    preco=entrada.get("preco") or 0,
+                    referencia_copy=ref_txt,
+                )
+                resultados.append(resultado)
 
         from core.config import OTIMIZADOR_LISTING_APLICAR
         from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
@@ -348,7 +531,7 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
         if OTIMIZADOR_LISTING_APLICAR:
             modo = "sugestao_com_confirmacao_telegram"
             for r in resultados:
-                if not r.get("ok"):
+                if not r.get("ok") or r.get("pre_publicacao"):
                     continue
                 sug = r.get("sugestoes_estruturadas") or []
                 if not sug or not isinstance(sug[0], dict):
@@ -397,6 +580,11 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
             msg += f"\n\n✅ Títulos aplicados: {', '.join(aplicados)}"
         if recusados:
             msg += f"\n⏭ Sem confirmação / recusados: {', '.join(recusados)}"
+        if ref_txt:
+            msg += (
+                "\n\n_Copy:_ estrutura das bolsas/legado desta conta "
+                "(palavras de bolsa não entram no título Impala)."
+            )
         alerta_enviado = bool(alertar_gestor(msg, agente_id="otimizador_listing"))
 
         return {
@@ -404,6 +592,7 @@ def analisar_catalogo(limite_itens: int = 10) -> dict:
             "modo": modo,
             "aplicacao_habilitada": bool(OTIMIZADOR_LISTING_APLICAR),
             "descricao_nunca_aplicada": True,
+            "usou_referencia_legado": bool(ref_txt),
             "total_analisados": len(resultados),
             "limite_itens": limite,
             "titulos_aplicados": aplicados,

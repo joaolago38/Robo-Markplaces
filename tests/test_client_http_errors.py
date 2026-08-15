@@ -31,13 +31,17 @@ class TestClientHttpErrors(unittest.TestCase):
             self.assertTrue(any("ESCOPO" in line or "403" in line for line in logs.output))
 
     def test_magalu_listar_perguntas_401(self):
-        with patch.object(mag, "MAGALU_ACCESS_TOKEN", "t"):
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", "t"), patch.object(
+            mag, "_canal_operando", return_value=True
+        ):
             self.mock_http.return_value = make_http_response(status_code=401)
             with self.assertLogs("magalu_client", level="ERROR"):
                 self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
 
     def test_amazon_listar_mensagens_rede(self):
-        with patch.object(amz, "AMAZON_ACCESS_TOKEN", "t"):
+        with patch.object(amz, "AMAZON_ACCESS_TOKEN", "t"), patch.object(
+            amz, "_canal_operando", return_value=True
+        ):
             self.mock_http.side_effect = RuntimeError("rede")
             with self.assertLogs("amazon_client", level="ERROR"):
                 self.assertEqual(amz.listar_mensagens_nao_respondidas(), [])
@@ -48,6 +52,7 @@ class TestClientHttpErrors(unittest.TestCase):
             patch.object(shopee, "SHOPEE_PARTNER_KEY", "k"),
             patch.object(shopee, "SHOPEE_SHOP_ID", "2"),
             patch.object(shopee, "SHOPEE_ACCESS_TOKEN", "t"),
+            patch.object(shopee, "_canal_operando", return_value=True),
         ):
             self.mock_http.return_value = make_http_response(status_code=403)
             with self.assertLogs("shopee_client", level="ERROR"):

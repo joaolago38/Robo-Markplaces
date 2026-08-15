@@ -11,13 +11,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from agentes.ml import agente_otimizador_listing as opt
 
 
+@patch.object(opt, "_referencia_copy_txt", return_value="")
 class TestAnalisarItem(unittest.TestCase):
-    def test_item_id_vazio(self):
+    def test_item_id_vazio(self, *_):
         out = opt.analisar_item("")
         self.assertFalse(out["ok"])
         self.assertIn("inválido", out["erro"].lower())
 
-    def test_item_id_placeholder_mlb_preencher(self):
+    def test_item_id_placeholder_mlb_preencher(self, *_):
         out = opt.analisar_item("MLB_PREENCHER")
         self.assertFalse(out["ok"])
         self.assertTrue(out.get("pulado"))
@@ -215,11 +216,12 @@ _CATALOGO_FIXTURE = [
 ]
 
 
+@patch("integracoes.ml.referencia_copy_legado.coletar_referencia_copy_legado", return_value={"n": 0, "ok": False})
 class TestAnalisarCatalogo(unittest.TestCase):
     @patch("core.notificador.alertar_gestor", return_value=True)
     @patch.object(opt, "analisar_item")
     @patch.object(opt, "_carregar_catalogo", return_value=_CATALOGO_FIXTURE)
-    def test_respeita_limite_e_ignora_inativos(self, mock_catalogo, mock_analisar, mock_alertar):
+    def test_respeita_limite_e_ignora_inativos(self, mock_catalogo, mock_analisar, mock_alertar, *_):
         mock_analisar.side_effect = [
             {
                 "ok": True,
@@ -244,7 +246,7 @@ class TestAnalisarCatalogo(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["total_analisados"], 1)
         self.assertEqual(mock_analisar.call_count, 1)
-        mock_analisar.assert_called_with("MLB-A")
+        mock_analisar.assert_called_with("MLB-A", referencia_copy="")
         mock_alertar.assert_called_once()
         self.assertTrue(out["alerta_enviado"])
         self.assertEqual(len(out["resultados"]), 1)
@@ -252,7 +254,7 @@ class TestAnalisarCatalogo(unittest.TestCase):
     @patch("core.notificador.alertar_gestor", return_value=True)
     @patch.object(opt, "analisar_item", return_value={"ok": True, "concorrentes_analisados": 0, "sugestoes_texto": "x"})
     @patch.object(opt, "_carregar_catalogo", return_value=_CATALOGO_FIXTURE[:1])
-    def test_omite_sem_concorrentes_no_resumo(self, _cat, _analisar, mock_alertar):
+    def test_omite_sem_concorrentes_no_resumo(self, _cat, _analisar, mock_alertar, *_):
         out = opt.analisar_catalogo(limite_itens=5)
         self.assertTrue(out["ok"])
         msg = mock_alertar.call_args[0][0]
@@ -282,7 +284,7 @@ class TestAnalisarCatalogo(unittest.TestCase):
         },
     )
     @patch.object(opt, "_carregar_catalogo", return_value=_CATALOGO_FIXTURE[:1])
-    def test_alertar_gestor_com_preview_descricao(self, _cat, _analisar, mock_alertar):
+    def test_alertar_gestor_com_preview_descricao(self, _cat, _analisar, mock_alertar, *_):
         opt.analisar_catalogo(limite_itens=5)
         msg = mock_alertar.call_args[0][0]
         self.assertIn("Sugestão descrição (preview)", msg)
@@ -302,7 +304,7 @@ class TestAnalisarCatalogo(unittest.TestCase):
         },
     )
     @patch.object(opt, "_carregar_catalogo", return_value=_CATALOGO_FIXTURE[:1])
-    def test_alertar_gestor_com_itens_relevantes(self, _cat, _analisar, mock_alertar):
+    def test_alertar_gestor_com_itens_relevantes(self, _cat, _analisar, mock_alertar, *_):
         opt.analisar_catalogo(limite_itens=5)
         msg = mock_alertar.call_args[0][0]
         self.assertIn("MLB-A", msg)
@@ -427,7 +429,54 @@ class TestHelpers(unittest.TestCase):
         self.assertIsNone(opt._titulo_aplicavel("Bom título", "MLB_PREENCHER"))
         self.assertEqual(opt._titulo_aplicavel("Kit Impala 12 cores", "MLB123"), "Kit Impala 12 cores")
 
+    def test_montar_contexto_inclui_referencia_copy(self):
+        ctx = opt._montar_contexto(
+            {"titulo": "Kit Impala", "preco": 39.9, "estoque": 0, "visitas_7d": 0, "visitas_30d": 0, "status": "pre_publicacao"},
+            [],
+            "",
+            referencia_copy="=== REFERÊNCIA DE COPY DA CONTA",
+        )
+        self.assertIn("REFERÊNCIA DE COPY", ctx)
+        self.assertIn("Kit Impala", ctx)
 
+    def test_listar_pre_publicacao_sem_mlb(self):
+        itens = opt._listar_itens_pre_publicacao(
+            [
+                {
+                    "sku": "IMP-X",
+                    "nome": "Kit X",
+                    "titulo_sugerido_ml": "Kit 4 Esmaltes Impala",
+                    "canais": {"mercadolivre": {"ativo": True, "item_id": "MLB_PREENCHER", "titulo_anuncio": "Kit 4 Esmaltes Impala"}},
+                },
+                {
+                    "sku": "IMP-Y",
+                    "nome": "Kit Y",
+                    "canais": {"mercadolivre": {"ativo": True, "item_id": "MLB123"}},
+                },
+            ]
+        )
+        self.assertEqual(len(itens), 1)
+        self.assertEqual(itens[0]["sku"], "IMP-X")
+        self.assertEqual(itens[0]["titulo"], "Kit 4 Esmaltes Impala")
+
+    def test_resumo_telegram_pre_pub_com_referencia(self):
+        msg = opt._montar_resumo_telegram([
+            {
+                "ok": True,
+                "sku": "IMP-X",
+                "pre_publicacao": True,
+                "titulo_atual": "Kit 4",
+                "visitas_7d": 0,
+                "sugestoes_texto": "Kit 4 Esmaltes Impala Perolado Manicure",
+                "concorrentes_analisados": 0,
+                "usou_referencia_legado": True,
+            }
+        ])
+        self.assertIn("[pré-pub] IMP-X", msg)
+        self.assertIn("Kit 4 Esmaltes", msg)
+
+
+@patch("integracoes.ml.referencia_copy_legado.coletar_referencia_copy_legado", return_value={"n": 0, "ok": False})
 class TestAplicarTituloComTravas(unittest.TestCase):
     @patch("core.config.OTIMIZADOR_LISTING_APLICAR", False)
     @patch("core.notificador.alertar_gestor", return_value=True)
@@ -448,7 +497,7 @@ class TestAplicarTituloComTravas(unittest.TestCase):
     @patch.object(opt, "_carregar_catalogo", return_value=[
         {"sku": "S", "nome": "N", "canais": {"mercadolivre": {"ativo": True, "item_id": "MLB-A"}}},
     ])
-    def test_flag_off_nunca_aplica(self, _cat, _analisar, mock_upd, mock_alertar):
+    def test_flag_off_nunca_aplica(self, _cat, _analisar, mock_upd, mock_alertar, *_):
         out = opt.analisar_catalogo(limite_itens=1)
         self.assertEqual(out["modo"], "sugestao")
         self.assertFalse(out["aplicacao_habilitada"])
@@ -507,6 +556,43 @@ class TestAplicarTituloComTravas(unittest.TestCase):
         out = opt.analisar_catalogo(limite_itens=1)
         self.assertEqual(out["titulos_aplicados"], ["MLB-A"])
         mock_upd.assert_called_once_with("MLB-A", "Titulo Novo ML")
+
+
+class TestPrePublicacaoCatalogo(unittest.TestCase):
+    @patch("integracoes.ml.referencia_copy_legado.montar_bloco_contexto", return_value="=== REFERÊNCIA DE COPY DA CONTA")
+    @patch("integracoes.ml.referencia_copy_legado.coletar_referencia_copy_legado", return_value={"n": 2, "ok": True})
+    @patch("core.notificador.alertar_gestor", return_value=True)
+    @patch.object(opt, "analisar_titulo_proposto")
+    @patch.object(opt, "_carregar_catalogo", return_value=[
+        {
+            "sku": "IMP-X",
+            "nome": "Kit X",
+            "canais": {
+                "mercadolivre": {
+                    "ativo": True,
+                    "item_id": "MLB_PREENCHER",
+                    "titulo_anuncio": "Kit 4 Esmaltes Impala",
+                    "preco": 39.9,
+                }
+            },
+        }
+    ])
+    def test_pre_pub_quando_sem_mlb(self, _cat, mock_pre, mock_alertar, *_):
+        mock_pre.return_value = {
+            "ok": True,
+            "sku": "IMP-X",
+            "pre_publicacao": True,
+            "titulo_atual": "Kit 4 Esmaltes Impala",
+            "sugestoes_texto": "Kit 4 Esmaltes Impala Perolado Manicure",
+            "concorrentes_analisados": 1,
+            "usou_referencia_legado": True,
+        }
+        out = opt.analisar_catalogo(limite_itens=3)
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["usou_referencia_legado"])
+        mock_pre.assert_called_once()
+        msg = mock_alertar.call_args[0][0]
+        self.assertIn("bolsas/legado", msg)
 
 
 if __name__ == "__main__":

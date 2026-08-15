@@ -176,7 +176,14 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
     itens: list[dict] = []
 
     try:
-        anuncios = ml_client.listar_meus_anuncios()[:limite_itens]
+        anuncios = ml_client.listar_meus_anuncios()
+        try:
+            from integracoes.ml.integridade_dados_ml import executar as auditar_ml
+
+            auditar_ml(anuncios=anuncios)
+        except Exception as exc:
+            logger.info("integridade ML: %s", exc)
+        anuncios = anuncios[:limite_itens]
     except Exception as exc:
         logger.error("monitor_ml listar_meus_anuncios: %s", exc)
         return [], [f"Não foi possível listar anúncios: {exc}"]

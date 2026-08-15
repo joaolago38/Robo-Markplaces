@@ -3442,6 +3442,18 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 2, "x": 2, "y": 6},
                     "id": 780020,
                 },
+                {
+                    **_qv(
+                        "Integridade ML % (meta 99,99)",
+                        "avg:robo.ml.integridade.pct{*}",
+                        aggregator="avg",
+                        red_lt=99.99,
+                        green_gt=99.98,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 6},
+                    "id": 780021,
+                },
             ],
         },
         "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
@@ -4104,7 +4116,8 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "name": "[Robo] Magalu auth/token (logs 1h)",
             "type": "log alert",
             "query": (
-                'logs("service:robo-markplaces Magalu (401 OR invalid_grant)")'
+                'logs("service:robo-markplaces (Magalu OR \\"Magazine Luiza\\") '
+                '(401 OR 400 OR invalid_grant)")'
                 '.index("*").rollup("count").last("1h") > 5'
             ),
             "message": (
@@ -4254,6 +4267,25 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "tags": [TAG_MONITOR, "monitor:conectividade", "severity:p2"],
             "options": {
                 "thresholds": {"critical": 5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
+        },
+        {
+            "name": "[Robo] Integridade dados ML abaixo de 99,99%",
+            "type": "query alert",
+            "query": "avg(last_1h):avg:robo.ml.integridade.pct{*} < 99.99",
+            "message": (
+                "Espelho ML abaixo de 99,99% vs API ao vivo. "
+                "Listagem incompleta, GET /items falhou ou IDs faltando. "
+                "Nao tome preco/estoque como verdade ate o widget voltar ao verde.\n"
+                + msg_ecom
+            ),
+            "tags": [TAG_MONITOR, "monitor:integridade_ml", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 99.99},
                 "notify_no_data": False,
                 "require_full_window": False,
                 "include_tags": True,

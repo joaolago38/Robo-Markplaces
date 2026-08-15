@@ -63,6 +63,11 @@ jobs:
             logs/chat_ultima.json
             logs/nfe_ultima.json
             logs/vendas_whatsapp_ultima.json
+            logs/decisao_oscilacao_ultima.json
+            logs/briefing_ruptura_impala_ultima.json
+            logs/kits_compativeis_manicures_ultima.json
+            logs/ponto_ruptura_segundo_cnpj_ultima.json
+            logs/ads_product_ads_404.json
           key: saude-heartbeats-${{ github.run_id }}
           restore-keys: |
             saude-heartbeats-
@@ -72,6 +77,7 @@ jobs:
           path: |
             logs/datadog_erros_recentes.json
             logs/datadog_vigia_history.json
+            logs/decisao_oscilacao_ultima.json
           key: vigia-datadog-${{ github.run_id }}
           restore-keys: |
             vigia-datadog-
@@ -91,6 +97,7 @@ jobs:
             logs/datadog_erros_recentes.json
             logs/datadog_vigia_history.json
             logs/alertas_cooldown.json
+            logs/decisao_oscilacao_ultima.json
           key: vigia-datadog-${{ github.run_id }}
       - name: Salvar snapshot vigia
         uses: actions/upload-artifact@v4

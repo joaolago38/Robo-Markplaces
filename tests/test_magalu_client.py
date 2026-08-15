@@ -47,6 +47,9 @@ if "requests.adapters" not in sys.modules:
 
 import integracoes.magalu.magalu_client as mag
 
+# Spec deixa Magalu inativo; estes testes cobrem o cliente com canal ligado.
+mag._canal_operando = lambda: True
+
 
 def _resp(status: int, body: dict | None = None, text: str = "") -> MagicMock:
     r = MagicMock()
@@ -375,6 +378,14 @@ class TestHelpers(unittest.TestCase):
         headers = mag._h()
         self.assertEqual(headers["Authorization"], "Bearer refreshed")
         self.assertNotIn("X-Seller-Id", headers)
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_enabled_respeita_canal_operando(self, *_):
+        with patch.object(mag, "_canal_operando", return_value=True):
+            self.assertTrue(mag._enabled())
+        with patch.object(mag, "_canal_operando", return_value=False):
+            self.assertFalse(mag._enabled())
 
 
 if __name__ == "__main__":

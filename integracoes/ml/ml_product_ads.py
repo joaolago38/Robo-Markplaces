@@ -13,6 +13,7 @@ from core.config import (
     ML_ADS_ACOS_DIAS_LIMITE,
     ML_ADS_KILL_SWITCH,
     ML_ADS_ORCAMENTO_MAXIMO,
+    ROOT,
 )
 from core.notificador import alertar_gestor
 from integracoes.ml.ml_client import BASE, _enabled, _request_ml
@@ -23,37 +24,67 @@ _METRICS = "clicks,prints,ctr,cost,cpc,acos,roas,cvr,units_quantity,total_amount
 # Estado da última listagem — probe/escrita usam para distinguir 404 de "sem campanha".
 _ULTIMA_LISTAGEM: dict = {"ok": True, "codigo": "", "advertiser_id": ""}
 _ULTIMO_AVISO_404_TS: float = 0.0
-_COOLDOWN_AVISO_404_SEG = 6 * 3600  # evita spam warn no Datadog a cada ciclo 30min
+_COOLDOWN_AVISO_404_SEG = 6 * 3600  # log: evita spam warn a cada ciclo 30min
+_COOLDOWN_METRICA_404_SEG = 7 * 86400  # métrica: 1 lembrete/semana, não a cada job
+_COOLDOWN_404_PATH = ROOT / "logs" / "ads_product_ads_404.json"
 
 
 def ultima_listagem_codigo() -> str:
     return str(_ULTIMA_LISTAGEM.get("codigo") or "")
 
 
+def _estado_404() -> dict:
+    try:
+        from core.atomic_io import ler_json
+
+        data = ler_json(_COOLDOWN_404_PATH, default={})
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _salvar_estado_404(estado: dict) -> None:
+    try:
+        from core.atomic_io import escrever_json_atomico
+
+        escrever_json_atomico(_COOLDOWN_404_PATH, estado)
+    except Exception:
+        pass
+
+
 def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
-    """Warn + métrica no máximo 1x por processo / 6h (evita spam no Datadog)."""
+    """Warn + métrica com cooldown em disco (Actions é processo novo a cada job)."""
     global _ULTIMO_AVISO_404_TS
     agora = time.time()
-    if (agora - _ULTIMO_AVISO_404_TS) < _COOLDOWN_AVISO_404_SEG:
+    estado = _estado_404()
+    ultimo_warn = float(estado.get("warn_ts") or _ULTIMO_AVISO_404_TS or 0)
+    ultimo_metric = float(estado.get("metric_ts") or 0)
+    if (agora - ultimo_warn) < _COOLDOWN_AVISO_404_SEG:
         logger.debug(
             "ML listar_campanhas: Product Ads ainda 404 advertiser=%s (aviso em cooldown)",
             advertiser_id,
         )
+        _ULTIMO_AVISO_404_TS = ultimo_warn
         return
     _ULTIMO_AVISO_404_TS = agora
-    try:
-        from core.datadog_metrics import incrementar
+    estado["warn_ts"] = agora
+    estado["advertiser_id"] = advertiser_id or ""
+    if (agora - ultimo_metric) >= _COOLDOWN_METRICA_404_SEG:
+        try:
+            from core.datadog_metrics import incrementar
 
-        incrementar(
-            "ads.indisponivel",
-            tags=["motivo:http_404", f"advertiser:{advertiser_id or 'desconhecido'}"],
-        )
-    except Exception:
-        pass
+            incrementar(
+                "ads.indisponivel",
+                tags=["motivo:http_404", f"advertiser:{advertiser_id or 'desconhecido'}"],
+            )
+            estado["metric_ts"] = agora
+        except Exception:
+            pass
+    _salvar_estado_404(estado)
     logger.warning(
         "ML listar_campanhas: Product Ads indisponível (HTTP 404) "
         "advertiser=%s — confira escopos advertising / ID no DevCenter "
-        "(próximos avisos em cooldown %sh neste processo)",
+        "(próximos avisos em cooldown %sh)",
         advertiser_id,
         _COOLDOWN_AVISO_404_SEG // 3600,
     )

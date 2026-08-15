@@ -271,8 +271,9 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "respondendo. Telegram principalmente se algo não estiver ok."
     ),
     "otimizador_listing": (
-        "Sugere melhorias de título, descrição e fotos dos anúncios ML com base em "
-        "métricas e concorrentes (somente leitura). Telegram: lista de sugestões."
+        "Sugere título e descrição ML via Claude: concorrentes + estrutura de copy "
+        "das bolsas/legado desta conta que já vendem (não copia o produto bolsa). "
+        "Kits Impala sem MLB entram como pré-publicação. Telegram: lista de sugestões."
     ),
     "relatorio_financeiro": (
         "Resume economia estimada de repricing e gasto de Ads do período para o "

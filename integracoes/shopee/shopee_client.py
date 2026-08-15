@@ -36,11 +36,22 @@ def _ids_validos() -> bool:
     return bool(pid.isdigit() and sid.isdigit())
 
 
+def _canal_operando() -> bool:
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao("shopee")
+    except Exception:
+        return True
+
+
 def _enabled() -> bool:
     tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
     if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token):
         return False
-    return _ids_validos()
+    if not _ids_validos():
+        return False
+    return _canal_operando()
 
 
 def _token_para_assinatura() -> str:
