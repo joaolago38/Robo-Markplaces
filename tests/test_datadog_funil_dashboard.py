@@ -150,6 +150,10 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.impala.guerra.carmed_titulo",
             "robo.impala.guerra.nosso_carmed",
             "robo.esmaltes.kit_manicure.entrada_ok",
+            "robo.impala.guerra.canal_liberado{marketplace:mercadolivre}",
+            "robo.impala.guerra.canal_liberado{marketplace:shopee}",
+            "robo.impala.guerra.canal_liberado{marketplace:magalu}",
+            "robo.impala.guerra.canal_liberado{marketplace:amazon}",
         ):
             self.assertIn(metric, blob, msg=metric)
 

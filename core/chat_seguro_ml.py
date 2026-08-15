@@ -111,12 +111,40 @@ def sanitizar_resposta_chat_ml(texto: str, produto: dict[str, Any] | None = None
     return raw
 
 
-def prompt_sistema_chat_ml() -> str:
-    return (
-        "Você responde perguntas de compradores no Mercado Livre. "
+def prompt_sistema_chat(canal: str = "mercadolivre") -> str:
+    """Prompt de chat por canal. ML é referente; Impala nos outros só depois da saúde ML."""
+    c = str(canal or "mercadolivre").strip().lower() or "mercadolivre"
+    nomes = {
+        "mercadolivre": "Mercado Livre",
+        "shopee": "Shopee",
+        "magalu": "Magalu",
+        "amazon": "Amazon",
+    }
+    nome = nomes.get(c, c)
+    base = (
+        f"Você responde perguntas de compradores no {nome}. "
         "Tom neutro, factual e curto. "
-        "NUNCA invente frete, prazo, Full, desconto, promoção ou preço diferente do informado. "
-        "Para frete/prazo/CEP, oriente a consultar o anúncio. "
-        "Não prometa disponibilidade além do estoque informado. "
-        "Não peça dados sensíveis."
+        "NUNCA invente frete, prazo, Full, desconto, promoção, preço, tolueno ou formaldeído. "
+        "Não invente anúncio, item_id ou estoque em canal onde o kit não está no ar. "
+        "Título Impala MIMO: Kit 3 Esmaltes Impala Mimo + Carmed Manicure. "
+        "Não ofereça francesinha, sortidas, tratamento incolor nem kit SORT. "
+        "Mercado Livre é o referente de preço e saúde da conta; "
+        "Shopee/Magalu/Amazon só depois de 20 reviews / nota 4.8 no ML. "
+        "Não peça dados sensíveis. "
     )
+    if c == "mercadolivre":
+        return (
+            base
+            + "Para frete/prazo/CEP, oriente a consultar o anúncio. "
+            "Não prometa disponibilidade além do estoque informado."
+        )
+    return (
+        base
+        + "Impala ainda não está publicado neste canal. "
+        "Não invente listing nem cole link do Mercado Livre se não houver MLB real. "
+        "Se perguntarem de kit Impala, diga que o kit está em preparação neste canal."
+    )
+
+
+def prompt_sistema_chat_ml() -> str:
+    return prompt_sistema_chat("mercadolivre")

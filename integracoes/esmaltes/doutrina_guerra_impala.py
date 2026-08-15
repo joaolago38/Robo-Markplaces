@@ -28,6 +28,8 @@ _PRIORIDADE = {
 
 _TAXA_ML_PADRAO = 0.18
 _MARGEM_FASE_PADRAO = {1: 0.10, 2: 0.18, 3: 0.25}
+CANAIS = ("mercadolivre", "shopee", "magalu", "amazon")
+CANAL_REFERENTE = "mercadolivre"
 
 # Título ML da entrada (≤60): busca + marca + coleção + extra + público.
 TITULO_MIMO_ML = "Kit 3 Esmaltes Impala Mimo + Carmed Manicure"
@@ -383,6 +385,34 @@ def sku_pode_publicar_agora(
     return False, "fora_frente_nao_abrir_4o_sku"
 
 
+def canal_pode_entrar(
+    marketplace: str,
+    *,
+    condicoes: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    """ML é o referente. Shopee/Magalu/Amazon só depois da fase 3 (saúde ML)."""
+    canal = str(marketplace or "").strip().lower()
+    if canal not in CANAIS:
+        return False, "canal_desconhecido"
+    cond = (
+        condicoes
+        if isinstance(condicoes, dict) and condicoes.get("fase") is not None
+        else avaliar_condicoes_guerra()
+    )
+    if canal == CANAL_REFERENTE:
+        return sku_pode_publicar_agora("IMP-MIMO-003", condicoes=cond)
+    d = carregar_doutrina()
+    canais_cfg = d.get("canais") if isinstance(d.get("canais"), dict) else {}
+    try:
+        fase_min = int(canais_cfg.get("fase_minima_secundario") or 3)
+    except (TypeError, ValueError):
+        fase_min = 3
+    fase = int(cond.get("fase") or 0)
+    if fase < fase_min:
+        return False, f"aguardar_ml_fase_{fase_min}"
+    return True, "ml_referente_saudavel"
+
+
 def avaliar_condicoes_guerra(
     *,
     produtos: list[dict[str, Any]] | None = None,
@@ -515,6 +545,13 @@ def emitir_metricas_condicoes(condicoes: dict[str, Any] | None = None) -> dict[s
                 "impala.guerra.titulo_peca",
                 1.0 if pecas.get(peca) else 0.0,
                 tags=[f"peca:{peca}"],
+            )
+        for canal in CANAIS:
+            ok, _motivo = canal_pode_entrar(canal, condicoes=cond)
+            gauge(
+                "impala.guerra.canal_liberado",
+                1.0 if ok else 0.0,
+                tags=[f"marketplace:{canal}"],
             )
         return cond
     except Exception as exc:

@@ -73,6 +73,17 @@
       "shopee": {
         "ativo": false,
         "preco": 0,
+        "estoque": 0,
+        "taxa_canal_pct": 14.0
+      },
+      "magalu": {
+        "ativo": false,
+        "preco": 0,
+        "estoque": 0
+      },
+      "amazon": {
+        "ativo": false,
+        "preco": 0,
         "estoque": 0
       }
     }
@@ -1015,6 +1026,17 @@
       "shopee": {
         "ativo": false,
         "preco": 0,
+        "estoque": 0,
+        "taxa_canal_pct": 14.0
+      },
+      "magalu": {
+        "ativo": false,
+        "preco": 0,
+        "estoque": 0
+      },
+      "amazon": {
+        "ativo": false,
+        "preco": 0,
         "estoque": 0
       }
     }
@@ -1625,6 +1647,17 @@
         "taxa_canal_pct": 18.0
       },
       "shopee": {
+        "ativo": false,
+        "preco": 0,
+        "estoque": 0,
+        "taxa_canal_pct": 14.0
+      },
+      "magalu": {
+        "ativo": false,
+        "preco": 0,
+        "estoque": 0
+      },
+      "amazon": {
         "ativo": false,
         "preco": 0,
         "estoque": 0

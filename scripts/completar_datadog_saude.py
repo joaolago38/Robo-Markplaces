@@ -1647,6 +1647,51 @@ def _grupo_decisao_guerra_impala() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 17},
                     "id": 741039,
                 },
+                {
+                    **_qv(
+                        "Canal ML liberado (referente)",
+                        "avg:robo.impala.guerra.canal_liberado{marketplace:mercadolivre}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 19},
+                    "id": 741040,
+                },
+                {
+                    **_qv(
+                        "Canal Shopee (so apos fase 3 ML)",
+                        "avg:robo.impala.guerra.canal_liberado{marketplace:shopee}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 19},
+                    "id": 741041,
+                },
+                {
+                    **_qv(
+                        "Canal Magalu (so apos fase 3 ML)",
+                        "avg:robo.impala.guerra.canal_liberado{marketplace:magalu}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 19},
+                    "id": 741042,
+                },
+                {
+                    **_qv(
+                        "Canal Amazon (so apos fase 3 ML)",
+                        "avg:robo.impala.guerra.canal_liberado{marketplace:amazon}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 19},
+                    "id": 741043,
+                },
             ],
         },
         "layout": {"x": 0, "y": 26, "width": 12, "height": 1},
@@ -4220,6 +4265,7 @@ def atualizar_dashboard_ecommerce() -> None:
             "(0=abrir MIMO, não é erro), publicar_agora (gate, não os 20 kits), "
             "título de atração (Impala+esmalte+Carmed+manicure), Carmed no ar, "
             "MIMO como entrada da manicure (não economia vs avulso), "
+            "canal_liberado por marketplace (ML referente; Shopee/Magalu/Amazon só fase 3+), "
             "margem/lucro do catálogo + Cruzeiro spa + pipeline onda 2. "
             "Rivais comparáveis só com amostra viva. Telegram aponta "
             "para este grupo. Cache STALE não entra como mercado.\n\n"

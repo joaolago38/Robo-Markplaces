@@ -336,6 +336,33 @@ class TestCondicoesGuerra(unittest.TestCase):
         self.assertTrue(all(pecas.values()))
         self.assertFalse(dg.pecas_titulo_mimo("Kit 3 Francesinha Impala")["sem_francesinha"])
 
+    def test_canal_secundario_bloqueado_na_fase_0(self):
+        cond = dg.avaliar_condicoes_guerra(
+            produtos=[
+                _kit("IMP-MIMO-003", nome="Kit 3 Esmaltes Impala Mimo + Carmed Manicure"),
+                _kit("IMP-PERL-004"),
+                _kit("IMP-JUPAES-006"),
+            ],
+            radar={"mercado_confiavel": False},
+            resumo_conta={"avaliacoes": 0, "nota": 0},
+        )
+        ok_ml, motivo_ml = dg.canal_pode_entrar("mercadolivre", condicoes=cond)
+        self.assertTrue(ok_ml)
+        self.assertEqual(motivo_ml, "abrir_frente_mimo_carmed")
+        for canal in ("shopee", "magalu", "amazon"):
+            ok, motivo = dg.canal_pode_entrar(canal, condicoes=cond)
+            self.assertFalse(ok, msg=canal)
+            self.assertIn("aguardar_ml_fase_3", motivo)
+        ok_x, motivo_x = dg.canal_pode_entrar("lojahub", condicoes=cond)
+        self.assertFalse(ok_x)
+        self.assertEqual(motivo_x, "canal_desconhecido")
+
+    def test_canal_secundario_libera_na_fase_3(self):
+        cond = {"fase": 3, "checks": {"mlb_mimo": True}}
+        ok, motivo = dg.canal_pode_entrar("shopee", condicoes=cond)
+        self.assertTrue(ok)
+        self.assertEqual(motivo, "ml_referente_saudavel")
+
 
 if __name__ == "__main__":
     unittest.main()

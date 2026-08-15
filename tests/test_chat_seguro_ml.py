@@ -6,6 +6,8 @@ import unittest
 from core.chat_seguro_ml import (
     MSG_CONSULTAR_ANUNCIO,
     MSG_SEM_DESCONTO,
+    prompt_sistema_chat,
+    prompt_sistema_chat_ml,
     sanitizar_resposta_chat_ml,
 )
 
@@ -41,6 +43,18 @@ class TestSanitizarResposta(unittest.TestCase):
         # "frete" sozinho sem "grátis/amanhã" — a regex pega frete grátis; "Confira frete" pode passar
         # Se a frase tiver "frete grátis" bloqueia; aqui só "frete" sem absoluto
         self.assertTrue(len(out) > 10)
+
+
+class TestPromptChatCanais(unittest.TestCase):
+    def test_ml_e_shopee_nao_inventam_listing(self):
+        ml = prompt_sistema_chat_ml()
+        self.assertIn("Mercado Livre", ml)
+        self.assertIn("Carmed Manicure", ml)
+        self.assertIn("francesinha", ml)
+        sh = prompt_sistema_chat("shopee")
+        self.assertIn("Shopee", sh)
+        self.assertIn("não está publicado neste canal", sh)
+        self.assertIn("4.8", sh)
 
 
 if __name__ == "__main__":
