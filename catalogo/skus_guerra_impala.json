@@ -2,18 +2,21 @@
   {
     "sku": "IMP-MIMO-003",
     "papel": "entrada",
+    "arma": "diferenciar",
     "nome": "Kit 3 Mimo + Carmed",
     "diferencial_obrigatorio": "kit compacto + Carmed no combo — margem real ~19% (não copiar vd/dia de kit no prejuízo)"
   },
   {
     "sku": "IMP-PERL-004",
-    "papel": "entrada",
+    "papel": "preco",
+    "arma": "igualar_faixa",
     "nome": "Kit 4 Perolado Tendência",
     "diferencial_obrigatorio": "Sonho/Polar/Lua/Dengo — margem real ~16%; só baixar preço com rival AO VIVO no mesmo tamanho"
   },
   {
     "sku": "IMP-JUPAES-006",
     "papel": "giro",
+    "arma": "listing",
     "nome": "Kit 6 Ju Paes — Virando o Jogo",
     "diferencial_obrigatorio": "margem real ~18% — segundo kit no ML depois do primeiro pedido MIMO/PERL"
   }

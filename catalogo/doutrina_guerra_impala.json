@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "nome": "guerra_por_faixa",
+  "cnpj": "52668583000127",
+  "piso_margem_pct": 15,
+  "taxa_ml": 0.18,
+  "gap_igualar_pct": 3,
+  "sku_preco": "IMP-PERL-004",
+  "sku_entrada": "IMP-MIMO-003",
+  "sku_giro": "IMP-JUPAES-006",
+  "skus_frente": ["IMP-MIMO-003", "IMP-PERL-004", "IMP-JUPAES-006"],
+  "preco_congelado": ["IMP-MIMO-003", "IMP-JUPAES-006"],
+  "margem_por_fase": {
+    "1": 0.10,
+    "2": 0.18,
+    "3": 0.25
+  },
+  "kits": {
+    "IMP-MIMO-003": {
+      "papel": "entrada",
+      "arma": "diferenciar",
+      "preco_fase1": 44.9
+    },
+    "IMP-PERL-004": {
+      "papel": "preco",
+      "arma": "igualar_faixa",
+      "preco_fase1": 39.9
+    },
+    "IMP-JUPAES-006": {
+      "papel": "giro",
+      "arma": "listing",
+      "exige_pedido_vencedor": true,
+      "preco_fase1": 64.9
+    }
+  },
+  "classificacoes": ["ignorar", "diferenciar", "igualar_faixa", "nao_perseguir"],
+  "gatilhos": {
+    "gap_pct_min": 3,
+    "estoque_ml_min": 30,
+    "reviews_ads": 20,
+    "nota_ads": 4.8,
+    "acos_max": 0.2
+  }
+}

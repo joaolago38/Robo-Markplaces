@@ -258,8 +258,8 @@ class TestRepricingImpalaApplyPath(unittest.TestCase):
     def test_dry_run_nao_aplica(self, mock_cat, _cong):
         mock_cat.return_value = [
             {
-                "sku": "IMP-MIMO-003",
-                "nome": "Kit Impala",
+                "sku": "IMP-PERL-004",
+                "nome": "Kit Impala Perolado",
                 "custo_total": 27.0,
                 "fase_atual": 1,
                 "preco": 30.0,

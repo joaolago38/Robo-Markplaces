@@ -97,6 +97,17 @@ def executar(dry_run: bool = True, fase_override: int | None = None) -> dict:
             )
         ]
         resultados = [calcular_preco_ideal(k, fase_override) for k in kits]
+        for r in resultados:
+            sku_r = str(r.get("sku") or "")
+            try:
+                from integracoes.esmaltes.doutrina_guerra_impala import sku_pode_mexer_preco
+
+                if r.get("ajuste_necessario") and not sku_pode_mexer_preco(sku_r):
+                    r["ajuste_necessario"] = False
+                    r["congelado_doutrina"] = True
+                    r["motivo"] = "doutrina: só PERL mexe preço na frente"
+            except Exception as exc:
+                logger.debug("doutrina repricing %s: %s", sku_r, exc)
         ajustes = [r for r in resultados if r.get("ajuste_necessario") and not r.get("erro")]
 
         aplicados = []

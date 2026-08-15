@@ -33,6 +33,17 @@ SYSTEM_RUPTURA = (
     "Não publicar anúncio. Não trocar CNPJ 52.668.583/0001-27."
 )
 
+SYSTEM_GUERRA = (
+    "Guerra Impala por faixa — classifique UM golpe. Cite SOMENTE o JSON. "
+    "Saída obrigatória: IGNORAR | DIFERENCIAR | IGUALAR_FAIXA | NAO_PERSEGUIR. "
+    "Um FAZER, duas recusas, uma arma (preco|listing|chat|observar). SKU explícito. "
+    "Se fonte_rival ≠ ao_vivo, IGNORAR — não use preco_ml_mercado. "
+    "Se rival_min < piso_preco, NAO_PERSEGUIR — não fure margem da fase. "
+    "Só IMP-PERL-004 iguala preço; MIMO diferencia; JUPAES não disputa kit 3/4. "
+    "Não invente concorrente, vd/dia nem ranking. Não publicar anúncio. "
+    "Não trocar CNPJ 52.668.583/0001-27. Não ligar Ads neste golpe."
+)
+
 
 def dosar_analise_para_decisao(
     *,
@@ -58,6 +69,7 @@ def dosar_analise_para_decisao(
     prop = (proposito or "").lower()
     forcada = str(forcar_profundidade or "").strip().lower()
     ruptura = "ruptura" in prop
+    guerra = "guerra" in prop and not ruptura
 
     profundidade = "padrao"
     motivos: list[str] = []
@@ -83,9 +95,21 @@ def dosar_analise_para_decisao(
 
     if ruptura or forcada == "ampliada":
         instrucoes = SYSTEM_RUPTURA
+    if guerra:
+        instrucoes = SYSTEM_GUERRA
+        if not forcada:
+            profundidade = "padrao"
+            motivos.append("guerra_por_faixa")
 
     foco = ["FAZER", "NAO_FAZER", "OBSERVAR"]
-    if ruptura:
+    if guerra:
+        foco = [
+            "IGNORAR",
+            "DIFERENCIAR",
+            "IGUALAR_FAIXA",
+            "NAO_PERSEGUIR",
+        ]
+    elif ruptura:
         foco = [
             "PROTEGER_MARGEM",
             "NAO_ESCALAR_ADS",

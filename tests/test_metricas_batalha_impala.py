@@ -176,12 +176,13 @@ class TestBatalhaImpala(unittest.TestCase):
         self.assertFalse(out["ok"])
         mock_inc.assert_any_call("impala.batalha.erro")
 
+    @patch("integracoes.esmaltes.golpe_guerra_impala.processar_golpe_batalha", return_value={"disparar": False})
     @patch("integracoes.esmaltes.decisao_batalha_agir.processar_agir_batalha", return_value={"criticas": 0, "top": [], "por_acao": {}})
     @patch("integracoes.esmaltes.metricas_batalha_impala.emitir_metricas_batalha_impala")
     @patch("integracoes.esmaltes.metricas_batalha_impala.escrever_json_atomico")
     @patch("integracoes.esmaltes.metricas_batalha_impala.montar_batalha")
     @patch("integracoes.esmaltes.metricas_batalha_impala.extrair_anuncios_impala")
-    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir):
+    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir, _golpe):
         mock_ext.return_value = [{"item_id": "MLB1"}]
         mock_mont.return_value = {"anuncios_unicos": 1, "comparacoes": []}
         mock_emit.return_value = {"ok": True}

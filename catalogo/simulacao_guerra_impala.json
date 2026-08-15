@@ -1,0 +1,147 @@
+{
+  "versao": 1,
+  "nota": "IDs MLB9000… são SIMULAÇÃO. Não gravar em produtos.json. Não são anúncios reais.",
+  "seller_id_nosso": "1651424153",
+  "cenario_operacional": "igual_para_igual",
+  "nossos_mlb": {
+    "IMP-MIMO-003": "MLB9000110003",
+    "IMP-PERL-004": "MLB9000110004",
+    "IMP-JUPAES-006": "MLB9000110006"
+  },
+  "quando_mlb_real": [
+    "Publicar MIMO, depois PERL, JUPAES só após o 1º pedido vencedor.",
+    "Gravar item_id real em produtos.json → canais.mercadolivre (sem MLB_PREENCHER).",
+    "Estoque 60 no anúncio e no catálogo (piso de ruptura 30).",
+    "Radar já busca MIMO/PERL/JUPAES; se aparecer MLB rival, colar em concorrentes_monitorados e ativar o watch.",
+    "Não ligar Ads antes de 20 avaliações + nota 4,8 + contrato.",
+    "Não copiar estes MLB9000… para o catálogo de produção."
+  ],
+  "cenarios": [
+    {
+      "id": "hoje",
+      "nome": "Hoje (sem MLB, estoque 0)",
+      "hidratar_nossos": false,
+      "rivais": []
+    },
+    {
+      "id": "igual_para_igual",
+      "nome": "Anúncios no ar — guerra de igual para igual",
+      "hidratar_nossos": true,
+      "rivais": [
+        {
+          "item_id": "MLB9000210003",
+          "titulo": "Kit 3 Esmaltes Impala Mimo Manicure",
+          "marca": "Impala",
+          "qtd_kit": 3,
+          "preco": 42.9,
+          "quantidade_vendida": 48,
+          "seller_id": "1666381510"
+        },
+        {
+          "item_id": "MLB9000211003",
+          "titulo": "Kit 3 Esmaltes Impala Cremoso",
+          "marca": "Impala",
+          "qtd_kit": 3,
+          "preco": 46.5,
+          "quantidade_vendida": 12,
+          "seller_id": "1666381999"
+        },
+        {
+          "item_id": "MLB9000210004",
+          "titulo": "Kit 4 Esmaltes Impala Perolado Tendência",
+          "marca": "Impala",
+          "qtd_kit": 4,
+          "preco": 39.0,
+          "quantidade_vendida": 90,
+          "seller_id": "1666381510"
+        },
+        {
+          "item_id": "MLB9000211004",
+          "titulo": "Kit 4 Impala Perolado Atacado",
+          "marca": "Impala",
+          "qtd_kit": 4,
+          "preco": 41.5,
+          "quantidade_vendida": 22,
+          "seller_id": "1666381999"
+        },
+        {
+          "item_id": "MLB9000210006",
+          "titulo": "Kit 6 Esmaltes Impala Ju Paes",
+          "marca": "Impala",
+          "qtd_kit": 6,
+          "preco": 64.9,
+          "quantidade_vendida": 31,
+          "seller_id": "1666381510"
+        }
+      ]
+    },
+    {
+      "id": "perl_pressionado",
+      "nome": "PERL 8% acima do rival ao vivo (ainda acima do piso)",
+      "hidratar_nossos": true,
+      "rivais": [
+        {
+          "item_id": "MLB9000310003",
+          "titulo": "Kit 3 Esmaltes Impala Mimo",
+          "marca": "Impala",
+          "qtd_kit": 3,
+          "preco": 43.5,
+          "quantidade_vendida": 20,
+          "seller_id": "1666381510"
+        },
+        {
+          "item_id": "MLB9000310004",
+          "titulo": "Kit 4 Esmaltes Impala Perolado",
+          "marca": "Impala",
+          "qtd_kit": 4,
+          "preco": 37.0,
+          "quantidade_vendida": 110,
+          "seller_id": "1666381510"
+        },
+        {
+          "item_id": "MLB9000310006",
+          "titulo": "Kit 6 Impala Ju Paes",
+          "marca": "Impala",
+          "qtd_kit": 6,
+          "preco": 62.0,
+          "quantidade_vendida": 15,
+          "seller_id": "1666381510"
+        }
+      ]
+    },
+    {
+      "id": "dump_abaixo_piso",
+      "nome": "Rival kit 4 abaixo do piso — não perseguir",
+      "hidratar_nossos": true,
+      "rivais": [
+        {
+          "item_id": "MLB9000410003",
+          "titulo": "Kit 3 Impala Mimo",
+          "marca": "Impala",
+          "qtd_kit": 3,
+          "preco": 44.9,
+          "quantidade_vendida": 8,
+          "seller_id": "1666381510"
+        },
+        {
+          "item_id": "MLB9000410004",
+          "titulo": "Kit 4 Impala Perolado Dump",
+          "marca": "Impala",
+          "qtd_kit": 4,
+          "preco": 29.9,
+          "quantidade_vendida": 200,
+          "seller_id": "1666381888"
+        },
+        {
+          "item_id": "MLB9000410006",
+          "titulo": "Kit 6 Impala Ju Paes",
+          "marca": "Impala",
+          "qtd_kit": 6,
+          "preco": 64.9,
+          "quantidade_vendida": 5,
+          "seller_id": "1666381510"
+        }
+      ]
+    }
+  ]
+}

@@ -37,7 +37,7 @@ def _prio_peso(prio: str) -> float:
 
 def _papel_peso(papel: str) -> float:
     p = str(papel or "").lower()
-    return 1.6 if p in ("guerra", "entrada", "giro") else 1.0
+    return 1.6 if p in ("guerra", "entrada", "giro", "preco") else 1.0
 
 
 def _rival_ao_vivo(comp: dict[str, Any]) -> bool:
@@ -76,12 +76,26 @@ def classificar_acao(comp: dict[str, Any]) -> dict[str, Any] | None:
     elif gap is None:
         return None
     elif gap_f >= _GAP_PRECO_MIN:
-        acao = "revisar_preco"
-        motivo = (
-            f"Preço ~{gap_f:.1f}% acima do rival min "
-            f"(R$ {_f(comp.get('nosso_preco')):.2f} vs R$ {_f(comp.get('rival_min')):.2f})"
-        )
-        score = gap_f * _prio_peso(prio) * _papel_peso(papel)
+        try:
+            from integracoes.esmaltes.doutrina_guerra_impala import sku_pode_mexer_preco
+
+            pode_preco = sku_pode_mexer_preco(sku)
+        except Exception:
+            pode_preco = True
+        if not pode_preco:
+            acao = "melhorar_listing"
+            motivo = (
+                f"Gap {gap_f:.1f}% — doutrina: diferenciar `{sku}` "
+                "(só PERL iguala preço na faixa)"
+            )
+            score = 10.0 + gap_f * 0.3 * _prio_peso(prio)
+        else:
+            acao = "revisar_preco"
+            motivo = (
+                f"Preço ~{gap_f:.1f}% acima do rival min "
+                f"(R$ {_f(comp.get('nosso_preco')):.2f} vs R$ {_f(comp.get('rival_min')):.2f})"
+            )
+            score = gap_f * _prio_peso(prio) * _papel_peso(papel)
     elif gap_f <= 0 and rivais >= _RIVAIS_MUITOS:
         acao = "melhorar_listing"
         motivo = (

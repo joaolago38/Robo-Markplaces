@@ -299,12 +299,26 @@ def processar_e_persistir(
     from datetime import datetime, timezone
 
     anuncios = extrair_anuncios_impala(kits_unicos)
-    batalha = montar_batalha(anuncios_impala=anuncios)
+    amostra_impala = len(anuncios)
+    produtos: list[dict[str, Any]] | None = None
+    overlay = False
+    try:
+        from core.config import SIMULACAO_GUERRA_IMPALA_OPERACIONAL
+        from integracoes.esmaltes.simulacao_guerra_impala import aplicar_visao_operacional
+
+        if SIMULACAO_GUERRA_IMPALA_OPERACIONAL:
+            produtos, anuncios, overlay = aplicar_visao_operacional(anuncios)
+    except Exception as exc:
+        logger.warning("visao operacional: %s", exc)
+    batalha = montar_batalha(anuncios_impala=anuncios, produtos=produtos)
+    if overlay:
+        batalha = {**batalha, "visao_operacional": True, "cenario": "igual_para_igual"}
     payload = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "origem": origem,
         "batalha": batalha,
-        "amostra_impala": len(anuncios),
+        "amostra_impala": amostra_impala,
+        "visao_operacional": overlay,
     }
     try:
         escrever_json_atomico(SNAPSHOT_PATH, payload)
@@ -312,6 +326,7 @@ def processar_e_persistir(
         logger.warning("snapshot batalha: %s", exc)
     emit = emitir_metricas_batalha_impala(batalha)
     agir: dict[str, Any] = {}
+    golpe: dict[str, Any] = {}
     try:
         from integracoes.esmaltes.decisao_batalha_agir import processar_agir_batalha
 
@@ -323,12 +338,24 @@ def processar_e_persistir(
             "resumo_claude": agir.get("resumo_claude"),
         }
         try:
+            from integracoes.esmaltes.golpe_guerra_impala import processar_golpe_batalha
+
+            golpe = processar_golpe_batalha(batalha, produtos=produtos, enviar_alerta=True)
+            payload["golpe"] = {
+                "disparar": golpe.get("disparar"),
+                "classificacao": (golpe.get("golpe") or {}).get("classificacao"),
+                "sku": (golpe.get("golpe") or {}).get("sku"),
+                "arma": (golpe.get("golpe") or {}).get("arma"),
+            }
+        except Exception as exc:
+            logger.warning("golpe guerra: %s", exc)
+        try:
             escrever_json_atomico(SNAPSHOT_PATH, payload)
         except Exception as exc:
             logger.warning("snapshot batalha+agir: %s", exc)
     except Exception as exc:
         logger.warning("agir batalha: %s", exc)
-    return {**payload, "emit": emit, "agir": agir}
+    return {**payload, "emit": emit, "agir": agir, "golpe": golpe}
 
 
 def processar_de_snapshot_kits(caminho: str | None = None) -> dict[str, Any]:

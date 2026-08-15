@@ -70,6 +70,23 @@ class TestDecisaoBatalhaAgir(unittest.TestCase):
         self.assertIn("planilha", row["motivo"].lower())
         self.assertFalse(row["critica"])
 
+    def test_mimo_com_gap_diferencia_nao_revisa_preco(self):
+        row = dba.classificar_acao(
+            {
+                "sku": "IMP-MIMO-003",
+                "gap_pct": 12.0,
+                "rivais_no_tam": 3,
+                "mlb_ok": True,
+                "fonte_rival": "ao_vivo",
+                "nosso_preco": 44.9,
+                "rival_min": 40.0,
+                "papel": "entrada",
+                "prio": "p0",
+            }
+        )
+        self.assertEqual(row["acao"], "melhorar_listing")
+        self.assertFalse(row["critica"])
+
     @patch.object(dba, "gauge")
     @patch.object(dba, "incrementar")
     def test_gerar_e_emitir(self, mock_inc, mock_gauge):

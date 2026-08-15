@@ -702,6 +702,35 @@ DECISAO_DIA_ESMALTES_COOLDOWN_SEG = int(os.getenv("DECISAO_DIA_ESMALTES_COOLDOWN
 DECISAO_DIA_ESMALTES_GUERRA_CATALOGO = os.getenv(
     "DECISAO_DIA_ESMALTES_GUERRA_CATALOGO", "catalogo/skus_guerra_impala.json"
 )
+DOUTRINA_GUERRA_IMPALA_CATALOGO = os.getenv(
+    "DOUTRINA_GUERRA_IMPALA_CATALOGO", "catalogo/doutrina_guerra_impala.json"
+)
+GOLPE_GUERRA_IMPALA_ATIVO = os.getenv("GOLPE_GUERRA_IMPALA_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+GOLPE_GUERRA_IMPALA_ALERTA = os.getenv("GOLPE_GUERRA_IMPALA_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+GOLPE_GUERRA_IMPALA_COOLDOWN_SEG = int(os.getenv("GOLPE_GUERRA_IMPALA_COOLDOWN_SEG", "21600"))
+GOLPE_GUERRA_CLAUDE = os.getenv("GOLPE_GUERRA_CLAUDE", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+SIMULACAO_GUERRA_IMPALA_ALERTA = os.getenv("SIMULACAO_GUERRA_IMPALA_ALERTA", "0").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+SIMULACAO_GUERRA_IMPALA_OPERACIONAL = os.getenv("SIMULACAO_GUERRA_IMPALA_OPERACIONAL", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 # Operação consolidada (crescimento + decisão + ecossistema → 1 Telegram)
 ESMALTES_OPERACAO_ATIVO = os.getenv("ESMALTES_OPERACAO_ATIVO", "1").strip().lower() not in (
     "0",
