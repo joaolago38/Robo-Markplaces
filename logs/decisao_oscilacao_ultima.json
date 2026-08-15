@@ -1,49 +1,27 @@
 {
-  "timestamp": "2026-08-15T11:48:12.076639+00:00",
+  "timestamp": "2026-08-15T11:53:49.520462+00:00",
   "atual": {
-    "saude_score": 5.0,
+    "saude_score": 20.7,
     "produtos_seguros": 0.0,
-    "esforco_faltando": 6.0,
+    "esforco_faltando": 0.0,
     "kit_condicao_ok": 2.0,
-    "progresso_pct": 33.3,
-    "claude_ok": 0.0,
+    "progresso_pct": 0.0,
+    "claude_ok": 1.0,
     "aproximando": 1.0,
     "anuncios_foco": 0.0
   },
   "anterior": {
-    "saude_score": 3.3,
+    "saude_score": 20.7,
     "produtos_seguros": 0.0,
-    "esforco_faltando": 7.0,
+    "esforco_faltando": 0.0,
     "kit_condicao_ok": 2.0,
-    "progresso_pct": 22.2,
-    "claude_ok": 0.0,
-    "aproximando": 0.0,
+    "progresso_pct": 0.0,
+    "claude_ok": 1.0,
+    "aproximando": 1.0,
     "anuncios_foco": 0.0
   },
-  "oscilacao": true,
-  "cuidado": true,
+  "oscilacao": false,
+  "cuidado": false,
   "primeira_amostra": false,
-  "mudancas": [
-    {
-      "metrica": "esforco_faltando",
-      "de": 7.0,
-      "para": 6.0,
-      "delta": 1.0,
-      "limiar": 0.0
-    },
-    {
-      "metrica": "progresso_pct",
-      "de": 22.2,
-      "para": 33.3,
-      "delta": 11.1,
-      "limiar": 5.0
-    },
-    {
-      "metrica": "aproximando",
-      "de": 0.0,
-      "para": 1.0,
-      "delta": 1.0,
-      "limiar": 0.0
-    }
-  ]
+  "mudancas": []
 }

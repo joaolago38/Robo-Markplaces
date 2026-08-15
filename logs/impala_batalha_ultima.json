@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-08-14T22:53:09.888477+00:00",
+  "timestamp": "2026-08-15T11:58:33.571988+00:00",
   "origem": "monitor_concorrentes",
   "batalha": {
-    "anuncios_unicos": 2,
+    "anuncios_unicos": 1,
     "sellers_unicos": 0,
-    "vendas_proxy": 7,
+    "vendas_proxy": 5,
     "preco_min": 38.0,
-    "preco_mediano": 40.0,
-    "preco_medio": 40.0,
-    "preco_max": 42.0,
+    "preco_mediano": 38.0,
+    "preco_medio": 38.0,
+    "preco_max": 38.0,
     "por_tamanho": [],
     "comparacoes": [
       {
@@ -262,18 +262,10 @@
         "quantidade_vendida": 5,
         "qtd_kit": null,
         "seller_id": null
-      },
-      {
-        "item_id": "MLB2",
-        "titulo": "Kit Impala Y",
-        "preco": 42.0,
-        "quantidade_vendida": 2,
-        "qtd_kit": null,
-        "seller_id": null
       }
     ]
   },
-  "amostra_impala": 2,
+  "amostra_impala": 1,
   "agir": {
     "criticas": 15,
     "por_acao": {

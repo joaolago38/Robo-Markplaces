@@ -4,7 +4,7 @@ Cruza saúde do CNPJ Impala (fase 2) com preparação CNAE/seller do Masterprint
 
 Vereditos:
   ainda_nao    — Impala não passou na checklist
-  aproximando  — ≥ metade das avaliações (default 10) ou ≥ metade dos checks
+  aproximando  — anúncio foco no ar E (≥10 reviews da conta OU MLB+estoque+maioria)
   liberado     — todos os checks de ruptura ok → segundo CNPJ pode entrar em ação
 """
 from __future__ import annotations

@@ -3,35 +3,46 @@
     {
       "fingerprint": "cecaf1fe419184e2b12c",
       "primeira_vez": "2026-07-14T11:46:38.686513+00:00",
-      "ultima_vez": "2026-08-15T11:48:12.070650+00:00",
+      "ultima_vez": "2026-08-15T11:52:36.812370+00:00",
       "logger": "notificador",
       "mensagem": "Telegram erro: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 21
+      "ocorrencias": 38
     },
     {
       "fingerprint": "932ec7d3ef9c57e06c2d",
       "primeira_vez": "2026-07-14T11:46:38.168580+00:00",
-      "ultima_vez": "2026-08-15T11:48:12.063787+00:00",
+      "ultima_vez": "2026-08-15T11:52:36.805312+00:00",
       "logger": "http_client",
       "mensagem": "HTTP POST api.telegram.org falhou: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "status": "error",
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot.../sendMessage (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 21
+      "ocorrencias": 38
     },
     {
       "fingerprint": "3c8afe3961ceba0bfac9",
       "primeira_vez": "2026-08-15T11:47:27.418071+00:00",
-      "ultima_vez": "2026-08-15T11:48:05.636552+00:00",
+      "ultima_vez": "2026-08-15T11:51:09.755076+00:00",
       "logger": "http_client",
       "mensagem": "HTTP POST api.anthropic.com falhou: HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "status": "error",
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.anthropic.com', port=443): Max retries exceeded with url: /v1/messages (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 3
+      "ocorrencias": 9
+    },
+    {
+      "fingerprint": "756da4368769a7f0c621",
+      "primeira_vez": "2026-08-15T11:48:38.874292+00:00",
+      "ultima_vez": "2026-08-15T11:48:38.874292+00:00",
+      "logger": "agente_ponto_ruptura_segundo_cnpj",
+      "mensagem": "ponto ruptura: boom\nTraceback (most recent call last):\n  File \"C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\tests\\..\\agentes\\empresa\\agente_ponto_ruptura_segundo_cnpj.py\", line 141, in executar\n    resultado = avaliar_ponto_ruptura()\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1175, in __call__\n    return self._mock_call(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Usuário\\python\\Lib\\unittest\\mock.py\", line 1179, in _mock_ca",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 1
     },
     {
       "fingerprint": "c450164066d6d0ddefb1",
@@ -1638,18 +1649,7 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 3
-    },
-    {
-      "fingerprint": "bb20a509140fb04093e2",
-      "primeira_vez": "2026-07-05T20:44:30.519218+00:00",
-      "ultima_vez": "2026-07-05T21:19:09.450639+00:00",
-      "logger": "agente_repricing_marketplaces",
-      "mensagem": "Repricing: falha ao aplicar novo preço sku=SKU1 canal=mercadolivre ref=MLB1 novo_preco=13.19",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-08-15T11:48:12.070650+00:00"
+  "atualizado_em": "2026-08-15T11:52:36.812370+00:00"
 }

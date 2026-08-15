@@ -1,14 +1,6 @@
 {
-  "timestamp": "2026-08-14T22:53:09.246782+00:00",
+  "timestamp": "2026-08-15T11:55:02.120203+00:00",
   "eventos": [
-    {
-      "tipo": "priorizar_chat",
-      "marketplace": "mercadolivre",
-      "motivo": "pendencias=0 status=critico score=10",
-      "criado_em": "2026-08-14T22:50:49.600162+00:00",
-      "expira_em": "2026-08-15T04:50:49.600162+00:00",
-      "prioridade": 1
-    },
     {
       "tipo": "congelar_repricing",
       "marketplace": "mercadolivre",
@@ -18,19 +10,27 @@
       "prioridade": 1
     },
     {
-      "tipo": "priorizar_chat",
-      "marketplace": "shopee",
-      "motivo": "pendencias=0 status=critico score=20",
-      "criado_em": "2026-08-14T22:50:49.628535+00:00",
-      "expira_em": "2026-08-15T04:50:49.628535+00:00",
-      "prioridade": 1
-    },
-    {
       "tipo": "congelar_repricing",
       "marketplace": "shopee",
       "motivo": "score=20 claims=0.0000 status=critico",
       "criado_em": "2026-08-14T22:50:49.628535+00:00",
       "expira_em": "2026-08-15T22:50:49.628535+00:00",
+      "prioridade": 1
+    },
+    {
+      "tipo": "priorizar_chat",
+      "marketplace": "mercadolivre",
+      "motivo": "pendencias=0 status=critico score=10",
+      "criado_em": "2026-08-15T11:54:39.303063+00:00",
+      "expira_em": "2026-08-15T17:54:39.303063+00:00",
+      "prioridade": 1
+    },
+    {
+      "tipo": "priorizar_chat",
+      "marketplace": "shopee",
+      "motivo": "pendencias=0 status=critico score=20",
+      "criado_em": "2026-08-15T11:55:02.108702+00:00",
+      "expira_em": "2026-08-15T17:55:02.108702+00:00",
       "prioridade": 1
     },
     {

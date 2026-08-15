@@ -244,6 +244,16 @@
       "usd_brl": 5.1798,
       "fonte": "fallback",
       "consultado_em": "2026-08-13T14:24:18.170342+00:00"
+    },
+    {
+      "usd_brl": 5.1798,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-13T14:24:18.170342+00:00"
+    },
+    {
+      "usd_brl": 5.1798,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-13T14:24:18.170342+00:00"
     }
   ],
   "ultima": {
@@ -252,7 +262,7 @@
     "fonte": "fallback",
     "variacao_pct": null,
     "consultado_em": "2026-08-13T14:24:18.170342+00:00",
-    "idade_seg": 116931,
+    "idade_seg": 164096,
     "confiavel": false,
     "aviso": "API de câmbio indisponível — usando último valor ou padrão"
   }
