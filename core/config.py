@@ -726,11 +726,18 @@ SIMULACAO_GUERRA_IMPALA_ALERTA = os.getenv("SIMULACAO_GUERRA_IMPALA_ALERTA", "0"
     "false",
     "no",
 )
-SIMULACAO_GUERRA_IMPALA_OPERACIONAL = os.getenv("SIMULACAO_GUERRA_IMPALA_OPERACIONAL", "1").strip().lower() not in (
+SIMULACAO_GUERRA_IMPALA_OPERACIONAL = os.getenv("SIMULACAO_GUERRA_IMPALA_OPERACIONAL", "0").strip().lower() not in (
     "0",
     "false",
     "no",
 )
+VISAO_ATUACAO_IMPALA_ALERTA = os.getenv("VISAO_ATUACAO_IMPALA_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+VISAO_ATUACAO_IMPALA_COOLDOWN_SEG = int(os.getenv("VISAO_ATUACAO_IMPALA_COOLDOWN_SEG", "21600"))
+DD_DASH_ECOMMERCE = (os.getenv("DD_DASH_ECOMMERCE") or "j53-h48-8ea").strip() or "j53-h48-8ea"
 # Operação consolidada (crescimento + decisão + ecossistema → 1 Telegram)
 ESMALTES_OPERACAO_ATIVO = os.getenv("ESMALTES_OPERACAO_ATIVO", "1").strip().lower() not in (
     "0",

@@ -244,12 +244,20 @@ def montar_checklist(
     """Checklist ordenado do que falta fazer (humano + config)."""
     itens: list[dict[str, Any]] = []
     if sem_mlb:
+        skus = [str(k.get("sku") or "").upper() for k in sem_mlb if k.get("sku")]
+        primeiro = "IMP-MIMO-003" if "IMP-MIMO-003" in skus else (skus[0] if skus else "")
         itens.append(
             {
                 "id": "publicar_kits_mlb",
                 "prioridade": 1,
-                "titulo": f"Preencher MLB real em {len(sem_mlb)} kit(s) do catálogo",
-                "detalhe": ", ".join(str(k.get("sku")) for k in sem_mlb[:5]),
+                "titulo": (
+                    f"Abrir frente: publicar `{primeiro}` "
+                    f"(faltam {len(sem_mlb)} MLB no catálogo)"
+                ),
+                "detalhe": (
+                    "Ordem doutrina: MIMO (Mimo+Carmed) → PERL mesmo ciclo → "
+                    "JUPAES após 1o pedido. Não abrir 4o SKU."
+                ),
                 "tipo": "ops",
             }
         )

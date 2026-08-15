@@ -1,14 +1,10 @@
 {
-  "timestamp": "2026-08-15T13:32:20.728955+00:00",
-  "ok": false,
+  "timestamp": "2026-08-15T16:08:19.809327+00:00",
+  "ok": true,
   "dry_run": false,
-  "erro": "bling_indisponivel",
-  "probe": {
-    "ok": false,
-    "status": 403,
-    "msg": "sem permissao"
-  },
-  "total_ajustes": 0,
-  "total_aplicados_sucesso": 0,
-  "total_falhas_aplicacao": 0
+  "total_ajustes": 1,
+  "total_aplicados_sucesso": 1,
+  "total_falhas_aplicacao": 0,
+  "skipped_placeholder_mlb": 0,
+  "produtos_sem_estoque_bling": 0
 }

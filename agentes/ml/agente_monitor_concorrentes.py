@@ -622,8 +622,9 @@ def executar(
             amostra: list[dict[str, Any]] = []
             for r in resultados:
                 amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
-            if amostra:
-                processar_e_persistir(amostra, origem="monitor_concorrentes")
+            # Amostra vazia (403/busca cega) ainda precisa do radar: senão
+            # os gauges de guerra ficam congelados no último valor.
+            processar_e_persistir(amostra, origem="monitor_concorrentes")
         except Exception as exc:
             logger.warning("batalha Impala apos concorrentes: %s", exc)
 

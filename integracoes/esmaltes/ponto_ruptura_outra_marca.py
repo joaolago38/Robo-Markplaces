@@ -229,6 +229,7 @@ def avaliar_ruptura_outra_marca(
     resumo: dict[str, Any] | None = None,
     catalogo: dict[str, Any] | None = None,
     cnae: dict[str, Any] | None = None,
+    condicoes: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Veredito para entrar com outra marca no mesmo CNPJ. Nunca lança."""
     cat = catalogo if catalogo is not None else carregar_catalogo_candidatas()
@@ -248,6 +249,15 @@ def avaliar_ruptura_outra_marca(
     impala_ok = bool(ruptura_impala.get("liberado"))
     ml_ok = bool(canais.get("ml_ok"))
     foco_ok = ativos_foco > 0
+    if condicoes is None:
+        try:
+            from integracoes.esmaltes.doutrina_guerra_impala import avaliar_condicoes_guerra
+
+            condicoes = avaliar_condicoes_guerra()
+        except Exception:
+            condicoes = {"fase": 0}
+    fase_guerra = int((condicoes or {}).get("fase") or 0)
+    fase_ruptura_ok = fase_guerra >= 5
 
     checks = [
         _check(
@@ -256,6 +266,13 @@ def avaliar_ruptura_outra_marca(
             "Impala passou na checklist (reviews/MLB/estoque/pedido)",
             ruptura_impala.get("veredito"),
             "liberado",
+        ),
+        _check(
+            "fase_guerra",
+            fase_ruptura_ok,
+            "Doutrina guerra fase 5 (frente viva + reviews + estoque 30+ + radar nao cego)",
+            fase_guerra,
+            5,
         ),
         _check(
             "anuncios_foco",

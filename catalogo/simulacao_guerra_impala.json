@@ -3,6 +3,7 @@
   "nota": "IDs MLB9000… são SIMULAÇÃO. Não gravar em produtos.json. Não são anúncios reais.",
   "seller_id_nosso": "1651424153",
   "cenario_operacional": "igual_para_igual",
+  "estoque_ideal": 60,
   "nossos_mlb": {
     "IMP-MIMO-003": "MLB9000110003",
     "IMP-PERL-004": "MLB9000110004",

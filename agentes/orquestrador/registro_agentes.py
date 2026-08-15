@@ -187,6 +187,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": True},
     ),
     AgenteRegistrado(
+        "visao_atuacao_impala",
+        "Visão atuação Impala (radar diferencial)",
+        "monitor",
+        "agentes.esmaltes.agente_visao_atuacao_impala:executar",
+        {"enviar_alerta": True},
+        notas="Se o monitor já rodou o radar nos últimos 25 min, reusa o snapshot (não sobrescreve amostra ao vivo).",
+    ),
+    AgenteRegistrado(
         "resumo_conta_ml",
         "Resumo conta ML (painel)",
         "monitor",

@@ -300,33 +300,55 @@ def processar_e_persistir(
 
     anuncios = extrair_anuncios_impala(kits_unicos)
     amostra_impala = len(anuncios)
-    produtos: list[dict[str, Any]] | None = None
+    anuncios_reais = list(anuncios)
+    produtos_reais = carregar_produtos_catalogo()
     overlay = False
+    batalha_sim: dict[str, Any] | None = None
     try:
         from core.config import SIMULACAO_GUERRA_IMPALA_OPERACIONAL
         from integracoes.esmaltes.simulacao_guerra_impala import aplicar_visao_operacional
 
         if SIMULACAO_GUERRA_IMPALA_OPERACIONAL:
-            produtos, anuncios, overlay = aplicar_visao_operacional(anuncios)
+            prods_s, ads_s, overlay = aplicar_visao_operacional(anuncios_reais, produtos=produtos_reais)
+            if overlay:
+                batalha_sim = montar_batalha(anuncios_impala=ads_s, produtos=prods_s)
+                batalha_sim = {**batalha_sim, "visao_operacional": True, "cenario": "igual_para_igual"}
     except Exception as exc:
         logger.warning("visao operacional: %s", exc)
-    batalha = montar_batalha(anuncios_impala=anuncios, produtos=produtos)
-    if overlay:
-        batalha = {**batalha, "visao_operacional": True, "cenario": "igual_para_igual"}
+        overlay = False
+        batalha_sim = None
+    # Datadog e golpe/agir usam só o real (sem MLB9000 / rivais de fixture).
+    batalha = montar_batalha(anuncios_impala=anuncios_reais, produtos=produtos_reais)
     payload = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "origem": origem,
         "batalha": batalha,
+        "batalha_sim": batalha_sim,
         "amostra_impala": amostra_impala,
         "visao_operacional": overlay,
+        "anuncios_reais": [
+            {
+                "item_id": a.get("item_id"),
+                "titulo": str(a.get("titulo") or "")[:120],
+                "preco": a.get("preco"),
+                "qtd_kit": a.get("qtd_kit"),
+            }
+            for a in anuncios_reais[:40]
+            if isinstance(a, dict)
+        ],
     }
     try:
         escrever_json_atomico(SNAPSHOT_PATH, payload)
     except Exception as exc:
         logger.warning("snapshot batalha: %s", exc)
     emit = emitir_metricas_batalha_impala(batalha)
+    try:
+        gauge("impala.guerra.overlay", 1.0 if overlay else 0.0)
+    except Exception:
+        pass
     agir: dict[str, Any] = {}
     golpe: dict[str, Any] = {}
+    radar: dict[str, Any] = {}
     try:
         from integracoes.esmaltes.decisao_batalha_agir import processar_agir_batalha
 
@@ -340,7 +362,7 @@ def processar_e_persistir(
         try:
             from integracoes.esmaltes.golpe_guerra_impala import processar_golpe_batalha
 
-            golpe = processar_golpe_batalha(batalha, produtos=produtos, enviar_alerta=True)
+            golpe = processar_golpe_batalha(batalha, produtos=produtos_reais, enviar_alerta=True)
             payload["golpe"] = {
                 "disparar": golpe.get("disparar"),
                 "classificacao": (golpe.get("golpe") or {}).get("classificacao"),
@@ -350,12 +372,27 @@ def processar_e_persistir(
         except Exception as exc:
             logger.warning("golpe guerra: %s", exc)
         try:
+            from integracoes.esmaltes.radar_diferencial_impala import processar_radar
+
+            radar = processar_radar(anuncios_reais, produtos=produtos_reais, enviar_alerta=True)
+            payload["radar_diferencial"] = {
+                "n_comparaveis": radar.get("n_comparaveis"),
+                "n_nao_comparaveis": radar.get("n_nao_comparaveis"),
+                "fazer": radar.get("fazer"),
+                "extras": radar.get("extras"),
+                "mercado_confiavel": radar.get("mercado_confiavel"),
+                "fonte": radar.get("fonte"),
+            }
+        except Exception as exc:
+            logger.warning("radar diferencial: %s", exc)
+            radar = {}
+        try:
             escrever_json_atomico(SNAPSHOT_PATH, payload)
         except Exception as exc:
             logger.warning("snapshot batalha+agir: %s", exc)
     except Exception as exc:
         logger.warning("agir batalha: %s", exc)
-    return {**payload, "emit": emit, "agir": agir, "golpe": golpe}
+    return {**payload, "emit": emit, "agir": agir, "golpe": golpe, "radar_diferencial": radar if isinstance(radar, dict) else {}}
 
 
 def processar_de_snapshot_kits(caminho: str | None = None) -> dict[str, Any]:

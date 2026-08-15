@@ -66,9 +66,20 @@ def classificar_acao(comp: dict[str, Any]) -> dict[str, Any] | None:
     ao_vivo = _rival_ao_vivo(comp)
 
     if not mlb_ok:
-        acao = "publicar_mlb"
-        motivo = "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço"
-        score = 40.0 + max(0.0, gap_f)
+        try:
+            from integracoes.esmaltes.doutrina_guerra_impala import sku_pode_publicar_agora
+
+            pode_pub, motivo_pub = sku_pode_publicar_agora(sku)
+        except Exception:
+            pode_pub, motivo_pub = True, "SKU sem MLB válido"
+        if not pode_pub:
+            acao = "observar"
+            motivo = motivo_pub
+            score = 2.0
+        else:
+            acao = "publicar_mlb"
+            motivo = motivo_pub or "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço"
+            score = 40.0 + max(0.0, gap_f)
     elif not ao_vivo:
         acao = "observar"
         motivo = "Sem rival ao vivo no tamanho — não reagir a preço de planilha"

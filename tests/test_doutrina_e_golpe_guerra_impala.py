@@ -137,6 +137,30 @@ class TestGolpeCompilador(unittest.TestCase):
         self.assertEqual(out["golpe"]["sku"], "IMP-PERL-004")
         self.assertEqual(out["golpe"]["classificacao"], dg.CLASSIF_IGUALAR)
 
+    @patch.object(gg, "emitir_metricas_golpe")
+    @patch.object(gg, "escrever_json_atomico")
+    def test_overlay_nao_dispara_golpe(self, _w, _em):
+        batalha = {
+            "visao_operacional": True,
+            "comparacoes": [
+                {
+                    "sku": "IMP-PERL-004",
+                    "mlb_ok": True,
+                    "fonte_rival": "ao_vivo",
+                    "gap_pct": 8.0,
+                    "rivais_no_tam": 2,
+                    "nosso_preco": 39.9,
+                    "rival_min": 37.0,
+                    "kit_tag": "kit:perl004",
+                }
+            ],
+        }
+        produtos = [{"sku": "IMP-PERL-004", "custo_total": 26.23, "fase_atual": 1}]
+        out = gg.processar_golpe_batalha(batalha, produtos=produtos, enviar_alerta=True)
+        self.assertFalse(out["disparar"])
+        self.assertTrue(out.get("overlay_sem_golpe"))
+        self.assertFalse(out.get("alerta_enviado"))
+
     @patch.object(gg, "GOLPE_GUERRA_CLAUDE", True)
     @patch("core.resumo_ia.sintetizar_claude")
     def test_claude_so_no_disparo(self, mock_sint):
@@ -198,6 +222,108 @@ class TestAgenteGolpe(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertFalse(out["disparar"])
         mock_alert.assert_not_called()
+
+
+def _kit(sku: str, *, mlb: bool = False, estoque: int = 0, nome: str = "") -> dict:
+    ml: dict = {"preco": 44.9, "estoque": estoque, "titulo_anuncio": nome or sku}
+    if mlb:
+        ml["item_id"] = "MLB12345678"
+    return {
+        "sku": sku,
+        "nome": nome or sku,
+        "estoque_total": estoque,
+        "custo_total": 28.13,
+        "preco": 44.9,
+        "canais": {"mercadolivre": ml},
+    }
+
+
+class TestCondicoesGuerra(unittest.TestCase):
+    def test_hoje_fase_0_sem_mlb(self):
+        out = dg.avaliar_condicoes_guerra(
+            produtos=[
+                _kit("IMP-MIMO-003", nome="Kit 3 Mimo + Carmed"),
+                _kit("IMP-PERL-004"),
+                _kit("IMP-JUPAES-006"),
+            ],
+            radar={"mercado_confiavel": False},
+            resumo_conta={"avaliacoes": 0, "nota": 0},
+        )
+        self.assertEqual(out["fase"], 0)
+        self.assertEqual(out["fase_nome"], "abrir_frente")
+        self.assertTrue(out["liberar"]["mimo"])
+        self.assertFalse(out["liberar"]["ads"])
+        self.assertFalse(out["liberar"]["golpe_preco"])
+        self.assertFalse(out["liberar"]["ruptura"])
+        self.assertIn("MIMO", out["fazer"])
+        pode, motivo = dg.sku_pode_publicar_agora("IMP-MIMO-003", condicoes=out)
+        self.assertTrue(pode)
+        self.assertIn("mimo", motivo)
+        self.assertFalse(dg.sku_pode_publicar_agora("IMP-PERL-004", condicoes=out)[0])
+        self.assertFalse(dg.sku_pode_publicar_agora("IMP-JUPAES-006", condicoes=out)[0])
+
+    def test_fase_1_mimo_no_ar_sem_pedido(self):
+        out = dg.avaliar_condicoes_guerra(
+            produtos=[
+                _kit("IMP-MIMO-003", mlb=True, estoque=10, nome="Kit 3 Mimo + Carmed"),
+                _kit("IMP-PERL-004"),
+            ],
+            radar={"mercado_confiavel": False},
+            resumo_conta={"avaliacoes": 0, "nota": 0},
+        )
+        self.assertEqual(out["fase"], 1)
+        self.assertTrue(out["liberar"]["perl"])
+        self.assertTrue(dg.sku_pode_publicar_agora("IMP-PERL-004", condicoes=out)[0])
+        self.assertFalse(dg.sku_pode_publicar_agora("IMP-JUPAES-006", condicoes=out)[0])
+
+    def test_fase_3_ads_sem_mercado_vivo(self):
+        frente = [
+            _kit("IMP-MIMO-003", mlb=True, estoque=30, nome="Kit 3 Mimo + Carmed"),
+            _kit("IMP-PERL-004", mlb=True, estoque=30),
+            _kit("IMP-JUPAES-006", mlb=True, estoque=30),
+        ]
+        out = dg.avaliar_condicoes_guerra(
+            produtos=frente,
+            radar={"mercado_confiavel": False},
+            resumo_conta={"avaliacoes": 20, "nota": 4.8},
+        )
+        self.assertEqual(out["fase"], 3)
+        self.assertTrue(out["liberar"]["ads"])
+        self.assertFalse(out["liberar"]["golpe_preco"])
+
+    def test_fase_5_ruptura(self):
+        frente = [
+            _kit("IMP-MIMO-003", mlb=True, estoque=30, nome="Kit 3 Mimo + Carmed"),
+            _kit("IMP-PERL-004", mlb=True, estoque=30),
+            _kit("IMP-JUPAES-006", mlb=True, estoque=30),
+        ]
+        out = dg.avaliar_condicoes_guerra(
+            produtos=frente,
+            radar={"mercado_confiavel": True},
+            resumo_conta={"avaliacoes": 20, "nota": 4.9},
+        )
+        self.assertEqual(out["fase"], 5)
+        self.assertTrue(out["liberar"]["ruptura"])
+        self.assertTrue(out["liberar"]["golpe_preco"])
+
+    @patch("integracoes.esmaltes.doutrina_guerra_impala.gauge")
+    def test_emitir_condicoes_fase_0(self, mock_g):
+        cond = dg.avaliar_condicoes_guerra(
+            produtos=[
+                _kit("IMP-MIMO-003", nome="Kit 3 Mimo + Carmed"),
+                _kit("IMP-PERL-004"),
+                _kit("IMP-JUPAES-006"),
+            ],
+            radar={"mercado_confiavel": False},
+            resumo_conta={"avaliacoes": 0, "nota": 0},
+        )
+        out = dg.emitir_metricas_condicoes(cond)
+        self.assertEqual(out["fase"], 0)
+        nomes = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
+        self.assertEqual(nomes["impala.guerra.fase"], 0.0)
+        self.assertEqual(nomes["impala.guerra.liberar_mimo"], 1.0)
+        self.assertEqual(nomes["impala.guerra.liberar_ads"], 0.0)
+        self.assertEqual(nomes["impala.guerra.publicar_agora"], 1.0)
 
 
 if __name__ == "__main__":

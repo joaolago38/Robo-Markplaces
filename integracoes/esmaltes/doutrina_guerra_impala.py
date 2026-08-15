@@ -9,6 +9,7 @@ from typing import Any
 
 from core.atomic_io import ler_json
 from core.config import DOUTRINA_GUERRA_IMPALA_CATALOGO, ROOT
+from core.datadog_metrics import gauge
 
 logger = logging.getLogger("doutrina_guerra_impala")
 
@@ -242,3 +243,230 @@ def classificar_golpe(
         disparar=False,
         **base,
     )
+
+
+def _estoque(produto: dict[str, Any] | None) -> int:
+    if not isinstance(produto, dict):
+        return 0
+    ml = (produto.get("canais") or {}).get("mercadolivre") or {}
+    try:
+        return max(int(produto.get("estoque_total") or 0), int(ml.get("estoque") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _mlb_ok(produto: dict[str, Any] | None) -> bool:
+    from integracoes.esmaltes.crescimento_esmaltes import _mlb_valido
+    from integracoes.esmaltes.decisao_dia_esmaltes import _item_id
+
+    if not isinstance(produto, dict):
+        return False
+    return bool(_mlb_valido(_item_id(produto)))
+
+
+def _carregar_resumo_conta() -> dict[str, Any]:
+    snap = ler_json(ROOT / "logs" / "resumo_conta_ml_ultima.json", default={})
+    if not isinstance(snap, dict):
+        return {}
+    out = dict(snap)
+    if isinstance(snap.get("reputacao"), dict):
+        out.update(snap["reputacao"])
+    return out
+
+
+def _reviews_nota(conta: dict[str, Any]) -> tuple[int, float]:
+    reviews = int(
+        conta.get("avaliacoes")
+        or conta.get("quantidade_avaliacoes")
+        or 0
+    )
+    nota = _f(conta.get("nota") or conta.get("nota_media") or conta.get("rating_average"))
+    return reviews, nota
+
+
+def _proximo_gate(fase: int, checks: dict[str, Any], gat: dict[str, Any]) -> str:
+    if fase <= 0:
+        if not checks.get("mlb_mimo"):
+            return "Publicar MIMO R$44,90 com titulo Mimo + Carmed (estoque 10)"
+        return "Entrar estoque MIMO (10 validacao, depois 30)"
+    if fase == 1:
+        if not checks.get("mlb_perl"):
+            return "Publicar PERL R$39,90 no mesmo ciclo (preco congelado)"
+        return "Fechar 1o pedido vencedor (chat/perguntas em dia)"
+    if fase == 2:
+        if not checks.get("mlb_jupaes"):
+            return "Publicar JUPAES R$64,90 + combo removedor no copy"
+        return (
+            f"Juntar {int(gat.get('reviews_ads') or 20)} reviews e nota "
+            f"{_f(gat.get('nota_ads'), 4.8):.1f} para Ads"
+        )
+    if fase == 3:
+        return "Amostra ML viva (hoje busca 403) — Ads pode ligar; preco ainda nao"
+    if fase == 4:
+        return "Estoque MIMO 30+ com frente viva para ruptura"
+    return "Outra marca / 2o CNPJ liberados pela doutrina"
+
+
+def _id_fase(row: dict[str, Any]) -> int | None:
+    if not isinstance(row, dict) or row.get("id") is None:
+        return None
+    try:
+        return int(row["id"])
+    except (TypeError, ValueError):
+        return None
+
+
+def sku_pode_publicar_agora(
+    sku: str,
+    *,
+    condicoes: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    """
+    Frente em ordem: MIMO → PERL (MIMO no ar) → JUPAES (1o pedido).
+    Outro IMP-* fica fora até a ruptura.
+    """
+    sku_u = (sku or "").strip().upper()
+    if not sku_u:
+        return False, "sku_vazio"
+    if not sku_u.startswith("IMP-"):
+        return True, "fora_impala"
+    cond = condicoes if isinstance(condicoes, dict) else avaliar_condicoes_guerra()
+    checks = cond.get("checks") if isinstance(cond.get("checks"), dict) else {}
+    if sku_u == "IMP-MIMO-003":
+        if checks.get("mlb_mimo"):
+            return False, "mimo_ja_no_ar"
+        return True, "abrir_frente_mimo_carmed"
+    if sku_u == "IMP-PERL-004":
+        if not checks.get("mlb_mimo") or int(checks.get("estoque_mimo") or 0) <= 0:
+            return False, "esperar_mimo_no_ar"
+        if checks.get("mlb_perl"):
+            return False, "perl_ja_no_ar"
+        return True, "perl_mesmo_ciclo"
+    if sku_u == "IMP-JUPAES-006":
+        if int(checks.get("reviews") or 0) < 1:
+            return False, "esperar_primeiro_pedido"
+        if checks.get("mlb_jupaes"):
+            return False, "jupaes_ja_no_ar"
+        return True, "giro_apos_pedido"
+    return False, "fora_frente_nao_abrir_4o_sku"
+
+
+def avaliar_condicoes_guerra(
+    *,
+    produtos: list[dict[str, Any]] | None = None,
+    radar: dict[str, Any] | None = None,
+    resumo_conta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Melhor cenário possível com os dados atuais: fase 0–5 e o próximo gate.
+    Não inventa MLB nem amostra viva.
+    """
+    from core.catalogo_produtos import carregar_produtos_catalogo
+
+    d = carregar_doutrina()
+    gat = d.get("gatilhos") or {}
+    est_min = int(gat.get("estoque_ml_min") or 30)
+    reviews_ads = int(gat.get("reviews_ads") or 20)
+    nota_ads = _f(gat.get("nota_ads"), 4.8)
+    prods = produtos if produtos is not None else carregar_produtos_catalogo()
+    por = {
+        str(p.get("sku") or "").strip().upper(): p
+        for p in prods
+        if isinstance(p, dict) and p.get("sku")
+    }
+    mimo = por.get("IMP-MIMO-003")
+    perl = por.get("IMP-PERL-004")
+    jupaes = por.get("IMP-JUPAES-006")
+    titulo_mimo = str(
+        ((mimo or {}).get("canais") or {}).get("mercadolivre", {}).get("titulo_anuncio")
+        or (mimo or {}).get("nome")
+        or ""
+    ).lower()
+    radar = radar if isinstance(radar, dict) else {}
+    conta = resumo_conta if isinstance(resumo_conta, dict) else _carregar_resumo_conta()
+    reviews, nota = _reviews_nota(conta if isinstance(conta, dict) else {})
+    checks = {
+        "mlb_mimo": _mlb_ok(mimo),
+        "mlb_perl": _mlb_ok(perl),
+        "mlb_jupaes": _mlb_ok(jupaes),
+        "estoque_mimo": _estoque(mimo),
+        "carmed_titulo": "carmed" in titulo_mimo and "mimo" in titulo_mimo,
+        "mercado_confiavel": bool(radar.get("mercado_confiavel")),
+        "reviews": reviews,
+        "nota": nota,
+    }
+    est_mimo = int(checks["estoque_mimo"])
+    ads_ok = reviews >= reviews_ads and nota >= nota_ads
+    if not checks["mlb_mimo"] or est_mimo <= 0:
+        fase = 0
+    elif not checks["mlb_perl"] or reviews < 1:
+        fase = 1
+    elif not checks["mlb_jupaes"] or not ads_ok:
+        fase = 2
+    elif not checks["mercado_confiavel"]:
+        fase = 3
+    elif est_mimo < est_min:
+        fase = 4
+    else:
+        fase = 5
+    fases = d.get("fases") or []
+    atual = next((f for f in fases if _id_fase(f) == fase), {})
+    proxima = next((f for f in fases if _id_fase(f) == fase + 1), {})
+    return {
+        "ok": True,
+        "cenario": str(d.get("cenario_mais_possivel") or "abrir_frente_mimo_carmed"),
+        "fase": fase,
+        "fase_nome": str(atual.get("nome") or f"fase_{fase}"),
+        "fazer": str(atual.get("fazer") or ""),
+        "proximo": _proximo_gate(fase, checks, gat),
+        "proxima_fase": str(proxima.get("nome") or ""),
+        "agentes": list(atual.get("agentes") or []),
+        "checks": checks,
+        "estoque_min_guerra": est_min,
+        "liberar": {
+            "mimo": not bool(checks["mlb_mimo"]),
+            "perl": bool(checks["mlb_mimo"] and est_mimo > 0 and not checks["mlb_perl"]),
+            "jupaes": fase >= 2 and not bool(checks["mlb_jupaes"]),
+            "ads": fase >= 3,
+            "golpe_preco": fase >= 4,
+            "ruptura": fase >= 5,
+        },
+        "nao_fazer": list(d.get("nao_fazer_global") or []),
+    }
+
+
+_FRENTE_KIT_TAGS = (
+    ("IMP-MIMO-003", "kit:mimo003"),
+    ("IMP-PERL-004", "kit:perl004"),
+    ("IMP-JUPAES-006", "kit:jupaes006"),
+)
+
+
+def emitir_metricas_condicoes(condicoes: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Gauges de fase/liberar/publicar para o grupo Decisão guerra.
+
+    O heartbeat do catálogo também chama isto: o radar sozinho não basta,
+    porque métricas novas (fase, liberar_*) só entram no Datadog quando
+    algum caminho que já roda com frequência as envia.
+    """
+    try:
+        cond = (
+            condicoes
+            if isinstance(condicoes, dict) and condicoes.get("fase") is not None
+            else avaliar_condicoes_guerra()
+        )
+        gauge("impala.guerra.fase", float(cond.get("fase") or 0))
+        lib = cond.get("liberar") if isinstance(cond.get("liberar"), dict) else {}
+        for chave in ("mimo", "perl", "jupaes", "ads", "golpe_preco", "ruptura"):
+            gauge(f"impala.guerra.liberar_{chave}", 1.0 if lib.get(chave) else 0.0)
+        n_pub = 0.0
+        for sku, tag in _FRENTE_KIT_TAGS:
+            ok, _motivo = sku_pode_publicar_agora(sku, condicoes=cond)
+            if ok:
+                n_pub += 1.0
+            gauge("impala.guerra.publicar_sku", 1.0 if ok else 0.0, tags=[tag])
+        gauge("impala.guerra.publicar_agora", n_pub)
+        return cond
+    except Exception as exc:
+        logger.warning("emitir_metricas_condicoes: %s", exc)
+        return {"ok": False, "erro": str(exc)}

@@ -138,6 +138,14 @@ class TestContratoImpulso(unittest.TestCase):
             "contrato_desligado",
         )
 
+    def test_ads_bloqueado_antes_fase_3(self):
+        fake = {"ok": True, "ativo": True, "skus_liberados": ["IMP-MIMO-003"]}
+        ok, motivo = contrato.ads_pode_ligar(contrato=fake, condicoes={"ok": True, "fase": 0})
+        self.assertFalse(ok)
+        self.assertIn("fase_guerra=0", motivo)
+        ok3, _ = contrato.ads_pode_ligar(contrato=fake, condicoes={"ok": True, "fase": 3})
+        self.assertTrue(ok3)
+
     def test_campanha_exige_link(self):
         fake = {"ok": True, "ativo": True, "skus_liberados": ["IMP-MIMO-003"], "bloqueados": []}
         ok, motivo = contrato.campanha_pode_enviar("IMP-MIMO-003", link_valido=False, contrato=fake)

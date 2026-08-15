@@ -176,13 +176,14 @@ class TestBatalhaImpala(unittest.TestCase):
         self.assertFalse(out["ok"])
         mock_inc.assert_any_call("impala.batalha.erro")
 
+    @patch("integracoes.esmaltes.radar_diferencial_impala.processar_radar", return_value={"n_comparaveis": 0})
     @patch("integracoes.esmaltes.golpe_guerra_impala.processar_golpe_batalha", return_value={"disparar": False})
     @patch("integracoes.esmaltes.decisao_batalha_agir.processar_agir_batalha", return_value={"criticas": 0, "top": [], "por_acao": {}})
     @patch("integracoes.esmaltes.metricas_batalha_impala.emitir_metricas_batalha_impala")
     @patch("integracoes.esmaltes.metricas_batalha_impala.escrever_json_atomico")
     @patch("integracoes.esmaltes.metricas_batalha_impala.montar_batalha")
     @patch("integracoes.esmaltes.metricas_batalha_impala.extrair_anuncios_impala")
-    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir, _golpe):
+    def test_processar_e_persistir(self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir, _golpe, _radar):
         mock_ext.return_value = [{"item_id": "MLB1"}]
         mock_mont.return_value = {"anuncios_unicos": 1, "comparacoes": []}
         mock_emit.return_value = {"ok": True}
@@ -193,6 +194,43 @@ class TestBatalhaImpala(unittest.TestCase):
         mock_emit.assert_called_once()
         mock_agir.assert_called_once()
         self.assertIn("agir", out)
+
+    @patch("integracoes.esmaltes.simulacao_guerra_impala.aplicar_visao_operacional")
+    @patch("core.config.SIMULACAO_GUERRA_IMPALA_OPERACIONAL", True)
+    @patch("integracoes.esmaltes.radar_diferencial_impala.processar_radar", return_value={"n_comparaveis": 0})
+    @patch("integracoes.esmaltes.golpe_guerra_impala.processar_golpe_batalha", return_value={"disparar": False})
+    @patch("integracoes.esmaltes.decisao_batalha_agir.processar_agir_batalha", return_value={"criticas": 0, "top": [], "por_acao": {}})
+    @patch("integracoes.esmaltes.metricas_batalha_impala.emitir_metricas_batalha_impala")
+    @patch("integracoes.esmaltes.metricas_batalha_impala.escrever_json_atomico")
+    @patch("integracoes.esmaltes.metricas_batalha_impala.montar_batalha")
+    @patch("integracoes.esmaltes.metricas_batalha_impala.extrair_anuncios_impala")
+    def test_datadog_emite_batalha_real_nao_overlay(
+        self, mock_ext, mock_mont, mock_w, mock_emit, mock_agir, _golpe, _radar, mock_aplicar
+    ):
+        reais = [{"item_id": "MLB1", "titulo": "Kit Impala real"}]
+        mock_ext.return_value = reais
+        mock_aplicar.return_value = (
+            [{"sku": "IMP-MIMO-003"}],
+            [{"item_id": "MLB9000110003", "titulo": "sim", "qtd_kit": 3}],
+            True,
+        )
+        mock_mont.return_value = {"anuncios_unicos": 0, "comparacoes": []}
+        mock_emit.return_value = {"ok": True}
+        out = b.processar_e_persistir(reais, origem="teste")
+        real_calls = [
+            c for c in mock_mont.call_args_list
+            if (c.kwargs.get("anuncios_impala") or [{}])[0].get("item_id") == "MLB1"
+        ]
+        sim_calls = [
+            c for c in mock_mont.call_args_list
+            if (c.kwargs.get("anuncios_impala") or [{}])[0].get("item_id") == "MLB9000110003"
+        ]
+        self.assertEqual(len(real_calls), 1)
+        self.assertEqual(len(sim_calls), 1)
+        mock_emit.assert_called_once()
+        mock_agir.assert_called_once()
+        self.assertTrue(out.get("visao_operacional"))
+        self.assertIsNotNone(out.get("batalha_sim"))
 
     @patch("integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir")
     def test_processar_de_snapshot_kits(self, mock_proc):

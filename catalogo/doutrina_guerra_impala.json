@@ -37,8 +37,56 @@
   "gatilhos": {
     "gap_pct_min": 3,
     "estoque_ml_min": 30,
+    "estoque_validacao": 10,
+    "estoque_ideal": 60,
     "reviews_ads": 20,
     "nota_ads": 4.8,
     "acos_max": 0.2
-  }
+  },
+  "cenario_mais_possivel": "abrir_frente_mimo_carmed",
+  "fases": [
+    {
+      "id": 0,
+      "nome": "abrir_frente",
+      "fazer": "Publicar MIMO R$44,90 com titulo Mimo + Carmed; estoque 10 (validacao) depois 30",
+      "agentes": ["radar_diferencial", "monitor_concorrentes", "contrato_impulso", "ads_gatilho"]
+    },
+    {
+      "id": 1,
+      "nome": "no_ar",
+      "fazer": "PERL no ar no mesmo ciclo (R$39,90 congelado). Ads off. Chat/perguntas em dia.",
+      "agentes": ["golpe_guerra", "monitor_concorrentes", "resumo_conta_ml"]
+    },
+    {
+      "id": 2,
+      "nome": "primeiro_pedido",
+      "fazer": "Com 1 pedido vencedor: publicar JUPAES R$64,90. Combo removedor no copy.",
+      "agentes": ["esmaltes_operacao", "promocoes_manicures", "crescimento"]
+    },
+    {
+      "id": 3,
+      "nome": "ads",
+      "fazer": "Ligar Ads so com 20 reviews, nota 4.8, MLB guerra e ACOS<=20%. Budget R$10/dia.",
+      "agentes": ["ads_gatilho", "contrato_impulso"]
+    },
+    {
+      "id": 4,
+      "nome": "guerra_preco",
+      "fazer": "So PERL iguala se mercado_confiavel=1, rival kit 4 perolado ao vivo, gap>=3% e preco >= piso 15% (R$39,15).",
+      "agentes": ["golpe_guerra", "radar_diferencial", "repricing_impala"]
+    },
+    {
+      "id": 5,
+      "nome": "ruptura",
+      "fazer": "Outra marca / 2o CNPJ so com frente viva, reviews, estoque 30+ e radar nao cego.",
+      "agentes": ["ponto_ruptura_outra_marca", "ponto_ruptura_segundo_cnpj"]
+    }
+  ],
+  "nao_fazer_global": [
+    "Igualar francesinha/tratamento",
+    "Ligar Ads sem MLB da frente",
+    "Publicar JUPAES antes do 1o pedido",
+    "Baixar MIMO abaixo de R$41,99 (piso 15%)",
+    "Tratar cache STALE como rival ao vivo"
+  ]
 }

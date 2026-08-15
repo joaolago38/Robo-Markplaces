@@ -20,6 +20,8 @@
     "agente_ads_gatilho",
     "agente_otimizador_listing",
     "agente_monitor_concorrentes",
+    "radar_diferencial_impala",
+    "agente_visao_atuacao_impala",
     "agente_monitor_sem_venda_ml",
     "agente_monitor_anita",
     "agente_monitor_mercado_esmaltes",

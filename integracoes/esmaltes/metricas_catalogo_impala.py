@@ -11,7 +11,8 @@ import logging
 import re
 from typing import Any
 
-from core.config import TAXA_CANAL_PADRAO_PCT
+from core.atomic_io import ler_json
+from core.config import ROOT, TAXA_CANAL_PADRAO_PCT
 from core.datadog_metrics import gauge, incrementar
 from integracoes.esmaltes.crescimento_esmaltes import _mlb_valido
 
@@ -164,6 +165,19 @@ def montar_snapshot_catalogo(
         )
 
     custo_investido = round(sum(float(k["custo_total"] or 0) for k in kits), 2)
+    kits_acima_piso15 = sum(
+        1
+        for k in kits
+        if isinstance(k.get("margem_real_pct"), (int, float)) and float(k["margem_real_pct"]) >= 15.0
+    )
+    guerra_acima_piso15 = sum(
+        1
+        for k in kits
+        if k.get("guerra")
+        and isinstance(k.get("margem_real_pct"), (int, float))
+        and float(k["margem_real_pct"]) >= 15.0
+    )
+    lucro_ref_total = round(sum(float(k.get("lucro_ref_ml") or 0) for k in kits), 2)
     return {
         "kits_total": len(kits),
         "kits_p0": p0,
@@ -174,8 +188,45 @@ def montar_snapshot_catalogo(
         "guerra_sem_mlb": guerra_sem_mlb,
         "guerra_estoque_zero": guerra_estoque_z,
         "custo_investido": custo_investido,
+        "kits_acima_piso15": kits_acima_piso15,
+        "guerra_acima_piso15": guerra_acima_piso15,
+        "lucro_ref_total": lucro_ref_total,
         "kits": kits,
     }
+
+
+PIPELINE_KITS_PATH = ROOT / "catalogo" / "kits_pipeline_onda2.json"
+
+
+def emitir_metricas_pipeline_kits() -> dict[str, Any]:
+    """Lucro/margem da onda 2+ (Cruzeiro + kits propostos) para decidir o que entra depois do 1º pedido."""
+    try:
+        data = ler_json(PIPELINE_KITS_PATH, default={})
+        kits = [k for k in (data.get("kits") or []) if isinstance(k, dict) and k.get("sku")]
+        n_acima = 0
+        lucro_soma = 0.0
+        for k in kits:
+            tags = [
+                kit_tag(str(k.get("sku") or "")),
+                f"onda:{int(k.get('onda') or 0)}",
+                f"status:{str(k.get('status') or 'x')[:24]}",
+            ]
+            mop = k.get("margem_op_pct")
+            if mop is not None:
+                gauge("impala.pipeline.margem_op_pct", float(mop), tags=tags)
+                if float(mop) >= 15.0:
+                    n_acima += 1
+            if k.get("lucro_op") is not None:
+                lucro = float(k["lucro_op"])
+                lucro_soma += lucro
+                gauge("impala.pipeline.lucro_op", lucro, tags=tags)
+        gauge("impala.pipeline.kits_total", float(len(kits)))
+        gauge("impala.pipeline.kits_acima_piso15", float(n_acima))
+        gauge("impala.pipeline.lucro_op_soma", round(lucro_soma, 2))
+        return {"ok": True, "kits": len(kits), "acima_piso15": n_acima}
+    except Exception as exc:
+        logger.warning("emitir_metricas_pipeline_kits: %s", exc)
+        return {"ok": False, "erro": str(exc)}
 
 
 def emitir_metricas_catalogo_impala(
@@ -209,6 +260,9 @@ def emitir_metricas_catalogo_impala(
         gauge("catalogo.guerra_estoque_zero", float(snap["guerra_estoque_zero"]))
         # Soma dos custos unitários do catálogo (= capital de custo / investido em produto)
         gauge("catalogo.custo_investido", float(snap.get("custo_investido") or 0))
+        gauge("catalogo.kits_acima_piso15", float(snap.get("kits_acima_piso15") or 0))
+        gauge("catalogo.guerra_acima_piso15", float(snap.get("guerra_acima_piso15") or 0))
+        gauge("catalogo.lucro_ref_total", float(snap.get("lucro_ref_total") or 0))
 
         for k in snap["kits"]:
             tags = [
@@ -239,6 +293,14 @@ def emitir_metricas_catalogo_impala(
                 gauge("catalogo.margem_real_pct", float(k["margem_real_pct"]), tags=tags)
             if k["gap_mercado_pct"] is not None:
                 gauge("catalogo.gap_mercado_pct", float(k["gap_mercado_pct"]), tags=tags)
+
+        try:
+            from integracoes.esmaltes.doutrina_guerra_impala import emitir_metricas_condicoes
+
+            emitir_metricas_condicoes()
+        except Exception as exc:
+            logger.warning("emitir_metricas_condicoes via catalogo: %s", exc)
+        emitir_metricas_pipeline_kits()
 
         incrementar("catalogo.heartbeat")
         return {"ok": True, **{kk: snap[kk] for kk in snap if kk != "kits"}, "kits_emitidos": len(snap["kits"])}

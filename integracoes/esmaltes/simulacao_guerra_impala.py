@@ -264,7 +264,7 @@ def rodar_cenario(
         for sku in _FRENTE
     }
     top = golpe.get("golpe") if isinstance(golpe.get("golpe"), dict) else {}
-    return {
+    out = {
         "id": cenario.get("id"),
         "nome": cenario.get("nome"),
         "hidratar_nossos": hidratar,
@@ -325,7 +325,7 @@ def rodar_simulacao(*, cenario_id: str | None = None, todos: bool = False) -> di
             "nossos_mlb_simulados": fx.get("nossos_mlb") or {},
             "estoque_ideal": int(fx.get("estoque_ideal") or ESTOQUE_IDEAL),
             "catalogo_real": checklist_go_live(produtos),
-            "sala": top.get("sala") if isinstance(top, dict) else {},
+            "sala": (top.get("sala") if isinstance(top, dict) else None) or {},
             "cenarios": resultados,
         }
         try:

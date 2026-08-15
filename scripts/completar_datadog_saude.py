@@ -50,6 +50,7 @@ GROUP_PONTOS_CEGOS_ID = 700005
 GROUP_TOKENS_ID = 100001
 GROUP_CATALOGO_IMPALA_ID = 700006
 GROUP_BATALHA_IMPALA_ID = 700007
+GROUP_DECISAO_GUERRA_ID = 700018
 GROUP_OPERACAO_COMERCIAL_ID = 700008
 GROUP_MP_CATALOGO_ID = 760001
 GROUP_MP_MERCADO_ID = 760002
@@ -235,12 +236,18 @@ def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
     d = w.get("definition") or {}
     title = d.get("title") if isinstance(d, dict) else None
     wid = w.get("id")
-    if wid in (GROUP_CATALOGO_IMPALA_ID, GROUP_BATALHA_IMPALA_ID, GROUP_OPERACAO_COMERCIAL_ID):
+    if wid in (
+        GROUP_CATALOGO_IMPALA_ID,
+        GROUP_BATALHA_IMPALA_ID,
+        GROUP_OPERACAO_COMERCIAL_ID,
+        GROUP_DECISAO_GUERRA_ID,
+    ):
         return True
     if isinstance(title, str) and (
         title.startswith("[Catalogo Impala]")
         or title.startswith("[Batalha Impala]")
         or title.startswith("[Operacao comercial]")
+        or title.startswith("[Decisao guerra Impala]")
     ):
         return True
     return False
@@ -273,7 +280,7 @@ def _qv(
         formats.append({"comparator": "<", "palette": "white_on_yellow", "value": yellow_lt})
     if green_gt is not None:
         formats.append({"comparator": ">", "palette": "white_on_green", "value": green_gt})
-    if red_lt is None:
+    elif red_lt is None and yellow_gt is None and yellow_lt is None:
         formats.append({"comparator": ">=", "palette": "white_on_green", "value": 0})
     return {
         "definition": {
@@ -1303,6 +1310,301 @@ def _grupo_batalha_impala() -> dict[str, Any]:
             ],
         },
         "layout": {"x": 0, "y": 24, "width": 12, "height": 1},
+    }
+
+
+def _grupo_decisao_guerra_impala() -> dict[str, Any]:
+    """Margem operacional da frente + extras dos rivais (visão de atuação)."""
+    return {
+        "id": GROUP_DECISAO_GUERRA_ID,
+        "definition": {
+            "title": "[Decisao guerra Impala] Fase + MLB + margem/lucro catalogo + Cruzeiro + pipeline",
+            "type": "group",
+            "background_color": "vivid_orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Margem catalogo MIMO %",
+                        "avg:robo.impala.guerra.margem_op_pct{kit:mimo003}",
+                        aggregator="last",
+                        green_gt=15,
+                        yellow_lt=15,
+                        red_lt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 741001,
+                },
+                {
+                    **_qv(
+                        "Margem catalogo PERL %",
+                        "avg:robo.impala.guerra.margem_op_pct{kit:perl004}",
+                        aggregator="last",
+                        green_gt=15,
+                        yellow_lt=15,
+                        red_lt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 741002,
+                },
+                {
+                    **_qv(
+                        "Margem catalogo JUPAES %",
+                        "avg:robo.impala.guerra.margem_op_pct{kit:jupaes006}",
+                        aggregator="last",
+                        green_gt=15,
+                        yellow_lt=15,
+                        red_lt=10,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 741003,
+                },
+                {
+                    **_qv(
+                        "Rivais comparaveis (amostra viva)",
+                        "avg:robo.impala.guerra.rivais_comparaveis{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 741004,
+                },
+                {
+                    "id": 741010,
+                    "definition": {
+                        "title": "Extras titulos (0 se cache velho / busca cega)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "response_format": "timeseries",
+                                "style": {"palette": "datadog16"},
+                                "formulas": [{"alias": "anuncios", "formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.impala.guerra.extra_n{*} by {extra}",
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 2},
+                },
+                {
+                    "id": 741011,
+                    "definition": {
+                        "title": "Margem catalogo % (preco planejado, nao listing)",
+                        "type": "timeseries",
+                        "show_legend": True,
+                        "legend_layout": "horizontal",
+                        "requests": [
+                            {
+                                "display_type": "line",
+                                "response_format": "timeseries",
+                                "style": {"palette": "cool"},
+                                "formulas": [{"alias": "margem op %", "formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": "avg:robo.impala.guerra.margem_op_pct{*} by {kit}",
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 2},
+                },
+                {
+                    **_qv(
+                        "Nao comparaveis (amostra viva)",
+                        "avg:robo.impala.guerra.rivais_nao_comparaveis{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 5},
+                    "id": 741020,
+                },
+                {
+                    **_qv(
+                        "Frente com MLB real (0-3)",
+                        "avg:robo.impala.guerra.mlb_frente{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 5},
+                    "id": 741021,
+                },
+                {
+                    **_qv(
+                        "Cache busca idade h (amarelo >48h)",
+                        "avg:robo.impala.guerra.cache_idade_h{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        yellow_gt=48,
+                        red_gt=168,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 5},
+                    "id": 741022,
+                },
+                {
+                    **_qv(
+                        "Mercado confiavel (0/1)",
+                        "avg:robo.impala.guerra.mercado_confiavel{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 5},
+                    "id": 741023,
+                },
+                {
+                    **_qv(
+                        "Fase guerra 0-5 (0=abrir MIMO, nao e erro)",
+                        "avg:robo.impala.guerra.fase{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 7},
+                    "id": 741024,
+                },
+                {
+                    **_qv(
+                        "Liberar Ads (1 so na fase 3+)",
+                        "avg:robo.impala.guerra.liberar_ads{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 7},
+                    "id": 741025,
+                },
+                {
+                    **_qv(
+                        "Liberar golpe preco PERL (fase 4+)",
+                        "avg:robo.impala.guerra.liberar_golpe_preco{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 7},
+                    "id": 741026,
+                },
+                {
+                    **_qv(
+                        "Liberar ruptura (fase 5)",
+                        "avg:robo.impala.guerra.liberar_ruptura{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 7},
+                    "id": 741027,
+                },
+                {
+                    **_qv(
+                        "Publicar agora (gate MIMO, nao os 20 kits)",
+                        "avg:robo.impala.guerra.publicar_agora{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 9},
+                    "id": 741028,
+                },
+                {
+                    **_qv(
+                        "Kits catalogo acima piso 15%",
+                        "avg:robo.catalogo.kits_acima_piso15{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 9},
+                    "id": 741029,
+                },
+                {
+                    **_qv(
+                        "Lucro Cruzeiro spa R$/un",
+                        "avg:robo.catalogo.lucro_ref_ml{kit:crzkit003}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 9},
+                    "id": 741030,
+                },
+                {
+                    **_qv(
+                        "Ruptura 2o CNPJ % (nao confundir com fase)",
+                        "avg:robo.ponto_ruptura.progresso_pct{*}",
+                        aggregator="last",
+                        green_gt=80,
+                        yellow_lt=80,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 9},
+                    "id": 741031,
+                },
+                {
+                    **_toplist_metric(
+                        "Lucro ref R$/un por kit (maior = melhor capital)",
+                        "avg:robo.catalogo.lucro_ref_ml{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 11},
+                    "id": 741032,
+                },
+                {
+                    **_toplist_metric(
+                        "Margem real % por kit (piso 15)",
+                        "avg:robo.catalogo.margem_real_pct{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 11},
+                    "id": 741033,
+                },
+                {
+                    **_toplist_metric(
+                        "Pipeline onda 2+ lucro R$/un (nao publicar agora)",
+                        "avg:robo.impala.pipeline.lucro_op{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 14},
+                    "id": 741034,
+                },
+                {
+                    **_toplist_metric(
+                        "Pipeline onda 2+ margem op %",
+                        "avg:robo.impala.pipeline.margem_op_pct{*} by {kit}",
+                        aggregator="avg",
+                        limit=8,
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 14},
+                    "id": 741035,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 26, "width": 12, "height": 1},
     }
 
 
@@ -3868,6 +4170,11 @@ def atualizar_dashboard_ecommerce() -> None:
             "**Kits manicure Impala:** grupo [Kits Impala manicure] — kits do catálogo "
             "compatíveis com o que o ML oferece, com índice de compra Impala, economia "
             "vs avulso e condição (qtd≥3 + margem ≥ piso + padrão Impala).\n\n"
+            "**Decisão guerra Impala:** grupo [Decisao guerra Impala] — fase 0–5 "
+            "(0=abrir MIMO, não é erro), publicar_agora (gate, não os 20 kits), "
+            "margem/lucro do catálogo + Cruzeiro spa + pipeline onda 2. "
+            "Rivais comparáveis só com amostra viva. Telegram aponta "
+            "para este grupo. Cache STALE não entra como mercado.\n\n"
             "**Decisão / oscilação:** grupo [Decisao] — Claude pulsa assertividade "
             "máxima só para expor âncoras no Datadog e volta a uso moderado. "
             "Qualquer oscilação além da margem de erro deixa o widget **vermelho** "
@@ -3887,6 +4194,8 @@ def atualizar_dashboard_ecommerce() -> None:
     cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
     bat = _grupo_batalha_impala()
     bat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    guerra = _grupo_decisao_guerra_impala()
+    guerra["layout"] = {"x": 0, "y": 5, "width": 12, "height": 1}
     com = _grupo_operacao_comercial()
     com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     saude = _grupo_saude_conta_ml()
@@ -3905,13 +4214,13 @@ def atualizar_dashboard_ecommerce() -> None:
     payload = {
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
-            "ABA ECOMMERCE: catalogo Impala, batalha, ads, saude da conta ML, "
+            "ABA ECOMMERCE: catalogo Impala, batalha, decisao guerra (margem+extra), ads, saude da conta ML, "
             "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
             "kits Impala manicure, oscilacao/cuidado para decidir. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
             f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
-        "widgets": [note, com, cat, bat, saude, ruptura, outra, marca_kit, kits_m, decisao],
+        "widgets": [note, com, cat, bat, guerra, saude, ruptura, outra, marca_kit, kits_m, decisao],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],

@@ -1,8 +1,9 @@
 {
   "ok": true,
   "simulacao": true,
-  "timestamp": "2026-08-15T14:46:49.171539+00:00",
-  "aviso": "MLB9000… fictícios. Catálogo real continua MLB_PREENCHER / estoque 0.",
+  "visao_operacional": true,
+  "timestamp": "2026-08-15T14:49:54.876447+00:00",
+  "aviso": "Visão operacional: frente no ar em memória. Catálogo em disco continua sem MLB real.",
   "quando_mlb_real": [
     "Publicar MIMO, depois PERL, JUPAES só após o 1º pedido vencedor.",
     "Gravar item_id real em produtos.json → canais.mercadolivre (sem MLB_PREENCHER).",
@@ -46,6 +47,22 @@
       "preco": 64.9
     }
   ],
+  "sala": {
+    "modo": "operacional",
+    "frente_no_ar": true,
+    "chat_30min": "on",
+    "radar_rivais": 5,
+    "estoque_un": 60,
+    "ruptura_piso_un": 30,
+    "repricing": "perl_apenas",
+    "ads": "aguardando_20_avaliacoes_nota_4_8",
+    "cnpj_2": "aguardando_20_avaliacoes",
+    "golpe": "diferenciar",
+    "sku": "IMP-MIMO-003",
+    "arma": "listing",
+    "fazer": "Diferenciar `IMP-MIMO-003` (título/foto/chat) — preço firme",
+    "nao_fazer": "Baixar este SKU; igualar kit 10/15 no prejuízo"
+  },
   "cenarios": [
     {
       "id": "igual_para_igual",
@@ -213,7 +230,23 @@
           "pode_impulsionar": true,
           "bloqueios": []
         }
-      ]
+      ],
+      "sala": {
+        "modo": "operacional",
+        "frente_no_ar": true,
+        "chat_30min": "on",
+        "radar_rivais": 5,
+        "estoque_un": 60,
+        "ruptura_piso_un": 30,
+        "repricing": "perl_apenas",
+        "ads": "aguardando_20_avaliacoes_nota_4_8",
+        "cnpj_2": "aguardando_20_avaliacoes",
+        "golpe": "diferenciar",
+        "sku": "IMP-MIMO-003",
+        "arma": "listing",
+        "fazer": "Diferenciar `IMP-MIMO-003` (título/foto/chat) — preço firme",
+        "nao_fazer": "Baixar este SKU; igualar kit 10/15 no prejuízo"
+      }
     }
   ]
 }

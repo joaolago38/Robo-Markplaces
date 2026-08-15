@@ -138,7 +138,37 @@ class TestSimulacaoGuerra(unittest.TestCase):
         self.assertEqual(len(rivais), 1)
         self.assertEqual(rivais[0]["item_id"], "MLB9000210003")
 
-    def test_rodar_nao_grava_produtos_json(self):
+    def test_visao_operacional_hidrata_e_completa_rivais(self):
+        hidratados, rivais, overlay = sg.aplicar_visao_operacional([], produtos=FRENTE)
+        self.assertTrue(overlay)
+        mimo = next(p for p in hidratados if p["sku"] == "IMP-MIMO-003")
+        self.assertEqual(mimo["canais"]["mercadolivre"]["item_id"], "MLB9000110003")
+        self.assertEqual(mimo["estoque_total"], 60)
+        tamanhos = {int(r["qtd_kit"]) for r in rivais}
+        self.assertEqual(tamanhos, {3, 4, 6})
+        self.assertEqual(FRENTE[0]["canais"]["mercadolivre"]["item_id"], "MLB_PREENCHER")
+
+    def test_visao_desliga_com_mlb_real(self):
+        live = copy.deepcopy(FRENTE)
+        live[0]["canais"]["mercadolivre"]["item_id"] = "MLB1234567890"
+        live[0]["canais"]["mercadolivre"]["estoque"] = 60
+        hidratados, rivais, overlay = sg.aplicar_visao_operacional(
+            [{"item_id": "MLB555", "qtd_kit": 3, "preco": 40.0, "marca": "Impala"}],
+            produtos=live,
+        )
+        self.assertFalse(overlay)
+        self.assertEqual(hidratados[0]["canais"]["mercadolivre"]["item_id"], "MLB1234567890")
+        self.assertEqual(len(rivais), 1)
+
+    def test_rodar_padrao_e_igual_para_igual(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(sg, "SNAPSHOT_PATH", Path(tmp) / "snap.json"):
+                out = sg.rodar_simulacao()
+        ids = [c.get("id") for c in out.get("cenarios") or []]
+        self.assertEqual(ids, ["igual_para_igual"])
+        self.assertTrue(out.get("visao_operacional"))
+        self.assertEqual(out.get("sala", {}).get("golpe"), "diferenciar")
+        self.assertEqual(out.get("sala", {}).get("sku"), "IMP-MIMO-003")
         from core.catalogo_produtos import carregar_produtos_catalogo
 
         antes = {

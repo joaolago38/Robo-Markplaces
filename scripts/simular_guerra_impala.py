@@ -31,13 +31,14 @@ from integracoes.esmaltes.simulacao_guerra_impala import formatar_mensagem, roda
 def main() -> int:
     parser = argparse.ArgumentParser(description="Simula guerra Impala com anúncios no ar")
     parser.add_argument("--cenario", default="", help="hoje | igual_para_igual | perl_pressionado | dump_abaixo_piso")
+    parser.add_argument("--todos", action="store_true", help="Roda os 4 cenários (incluindo hoje sem MLB)")
     args = parser.parse_args()
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except Exception:
         pass
     cid = str(args.cenario or "").strip() or None
-    out = rodar_simulacao(cenario_id=cid)
+    out = rodar_simulacao(cenario_id=cid, todos=bool(args.todos))
     print(formatar_mensagem(out))
     print()
     print(json.dumps({k: out[k] for k in out if k != "cenarios"}, ensure_ascii=False, indent=2)[:500])

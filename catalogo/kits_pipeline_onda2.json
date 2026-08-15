@@ -1,0 +1,153 @@
+{
+  "timestamp": "2026-08-15T15:45:00+00:00",
+  "fonte": [
+    "catalogo/produtos.json (custo_unitario 2,87 / complemento Carmed 7,00)",
+    "catalogo/oportunidades_impala.json (POV/Ju Paes 3,36, Flash 4,86, Verniz 3,36, Base 2,87)",
+    "catalogo/kits_cruzeiro.json (Consolidado_Impala_Cruzeiro.xlsx)",
+    "catalogo/complementos_livia.json (lixa < R$ 1, Carmed)",
+    "logs/montar_kits_impala_ultima.json (planilha NCM 168 cores — sinal ML fraco)"
+  ],
+  "regra": "Taxa ML 18%. Piso operacional 15% = custo / 0,67. Não publicar agora — frente continua MIMO. Estes kits só entram depois do 1º pedido.",
+  "nao_criar": [
+    {
+      "ideia": "Kit 3 Branco + Paraíso + Sorvete de Céu Azul",
+      "origem": "montar_kits_impala (13 jul)",
+      "motivo": "Sinal ML é ruído (toalha azul, francesinha R$ 22, vendas_proxy 0). Igualar francesinha queima margem."
+    },
+    {
+      "ideia": "Mais um kit 10/15/30 sortido",
+      "origem": "planilha Cadastro NCM (hits_ml 'alta')",
+      "motivo": "Hits são overlap de token 'kit/esmalte/impala'. Margem operacional −5% a −30%."
+    }
+  ],
+  "kits": [
+    {
+      "sku": "CRZ-KIT-003",
+      "status": "ja_no_catalogo",
+      "onda": 2,
+      "nome": "Kit Spa dos Pés Básico",
+      "porque_aumenta": "Maior lucro/un. da casa. Não compete com MIMO. Mesmo CNPJ cosmético.",
+      "composicao": "Amolecedor 90ml + Creme pés 90ml + Esfoliante 95g",
+      "custo_total": 16.85,
+      "preco": 54.9,
+      "taxa_pct": 18,
+      "lucro_op": 28.17,
+      "margem_op_pct": 51.3,
+      "piso_15": 25.15,
+      "invest_10un": 168.5
+    },
+    {
+      "sku": "CRZ-KIT-001",
+      "status": "ja_no_catalogo",
+      "onda": 2,
+      "nome": "Kit Iniciante Manicure (3 essenciais Cruzeiro)",
+      "porque_aumenta": "Anexo natural do MIMO (removedor/cutícula). Copy da fase 2 já pede combo.",
+      "composicao": "Acetona 95ml + Amolecedor 90ml + Esfoliante 95g",
+      "custo_total": 16.48,
+      "preco": 39.9,
+      "taxa_pct": 18,
+      "lucro_op": 16.24,
+      "margem_op_pct": 40.7,
+      "piso_15": 24.6,
+      "invest_10un": 164.8
+    },
+    {
+      "sku": "CRZ-KIT-002",
+      "status": "ja_no_catalogo",
+      "onda": 2,
+      "nome": "Kit Removedor Completo + Dosador",
+      "porque_aumenta": "Consumível: a manicure recompra. Sobe ticket sem 4º SKU Impala de esmalte.",
+      "composicao": "Acetona 95ml + Eco Unhas 95ml + Dosador 150ml",
+      "custo_total": 24.58,
+      "preco": 49.9,
+      "taxa_pct": 18,
+      "lucro_op": 16.34,
+      "margem_op_pct": 32.8,
+      "piso_15": 36.69,
+      "invest_10un": 245.8
+    },
+    {
+      "sku": "IMP-FLASH-003",
+      "status": "proposto",
+      "onda": 2,
+      "nome": "Kit 3 Impala + Flash Secante",
+      "porque_aumenta": "Extra profissional (não Carmed). Margem melhor que MIMO. Título não cai em francesinha.",
+      "composicao": "3 cremosos Impala (R$ 2,87) + Flash Secante (ref. 1009488, R$ 4,86)",
+      "custo_esmaltes": 8.61,
+      "custo_complemento": 4.86,
+      "custo_embalagem": 3.52,
+      "frete_estimado": 9.0,
+      "custo_total": 25.99,
+      "preco": 44.9,
+      "taxa_pct": 18,
+      "lucro_op": 10.83,
+      "margem_op_pct": 24.1,
+      "piso_15": 38.79,
+      "invest_10un": 259.9,
+      "cores_sugeridas": ["Admire", "Sutileza", "Amor Profundo"]
+    },
+    {
+      "sku": "IMP-BAIL-003",
+      "status": "proposto",
+      "onda": 2,
+      "nome": "Kit 3 Bailarina + lixa",
+      "porque_aumenta": "Coleção que a planilha já marca como 'vende bem', em tamanho 3 (o ML lista mais). Kit 5 atual fica abaixo do piso.",
+      "composicao": "Ballet Clássico + Pliê + Tutu (R$ 2,87) + lixa Katy (< R$ 1)",
+      "custo_esmaltes": 8.61,
+      "custo_complemento": 1.0,
+      "custo_embalagem": 3.52,
+      "frete_estimado": 9.0,
+      "custo_total": 22.13,
+      "preco": 39.9,
+      "taxa_pct": 18,
+      "lucro_op": 10.59,
+      "margem_op_pct": 26.5,
+      "piso_15": 33.03,
+      "invest_10un": 221.3,
+      "em_vez_de": "IMP-BAIL-005 a R$ 48,90 (margem 10,9%)"
+    },
+    {
+      "sku": "IMP-POV-004",
+      "status": "proposto",
+      "onda": 3,
+      "nome": "Kit 4 POV + Carmed",
+      "porque_aumenta": "Nicho Gen Z da planilha Oportunidades + extra que o rival kit 4 perolado não tem. Não abrir junto com MIMO (mesmo extra).",
+      "composicao": "Minha Vibe, Look do Dia, Clean Girl, For You Page (R$ 3,36) + Carmed (R$ 7)",
+      "custo_esmaltes": 13.44,
+      "custo_complemento": 7.0,
+      "custo_embalagem": 3.75,
+      "frete_estimado": 11.0,
+      "custo_total": 35.19,
+      "preco": 54.9,
+      "taxa_pct": 18,
+      "lucro_op": 9.83,
+      "margem_op_pct": 17.9,
+      "piso_15": 52.52,
+      "invest_10un": 351.9,
+      "em_vez_de": "IMP-POV-008 a R$ 74,90 (margem 13,8%)"
+    }
+  ],
+  "reprecificar_existente": [
+    {
+      "sku": "IMP-BAIL-005",
+      "preco_hoje": 48.9,
+      "margem_hoje_pct": 10.88,
+      "preco_piso_15": 51.91,
+      "nota": "Se for manter o kit 5, sobe o preço. Senão troca pelo IMP-BAIL-003."
+    },
+    {
+      "sku": "IMP-POV-008",
+      "preco_hoje": 74.9,
+      "margem_hoje_pct": 13.83,
+      "preco_piso_15": 76.21,
+      "nota": "Ou sobe R$ 1,31 ou corta para kit 4 (IMP-POV-004)."
+    },
+    {
+      "sku": "BUNDLE-777-5ESM",
+      "preco_hoje": 79.9,
+      "margem_hoje_pct": 9.2,
+      "preco_piso_15": 86.79,
+      "nota": "Margem 'trabalho' 31% na planilha ignora taxa 18%+frete. Só onda 3, a R$ 86,90+."
+    }
+  ]
+}

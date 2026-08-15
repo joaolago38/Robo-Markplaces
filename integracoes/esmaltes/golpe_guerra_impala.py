@@ -130,8 +130,13 @@ def formatar_mensagem_golpe(payload: dict[str, Any], *, texto_ia: str = "") -> s
 
     g = payload.get("golpe") if isinstance(payload.get("golpe"), dict) else {}
     classif = str(g.get("classificacao") or "ignorar")
+    titulo = (
+        "*IMPALA ON* — golpe da guerra"
+        if payload.get("visao_operacional")
+        else "⚔ *Impala — golpe da guerra*"
+    )
     linhas = [
-        cabecalho_agente("golpe_guerra_impala", "⚔ *Impala — golpe da guerra*"),
+        cabecalho_agente("golpe_guerra_impala", titulo),
         f"Classificação: *{classif}*",
         f"SKU: `{g.get('sku') or 'n/d'}` · arma *{g.get('arma') or 'observar'}*",
         f"FAZER: {g.get('fazer') or '—'}",
@@ -158,6 +163,10 @@ def processar_golpe_batalha(
     """Monta, persiste, métricas, Claude no disparo. Nunca lança."""
     try:
         payload = montar_golpe(batalha, produtos=produtos)
+        if isinstance(batalha, dict) and batalha.get("visao_operacional"):
+            payload["visao_operacional"] = True
+            payload["disparar"] = False
+            payload["overlay_sem_golpe"] = True
         emitir_metricas_golpe(payload)
         texto_ia = sintetizar_golpe_claude(payload)
         if texto_ia:

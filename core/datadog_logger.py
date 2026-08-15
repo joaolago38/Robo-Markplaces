@@ -141,6 +141,8 @@ _LOGGER_META = {
     "agente_golpe_guerra_impala": ("mercadolivre", "agente"),
     "simulacao_guerra_impala": ("mercadolivre", "integracao"),
     "agente_simulacao_guerra_impala": ("mercadolivre", "agente"),
+    "radar_diferencial_impala": ("mercadolivre", "integracao"),
+    "agente_visao_atuacao_impala": ("mercadolivre", "agente"),
     "agente_esmaltes_operacao": ("mercadolivre", "agente"),
     "agente_alibaba_sourcing": ("multi", "agente"),
     "contrato_impulso_ml": ("mercadolivre", "integracao"),

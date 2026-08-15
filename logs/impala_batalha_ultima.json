@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-15T14:27:55.797231+00:00",
+  "timestamp": "2026-08-15T16:09:26.620875+00:00",
   "origem": "monitor_concorrentes",
   "batalha": {
     "anuncios_unicos": 0,
@@ -13,7 +13,7 @@
     "comparacoes": [
       {
         "sku": "IMP-PERL-004",
-        "papel": "entrada",
+        "papel": "preco",
         "prio": "p0",
         "kit_tag": "kit:perl004",
         "tam": 4,
@@ -298,97 +298,8 @@
     "comparacoes_sem_rival": 20,
     "top_anuncios": []
   },
+  "batalha_sim": null,
   "amostra_impala": 0,
-  "agir": {
-    "criticas": 20,
-    "por_acao": {
-      "revisar_preco": 0,
-      "melhorar_listing": 0,
-      "publicar_mlb": 20,
-      "observar": 0
-    },
-    "top": [
-      {
-        "sku": "IMP-PERL-004",
-        "kit_tag": "kit:perl004",
-        "acao": "publicar_mlb",
-        "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
-        "score": 40.0,
-        "gap_pct": 0.0,
-        "rivais_no_tam": 0,
-        "nosso_preco": 39.9,
-        "rival_min": null,
-        "papel": "entrada",
-        "prio": "p0",
-        "mlb_ok": false,
-        "fonte_rival": "ausente",
-        "critica": true
-      },
-      {
-        "sku": "IMP-VR-015",
-        "kit_tag": "kit:vr015",
-        "acao": "publicar_mlb",
-        "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
-        "score": 40.0,
-        "gap_pct": 0.0,
-        "rivais_no_tam": 0,
-        "nosso_preco": 69.9,
-        "rival_min": null,
-        "papel": "catalogo",
-        "prio": "p0",
-        "mlb_ok": false,
-        "fonte_rival": "ausente",
-        "critica": true
-      },
-      {
-        "sku": "IMP-SORT-010",
-        "kit_tag": "kit:sort010",
-        "acao": "publicar_mlb",
-        "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
-        "score": 40.0,
-        "gap_pct": 0.0,
-        "rivais_no_tam": 0,
-        "nosso_preco": 48.0,
-        "rival_min": null,
-        "papel": "catalogo",
-        "prio": "p0",
-        "mlb_ok": false,
-        "fonte_rival": "ausente",
-        "critica": true
-      },
-      {
-        "sku": "BUNDLE-777-5ESM",
-        "kit_tag": "kit:b7775esm",
-        "acao": "publicar_mlb",
-        "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
-        "score": 40.0,
-        "gap_pct": 0.0,
-        "rivais_no_tam": 0,
-        "nosso_preco": 79.9,
-        "rival_min": null,
-        "papel": "catalogo",
-        "prio": "p0",
-        "mlb_ok": false,
-        "fonte_rival": "ausente",
-        "critica": true
-      },
-      {
-        "sku": "IMP-NUDE-010",
-        "kit_tag": "kit:nude010",
-        "acao": "publicar_mlb",
-        "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
-        "score": 40.0,
-        "gap_pct": 0.0,
-        "rivais_no_tam": 0,
-        "nosso_preco": 49.9,
-        "rival_min": null,
-        "papel": "catalogo",
-        "prio": "p1",
-        "mlb_ok": false,
-        "fonte_rival": "ausente",
-        "critica": true
-      }
-    ],
-    "resumo_claude": null
-  }
+  "visao_operacional": false,
+  "anuncios_reais": []
 }
