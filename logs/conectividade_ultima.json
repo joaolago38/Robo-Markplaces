@@ -1,41 +1,38 @@
 {
-  "timestamp": "2026-08-16T16:11:54.508745+00:00",
-  "ok": true,
+  "timestamp": "2026-08-16T16:15:24.342177+00:00",
+  "ok": false,
   "total": 4,
-  "ok_count": 4,
-  "falha": 0,
-  "pulado": 3,
+  "ok_count": 0,
+  "falha": 4,
+  "pulado": 0,
   "resultados": [
     {
       "marketplace": "mercadolivre",
-      "ok": true,
-      "status_http": 200,
-      "msg": "",
-      "dias_sem_acesso": 0
+      "ok": false,
+      "status_http": 0,
+      "msg": "boom",
+      "dias_sem_acesso": -1
     },
     {
       "marketplace": "magalu",
-      "ok": true,
-      "skipped": true,
+      "ok": false,
       "status_http": 0,
-      "msg": "spec.inativo",
-      "dias_sem_acesso": 0
+      "msg": "boom",
+      "dias_sem_acesso": -1
     },
     {
       "marketplace": "shopee",
-      "ok": true,
-      "skipped": true,
+      "ok": false,
       "status_http": 0,
-      "msg": "spec.inativo",
-      "dias_sem_acesso": 0
+      "msg": "boom",
+      "dias_sem_acesso": -1
     },
     {
       "marketplace": "amazon",
-      "ok": true,
-      "skipped": true,
+      "ok": false,
       "status_http": 0,
-      "msg": "spec.inativo",
-      "dias_sem_acesso": 0
+      "msg": "boom",
+      "dias_sem_acesso": -1
     }
   ]
 }

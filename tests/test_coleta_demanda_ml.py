@@ -136,7 +136,7 @@ class ColetaDemandaMlTests(unittest.TestCase):
 
     def test_titulo_bate_e_enriquecer_vazio(self):
         self.assertTrue(cd._titulo_bate("qualquer", None))
-        self.assertTrue(cd._titulo_bate("PETG Preto", "[petg"))
+        self.assertFalse(cd._titulo_bate("PETG Preto", "[petg"))
         self.assertEqual(cd.enriquecer_visitas_lista([], limite=5), 0)
         self.assertEqual(cd.enriquecer_visitas_lista([{"item_id": "MLB1"}], limite=0), 0)
 
@@ -172,13 +172,15 @@ class ColetaDemandaMlTests(unittest.TestCase):
             self.assertIn("pref.blindspot.funil_proprio", nomes)
 
     def test_emitir_metricas_demanda_petg_e_erro_progresso(self):
-        with patch("integracoes.ml.coleta_demanda_ml.gauge") as mock_g:
-            cd.emitir_metricas_demanda(
-                "filamentos.petg",
-                funil={"totais": {"unidades_7d": 14}},
-            )
-            nomes = [c.args[0] for c in mock_g.call_args_list]
-            self.assertIn("progresso.petg_unid_dia", nomes)
+        with patch("integracoes.ml.coleta_demanda_ml.gauge"):
+            with patch(
+                "integracoes.esmaltes.metricas_progresso_24m.emitir_petg_funil"
+            ) as mock_petg:
+                cd.emitir_metricas_demanda(
+                    "filamentos.petg",
+                    funil={"totais": {"unidades_7d": 14}},
+                )
+                mock_petg.assert_called_once_with(14.0)
         with patch("integracoes.ml.coleta_demanda_ml.gauge"):
             with patch(
                 "integracoes.esmaltes.metricas_progresso_24m.prefixo_emite_petg",
