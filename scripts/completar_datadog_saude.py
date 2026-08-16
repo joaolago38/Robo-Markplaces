@@ -62,6 +62,7 @@ GROUP_RUPTURA_OUTRA_MARCA_ID = 700014
 GROUP_MARCA_KIT_TENDENCIA_ID = 700015
 GROUP_KITS_MANICURE_ID = 700016
 GROUP_DECISAO_OSCILACAO_ID = 700017
+GROUP_PROGRESSO_24M_ID = 700019
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -241,6 +242,7 @@ def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
         GROUP_BATALHA_IMPALA_ID,
         GROUP_OPERACAO_COMERCIAL_ID,
         GROUP_DECISAO_GUERRA_ID,
+        GROUP_PROGRESSO_24M_ID,
     ):
         return True
     if isinstance(title, str) and (
@@ -248,6 +250,7 @@ def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
         or title.startswith("[Batalha Impala]")
         or title.startswith("[Operacao comercial]")
         or title.startswith("[Decisao guerra Impala]")
+        or title.startswith("[Progresso 24 meses]")
     ):
         return True
     return False
@@ -301,6 +304,95 @@ def _qv(
                     ],
                     "response_format": "scalar",
                     "aggregator": aggregator,
+                }
+            ],
+        }
+    }
+
+
+def _qv_formula(
+    title: str,
+    queries: list[tuple[str, str]],
+    formula: str,
+    *,
+    aggregator: str = "avg",
+    red_gt: float | None = None,
+    red_lt: float | None = None,
+    yellow_gt: float | None = None,
+    yellow_lt: float | None = None,
+    green_gt: float | None = 0,
+    precision: int = 0,
+) -> dict[str, Any]:
+    """query_value com fórmula (ex.: lucro/mês ÷ meta × 100)."""
+    formats: list[dict[str, Any]] = []
+    if red_gt is not None:
+        formats.append({"comparator": ">", "palette": "white_on_red", "value": red_gt})
+    if red_lt is not None:
+        formats.append({"comparator": "<", "palette": "white_on_red", "value": red_lt})
+    if yellow_gt is not None:
+        formats.append({"comparator": ">", "palette": "white_on_yellow", "value": yellow_gt})
+    if yellow_lt is not None:
+        formats.append({"comparator": "<", "palette": "white_on_yellow", "value": yellow_lt})
+    if green_gt is not None:
+        formats.append({"comparator": ">", "palette": "white_on_green", "value": green_gt})
+    return {
+        "definition": {
+            "title": title,
+            "type": "query_value",
+            "autoscale": True,
+            "precision": precision,
+            "requests": [
+                {
+                    "conditional_formats": formats,
+                    "formulas": [{"formula": formula}],
+                    "queries": [
+                        {
+                            "data_source": "metrics",
+                            "name": name,
+                            "query": query,
+                        }
+                        for name, query in queries
+                    ],
+                    "response_format": "scalar",
+                    "aggregator": aggregator,
+                }
+            ],
+        }
+    }
+
+
+def _ts_overlay(
+    title: str,
+    series: list[tuple[str, str]],
+    *,
+    palette: str = "dog_classic",
+) -> dict[str, Any]:
+    """Timeseries com N séries (alias, query)."""
+    queries = [
+        {
+            "data_source": "metrics",
+            "name": f"query{i}",
+            "query": query,
+        }
+        for i, (_alias, query) in enumerate(series, 1)
+    ]
+    formulas = [
+        {"alias": alias, "formula": f"query{i}"}
+        for i, (alias, _query) in enumerate(series, 1)
+    ]
+    return {
+        "definition": {
+            "title": title,
+            "type": "timeseries",
+            "show_legend": True,
+            "legend_layout": "horizontal",
+            "requests": [
+                {
+                    "display_type": "line",
+                    "response_format": "timeseries",
+                    "style": {"palette": palette},
+                    "formulas": formulas,
+                    "queries": queries,
                 }
             ],
         }
@@ -1551,18 +1643,6 @@ def _grupo_decisao_guerra_impala() -> dict[str, Any]:
                     "id": 741030,
                 },
                 {
-                    **_qv(
-                        "Ruptura 2o CNPJ % (nao confundir com fase)",
-                        "avg:robo.ponto_ruptura.progresso_pct{*}",
-                        aggregator="last",
-                        green_gt=80,
-                        yellow_lt=80,
-                        precision=1,
-                    ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 9},
-                    "id": 741031,
-                },
-                {
                     **_toplist_metric(
                         "Lucro ref R$/un por kit (maior = melhor capital)",
                         "avg:robo.catalogo.lucro_ref_ml{*} by {kit}",
@@ -2161,17 +2241,6 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 2, "x": 0, "y": 24},
                     "id": 750007,
                 },
-                {
-                    **_qv(
-                        "Ads avaliacoes",
-                        "avg:robo.ads.avaliacoes{*}",
-                        aggregator="avg",
-                        green_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 24},
-                    "id": 750008,
-                },
                 # --- Alertas de canal + decisao ---
                 {
                     **_qv(
@@ -2267,18 +2336,6 @@ def _grupo_operacao_comercial() -> dict[str, Any]:
                     ),
                     "layout": {"height": 2, "width": 3, "x": 6, "y": 28},
                     "id": 750022,
-                },
-                {
-                    **_qv(
-                        "Guerra sem MLB",
-                        "avg:robo.catalogo.guerra_sem_mlb{*}",
-                        aggregator="avg",
-                        green_gt=None,
-                        red_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 28},
-                    "id": 750023,
                 },
             ],
         },
@@ -3450,7 +3507,7 @@ def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Aproximando (0/1)",
+                        "Aproximando Impala (0/1)",
                         "avg:robo.ponto_ruptura.aproximando{*}",
                         aggregator="avg",
                         green_gt=None,
@@ -3497,7 +3554,7 @@ def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Checks ok",
+                        "Checks Impala ok",
                         "avg:robo.ponto_ruptura.checks_ok{*}",
                         aggregator="avg",
                         green_gt=6,
@@ -3554,18 +3611,6 @@ def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
                     ),
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 4},
                     "id": 770012,
-                },
-                {
-                    **_qv(
-                        "OSCILACAO — cuidado (0/1)",
-                        "avg:robo.decisao.oscilacao{*}",
-                        aggregator="avg",
-                        green_gt=None,
-                        red_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 3, "x": 0, "y": 6},
-                    "id": 770013,
                 },
                 {
                     **_qv(
@@ -3775,19 +3820,6 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "ACOS Ads",
-                        "avg:robo.ads.acos_atual{*}",
-                        aggregator="avg",
-                        green_gt=None,
-                        yellow_gt=0.15,
-                        red_gt=0.20,
-                        precision=2,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 4},
-                    "id": 780016,
-                },
-                {
-                    **_qv(
                         "Envios pendentes",
                         "avg:robo.ml.saude.envios_pendentes{*}",
                         aggregator="avg",
@@ -3876,7 +3908,7 @@ def _grupo_ruptura_outra_marca() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Aproximando (0/1)",
+                        "Aproximando outra marca (0/1)",
                         "avg:robo.marca_esmalte.ruptura.aproximando{*}",
                         aggregator="avg",
                         green_gt=None,
@@ -3912,7 +3944,7 @@ def _grupo_ruptura_outra_marca() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Checks ok",
+                        "Checks outra marca ok",
                         "avg:robo.marca_esmalte.ruptura.checks_ok{*}",
                         aggregator="avg",
                         green_gt=5,
@@ -4109,18 +4141,6 @@ def _grupo_kits_manicure_impala() -> dict[str, Any]:
                     "id": 791013,
                 },
                 {
-                    **_qv(
-                        "OSCILACAO — cuidado (0/1)",
-                        "avg:robo.decisao.oscilacao{*}",
-                        aggregator="avg",
-                        green_gt=None,
-                        red_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
-                    "id": 791016,
-                },
-                {
                     **_toplist_metric(
                         "Indice de compra Impala por kit",
                         "avg:robo.esmaltes.kit_manicure.indice_compra{*} by {kit}",
@@ -4234,6 +4254,148 @@ def _grupo_decisao_oscilacao() -> dict[str, Any]:
     }
 
 
+def _grupo_progresso_24m() -> dict[str, Any]:
+    """Teto 24 meses: lucro/mês vs 2.5k/20k, dois CNPJs, Cruzeiro 12/dia, PETG 6/dia, reviews 20."""
+    ts_cnpjs = _ts_overlay(
+        "Lucro/mes estimado — Impala vs Masterprint vs metas",
+        [
+            ("Impala", "avg:robo.progresso.lucro_mes_impala{*}"),
+            ("Masterprint", "avg:robo.progresso.lucro_mes_masterprint{*}"),
+            ("meta ano 1 R$ 2.5k", "avg:robo.progresso.meta_lucro_ano1_mes{*}"),
+            ("meta alvo R$ 20k", "avg:robo.progresso.meta_lucro_alvo_mes{*}"),
+        ],
+        palette="cool",
+    )
+    ts_ritmo = _ts_overlay(
+        "Ritmo/dia — Cruzeiro vs 12 · PETG vs 6",
+        [
+            ("Cruzeiro unid/dia", "avg:robo.progresso.cruzeiro_unid_dia{*}"),
+            ("meta Cruzeiro 12", "avg:robo.progresso.meta_cruzeiro_unid_dia{*}"),
+            ("PETG unid/dia", "avg:robo.progresso.petg_unid_dia{*}"),
+            ("meta PETG 6", "avg:robo.progresso.meta_petg_unid_dia{*}"),
+        ],
+        palette="warm",
+    )
+    pct_ano1 = _qv_formula(
+        "% da meta ano 1 (R$ 2.5k)",
+        [
+            ("query1", "avg:robo.progresso.lucro_mes_estimado{*}"),
+            ("query2", "avg:robo.progresso.meta_lucro_ano1_mes{*}"),
+        ],
+        "query1 / query2 * 100",
+        aggregator="avg",
+        green_gt=80,
+        yellow_gt=10,
+        red_lt=5,
+        precision=0,
+    )
+    return {
+        "id": GROUP_PROGRESSO_24M_ID,
+        "definition": {
+            "title": "[Progresso 24 meses] Teto R$ 2.5k → R$ 20k / dois CNPJs",
+            "type": "group",
+            "background_color": "vivid_purple",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "id": 781000,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Teto, nao previsao.** Relogio comeca quando MIMO vender. "
+                            "Lucro/mes = (lucro na janela de pedidos ÷ dias) × 30. "
+                            "Cruzeiro 12/dia + PETG 6/dia = ritmo do plano R$ 20k. "
+                            "Reviews 20 e ruptura % ficam so no grupo [CNAE / 2o CNPJ]. "
+                            "0 e o estado correto ate o 1o pedido."
+                        ),
+                        "background_color": "purple",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+                },
+                {
+                    **_qv(
+                        "Lucro/mes estimado R$",
+                        "avg:robo.progresso.lucro_mes_estimado{*}",
+                        aggregator="avg",
+                        green_gt=2500,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+                    "id": 781001,
+                },
+                {
+                    **pct_ano1,
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
+                    "id": 781002,
+                },
+                {
+                    **_qv(
+                        "Lucro/mes Impala R$",
+                        "avg:robo.progresso.lucro_mes_impala{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
+                    "id": 781003,
+                },
+                {
+                    **_qv(
+                        "Lucro/mes Masterprint R$",
+                        "avg:robo.progresso.lucro_mes_masterprint{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "id": 781004,
+                },
+                {
+                    **_qv(
+                        "Cruzeiro unid/dia",
+                        "avg:robo.progresso.cruzeiro_unid_dia{*}",
+                        aggregator="avg",
+                        green_gt=11,
+                        yellow_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
+                    "id": 781005,
+                },
+                {
+                    **_qv(
+                        "PETG unid/dia",
+                        "avg:robo.progresso.petg_unid_dia{*}",
+                        aggregator="avg",
+                        green_gt=5,
+                        yellow_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "id": 781006,
+                },
+                {
+                    **ts_cnpjs,
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
+                    "id": 781020,
+                },
+                {
+                    **ts_ritmo,
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 4},
+                    "id": 781021,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 1, "width": 12, "height": 1},
+    }
+
+
 def atualizar_dashboard_ecommerce() -> None:
     """Dashboard Ecommerce: catalogo, batalha, ads/vendas/decisao."""
     ecom_id = _resolver_dash_ecommerce()
@@ -4247,6 +4409,10 @@ def atualizar_dashboard_ecommerce() -> None:
             "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
             "**invest. validacao**, **kits Cruzeiro**, **oportunidades/Livia**, "
             "**taxa de crescimento** e **custo/Ads**.\n\n"
+            "**Progresso 24 meses:** grupo [Progresso 24 meses] — lucro/mês estimado "
+            "vs R$ 2.5k (ano 1) e R$ 20k (alvo), Impala vs Masterprint no mesmo gráfico, "
+            "Cruzeiro unid/dia vs 12, PETG unid/dia vs 6, reviews 0→20. "
+            "Teto, não previsão; 0 até o 1º pedido MIMO.\n\n"
             "**2o CNPJ / CNAE:** grupo [CNAE / 2o CNPJ] — gaps de KYC agora; "
             "liberado só quando Impala bater a checklist (20 reviews / 4.8 / MLB / estoque).\n\n"
             "**Outra marca de esmalte:** grupo [Ruptura outra marca] — mesmo CNPJ "
@@ -4282,8 +4448,10 @@ def atualizar_dashboard_ecommerce() -> None:
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="orange",
-        height=4,
+        height=5,
     )
+    prog = _grupo_progresso_24m()
+    prog["layout"] = {"x": 0, "y": 1, "width": 12, "height": 1}
     cat = _grupo_catalogo_impala()
     cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
     bat = _grupo_batalha_impala()
@@ -4308,13 +4476,27 @@ def atualizar_dashboard_ecommerce() -> None:
     payload = {
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
-            "ABA ECOMMERCE: catalogo Impala, batalha, decisao guerra (margem+extra), ads, saude da conta ML, "
+            "ABA ECOMMERCE: progresso 24 meses (teto 2.5k→20k, dois CNPJs, Cruzeiro 12/d, PETG 6/d), "
+            "catalogo Impala, batalha, decisao guerra (margem+extra), ads, saude da conta ML, "
             "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
             "kits Impala manicure, oscilacao/cuidado para decidir. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
             f"ABA MASTERPRINT: {_url_dash(mp_id)}"
         ),
-        "widgets": [note, com, cat, bat, guerra, saude, ruptura, outra, marca_kit, kits_m, decisao],
+        "widgets": [
+            note,
+            prog,
+            com,
+            cat,
+            bat,
+            guerra,
+            saude,
+            ruptura,
+            outra,
+            marca_kit,
+            kits_m,
+            decisao,
+        ],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -4342,6 +4524,9 @@ def atualizar_dashboard_masterprint() -> None:
             "(otimizador prioriza IDs).\n"
             "**Atenção:** vendas/receita/lucro de concorrentes ficam **n/d** (API ML 403). "
             "Use visitas rivais como proxy de demanda.\n\n"
+            "**Progresso 24 meses (dois CNPJs):** grupo no dash Impala — "
+            "PETG unid/dia vs 6 e lucro Masterprint no mesmo gráfico que Impala.\n"
+            "**CNAE / ruptura Impala:** só no dash Impala (mesmo grupo, sem cópia aqui).\n\n"
             f"**Robo / plataforma:** [Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
             f"**E-commerce Impala:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
         ),
@@ -4356,8 +4541,6 @@ def atualizar_dashboard_masterprint() -> None:
     merc["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     com = _grupo_operacao_masterprint()
     com["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
-    ruptura = _grupo_ponto_ruptura_cnae()
-    ruptura["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_MASTERPRINT_TITLE,
@@ -4366,7 +4549,7 @@ def atualizar_dashboard_masterprint() -> None:
             "(custos, mercado ML, margem). "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, funil, com, cat, merc, ruptura],
+        "widgets": [note, funil, com, cat, merc],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],

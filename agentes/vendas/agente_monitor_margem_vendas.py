@@ -143,7 +143,7 @@ def _carregar_produtos() -> list[dict[str, Any]]:
             return []
 
 
-def _emitir_metricas(analise: dict[str, Any]) -> None:
+def _emitir_metricas(analise: dict[str, Any], *, dias: int = 2) -> None:
     try:
         from integracoes.esmaltes.metricas_catalogo_impala import kit_tag
 
@@ -191,6 +191,10 @@ def _emitir_metricas(analise: dict[str, Any]) -> None:
             mp_tag = f"marketplace:{str(mp).strip().lower() or 'x'}"
             gauge("vendas.receita_por_canal", float(bucket.get("receita_bruta") or 0), tags=[mp_tag])
             gauge("vendas.lucro_por_canal", float(bucket.get("lucro_reais") or 0), tags=[mp_tag])
+
+        from integracoes.esmaltes.metricas_progresso_24m import emitir_realizado_vendas
+
+        emitir_realizado_vendas(analise, dias=dias)
     except Exception as exc:
         logger.debug("métricas margem: %s", exc)
 
@@ -216,7 +220,7 @@ def executar(
         pedidos, ok_map = _buscar_pedidos(janela)
         produtos = _carregar_produtos()
         analise = analisar_pedidos(pedidos, produtos, margem_min_pct=min_pct)
-        _emitir_metricas(analise)
+        _emitir_metricas(analise, dias=janela)
 
         alertas_enviados = 0
         resumo_enviado = False

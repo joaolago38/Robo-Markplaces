@@ -334,6 +334,36 @@
       "usd_brl": 5.222,
       "fonte": "fallback",
       "consultado_em": "2026-08-15T13:32:22.882140+00:00"
+    },
+    {
+      "usd_brl": 5.222,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-15T13:32:22.882140+00:00"
+    },
+    {
+      "usd_brl": 5.222,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-15T13:32:22.882140+00:00"
+    },
+    {
+      "usd_brl": 5.222,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-15T13:32:22.882140+00:00"
+    },
+    {
+      "usd_brl": 5.222,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-15T13:32:22.882140+00:00"
+    },
+    {
+      "usd_brl": 5.222,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-15T13:32:22.882140+00:00"
+    },
+    {
+      "usd_brl": 5.222,
+      "fonte": "fallback",
+      "consultado_em": "2026-08-15T13:32:22.882140+00:00"
     }
   ],
   "ultima": {
@@ -342,7 +372,7 @@
     "fonte": "fallback",
     "variacao_pct": null,
     "consultado_em": "2026-08-15T13:32:22.882140+00:00",
-    "idade_seg": 19559,
+    "idade_seg": 96165,
     "confiavel": false,
     "aviso": "API de câmbio indisponível — usando último valor ou padrão"
   }

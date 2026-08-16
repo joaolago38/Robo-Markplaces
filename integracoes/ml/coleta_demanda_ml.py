@@ -458,3 +458,13 @@ def emitir_metricas_demanda(
             vendas_cego = 0.0 if item.get("status") == "ok" else 1.0
             break
     gauge(f"{pref}.blindspot.vendas_api", vendas_cego)
+    try:
+        from integracoes.esmaltes.metricas_progresso_24m import (
+            emitir_petg_funil,
+            prefixo_emite_petg,
+        )
+
+        if prefixo_emite_petg(pref):
+            emitir_petg_funil(float(unidades))
+    except Exception as exc:
+        logger.debug("progresso petg: %s", exc)

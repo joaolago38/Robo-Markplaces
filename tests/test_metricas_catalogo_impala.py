@@ -97,6 +97,14 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
                 {"estoque_total": 3, "canais": {"mercadolivre": {"estoque": 3}}}
             )
         )
+        self.assertFalse(
+            m._estoque_zero(
+                {
+                    "estoque_total": "x",
+                    "canais": {"mercadolivre": {"estoque": "y"}},
+                }
+            )
+        )
         snap = m.montar_snapshot_catalogo(
             produtos=[None, {}, {"sku": ""}, *self.produtos],  # type: ignore[list-item]
             guerra=self.guerra,
@@ -162,6 +170,32 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         out = m.emitir_metricas_catalogo_impala(produtos=[], guerra=[])
         self.assertFalse(out["ok"])
         mock_inc.assert_any_call("catalogo.heartbeat_erro")
+
+    @patch("integracoes.esmaltes.metricas_catalogo_impala.gauge")
+    @patch(
+        "integracoes.esmaltes.metricas_catalogo_impala.ler_json",
+        side_effect=RuntimeError("boom"),
+    )
+    def test_pipeline_kits_erro(self, _ler, _g):
+        out = m.emitir_metricas_pipeline_kits()
+        self.assertFalse(out["ok"])
+        self.assertIn("boom", out["erro"])
+
+    @patch("integracoes.esmaltes.metricas_catalogo_impala.incrementar")
+    @patch("integracoes.esmaltes.metricas_catalogo_impala.gauge")
+    @patch(
+        "integracoes.esmaltes.doutrina_guerra_impala.emitir_metricas_condicoes",
+        side_effect=RuntimeError("cond"),
+    )
+    @patch(
+        "integracoes.esmaltes.metricas_progresso_24m.emitir_metas_progresso_24m",
+        side_effect=RuntimeError("prog"),
+    )
+    def test_emitir_engole_falha_condicoes_e_progresso(self, _p, _c, _g, _inc):
+        out = m.emitir_metricas_catalogo_impala(
+            produtos=self.produtos, guerra=self.guerra
+        )
+        self.assertTrue(out["ok"])
 
 
 if __name__ == "__main__":
