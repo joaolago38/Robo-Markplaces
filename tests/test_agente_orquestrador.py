@@ -66,6 +66,7 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertIn("monitor_mercado_esmaltes", ids)
         self.assertIn("monitor_concorrentes", ids)
         self.assertIn("visao_atuacao_impala", ids)
+        self.assertIn("kits_concorrentes_unificado", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", set())
     def test_registro_completo_inclui_rotinas_excluidas(self):

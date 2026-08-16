@@ -147,6 +147,9 @@ class TestMontarBriefing(unittest.TestCase):
         self.assertIn("Esforço para ruptura tranquila", blob)
         self.assertIn("Números âncora", blob)
         self.assertIn("±", blob)
+        self.assertFalse(out["radar_claude"]["pausar_por_ctr_cvr"])
+        self.assertIn("Radar Claude (OBSERVAR)", blob)
+        self.assertIn("CTR/CVR", blob)
 
     def test_ancora_expõe_margem_de_erro_e_candidatos(self):
         catalogo = {

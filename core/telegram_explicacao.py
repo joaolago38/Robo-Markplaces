@@ -167,6 +167,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "acima de 15%, se há MLB publicado e se a amostra é ao vivo ou cache velho. "
         "Telegram com o FAZER e o link do Datadog."
     ),
+    "kits_concorrentes_unificado": (
+        "Junta num JSON só os snapshots de kits já gravados (radar Impala, marca×kit, "
+        "Anita, nossos kits, PETG com kit no título). Não busca ML e não publica. "
+        "Arquivo: logs/kits_concorrentes_unificado_ultima.json."
+    ),
     "monitor_removedores_unha": (
         "Anexo: ranking de removedores no ML. Digest semanal (quarta) — "
         "fora do foco diário de kits."
@@ -368,6 +373,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "golpe_guerra_impala": "No golpe (monitor concorrentes 30 min); cooldown 6h por SKU+classe",
     "simulacao_guerra_impala": "Sob demanda / CLI — nao entra no cron",
     "radar_diferencial_impala": "No monitor concorrentes (30 min) + orquestrador visao atuacao; cooldown 6h no Telegram",
+    "kits_concorrentes_unificado": "A cada 30 min (orquestrador), depois do radar; sem Telegram — só o JSON",
     "monitor_removedores_unha": "1x/semana quarta 09:00 BRT (anexo)",
     "monitor_tendencias_esmaltes": "Debug manual (sem Telegram) — produção via busca_kit",
     "comparativo_anita_impala": "Segundas e quintas às 08:00 BRT (Actions); fora do orquestrador 30 min",
@@ -485,6 +491,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("simulacao_guerra", "simulacao_guerra_impala"),
     ("radar_diferencial_impala", "radar_diferencial_impala"),
     ("visao_atuacao_impala", "radar_diferencial_impala"),
+    ("kits_concorrentes_unificado", "kits_concorrentes_unificado"),
+    ("kits_concorrentes", "kits_concorrentes_unificado"),
     ("removedores", "monitor_removedores_unha"),
     ("tendencias_esmaltes", "monitor_tendencias_esmaltes"),
     ("esmaltes:tendencias", "monitor_tendencias_esmaltes"),

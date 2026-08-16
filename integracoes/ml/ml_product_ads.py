@@ -171,6 +171,19 @@ def _periodo_ads(dias: int) -> tuple[str, str]:
     return (hoje - timedelta(days=dias)).isoformat(), hoje.isoformat()
 
 
+def _met(metrics: dict | None, row: dict, chave: str, *, inteiro: bool = False):
+    src = metrics if isinstance(metrics, dict) else {}
+    bruto = src.get(chave)
+    if bruto is None:
+        bruto = row.get(chave)
+    try:
+        if inteiro:
+            return int(float(bruto or 0))
+        return float(bruto or 0)
+    except (TypeError, ValueError):
+        return 0 if inteiro else 0.0
+
+
 def _normalizar_campanha(row: dict) -> dict:
     metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else row
     return {
@@ -178,11 +191,39 @@ def _normalizar_campanha(row: dict) -> dict:
         "nome": str(row.get("name") or row.get("campaign_name") or ""),
         "status": str(row.get("status") or ""),
         "budget": float(row.get("budget") or 0),
-        "acos": float((metrics or {}).get("acos") or row.get("acos") or 0),
-        "roas": float((metrics or {}).get("roas") or row.get("roas") or 0),
-        "cost": float((metrics or {}).get("cost") or row.get("cost") or 0),
-        "clicks": int((metrics or {}).get("clicks") or row.get("clicks") or 0),
+        "acos": _met(metrics, row, "acos"),
+        "roas": _met(metrics, row, "roas"),
+        "cost": _met(metrics, row, "cost"),
+        "clicks": _met(metrics, row, "clicks", inteiro=True),
+        "prints": _met(metrics, row, "prints", inteiro=True),
+        "ctr": _met(metrics, row, "ctr"),
+        "cvr": _met(metrics, row, "cvr"),
+        "cpc": _met(metrics, row, "cpc"),
+        "units_quantity": _met(metrics, row, "units_quantity", inteiro=True),
+        "total_amount": _met(metrics, row, "total_amount"),
     }
+
+
+def emitir_metricas_visibilidade_ads(campanhas: list[dict] | None) -> None:
+    """Gauges de CTR/CVR/prints para Datadog. Não decide pausa (pausa continua ACOS)."""
+    try:
+        from core.datadog_metrics import gauge
+
+        rows = [c for c in (campanhas or []) if isinstance(c, dict)]
+        prints = sum(int(c.get("prints") or 0) for c in rows)
+        clicks = sum(int(c.get("clicks") or 0) for c in rows)
+        ctrs = [float(c.get("ctr") or 0) for c in rows if float(c.get("ctr") or 0) > 0]
+        cvrs = [float(c.get("cvr") or 0) for c in rows if float(c.get("cvr") or 0) > 0]
+        cpcs = [float(c.get("cpc") or 0) for c in rows if float(c.get("cpc") or 0) > 0]
+        gauge("ads.campanhas_n", float(len(rows)))
+        gauge("ads.prints_total", float(prints))
+        gauge("ads.clicks_total", float(clicks))
+        gauge("ads.ctr_medio", (sum(ctrs) / len(ctrs)) if ctrs else 0.0)
+        gauge("ads.cvr_medio", (sum(cvrs) / len(cvrs)) if cvrs else 0.0)
+        gauge("ads.cpc_medio", (sum(cpcs) / len(cpcs)) if cpcs else 0.0)
+        gauge("ads.ctr_cvr_visivel", 1.0 if prints or ctrs or cvrs else 0.0)
+    except Exception:
+        pass
 
 
 def listar_campanhas(
@@ -239,7 +280,9 @@ def listar_campanhas(
             "codigo": "ok",
             "advertiser_id": advertiser_id,
         }
-        return [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
+        campanhas = [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
+        emitir_metricas_visibilidade_ads(campanhas)
+        return campanhas
     except Exception as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
         # 404 = advertiser/campanhas inexistente ou Product Ads sem escopo —
@@ -251,6 +294,7 @@ def listar_campanhas(
                 "advertiser_id": advertiser_id,
             }
             _avisar_ads_indisponivel_404(advertiser_id)
+            emitir_metricas_visibilidade_ads([])
             # Não incrementa ads.probe_falha: 404 de config conhecida poluía
             # o monitor P1 até o escopo Ads ser corrigido no DevCenter.
         else:

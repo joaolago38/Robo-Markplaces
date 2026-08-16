@@ -59,7 +59,16 @@ class TestListarCampanhas(unittest.TestCase):
                     "name": "Camp Impala",
                     "status": "active",
                     "budget": 50,
-                    "metrics": {"acos": 0.15, "cost": 100, "roas": 4.0, "clicks": 10},
+                    "metrics": {
+                        "acos": 0.15,
+                        "cost": 100,
+                        "roas": 4.0,
+                        "clicks": 10,
+                        "prints": 500,
+                        "ctr": 2.0,
+                        "cvr": 0.04,
+                        "cpc": 1.2,
+                    },
                 }
             ]
         })
@@ -67,6 +76,9 @@ class TestListarCampanhas(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["id"], "C1")
         self.assertEqual(out[0]["acos"], 0.15)
+        self.assertEqual(out[0]["prints"], 500)
+        self.assertEqual(out[0]["ctr"], 2.0)
+        self.assertEqual(out[0]["cvr"], 0.04)
 
     @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
     @patch.object(ads, "_request_ml")
@@ -210,5 +222,39 @@ class TestAplicarDecisao(unittest.TestCase):
         mock_orcamento.assert_not_called()
 
 
+class TestVisibilidadeCtrCvr(unittest.TestCase):
+    def test_normalizar_guarda_ctr_cvr_prints(self):
+        row = ads._normalizar_campanha(
+            {
+                "id": "C1",
+                "metrics": {
+                    "acos": 0.1,
+                    "clicks": 8,
+                    "prints": 400,
+                    "ctr": 2.0,
+                    "cvr": 0.05,
+                    "cpc": 0.9,
+                },
+            }
+        )
+        self.assertEqual(row["prints"], 400)
+        self.assertEqual(row["ctr"], 2.0)
+        self.assertEqual(row["cvr"], 0.05)
+        self.assertEqual(row["cpc"], 0.9)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_visibilidade_sem_sku_tag(self, mock_gauge):
+        ads.emitir_metricas_visibilidade_ads(
+            [{"prints": 100, "clicks": 4, "ctr": 4.0, "cvr": 0.1, "cpc": 1.0}]
+        )
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ads.ctr_medio", nomes)
+        self.assertIn("ads.cvr_medio", nomes)
+        self.assertIn("ads.ctr_cvr_visivel", nomes)
+        for c in mock_gauge.call_args_list:
+            self.assertNotIn("tags", c.kwargs)
+
+
 if __name__ == "__main__":
     unittest.main()
+

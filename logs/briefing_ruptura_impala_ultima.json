@@ -1,76 +1,62 @@
 {
   "ok": true,
   "veredito": "ainda_nao",
-  "saude_score": 3.3,
-  "progresso_pct": 22.2,
+  "saude_score": 6.4,
+  "progresso_pct": 42.9,
   "esforco": {
-    "faltando_n": 7,
-    "feitos_n": 2,
+    "faltando_n": 4,
+    "feitos_n": 3,
     "faltando": [
       {
-        "id": "avaliacoes",
-        "rotulo": "Avaliações Impala (com anúncio foco)",
-        "atual": "0 conta/legado",
-        "minimo": 20,
-        "atitude": "Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8)."
+        "id": "impala_fase1",
+        "rotulo": "Impala passou na checklist (reviews/MLB/estoque/pedido)",
+        "atual": "ainda_nao",
+        "minimo": "liberado",
+        "atitude": "Fechar a checklist Impala (reviews / MLB / estoque / pedido) antes de outra marca."
       },
       {
-        "id": "nota",
-        "rotulo": "Nota média (≥1 review no foco)",
-        "atual": 0.0,
-        "minimo": 4.8,
-        "atitude": "Tratar reclamações e qualidade do anúncio até a nota média ≥ 4.8."
-      },
-      {
-        "id": "mlb",
-        "rotulo": "MLB dos kits MIMO-003 e PERL-004 (margem ≥ piso)",
-        "atual": "IMP-MIMO-003=falta,IMP-PERL-004=falta",
-        "minimo": "ambos MLB",
-        "atitude": "Preencher MLB válido de IMP-MIMO-003 e IMP-PERL-004 — kits com margem ≥ piso; SORT-006 fica para fase 2."
-      },
-      {
-        "id": "estoque",
-        "rotulo": "Estoque >= 30 nos dois kits",
-        "atual": "IMP-MIMO-003=0,IMP-PERL-004=0",
-        "minimo": 30,
-        "atitude": "Abastecer estoque dos kits de validação MIMO-003 e PERL-004 (mínimo do ponto de ruptura)."
-      },
-      {
-        "id": "pedidos",
-        "rotulo": "Pedido próprio (margem 24h Impala; venda da conta só com foco)",
-        "atual": "itens=0 completadas=0",
-        "minimo": ">=1",
-        "atitude": "Concluir 1 pedido próprio com margem registrada (não contar bolsa/legado)."
-      },
-      {
-        "id": "ads_acos",
-        "rotulo": "ACOS ≤ teto (snapshot Ads visível)",
-        "atual": "n/d",
-        "minimo": 0.2,
-        "atitude": "Manter Ads desligado ou ACOS abaixo do teto — snapshot Ads precisa existir (vazio não é ok)."
+        "id": "fase_guerra",
+        "rotulo": "Doutrina guerra fase 5 (frente viva + reviews + estoque 30+ + radar nao cego)",
+        "atual": 0,
+        "minimo": 5,
+        "atitude": "Fechar: Doutrina guerra fase 5 (frente viva + reviews + estoque 30+ + radar nao cego)"
       },
       {
         "id": "anuncios_foco",
-        "rotulo": "Há anúncio Impala (kit) ativo no ML",
+        "rotulo": "Há anúncio Impala ativo no ML",
         "atual": 0,
         "minimo": ">=1",
         "atitude": "Colocar no ar pelo menos 1 anúncio Impala (kit) no ML."
+      },
+      {
+        "id": "radar_ml",
+        "rotulo": "Amostra ML suficiente para ranquear marcas",
+        "atual": "anuncios_outras=1",
+        "minimo": ">=5",
+        "atitude": "Radar de concorrentes precisa de amostra (≥5 anúncios) — busca 403 deixa o ranking cego."
       }
     ],
     "feitos": [
       {
-        "id": "claims",
-        "rotulo": "Claims baixos (API visível)",
-        "atual": 0,
-        "minimo": "<2",
-        "atitude": "Claims baixos."
+        "id": "cnpj_ml",
+        "rotulo": "CNPJ 52.668.583/0001-27 identificado no ML",
+        "atual": "1651424153",
+        "minimo": "seller_id",
+        "atitude": "Confirmar seller_id do CNPJ 52.668.583/0001-27 no ML."
       },
       {
-        "id": "saude_conta",
-        "rotulo": "Reputação sem laranja/vermelho e taxas <5%",
-        "atual": "sem cor",
-        "minimo": "ok",
-        "atitude": "Reputação e taxas da conta no piso."
+        "id": "cnae_cosmetico",
+        "rotulo": "CNAE 4772500 (cosméticos) neste CNPJ",
+        "atual": "ok",
+        "minimo": "4772500",
+        "atitude": "Manter CNAE 4772-5/00 neste CNPJ."
+      },
+      {
+        "id": "candidata",
+        "rotulo": "Há marca candidata (não Impala) no referente ML",
+        "atual": "Anita",
+        "minimo": "top1",
+        "atitude": "Só ranquear outra marca quando houver anúncios/vendas na amostra."
       }
     ]
   },
@@ -304,7 +290,7 @@
   },
   "ancora_numerica": {
     "veredito": "ainda_nao",
-    "saude_score": 3.3,
+    "saude_score": 6.4,
     "saude_erro_pct": 5.0,
     "margem_piso_pct": 15.0,
     "margem_fonte": "catalogo_custo_mais_taxa_ml",
@@ -317,7 +303,7 @@
     "anuncios_foco": 0,
     "legado_ignorado": 38,
     "seguros_n": 0,
-    "faltando_n": 7,
+    "faltando_n": 4,
     "candidatos_margem": [
       {
         "sku": "IMP-MIMO-003",
@@ -454,7 +440,14 @@
       }
     ]
   },
-  "resumo_deterministico": "Veredito *ainda_nao* · saúde Impala ML `3.3/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nEsforço para ruptura tranquila:\n• Publicar kits Impala e pedir avaliação após a entrega (meta 20 reviews / nota 4.8).\n• Tratar reclamações e qualidade do anúncio até a nota média ≥ 4.8.\n• Preencher MLB válido de IMP-MIMO-003 e IMP-PERL-004 — kits com margem ≥ piso; SORT-006 fica para fase 2.\n• Abastecer estoque dos kits de validação MIMO-003 e PERL-004 (mínimo do ponto de ruptura).\nJá encaminhado: Claims baixos (API visível), Reputação sem laranja/vermelho e taxas <5%.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
+  "radar_claude": {
+    "pausar_por": "acos_gt_20",
+    "pausar_por_ctr_cvr": false,
+    "ligar_ads_por_ctr": false,
+    "ctr_cvr_visivel_datadog": true,
+    "observar": "CTR/CVR Ads no Datadog (ads.ctr_medio / ads.cvr_medio) quando Product Ads responder. Não pausar por CTR/CVR. Pausa só ACOS > 20%. Não ligar Ads por clique. Vídeo e CTR da busca ainda não coletados."
+  },
+  "resumo_deterministico": "Veredito *ainda_nao* · saúde Impala ML `6.4/100` · anúncios foco `0` · reviews `0` nota `0.0`.\nPrévia ML: catálogo Impala vazio no ar (legado ignorado). Publicar kit de validação é o esforço nº 1.\nEsforço para ruptura tranquila:\n• Fechar a checklist Impala (reviews / MLB / estoque / pedido) antes de outra marca.\n• Fechar: Doutrina guerra fase 5 (frente viva + reviews + estoque 30+ + radar nao cego)\n• Colocar no ar pelo menos 1 anúncio Impala (kit) no ML.\n• Radar de concorrentes precisa de amostra (≥5 anúncios) — busca 403 deixa o ranking cego.\nJá encaminhado: CNPJ 52.668.583/0001-27 identificado no ML, CNAE 4772500 (cosméticos) neste CNPJ, Há marca candidata (não Impala) no referente ML.\nNenhum kit Impala no piso de margem segura (15.0%) com MLB e estoque. Não escale Ads nem volume até haver produto com lucro protegido.\nNão publicar anúncio automático. Não trocar de CNPJ.",
   "resumo_claude": "",
   "claude_ok": false,
   "claude_fase": "moderada",
@@ -467,7 +460,7 @@
     "margem_pct": 16.26,
     "piso_pct": 15.0
   },
-  "fingerprint": "ainda_nao|3.3|7|0|0|0|IMP-MIMO-003",
+  "fingerprint": "ainda_nao|6.4|4|0|0|0|IMP-MIMO-003",
   "cnpj": "52.668.583/0001-27",
-  "timestamp": "2026-08-16T16:15:12.805516+00:00"
+  "timestamp": "2026-08-16T22:36:37.032171+00:00"
 }
