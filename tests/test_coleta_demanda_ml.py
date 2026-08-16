@@ -134,6 +134,12 @@ class ColetaDemandaMlTests(unittest.TestCase):
         self.assertEqual(n, 2)
         self.assertEqual(resultados[0]["produtos"][0]["visitas_7d"], 12)
 
+    def test_titulo_bate_e_enriquecer_vazio(self):
+        self.assertTrue(cd._titulo_bate("qualquer", None))
+        self.assertTrue(cd._titulo_bate("PETG Preto", "[petg"))
+        self.assertEqual(cd.enriquecer_visitas_lista([], limite=5), 0)
+        self.assertEqual(cd.enriquecer_visitas_lista([{"item_id": "MLB1"}], limite=0), 0)
+
     def test_emitir_metricas_demanda(self):
         with patch("integracoes.ml.coleta_demanda_ml.gauge") as mock_g:
             cd.emitir_metricas_demanda(
@@ -164,6 +170,21 @@ class ColetaDemandaMlTests(unittest.TestCase):
             self.assertIn("pref.blindspot.parciais", nomes)
             self.assertIn("pref.blindspot.busca_oficial", nomes)
             self.assertIn("pref.blindspot.funil_proprio", nomes)
+
+    def test_emitir_metricas_demanda_petg_e_erro_progresso(self):
+        with patch("integracoes.ml.coleta_demanda_ml.gauge") as mock_g:
+            cd.emitir_metricas_demanda(
+                "filamentos.petg",
+                funil={"totais": {"unidades_7d": 14}},
+            )
+            nomes = [c.args[0] for c in mock_g.call_args_list]
+            self.assertIn("progresso.petg_unid_dia", nomes)
+        with patch("integracoes.ml.coleta_demanda_ml.gauge"):
+            with patch(
+                "integracoes.esmaltes.metricas_progresso_24m.prefixo_emite_petg",
+                side_effect=RuntimeError("boom"),
+            ):
+                cd.emitir_metricas_demanda("filamentos.petg", funil={})
 
     def test_formatar_visitas_rivais(self):
         linhas = cd.formatar_secao_visitas_rivais(
