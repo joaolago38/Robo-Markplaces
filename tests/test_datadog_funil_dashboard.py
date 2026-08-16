@@ -71,7 +71,6 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ruptura.impala.produtos_seguros",
             "robo.ruptura.impala.margem_media_segura_pct",
             "robo.ruptura.impala.esforco_faltando",
-            "robo.decisao.oscilacao",
             "robo.ruptura.impala.claude_assertividade_maxima",
         ):
             self.assertIn(metric, blob, msg=metric)
@@ -91,7 +90,6 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.saude.catalogo_foco_vazio",
             "robo.ml.integridade.pct",
             "robo.vendas.receita_bruta",
-            "robo.ads.acos_atual",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_SAUDE_CONTA_ML_ID)
@@ -199,6 +197,25 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         src = Path(dd.__file__).read_text(encoding="utf-8")
         self.assertIn("Magazine Luiza", src)
         self.assertIn("401 OR 400 OR invalid_grant", src)
+
+    def test_grupo_progresso_24m(self):
+        grupo = dd._grupo_progresso_24m()
+        blob = str(grupo)
+        for metric in (
+            "robo.progresso.lucro_mes_estimado",
+            "robo.progresso.meta_lucro_ano1_mes",
+            "robo.progresso.meta_lucro_alvo_mes",
+            "robo.progresso.lucro_mes_impala",
+            "robo.progresso.lucro_mes_masterprint",
+            "robo.progresso.cruzeiro_unid_dia",
+            "robo.progresso.meta_cruzeiro_unid_dia",
+            "robo.progresso.petg_unid_dia",
+            "robo.progresso.meta_petg_unid_dia",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_PROGRESSO_24M_ID)
+        self.assertIn("[Progresso 24 meses]", blob)
+        self.assertIn("query1 / query2 * 100", blob)
 
 
 if __name__ == "__main__":

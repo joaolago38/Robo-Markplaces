@@ -301,6 +301,12 @@ def emitir_metricas_catalogo_impala(
         except Exception as exc:
             logger.warning("emitir_metricas_condicoes via catalogo: %s", exc)
         emitir_metricas_pipeline_kits()
+        try:
+            from integracoes.esmaltes.metricas_progresso_24m import emitir_metas_progresso_24m
+
+            emitir_metas_progresso_24m()
+        except Exception as exc:
+            logger.warning("emitir_metas_progresso_24m via catalogo: %s", exc)
 
         incrementar("catalogo.heartbeat")
         return {"ok": True, **{kk: snap[kk] for kk in snap if kk != "kits"}, "kits_emitidos": len(snap["kits"])}

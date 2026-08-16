@@ -134,6 +134,7 @@ _LOGGER_META = {
     "agente_decisao_dia_esmaltes": ("mercadolivre", "agente"),
     "decisao_dia_esmaltes": ("mercadolivre", "integracao"),
     "metricas_catalogo_impala": ("mercadolivre", "integracao"),
+    "metricas_progresso_24m": ("mercadolivre", "integracao"),
     "metricas_batalha_impala": ("mercadolivre", "integracao"),
     "decisao_batalha_agir": ("mercadolivre", "integracao"),
     "doutrina_guerra_impala": ("mercadolivre", "integracao"),
