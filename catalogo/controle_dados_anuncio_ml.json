@@ -1,0 +1,88 @@
+{
+  "versao": 1,
+  "nome": "controle_dados_anuncio_ml",
+  "atualizado": "2026-08-16",
+  "nota": "Mapa do que o robô vê, descarta ou ainda não coleta. Controle de Ads/funil na entrada só destrava com MIMO no ar. Não liga Ads sozinho.",
+  "entrada_agora": {
+    "mlb_impala": false,
+    "anuncio_foco": 0,
+    "ads": "desligado",
+    "snapshot_ads_gatilho": "ausente",
+    "product_ads_404": true,
+    "advertiser_id_visto": "421764"
+  },
+  "temos_controle": [
+    {
+      "dado": "ACOS",
+      "onde": "ads_gatilho + monitor_ml + Datadog ads.acos_atual",
+      "tratamento": "Teto 20%. Acima + gasto > 0 → pausa automática (gatilho). Monitor só avisa.",
+      "falta_para_usar": "MLB + Ads ligado + snapshot visível (hoje n/d). ACOS 0 não distingue 'não gastou' de 'API falhou'."
+    },
+    {
+      "dado": "ROAS (Ads)",
+      "onde": "monitor_ml (campanha ativa)",
+      "tratamento": "≥20 cliques e ROAS < 1 → aviso Telegram. Não pausa.",
+      "falta_para_usar": "Campanha ativa com cliques. Não vai para Datadog nem heartbeat."
+    },
+    {
+      "dado": "Reputação para ligar Ads",
+      "onde": "ads_gatilho + contrato_impulso",
+      "tratamento": "20 reviews / nota 4.8 + MLB guerra + fase 3. Fail-closed sem MLB.",
+      "falta_para_usar": "Publicar Impala e juntar avaliações no foco (legado não conta)."
+    },
+    {
+      "dado": "Conversão orgânica visita→pedido",
+      "onde": "coleta_demanda_ml + acoes_funil_ml",
+      "tratamento": "conversao_pct se visitas ≥ ~10. <2% → listing; ≥5% → manter. Proxy, não clique-a-clique.",
+      "falta_para_usar": "Anúncio Impala com visitas. Hoje 0."
+    },
+    {
+      "dado": "Visitas 7d/30d",
+      "onde": "buscar_visitas_item (anúncio próprio)",
+      "tratamento": "Funil e sem_venda. Rival costuma 403.",
+      "falta_para_usar": "MLB próprio no ar."
+    }
+  ],
+  "agora_guardamos_sem_pausar": [
+    {
+      "dado": "CTR Ads (prints→cliques)",
+      "api": "Product Ads metrics ctr, prints",
+      "onde": "_normalizar_campanha + ads.ctr_medio / ads.prints_total",
+      "tratamento": "Visível. Não pausa. Radar Claude OBSERVAR."
+    },
+    {
+      "dado": "CVR Ads (clique→venda)",
+      "api": "Product Ads metrics cvr, units_quantity, total_amount",
+      "onde": "_normalizar_campanha + ads.cvr_medio",
+      "tratamento": "Visível. Não pausa. Radar Claude OBSERVAR."
+    },
+    {
+      "dado": "CPC Ads",
+      "api": "metrics cpc",
+      "onde": "_normalizar_campanha + ads.cpc_medio"
+    }
+  ],
+  "nao_coletamos": [
+    {
+      "dado": "Vídeo no anúncio",
+      "nota": "GET /items não pede video_id; hidratar só título/preço/sku/status/estoque."
+    },
+    {
+      "dado": "CTR orgânico da busca",
+      "nota": "Há visitas, não impressões da listagem. Sem prints orgânicos não há CTR de busca."
+    },
+    {
+      "dado": "Quantidade/qualidade de fotos",
+      "nota": "Ação do funil cita fotos; não conta pictures[] na API."
+    }
+  ],
+  "para_ter_controle": [
+    "1. Publicar MIMO (e PERL): destrava visita, funil, reputação no foco.",
+    "2. Snapshot Ads visível: heartbeat ads_gatilho_ultima.json + check ads_acos deixar de ser n/d (vazio ≠ ok).",
+    "3. Product Ads deixar de 404 (escopo advertising / advertiser 421764) senão ACOS/CTR/CVR de Ads não existem.",
+    "4. Feito 16 ago 2026: prints/ctr/cvr/cpc no normalizar + gauges; Claude OBSERVAR (não pausa).",
+    "5. Distinguir ACOS 0 (sem gasto) de falha de API no check de ruptura.",
+    "6. Opcional: video_id/has_video e n_fotos no hidratar anúncio.",
+    "7. CTR orgânico só se a API de visitas/impressões do próprio item entregar prints — hoje não entra no robô."
+  ]
+}

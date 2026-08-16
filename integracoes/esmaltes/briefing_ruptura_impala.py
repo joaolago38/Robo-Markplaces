@@ -53,6 +53,24 @@ _ATITUDES_FEITAS = {
     "saude_conta": "Reputação e taxas da conta no piso.",
 }
 
+# Radar para Claude (OBSERVAR): ver CTR/CVR, não pausar nem ligar Ads por eles.
+RADAR_CLAUDE_ADS = {
+    "pausar_por": "acos_gt_20",
+    "pausar_por_ctr_cvr": False,
+    "ligar_ads_por_ctr": False,
+    "ctr_cvr_visivel_datadog": True,
+    "observar": (
+        "CTR/CVR Ads no Datadog (ads.ctr_medio / ads.cvr_medio) quando Product Ads "
+        "responder. Não pausar por CTR/CVR. Pausa só ACOS > 20%. Não ligar Ads por clique. "
+        "Vídeo e CTR da busca ainda não coletados."
+    ),
+}
+
+
+def radar_claude_ads() -> dict[str, Any]:
+    """Bloco estável no briefing para o Claude citar em OBSERVAR."""
+    return dict(RADAR_CLAUDE_ADS)
+
 
 def _f(val: Any, default: float = 0.0) -> float:
     try:
@@ -450,6 +468,8 @@ def _claude_ruptura(
         "(2) o que já está ok; (3) SKU para a manicure com margem e economia "
         "do JSON (não invente); (4) prévia ML. "
         "Use FAZER / NÃO FAZER / OBSERVAR. "
+        "Se radar_claude.observar vier no JSON, uma linha OBSERVAR sobre CTR/CVR "
+        "(não pausar por eles; não ligar Ads). "
         "Não publicar anúncio automático nem trocar CNPJ "
         "(52.668.583/0001-27 permanece o dono dos esmaltes)."
         if maxima
@@ -460,6 +480,7 @@ def _claude_ruptura(
             "(2) NÃO FAZER Ads / SORT-006 se margem < piso / 2º CNPJ; "
             "(3) esforço que falta para ruptura segura; (4) prévia ML. "
             "FAZER / NÃO FAZER / OBSERVAR. Não invente vd/dia nem ranking. "
+            "Se radar_claude.observar vier no JSON, uma linha OBSERVAR (CTR/CVR não pausam). "
             "Não publicar anúncio nem trocar CNPJ 52.668.583/0001-27."
         )
     )
@@ -580,6 +601,10 @@ def formatar_secao_briefing(briefing: dict[str, Any] | None) -> list[str]:
                 f"saúde ±`{ancora.get('saude_erro_pct')}%` · radar `{ancora.get('radar_ml')}`",
             ]
         )
+    radar = data.get("radar_claude") or {}
+    obs = str(radar.get("observar") or "").strip()
+    if obs:
+        linhas.extend(["", "*Radar Claude (OBSERVAR)*", f"• {obs}"])
     texto_ia = str(data.get("resumo_claude") or "").strip()
     if texto_ia and not texto_ia.startswith("⚠️"):
         flag = (
@@ -714,6 +739,7 @@ def montar_briefing_ruptura(
                             "previa_ml": previa,
                             "ancora_numerica": ancora,
                             "kits_manicure": kits_m,
+                            "radar_claude": radar_claude_ads(),
                             "cnpj": "52.668.583/0001-27",
                             "claude_fase": fase,
                             "momento_lucro": momento,
@@ -737,6 +763,7 @@ def montar_briefing_ruptura(
             "previa_ml": previa,
             "ancora_numerica": ancora,
             "kits_manicure": kits_m,
+            "radar_claude": radar_claude_ads(),
             "resumo_deterministico": det,
             "resumo_claude": texto_ia if claude_ok else "",
             "claude_ok": claude_ok,

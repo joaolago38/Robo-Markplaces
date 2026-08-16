@@ -195,6 +195,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Se o monitor já rodou o radar nos últimos 25 min, reusa o snapshot (não sobrescreve amostra ao vivo).",
     ),
     AgenteRegistrado(
+        "kits_concorrentes_unificado",
+        "Kits concorrentes (índice único)",
+        "monitor",
+        "agentes.esmaltes.agente_kits_concorrentes_unificado:executar",
+        {"enviar_alerta": False},
+        notas="Lê snapshots já gravados e junta em logs/kits_concorrentes_unificado_ultima.json. Sem Telegram.",
+    ),
+    AgenteRegistrado(
         "resumo_conta_ml",
         "Resumo conta ML (painel)",
         "monitor",

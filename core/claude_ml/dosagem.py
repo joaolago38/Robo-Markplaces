@@ -31,7 +31,8 @@ SYSTEM_RUPTURA = (
     "Não arredonde margem além de 0,1 p.p. Não invente vd/dia, reviews, MLB ou ranking. "
     "Se fonte=ref_catalogo, não trate como venda ao vivo. "
     "Se radar_ml=cego, escreva que a amostra está cega — não invente concorrente. "
-    "Número ausente = n/d. Decisão em FAZER / NÃO FAZER / OBSERVAR com SKU explícito. "
+    "Se radar_claude existir, cite em OBSERVAR: CTR/CVR visíveis não pausam Ads; pausa só ACOS. "
+    "Não ligar Ads por CTR. Número ausente = n/d. Decisão em FAZER / NÃO FAZER / OBSERVAR com SKU explícito. "
     "Não publicar anúncio. Não trocar CNPJ 52.668.583/0001-27."
 )
 

@@ -1,0 +1,374 @@
+{
+  "ok": true,
+  "timestamp": "2026-08-16T18:31:55.838990+00:00",
+  "onde": {
+    "unico": "logs/kits_concorrentes_unificado_ultima.json",
+    "nota": "Índice. Os agentes originais continuam gravando os arquivos-fonte."
+  },
+  "fontes": [
+    {
+      "id": "radar",
+      "path": "logs/radar_diferencial_impala_ultima.json",
+      "rotulo": "Rivais Impala (qtd kit, extras)",
+      "presente": true,
+      "ok": true,
+      "timestamp": "2026-08-15T18:56:37.443240+00:00",
+      "idade_h": 23.6,
+      "stale": true
+    },
+    {
+      "id": "marca_kit",
+      "path": "logs/esmaltes_marca_kit_ultima.json",
+      "rotulo": "Marca × tamanho de kit",
+      "presente": true,
+      "ok": true,
+      "timestamp": "2026-08-16T16:15:10.135883+00:00",
+      "idade_h": 2.3,
+      "stale": false
+    },
+    {
+      "id": "mercado",
+      "path": "logs/esmaltes_mercado_ultima.json",
+      "rotulo": "Mercado esmaltes consolidado",
+      "presente": true,
+      "ok": true,
+      "timestamp": "2026-08-16T16:15:07.670843+00:00",
+      "idade_h": 2.3,
+      "stale": false
+    },
+    {
+      "id": "nossos",
+      "path": "logs/kits_compativeis_manicures_ultima.json",
+      "rotulo": "Nossos kits vs ML",
+      "presente": true,
+      "ok": true,
+      "timestamp": "2026-08-15T18:23:02.557827+00:00",
+      "idade_h": 24.1,
+      "stale": false
+    },
+    {
+      "id": "anita",
+      "path": "logs/anita_esmaltes_ultima.json",
+      "rotulo": "Anita vs Impala (qtd kit)",
+      "presente": true,
+      "ok": true,
+      "timestamp": "2026-08-16T16:15:07.606680+00:00",
+      "idade_h": 2.3,
+      "stale": false
+    },
+    {
+      "id": "anuncio",
+      "path": "logs/analise_anuncio_concorrente_ultima.json",
+      "rotulo": "Anúncio rival pontual",
+      "presente": true,
+      "ok": true,
+      "timestamp": "2026-07-10T16:41:59.924697+00:00",
+      "idade_h": 889.8,
+      "stale": true
+    },
+    {
+      "id": "kits_monitor",
+      "path": "logs/esmaltes_kits_monitor_ultima.json",
+      "rotulo": "Varredura kit 3/5/6/10",
+      "presente": false,
+      "ok": false,
+      "timestamp": null,
+      "idade_h": null,
+      "stale": false
+    },
+    {
+      "id": "petg",
+      "path": "logs/masterprint_petg_ultima.json",
+      "rotulo": "PETG Masterprint (kit no título)",
+      "presente": true,
+      "ok": true,
+      "timestamp": "2026-08-08T21:28:49.270712+00:00",
+      "idade_h": 189.1,
+      "stale": true
+    }
+  ],
+  "fontes_presentes": 7,
+  "fontes_total": 8,
+  "fontes_stale": 3,
+  "esmaltes": {
+    "radar_stale": true,
+    "radar_idade_h": 866.1,
+    "n_rivais": 18,
+    "n_comparaveis": 0,
+    "extras": {
+      "francesinha": 8,
+      "tratamento": 5,
+      "outra_marca": 2,
+      "nenhum": 3,
+      "carmed": 0,
+      "brinde": 0,
+      "alicate": 0,
+      "removedor": 0,
+      "full": 0
+    },
+    "rivais": [
+      {
+        "item_id": "MLB3715746005",
+        "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+        "preco": 22.54,
+        "qtd_kit": 3,
+        "extras": [
+          "francesinha"
+        ]
+      },
+      {
+        "item_id": "MLB5106097646",
+        "titulo": "Impala - Kit 3 Esmaltes Francesinha Cor Sortidas",
+        "preco": 23.19,
+        "qtd_kit": 3,
+        "extras": [
+          "francesinha"
+        ]
+      },
+      {
+        "item_id": "MLB4056949611",
+        "titulo": "Kit 3 Esmaltes Impala Base Verniz Vermelho Intensificador",
+        "preco": 36.06,
+        "qtd_kit": 3,
+        "extras": [
+          "tratamento"
+        ]
+      },
+      {
+        "item_id": "MLB5975566072",
+        "titulo": "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
+        "preco": 22.3,
+        "qtd_kit": 3,
+        "extras": [
+          "francesinha"
+        ]
+      },
+      {
+        "item_id": "MLB4087433501",
+        "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+        "preco": 30.71,
+        "qtd_kit": 3,
+        "extras": [
+          "tratamento"
+        ]
+      },
+      {
+        "item_id": "MLB6688504570",
+        "titulo": "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure",
+        "preco": 33.75,
+        "qtd_kit": 3,
+        "extras": [
+          "tratamento"
+        ]
+      },
+      {
+        "item_id": "MLB7071399990",
+        "titulo": "Kit 3 Esmalte Risque Tons Nude Glitter Impala Atacado 3 Esmaltes",
+        "preco": 22.49,
+        "qtd_kit": 3,
+        "extras": [
+          "outra_marca"
+        ]
+      },
+      {
+        "item_id": "MLB7069274460",
+        "titulo": "Kit 3 Esmalte Impala Tratamento Incolor 7,5ml",
+        "preco": 26.99,
+        "qtd_kit": 3,
+        "extras": [
+          "tratamento"
+        ]
+      },
+      {
+        "item_id": "MLB6599892614",
+        "titulo": "Kit 3 Esmalte Impala Tratamento Incolor 7,5ml",
+        "preco": 45.99,
+        "qtd_kit": 3,
+        "extras": [
+          "tratamento"
+        ]
+      },
+      {
+        "item_id": "MLB7286297590",
+        "titulo": "Kit 3 Esmaltes Impala Perolado Neném 7,5ml Kit 3 Neném",
+        "preco": 24.99,
+        "qtd_kit": 3,
+        "extras": [
+          "nenhum"
+        ]
+      },
+      {
+        "item_id": "MLB7153021930",
+        "titulo": "Kit 3 Esmaltes Misturinha Impala + Risqué Roxo Glitter 3 Cores",
+        "preco": 22.89,
+        "qtd_kit": 3,
+        "extras": [
+          "outra_marca"
+        ]
+      },
+      {
+        "item_id": "MLB4823282217",
+        "titulo": "Impala Nude - Kit 6 Esmaltes Tons Nudes",
+        "preco": 38.09,
+        "qtd_kit": 6,
+        "extras": [
+          "nenhum"
+        ]
+      },
+      {
+        "item_id": "MLB5317556912",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 33.05,
+        "qtd_kit": 6,
+        "extras": [
+          "francesinha"
+        ]
+      },
+      {
+        "item_id": "MLB4127676627",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 36.9,
+        "qtd_kit": 6,
+        "extras": [
+          "francesinha"
+        ]
+      },
+      {
+        "item_id": "MLB5134223528",
+        "titulo": "Kit 6 Esmaltes Para Unhas Francesinha Impala Manicure",
+        "preco": 37.99,
+        "qtd_kit": 6,
+        "extras": [
+          "francesinha"
+        ]
+      }
+    ],
+    "marca_kit": [
+      {
+        "marca": "Impala",
+        "qtd_kit": 5,
+        "anuncios": 1,
+        "preco_medio": 42.0,
+        "preco_por_unidade": 8.4,
+        "vendidos": 200
+      },
+      {
+        "marca": "Anita",
+        "qtd_kit": 5,
+        "anuncios": 1,
+        "preco_medio": 45.0,
+        "preco_por_unidade": 9.0,
+        "vendidos": 120
+      }
+    ],
+    "nossos": [
+      {
+        "sku": "IMP-PERL-004",
+        "qtd_kit": 4,
+        "preco": 39.9,
+        "margem_pct": 16.26,
+        "condicao_ok": true,
+        "preco_por_unidade": 9.97,
+        "compativeis_ml_n": 0
+      },
+      {
+        "sku": "IMP-JUPAES-006",
+        "qtd_kit": 6,
+        "preco": 64.9,
+        "margem_pct": 18.18,
+        "condicao_ok": true,
+        "preco_por_unidade": 10.82,
+        "compativeis_ml_n": 0
+      },
+      {
+        "sku": "IMP-MIMO-003",
+        "qtd_kit": 3,
+        "preco": 44.9,
+        "margem_pct": 19.35,
+        "condicao_ok": true,
+        "preco_por_unidade": 14.97,
+        "compativeis_ml_n": 0
+      },
+      {
+        "sku": "IMP-VR-015",
+        "qtd_kit": 15,
+        "preco": 69.9,
+        "margem_pct": -20.86,
+        "condicao_ok": false,
+        "preco_por_unidade": 4.66,
+        "compativeis_ml_n": 0
+      },
+      {
+        "sku": "IMP-BAIL-005",
+        "qtd_kit": 5,
+        "preco": 48.9,
+        "margem_pct": 10.88,
+        "condicao_ok": false,
+        "preco_por_unidade": 9.78,
+        "compativeis_ml_n": 2
+      },
+      {
+        "sku": "IMP-SORT-010",
+        "qtd_kit": 10,
+        "preco": 48.0,
+        "margem_pct": -28.73,
+        "condicao_ok": false,
+        "preco_por_unidade": 4.8,
+        "compativeis_ml_n": 0
+      },
+      {
+        "sku": "IMP-ATAC-030",
+        "qtd_kit": 30,
+        "preco": 119.9,
+        "margem_pct": -23.63,
+        "condicao_ok": false,
+        "preco_por_unidade": 4.0,
+        "compativeis_ml_n": 0
+      },
+      {
+        "sku": "IMP-NUDE-010",
+        "qtd_kit": 10,
+        "preco": 49.9,
+        "margem_pct": -24.51,
+        "condicao_ok": false,
+        "preco_por_unidade": 4.99,
+        "compativeis_ml_n": 0
+      }
+    ],
+    "anita": {
+      "share_impala_pct": 62.5,
+      "unidades_impala": 200,
+      "unidades_anita": 120,
+      "segmentos": [
+        {
+          "nome": "Kit 5 Anita",
+          "qtd_kit": 5,
+          "total_anuncios": 2,
+          "menor_preco_impala": 42.0,
+          "menor_preco_anita": 45.0
+        }
+      ]
+    },
+    "anuncio_exemplo": {
+      "termo": "kit 5 esmaltes impala bailarina",
+      "item_id": "MLB6725163428",
+      "titulo": "Kit 5 Esmaltes Impala Coleção Bailarina",
+      "preco": 28.9,
+      "avaliacoes": 933,
+      "nota": 4.9
+    }
+  },
+  "filamentos": {
+    "anuncios_petg": 42,
+    "kits_no_titulo": 1,
+    "exemplos": [
+      {
+        "item_id": "MLB4849431207",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d Kit 2x Petg Preto",
+        "preco": 209.9,
+        "seller_id": "464560367",
+        "cor": "Preto"
+      }
+    ]
+  }
+}
