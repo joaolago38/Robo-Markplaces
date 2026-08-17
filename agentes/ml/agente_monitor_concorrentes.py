@@ -616,28 +616,46 @@ def executar(
 
         _salvar_historico(historico)
 
+        amostra: list[dict[str, Any]] = []
+        for r in resultados:
+            amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
+
         try:
             from integracoes.esmaltes.metricas_batalha_impala import processar_e_persistir
 
-            amostra: list[dict[str, Any]] = []
-            for r in resultados:
-                amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
             # Amostra vazia (403/busca cega) ainda precisa do radar: senão
             # os gauges de guerra ficam congelados no último valor.
             processar_e_persistir(amostra, origem="monitor_concorrentes")
         except Exception as exc:
             logger.warning("batalha Impala apos concorrentes: %s", exc)
 
+        try:
+            from integracoes.esmaltes.novos_kits_impala import processar as processar_novos_kits
+
+            novos = processar_novos_kits(amostra, persistir=True, enviar_alerta=enviar_alerta)
+            alertas_todos.extend(novos.get("alertas") or [])
+        except Exception as exc:
+            logger.warning("novos kits Impala apos concorrentes: %s", exc)
+
         enviado = False
         if enviar_alerta and alertas_todos:
             from core.telegram_explicacao import cabecalho_agente
 
             watch = [a for a in alertas_todos if "[watchlist]" in a]
-            demais = [a for a in alertas_todos if "[watchlist]" not in a]
+            novos_kits = [a for a in alertas_todos if "[novos-kits-impala]" in a]
+            demais = [
+                a
+                for a in alertas_todos
+                if "[watchlist]" not in a and "[novos-kits-impala]" not in a
+            ]
             blocos = [
                 cabecalho_agente("monitor_concorrentes", "🔎 *Monitor concorrentes ML*"),
                 "",
             ]
+            if novos_kits:
+                blocos.append("*Novos kits Impala no ML*")
+                blocos.extend(f"• {a}" for a in novos_kits)
+                blocos.append("")
             if watch:
                 blocos.append("*Watchlist MLB (alta confiança — preço/status)*")
                 blocos.extend(f"• {a}" for a in watch)

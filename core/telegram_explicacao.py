@@ -101,8 +101,9 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     ),
     "monitor_concorrentes": (
         "Monitora lojas e termos concorrentes no ML (incluindo Novamix). Avisa quando "
-        "seu preço alvo fica longe do mercado ou surge ameaça forte. Telegram: "
-        "alertas de gap e resumo de concorrência."
+        "seu preço alvo fica longe do mercado, surge ameaça forte ou aparece kit Impala "
+        "novo no ML (busca ampla, anúncio recém-criado ou MLB que ainda não estava na "
+        "amostra). Telegram: gap, watchlist e novos kits Impala."
     ),
     "resumo_diario_novamix": (
         "Debug: resumo Novamix. Só se a loja for operação separada ainda "

@@ -36,6 +36,16 @@
     "limite_resultados": 30
   },
   {
+    "id": "impala-novos-kits",
+    "ativo": true,
+    "nome": "Novos kits Impala no ML",
+    "termo_busca": "kit esmalte impala",
+    "meu_preco": 0,
+    "limite_resultados": 40,
+    "papel": "descoberta",
+    "notas": "Busca ampla: kits Impala recém-colocados no ML, não só a frente MIMO/PERL/JUPAES. Sem preço alvo para não gerar alerta de gap."
+  },
+  {
     "id": "kit15-verm-rosa",
     "ativo": false,
     "nome": "Kit 15 Impala Vermelho e Rosa (fora da frente — margem real negativa)",
