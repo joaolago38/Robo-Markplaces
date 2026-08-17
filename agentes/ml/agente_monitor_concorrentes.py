@@ -616,17 +616,29 @@ def executar(
 
         _salvar_historico(historico)
 
+        amostra: list[dict[str, Any]] = []
+        for r in resultados:
+            amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
+
         try:
             from integracoes.esmaltes.metricas_batalha_impala import processar_e_persistir
 
-            amostra: list[dict[str, Any]] = []
-            for r in resultados:
-                amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
             # Amostra vazia (403/busca cega) ainda precisa do radar: senão
             # os gauges de guerra ficam congelados no último valor.
             processar_e_persistir(amostra, origem="monitor_concorrentes")
         except Exception as exc:
             logger.warning("batalha Impala apos concorrentes: %s", exc)
+
+        try:
+            from integracoes.esmaltes.novos_kits_impala import processar as processar_novos_kits
+
+            novos = processar_novos_kits(amostra, persistir=True, enviar_alerta=enviar_alerta)
+            # Card próprio no Telegram (nome do kit + saúde + ranking).
+            # Não mistura no alerta de gap/watchlist para não duplicar.
+            if novos.get("alerta_enviado"):
+                logger.info("novos kits Impala: Telegram enviado")
+        except Exception as exc:
+            logger.warning("novos kits Impala apos concorrentes: %s", exc)
 
         enviado = False
         if enviar_alerta and alertas_todos:

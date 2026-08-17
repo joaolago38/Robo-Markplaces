@@ -390,6 +390,24 @@ MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO = os.getenv(
     "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", "1"
 ).strip().lower() not in ("0", "false", "no")
 
+# Novos kits Impala no ML (busca ampla no monitor concorrentes)
+NOVOS_KITS_IMPALA_ATIVO = os.getenv("NOVOS_KITS_IMPALA_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+NOVOS_KITS_IMPALA_ALERTA = os.getenv("NOVOS_KITS_IMPALA_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+NOVOS_KITS_IMPALA_DIAS = int(os.getenv("NOVOS_KITS_IMPALA_DIAS", "14"))
+NOVOS_KITS_IMPALA_TOP_N = int(os.getenv("NOVOS_KITS_IMPALA_TOP_N", "8"))
+NOVOS_KITS_IMPALA_RANK_N = int(os.getenv("NOVOS_KITS_IMPALA_RANK_N", "8"))
+NOVOS_KITS_IMPALA_RANK_COOLDOWN_SEG = int(
+    os.getenv("NOVOS_KITS_IMPALA_RANK_COOLDOWN_SEG", "21600")
+)
+
 # Resumo diário Novamix (loja concorrente ML)
 NOVAMIX_RESUMO_DIARIO_SELLER_ID = os.getenv("NOVAMIX_RESUMO_DIARIO_SELLER_ID", "1666381510").strip()
 NOVAMIX_RESUMO_DIARIO_NICKNAME = os.getenv("NOVAMIX_RESUMO_DIARIO_NICKNAME", "NOVAMIX_COMERCIAL").strip()

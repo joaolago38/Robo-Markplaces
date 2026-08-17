@@ -21,6 +21,7 @@ logger = logging.getLogger("agente_amazon")
 _TAG = ["marketplace:amazon"]
 HEARTBEAT_PATH = ROOT / "logs" / "chat_ultima.json"
 
+
 def processar_mensagens() -> int:
     mensagens = listar_mensagens_nao_respondidas()
     gauge("chat.fila", float(len(mensagens or [])), tags=_TAG)

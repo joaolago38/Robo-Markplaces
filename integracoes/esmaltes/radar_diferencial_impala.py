@@ -37,6 +37,7 @@ _TERMOS_CACHE = (
     "kit 6 esmaltes impala ju paes",
     "kit 6 esmaltes impala sortidos",
     "kit impala",
+    "kit esmalte impala",
 )
 
 _EXTRAS: tuple[tuple[str, re.Pattern[str]], ...] = (

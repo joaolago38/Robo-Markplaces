@@ -185,6 +185,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "monitor",
         "agentes.ml.agente_monitor_concorrentes:executar",
         {"enviar_alerta": True},
+        notas="Inclui busca ampla de kits Impala novos no ML (catálogo impala-novos-kits).",
     ),
     AgenteRegistrado(
         "visao_atuacao_impala",

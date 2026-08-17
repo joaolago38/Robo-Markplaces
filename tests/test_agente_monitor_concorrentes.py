@@ -5,6 +5,7 @@ import importlib.util
 import os
 import sys
 import unittest
+from contextlib import ExitStack
 from unittest.mock import patch
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -18,12 +19,22 @@ mon = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(mon)
 
 
-def _isolar_batalha():
-    """Monitor unitário não dispara radar/golpe/Telegram/Datadog de guerra."""
-    return patch(
-        "integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir",
-        return_value={},
+def _isolar_batalha(test_case) -> None:
+    """Monitor unitário não dispara radar/golpe/Datadog de guerra nem novos kits."""
+    stack = ExitStack()
+    stack.enter_context(
+        patch(
+            "integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir",
+            return_value={},
+        )
     )
+    stack.enter_context(
+        patch(
+            "integracoes.esmaltes.novos_kits_impala.processar",
+            return_value={"ok": True, "alertas": [], "n_novos": 0},
+        )
+    )
+    test_case.addCleanup(stack.close)
 
 
 _LISTA_ALERTA = [
@@ -53,9 +64,7 @@ _CONC = {"item_id": "MLB2", "titulo": "Kit Impala Teste", "preco": 40.0, "quanti
 
 class TestMonitorConcorrentes(unittest.TestCase):
     def setUp(self):
-        p = _isolar_batalha()
-        p.start()
-        self.addCleanup(p.stop)
+        _isolar_batalha(self)
 
     @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
     @patch.object(mon, "alertar_gestor", return_value=True)
@@ -190,9 +199,7 @@ class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
     """Garante que as métricas são enviadas ao Datadog a cada ciclo do agente."""
 
     def setUp(self):
-        p = _isolar_batalha()
-        p.start()
-        self.addCleanup(p.stop)
+        _isolar_batalha(self)
 
     @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[
         {"item_id": "MLB1", "titulo": "Kit Impala X", "preco": 38.0, "quantidade_vendida": 5},
@@ -250,9 +257,7 @@ class TestMonitorConcorrentesMetricasDatadog(unittest.TestCase):
 
 class TestWatchlistItem(unittest.TestCase):
     def setUp(self):
-        p = _isolar_batalha()
-        p.start()
-        self.addCleanup(p.stop)
+        _isolar_batalha(self)
 
     @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False)
     @patch.object(mon, "alertar_gestor", return_value=True)
@@ -321,6 +326,38 @@ class TestWatchlistItem(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertFalse(out["resultados"][0]["ok"])
         self.assertIn("PREENCHER", out["resultados"][0].get("erro", "").upper())
+
+
+class TestNovosKitsImpalaNoMonitor(unittest.TestCase):
+    def setUp(self):
+        p = patch(
+            "integracoes.esmaltes.metricas_batalha_impala.processar_e_persistir",
+            return_value={},
+        )
+        p.start()
+        self.addCleanup(p.stop)
+
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", True)
+    @patch.object(mon, "alertar_gestor", return_value=True)
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(mon, "_carregar_lista", return_value=_LISTA_ESTAVEL)
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[_CONC])
+    @patch(
+        "integracoes.esmaltes.novos_kits_impala.processar",
+        return_value={
+            "ok": True,
+            "n_novos": 1,
+            "alerta_enviado": True,
+            "alertas": [],
+        },
+    )
+    def test_dispara_card_novos_kits(self, mock_proc, *_):
+        out = mon.executar(enviar_alerta=True)
+        self.assertTrue(out["ok"])
+        mock_proc.assert_called_once()
+        self.assertTrue(mock_proc.call_args.kwargs.get("enviar_alerta"))
+        self.assertTrue(mock_proc.call_args.kwargs.get("persistir"))
 
 
 if __name__ == "__main__":
