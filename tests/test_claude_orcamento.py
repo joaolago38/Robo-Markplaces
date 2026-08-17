@@ -13,10 +13,18 @@ class TestClaudeOrcamento(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.path = Path(self.tmp.name) / "uso.json"
+        self.painel = Path(self.tmp.name) / "painel.json"
+        self.hist = Path(self.tmp.name) / "hist.json"
         self.patcher = patch.object(o, "USO_PATH", self.path)
         self.patcher.start()
+        self._p_painel = patch.object(o, "PAINEL_PATH", self.painel)
+        self._p_painel.start()
+        self._p_hist = patch.object(o, "HIST_PATH", self.hist)
+        self._p_hist.start()
 
     def tearDown(self):
+        self._p_hist.stop()
+        self._p_painel.stop()
         self.patcher.stop()
         self.tmp.cleanup()
 
@@ -250,6 +258,66 @@ class TestClaudeOrcamento(unittest.TestCase):
             ],
         ):
             self.assertEqual(o.detectar_origem(), "ml.agente_monitor_ml")
+
+    def test_resumo_usa_snapshot_console_quando_cache_zerou(self):
+        self.path.write_text(
+            '{"orcamento_usd": 8.99, "consumido_usd": 0, "fonte_saldo": "console_painel",'
+            ' "saldo_console_usd": 2.41, "gasto_mes_console_usd": 3.44,'
+            ' "resultados": {"ok": 0, "falha": 0, "fallback": 0, "vazio": 0, "bloqueado": 0},'
+            ' "por_origem": {}, "por_modelo": {}}',
+            encoding="utf-8",
+        )
+        r = o.resumo()
+        self.assertAlmostEqual(r["restante_usd"], 2.41, places=2)
+        self.assertAlmostEqual(r["consumido_usd"], 3.44, places=2)
+        self.assertEqual(r["fonte_saldo"], "console_painel")
+        self.assertFalse(r["bloqueado"])
+
+    @patch.object(o, "_talvez_alertar")
+    def test_registrar_uso_nao_reseta_orcamento_console(self, _alerta):
+        o.aplicar_saldo_console(2.41, gasto_mes_usd=3.44, emitir_datadog=False)
+        with patch.object(o, "_cfg") as cfg:
+            cfg.return_value.CLAUDE_ORCAMENTO_USD = 8.99
+            cfg.return_value.CLAUDE_ORCAMENTO_ATIVO = True
+            cfg.return_value.CLAUDE_PRECO_HAIKU_IN = 1.0
+            cfg.return_value.CLAUDE_PRECO_HAIKU_OUT = 5.0
+            o.registrar_uso(
+                modelo="claude-haiku-4-5",
+                input_tokens=0,
+                output_tokens=0,
+                origem="teste",
+                resultado="bloqueado",
+            )
+        r = o.resumo()
+        self.assertAlmostEqual(r["restante_usd"], 2.41, places=2)
+        self.assertLess(r["orcamento_usd"], 8.0)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_metricas_billing_datadog(self, mock_gauge):
+        r = {
+            "consumido_usd": 3.44,
+            "restante_usd": 0.0,
+            "orcamento_usd": 3.44,
+            "assertividade_pct": 40.0,
+            "fonte_saldo": "console_api",
+        }
+        o.emitir_metricas_claude_datadog(r)
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ia.billing.creditos_usd", nomes)
+        self.assertIn("ia.billing.gasto_mes_usd", nomes)
+        self.assertIn("claude.orcamento_restante_usd", nomes)
+        pares = {c.args[0]: c.args[1] for c in mock_gauge.call_args_list}
+        self.assertEqual(pares["ia.billing.creditos_usd"], 0.0)
+        self.assertEqual(pares["ia.billing.gasto_mes_usd"], 3.44)
+
+    @patch("core.claude_billing.consultar_custo_mes_console")
+    def test_sincronizar_saldo_real_zera_quando_gasto_atinge_pack(self, mock_consulta):
+        o.aplicar_saldo_console(2.41, gasto_mes_usd=3.44, emitir_datadog=False)
+        mock_consulta.return_value = {"ok": True, "gasto_mes_usd": 5.85, "fonte": "console_api"}
+        out = o.sincronizar_saldo_real(emitir_datadog=False)
+        self.assertTrue(out["ok"])
+        self.assertAlmostEqual(out["creditos_usd"], 0.0, places=2)
+        self.assertAlmostEqual(out["resumo"]["restante_usd"], 0.0, places=2)
 
 
 if __name__ == "__main__":

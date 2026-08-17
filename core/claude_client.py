@@ -48,6 +48,34 @@ def _status_http_erro(exc: Exception) -> int | None:
     return None
 
 
+def _erro_credito_insuficiente(exc: Exception) -> bool:
+    resp = getattr(exc, "response", None)
+    blob = ""
+    if resp is not None:
+        blob = str(getattr(resp, "text", None) or "")[:2000]
+    blob = f"{blob} {exc}".lower()
+    return any(
+        trecho in blob
+        for trecho in (
+            "credit balance is too low",
+            "insufficient credits",
+            "insufficient_quota",
+            "billing hard limit",
+        )
+    )
+
+
+def _talvez_zerar_saldo_console(exc: Exception) -> None:
+    if not _erro_credito_insuficiente(exc):
+        return
+    try:
+        from core.claude_orcamento import marcar_saldo_zerado_console
+
+        marcar_saldo_zerado_console(motivo="api_credit_too_low")
+    except Exception:
+        logger.debug("nao foi possivel zerar saldo Claude no Datadog", exc_info=True)
+
+
 def _log_erro_claude(exc: Exception, *, contexto: str) -> None:
     from core.log_opcional import erro_opcional, log_erros_claude_ativos
 
@@ -235,6 +263,7 @@ def perguntar(
         return "⚠️ Erro na IA: resposta inválida."
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:comunicacao"])
+        _talvez_zerar_saldo_console(e)
         _log_erro_claude(e, contexto="texto livre")
         try:
             from core.claude_orcamento import registrar_uso as _reg
@@ -363,6 +392,7 @@ def perguntar_estruturado(
         return payload_out
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:estruturado"])
+        _talvez_zerar_saldo_console(e)
         _log_erro_claude(e, contexto=f"estruturado tool={tool_name}")
         try:
             from core.claude_orcamento import registrar_uso

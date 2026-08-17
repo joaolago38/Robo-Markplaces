@@ -62,6 +62,11 @@ def skip_se_spec_inativo(marketplace_id: str) -> dict | None:
 
 # IA
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+# Admin API (sk-ant-admin…) — gasto real do mês → Datadog. Sem isso o gauge
+# usa o último snapshot do painel, não o teto CLAUDE_ORCAMENTO_USD.
+ANTHROPIC_ADMIN_API_KEY = (
+    os.getenv("ANTHROPIC_ADMIN_API_KEY") or os.getenv("ANTHROPIC_ADMIN_KEY") or ""
+).strip()
 # Toggle mestre: 0 = pausa TODAS as chamadas Claude (sem gastar token/USD)
 # Também existe logs/claude_toggle.json (scripts/toggle_claude.py) para pausa momentânea.
 # Default OFF: exige opt-in explícito (CLAUDE_ATIVO=1) para gastar créditos.

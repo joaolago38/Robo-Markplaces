@@ -272,6 +272,28 @@ class TestClaudeResponderGerar(unittest.TestCase):
         self.assertIn("instagram", prompt.lower())
         self.assertIn("Kit Impala", prompt)
 
+    def test_erro_credito_insuficiente(self):
+        exc = Exception("timeout")
+        self.assertFalse(claude_client._erro_credito_insuficiente(exc))
+        http = Exception("Error")
+        http.response = MagicMock()
+        http.response.text = '{"error":{"message":"Your credit balance is too low to access the Anthropic API"}}'
+        http.response.status_code = 400
+        self.assertTrue(claude_client._erro_credito_insuficiente(http))
+
+    @patch("core.claude_orcamento.marcar_saldo_zerado_console")
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_pergunta_zera_saldo_quando_credito_acabou(self, mock_request, mock_zerar):
+        http = Exception("400")
+        http.response = MagicMock()
+        http.response.text = "Your credit balance is too low"
+        http.response.status_code = 400
+        mock_request.side_effect = http
+        out = claude_client.perguntar("oi")
+        self.assertTrue(out.startswith("⚠️"))
+        mock_zerar.assert_called()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,10 +23,10 @@ from core.claude_orcamento import (
     ranking_consumo_por_agente,
     resetar_consumo,
     resumo,
+    sincronizar_saldo_real,
 )
 from core.config import (
     CLAUDE_ORCAMENTO_ALERTA,
-    CLAUDE_ORCAMENTO_USD,
     ROOT,
 )
 from core.datadog_metrics import incrementar
@@ -36,11 +36,28 @@ logger = logging.getLogger("agente_consumo_claude")
 SNAPSHOT_PATH = ROOT / "logs" / "consumo_claude_ultima.json"
 
 
-def executar(*, enviar_alerta: bool = True, reset: bool = False) -> dict[str, Any]:
+def executar(
+    *,
+    enviar_alerta: bool = True,
+    reset: bool = False,
+    sincronizar: bool = True,
+) -> dict[str, Any]:
     try:
         if reset:
             r = resetar_consumo(manter_orcamento=True)
         else:
+            if sincronizar:
+                sync = sincronizar_saldo_real(emitir_datadog=False)
+                if sync.get("ok"):
+                    logger.info(
+                        "Claude Datadog alinhado à Cost API restante=US$ %s",
+                        (sync.get("resumo") or {}).get("restante_usd"),
+                    )
+                else:
+                    logger.info(
+                        "Claude Datadog sem Cost API (%s) — usando snapshot do painel",
+                        sync.get("motivo"),
+                    )
             r = resumo()
         graficos = gerar_graficos_consumo(r)
         ranking = graficos.get("ranking") or ranking_consumo_por_agente(r)
@@ -48,7 +65,8 @@ def executar(*, enviar_alerta: bool = True, reset: bool = False) -> dict[str, An
         payload = {
             "ok": True,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "orcamento_usd": CLAUDE_ORCAMENTO_USD,
+            "orcamento_usd": r.get("orcamento_usd"),
+            "fonte_saldo": r.get("fonte_saldo"),
             "resumo": r,
             "ranking_agentes": ranking,
             "graficos": {
@@ -159,7 +177,11 @@ def main() -> int:
         )
         if args.reset or not args.sem_alerta:
             # ainda publica o painel Telegram se pedido
-            out = executar(enviar_alerta=not args.sem_alerta, reset=False)
+            out = executar(
+                enviar_alerta=not args.sem_alerta,
+                reset=False,
+                sincronizar=False,
+            )
             print({"alerta_enviado": out.get("alerta_enviado")})
         return 0
     out = executar(enviar_alerta=not args.sem_alerta, reset=args.reset)
