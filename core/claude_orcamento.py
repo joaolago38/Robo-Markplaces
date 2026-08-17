@@ -1,8 +1,9 @@
 """
 core/claude_orcamento.py
 Orçamento local Claude (tokens → US$) + hard stop + alertas Telegram.
-O saldo restante da console (Anthropic/OpenAI) NÃO vem pela API automaticamente.
-Usamos orçamento local + sync manual via aplicar_saldo_console() / --creditos.
+
+Saldo real: Cost Admin API (gasto do mês) + último snapshot do painel.
+Sem Admin key o Datadog publica o snapshot (não o teto CLAUDE_ORCAMENTO_USD).
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ GRAFICO_AGENTES_PATH = ROOT / "logs" / "grafico_claude_por_agente.png"
 GRAFICO_EVOLUCAO_PATH = ROOT / "logs" / "grafico_claude_evolucao.png"
 MAX_EVENTOS = 200
 MAX_HIST_PONTOS = 60
+_FONTES_CONSOLE = ("console_painel", "console_api")
 
 # Preços aproximados US$ / 1M tokens (Haiku 4.5 / Sonnet 4.5 — ajustáveis via env)
 _PRECO_DEFAULT = {
@@ -172,8 +174,8 @@ def carregar_estado() -> dict[str, Any]:
     base = _estado_vazio()
     base.update(data)
     c = _cfg()
-    # Saldo do painel Anthropic prevalece sobre CLAUDE_ORCAMENTO_USD do .env
-    if str(base.get("fonte_saldo") or "") != "console_painel":
+    # Saldo do painel/API Anthropic prevalece sobre CLAUDE_ORCAMENTO_USD do .env
+    if str(base.get("fonte_saldo") or "") not in _FONTES_CONSOLE:
         base["orcamento_usd"] = float(
             getattr(c, "CLAUDE_ORCAMENTO_USD", base["orcamento_usd"]) or 8.99
         )
@@ -182,11 +184,34 @@ def carregar_estado() -> dict[str, Any]:
     return base
 
 
-def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
-    e = estado or carregar_estado()
+def _numeros_console(e: dict[str, Any]) -> tuple[float, float, float]:
+    """
+    (orcamento, consumido, restante) alinhados ao painel/API.
+    Evita publicar CLAUDE_ORCAMENTO_USD (8.99) quando o cache local zerou
+    o consumido mas ainda há snapshot de créditos.
+    """
     orc = float(e.get("orcamento_usd") or 0)
     used = float(e.get("consumido_usd") or 0)
-    resta = max(0.0, round(orc - used, 6))
+    fonte = str(e.get("fonte_saldo") or "")
+    if fonte not in _FONTES_CONSOLE or e.get("saldo_console_usd") is None:
+        resta = max(0.0, round(orc - used, 6))
+        return orc, used, resta
+    saldo = float(e.get("saldo_console_usd") or 0)
+    gasto_sync = e.get("gasto_mes_console_usd")
+    if gasto_sync is None:
+        pack = orc if orc > 0 else saldo
+        return pack, max(0.0, pack - saldo), max(0.0, round(saldo, 6))
+    gasto_sync_f = float(gasto_sync)
+    delta = max(0.0, used - gasto_sync_f)
+    resta = max(0.0, round(saldo - delta, 6))
+    consumido = round(gasto_sync_f + delta, 6)
+    pack = round(consumido + resta, 6)
+    return pack, consumido, resta
+
+
+def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
+    e = estado or carregar_estado()
+    orc, used, resta = _numeros_console(e)
     pct = round((used / orc) * 100, 1) if orc > 0 else 0.0
     resultados = dict(e.get("resultados") or {})
     assert_global = calcular_assertividade(resultados)
@@ -207,7 +232,7 @@ def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
         "chamadas": int(e.get("chamadas") or 0),
         "tokens_in": int(e.get("tokens_in") or 0),
         "tokens_out": int(e.get("tokens_out") or 0),
-        "bloqueado": bool(e.get("bloqueado")) or (orc > 0 and used >= orc),
+        "bloqueado": bool(e.get("bloqueado")) or (orc > 0 and resta <= 0),
         "resultados": resultados,
         "assertividade_pct": assert_global,
         "por_origem": por_origem,
@@ -294,8 +319,12 @@ def registrar_uso(
             nonlocal cruzados
             if not isinstance(estado, dict):
                 estado = _estado_vazio()
-            orc = float(getattr(c, "CLAUDE_ORCAMENTO_USD", 8.99) or 8.99)
-            estado["orcamento_usd"] = orc
+            fonte = str(estado.get("fonte_saldo") or "")
+            if fonte in _FONTES_CONSOLE and estado.get("orcamento_usd") is not None:
+                orc = float(estado.get("orcamento_usd") or 0)
+            else:
+                orc = float(getattr(c, "CLAUDE_ORCAMENTO_USD", 8.99) or 8.99)
+                estado["orcamento_usd"] = orc
             used_antes = float(estado.get("consumido_usd") or 0)
             pct_antes = (used_antes / orc * 100) if orc > 0 else 0.0
             used = used_antes + custo
@@ -524,7 +553,11 @@ def montar_mensagem_telegram(
     linhas.extend(
         [
             "",
-            "_Estimativa local (preço/MTok). Saldo real: console.anthropic.com → Billing._",
+            (
+                "_Saldo Datadog = Cost API Anthropic (gasto do mês) + créditos restantes._"
+                if str(r.get("fonte_saldo") or "") in _FONTES_CONSOLE
+                else "_Estimativa local (preço/MTok). Sem Admin key o restante some o último snapshot do painel._"
+            ),
         ]
     )
     return "\n".join(linhas).strip()
@@ -557,10 +590,20 @@ def emitir_metricas_claude_datadog(
     tags = ["fonte:consumo_claude"]
     if r.get("fonte_saldo"):
         tags.append(f"fonte_saldo:{r.get('fonte_saldo')}")
-    gauge("claude.orcamento_consumido_usd", float(r.get("consumido_usd") or 0), tags=tags)
-    gauge("claude.orcamento_restante_usd", float(r.get("restante_usd") or 0), tags=tags)
+    restante = float(r.get("restante_usd") or 0)
+    consumido = float(r.get("consumido_usd") or 0)
+    gauge("claude.orcamento_consumido_usd", consumido, tags=tags)
+    gauge("claude.orcamento_restante_usd", restante, tags=tags)
     gauge("claude.orcamento_usd", float(r.get("orcamento_usd") or 0), tags=tags)
     gauge("claude.assertividade_pct", float(r.get("assertividade_pct") or 0), tags=tags)
+    # Mesmos números nos gauges que o dashboard espera como billing da console
+    gauge("ia.billing.creditos_usd", restante, tags=tags)
+    gauge("ia.billing.gasto_mes_usd", consumido, tags=tags)
+    gauge(
+        "claude.fonte_console",
+        1.0 if str(r.get("fonte_saldo") or "") in _FONTES_CONSOLE else 0.0,
+        tags=tags,
+    )
     if tokens_7d is not None:
         gauge("claude.tokens_7d", float(tokens_7d), tags=tags)
     if tokens_7d_crescimento_pct is not None:
@@ -581,13 +624,15 @@ def aplicar_saldo_console(
     prompt_cache_ativo: bool | None = None,
     limite_mes_usd: float | None = None,
     emitir_datadog: bool = True,
+    fonte_saldo: str = "console_painel",
 ) -> dict[str, Any]:
     """
-    Alinha o orçamento local ao saldo do painel (print/console).
+    Alinha o orçamento local ao saldo do painel ou da Cost API.
     restante = créditos; consumido = gasto do mês (se informado).
     """
     creditos = max(0.0, float(creditos_usd or 0))
     gasto = float(gasto_mes_usd) if gasto_mes_usd is not None else None
+    fonte = fonte_saldo if fonte_saldo in _FONTES_CONSOLE else "console_painel"
 
     def _patch(estado: dict[str, Any]) -> dict[str, Any]:
         used = float(gasto) if gasto is not None else float(estado.get("consumido_usd") or 0)
@@ -597,7 +642,7 @@ def aplicar_saldo_console(
         estado["bloqueado"] = bool(
             estado["orcamento_usd"] > 0 and estado["consumido_usd"] >= estado["orcamento_usd"]
         )
-        estado["fonte_saldo"] = "console_painel"
+        estado["fonte_saldo"] = fonte
         estado["saldo_console_usd"] = round(creditos, 4)
         if gasto is not None:
             estado["gasto_mes_console_usd"] = round(gasto, 4)
@@ -615,7 +660,7 @@ def aplicar_saldo_console(
 
     estado = ler_e_atualizar_json(USO_PATH, _patch, default=_estado_vazio())
     r = resumo(estado if isinstance(estado, dict) else None)
-    r["fonte_saldo"] = "console_painel"
+    r["fonte_saldo"] = fonte
     snap = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "creditos_usd": creditos,
@@ -624,6 +669,7 @@ def aplicar_saldo_console(
         "tokens_7d_crescimento_pct": tokens_7d_crescimento_pct,
         "prompt_cache_ativo": prompt_cache_ativo,
         "limite_mes_usd": limite_mes_usd,
+        "fonte_saldo": fonte,
         "resumo": r,
     }
     escrever_json_atomico(PAINEL_PATH, snap)
@@ -640,6 +686,67 @@ def aplicar_saldo_console(
             limite_mes_usd=limite_mes_usd,
         )
     return r
+
+
+def marcar_saldo_zerado_console(*, motivo: str = "api_credit_too_low") -> dict[str, Any]:
+    """Anthropic recusou a chamada por crédito — Datadog passa a mostrar US$ 0."""
+    logger.warning("Saldo Claude zerado no Datadog (%s)", motivo)
+    return aplicar_saldo_console(0.0, emitir_datadog=True, fonte_saldo="console_api")
+
+
+def sincronizar_saldo_real(*, emitir_datadog: bool = True) -> dict[str, Any]:
+    """
+    Puxa o gasto do mês na Cost API e republica restante/consumido no Datadog.
+    Sem Admin key: não inventa 8.99 — `resumo()` já usa o snapshot do painel.
+    """
+    try:
+        from core.claude_billing import consultar_custo_mes_console
+
+        consulta = consultar_custo_mes_console()
+    except Exception as exc:
+        logger.warning("sync saldo Claude falhou: %s", exc)
+        r = resumo()
+        if emitir_datadog:
+            emitir_metricas_claude_datadog(r)
+        return {"ok": False, "motivo": type(exc).__name__, "resumo": r}
+
+    if not consulta.get("ok"):
+        r = resumo()
+        if emitir_datadog:
+            emitir_metricas_claude_datadog(r)
+        return {
+            "ok": False,
+            "motivo": consulta.get("motivo") or "consulta_falhou",
+            "resumo": r,
+        }
+
+    gasto = float(consulta.get("gasto_mes_usd") or 0)
+    estado = carregar_estado()
+    saldo = estado.get("saldo_console_usd")
+    gasto_ant = estado.get("gasto_mes_console_usd")
+    if saldo is not None and gasto_ant is not None:
+        pack = float(saldo) + float(gasto_ant)
+    else:
+        pack = float(getattr(_cfg(), "CLAUDE_ORCAMENTO_USD", 0) or 0)
+    creditos = max(0.0, round(pack - gasto, 6))
+    r = aplicar_saldo_console(
+        creditos,
+        gasto_mes_usd=gasto,
+        emitir_datadog=emitir_datadog,
+        fonte_saldo="console_api",
+    )
+    logger.info(
+        "Saldo Claude sincronizado via Cost API: restante=US$ %.4f gasto_mes=US$ %.4f",
+        creditos,
+        gasto,
+    )
+    return {
+        "ok": True,
+        "fonte": "console_api",
+        "creditos_usd": creditos,
+        "gasto_mes_usd": gasto,
+        "resumo": r,
+    }
 
 
 def _nome_agente_curto(origem: str, max_len: int = 40) -> str:

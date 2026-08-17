@@ -29,6 +29,11 @@ SECRETS = {
                 "onde":      "console.anthropic.com -> API Keys (deposite $5 = R$30)",
                 "formato":   "sk-ant-api03-...",
             },
+            "ANTHROPIC_ADMIN_API_KEY": {
+                "descricao": "Admin key — gasto real do mês no Datadog (opcional, contas com org)",
+                "onde":      "console.anthropic.com -> Settings -> Admin API keys (sk-ant-admin...)",
+                "formato":   "sk-ant-admin01-...",
+            },
             "TELEGRAM_TOKEN": {
                 "descricao": "Token do bot do Telegram para alertas",
                 "onde":      "No Telegram: converse com @BotFather -> /newbot",

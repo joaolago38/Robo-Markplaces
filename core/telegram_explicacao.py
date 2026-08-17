@@ -18,7 +18,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     ),
     "consumo_claude": (
         "Mostra orçamento Claude (US$ usado/restante) e a assertividade por agente "
-        "(ok vs falha/fallback/vazio). Alerta limiares e hard stop. Estimativa local por tokens."
+        "(ok vs falha/fallback/vazio). Alerta limiares e hard stop. "
+        "Saldo Datadog vem da Cost API Anthropic (Admin key) ou do último snapshot do painel."
     ),
     "monitor_margem_vendas": (
         "Calcula lucro e margem dos pedidos em ML, Shopee, Magalu e Amazon (custo do "

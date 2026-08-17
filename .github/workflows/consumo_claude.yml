@@ -39,6 +39,7 @@ jobs:
         with:
           path: |
             logs/claude_uso_orcamento.json
+            logs/claude_saldo_painel_ultima.json
             logs/claude_toggle.json
             logs/alertas_cooldown.json
           key: estado-vendas-ia-${{ github.run_id }}
@@ -51,6 +52,7 @@ jobs:
         run: python -m agentes.infra.agente_consumo_claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_ADMIN_API_KEY: ${{ secrets.ANTHROPIC_ADMIN_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
           CLAUDE_ECONOMICO: "1"
           CLAUDE_MODELO: claude-haiku-4-5
@@ -69,6 +71,7 @@ jobs:
         with:
           path: |
             logs/claude_uso_orcamento.json
+            logs/claude_saldo_painel_ultima.json
             logs/claude_toggle.json
             logs/alertas_cooldown.json
           key: estado-vendas-ia-${{ github.run_id }}
@@ -78,6 +81,7 @@ jobs:
           name: consumo-claude
           path: |
             logs/claude_uso_orcamento.json
+            logs/claude_saldo_painel_ultima.json
             logs/consumo_claude_ultima.json
           retention-days: 30
           if-no-files-found: ignore
