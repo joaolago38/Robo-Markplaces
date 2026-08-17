@@ -633,7 +633,10 @@ def executar(
             from integracoes.esmaltes.novos_kits_impala import processar as processar_novos_kits
 
             novos = processar_novos_kits(amostra, persistir=True, enviar_alerta=enviar_alerta)
-            alertas_todos.extend(novos.get("alertas") or [])
+            # Card próprio no Telegram (nome do kit + saúde + ranking).
+            # Não mistura no alerta de gap/watchlist para não duplicar.
+            if novos.get("alerta_enviado"):
+                logger.info("novos kits Impala: Telegram enviado")
         except Exception as exc:
             logger.warning("novos kits Impala apos concorrentes: %s", exc)
 
@@ -642,20 +645,11 @@ def executar(
             from core.telegram_explicacao import cabecalho_agente
 
             watch = [a for a in alertas_todos if "[watchlist]" in a]
-            novos_kits = [a for a in alertas_todos if "[novos-kits-impala]" in a]
-            demais = [
-                a
-                for a in alertas_todos
-                if "[watchlist]" not in a and "[novos-kits-impala]" not in a
-            ]
+            demais = [a for a in alertas_todos if "[watchlist]" not in a]
             blocos = [
                 cabecalho_agente("monitor_concorrentes", "🔎 *Monitor concorrentes ML*"),
                 "",
             ]
-            if novos_kits:
-                blocos.append("*Novos kits Impala no ML*")
-                blocos.extend(f"• {a}" for a in novos_kits)
-                blocos.append("")
             if watch:
                 blocos.append("*Watchlist MLB (alta confiança — preço/status)*")
                 blocos.extend(f"• {a}" for a in watch)

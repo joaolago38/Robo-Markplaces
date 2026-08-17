@@ -86,6 +86,7 @@ class TestNovosKitsImpala(unittest.TestCase):
         self.assertIn("anuncio_novo", row["motivos"])
         self.assertTrue(row["fora_frente"])
         self.assertIn("fora da frente", nk.formatar_alerta(row))
+        self.assertIn("Kit 8 Impala", nk.formatar_alerta(row))
 
     def test_ja_visto_sem_alerta(self):
         out = nk.montar_novos(
@@ -95,9 +96,10 @@ class TestNovosKitsImpala(unittest.TestCase):
         )
         self.assertEqual(out["n_novos"], 0)
 
+    @patch.object(nk, "_enviar_telegram", return_value=(False, "teste"))
     @patch.object(nk, "emitir_metricas")
     @patch.object(nk, "incrementar")
-    def test_processar_persiste_e_alerta(self, mock_i, _m):
+    def test_processar_persiste_e_alerta(self, mock_i, _m, _tg):
         with tempfile.TemporaryDirectory() as tmp:
             pasta = Path(tmp)
             with (
@@ -131,6 +133,43 @@ class TestNovosKitsImpala(unittest.TestCase):
         self.assertTrue(segundo.get("alertas"))
         self.assertIn("[novos-kits-impala]", segundo["alertas"][0])
         mock_i.assert_any_call("impala.novos_kits.ok")
+
+    def test_nome_kit_e_saude(self):
+        a = _kit(quantidade_vendida=400, nota=4.8, avaliacoes=25, preco=44.9)
+        self.assertEqual(nk.nome_kit(a), "Kit 3 Impala Mimo + Carmed")
+        saude = nk.saude_anuncio(a)
+        self.assertGreaterEqual(saude["score"], 70)
+        self.assertEqual(saude["faixa"], "boa")
+
+    def test_ranking_ordena_por_saude(self):
+        anuncios = [
+            _kit(item_id="MLB111111111", titulo="Kit 3 Impala Mimo", qtd_kit=3, quantidade_vendida=5, preco=44.9),
+            _kit(
+                item_id="MLB222222222",
+                titulo="Kit 8 Esmaltes Impala Sortidos",
+                qtd_kit=8,
+                quantidade_vendida=200,
+                nota=4.9,
+                avaliacoes=40,
+                preco=52.0,
+            ),
+        ]
+        rank = nk.montar_ranking(anuncios, limite=5)
+        self.assertEqual(rank[0]["item_id"], "MLB222222222")
+        self.assertIn("Kit 8 Impala", rank[0]["nome_kit"])
+        nomes = nk.nomes_kits_a_venda(anuncios)
+        self.assertTrue(any("Mimo" in n for n in nomes))
+        self.assertTrue(any("Kit 8" in n for n in nomes))
+        msg = nk.formatar_mensagem(
+            novos=rank[:1],
+            ranking=rank,
+            nomes=nomes,
+            n_amostra=2,
+        )
+        self.assertIn("Kits Impala no Mercado Livre", msg)
+        self.assertIn("Ranking", msg)
+        self.assertIn("Kits à venda", msg)
+        self.assertIn("/100", msg)
 
 
 if __name__ == "__main__":

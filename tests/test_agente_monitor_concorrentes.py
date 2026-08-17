@@ -348,20 +348,16 @@ class TestNovosKitsImpalaNoMonitor(unittest.TestCase):
         return_value={
             "ok": True,
             "n_novos": 1,
-            "alertas": [
-                "[novos-kits-impala] kit 8 outro — Kit 8 Impala Sortidos | R$ 49,90 (`MLB555666777`, 2d no ar)"
-            ],
+            "alerta_enviado": True,
+            "alertas": [],
         },
     )
-    def test_telegram_secao_novos_kits(self, *_):
+    def test_dispara_card_novos_kits(self, mock_proc, *_):
         out = mon.executar(enviar_alerta=True)
         self.assertTrue(out["ok"])
-        self.assertGreaterEqual(out["total_alertas"], 1)
-        self.assertTrue(out["enviado"])
-        texto = " ".join(out.get("alertas") or [])
-        self.assertIn("[novos-kits-impala]", texto)
-        msg = mon.alertar_gestor.call_args[0][0]
-        self.assertIn("Novos kits Impala no ML", msg)
+        mock_proc.assert_called_once()
+        self.assertTrue(mock_proc.call_args.kwargs.get("enviar_alerta"))
+        self.assertTrue(mock_proc.call_args.kwargs.get("persistir"))
 
 
 if __name__ == "__main__":

@@ -101,9 +101,12 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     ),
     "monitor_concorrentes": (
         "Monitora lojas e termos concorrentes no ML (incluindo Novamix). Avisa quando "
-        "seu preço alvo fica longe do mercado, surge ameaça forte ou aparece kit Impala "
-        "novo no ML (busca ampla, anúncio recém-criado ou MLB que ainda não estava na "
-        "amostra). Telegram: gap, watchlist e novos kits Impala."
+        "seu preço alvo fica longe do mercado ou surge ameaça forte. Telegram: gap e "
+        "watchlist. Kits Impala novos vão num card separado (nome do kit, saúde e ranking)."
+    ),
+    "novos_kits_impala": (
+        "Busca ampla de kits Impala no ML. Telegram: kits recém-colocados (nome) + "
+        "ranking dos melhores anúncios pela saúde (vendas, nota, avaliações, visitas)."
     ),
     "resumo_diario_novamix": (
         "Debug: resumo Novamix. Só se a loja for operação separada ainda "
@@ -358,6 +361,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions); fora do orquestrador 30 min",
     "relatorio_estrategia_ml": "Segundas às 08:00 BRT (fora do orquestrador)",
     "monitor_concorrentes": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "novos_kits_impala": "No monitor concorrentes (30 min): card próprio com novos + ranking; ranking sozinho a cada 6h",
     "resumo_diario_novamix": "Debug manual (sem Telegram) — Novamix fora do ciclo Impala",
     "monitor_sem_venda_ml": "A cada 30 min (orquestrador)",
     "monitor_anita": "Debug manual (sem Telegram) — produção via comparativo_anita_impala",
@@ -467,6 +471,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("sem_venda", "monitor_sem_venda_ml"),
     ("monitor_concorrentes", "monitor_concorrentes"),
     ("concorrentes", "monitor_concorrentes"),
+    ("novos_kits_impala", "novos_kits_impala"),
+    ("novos_kits", "novos_kits_impala"),
     ("anita:esmaltes", "monitor_anita"),
     ("anita:", "monitor_anita"),
     ("esmaltes:mercado", "monitor_mercado_esmaltes"),
