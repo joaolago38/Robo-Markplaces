@@ -103,9 +103,9 @@ def executar_para_produto(
     produto: dict[str, Any],
     *,
     cambio_usd_brl: float | None = None,
-    buscar_alibaba: bool = True,
+    buscar_alibaba: bool = False,
 ) -> dict[str, Any]:
-    """Usa a melhor oportunidade Alibaba (menor preço) ou dados do catálogo."""
+    """Usa FOB do catálogo. Consulta Alibaba.com só se buscar_alibaba=True."""
     oportunidade: dict[str, Any] = {
         "preco_usd": produto.get("preco_fob_usd"),
         "moq": produto.get("moq_referencia") or 1,
@@ -125,7 +125,7 @@ def executar_para_produto(
 def executar(
     *,
     produto_id: str | None = None,
-    buscar_alibaba: bool = True,
+    buscar_alibaba: bool = False,
 ) -> dict[str, Any]:
     produtos = _carregar_produtos()
     if produto_id:
@@ -198,11 +198,15 @@ def formatar_resumo_telegram(resultado: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Cálculo formal importação aérea CNPJ (VCP)")
     parser.add_argument("--produto", help="ID do produto no catálogo Alibaba")
-    parser.add_argument("--sem-alibaba", action="store_true", help="Usa só preço FOB do catálogo")
+    parser.add_argument(
+        "--com-alibaba",
+        action="store_true",
+        help="Consulta Alibaba.com (desligado por padrão)",
+    )
     args = parser.parse_args(argv)
 
     logger.info("=== Cálculo importação aérea formal ===")
-    out = executar(produto_id=args.produto, buscar_alibaba=not args.sem_alibaba)
+    out = executar(produto_id=args.produto, buscar_alibaba=args.com_alibaba)
     if not out.get("ok"):
         logger.error("Falhou: %s", out.get("motivo"))
         return 1

@@ -750,8 +750,14 @@ ESMALTES_OPERACAO_ALERTA = os.getenv("ESMALTES_OPERACAO_ALERTA", "1").strip().lo
     "no",
 )
 ESMALTES_OPERACAO_COOLDOWN_SEG = int(os.getenv("ESMALTES_OPERACAO_COOLDOWN_SEG", "18000"))
-# Alibaba busca + inteligência em um run
-ALIBABA_SOURCING_ATIVO = os.getenv("ALIBABA_SOURCING_ATIVO", "1").strip().lower() not in (
+# Consulta ao vivo Alibaba.com / DDG (site:alibaba.com). Default off.
+ALIBABA_CONSULTA_ATIVA = os.getenv("ALIBABA_CONSULTA_ATIVA", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+# Alibaba busca + inteligência em um run (default off; busca também respeita ALIBABA_CONSULTA_ATIVA)
+ALIBABA_SOURCING_ATIVO = os.getenv("ALIBABA_SOURCING_ATIVO", "0").strip().lower() not in (
     "0",
     "false",
     "no",
@@ -1119,10 +1125,10 @@ DESCOBERTA_NICHOS_CATALOGO = os.getenv(
     "DESCOBERTA_NICHOS_CATALOGO", "catalogo/descoberta_nichos.json"
 )
 DESCOBERTA_PAUSA_ENTRE_ANALISES_SEG = float(os.getenv("DESCOBERTA_PAUSA_ENTRE_ANALISES_SEG", "1.0"))
-DESCOBERTA_BUSCAR_ALIBABA = os.getenv("DESCOBERTA_BUSCAR_ALIBABA", "1").strip().lower() not in (
-    "0",
-    "false",
-    "no",
+DESCOBERTA_BUSCAR_ALIBABA = os.getenv("DESCOBERTA_BUSCAR_ALIBABA", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
 )
 DESCOBERTA_ALIBABA_MAX_POR_OPORTUNIDADE = int(os.getenv("DESCOBERTA_ALIBABA_MAX_POR_OPORTUNIDADE", "3"))
 DESCOBERTA_ALIBABA_PAUSA_SEG = float(os.getenv("DESCOBERTA_ALIBABA_PAUSA_SEG", "0.5"))

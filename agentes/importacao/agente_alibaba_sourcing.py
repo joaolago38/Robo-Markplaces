@@ -2,6 +2,8 @@
 agentes/importacao/agente_alibaba_sourcing.py
 Um run: busca Alibaba (catálogo) + inteligência (câmbio/landed/margem).
 
+Consulta Alibaba.com desligada por padrão (ALIBABA_CONSULTA_ATIVA=0).
+
 Os agentes individuais permanecem para testes e execução manual;
 aqui o alerta principal fica na inteligência (busca sem Telegram duplicado).
 

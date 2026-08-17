@@ -142,7 +142,35 @@ class TestDetectarBloqueioAlibaba(unittest.TestCase):
         self.assertIsNone(busca.detectar_bloqueio_html_alibaba(html))
 
 
+class TestConsultaDesligada(unittest.TestCase):
+    def test_direto_nao_chama_rede(self):
+        with patch.object(busca, "request") as mock_request:
+            det = busca.buscar_alibaba_direto_detalhado("PLA")
+        mock_request.assert_not_called()
+        self.assertEqual(det["itens"], [])
+        self.assertEqual(det["motivo"], "consulta_desligada")
+
+    def test_oportunidades_nao_chama_ddg(self):
+        with patch.object(busca, "buscar_duckduckgo") as mock_ddg, patch.object(
+            busca, "buscar_alibaba_direto_detalhado"
+        ) as mock_direto:
+            out = busca.buscar_oportunidades_detalhado(
+                {"termo_busca": "PLA filament"}, pausa_seg=0
+            )
+        mock_ddg.assert_not_called()
+        mock_direto.assert_not_called()
+        self.assertEqual(out["oportunidades"], [])
+        self.assertEqual(out["coleta"]["motivo"], "consulta_desligada")
+
+    def test_ddg_helper_nao_chama_lite(self):
+        with patch("core.ddg_lite.buscar") as mock_ddg:
+            out = busca.buscar_duckduckgo("site:alibaba.com PLA")
+        mock_ddg.assert_not_called()
+        self.assertEqual(out, [])
+
+
 class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "request")
     def test_pagina_multipla(self, mock_request):
         html_p1 = (
@@ -167,6 +195,7 @@ class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
         self.assertIn("page=1", mock_request.call_args_list[0].args[1])
         self.assertIn("page=2", mock_request.call_args_list[1].args[1])
 
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "request")
     def test_detalhado_marca_bloqueio_captcha(self, mock_request):
         html = "<html><head></head><body>" + ("z" * 1200) + " captcha punish </body></html>"
@@ -180,6 +209,7 @@ class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
         self.assertIn("anti_bot", det.get("motivo") or "")
         self.assertEqual(mock_request.call_count, 1)
 
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "request")
     def test_html_curto_sem_captcha_nao_bloqueia(self, mock_request):
         html = "<html><body>no results found for query</body></html>"
@@ -191,6 +221,7 @@ class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
         self.assertFalse(det["bloqueado"])
         self.assertEqual(det["itens"], [])
 
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "request")
     def test_http_erro_nao_e_anti_bot(self, mock_request):
         mock_request.return_value = MagicMock(status_code=403, text="Forbidden")
@@ -201,6 +232,7 @@ class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
         self.assertFalse(det["bloqueado"])
         self.assertEqual(det.get("motivo"), "http_403")
 
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "request")
     def test_excecao_nao_e_anti_bot(self, mock_request):
         mock_request.side_effect = TimeoutError("timeout")
@@ -213,6 +245,7 @@ class TestBuscarAlibabaDiretoPaginacao(unittest.TestCase):
 
 
 class TestBuscarOportunidades(unittest.TestCase):
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "buscar_duckduckgo", return_value=[])
     @patch.object(busca, "buscar_alibaba_direto_detalhado")
     def test_retorna_novos_itens(self, mock_direto, _ddg):
@@ -241,6 +274,7 @@ class TestBuscarOportunidades(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertIn("alibaba.com", out[0]["url"])
 
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "buscar_duckduckgo", return_value=[])
     @patch.object(busca, "buscar_alibaba_direto_detalhado")
     def test_busca_termo_secundario(self, mock_direto, _ddg):
@@ -293,6 +327,7 @@ class TestBuscarOportunidades(unittest.TestCase):
         self.assertEqual(mock_direto.call_count, 2)
         self.assertEqual(len(out), 2)
 
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "buscar_duckduckgo")
     @patch.object(busca, "buscar_alibaba_direto_detalhado")
     def test_ddg_nao_pula_com_poucos_diretos(self, mock_direto, mock_ddg):
@@ -322,6 +357,7 @@ class TestBuscarOportunidades(unittest.TestCase):
             busca.buscar_oportunidades(produto, pausa_seg=0)
         mock_ddg.assert_called()
 
+    @patch("core.config.ALIBABA_CONSULTA_ATIVA", True)
     @patch.object(busca, "buscar_duckduckgo", return_value=[])
     @patch.object(busca, "buscar_alibaba_direto_detalhado")
     def test_detalhado_propaga_bloqueio(self, mock_direto, _ddg):

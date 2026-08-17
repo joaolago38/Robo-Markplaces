@@ -29,6 +29,12 @@ _USER_AGENT = (
 _DOMINIOS_ALIBABA = ("alibaba.com", "alibaba.cn")
 
 
+def _consulta_desligada() -> bool:
+    from core.config import ALIBABA_CONSULTA_ATIVA
+
+    return not ALIBABA_CONSULTA_ATIVA
+
+
 def _normalizar(texto: str) -> str:
     texto = unicodedata.normalize("NFKD", (texto or "").lower())
     return "".join(c for c in texto if not unicodedata.combining(c))
@@ -256,6 +262,9 @@ def _extrair_resultados_ddg(html: str) -> list[dict[str, str]]:
 
 
 def buscar_duckduckgo(query: str, *, max_resultados: int = 10) -> list[dict[str, str]]:
+    if _consulta_desligada():
+        logger.info("Alibaba consulta desligada — DDG site:alibaba.com não roda")
+        return []
     from core.ddg_lite import buscar as ddg_buscar
 
     return ddg_buscar(query, max_resultados=max_resultados, contexto="alibaba")
@@ -402,6 +411,9 @@ def buscar_alibaba_direto_detalhado(
         "paginas_ok": 0,
         "status_http": None,
     }
+    if _consulta_desligada():
+        logger.info("Alibaba consulta desligada — busca direta não roda")
+        return {**vazio, "motivo": "consulta_desligada"}
     if not termo.strip():
         return {**vazio, "motivo": "termo_vazio"}
     if max_resultados is None:
@@ -562,6 +574,9 @@ def buscar_oportunidades_detalhado(
         "candidatos": 0,
         "status_http": None,
     }
+    if _consulta_desligada():
+        logger.info("Alibaba consulta desligada — oportunidades não consultam Alibaba.com")
+        return {"oportunidades": [], "coleta": {**coleta, "motivo": "consulta_desligada"}}
     termos = termos_busca_produto(produto)
     if not termos:
         return {"oportunidades": [], "coleta": {**coleta, "motivo": "termo_vazio"}}

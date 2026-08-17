@@ -14,6 +14,7 @@ class TestAlibabaSourcing(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertEqual(out["motivo"], "agente_desligado")
 
+    @patch.object(src, "ALIBABA_SOURCING_ATIVO", True)
     @patch.object(src, "escrever_json_atomico")
     @patch("agentes.importacao.agente_alibaba_importacao_inteligente.executar")
     @patch("agentes.importacao.agente_alibaba_importacao.executar")
@@ -27,6 +28,7 @@ class TestAlibabaSourcing(unittest.TestCase):
         mock_intel.assert_called_once_with(enviar_alerta=True)
         self.assertTrue(out["alerta_enviado"])
 
+    @patch.object(src, "ALIBABA_SOURCING_ATIVO", True)
     @patch.object(src, "escrever_json_atomico")
     @patch("agentes.importacao.agente_alibaba_importacao_inteligente.executar")
     @patch("agentes.importacao.agente_alibaba_importacao.executar")
