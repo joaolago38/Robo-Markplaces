@@ -505,10 +505,6 @@ def montar_novos(
         recente = 0 if "recente" in (r.get("motivos") or []) else 1
         dias = r.get("dias")
         dias_i = int(dias) if isinstance(dias, int) else 9999
-        try:
-            preco = float(r.get("preco") or 0)
-        except (TypeError, ValueError):
-            preco = 0.0
         return (recente, dias_i, -_f(r.get("saude")))
 
     novos.sort(key=_chave)
