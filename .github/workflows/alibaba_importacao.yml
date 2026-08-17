@@ -1,13 +1,10 @@
 name: Monitor Alibaba Importação
 
-# Único cron de importação Alibaba: alibaba_sourcing (+ ML tendências).
-# Busca e inteligência individuais só via CLI/módulo (sem Telegram duplicado).
+# Consulta ao vivo Alibaba.com / DDG desligada. Workflow só manual (workflow_dispatch).
+# Para religar: ALIBABA_CONSULTA_ATIVA=1 e ALIBABA_SOURCING_ATIVO=1.
 
 on:
   workflow_dispatch:
-  schedule:
-    # 2x/dia BRT 08:00 / 20:00 (= 11:00 / 23:00 UTC)
-    - cron: "0 11,23 * * *"
 
 concurrency:
   # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
@@ -28,7 +25,8 @@ env:
   DDG_MIN_INTERVAL_SEG: ${{ secrets.DDG_MIN_INTERVAL_SEG || '8' }}
   DDG_CIRCUIT_BREAKER_SEG: ${{ secrets.DDG_CIRCUIT_BREAKER_SEG || '600' }}
   DDG_FALHAS_403_PARA_BREAKER: ${{ secrets.DDG_FALHAS_403_PARA_BREAKER || '8' }}
-  ALIBABA_SOURCING_ATIVO: "1"
+  ALIBABA_CONSULTA_ATIVA: "0"
+  ALIBABA_SOURCING_ATIVO: "0"
   BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
   BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
   BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
@@ -89,7 +87,8 @@ jobs:
           ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-          ALIBABA_SOURCING_ATIVO: "1"
+          ALIBABA_CONSULTA_ATIVA: "0"
+          ALIBABA_SOURCING_ATIVO: "0"
       - name: Salvar historico (backup)
         uses: actions/upload-artifact@v4
         with:

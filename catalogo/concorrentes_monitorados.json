@@ -85,5 +85,27 @@
     "sku": "IMP-MIMO-003",
     "meu_preco": 44.90,
     "notas": "Quando o radar trouxer um MLB real do rival, grave aqui e ative. GET /items de rival pode 403; visits às vezes responde."
+  },
+  {
+    "id": "watch-parafuso-gn25-amcompany",
+    "ativo": true,
+    "tipo": "item",
+    "nome": "AMCOMPANY GN25 3,5x25 1000pçs FULL",
+    "item_id_concorrente": "MLB2068535230",
+    "sku": "HW-PAR-GN25-1000",
+    "meu_preco": 0,
+    "papel": "vigia",
+    "notas": "Vigia, não operar. LojaHub R$ 28,15 é só taxa 12% — Full + CMV não entram. Giro ~15/dia a R$ 31,99. Sem CMV de fábrica não copiar preço. 16 ago 2026."
+  },
+  {
+    "id": "parafuso-drywall-gn25-1000",
+    "ativo": true,
+    "nome": "Parafuso drywall GN25 3,5x25 1000 (radar)",
+    "termo_busca": "parafuso drywall gn25 3,5x25 1000",
+    "sku": "HW-PAR-GN25-1000",
+    "meu_preco": 0,
+    "limite_resultados": 20,
+    "papel": "vigia",
+    "notas": "Pega AMCOMPANY (R$ 31,99 Full) e genéricos tipo NOUSHUN (R$ 29,90 clássico, comprador paga frete). Commodity: líquido LojaHub ≠ lucro. Não entra em produtos.json nem repricing Impala."
   }
 ]

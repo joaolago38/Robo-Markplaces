@@ -56,16 +56,13 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "licitações novas + resumo com checklist de participação."
     ),
     "alibaba": (
-        "Busca catálogo Alibaba. Em produção roda só dentro de alibaba_sourcing — "
-        "não manda Telegram sozinho."
+        "Busca catálogo Alibaba.com desligada. Sem consulta ao vivo."
     ),
     "alibaba_inteligencia": (
-        "Câmbio + landed + margem. Em produção roda só dentro de alibaba_sourcing — "
-        "não manda Telegram sozinho."
+        "Câmbio + landed + margem sobre catálogo local. Sem consulta Alibaba.com."
     ),
     "alibaba_sourcing": (
-        "Único run Alibaba: busca catálogo + inteligência de margem/câmbio. "
-        "Preferir este no cron."
+        "Consulta Alibaba.com desligada. Sem cron; só manual se religar as flags."
     ),
     "comparar_portos_alibaba": (
         "Compara importação com referência Alibaba (FOB) em qualquer porto ou "
@@ -347,13 +344,13 @@ HORARIOS_AGENTES: dict[str, str] = {
     "lojas_veiculos": "1x/dia às 09:30 BRT (Actions); fora do orquestrador 30 min",
     "carros_batidos": "1x/dia às 10:15 BRT (Actions); fora do orquestrador 30 min",
     "licitacoes": "A cada 4h (Actions); fora do orquestrador 30 min",
-    "alibaba": "Debug/CLI — produção via alibaba_sourcing",
-    "alibaba_inteligencia": "Debug/CLI — produção via alibaba_sourcing",
-    "alibaba_sourcing": "2x/dia às 08:00 e 20:00 BRT (Actions); fora do orquestrador 30 min",
+    "alibaba": "Debug/CLI — consulta Alibaba.com desligada",
+    "alibaba_inteligencia": "Debug/CLI — consulta Alibaba.com desligada",
+    "alibaba_sourcing": "DESLIGADO (sem consulta Alibaba.com); só workflow_dispatch manual",
     "comparar_portos_alibaba": "Sob demanda / CLI; fora do orquestrador 30 min",
     "hub_paraguai_marketplace": "Planejado — sem cron",
     "tributacao_py_br": "Futuro Mercosul — sem cron",
-    "ml_tendencias_importacao": "Junto com alibaba_sourcing (2x/dia Actions)",
+    "ml_tendencias_importacao": "DESLIGADO junto com alibaba_sourcing (sem consulta Alibaba.com)",
     "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
     "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions); fora do orquestrador 30 min",

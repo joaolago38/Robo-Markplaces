@@ -74,6 +74,14 @@
     {
       "dado": "Quantidade/qualidade de fotos",
       "nota": "Ação do funil cita fotos; não conta pictures[] na API."
+    },
+    {
+      "dado": "Receita líquida LojaHub do rival",
+      "nota": "analise_anuncio_concorrente estima preço × (1 − taxa%). Igual ao overlay: não é lucro. Falta CMV, Full/frete e Simples. Vigia GN25 (MLB2068535230) usa isso — não copiar R$ 28,15 como margem."
+    },
+    {
+      "dado": "Custo Full vs clássico",
+      "nota": "Só temos frete_gratis bool. GN25 AMCOMPANY é Full (~R$ 10–18/caixa); NOUSHUN é clássico com comprador pagando envio. Sem essa linha o robô compara preço, não margem."
     }
   ],
   "para_ter_controle": [
