@@ -319,6 +319,49 @@ class TestClaudeOrcamento(unittest.TestCase):
         self.assertAlmostEqual(out["creditos_usd"], 0.0, places=2)
         self.assertAlmostEqual(out["resumo"]["restante_usd"], 0.0, places=2)
 
+    @patch.object(o, "_talvez_alertar")
+    def test_aplicar_zero_inativa_toggle(self, _alerta):
+        from core import claude_toggle as tog
+
+        with patch.object(tog, "_cfg_env_ativo", return_value=True):
+            o.aplicar_saldo_console(0.0, emitir_datadog=False)
+            ok, motivo = tog.claude_esta_ativo()
+        self.assertFalse(ok)
+        self.assertIn("sem_credito", motivo)
+
+    @patch.object(o, "_talvez_alertar")
+    def test_aplicar_painel_reativa_mesmo_com_env_off(self, _alerta):
+        from core import claude_toggle as tog
+
+        tog.inativar_por_saldo()
+        with patch.object(tog, "_cfg_env_ativo", return_value=False):
+            o.aplicar_saldo_console(4.0, emitir_datadog=False, fonte_saldo="console_painel")
+            ok, _ = tog.claude_esta_ativo()
+        self.assertTrue(ok)
+
+    @patch.object(o, "_talvez_alertar")
+    def test_cost_api_positiva_nao_reativa(self, _alerta):
+        from core import claude_toggle as tog
+
+        tog.inativar_por_saldo()
+        with patch.object(tog, "_cfg_env_ativo", return_value=True):
+            o.aplicar_saldo_console(8.57, gasto_mes_usd=0.4, emitir_datadog=False, fonte_saldo="console_api")
+            ok, motivo = tog.claude_esta_ativo()
+        self.assertFalse(ok)
+        self.assertIn("sem_credito", motivo)
+
+    @patch("core.claude_billing.sondar_credito_disponivel", return_value={"ok": True, "com_credito": True, "motivo": "ok"})
+    def test_sonda_sucesso_religa(self, _sonda):
+        from core import claude_toggle as tog
+
+        tog.inativar_por_saldo()
+        with patch.object(tog, "_cfg_env_ativo", return_value=False):
+            out = o.talvez_sondar_saldo(ignorar_intervalo=True)
+            ok, _ = tog.claude_esta_ativo()
+        self.assertTrue(out.get("sondou"))
+        self.assertTrue(out.get("com_credito"))
+        self.assertTrue(ok)
+
 
 if __name__ == "__main__":
     unittest.main()

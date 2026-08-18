@@ -313,3 +313,7 @@ def executar(*, enviar_alerta: bool = True, lucro_minimo_pct: float | None = Non
     }
     logger.info("Inteligência preços: %d análises", len(analises))
     return resultado
+
+
+if __name__ == "__main__":
+    executar(enviar_alerta=True)

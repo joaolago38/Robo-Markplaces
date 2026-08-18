@@ -25,6 +25,66 @@ ANTHROPIC_VERSION = "2023-06-01"
 USER_AGENT = "Robo-Markplaces/1.0 (claude-billing-datadog)"
 
 
+_TRECHOS_SEM_CREDITO = (
+    "credit balance is too low",
+    "insufficient credits",
+    "insufficient_quota",
+    "billing hard limit",
+)
+MESSAGES_URL = "https://api.anthropic.com/v1/messages"
+
+
+def resposta_indica_sem_credito(status: int, texto: str) -> bool:
+    blob = f"{status} {texto or ''}".lower()
+    return any(trecho in blob for trecho in _TRECHOS_SEM_CREDITO)
+
+
+def sondar_credito_disponivel() -> dict[str, Any]:
+    """
+    Probe barato (Haiku, 1 token) para saber se a Anthropic ainda recusa por crédito.
+    Não usa o teto local 8.99. Nunca lança.
+    """
+    from core.config import ANTHROPIC_API_KEY, CLAUDE_MODELO_RAPIDO
+
+    chave = (ANTHROPIC_API_KEY or "").strip()
+    if not chave:
+        return {"ok": False, "com_credito": None, "motivo": "sem_api_key"}
+    modelo = (CLAUDE_MODELO_RAPIDO or "claude-haiku-4-5").strip()
+    try:
+        resp = request(
+            "POST",
+            MESSAGES_URL,
+            headers={
+                "x-api-key": chave,
+                "anthropic-version": ANTHROPIC_VERSION,
+                "content-type": "application/json",
+                "user-agent": USER_AGENT,
+            },
+            json={
+                "model": modelo,
+                "max_tokens": 1,
+                "messages": [{"role": "user", "content": "."}],
+            },
+            timeout=15,
+        )
+        texto = str(getattr(resp, "text", "") or "")[:2000]
+        status = int(getattr(resp, "status_code", 0) or 0)
+        if status < 400:
+            return {"ok": True, "com_credito": True, "motivo": "ok"}
+        if resposta_indica_sem_credito(status, texto):
+            return {"ok": True, "com_credito": False, "motivo": "credit_too_low"}
+        return {"ok": False, "com_credito": None, "motivo": f"http_{status}"}
+    except Exception as exc:
+        if resposta_indica_sem_credito(0, str(exc)):
+            return {"ok": True, "com_credito": False, "motivo": "credit_too_low"}
+        logger.warning("sonda crédito Claude falhou: %s", exc)
+        return {
+            "ok": False,
+            "com_credito": None,
+            "motivo": f"excecao:{type(exc).__name__}",
+        }
+
+
 def chave_admin() -> str:
     from core.config import ANTHROPIC_ADMIN_API_KEY, ANTHROPIC_API_KEY
 

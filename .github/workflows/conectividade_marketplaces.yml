@@ -39,18 +39,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Restaurar heartbeats de saude
-        uses: actions/cache@v4
+        uses: ./.github/actions/saude-heartbeats
         with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-          key: saude-heartbeats-${{ github.run_id }}
-          restore-keys: |
-            saude-heartbeats-
+          modo: restore
 
       - name: Rodar agente de conectividade
         run: python -m agentes.conectividade_marketplaces
@@ -84,13 +75,6 @@ jobs:
       - name: Publicar heartbeats de saude
         if: always()
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: ./.github/actions/saude-heartbeats
         with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-          key: saude-heartbeats-${{ github.run_id }}
+          modo: save

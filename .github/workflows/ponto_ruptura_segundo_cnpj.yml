@@ -42,6 +42,10 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar heartbeats de saude
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
       - name: Restaurar snapshots
         uses: actions/cache@v4
         with:
@@ -107,6 +111,12 @@ jobs:
           ESMALTES_CNPJ: ${{ vars.ESMALTES_CNPJ || '52668583000127' }}
           PONTO_RUPTURA_ATIVO: "1"
           PONTO_RUPTURA_ALERTA: "1"
+      - name: Publicar heartbeats de saude
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save
       - name: Publicar snapshot
         if: always()
         continue-on-error: true

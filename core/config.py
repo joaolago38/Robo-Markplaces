@@ -1221,6 +1221,8 @@ FIPE_PAUSA_ENTRE_CHAMADAS_SEG = float(os.getenv("FIPE_PAUSA_ENTRE_CHAMADAS_SEG",
 # Orquestrador 30 min
 ORQUESTRADOR_COOLDOWN_RESUMO_SEG = int(os.getenv("ORQUESTRADOR_COOLDOWN_RESUMO_SEG", "1500"))
 ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG = float(os.getenv("ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", "0.4"))
+# 0 = sem teto. >0 aborta o agente e segue a fila (evita o ciclo 30min morrer no meio).
+ORQUESTRADOR_TIMEOUT_AGENTE_SEG = float(os.getenv("ORQUESTRADOR_TIMEOUT_AGENTE_SEG", "240"))
 ORQUESTRADOR_EXCLUIR = {
     x.strip()
     for x in os.getenv(
@@ -1233,6 +1235,7 @@ ORQUESTRADOR_EXCLUIR = {
         "leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,"
         "alibaba_sourcing,comparar_portos_alibaba,"
         "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,"
+        "inteligencia_precos,monitor_ml,monitor_concorrentes,monitor_sem_venda_ml,monitor_mercado_esmaltes,panorama,"
         "sincronizar_estoque,repricing,repricing_impala,operacao_24h,"
         "chat_shopee,chat_magalu,chat_amazon,auto_respostas",
     ).split(",")

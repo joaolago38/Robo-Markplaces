@@ -38,23 +38,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Restaurar heartbeats de saude
-        uses: actions/cache@v4
+        uses: ./.github/actions/saude-heartbeats
         with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-            logs/estoque_ultima.json
-            logs/nfe_ultima.json
-            logs/ads_gatilho_ultima.json
-            logs/chat_ultima.json
-            logs/vendas_whatsapp_ultima.json
-          key: saude-heartbeats-${{ github.run_id }}
-          restore-keys: |
-            saude-heartbeats-
+          modo: restore
 
       - name: Rodar operacao 24h (repricing + NF-e reais)
         run: python -c "from agentes.operacao_24h import executar; executar(dry_run_repricing=False, dry_run_nfe=False)"
@@ -90,18 +76,6 @@ jobs:
       - name: Publicar heartbeats de saude
         if: always()
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: ./.github/actions/saude-heartbeats
         with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-            logs/estoque_ultima.json
-            logs/nfe_ultima.json
-            logs/ads_gatilho_ultima.json
-            logs/chat_ultima.json
-            logs/vendas_whatsapp_ultima.json
-          key: saude-heartbeats-${{ github.run_id }}
+          modo: save

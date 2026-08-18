@@ -15,7 +15,7 @@ from agentes.orquestrador.registro_agentes import AgenteRegistrado, listar_agent
 class TestRegistroAgentes(unittest.TestCase):
     def test_lista_padrao_tem_agentes(self):
         agentes = listar_agentes()
-        self.assertGreaterEqual(len(agentes), 10)
+        self.assertGreaterEqual(len(agentes), 8)
         ids = {a.id for a in agentes}
         self.assertIn("conectividade", ids)
         self.assertIn("chat_ml", ids)
@@ -63,8 +63,12 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("ponto_ruptura_outra_marca", ids)
         self.assertNotIn("monitor_cnpj_cnae", ids)
         self.assertIn("chat_ml", ids)
-        self.assertIn("monitor_mercado_esmaltes", ids)
-        self.assertIn("monitor_concorrentes", ids)
+        self.assertNotIn("monitor_mercado_esmaltes", ids)
+        self.assertNotIn("monitor_concorrentes", ids)
+        self.assertNotIn("inteligencia_precos", ids)
+        self.assertNotIn("monitor_ml", ids)
+        self.assertNotIn("monitor_sem_venda_ml", ids)
+        self.assertNotIn("panorama", ids)
         self.assertIn("visao_atuacao_impala", ids)
         self.assertIn("kits_concorrentes_unificado", ids)
 
@@ -103,6 +107,12 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertIn("monitor_cnpj_cnae", ids)
         self.assertIn("sumare_leiloes", ids)
         self.assertIn("chat_shopee", ids)
+        self.assertIn("monitor_mercado_esmaltes", ids)
+        self.assertIn("monitor_concorrentes", ids)
+        self.assertIn("inteligencia_precos", ids)
+        self.assertIn("monitor_ml", ids)
+        self.assertIn("monitor_sem_venda_ml", ids)
+        self.assertIn("panorama", ids)
 
     @patch("core.config.ORQUESTRADOR_EXCLUIR", {"leilao"})
     def test_excluir_por_env(self):
@@ -180,6 +190,48 @@ class TestOrquestrador(unittest.TestCase):
         )
         self.assertTrue(out["ok"])
         self.assertEqual(out["total"], 1)
+
+    @patch.object(orq, "gauge")
+    @patch.object(orq, "incrementar")
+    @patch.object(orq, "alertar_gestor")
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    @patch.object(orq, "ORQUESTRADOR_TIMEOUT_AGENTE_SEG", 1)
+    def test_timeout_agente_segue_fila(self, *_):
+        class _Fut:
+            def result(self, timeout=None):
+                raise orq.FuturesTimeout()
+
+        class _Pool:
+            def submit(self, *a, **k):
+                return _Fut()
+
+            def shutdown(self, wait=False, cancel_futures=True):
+                return None
+
+        with patch.object(orq, "ThreadPoolExecutor", return_value=_Pool()):
+            out = orq.executar(
+                enviar_resumo_telegram=False,
+                agentes=[self._agente_fake("lento")],
+            )
+        self.assertEqual(out["falhas"], 1)
+        self.assertFalse(out["agentes"][0]["ok"])
+        self.assertIn("timeout", out["agentes"][0]["erro"])
+        nomes = [c.args[0] for c in orq.incrementar.call_args_list]
+        self.assertTrue(any(n.endswith("agente.timeout") for n in nomes))
+
+    @patch.object(orq, "gauge")
+    @patch.object(orq, "incrementar")
+    @patch.object(orq, "alertar_gestor")
+    @patch.object(orq, "executar_registro", return_value={"ok": True})
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    @patch.object(orq, "ORQUESTRADOR_TIMEOUT_AGENTE_SEG", 0)
+    def test_ciclo_emite_pulse(self, *_):
+        orq.executar(
+            enviar_resumo_telegram=False,
+            agentes=[self._agente_fake("x")],
+        )
+        nomes = [c.args[0] for c in orq.gauge.call_args_list]
+        self.assertTrue(any(n.endswith("ciclo.pulse") for n in nomes))
 
 
 if __name__ == "__main__":

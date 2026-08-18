@@ -5,6 +5,9 @@
 
 on:
   workflow_dispatch:
+  schedule:
+    # 09:00 BRT = 12:00 UTC — após relatório manhã; não compete com o ciclo 30min
+    - cron: "0 12 * * *"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -16,6 +19,10 @@ env:
   BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
   BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
   BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
+
+concurrency:
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
   monitorar:
@@ -38,18 +45,9 @@ jobs:
           restore-keys: |
             brave-uso-mensal-
       - name: Restaurar heartbeats de saude
-        uses: actions/cache@v4
+        uses: ./.github/actions/saude-heartbeats
         with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-          key: saude-heartbeats-${{ github.run_id }}
-          restore-keys: |
-            saude-heartbeats-
+          modo: restore
       - name: Restaurar cooldown Telegram
         uses: actions/cache@v4
         with:
@@ -75,7 +73,9 @@ jobs:
       - name: Publicar heartbeats de saude
         if: always()
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save
       - name: Publicar cota Brave
         if: always()
         continue-on-error: true
@@ -83,15 +83,6 @@ jobs:
         with:
           path: logs/brave_uso_mensal.json
           key: brave-uso-mensal-${{ github.run_id }}
-        with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-          key: saude-heartbeats-${{ github.run_id }}
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
