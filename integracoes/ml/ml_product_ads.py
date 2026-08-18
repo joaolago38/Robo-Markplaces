@@ -52,6 +52,16 @@ def _salvar_estado_404(estado: dict) -> None:
         pass
 
 
+def _marcar_ads_indisponivel_agora(valor: float, *, advertiser_id: str = "") -> None:
+    try:
+        from core.datadog_metrics import gauge
+
+        tags = [f"advertiser:{advertiser_id or 'desconhecido'}"]
+        gauge("ads.indisponivel_agora", float(valor), tags=tags)
+    except Exception:
+        pass
+
+
 def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
     """Warn + métrica com cooldown em disco (Actions é processo novo a cada job)."""
     global _ULTIMO_AVISO_404_TS
@@ -60,6 +70,7 @@ def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
     ultimo_warn = float(estado.get("warn_ts") or _ULTIMO_AVISO_404_TS or 0)
     ultimo_metric = float(estado.get("metric_ts") or 0)
     if (agora - ultimo_warn) < _COOLDOWN_AVISO_404_SEG:
+        _marcar_ads_indisponivel_agora(1.0, advertiser_id=advertiser_id)
         logger.debug(
             "ML listar_campanhas: Product Ads ainda 404 advertiser=%s (aviso em cooldown)",
             advertiser_id,
@@ -80,6 +91,7 @@ def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
             estado["metric_ts"] = agora
         except Exception:
             pass
+    _marcar_ads_indisponivel_agora(1.0, advertiser_id=advertiser_id)
     _salvar_estado_404(estado)
     logger.warning(
         "ML listar_campanhas: Product Ads indisponível (HTTP 404) "
@@ -281,6 +293,7 @@ def listar_campanhas(
             "advertiser_id": advertiser_id,
         }
         campanhas = [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
+        _marcar_ads_indisponivel_agora(0.0, advertiser_id=advertiser_id)
         emitir_metricas_visibilidade_ads(campanhas)
         return campanhas
     except Exception as exc:

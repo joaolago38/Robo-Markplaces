@@ -232,6 +232,26 @@ class TestClaudePerguntar(unittest.TestCase):
         self.assertIn("pulado", out.lower())
         mock_request.assert_not_called()
 
+    @patch.object(claude_client, "_emitir_orcamento_datadog")
+    @patch("core.claude_orcamento.pode_chamar", return_value=(False, "orçamento Claude esgotado"))
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_bloqueio_orcamento_emite_datadog(self, mock_request, _pode, mock_emit):
+        out = claude_client.perguntar("p", origem="teste.orcamento")
+        self.assertIn("pausado", out.lower())
+        mock_request.assert_not_called()
+        mock_emit.assert_called()
+
+    @patch.object(claude_client, "_emitir_orcamento_datadog")
+    @patch("core.claude_orcamento.pode_chamar", return_value=(False, "orçamento Claude esgotado"))
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_estruturado_bloqueio_orcamento_emite_datadog(self, mock_request, _pode, mock_emit):
+        out = claude_client.perguntar_estruturado("p", {"type": "object"}, "t")
+        self.assertIsNone(out)
+        mock_request.assert_not_called()
+        mock_emit.assert_called()
+
     def test_mlb_invalido_placeholder(self):
         self.assertTrue(claude_client.mlb_invalido("MLB_PREENCHER"))
         self.assertTrue(claude_client.mlb_invalido(""))

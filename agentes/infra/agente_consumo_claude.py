@@ -24,6 +24,7 @@ from core.claude_orcamento import (
     resetar_consumo,
     resumo,
     sincronizar_saldo_real,
+    talvez_sondar_saldo,
 )
 from core.config import (
     CLAUDE_ORCAMENTO_ALERTA,
@@ -59,6 +60,10 @@ def executar(
                         sync.get("motivo"),
                     )
             r = resumo()
+        try:
+            talvez_sondar_saldo()
+        except Exception:
+            logger.debug("sonda saldo no painel Claude falhou", exc_info=True)
         graficos = gerar_graficos_consumo(r)
         ranking = graficos.get("ranking") or ranking_consumo_por_agente(r)
         msg = montar_mensagem_telegram(r, titulo="Claude — orçamento + assertividade")

@@ -4648,7 +4648,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Orquestrador sem ciclos (2h)",
             "type": "query alert",
-            "query": "sum(last_2h):sum:robo.orquestrador.ciclo{*}.as_count() < 1",
+            "query": "avg(last_2h):avg:robo.orquestrador.ciclo.pulse{*} < 1",
             "message": (
                 "Nenhum ciclo do orquestrador em 2h. "
                 "Verifique GitHub Actions orquestrador_30min.\n" + msg_base
@@ -4830,7 +4830,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Product Ads indisponivel (404/escopo)",
             "type": "query alert",
-            "query": "sum(last_12h):sum:robo.ads.indisponivel{*}.as_count() > 0",
+            "query": "avg(last_2h):avg:robo.ads.indisponivel_agora{*} > 0.5",
             "message": (
                 "Product Ads ML retornou HTTP 404 (escopo advertising / advertiser). "
                 "Corrija no DevCenter e regenere o token. "

@@ -8,6 +8,7 @@ Sem Admin key o Datadog publica o snapshot (não o teto CLAUDE_ORCAMENTO_USD).
 from __future__ import annotations
 
 import logging
+import os
 import traceback
 from datetime import datetime, timezone
 from typing import Any
@@ -25,6 +26,10 @@ GRAFICO_EVOLUCAO_PATH = ROOT / "logs" / "grafico_claude_evolucao.png"
 MAX_EVENTOS = 200
 MAX_HIST_PONTOS = 60
 _FONTES_CONSOLE = ("console_painel", "console_api")
+_FONTES_SALDO_EXTERNO = ("console_painel", "console_api", "api_probe")
+_FONTES_REATIVA_TOGGLE = ("console_painel", "api_probe")
+_SONDA_INTERVALO_SEG = 1800
+_PISO_PROBE_USD = 0.01
 
 # Preços aproximados US$ / 1M tokens (Haiku 4.5 / Sonnet 4.5 — ajustáveis via env)
 _PRECO_DEFAULT = {
@@ -175,7 +180,7 @@ def carregar_estado() -> dict[str, Any]:
     base.update(data)
     c = _cfg()
     # Saldo do painel/API Anthropic prevalece sobre CLAUDE_ORCAMENTO_USD do .env
-    if str(base.get("fonte_saldo") or "") not in _FONTES_CONSOLE:
+    if str(base.get("fonte_saldo") or "") not in _FONTES_SALDO_EXTERNO:
         base["orcamento_usd"] = float(
             getattr(c, "CLAUDE_ORCAMENTO_USD", base["orcamento_usd"]) or 8.99
         )
@@ -241,12 +246,83 @@ def resumo(estado: dict[str, Any] | None = None) -> dict[str, Any]:
     }
 
 
+def _em_pytest() -> bool:
+    return bool(os.environ.get("PYTEST_CURRENT_TEST"))
+
+
+def _aplicar_toggle_saldo(creditos: float, *, fonte: str) -> None:
+    """Sem crédito → desliga no código. Crédito real (painel/probe) → religa, ignorando Actions."""
+    try:
+        from core.claude_toggle import inativar_por_saldo, reativar_por_saldo
+
+        if float(creditos or 0) <= 0:
+            inativar_por_saldo()
+        elif fonte in _FONTES_REATIVA_TOGGLE:
+            reativar_por_saldo()
+    except Exception:
+        logger.debug("toggle Claude por saldo falhou", exc_info=True)
+
+
+def talvez_sondar_saldo(*, ignorar_intervalo: bool = False) -> dict[str, Any]:
+    """
+    Se o Claude estiver off por falta de crédito, pergunta à API se o saldo voltou.
+    Intervalo mínimo 30 min. Em pytest não sonda (evita HTTP real).
+    """
+    from core.claude_toggle import registrar_sondagem, sem_credito_ativo
+
+    if not sem_credito_ativo():
+        return {"sondou": False, "motivo": "nao_sem_credito"}
+    if _em_pytest() and not ignorar_intervalo:
+        return {"sondou": False, "motivo": "pytest"}
+    if not ignorar_intervalo:
+        from core.claude_toggle import estado_toggle
+
+        st = estado_toggle()
+        ultimo = str(st.get("saldo_sondado_em") or "")
+        if ultimo:
+            try:
+                ts = datetime.fromisoformat(ultimo.replace("Z", "+00:00"))
+                idade = (datetime.now(timezone.utc) - ts).total_seconds()
+                if idade < _SONDA_INTERVALO_SEG:
+                    return {"sondou": False, "motivo": "cooldown", "idade_seg": idade}
+            except ValueError:
+                pass
+    try:
+        from core.claude_billing import sondar_credito_disponivel
+
+        probe = sondar_credito_disponivel()
+    except Exception as exc:
+        logger.warning("sonda saldo Claude falhou: %s", exc)
+        return {"sondou": False, "motivo": type(exc).__name__}
+    try:
+        registrar_sondagem()
+    except Exception:
+        logger.debug("registrar_sondagem falhou", exc_info=True)
+    if probe.get("com_credito") is True:
+        aplicar_saldo_console(
+            _PISO_PROBE_USD,
+            emitir_datadog=True,
+            fonte_saldo="api_probe",
+        )
+        logger.info("Claude: API aceitou de novo — religado no código (Actions ignorado)")
+        return {"sondou": True, "com_credito": True, "probe": probe}
+    if probe.get("com_credito") is False:
+        marcar_saldo_zerado_console(motivo="api_credit_too_low")
+        return {"sondou": True, "com_credito": False, "probe": probe}
+    return {"sondou": True, "com_credito": None, "probe": probe}
+
+
 def pode_chamar(*, origem: str | None = None, forcar: bool = False) -> tuple[bool, str]:
     """Fail-closed: qualquer erro no toggle/orçamento bloqueia a chamada.
 
     `forcar=True` ignora CLAUDE_ATIVO / toggle de arquivo (ruptura Impala).
     Orçamento esgotado continua bloqueando.
+    Sem crédito o toggle de saldo desliga o Claude mesmo com CLAUDE_ATIVO=1.
     """
+    try:
+        talvez_sondar_saldo()
+    except Exception:
+        logger.debug("sonda saldo na porta Claude falhou", exc_info=True)
     if not forcar:
         try:
             from core.claude_toggle import claude_esta_ativo
@@ -266,6 +342,7 @@ def pode_chamar(*, origem: str | None = None, forcar: bool = False) -> tuple[boo
             return True, ""
         r = resumo()
         if r["bloqueado"] or r["restante_usd"] <= 0:
+            _aplicar_toggle_saldo(0.0, fonte="orcamento")
             return False, (
                 f"orçamento Claude esgotado "
                 f"(US$ {r['consumido_usd']:.4f} / {r['orcamento_usd']:.2f})"
@@ -596,6 +673,12 @@ def emitir_metricas_claude_datadog(
     gauge("claude.orcamento_restante_usd", restante, tags=tags)
     gauge("claude.orcamento_usd", float(r.get("orcamento_usd") or 0), tags=tags)
     gauge("claude.assertividade_pct", float(r.get("assertividade_pct") or 0), tags=tags)
+    try:
+        from core.claude_toggle import sem_credito_ativo
+
+        gauge("claude.sem_credito", 1.0 if sem_credito_ativo() else 0.0, tags=tags)
+    except Exception:
+        pass
     # Mesmos números nos gauges que o dashboard espera como billing da console
     gauge("ia.billing.creditos_usd", restante, tags=tags)
     gauge("ia.billing.gasto_mes_usd", consumido, tags=tags)
@@ -632,7 +715,10 @@ def aplicar_saldo_console(
     """
     creditos = max(0.0, float(creditos_usd or 0))
     gasto = float(gasto_mes_usd) if gasto_mes_usd is not None else None
-    fonte = fonte_saldo if fonte_saldo in _FONTES_CONSOLE else "console_painel"
+    if fonte_saldo in _FONTES_SALDO_EXTERNO:
+        fonte = fonte_saldo
+    else:
+        fonte = "console_painel"
 
     def _patch(estado: dict[str, Any]) -> dict[str, Any]:
         used = float(gasto) if gasto is not None else float(estado.get("consumido_usd") or 0)
@@ -685,6 +771,7 @@ def aplicar_saldo_console(
             prompt_cache_ativo=prompt_cache_ativo,
             limite_mes_usd=limite_mes_usd,
         )
+    _aplicar_toggle_saldo(creditos, fonte=fonte)
     return r
 
 

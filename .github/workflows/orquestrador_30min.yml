@@ -48,28 +48,9 @@ jobs:
           restore-keys: |
             brave-uso-mensal-
       - name: Restaurar heartbeats de saude
-        uses: actions/cache@v4
+        uses: ./.github/actions/saude-heartbeats
         with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-            logs/estoque_ultima.json
-            logs/ads_gatilho_ultima.json
-            logs/ads_product_ads_404.json
-            logs/chat_ultima.json
-            logs/nfe_ultima.json
-            logs/vendas_whatsapp_ultima.json
-            logs/decisao_oscilacao_ultima.json
-            logs/briefing_ruptura_impala_ultima.json
-            logs/kits_compativeis_manicures_ultima.json
-            logs/ponto_ruptura_segundo_cnpj_ultima.json
-          key: saude-heartbeats-${{ github.run_id }}
-          restore-keys: |
-            saude-heartbeats-
+          modo: restore
       - name: Restaurar cooldown de alertas Telegram
         uses: actions/cache@v4
         with:
@@ -142,7 +123,7 @@ jobs:
       - name: Rodar orquestrador 30min
         run: python -m agentes.orquestrador.agente_orquestrador
         env:
-          ORQUESTRADOR_EXCLUIR: leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,alibaba_sourcing,comparar_portos_alibaba,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,ads_gatilho,relatorio_estrategia_ml,relatorio_manha_ml,vigia_datadog,promocoes_manicures,resumo_conta_ml,conversao_manicures,necessidade_manicures,consumo_claude,montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,sincronizar_estoque,repricing,repricing_impala,operacao_24h,chat_shopee,chat_magalu,chat_amazon,auto_respostas
+          ORQUESTRADOR_EXCLUIR: leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,alibaba_sourcing,comparar_portos_alibaba,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,ads_gatilho,relatorio_estrategia_ml,relatorio_manha_ml,vigia_datadog,promocoes_manicures,resumo_conta_ml,conversao_manicures,necessidade_manicures,consumo_claude,montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,sincronizar_estoque,repricing,repricing_impala,operacao_24h,chat_shopee,chat_magalu,chat_amazon,auto_respostas,inteligencia_precos,monitor_ml,monitor_concorrentes,monitor_sem_venda_ml,monitor_mercado_esmaltes,panorama
           ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG: "0.4"
           CONVERSAO_MANICURES_CHAT_ML: "0"
           AUTO_RESPOSTAS_ML: "0"
@@ -198,26 +179,9 @@ jobs:
       - name: Publicar heartbeats de saude
         if: always()
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: ./.github/actions/saude-heartbeats
         with:
-          path: |
-            logs/orquestrador_ultimo_ciclo.json
-            logs/operacao_24h_ultima.json
-            logs/conectividade_ultima.json
-            logs/renovacao_tokens_ultima.json
-            logs/relatorio_manha_ml_ultima.json
-            logs/esmaltes_mercado_history.json
-            logs/estoque_ultima.json
-            logs/ads_gatilho_ultima.json
-            logs/ads_product_ads_404.json
-            logs/chat_ultima.json
-            logs/nfe_ultima.json
-            logs/vendas_whatsapp_ultima.json
-            logs/decisao_oscilacao_ultima.json
-            logs/briefing_ruptura_impala_ultima.json
-            logs/kits_compativeis_manicures_ultima.json
-            logs/ponto_ruptura_segundo_cnpj_ultima.json
-          key: saude-heartbeats-${{ github.run_id }}
+          modo: save
       - name: Publicar estado vendas/IA
         if: always()
         continue-on-error: true

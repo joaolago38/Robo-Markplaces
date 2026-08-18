@@ -116,6 +116,40 @@ class TestListarCampanhas(unittest.TestCase):
                     with self.assertLogs("ml_product_ads", level="WARNING"):
                         ads.listar_campanhas(advertiser_id="421764")
 
+    @patch("core.datadog_metrics.gauge")
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_emite_gauge_agora_mesmo_em_cooldown(self, _en, mock_req, _adv, mock_gauge):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ads_404.json"
+            with patch.object(ads, "_COOLDOWN_404_PATH", path):
+                ads.listar_campanhas(advertiser_id="421764")
+                ads._ULTIMO_AVISO_404_TS = 0.0
+                mock_gauge.reset_mock()
+                ads.listar_campanhas(advertiser_id="421764")
+        valores = [
+            c.args[1] for c in mock_gauge.call_args_list if c.args[0] == "ads.indisponivel_agora"
+        ]
+        self.assertTrue(valores)
+        self.assertTrue(all(v == 1.0 for v in valores))
+
+    @patch("core.datadog_metrics.gauge")
+    @patch.object(ads, "emitir_metricas_visibilidade_ads")
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_ok_zera_gauge_indisponivel_agora(self, _en, mock_req, _vis, mock_gauge):
+        mock_req.return_value = _resp({"results": []})
+        ads.listar_campanhas(advertiser_id="421764")
+        valores = [
+            c.args[1] for c in mock_gauge.call_args_list if c.args[0] == "ads.indisponivel_agora"
+        ]
+        self.assertEqual(valores, [0.0])
+
 
 class TestProbeEscrita404(unittest.TestCase):
     @patch.object(ads, "listar_campanhas", return_value=[])

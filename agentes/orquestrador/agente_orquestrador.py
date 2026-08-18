@@ -7,11 +7,17 @@ from __future__ import annotations
 
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
 from datetime import datetime, timezone
 from typing import Any
 
 from agentes.orquestrador.registro_agentes import AgenteRegistrado, executar_registro, listar_agentes
-from core.config import ORQUESTRADOR_COOLDOWN_RESUMO_SEG, ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG
+from core.config import (
+    ORQUESTRADOR_COOLDOWN_RESUMO_SEG,
+    ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG,
+    ORQUESTRADOR_TIMEOUT_AGENTE_SEG,
+)
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor, gestor_telegram_configurado
 from core.request_context import definir_request_id, novo_request_id
@@ -79,7 +85,7 @@ def _extrair_resumo(raw: Any) -> str:
     return "ok"
 
 
-def _executar_agente(registro: AgenteRegistrado) -> dict[str, Any]:
+def _executar_agente_interno(registro: AgenteRegistrado) -> dict[str, Any]:
     inicio = time.monotonic()
     resultado: dict[str, Any] = {
         "id": registro.id,
@@ -120,6 +126,39 @@ def _executar_agente(registro: AgenteRegistrado) -> dict[str, Any]:
             resultado.get("resumo", ""),
         )
     return resultado
+
+
+def _executar_agente(registro: AgenteRegistrado) -> dict[str, Any]:
+    timeout_seg = float(ORQUESTRADOR_TIMEOUT_AGENTE_SEG or 0)
+    if timeout_seg <= 0:
+        return _executar_agente_interno(registro)
+    pool = ThreadPoolExecutor(max_workers=1)
+    try:
+        fut = pool.submit(_executar_agente_interno, registro)
+        try:
+            return fut.result(timeout=timeout_seg)
+        except FuturesTimeout:
+            logger.error(
+                "Orquestrador: timeout de %.0fs em %s — segue a fila",
+                timeout_seg,
+                registro.id,
+            )
+            incrementar("orquestrador.agente.timeout", tags=[f"agente:{registro.id}"])
+            incrementar(
+                "orquestrador.agente.execucao",
+                tags=[f"agente:{registro.id}", "ok:false", "motivo:timeout"],
+            )
+            return {
+                "id": registro.id,
+                "nome": registro.nome,
+                "categoria": registro.categoria,
+                "ok": False,
+                "erro": f"timeout {int(timeout_seg)}s",
+                "resumo": f"timeout {int(timeout_seg)}s",
+                "duracao_ms": round(timeout_seg * 1000, 1),
+            }
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 def _montar_resumo_telegram(ciclo: dict[str, Any], *, titulo: str) -> str:
@@ -219,6 +258,7 @@ def executar_ciclo(
     }
 
     _enviar_metricas_ciclo(ciclo, prefixo=prefixo_metrica)
+    gauge(f"{prefixo_metrica}.ciclo.pulse", 1.0)
 
     try:
         from core.atomic_io import escrever_json_atomico

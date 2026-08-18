@@ -65,6 +65,15 @@ def _erro_credito_insuficiente(exc: Exception) -> bool:
     )
 
 
+def _emitir_orcamento_datadog() -> None:
+    try:
+        from core.claude_orcamento import emitir_metricas_claude_datadog
+
+        emitir_metricas_claude_datadog()
+    except Exception:
+        logger.debug("nao foi possivel emitir orcamento Claude no Datadog", exc_info=True)
+
+
 def _talvez_zerar_saldo_console(exc: Exception) -> None:
     if not _erro_credito_insuficiente(exc):
         return
@@ -164,6 +173,7 @@ def perguntar(
                 resultado="bloqueado",
                 origem=origem,
             )
+            _emitir_orcamento_datadog()
             return f"⚠️ Claude pausado: {motivo_orc}"
     except Exception as exc:
         # Fail-closed: sem gate confiável não chama a API (evita gastar USD).
@@ -322,6 +332,7 @@ def perguntar_estruturado(
                 resultado="bloqueado",
                 origem=origem,
             )
+            _emitir_orcamento_datadog()
             return None
     except Exception as exc:
         logger.warning("Gate Claude estruturado falhou — bloqueando: %s", exc)

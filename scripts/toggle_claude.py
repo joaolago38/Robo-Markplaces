@@ -3,7 +3,9 @@
 scripts/toggle_claude.py
 
 Liga/desliga o Claude de forma momentânea (arquivo logs/claude_toggle.json).
-Também respeita CLAUDE_ATIVO no .env / GitHub vars (prende tudo se =0).
+Sem crédito a API desliga sozinha no código (e religa ao detectar saldo),
+independente de CLAUDE_ATIVO no GitHub Actions. Pausa manual (`off`) não é
+desfeita pelo saldo.
 
 Uso:
   python scripts/toggle_claude.py status

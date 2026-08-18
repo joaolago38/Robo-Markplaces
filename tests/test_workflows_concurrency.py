@@ -40,6 +40,11 @@ _WORKFLOWS_FILA_PROPRIA = (
     "relatorio_manha_ml.yml",
     "relatorio_estrategia_ml.yml",
     "monitor_margem_vendas.yml",
+    "inteligencia_precos.yml",
+    "monitor_sem_venda_ml.yml",
+    "monitor_ml.yml",
+    "monitor_concorrentes_ml.yml",
+    "monitor_mercado_esmaltes.yml",
 )
 
 _WORKFLOWS_MONITOR_SECUNDARIO = (
@@ -105,10 +110,12 @@ class TestWorkflowsConcurrency(unittest.TestCase):
     def test_vigia_le_heartbeats_compartilhados_sem_regravar(self):
         path = WORKFLOWS_DIR / "vigia_datadog.yml"
         texto = path.read_text(encoding="utf-8")
-        self.assertIn("saude-heartbeats-", texto)
+        self.assertIn("./.github/actions/saude-heartbeats", texto)
+        self.assertIn("modo: restore", texto)
         # Não deve regravar heartbeats dos produtores no cache do vigia
         save_bloco = texto.split("Salvar cache vigia")[-1]
         self.assertNotIn("orquestrador_ultimo_ciclo.json", save_bloco)
+        self.assertNotIn("saude-heartbeats", save_bloco)
         self.assertIn("datadog_vigia_history.json", save_bloco)
 
     def test_produtores_publicam_saude_heartbeats(self):
@@ -118,16 +125,30 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             "operacao_24h_seguranca.yml",
             "renovar_tokens.yml",
             "relatorio_manha_ml.yml",
+            "relatorio_estrategia_ml.yml",
             "monitor_mercado_esmaltes.yml",
+            "ads_gatilho_ml.yml",
+            "sincronizar_estoque.yml",
+            "ponto_ruptura_segundo_cnpj.yml",
         ):
             texto = (WORKFLOWS_DIR / nome).read_text(encoding="utf-8")
-            self.assertIn("saude-heartbeats-", texto, nome)
-            self.assertIn("Restaurar heartbeats de saude", texto, nome)
-            self.assertIn("actions/cache/save", texto, nome)
-            # Conjunto completo — merge entre produtores
-            self.assertIn("orquestrador_ultimo_ciclo.json", texto, nome)
-            self.assertIn("renovacao_tokens_ultima.json", texto, nome)
-            self.assertIn("esmaltes_mercado_history.json", texto, nome)
+            self.assertIn("./.github/actions/saude-heartbeats", texto, nome)
+            self.assertIn("modo: restore", texto, nome)
+            self.assertIn("modo: save", texto, nome)
+
+    def test_agentes_pesados_tem_cron_proprio(self):
+        esperados = {
+            "inteligencia_precos.yml": "20 */2 * * *",
+            "monitor_ml.yml": "15 */2 * * *",
+            "monitor_concorrentes_ml.yml": "30 */4 * * *",
+            "monitor_sem_venda_ml.yml": "0 13 * * *",
+            "monitor_mercado_esmaltes.yml": "0 12 * * *",
+        }
+        for nome, cron in esperados.items():
+            texto = (WORKFLOWS_DIR / nome).read_text(encoding="utf-8")
+            self.assertIn("schedule:", texto, nome)
+            self.assertIn(cron, texto, nome)
+            self.assertNotIn(f"group: {_GROUP_TOKEN}", texto, nome)
 
 
 if __name__ == "__main__":

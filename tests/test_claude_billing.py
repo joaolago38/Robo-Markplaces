@@ -72,6 +72,37 @@ class TestClaudeBilling(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertEqual(out["motivo"], "http_403")
 
+    def test_sonda_sem_api_key(self):
+        with patch("core.config.ANTHROPIC_API_KEY", ""):
+            out = b.sondar_credito_disponivel()
+        self.assertFalse(out["ok"])
+        self.assertIsNone(out["com_credito"])
+
+    def test_sonda_api_ok_tem_credito(self):
+        resp = MagicMock()
+        resp.status_code = 200
+        resp.text = "{}"
+        with (
+            patch("core.config.ANTHROPIC_API_KEY", "sk-test"),
+            patch.object(b, "request", return_value=resp),
+        ):
+            out = b.sondar_credito_disponivel()
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["com_credito"])
+
+    def test_sonda_api_sem_credito(self):
+        resp = MagicMock()
+        resp.status_code = 400
+        resp.text = "Your credit balance is too low to access this model"
+        with (
+            patch("core.config.ANTHROPIC_API_KEY", "sk-test"),
+            patch.object(b, "request", return_value=resp),
+        ):
+            out = b.sondar_credito_disponivel()
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["com_credito"])
+        self.assertEqual(out["motivo"], "credit_too_low")
+
 
 if __name__ == "__main__":
     unittest.main()

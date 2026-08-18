@@ -51,6 +51,10 @@ jobs:
           key: telegram-cooldown-${{ github.run_id }}
           restore-keys: |
             telegram-cooldown-
+      - name: Restaurar heartbeats de saude
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
       - name: Relatorio estrategia ML
         run: python -m agentes.ml.agente_relatorio_estrategia_ml
         env:
@@ -70,6 +74,12 @@ jobs:
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           WHATSAPP_GRUPO_MANICURES_ID: ${{ secrets.WHATSAPP_GRUPO_MANICURES_ID }}
           TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}
+      - name: Publicar heartbeats de saude
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save
       - name: Salvar snapshot
         uses: actions/upload-artifact@v4
         with:
