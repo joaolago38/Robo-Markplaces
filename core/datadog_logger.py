@@ -265,10 +265,12 @@ _LOGGER_META = {
     "buffer_erros_datadog": ("infra", "core"),
     "consulta_erros_datadog": ("infra", "core"),
     "vigia_saude_datadog": ("infra", "core"),
+    "mcp_robo": ("infra", "core"),
 
     # --- Diagnóstico interno deste módulo ---
     "datadog_logger": ("infra", "core"),
     "datadog_metrics": ("infra", "core"),
+    "github_secrets": ("infra", "core"),
     "series_historica": ("infra", "core"),
     "graficos": ("infra", "core"),
     "prontidao": ("infra", "core"),

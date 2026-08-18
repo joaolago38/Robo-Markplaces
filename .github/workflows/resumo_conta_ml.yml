@@ -15,6 +15,8 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.11"
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
   DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}

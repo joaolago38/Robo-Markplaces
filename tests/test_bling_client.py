@@ -62,12 +62,39 @@ class TestRequestBling(unittest.TestCase):
 
     @patch.object(bling_client.token_manager, "get_token_bling", return_value="novo_tok")
     def test_renova_token_em_401(self, _mock_token):
+        import tempfile
+        from pathlib import Path
+
+        from core import log_cooldown
+
         r401 = make_http_response(status_code=401)
         r200 = make_http_response(status_code=200)
         self.mock_http.side_effect = [r401, r200]
-        out = bling_client._request_bling("GET", "http://x")
+        with tempfile.TemporaryDirectory() as tmp:
+            log_cooldown.reset_para_teste(Path(tmp) / "cd.json")
+            out = bling_client._request_bling("GET", "http://x")
+            log_cooldown.reset_para_teste()
         self.assertEqual(out.status_code, 200)
         self.assertEqual(self.mock_http.call_count, 2)
+
+    @patch.object(bling_client.token_manager, "get_token_bling", return_value="novo_tok")
+    def test_401_warning_so_uma_vez_no_cooldown(self, _mock_token):
+        import tempfile
+        from pathlib import Path
+
+        from core import log_cooldown
+
+        r401 = make_http_response(status_code=401)
+        r200 = make_http_response(status_code=200)
+        self.mock_http.side_effect = [r401, r200, r401, r200]
+        with tempfile.TemporaryDirectory() as tmp:
+            log_cooldown.reset_para_teste(Path(tmp) / "cd.json")
+            with self.assertLogs("bling", level="WARNING") as logs:
+                bling_client._request_bling("GET", "http://x")
+                bling_client._request_bling("GET", "http://x")
+            log_cooldown.reset_para_teste()
+        avisos = [line for line in logs.output if "Bling retornou 401" in line]
+        self.assertEqual(len(avisos), 1)
 
 
 class TestProbeProdutos(unittest.TestCase):

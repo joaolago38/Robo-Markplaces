@@ -278,7 +278,7 @@ def buscar(query: str, *, max_resultados: int = 8, contexto: str = "geral") -> l
                     )
                     return resultados[:max_resultados]
                 if backend == "lite" and status < 400:
-                    logger.info(
+                    logger.debug(
                         "DDG lite vazio [%s] — query=%r",
                         contexto,
                         query[:80],

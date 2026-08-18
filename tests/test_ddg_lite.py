@@ -96,6 +96,14 @@ class TestDdgLite(unittest.TestCase):
         self.assertEqual(len(out), 1)
         mock_html.assert_called_once()
 
+    @patch.object(ddg.time, "sleep")
+    @patch.object(ddg, "_buscar_lite", return_value=(200, []))
+    def test_vazio_nao_sobe_info(self, _lite, _sleep):
+        with self.assertLogs("ddg_lite", level="DEBUG") as logs:
+            self.assertEqual(ddg.buscar("q", contexto="mp_shopee.com.br"), [])
+        self.assertFalse(any("INFO" in line for line in logs.output))
+        self.assertTrue(any("DDG lite vazio" in line for line in logs.output))
+
 
 if __name__ == "__main__":
     unittest.main()

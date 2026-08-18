@@ -207,7 +207,7 @@ def _buscar_via_api(termo: str, limite: int) -> list[dict[str, Any]]:
             pass
         # Conhecido desde ~2025 (PolicyAgent). Não é incidente — fallback cobre.
         # Antes era WARNING e gerava centenas de warns/dia no Datadog.
-        logger.info(
+        logger.debug(
             "ML busca /sites/search HTTP 403 termo=%r — endpoint bloqueado; usando fallbacks",
             termo,
         )
@@ -359,7 +359,7 @@ def _buscar_via_products_api(termo: str, limite: int) -> list[dict[str, Any]]:
                 }
             )
             if len(encontrados) >= limite:
-                logger.info(
+                logger.debug(
                     "ML busca termo=%r fonte=products_api resultados=%d",
                     termo[:60],
                     len(encontrados),
@@ -367,7 +367,7 @@ def _buscar_via_products_api(termo: str, limite: int) -> list[dict[str, Any]]:
                 return encontrados
 
     if encontrados:
-        logger.info(
+        logger.debug(
             "ML busca termo=%r fonte=products_api resultados=%d",
             termo[:60],
             len(encontrados),
@@ -451,7 +451,7 @@ def _buscar_via_catalogo(termo: str, limite: int, item_id_referencia: str | None
                 combinado.append(norm)
 
     if combinado:
-        logger.info(
+        logger.debug(
             "ML busca termo=%r fallback catálogo refs=%s linhas=%d",
             termo,
             refs,
@@ -488,7 +488,7 @@ def _ler_cache(termo: str, limite: int) -> list[dict[str, Any]]:
         return []
     out = [dict(r, fonte_busca="cache") for r in rows if isinstance(r, dict)][:limite]
     if out:
-        logger.info("ML busca termo=%r fonte=cache resultados=%d", termo, len(out))
+        logger.debug("ML busca termo=%r fonte=cache resultados=%d", termo, len(out))
     return out
 
 
@@ -539,7 +539,7 @@ def executar_busca_termo(
         try:
             api = _buscar_via_api(termo, limite)
             if api:
-                logger.info("ML busca termo=%r fonte=api resultados=%d", termo, len(api))
+                logger.debug("ML busca termo=%r fonte=api resultados=%d", termo, len(api))
                 _gravar_cache(termo, api)
                 return api
         except Exception as exc:
@@ -555,7 +555,7 @@ def executar_busca_termo(
     combinado = _dedupe_por_item(combinado)[:limite]
     if combinado:
         fontes = sorted({str(r.get("fonte_busca") or "?") for r in combinado})
-        logger.info(
+        logger.debug(
             "ML busca termo=%r fonte=%s resultados=%d",
             termo,
             "+".join(fontes),

@@ -10,6 +10,7 @@ import logging
 from core import token_manager
 from core.config import BLING_ACCESS_TOKEN
 from core.http_client import request
+from core.log_cooldown import log_com_cooldown
 from core.log_opcional import erro_opcional, log_erros_bling_ativos
 
 logger = logging.getLogger("bling")
@@ -39,8 +40,13 @@ def _request_bling(method: str, url: str, **kwargs):
 
     status = getattr(r, "status_code", None)
     if status in (401, 403):
-        logger.warning(
-            "Bling retornou %s — renovando token e tentando novamente.", status
+        log_com_cooldown(
+            logger,
+            f"bling:http_{status}",
+            "Bling retornou %s — renovando token e tentando novamente "
+            "(próximos avisos em cooldown 6h).",
+            status,
+            cooldown_segundos=6 * 3600,
         )
         novo = token_manager.get_token_bling(forcar=True)
         if novo:

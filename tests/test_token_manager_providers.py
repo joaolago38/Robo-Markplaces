@@ -62,6 +62,36 @@ class TestTokenManagerProviders(unittest.TestCase):
         tm.sync_secrets_github.assert_called_once_with("new_at", "new_rt", prefix="ML")
 
     @patch.object(tm, "_salvar_store_ml")
+    @patch.object(tm, "sync_secrets_github", return_value=False)
+    @patch.object(tm, "_ml_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
+    def test_renovar_token_ml_sync_falha_loga_warning_com_cooldown(
+        self, mock_request, *_mocks
+    ):
+        import tempfile
+        from pathlib import Path
+
+        from core import log_cooldown
+
+        tm._ml_refresh_efetivo["valor"] = "old_rt"
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            log_cooldown.reset_para_teste(Path(tmp) / "cd.json")
+            with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+                with self.assertLogs("token_manager", level="WARNING") as logs:
+                    out = tm._renovar_token_ml()
+                    out2 = tm._renovar_token_ml()
+            log_cooldown.reset_para_teste()
+        self.assertEqual(out, "new_at")
+        self.assertEqual(out2, "new_at")
+        avisos = [line for line in logs.output if "Falha ao sincronizar ML_*" in line]
+        self.assertEqual(len(avisos), 1)
+
+    @patch.object(tm, "_salvar_store_ml")
     @patch.object(tm, "request")
     @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
     def test_renovar_token_ml_persiste_store(self, mock_request, mock_salvar):
@@ -379,7 +409,7 @@ class TestTokenManagerProviders(unittest.TestCase):
             {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
         )
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
-            with self.assertLogs("token_manager", level="WARNING") as logs:
+            with self.assertLogs("token_manager", level="ERROR") as logs:
                 out = tm._renovar_token_bling()
         self.assertEqual(out, "new_at")
         self.assertTrue(any("Falha ao sincronizar BLING_*" in line for line in logs.output))
