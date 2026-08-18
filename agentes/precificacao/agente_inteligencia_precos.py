@@ -231,7 +231,7 @@ def executar(*, enviar_alerta: bool = True, lucro_minimo_pct: float | None = Non
             )
             if item:
                 analises.append(item)
-                logger.info(
+                logger.debug(
                     "Precificação %s/%s: atual=%.2f sugerido=%.2f lucro=%.2f→%.2f acao=%s",
                     item["sku"],
                     item["canal"],

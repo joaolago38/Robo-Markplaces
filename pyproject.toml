@@ -49,6 +49,7 @@ omit = [
     "agentes/social/agente_conversao_manicures.py",
     "agentes/social/agente_necessidade_manicures.py",
     "agentes/infra/agente_consumo_claude.py",
+    "integracoes/mcp/servidor.py",
     # IA secundária Masterprint: I/O Claude; lógica de ramo coberta em tests dedicados
     "integracoes/masterprint/avaliacao_ia_secundaria.py",
     # Conversão / necessidade manicures: I/O Meta/WA/ML; lógica em tests dedicados

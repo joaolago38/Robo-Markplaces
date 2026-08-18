@@ -81,7 +81,7 @@ def buscar_todos_marketplaces(
             vistos.add(chave)
             combinado.append(row)
 
-    logger.info(
+    logger.debug(
         "Busca multi MP termo=%r → %d anúncio(s) em %s",
         termo[:50],
         len(combinado),

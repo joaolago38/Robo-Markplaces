@@ -12,6 +12,7 @@ import core.config as cfg
 from core.datadog_metrics import incrementar
 from core.github_secrets import sync_secrets_github
 from core.http_client import request
+from core.log_cooldown import log_com_cooldown
 from core.log_opcional import (
     erro_opcional,
     log_erros_bling_ativos,
@@ -176,9 +177,13 @@ def _renovar_token_ml():
             if sync_secrets_github(access_token, novo_refresh or refresh, prefix="ML"):
                 logger.info("Secrets ML_* sincronizados no GitHub (rotação automática).")
             else:
-                logger.warning(
+                log_com_cooldown(
+                    logger,
+                    "token_manager:github_sync_ml",
                     "Falha ao sincronizar ML_* no GitHub após rotação — "
-                    "a próxima renovação pode falhar até o sync funcionar."
+                    "a próxima renovação pode falhar até o sync funcionar "
+                    "(próximos avisos em cooldown 6h).",
+                    cooldown_segundos=6 * 3600,
                 )
 
         logger.info("Token ML renovado com sucesso")
@@ -644,7 +649,7 @@ def _renovar_token_magalu():
             if sync_secrets_github(access_token, novo_refresh, prefix="MAGALU"):
                 logger.info("Secrets MAGALU_* sincronizados no GitHub (rotação automática).")
             else:
-                logger.warning(
+                logger.error(
                     "Falha ao sincronizar MAGALU_* no GitHub após rotação — "
                     "a próxima renovação pode falhar até o sync funcionar."
                 )
@@ -847,7 +852,7 @@ def _renovar_token_bling():
             if sync_secrets_github(access_token, novo_refresh or refresh, prefix="BLING"):
                 logger.info("Secrets BLING_* sincronizados no GitHub (rotação automática).")
             else:
-                logger.warning(
+                logger.error(
                     "Falha ao sincronizar BLING_* no GitHub após rotação — "
                     "o próximo refresh pode falhar até o sync funcionar."
                 )
@@ -1038,7 +1043,7 @@ def _renovar_token_amazon():
             if sync_secrets_github(access_token, novo_refresh or refresh, prefix="AMAZON"):
                 logger.info("Secrets AMAZON_* sincronizados no GitHub.")
             else:
-                logger.warning("Falha ao sincronizar AMAZON_* no GitHub após renovação.")
+                logger.error("Falha ao sincronizar AMAZON_* no GitHub após renovação.")
 
         logger.info("Token Amazon renovado com sucesso")
         incrementar("token.renovado", tags=["provider:amazon"])
