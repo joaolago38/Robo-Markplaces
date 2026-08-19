@@ -96,6 +96,9 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.loja.p0.telegram_ok",
             "robo.ml.loja.p0.telegram_skip",
             "robo.ml.loja.p0.chat_falhas",
+            "robo.ml.saude.anuncios_ativos_conta",
+            "robo.ml.integridade.ids_busca",
+            "robo.ml.integridade.paging_total",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_SAUDE_CONTA_ML_ID)

@@ -178,7 +178,10 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
     try:
         from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco
 
-        anuncios_todos = ml_client.listar_meus_anuncios(aplicar_foco=False)
+        anuncios_todos = ml_client.listar_meus_anuncios(
+            statuses=("active", "paused"),
+            aplicar_foco=False,
+        )
         try:
             from integracoes.ml.integridade_dados_ml import executar as auditar_ml
 
@@ -415,19 +418,14 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
     enviado_p0 = False
     if enviar_alerta:
         try:
-            from integracoes.ml.alerta_pendencias_loja import (
-                classificar_pendencias_p0,
-                emitir_alerta_p0,
-            )
+            from integracoes.ml.alerta_pendencias_loja import emitir_alerta_p0_do_ciclo
 
-            nivel = ((conta.get("reputacao") or {}) if isinstance(conta.get("reputacao"), dict) else {}).get("level_id", "")
-            saude = conta.get("saude") if isinstance(conta.get("saude"), dict) else {}
-            pend = classificar_pendencias_p0(
-                perguntas_pendentes=int(conta.get("perguntas_pendentes") or 0),
-                level_id=str(nivel or ""),
-                claims_rate=float(saude.get("claims_rate") or 0),
+            enviado_p0 = bool(
+                emitir_alerta_p0_do_ciclo(
+                    perguntas_pendentes=int(conta.get("perguntas_pendentes") or 0),
+                    reputacao=conta.get("reputacao") if isinstance(conta.get("reputacao"), dict) else {},
+                ).get("enviado")
             )
-            enviado_p0 = emitir_alerta_p0(pend, enviar=True)
         except Exception as exc:
             logger.warning("monitor_ml P0: %s", exc)
         try:

@@ -91,12 +91,15 @@ def auditar_espelho(
 
     ids_busca = int(meta.get("ids_busca") or 0)
     ids_ok = int(meta.get("ids_ok") or 0)
+    paging_total = int(meta.get("paging_total") or 0)
     faltando = list(meta.get("ids_faltando") or [])
     checks_total += 1
-    if not faltando:
+    if not faltando and (paging_total <= 0 or ids_busca >= paging_total):
         checks_ok += 1
     else:
-        falhas.append(f"cobertura:{ids_ok}/{ids_busca} faltando={len(faltando)}")
+        falhas.append(
+            f"cobertura:{ids_ok}/{ids_busca} paging={paging_total} faltando={len(faltando)}"
+        )
 
     amostra = [a for a in rows if _item_id_anuncio(a)][: max(0, int(amostra_max))]
     if ids_ok > 0 and not amostra:
@@ -152,6 +155,7 @@ def auditar_espelho(
         "amostra": len(amostra),
         "ids_busca": ids_busca,
         "ids_ok": ids_ok,
+        "paging_total": paging_total,
         "faltando": faltando[:20],
         "falhas": falhas[:20],
         "motivo_listagem": str(meta.get("motivo") or ""),
@@ -168,6 +172,9 @@ def emitir_metricas(resultado: dict[str, Any]) -> None:
     gauge("ml.integridade.checks_total", _f(resultado.get("checks_total")))
     gauge("ml.integridade.corrigidos", _f(resultado.get("corrigidos")))
     gauge("ml.integridade.amostra", _f(resultado.get("amostra")))
+    gauge("ml.integridade.ids_busca", _f(resultado.get("ids_busca")))
+    gauge("ml.integridade.ids_ok", _f(resultado.get("ids_ok")))
+    gauge("ml.integridade.paging_total", _f(resultado.get("paging_total")))
     if resultado.get("atinge_meta"):
         incrementar("ml.integridade.ok")
     else:

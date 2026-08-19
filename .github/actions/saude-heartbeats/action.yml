@@ -32,6 +32,7 @@ runs:
           logs/kits_compativeis_manicures_ultima.json
           logs/ponto_ruptura_segundo_cnpj_ultima.json
           logs/ponto_ruptura_outra_marca_ultima.json
+          logs/integridade_ml_ultima.json
         key: saude-heartbeats-${{ github.run_id }}
         restore-keys: |
           saude-heartbeats-
@@ -59,4 +60,5 @@ runs:
           logs/kits_compativeis_manicures_ultima.json
           logs/ponto_ruptura_segundo_cnpj_ultima.json
           logs/ponto_ruptura_outra_marca_ultima.json
+          logs/integridade_ml_ultima.json
         key: saude-heartbeats-${{ github.run_id }}
