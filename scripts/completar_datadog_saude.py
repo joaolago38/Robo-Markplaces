@@ -2,8 +2,8 @@
 Completa observabilidade Datadog do Robo Marketplaces:
 
 1) Dashboard Robo/Saude (3iy-tka-awu): tokens, orquestrador, vigia, pontos cegos ops
-2) Dashboard Ecommerce Impala: Catalogo, Batalha, operacao comercial
-3) Dashboard Masterprint: Filamentos / Escritorio (mesma estrutura)
+2) Dashboard Fase 1 Impala / ML: catalogo, batalha, progresso Impala (sem Masterprint)
+3) Dashboard Fase 2 Masterprint: progresso PETG + filamentos / escritorio
 4) Monitores de alerta
 
 Requer DD_API_KEY + DD_APPLICATION_KEY no .env
@@ -43,9 +43,9 @@ DASH_SAUDE = "3iy-tka-awu"
 DASH_OPS = "7be-b7r-nrk"
 # Preenchido em runtime (env DD_DASH_ECOMMERCE ou busca/cria pelo titulo).
 DASH_ECOMMERCE = (os.getenv("DD_DASH_ECOMMERCE") or "j53-h48-8ea").strip()
-DASH_ECOMMERCE_TITLE = "Robo Marketplaces - Ecommerce Impala / ML"
+DASH_ECOMMERCE_TITLE = "Robo Marketplaces - Fase 1 Ecommerce Impala / ML"
 DASH_MASTERPRINT = (os.getenv("DD_DASH_MASTERPRINT") or "ggq-my7-h6g").strip()
-DASH_MASTERPRINT_TITLE = "Robo Marketplaces - Masterprint Filamentos / Escritorio"
+DASH_MASTERPRINT_TITLE = "Robo Marketplaces - Fase 2 Masterprint Filamentos / Escritorio"
 GROUP_PONTOS_CEGOS_ID = 700005
 GROUP_TOKENS_ID = 100001
 GROUP_CATALOGO_IMPALA_ID = 700006
@@ -56,6 +56,7 @@ GROUP_MP_CATALOGO_ID = 760001
 GROUP_MP_MERCADO_ID = 760002
 GROUP_MP_COMERCIAL_ID = 760003
 GROUP_MP_FUNIL_ID = 760004
+GROUP_PROGRESSO_FASE2_ID = 760005
 GROUP_PONTO_RUPTURA_ID = 700012
 GROUP_SAUDE_CONTA_ML_ID = 700013
 GROUP_RUPTURA_OUTRA_MARCA_ID = 700014
@@ -189,7 +190,7 @@ def _resolver_dash_ecommerce() -> str:
         {
             "title": DASH_ECOMMERCE_TITLE,
             "description": (
-                "Ecommerce Impala / ML: catalogo, batalha de precos, ads e vendas. "
+                "Fase 1 Impala / ML: catalogo, batalha de precos, ads e vendas. Sem Masterprint. "
                 f"Robo/plataforma: {_url_dash(DASH_SAUDE)}"
             ),
             "widgets": [],
@@ -218,8 +219,8 @@ def _resolver_dash_masterprint() -> str:
         {
             "title": DASH_MASTERPRINT_TITLE,
             "description": (
-                "Masterprint: filamentos 3D, pinceis/apagadores, custos tabela pedidos e mercado ML. "
-                f"Robo: {_url_dash(DASH_SAUDE)}"
+                "Fase 2 Masterprint: filamentos 3D, pinceis/apagadores, custos tabela "
+                f"pedidos e mercado ML. Robo: {_url_dash(DASH_SAUDE)}"
             ),
             "widgets": [],
             "layout_type": "ordered",
@@ -251,6 +252,7 @@ def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
         or title.startswith("[Operacao comercial]")
         or title.startswith("[Decisao guerra Impala]")
         or title.startswith("[Progresso 24 meses]")
+        or title.startswith("[Fase 1 / Impala]")
     ):
         return True
     return False
@@ -1399,6 +1401,68 @@ def _grupo_batalha_impala() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 10},
                     "id": 740027,
                 },
+                {
+                    **_qv(
+                        "Maior seller Impala un/dia",
+                        "avg:robo.impala.batalha.seller_vendas_dia_max{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 12},
+                    "id": 740028,
+                },
+                {
+                    **_qv(
+                        "Sellers Impala no ranking",
+                        "avg:robo.impala.batalha.top_sellers_emitidos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 12},
+                    "id": 740029,
+                },
+                {
+                    **_qv(
+                        "Amostra Impala com vendas/dia",
+                        "avg:robo.impala.batalha.vendas_dia_amostra{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 12},
+                    "id": 740030,
+                },
+                {
+                    **_qv(
+                        "Vendas proxy Impala (amostra)",
+                        "avg:robo.impala.batalha.vendas_proxy{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 12},
+                    "id": 740031,
+                },
+                {
+                    **_toplist_metric(
+                        "Maiores sellers Impala (un/dia)",
+                        "avg:robo.impala.batalha.seller_vendas_dia{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 14},
+                    "id": 740032,
+                },
+                {
+                    **_toplist_metric(
+                        "Sellers Impala — anuncios na amostra",
+                        "avg:robo.impala.batalha.seller_anuncios{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 14},
+                    "id": 740033,
+                },
             ],
         },
         "layout": {"x": 0, "y": 24, "width": 12, "height": 1},
@@ -1771,6 +1835,57 @@ def _grupo_decisao_guerra_impala() -> dict[str, Any]:
                     ),
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 19},
                     "id": 741043,
+                },
+                {
+                    **_qv(
+                        "Maior seller Cruzeiro un/dia",
+                        "avg:robo.cruzeiro.mercado.seller_vendas_dia_max{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 0, "y": 21},
+                    "id": 741044,
+                },
+                {
+                    **_qv(
+                        "Sellers Cruzeiro no ranking",
+                        "avg:robo.cruzeiro.mercado.top_sellers_emitidos{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 4, "y": 21},
+                    "id": 741045,
+                },
+                {
+                    **_qv(
+                        "Amostra Cruzeiro com vendas/dia",
+                        "avg:robo.cruzeiro.mercado.vendas_dia_amostra{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 8, "y": 21},
+                    "id": 741046,
+                },
+                {
+                    **_toplist_metric(
+                        "Maiores sellers Cruzeiro (un/dia)",
+                        "avg:robo.cruzeiro.mercado.seller_vendas_dia{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 23},
+                    "id": 741047,
+                },
+                {
+                    **_toplist_metric(
+                        "Sellers Cruzeiro — anuncios na amostra",
+                        "avg:robo.cruzeiro.mercado.seller_anuncios{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 23},
+                    "id": 741048,
                 },
             ],
         },
@@ -2348,7 +2463,7 @@ def _grupo_catalogo_masterprint() -> dict[str, Any]:
     return {
         "id": GROUP_MP_CATALOGO_ID,
         "definition": {
-            "title": "[Catalogo Masterprint] Filamentos / Pinceis / Apagadores",
+            "title": "[Fase 2 · Catalogo Masterprint] Filamentos / Pinceis / Apagadores",
             "type": "group",
             "background_color": "vivid_blue",
             "layout_type": "ordered",
@@ -2448,7 +2563,7 @@ def _grupo_funil_demanda_masterprint() -> dict[str, Any]:
     return {
         "id": GROUP_MP_FUNIL_ID,
         "definition": {
-            "title": "[Funil ML] Visitas → vendas / acoes / blindspots",
+            "title": "[Fase 2 · Funil ML] Visitas → vendas / acoes / blindspots",
             "type": "group",
             "background_color": "vivid_green",
             "layout_type": "ordered",
@@ -2974,7 +3089,7 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
     return {
         "id": GROUP_MP_MERCADO_ID,
         "definition": {
-            "title": "[Mercado ML] Filamentos / PETG / Escritorio",
+            "title": "[Fase 2 · Mercado ML] Filamentos / PETG / Escritorio",
             "type": "group",
             "background_color": "vivid_purple",
             "layout_type": "ordered",
@@ -2987,8 +3102,10 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                         "content": (
                             "**Vendas ML de concorrentes = indisponível (API 403).**\n"
                             "Use **anúncios / preço / margem / seller_transacoes**. "
-                            "Widgets de vendas/receita/lucro proxy ficam 0 por bloqueio da API, "
-                            "não por falta de rodada."
+                            "`seller_vendas_dia` só preenche se a API devolver `sold_quantity`. "
+                            "Para **nossa conta** com Masterprint, o funil próprio "
+                            "(`funil.unidades_7d` / visitas) é a leitura certa — "
+                            "não o ranking de rivais."
                         ),
                         "background_color": "yellow",
                         "font_size": "14",
@@ -3200,6 +3317,24 @@ def _grupo_mercado_masterprint() -> dict[str, Any]:
                     "layout": {"height": 3, "width": 4, "x": 8, "y": 12},
                     "id": 760235,
                 },
+                {
+                    **_toplist_metric(
+                        "Sellers PETG — un/dia (se API vendas)",
+                        "avg:robo.masterprint_petg.seller_vendas_dia{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 15},
+                    "id": 760236,
+                },
+                {
+                    **_toplist_metric(
+                        "Sellers Masterprint — un/dia (se API vendas)",
+                        "avg:robo.filamentos.ml.masterprint.seller_vendas_dia{*} by {seller}",
+                        aggregator="avg",
+                    ),
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 15},
+                    "id": 760237,
+                },
             ],
         },
         "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
@@ -3211,7 +3346,7 @@ def _grupo_operacao_masterprint() -> dict[str, Any]:
     return {
         "id": GROUP_MP_COMERCIAL_ID,
         "definition": {
-            "title": "[Operacao comercial] Filamentos / Escritorio — margem e precificação",
+            "title": "[Fase 2 · Operacao comercial] Filamentos / Escritorio — margem e precificação",
             "type": "group",
             "background_color": "vivid_orange",
             "layout_type": "ordered",
@@ -3405,8 +3540,8 @@ def atualizar_dashboard_saude() -> None:
             "## Aba Robo / plataforma\n\n"
             "Orquestrador, tokens, conectividade, vigia e falhas ops "
             "(chat / NF-e / estoque / telegram).\n\n"
-            f"**E-commerce Impala/ML:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})\n\n"
-            f"**Masterprint (filamentos / escritorio):** "
+            f"**Fase 1 Impala/ML:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})\n\n"
+            f"**Fase 2 Masterprint:** "
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="blue",
@@ -3445,8 +3580,8 @@ def atualizar_dashboard_saude() -> None:
         "description": (
             "ABA ROBO: saude do motor (orquestrador, tokens, vigia, conectividade, "
             "pontos cegos ops). "
-            f"ABA ECOMMERCE: {_url_dash(ecom_id)} · "
-            f"ABA MASTERPRINT: {_url_dash(mp_id)}"
+            f"ABA FASE 1 IMPALA: {_url_dash(ecom_id)} · "
+            f"ABA FASE 2 MASTERPRINT: {_url_dash(mp_id)}"
         ),
         "widgets": novo,
         "layout_type": raw.get("layout_type") or "ordered",
@@ -4255,31 +4390,28 @@ def _grupo_decisao_oscilacao() -> dict[str, Any]:
 
 
 def _grupo_progresso_24m() -> dict[str, Any]:
-    """Teto 24 meses: lucro/mês vs 2.5k/20k, dois CNPJs, Cruzeiro 12/dia, PETG 6/dia, reviews 20."""
-    ts_cnpjs = _ts_overlay(
-        "Lucro/mes estimado — Impala vs Masterprint vs metas",
+    """Fase 1 Impala: lucro/mês vs 2.5k/20k e Cruzeiro 12/dia. Sem Masterprint/PETG."""
+    ts_impala = _ts_overlay(
+        "Lucro/mes Impala vs metas (fase 1)",
         [
             ("Impala", "avg:robo.progresso.lucro_mes_impala{*}"),
-            ("Masterprint", "avg:robo.progresso.lucro_mes_masterprint{*}"),
             ("meta ano 1 R$ 2.5k", "avg:robo.progresso.meta_lucro_ano1_mes{*}"),
             ("meta alvo R$ 20k", "avg:robo.progresso.meta_lucro_alvo_mes{*}"),
         ],
         palette="cool",
     )
     ts_ritmo = _ts_overlay(
-        "Ritmo/dia — Cruzeiro vs 12 · PETG vs 6",
+        "Ritmo/dia — Cruzeiro vs 12 (fase 1)",
         [
             ("Cruzeiro unid/dia", "avg:robo.progresso.cruzeiro_unid_dia{*}"),
             ("meta Cruzeiro 12", "avg:robo.progresso.meta_cruzeiro_unid_dia{*}"),
-            ("PETG unid/dia", "avg:robo.progresso.petg_unid_dia{*}"),
-            ("meta PETG 6", "avg:robo.progresso.meta_petg_unid_dia{*}"),
         ],
         palette="warm",
     )
     pct_ano1 = _qv_formula(
-        "% da meta ano 1 (R$ 2.5k)",
+        "% da meta ano 1 (Impala)",
         [
-            ("query1", "avg:robo.progresso.lucro_mes_estimado{*}"),
+            ("query1", "avg:robo.progresso.lucro_mes_impala{*}"),
             ("query2", "avg:robo.progresso.meta_lucro_ano1_mes{*}"),
         ],
         "query1 / query2 * 100",
@@ -4292,9 +4424,9 @@ def _grupo_progresso_24m() -> dict[str, Any]:
     return {
         "id": GROUP_PROGRESSO_24M_ID,
         "definition": {
-            "title": "[Progresso 24 meses] Teto R$ 2.5k → R$ 20k / dois CNPJs",
+            "title": "[Fase 1 / Impala] Progresso 24 meses",
             "type": "group",
-            "background_color": "vivid_purple",
+            "background_color": "vivid_orange",
             "layout_type": "ordered",
             "show_title": True,
             "widgets": [
@@ -4303,11 +4435,128 @@ def _grupo_progresso_24m() -> dict[str, Any]:
                     "definition": {
                         "type": "note",
                         "content": (
-                            "**Teto, nao previsao.** Relogio comeca quando MIMO vender. "
-                            "Lucro/mes = (lucro na janela de pedidos ÷ dias) × 30. "
-                            "Cruzeiro 12/dia + PETG 6/dia = ritmo do plano R$ 20k. "
-                            "Reviews 20 e ruptura % ficam so no grupo [CNAE / 2o CNPJ]. "
-                            "0 e o estado correto ate o 1o pedido."
+                            "**Fase 1 = Impala (esmaltes / Cruzeiro).** Sem misturar "
+                            "filamento Masterprint. Relogio comeca quando MIMO vender. "
+                            "Lucro/mes Impala = (lucro SKU IMP/CRZ/BUNDLE na janela ÷ dias) × 30. "
+                            "PETG, lucro Masterprint e funil de filamento ficam na "
+                            "**aba Fase 2**. Reviews 20 e ruptura % ficam no grupo "
+                            "[CNAE / 2o CNPJ]. 0 e o estado correto ate o 1o pedido."
+                        ),
+                        "background_color": "orange",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+                },
+                {
+                    **_qv(
+                        "Lucro/mes Impala R$",
+                        "avg:robo.progresso.lucro_mes_impala{*}",
+                        aggregator="avg",
+                        green_gt=2500,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 781003,
+                },
+                {
+                    **pct_ano1,
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 781002,
+                },
+                {
+                    **_qv(
+                        "Cruzeiro unid/dia",
+                        "avg:robo.progresso.cruzeiro_unid_dia{*}",
+                        aggregator="avg",
+                        green_gt=11,
+                        yellow_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 781005,
+                },
+                {
+                    **_qv(
+                        "Meta Cruzeiro 12/dia",
+                        "avg:robo.progresso.meta_cruzeiro_unid_dia{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 781007,
+                },
+                {
+                    **ts_impala,
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
+                    "id": 781020,
+                },
+                {
+                    **ts_ritmo,
+                    "layout": {"height": 3, "width": 6, "x": 6, "y": 4},
+                    "id": 781021,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 1, "width": 12, "height": 1},
+    }
+
+
+def _grupo_progresso_fase2_masterprint() -> dict[str, Any]:
+    """Fase 2 Masterprint: lucro filamento/escritorio e ritmo PETG 6/dia."""
+    ts_mp = _ts_overlay(
+        "Lucro/mes Masterprint vs metas (fase 2)",
+        [
+            ("Masterprint", "avg:robo.progresso.lucro_mes_masterprint{*}"),
+            ("meta ano 1 R$ 2.5k", "avg:robo.progresso.meta_lucro_ano1_mes{*}"),
+            ("meta alvo R$ 20k", "avg:robo.progresso.meta_lucro_alvo_mes{*}"),
+        ],
+        palette="cool",
+    )
+    ts_petg = _ts_overlay(
+        "Ritmo/dia — PETG vs 6 (fase 2)",
+        [
+            ("PETG unid/dia", "avg:robo.progresso.petg_unid_dia{*}"),
+            ("meta PETG 6", "avg:robo.progresso.meta_petg_unid_dia{*}"),
+        ],
+        palette="cool",
+    )
+    pct_petg = _qv_formula(
+        "% da meta PETG 6/dia",
+        [
+            ("query1", "avg:robo.progresso.petg_unid_dia{*}"),
+            ("query2", "avg:robo.progresso.meta_petg_unid_dia{*}"),
+        ],
+        "query1 / query2 * 100",
+        aggregator="avg",
+        green_gt=80,
+        yellow_gt=10,
+        red_lt=5,
+        precision=0,
+    )
+    return {
+        "id": GROUP_PROGRESSO_FASE2_ID,
+        "definition": {
+            "title": "[Fase 2 / Masterprint] Progresso PETG / filamentos",
+            "type": "group",
+            "background_color": "vivid_purple",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "id": 781100,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Fase 2 = Masterprint (filamentos / escritorio / 2o CNPJ).** "
+                            "Nao misturar com Impala. Lucro/mes = SKUs que nao sao "
+                            "IMP/CRZ/BUNDLE. Ritmo operacional = PETG unid/dia vs 6. "
+                            "Operar so depois da ruptura Impala (checklist na aba Fase 1). "
+                            "0 e o estado correto ate o 1o pedido PETG."
                         ),
                         "background_color": "purple",
                         "font_size": "14",
@@ -4319,54 +4568,14 @@ def _grupo_progresso_24m() -> dict[str, Any]:
                 },
                 {
                     **_qv(
-                        "Lucro/mes estimado R$",
-                        "avg:robo.progresso.lucro_mes_estimado{*}",
-                        aggregator="avg",
-                        green_gt=2500,
-                        yellow_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
-                    "id": 781001,
-                },
-                {
-                    **pct_ano1,
-                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
-                    "id": 781002,
-                },
-                {
-                    **_qv(
-                        "Lucro/mes Impala R$",
-                        "avg:robo.progresso.lucro_mes_impala{*}",
-                        aggregator="avg",
-                        green_gt=0,
-                        precision=0,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
-                    "id": 781003,
-                },
-                {
-                    **_qv(
                         "Lucro/mes Masterprint R$",
                         "avg:robo.progresso.lucro_mes_masterprint{*}",
                         aggregator="avg",
                         green_gt=0,
                         precision=0,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
                     "id": 781004,
-                },
-                {
-                    **_qv(
-                        "Cruzeiro unid/dia",
-                        "avg:robo.progresso.cruzeiro_unid_dia{*}",
-                        aggregator="avg",
-                        green_gt=11,
-                        yellow_gt=0,
-                        precision=1,
-                    ),
-                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
-                    "id": 781005,
                 },
                 {
                     **_qv(
@@ -4377,18 +4586,34 @@ def _grupo_progresso_24m() -> dict[str, Any]:
                         yellow_gt=0,
                         precision=1,
                     ),
-                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
                     "id": 781006,
                 },
                 {
-                    **ts_cnpjs,
-                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
-                    "id": 781020,
+                    **pct_petg,
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 781108,
                 },
                 {
-                    **ts_ritmo,
+                    **_qv(
+                        "Meta PETG 6/dia",
+                        "avg:robo.progresso.meta_petg_unid_dia{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 781109,
+                },
+                {
+                    **ts_mp,
+                    "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
+                    "id": 781120,
+                },
+                {
+                    **ts_petg,
                     "layout": {"height": 3, "width": 6, "x": 6, "y": 4},
-                    "id": 781021,
+                    "id": 781121,
                 },
             ],
         },
@@ -4405,13 +4630,13 @@ def atualizar_dashboard_ecommerce() -> None:
     note = _note_widget(
         NOTE_ECOM_ID,
         (
-            "## Aba E-commerce Impala / ML\n\n"
+            "## Aba Fase 1 — Impala / ML\n\n"
             "Leitura: **receita / lucro / margem** + **produto (kit) com preco/custo/lucro**, "
             "**invest. validacao**, **kits Cruzeiro**, **oportunidades/Livia**, "
             "**taxa de crescimento** e **custo/Ads**.\n\n"
-            "**Progresso 24 meses:** grupo [Progresso 24 meses] — lucro/mês estimado "
-            "vs R$ 2.5k (ano 1) e R$ 20k (alvo), Impala vs Masterprint no mesmo gráfico, "
-            "Cruzeiro unid/dia vs 12, PETG unid/dia vs 6, reviews 0→20. "
+            "**Progresso fase 1:** grupo [Fase 1 / Impala] — só lucro Impala "
+            "(SKU IMP/CRZ/BUNDLE) vs R$ 2.5k / R$ 20k e Cruzeiro unid/dia vs 12. "
+            "PETG e lucro Masterprint **não entram aqui** — estão na aba Fase 2. "
             "Teto, não previsão; 0 até o 1º pedido MIMO.\n\n"
             "**2o CNPJ / CNAE:** grupo [CNAE / 2o CNPJ] — gaps de KYC agora; "
             "liberado só quando Impala bater a checklist (20 reviews / 4.8 / MLB / estoque).\n\n"
@@ -4444,7 +4669,7 @@ def atualizar_dashboard_ecommerce() -> None:
             "Bolsas Mariart/legado ficam fora do radar "
             "(widgets Bolsas/legado ignorados e Foco Impala vazio).\n\n"
             f"**Robo / plataforma:** [Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
-            f"**Masterprint (filamentos / pinceis / apagadores):** "
+            f"**Fase 2 Masterprint (filamentos / pinceis / apagadores):** "
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"
         ),
         background_color="orange",
@@ -4476,12 +4701,12 @@ def atualizar_dashboard_ecommerce() -> None:
     payload = {
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
-            "ABA ECOMMERCE: progresso 24 meses (teto 2.5k→20k, dois CNPJs, Cruzeiro 12/d, PETG 6/d), "
+            "ABA FASE 1 IMPALA: progresso Impala (teto 2.5k→20k, Cruzeiro 12/d; sem PETG/Masterprint), "
             "catalogo Impala, batalha, decisao guerra (margem+extra), ads, saude da conta ML, "
             "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
             "kits Impala manicure, oscilacao/cuidado para decidir. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
-            f"ABA MASTERPRINT: {_url_dash(mp_id)}"
+            f"ABA FASE 2 MASTERPRINT: {_url_dash(mp_id)}"
         ),
         "widgets": [
             note,
@@ -4509,7 +4734,7 @@ def atualizar_dashboard_ecommerce() -> None:
 
 
 def atualizar_dashboard_masterprint() -> None:
-    """Dashboard Masterprint: mesma estrutura do Impala (catalogo / mercado / comercial)."""
+    """Dashboard Fase 2 Masterprint: progresso PETG + catalogo / mercado / comercial."""
     mp_id = _resolver_dash_masterprint()
     ecom_id = _resolver_dash_ecommerce()
     raw = _get(f"/api/v1/dashboard/{mp_id}")
@@ -4517,39 +4742,44 @@ def atualizar_dashboard_masterprint() -> None:
     note = _note_widget(
         NOTE_MP_ID,
         (
-            "## Aba Masterprint — Filamentos / Escritorio\n\n"
-            "Leitura: **funil próprio** → **custo/catalogo** → **mercado ML** → "
-            "**margem / preço / sellers**.\n\n"
+            "## Aba Fase 2 — Masterprint Filamentos / Escritorio\n\n"
+            "Tudo desta aba é **Masterprint (2o CNPJ)**. Impala (esmaltes / Cruzeiro) "
+            "fica só na aba Fase 1.\n\n"
+            "Leitura: **progresso PETG** → **funil próprio** → **custo/catalogo** → "
+            "**mercado ML** → **margem / preço / sellers**.\n\n"
+            "**Progresso fase 2:** grupo [Fase 2 / Masterprint] — lucro Masterprint "
+            "(SKU que não é IMP/CRZ/BUNDLE) e PETG unid/dia vs 6.\n"
             "**Funil:** visitas→unidades→conversão% + ações críticas "
             "(otimizador prioriza IDs).\n"
             "**Atenção:** vendas/receita/lucro de concorrentes ficam **n/d** (API ML 403). "
             "Use visitas rivais como proxy de demanda.\n\n"
-            "**Progresso 24 meses (dois CNPJs):** grupo no dash Impala — "
-            "PETG unid/dia vs 6 e lucro Masterprint no mesmo gráfico que Impala.\n"
-            "**CNAE / ruptura Impala:** só no dash Impala (mesmo grupo, sem cópia aqui).\n\n"
+            "**CNAE / ruptura Impala:** gate na aba Fase 1 (não copie métricas Impala aqui). "
+            "Operar filamento no ar só depois da checklist Impala.\n\n"
             f"**Robo / plataforma:** [Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
-            f"**E-commerce Impala:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
+            f"**Fase 1 Impala:** [{DASH_ECOMMERCE_TITLE}]({_url_dash(ecom_id)})"
         ),
         background_color="purple",
-        height=3,
+        height=4,
     )
+    prog = _grupo_progresso_fase2_masterprint()
+    prog["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
     funil = _grupo_funil_demanda_masterprint()
-    funil["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    funil["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     cat = _grupo_catalogo_masterprint()
-    cat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    cat["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     merc = _grupo_mercado_masterprint()
-    merc["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+    merc["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
     com = _grupo_operacao_masterprint()
-    com["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
+    com["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_MASTERPRINT_TITLE,
         "description": (
-            "ABA MASTERPRINT: funil visitas→vendas, filamentos + escritorio "
-            "(custos, mercado ML, margem). "
-            f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA IMPALA: {_url_dash(ecom_id)}"
+            "ABA FASE 2 MASTERPRINT: progresso PETG/filamento, funil visitas→vendas, "
+            "catalogo e mercado ML. Sem métricas Impala. "
+            f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA FASE 1 IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, funil, com, cat, merc],
+        "widgets": [note, prog, funil, com, cat, merc],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -4632,7 +4862,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "message": (
                 "Funil proprio com acoes criticas "
                 "(visitas sem conversao / conversao baixa). "
-                "Veja grupo [Funil ML] no dashboard Masterprint e "
+                "Veja grupo [Fase 2 · Funil ML] no dashboard Fase 2 Masterprint e "
                 "logs/funil_ml_acoes_ultima.json.\n"
                 f"Dashboard: {_url_dash(DASH_MASTERPRINT)}\n" + msg_base
             ),
@@ -5140,8 +5370,8 @@ def main() -> int:
     _strip_cpu_ops_dashboard()
     upsert_monitores()
     print(f"Aba Robo:         {_url_dash(DASH_SAUDE)}")
-    print(f"Aba Ecommerce:    {_url_dash(ecom_id)}")
-    print(f"Aba Masterprint:  {_url_dash(mp_id)}")
+    print(f"Aba Fase 1 Impala:{_url_dash(ecom_id)}")
+    print(f"Aba Fase 2 MP:    {_url_dash(mp_id)}")
     print("Monitores: https://us5.datadoghq.com/monitors/manage?q=tag%3Aservice%3Arobo-markplaces")
     print("Nota: OAuth Magalu continua manual (token invalid_grant nos logs).")
     return 0

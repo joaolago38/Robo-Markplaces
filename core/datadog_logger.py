@@ -68,6 +68,7 @@ _LOGGER_META = {
     "agente_ponto_ruptura_segundo_cnpj": ("multi", "agente"),
     "ponto_ruptura_outra_marca": ("mercadolivre", "integracao"),
     "agente_ponto_ruptura_outra_marca": ("mercadolivre", "agente"),
+    "migracao_marcas": ("mercadolivre", "integracao"),
     "contexto_importacao_cnpj": ("multi", "integracao"),
     "corredor_paraguai_terrestre": ("multi", "integracao"),
     "hub_paraguai_marketplace": ("multi", "integracao"),

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-18T15:05:03.936138+00:00",
+  "timestamp": "2026-08-19T14:43:04.515982+00:00",
   "diagnostico": {
     "ativo": true,
     "fonte": "sodre",
@@ -14,9 +14,9 @@
   },
   "lotes": [
     {
-      "hash": "c3a3b3924abe09b4",
-      "titulo": "_payload.json?96f60c81 e3ee 4690 a28b deedcf166c2f",
-      "url": "https://www.sodresantoro.com.br/veiculos/_payload.json?96f60c81-e3ee-4690-a28b-deedcf166c2f",
+      "hash": "e85a8fcc2cb8f9f0",
+      "titulo": "_payload.json?afbba62c ebcb 4112 b2ed e19314e0432b",
+      "url": "https://www.sodresantoro.com.br/veiculos/_payload.json?afbba62c-ebcb-4112-b2ed-e19314e0432b",
       "lance_brl": null,
       "lance_lista_brl": null,
       "tem_documento": false,

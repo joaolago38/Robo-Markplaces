@@ -24,6 +24,21 @@ class MetricasPurasTests(unittest.TestCase):
         self.assertIsNone(aa.estimar_vendas_por_dia(0, 22))
         self.assertIsNone(aa.estimar_vendas_por_dia(10, None))
 
+    def test_vendas_por_dia_de_anuncio(self):
+        self.assertEqual(aa.vendas_por_dia_de_anuncio(None), 0.0)
+        self.assertEqual(
+            aa.vendas_por_dia_de_anuncio({"vendas_por_dia": 3.5, "quantidade_vendida": 1}),
+            3.5,
+        )
+        self.assertEqual(aa.vendas_por_dia_de_anuncio({"quantidade_vendida": 10}), 0.0)
+        out = aa.vendas_por_dia_de_anuncio(
+            {
+                "quantidade_vendida": 100,
+                "catalog_date_created": "2024-01-01T00:00:00Z",
+            }
+        )
+        self.assertGreater(out, 0)
+
     def test_dias_desde(self):
         self.assertIsNone(aa.dias_desde(""))
         self.assertIsNone(aa.dias_desde("lixo"))

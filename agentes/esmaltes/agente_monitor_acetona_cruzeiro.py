@@ -289,6 +289,16 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         escrever_json_atomico(HISTORY_PATH, historico)
 
         gauge("acetona.vendedores_unicos", float(consolidado.get("vendedores_cruzeiro_unicos") or 0))
+        try:
+            from integracoes.esmaltes.metricas_sellers_mercado import emitir_sellers_mercado
+
+            emitir_sellers_mercado(
+                "cruzeiro.mercado",
+                consolidado.get("anuncios_cruzeiro") or [],
+                top_n=10,
+            )
+        except Exception as exc:
+            logger.warning("metricas sellers cruzeiro: %s", exc)
 
         alerta_enviado = False
         if enviar_alerta and ACETONA_CRUZEIRO_ALERTA_RESUMO and consolidado.get("termos_com_dados"):

@@ -74,6 +74,37 @@ def estimar_vendas_por_dia(vendas: int | float, dias: int | None) -> float | Non
     return round(v / max(1, int(dias)), 2)
 
 
+def vendas_por_dia_de_anuncio(anuncio: dict[str, Any] | None) -> float:
+    """Vendas/dia já calculada ou estimada (sold_quantity ÷ dias). 0 se n/d."""
+    if not isinstance(anuncio, dict):
+        return 0.0
+    met = anuncio.get("metricas") if isinstance(anuncio.get("metricas"), dict) else {}
+    vpd = anuncio.get("vendas_por_dia")
+    if vpd is None:
+        vpd = met.get("vendas_por_dia")
+    try:
+        if vpd is not None:
+            f = float(vpd)
+            if f > 0:
+                return f
+    except (TypeError, ValueError):
+        pass
+    vendas = _i(
+        anuncio.get("quantidade_vendida")
+        or anuncio.get("sold_quantity")
+        or anuncio.get("vendas")
+        or met.get("quantidade_vendida")
+        or 0
+    )
+    for chave in ("date_created", "catalog_date_created", "anuncio_criado", "catalogo_criado"):
+        raw = anuncio.get(chave) or met.get(chave)
+        dias = dias_desde(str(raw or "") or None)
+        est = estimar_vendas_por_dia(vendas, dias)
+        if est:
+            return float(est)
+    return 0.0
+
+
 def estimar_receitas(
     preco: float,
     vendas: int | float,
