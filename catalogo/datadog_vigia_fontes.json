@@ -115,6 +115,16 @@
       "ignorar_ausente": true
     },
   {
+    "id": "integridade_ml",
+    "ativo": true,
+    "nome": "Integridade dados ML",
+    "path": "logs/integridade_ml_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 4,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+  {
     "id": "chat",
     "ativo": true,
     "nome": "Chat marketplaces",

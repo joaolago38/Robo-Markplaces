@@ -164,6 +164,15 @@ class TestHelpers(unittest.TestCase):
 
         self.assertEqual(mon.MAX_ITENS_ANALISE, cfg.ML_MAX_ITENS_ANALISE)
 
+    @patch("integracoes.ml.integridade_dados_ml.executar")
+    @patch.object(mon.ml_client, "listar_meus_anuncios", return_value=[])
+    def test_concorrencia_lista_active_e_paused(self, mock_listar, _auditar):
+        conc, recs = mon._analisar_concorrencia(limite_itens=0)
+        self.assertEqual(conc, [])
+        kwargs = mock_listar.call_args.kwargs
+        self.assertEqual(kwargs.get("statuses"), ("active", "paused"))
+        self.assertFalse(kwargs.get("aplicar_foco"))
+
 
 if __name__ == "__main__":
     unittest.main()

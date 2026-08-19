@@ -141,7 +141,31 @@ class TestIntegridadeDadosMl(unittest.TestCase):
         nomes = [c.args[0] for c in g.call_args_list]
         self.assertIn("ml.integridade.pct", nomes)
         self.assertIn("ml.integridade.amostra", nomes)
+        self.assertIn("ml.integridade.ids_busca", nomes)
+        self.assertIn("ml.integridade.paging_total", nomes)
         inc.assert_called_once_with("ml.integridade.ok")
+
+    def test_paginacao_incompleta_nao_atinge_meta(self):
+        out = integ.auditar_espelho(
+            [{"item_id": "MLB1", "titulo": "X", "preco": 1, "status": "active", "sold_quantity": 0, "estoque": 1}],
+            meta_listagem={
+                "ok": True,
+                "ids_busca": 9,
+                "ids_ok": 9,
+                "ids_faltando": [],
+                "paging_total": 38,
+            },
+            buscar_item=lambda _iid: {
+                "item_id": "MLB1",
+                "titulo": "X",
+                "preco": 1,
+                "status": "active",
+                "sold_quantity": 0,
+                "estoque": 1,
+            },
+        )
+        self.assertFalse(out["atinge_meta"])
+        self.assertTrue(any("paging=38" in f for f in out["falhas"]))
 
     def test_amostra_vazia_com_ids_ok_nao_atinge_meta(self):
         """Foco vazio + listagem hidratada não pode virar 100% sem GET /items."""

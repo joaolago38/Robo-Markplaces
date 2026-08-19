@@ -1,30 +1,18 @@
 {
-  "timestamp": "2026-08-19T15:18:31.142276+00:00",
+  "timestamp": "2026-08-19T15:54:50.131208+00:00",
   "diagnostico": {
     "ativo": true,
     "fonte": "sodre",
     "leiloes_ok": 1,
     "leiloes_falha": 0,
-    "lotes_veiculo": 24,
+    "lotes_veiculo": 23,
     "modo_coleta": "direto",
     "erro": null,
     "lotes_com_documento": 0,
-    "lotes_sem_documento": 24,
+    "lotes_sem_documento": 23,
     "lance_minimo_brl": 500.0
   },
   "lotes": [
-    {
-      "hash": "e85a8fcc2cb8f9f0",
-      "titulo": "_payload.json?afbba62c ebcb 4112 b2ed e19314e0432b",
-      "url": "https://www.sodresantoro.com.br/veiculos/_payload.json?afbba62c-ebcb-4112-b2ed-e19314e0432b",
-      "lance_brl": null,
-      "lance_lista_brl": null,
-      "tem_documento": false,
-      "comitente": "Sodré Santoro",
-      "tipo_comitente": "leiloeiro",
-      "fonte": "html",
-      "abaixo_lance_minimo": false
-    },
     {
       "hash": "9db494acc41310cb",
       "titulo": "lotes?lot_brand=volkswagen",
@@ -306,6 +294,6 @@
     "leiloes_encontrados": 1,
     "leiloes_coletados_ok": 1,
     "modo_coleta": "direto",
-    "lotes_veiculo_documento": 24
+    "lotes_veiculo_documento": 23
   }
 }

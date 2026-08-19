@@ -184,6 +184,8 @@ class TestVigiaFiltrosNotificador(unittest.TestCase):
         self.assertNotIn("notificador", filtros.get("loggers_ignorar") or [])
         self.assertIn("notificador", filtros.get("loggers_ml") or [])
         self.assertIn("agente_faturamento", filtros.get("loggers_ml") or [])
+        self.assertIn("alerta_pendencias_loja", filtros.get("loggers_ml") or [])
+        self.assertIn("integridade_dados_ml", filtros.get("loggers_ml") or [])
 
     def test_fonte_estoque_no_catalogo(self):
         from integracoes.datadog import vigia_saude as vs
@@ -194,6 +196,7 @@ class TestVigiaFiltrosNotificador(unittest.TestCase):
         self.assertIn("ads_gatilho", ids)
         self.assertIn("ponto_ruptura_segundo_cnpj", ids)
         self.assertIn("ponto_ruptura_outra_marca", ids)
+        self.assertIn("integridade_ml", ids)
         self.assertIn("chat", ids)
         self.assertIn("nfe", ids)
         self.assertIn("vendas_whatsapp", ids)

@@ -130,6 +130,8 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
         ignorados_fora_foco = int(filtro.get("ignorados") or 0)
         ativos = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "active")
         pausados = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "paused")
+        ativos_conta = sum(1 for a in anuncios_todos if str(a.get("status") or "").lower() == "active")
+        pausados_conta = sum(1 for a in anuncios_todos if str(a.get("status") or "").lower() == "paused")
         from integracoes.ml.tipo_anuncio_ml import contar_prateleiras
 
         prateleiras = contar_prateleiras(anuncios)
@@ -224,6 +226,8 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             "perguntas_pendentes": len(perguntas),
             "anuncios_ativos": ativos,
             "anuncios_pausados": pausados,
+            "anuncios_ativos_conta": ativos_conta,
+            "anuncios_pausados_conta": pausados_conta,
             "anuncios_total": len(anuncios),
             "anuncios_premium": int(prateleiras.get("premium") or 0),
             "anuncios_classico": int(prateleiras.get("classico") or 0),
@@ -282,6 +286,8 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
     gauge("ml.saude.sem_cor", 1.0 if rep.get("sem_cor") else 0.0)
     gauge("ml.saude.anuncios_ativos", float(resumo.get("anuncios_ativos") or 0))
     gauge("ml.saude.anuncios_pausados", float(resumo.get("anuncios_pausados") or 0))
+    gauge("ml.saude.anuncios_ativos_conta", float(resumo.get("anuncios_ativos_conta") or 0))
+    gauge("ml.saude.anuncios_pausados_conta", float(resumo.get("anuncios_pausados_conta") or 0))
     gauge("ml.saude.anuncios_premium", float(resumo.get("anuncios_premium") or 0))
     gauge("ml.saude.anuncios_classico", float(resumo.get("anuncios_classico") or 0))
     gauge(
