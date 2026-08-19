@@ -310,9 +310,14 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "padronizadas (visuais quando configurado). Telegram se processou mensagens "
         "na rodada."
     ),
+    "alerta_pendencias_loja": (
+        "P0 da loja: envio pendente, pergunta que o chat não fechou, claim ou cor "
+        "laranja. Sai no ciclo 30 min; o mesmo estado espera 30 min."
+    ),
     "chat_ml": (
         "Lê e processa mensagens do chat do Mercado Livre. Telegram sobretudo em "
-        "erro ou taxa alta de reclamações — não é resumo rotineiro ao gestor."
+        "erro ou taxa alta de reclamações — não é resumo rotineiro ao gestor. "
+        "P0 de envio/pergunta sai pelo alerta_pendencias_loja no mesmo ciclo."
     ),
     "chat_shopee": (
         "Lê e processa mensagens do chat da Shopee. Telegram sobretudo em erro/IA — "
@@ -356,7 +361,10 @@ HORARIOS_AGENTES: dict[str, str] = {
     "hub_paraguai_marketplace": "Planejado — sem cron",
     "tributacao_py_br": "Futuro Mercosul — sem cron",
     "ml_tendencias_importacao": "DESLIGADO junto com alibaba_sourcing (sem consulta Alibaba.com)",
-    "monitor_ml": "A cada 30 min (orquestrador); workflow dedicado só manual",
+    "alerta_pendencias_loja": (
+        "A cada 30 min via chat_ml (orquestrador); também no resumo 09:00 e no monitor_ml 2 h"
+    ),
+    "monitor_ml": "A cada 2 h (Actions); fora do orquestrador 30 min",
     "resumo_conta_ml": "Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min",
     "relatorio_manha_ml": "Todo dia às 07:30 BRT (Actions); fora do orquestrador 30 min",
     "relatorio_estrategia_ml": "Segundas às 08:00 BRT (fora do orquestrador)",
@@ -463,6 +471,7 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("ml_tendencias", "ml_tendencias_importacao"),
     ("ml:relatorio:manha", "relatorio_manha_ml"),
     ("relatorio_manha", "relatorio_manha_ml"),
+    ("ml:loja:p0", "alerta_pendencias_loja"),
     ("ml:resumo_conta", "resumo_conta_ml"),
     ("resumo_conta", "resumo_conta_ml"),
     ("estrategia_ml", "relatorio_estrategia_ml"),

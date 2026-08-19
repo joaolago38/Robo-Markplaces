@@ -92,9 +92,20 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.saude.catalogo_foco_vazio",
             "robo.ml.integridade.pct",
             "robo.vendas.receita_bruta",
+            "robo.ml.loja.p0.tem",
+            "robo.ml.loja.p0.telegram_ok",
+            "robo.ml.loja.p0.telegram_skip",
+            "robo.ml.loja.p0.chat_falhas",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_SAUDE_CONTA_ML_ID)
+
+    def test_grupo_pontos_cegos_tem_p0_loja(self):
+        grupo = dd._grupo_pontos_cegos()
+        blob = str(grupo)
+        self.assertIn("robo.ml.loja.p0.tem", blob)
+        self.assertIn("robo.ml.loja.p0.telegram_ok", blob)
+        self.assertIn("robo.ml.loja.p0.telegram_skip", blob)
 
     def test_grupo_ruptura_outra_marca(self):
         grupo = dd._grupo_ruptura_outra_marca()
@@ -110,6 +121,10 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.marca_esmalte.cnpj_canal{marketplace:magalu}",
             "robo.marca_esmalte.cnpj_canal{marketplace:amazon}",
             "robo.marca_esmalte.candidata.score{*} by {marca}",
+            "robo.migracao.fase",
+            "robo.migracao.bloqueada",
+            "robo.migracao.impala_liberado",
+            "robo.migracao.cnpj2_pode_operar",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_RUPTURA_OUTRA_MARCA_ID)

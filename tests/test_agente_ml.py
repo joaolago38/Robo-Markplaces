@@ -146,6 +146,7 @@ class TestAgenteMlReputacao(unittest.TestCase):
 
 
 class TestAgenteMlExecutar(unittest.TestCase):
+    @patch("integracoes.ml.alerta_pendencias_loja.emitir_alerta_p0_do_ciclo", return_value={"tem_p0": False})
     @patch("agentes.vendas_notificador.notificar_pedidos_novos_marketplace", return_value={})
     @patch.object(agente_ml, "verificar_reputacao", return_value={})
     @patch.object(agente_ml, "ciclo_chat", return_value=0)
@@ -153,6 +154,7 @@ class TestAgenteMlExecutar(unittest.TestCase):
         out = agente_ml.executar()
         self.assertIn("chat", out)
         self.assertIn("reputacao", out)
+        self.assertIn("p0_loja", out)
 
 
 class TestAgenteMlAnuncios(unittest.TestCase):

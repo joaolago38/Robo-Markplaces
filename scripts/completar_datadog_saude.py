@@ -789,6 +789,7 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
                                     {"alias": "Repricing rodadas", "formula": "query3"},
                                     {"alias": "Telegram OK", "formula": "query4"},
                                     {"alias": "Telegram erro", "formula": "query5"},
+                                    {"alias": "Telegram P0 loja", "formula": "query6"},
                                 ],
                                 "queries": [
                                     {
@@ -815,6 +816,11 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
                                         "data_source": "metrics",
                                         "name": "query5",
                                         "query": "sum:robo.telegram.envio_erro{*}.as_count()",
+                                    },
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query6",
+                                        "query": "sum:robo.ml.loja.p0.telegram_ok{*}.as_count()",
                                     },
                                 ],
                             }
@@ -931,6 +937,44 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
                     ),
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 9},
                     "id": 720023,
+                },
+                {
+                    **_qv(
+                        "P0 loja ativo (0/1)",
+                        "avg:robo.ml.loja.p0.tem{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 11},
+                    "id": 720024,
+                },
+                {
+                    **_qv(
+                        "Telegram P0 enviado",
+                        "sum:robo.ml.loja.p0.telegram_ok{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 11},
+                    "id": 720025,
+                },
+                {
+                    **_qv(
+                        "Telegram P0 skip",
+                        "sum:robo.ml.loja.p0.telegram_skip{*}.as_count()",
+                        green_gt=None,
+                        yellow_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 11},
+                    "id": 720026,
+                },
+                {
+                    **_qv(
+                        "Briefing conta Telegram",
+                        "sum:robo.ml.resumo_conta.telegram_ok{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 11},
+                    "id": 720027,
                 },
             ],
         },
@@ -3955,6 +3999,18 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                 },
                 {
                     **_qv(
+                        "P0 loja ativo (0/1)",
+                        "avg:robo.ml.loja.p0.tem{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 4},
+                    "id": 780016,
+                },
+                {
+                    **_qv(
                         "Envios pendentes",
                         "avg:robo.ml.saude.envios_pendentes{*}",
                         aggregator="avg",
@@ -4012,6 +4068,50 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                     ),
                     "layout": {"height": 2, "width": 2, "x": 4, "y": 6},
                     "id": 780021,
+                },
+                {
+                    **_qv(
+                        "Telegram P0 enviado",
+                        "sum:robo.ml.loja.p0.telegram_ok{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 6},
+                    "id": 780022,
+                },
+                {
+                    **_qv(
+                        "Telegram P0 skip",
+                        "sum:robo.ml.loja.p0.telegram_skip{*}.as_count()",
+                        green_gt=None,
+                        yellow_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 6},
+                    "id": 780023,
+                },
+                {
+                    **_qv(
+                        "P0 chat falhas",
+                        "avg:robo.ml.loja.p0.chat_falhas{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 6},
+                    "id": 780024,
+                },
+                {
+                    **_ts_overlay(
+                        "P0 Telegram vs briefing 09:00",
+                        [
+                            ("P0 enviado", "sum:robo.ml.loja.p0.telegram_ok{*}.as_count()"),
+                            ("P0 skip", "sum:robo.ml.loja.p0.telegram_skip{*}.as_count()"),
+                            ("Briefing conta", "sum:robo.ml.resumo_conta.telegram_ok{*}.as_count()"),
+                            ("P0 ativo", "avg:robo.ml.loja.p0.tem{*}"),
+                        ],
+                        palette="warm",
+                    ),
+                    "layout": {"height": 3, "width": 12, "x": 0, "y": 8},
+                    "id": 780025,
                 },
             ],
         },
@@ -4157,13 +4257,70 @@ def _grupo_ruptura_outra_marca() -> dict[str, Any]:
                     "id": 790011,
                 },
                 {
+                    **_qv(
+                        "Migracao fase (0=F0)",
+                        "avg:robo.migracao.fase{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 4},
+                    "id": 790013,
+                },
+                {
+                    **_qv(
+                        "Migracao bloqueada (0/1)",
+                        "avg:robo.migracao.bloqueada{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 6},
+                    "id": 790014,
+                },
+                {
+                    **_qv(
+                        "Migracao Impala liberado",
+                        "avg:robo.migracao.impala_liberado{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 6},
+                    "id": 790015,
+                },
+                {
+                    **_qv(
+                        "Migracao saude conta",
+                        "avg:robo.migracao.saude_conta{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 6},
+                    "id": 790016,
+                },
+                {
+                    **_qv(
+                        "CNPJ2 pode operar",
+                        "avg:robo.migracao.cnpj2_pode_operar{*}",
+                        aggregator="avg",
+                        green_gt=0.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 6},
+                    "id": 790017,
+                },
+                {
                     **_toplist_metric(
                         "Marcas candidatas (score ML, sem Impala)",
                         "avg:robo.marca_esmalte.candidata.score{*} by {marca}",
                         aggregator="avg",
                         limit=10,
                     ),
-                    "layout": {"height": 4, "width": 12, "x": 0, "y": 6},
+                    "layout": {"height": 4, "width": 12, "x": 0, "y": 8},
                     "id": 790012,
                 },
             ],
@@ -4667,7 +4824,11 @@ def atualizar_dashboard_ecommerce() -> None:
             "**Saude da conta ML:** grupo [Saude conta ML] — reputação/cor da *conta*, "
             "anúncios do foco Impala (kits), claims e receita dos *seus* pedidos. "
             "Bolsas Mariart/legado ficam fora do radar "
-            "(widgets Bolsas/legado ignorados e Foco Impala vazio).\n\n"
+            "(widgets Bolsas/legado ignorados e Foco Impala vazio). "
+            "P0 loja (envio/pergunta/cor) vai ao Telegram no ciclo 30 min; "
+            "widgets P0 ativo / Telegram P0 vs briefing 09:00.\n\n"
+            "**Migracao de marcas:** gauges `robo.migracao.*` no grupo "
+            "[Ruptura outra marca] (fase F0/F1, bloqueada, Impala liberado, CNPJ2).\n\n"
             f"**Robo / plataforma:** [Robo Marketplaces - Robo / Saude]({_url_dash(DASH_SAUDE)})\n\n"
             f"**Fase 2 Masterprint (filamentos / pinceis / apagadores):** "
             f"[{DASH_MASTERPRINT_TITLE}]({_url_dash(mp_id)})"

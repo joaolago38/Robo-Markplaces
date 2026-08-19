@@ -412,9 +412,33 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
     resumo = _montar_resumo(conta, ads, concorrencia, todas_recs)
 
     enviado = False
+    enviado_p0 = False
     if enviar_alerta:
         try:
-            enviado = bool(alertar_gestor(resumo))
+            from integracoes.ml.alerta_pendencias_loja import (
+                classificar_pendencias_p0,
+                emitir_alerta_p0,
+            )
+
+            nivel = ((conta.get("reputacao") or {}) if isinstance(conta.get("reputacao"), dict) else {}).get("level_id", "")
+            saude = conta.get("saude") if isinstance(conta.get("saude"), dict) else {}
+            pend = classificar_pendencias_p0(
+                perguntas_pendentes=int(conta.get("perguntas_pendentes") or 0),
+                level_id=str(nivel or ""),
+                claims_rate=float(saude.get("claims_rate") or 0),
+            )
+            enviado_p0 = emitir_alerta_p0(pend, enviar=True)
+        except Exception as exc:
+            logger.warning("monitor_ml P0: %s", exc)
+        try:
+            enviado = bool(
+                alertar_gestor(
+                    resumo,
+                    chave="ml:monitor_ml:resumo",
+                    cooldown_segundos=7200,
+                    agente_id="monitor_ml",
+                )
+            )
         except Exception as exc:
             logger.error("monitor_ml alertar_gestor: %s", exc)
 
@@ -426,6 +450,7 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
         "recomendacoes": list(dict.fromkeys(todas_recs)),
         "resumo": resumo,
         "enviado": enviado,
+        "enviado_p0": enviado_p0,
     }
 
 
