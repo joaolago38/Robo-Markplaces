@@ -86,6 +86,18 @@ class TestEmitirP0(unittest.TestCase):
         self.assertEqual(out["chat_falhas"], 1)
         self.assertTrue(out["enviado"])
 
+    @patch("integracoes.ml.alerta_pendencias_loja.incrementar")
+    @patch("integracoes.ml.alerta_pendencias_loja.gauge")
+    def test_emite_gauges_mesmo_sem_p0(self, mock_gauge, _inc):
+        from integracoes.ml.alerta_pendencias_loja import emitir_metricas_p0
+
+        emitir_metricas_p0(classificar_pendencias_p0())
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ml.loja.p0.tem", nomes)
+        self.assertIn("ml.loja.p0.envios", nomes)
+        tem = next(c for c in mock_gauge.call_args_list if c.args[0] == "ml.loja.p0.tem")
+        self.assertEqual(tem.args[1], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

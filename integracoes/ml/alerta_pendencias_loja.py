@@ -9,7 +9,7 @@ import logging
 from typing import Any
 
 from core.config import ML_LOJA_P0_ALERTA, ML_LOJA_P0_COOLDOWN_SEG
-from core.datadog_metrics import incrementar
+from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
 
 logger = logging.getLogger("alerta_pendencias_loja")
@@ -75,6 +75,8 @@ def classificar_pendencias_p0(
         "envios_pendentes": _i(envios_pendentes),
         "perguntas_pendentes": _i(perguntas_pendentes),
         "chat_falhas": _i(chat_falhas),
+        "claims_abertos": _i(claims_abertos),
+        "cor_ruim": 1 if cor_hit else 0,
     }
 
 
@@ -89,8 +91,28 @@ def montar_mensagem_p0(pendencias: dict[str, Any]) -> str:
     return "\n".join(linhas)
 
 
+def emitir_metricas_p0(pendencias: dict[str, Any]) -> None:
+    """Gauges a cada ciclo — 0 também entra, senão o Datadog fica vazio."""
+    gauge("ml.loja.p0.tem", 1.0 if pendencias.get("tem_p0") else 0.0)
+    gauge("ml.loja.p0.envios", float(_i(pendencias.get("envios_pendentes"))))
+    gauge("ml.loja.p0.perguntas", float(_i(pendencias.get("perguntas_pendentes"))))
+    gauge("ml.loja.p0.chat_falhas", float(_i(pendencias.get("chat_falhas"))))
+    gauge("ml.loja.p0.claims", float(_i(pendencias.get("claims_abertos"))))
+    gauge("ml.loja.p0.cor_ruim", 1.0 if pendencias.get("cor_ruim") else 0.0)
+    if pendencias.get("tem_p0"):
+        logger.info(
+            "P0 loja tem_p0=1 envios=%s perguntas=%s claims=%s chat_falhas=%s cor_ruim=%s",
+            pendencias.get("envios_pendentes"),
+            pendencias.get("perguntas_pendentes"),
+            pendencias.get("claims_abertos"),
+            pendencias.get("chat_falhas"),
+            pendencias.get("cor_ruim"),
+        )
+
+
 def emitir_alerta_p0(pendencias: dict[str, Any], *, enviar: bool = True) -> bool:
     """Envia se tem P0. Mesmo estado: 30 min. Estado novo: na hora."""
+    emitir_metricas_p0(pendencias)
     if not enviar or not ML_LOJA_P0_ALERTA:
         return False
     if not pendencias.get("tem_p0"):
