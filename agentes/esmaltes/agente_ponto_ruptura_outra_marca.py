@@ -154,6 +154,24 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
         resultado = anexar_briefing(resultado)
         resultado["timestamp"] = datetime.now(timezone.utc).isoformat()
         resultado["gerado_em"] = agora_brasil().isoformat()
+        try:
+            from integracoes.esmaltes.migracao_marcas import (
+                avaliar_migracao,
+                emitir_metricas_migracao,
+            )
+
+            mig = avaliar_migracao(ruptura_outra=resultado)
+            emitir_metricas_migracao(mig)
+            resultado["migracao"] = {
+                "fase": mig.get("fase"),
+                "fase_nome": mig.get("fase_nome"),
+                "bloqueada": mig.get("bloqueada"),
+                "motivo_bloqueio": mig.get("motivo_bloqueio"),
+                "proxima_marca": mig.get("proxima_marca"),
+                "cnpj2": mig.get("cnpj2"),
+            }
+        except Exception as exc:
+            logger.warning("migracao marcas: %s", exc)
         _emitir_metricas(resultado)
 
         ver = str(resultado.get("veredito") or "ainda_nao")
