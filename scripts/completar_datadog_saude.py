@@ -4965,7 +4965,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "query": "avg(last_1d):avg:robo.catalogo.guerra_sem_mlb{*} > 0",
             "message": (
                 "SKU(s) de guerra Impala ainda sem MLB (MLB_PREENCHER). "
-                "Publique PERL/VR/SORT antes de ads/promocao.\n" + msg_ecom
+                "Publique MIMO-003 / PERL-004 / JU PAES-006 antes de ads/promocao.\n" + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p1"],
             "options": {

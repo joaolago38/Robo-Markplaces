@@ -776,7 +776,19 @@ def aplicar_saldo_console(
 
 
 def marcar_saldo_zerado_console(*, motivo: str = "api_credit_too_low") -> dict[str, Any]:
-    """Anthropic recusou a chamada por crédito — Datadog passa a mostrar US$ 0."""
+    """Sonda recusou crédito. Não apaga snapshot do painel ≥ US$2 — isso flapa o monitor."""
+    r = resumo()
+    restante = float(r.get("restante_usd") or 0)
+    fonte = str(r.get("fonte_saldo") or "")
+    if restante >= 2.0 and fonte in _FONTES_SALDO_EXTERNO:
+        logger.warning(
+            "Sonda Claude recusou (%s), mas snapshot restante=%.2f (fonte=%s) — Datadog mantém o painel",
+            motivo,
+            restante,
+            fonte,
+        )
+        emitir_metricas_claude_datadog(r)
+        return r
     logger.warning("Saldo Claude zerado no Datadog (%s)", motivo)
     return aplicar_saldo_console(0.0, emitir_datadog=True, fonte_saldo="console_api")
 

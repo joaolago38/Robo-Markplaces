@@ -12,6 +12,7 @@ import subprocess
 from core.datadog_metrics import incrementar
 
 logger = logging.getLogger("github_secrets")
+_aviso_gh_token = False
 
 
 def _pat_grava_secret() -> str:
@@ -31,12 +32,15 @@ def sync_secrets_github(
         return False
 
     if os.getenv("GITHUB_ACTIONS") == "true" and not _pat_grava_secret():
-        logger.error(
-            "Não gravou Secret %s_*: GH_TOKEN vazio. "
-            "O GITHUB_TOKEN padrão do Actions não grava Secrets — "
-            "defina secrets.GH_TOKEN (PAT com secrets:write) no workflow.",
-            prefix,
-        )
+        global _aviso_gh_token
+        if not _aviso_gh_token:
+            logger.warning(
+                "Não gravou Secret %s_*: GH_TOKEN vazio. "
+                "O GITHUB_TOKEN padrão do Actions não grava Secrets — "
+                "defina secrets.GH_TOKEN (PAT com secrets:write) no workflow.",
+                prefix,
+            )
+            _aviso_gh_token = True
         incrementar("token.sync_github_falha", tags=[f"prefix:{prefix}", "motivo:gh_token_vazio"])
         return False
 

@@ -1,27 +1,56 @@
 {
-  "timestamp": "2026-08-18T15:04:55.785285+00:00",
+  "timestamp": "2026-08-19T11:36:22.612861+00:00",
   "atual": {
-    "saude_score": 20.7,
+    "saude_score": 3.3,
     "produtos_seguros": 0.0,
-    "esforco_faltando": 0.0,
+    "esforco_faltando": 7.0,
     "kit_condicao_ok": 3.0,
-    "progresso_pct": 0.0,
-    "claude_ok": 1.0,
-    "aproximando": 1.0,
+    "progresso_pct": 22.2,
+    "claude_ok": 0.0,
+    "aproximando": 0.0,
     "anuncios_foco": 0.0
   },
   "anterior": {
-    "saude_score": 20.7,
-    "produtos_seguros": 0.0,
+    "saude_score": 25.0,
+    "produtos_seguros": 2.0,
     "esforco_faltando": 0.0,
     "kit_condicao_ok": 3.0,
-    "progresso_pct": 0.0,
-    "claude_ok": 1.0,
-    "aproximando": 1.0,
+    "progresso_pct": 100.0,
+    "claude_ok": 0.0,
+    "aproximando": 0.0,
     "anuncios_foco": 0.0
   },
-  "oscilacao": false,
-  "cuidado": false,
+  "oscilacao": true,
+  "cuidado": true,
   "primeira_amostra": false,
-  "mudancas": []
+  "mudancas": [
+    {
+      "metrica": "saude_score",
+      "de": 25.0,
+      "para": 3.3,
+      "delta": 21.7,
+      "limiar": 2.0
+    },
+    {
+      "metrica": "produtos_seguros",
+      "de": 2.0,
+      "para": 0.0,
+      "delta": 2.0,
+      "limiar": 0.0
+    },
+    {
+      "metrica": "esforco_faltando",
+      "de": 0.0,
+      "para": 7.0,
+      "delta": 7.0,
+      "limiar": 0.0
+    },
+    {
+      "metrica": "progresso_pct",
+      "de": 100.0,
+      "para": 22.2,
+      "delta": 77.8,
+      "limiar": 5.0
+    }
+  ]
 }

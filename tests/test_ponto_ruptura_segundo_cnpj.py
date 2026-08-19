@@ -264,6 +264,8 @@ class TestPreparacaoCnae(unittest.TestCase):
         )
         self.assertFalse(out["pronto"])
         self.assertGreaterEqual(out["gaps_n"], 1)
+        self.assertEqual(out["gaps_cnae_n"], 0)
+        self.assertEqual(out["gaps_kyc_n"], 1)
         ids = {g["id"] for g in out["gaps"]}
         self.assertIn("masterprint_seller_ml", ids)
 
@@ -318,6 +320,8 @@ class TestPreparacaoCnae(unittest.TestCase):
         self.assertIn("masterprint_cnae_informatica", ids_ok)
         self.assertIn("masterprint_cnae_resinas", ids_ok)
         self.assertIn("masterprint_cnae_papelaria", ids_ok)
+        self.assertEqual(out["gaps_cnae_n"], 0)
+        self.assertGreaterEqual(out["gaps_kyc_n"], 1)
 
 
 class TestMensagemEAgente(unittest.TestCase):

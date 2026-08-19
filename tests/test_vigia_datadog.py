@@ -226,6 +226,37 @@ class VigiaDatadogTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertFalse(out["tem_critico"])
 
+    def test_analisar_saude_inatividade_nao_critica_nao_zera_ok(self):
+        with patch.object(
+            vs,
+            "verificar_inatividade",
+            return_value=[
+                {
+                    "gravidade": "alta",
+                    "fonte_id": "relatorio_estrategia_ml",
+                    "nome": "Relatório estratégia",
+                    "motivo": "sem_resposta",
+                }
+            ],
+        ):
+            with patch.object(vs, "verificar_erros_nao_tratados", return_value=[]):
+                out = vs.analisar_saude([])
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["tem_critico"])
+        self.assertEqual(out["total_inatividades"], 1)
+        self.assertEqual(out["mensagem_critica"], "")
+
+    def test_analisar_saude_inatividade_critica_zera_ok(self):
+        with patch.object(
+            vs,
+            "verificar_inatividade",
+            return_value=[{"gravidade": "critica", "fonte_id": "orquestrador", "nome": "Orquestrador"}],
+        ):
+            with patch.object(vs, "verificar_erros_nao_tratados", return_value=[]):
+                out = vs.analisar_saude([])
+        self.assertFalse(out["ok"])
+        self.assertTrue(out["tem_critico"])
+
     def test_buscar_erros_datadog_desabilitado(self):
         with patch("core.config.DD_LOGS_ENABLED", False):
             with patch("core.config.DD_API_KEY", ""):

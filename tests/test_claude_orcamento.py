@@ -362,6 +362,22 @@ class TestClaudeOrcamento(unittest.TestCase):
         self.assertTrue(out.get("com_credito"))
         self.assertTrue(ok)
 
+    @patch("core.datadog_metrics.gauge")
+    def test_marcar_saldo_zerado_nao_apaga_snapshot_acima_de_2(self, mock_gauge):
+        o.aplicar_saldo_console(8.99, gasto_mes_usd=0.4, emitir_datadog=False, fonte_saldo="console_painel")
+        r = o.marcar_saldo_zerado_console(motivo="api_credit_too_low")
+        self.assertGreaterEqual(float(r["restante_usd"]), 2.0)
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("claude.orcamento_restante_usd", nomes)
+        pares = {c.args[0]: c.args[1] for c in mock_gauge.call_args_list}
+        self.assertGreaterEqual(pares["claude.orcamento_restante_usd"], 2.0)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_marcar_saldo_zerado_quando_snapshot_ja_e_zero(self, _gauge):
+        o.aplicar_saldo_console(0.0, emitir_datadog=False, fonte_saldo="console_api")
+        r = o.marcar_saldo_zerado_console(motivo="api_credit_too_low")
+        self.assertAlmostEqual(float(r["restante_usd"]), 0.0, places=2)
+
 
 if __name__ == "__main__":
     unittest.main()

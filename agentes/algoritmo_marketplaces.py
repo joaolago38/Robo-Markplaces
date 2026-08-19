@@ -44,7 +44,7 @@ def executar(alertar_quando_atencao: bool = False) -> dict:
 
     # Eventos só para canais configurados (emitir_de_avaliacao também ignora inativo).
     eventos = emitir_de_avaliacao(avaliacoes)
-    eventos_ativos = persistir_eventos(eventos) if eventos else persistir_eventos([])
+    eventos_ativos = persistir_eventos(eventos, avaliacoes=avaliacoes)
 
     for nome, avaliacao in avaliacoes.items():
         status = avaliacao["status"]

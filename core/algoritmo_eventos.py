@@ -122,12 +122,60 @@ def _ativos_validos(eventos: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
-def persistir_eventos(novos: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _canal_recuperado(av: dict[str, Any]) -> bool:
+    """True se a avaliação atual já não justifica congelar preço."""
+    status = str(av.get("status") or "").strip().lower()
+    if status in {"inativo"}:
+        return False
+    metrics = av.get("metrics") if isinstance(av.get("metrics"), dict) else {}
+    if metrics.get("configurado") is False:
+        return False
+    try:
+        score = int(av.get("score") or 0)
+    except (TypeError, ValueError):
+        score = 0
+    try:
+        claims = float(metrics.get("claims_rate") or 0)
+    except (TypeError, ValueError):
+        claims = 0.0
+    return status in {"saudavel", "ok"} and score >= 60 and claims < 0.01
+
+
+def _soltar_congelamento_se_recuperou(
+    eventos: list[dict[str, Any]],
+    avaliacoes: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Tira congelar_repricing quando o canal já voltou a saudável (não espera o TTL de 24h)."""
+    if not avaliacoes:
+        return eventos
+    soltar = {
+        str(nome).strip().lower()
+        for nome, av in avaliacoes.items()
+        if isinstance(av, dict) and _canal_recuperado(av)
+    }
+    if not soltar:
+        return eventos
+    return [
+        e
+        for e in eventos
+        if not (
+            e.get("tipo") == "congelar_repricing"
+            and str(e.get("marketplace") or "").strip().lower() in soltar
+        )
+    ]
+
+
+def persistir_eventos(
+    novos: list[dict[str, Any]],
+    *,
+    avaliacoes: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     data = ler_json(EVENTOS_PATH, default={"eventos": []})
     if not isinstance(data, dict):
         data = {"eventos": []}
     existentes = list(data.get("eventos") or [])
     merged = _ativos_validos(existentes + list(novos or []))
+    merged = _soltar_congelamento_se_recuperou(merged, avaliacoes)
     escrever_json_atomico(
         EVENTOS_PATH,
         {
