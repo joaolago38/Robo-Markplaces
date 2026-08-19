@@ -553,6 +553,15 @@ def emitir_metricas_condicoes(condicoes: dict[str, Any] | None = None) -> dict[s
                 1.0 if ok else 0.0,
                 tags=[f"marketplace:{canal}"],
             )
+        try:
+            from integracoes.meta.ciclo_campanhas import (
+                avaliar_momento_ciclo_meta,
+                emitir_metricas_ciclo_meta,
+            )
+
+            emitir_metricas_ciclo_meta(avaliar_momento_ciclo_meta(condicoes=cond))
+        except Exception as exc:
+            logger.warning("ciclo_campanhas_meta via doutrina: %s", exc)
         return cond
     except Exception as exc:
         logger.warning("emitir_metricas_condicoes: %s", exc)

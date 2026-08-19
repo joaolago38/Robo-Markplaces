@@ -238,7 +238,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     ),
     "meta_metricas": (
         "Lê métricas das campanhas Meta Ads (gasto, CTR, ROAS) e alerta campanhas "
-        "em atenção ou críticas. No orquestrador costuma alertar só o crítico."
+        "em atenção ou críticas. No orquestrador costuma alertar só o crítico. "
+        "IG/FB só entra no ciclo com saúde da conta ML ok e Impala na fase 3 Ads."
     ),
     "trafego_manicures": (
         "Debug/API: tráfego pago manicures. Alerta costuma ficar off — "

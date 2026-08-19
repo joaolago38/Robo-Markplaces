@@ -13,7 +13,13 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
-from integracoes.meta.meta_ads_client import listar_metricas_campanhas, normalizar_metrica_campanha
+from integracoes.meta.ciclo_campanhas import emitir_metricas_ciclo_meta
+from integracoes.meta.meta_ads_client import (
+    listar_metricas_campanhas,
+    listar_metricas_por_plataforma,
+    normalizar_metrica_campanha,
+    normalizar_por_plataforma,
+)
 
 logger = logging.getLogger("agente_metricas_meta")
 
@@ -93,6 +99,18 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
             gauge("meta.roas_medio", float(sum(roas_vals) / len(roas_vals)))
         if resumo["critico"]:
             incrementar("meta.alerta_critico", float(resumo["critico"]))
+        plat_rows = listar_metricas_por_plataforma(periodo_dias=periodo_dias)
+        momento = emitir_metricas_ciclo_meta(
+            plataformas=normalizar_por_plataforma(plat_rows),
+        )
+        if isinstance(momento, dict):
+            payload["ciclo"] = {
+                "pronto": bool(momento.get("pronto")),
+                "saude_conta_ok": bool(momento.get("saude_conta_ok")),
+                "impala_ok": bool(momento.get("impala_ok")),
+                "fase": momento.get("fase"),
+                "motivo": momento.get("motivo"),
+            }
     except Exception as exc:
         logger.warning("Meta metricas Datadog: %s", exc)
     logger.info("Métricas Meta: %s", payload)

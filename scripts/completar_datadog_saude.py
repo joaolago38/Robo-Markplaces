@@ -1931,6 +1931,73 @@ def _grupo_decisao_guerra_impala() -> dict[str, Any]:
                     "layout": {"height": 3, "width": 6, "x": 6, "y": 23},
                     "id": 741048,
                 },
+                {
+                    **_qv(
+                        "Momento IG/FB no ciclo (1=saude ML + Impala ads)",
+                        "avg:robo.meta.ciclo.pronto{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 26},
+                    "id": 741049,
+                },
+                {
+                    **_qv(
+                        "Saude conta ML (gate IG/FB)",
+                        "avg:robo.meta.ciclo.saude_conta_ok{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 26},
+                    "id": 741050,
+                },
+                {
+                    **_qv(
+                        "Impala ads-ready fase 3+ (gate IG/FB)",
+                        "avg:robo.meta.ciclo.impala_ok{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 26},
+                    "id": 741051,
+                },
+                {
+                    **_qv(
+                        "Meta campanhas (0 ate ligar)",
+                        "avg:robo.meta.campanhas_total{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 26},
+                    "id": 741052,
+                },
+                {
+                    **_qv(
+                        "Campanhas Instagram",
+                        "avg:robo.meta.campanhas_plataforma{plataforma:instagram}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 26},
+                    "id": 741053,
+                },
+                {
+                    **_qv(
+                        "Campanhas Facebook",
+                        "avg:robo.meta.campanhas_plataforma{plataforma:facebook}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 26},
+                    "id": 741054,
+                },
             ],
         },
         "layout": {"x": 0, "y": 26, "width": 12, "height": 1},
@@ -4158,6 +4225,29 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 11},
                     "id": 780029,
                 },
+                {
+                    **_qv(
+                        "Saude conta (cor/taxas, 0/1)",
+                        "avg:robo.ml.saude.conta_ok{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 13},
+                    "id": 780030,
+                },
+                {
+                    **_qv(
+                        "Momento IG/FB no ciclo",
+                        "avg:robo.meta.ciclo.pronto{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 13},
+                    "id": 780031,
+                },
             ],
         },
         "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
@@ -4861,7 +4951,10 @@ def atualizar_dashboard_ecommerce() -> None:
             "canal_liberado por marketplace (ML referente; Shopee/Magalu/Amazon só fase 3+), "
             "margem/lucro do catálogo + Cruzeiro spa + pipeline onda 2. "
             "Rivais comparáveis só com amostra viva. Telegram aponta "
-            "para este grupo. Cache STALE não entra como mercado.\n\n"
+            "para este grupo. Cache STALE não entra como mercado. "
+            "IG/FB entra no ciclo só com `meta.ciclo.pronto=1` (saúde conta ML "
+            "sem laranja/vermelho + Impala fase 3 Ads: 20 reviews / nota 4.8 / frente no ar); "
+            "campanhas IG/FB ficam 0 até existirem na Meta.\n\n"
             "**Decisão / oscilação:** grupo [Decisao] — Claude pulsa assertividade "
             "máxima só para expor âncoras no Datadog e volta a uso moderado. "
             "Qualquer oscilação além da margem de erro deixa o widget **vermelho** "

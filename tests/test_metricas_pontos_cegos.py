@@ -160,6 +160,8 @@ class TestVendasMetricas(unittest.TestCase):
 
 
 class TestMetaMetricas(unittest.TestCase):
+    @patch("agentes.social.agente_metricas_meta.emitir_metricas_ciclo_meta", return_value={})
+    @patch("agentes.social.agente_metricas_meta.listar_metricas_por_plataforma", return_value=[])
     @patch("agentes.social.agente_metricas_meta.alertar_gestor")
     @patch("agentes.social.agente_metricas_meta.gauge")
     @patch("agentes.social.agente_metricas_meta.incrementar")

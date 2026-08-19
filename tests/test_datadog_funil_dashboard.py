@@ -99,6 +99,8 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.saude.anuncios_ativos_conta",
             "robo.ml.integridade.ids_busca",
             "robo.ml.integridade.paging_total",
+            "robo.ml.saude.conta_ok",
+            "robo.meta.ciclo.pronto",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_SAUDE_CONTA_ML_ID)
@@ -174,6 +176,12 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.impala.guerra.canal_liberado{marketplace:amazon}",
             "robo.cruzeiro.mercado.seller_vendas_dia",
             "robo.cruzeiro.mercado.seller_anuncios",
+            "robo.meta.ciclo.pronto",
+            "robo.meta.ciclo.saude_conta_ok",
+            "robo.meta.ciclo.impala_ok",
+            "robo.meta.campanhas_total",
+            "robo.meta.campanhas_plataforma{plataforma:instagram}",
+            "robo.meta.campanhas_plataforma{plataforma:facebook}",
         ):
             self.assertIn(metric, blob, msg=metric)
 

@@ -271,9 +271,19 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
 
     if not resumo.get("ok"):
         gauge("ml.saude.ok", 0.0)
+        gauge("ml.saude.conta_ok", 0.0)
         return
+    from integracoes.empresa.ponto_ruptura_segundo_cnpj import _f, _saude_conta_ok
+
     rep = resumo.get("reputacao") if isinstance(resumo.get("reputacao"), dict) else {}
+    conta_ok, _atual = _saude_conta_ok(
+        cor=str(rep.get("cor") or rep.get("level_id") or ""),
+        atraso_rate=_f(rep.get("atraso_rate")),
+        cancelamentos_rate=_f(rep.get("cancelamentos_rate")),
+        claims_rate=_f(rep.get("claims_rate")),
+    )
     gauge("ml.saude.ok", 1.0)
+    gauge("ml.saude.conta_ok", 1.0 if conta_ok else 0.0)
     gauge("ml.saude.vendas_completadas", float(rep.get("vendas_completadas") or 0))
     gauge("ml.saude.vendas_60d", float(rep.get("vendas_60d") or 0))
     gauge("ml.saude.avaliacoes", float(rep.get("avaliacoes") or 0))
