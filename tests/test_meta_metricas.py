@@ -9,6 +9,7 @@ from agentes.social.agente_metricas_meta import executar
 
 
 class MetaMetricasTests(unittest.TestCase):
+    @patch("agentes.social.agente_metricas_meta.coletar_receita_ml", return_value={"ok": True, "receita_ml": 0, "pedidos_ml": 0})
     @patch("agentes.social.agente_metricas_meta.emitir_metricas_ciclo_meta", return_value={"pronto": False})
     @patch("agentes.social.agente_metricas_meta.listar_metricas_por_plataforma", return_value=[])
     @patch("agentes.social.agente_metricas_meta.alertar_gestor")
@@ -30,6 +31,7 @@ class MetaMetricasTests(unittest.TestCase):
         self.assertEqual(out["resumo"]["total"], 1)
         self.assertEqual(out["campanhas"][0]["status"], "critico")
 
+    @patch("agentes.social.agente_metricas_meta.coletar_receita_ml", return_value={"ok": True, "receita_ml": 0, "pedidos_ml": 0})
     @patch("agentes.social.agente_metricas_meta.emitir_metricas_ciclo_meta", return_value={"pronto": False})
     @patch("agentes.social.agente_metricas_meta.listar_metricas_por_plataforma", return_value=[])
     @patch("agentes.social.agente_metricas_meta.listar_metricas_campanhas")

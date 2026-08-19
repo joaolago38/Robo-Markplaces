@@ -182,6 +182,11 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.meta.campanhas_total",
             "robo.meta.campanhas_plataforma{plataforma:instagram}",
             "robo.meta.campanhas_plataforma{plataforma:facebook}",
+            "robo.meta.ciclo.roas_real",
+            "robo.meta.ciclo.receita_ml",
+            "robo.meta.ciclo.conversao_imp_pct",
+            "robo.meta.ciclo.eficiencia_pct",
+            "robo.meta.ciclo.cpa_ml",
         ):
             self.assertIn(metric, blob, msg=metric)
 

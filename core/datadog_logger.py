@@ -45,6 +45,7 @@ _LOGGER_META = {
     "amazon_client": ("amazon", "integracao"),
     "meta": ("meta", "integracao"),
     "meta_ads_client": ("meta_ads", "integracao"),
+    "ciclo_campanhas_meta": ("meta", "integracao"),
     "lojahub": ("lojahub", "integracao"),
 
     # --- Core (infraestrutura compartilhada, não é um marketplace) ---

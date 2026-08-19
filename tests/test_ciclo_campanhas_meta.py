@@ -122,5 +122,67 @@ class CicloCampanhasMetaTests(unittest.TestCase):
         self.assertEqual(pares[("meta.gasto_plataforma", ("plataforma:facebook",))], 8.0)
 
 
+class EficienciaCicloMetaTests(unittest.TestCase):
+    def test_zero_sem_ads_nem_venda(self):
+        out = ciclo.avaliar_eficiencia_ciclo(
+            meta={"gasto_meta": 0, "impressoes": 0, "clicks": 0, "compras_pixel": 0, "receita_meta_pixel": 0},
+            ml={"ok": True, "receita_ml": 0, "pedidos_ml": 0},
+        )
+        self.assertEqual(out["eficiencia_pct"], 0.0)
+        self.assertEqual(out["conversao_imp_pct"], 0.0)
+        self.assertEqual(out["cpa_ml"], 0.0)
+        self.assertEqual(out["status"], "insuficiente_dados")
+
+    def test_roas_real_e_conversao_ponta_a_ponta(self):
+        out = ciclo.avaliar_eficiencia_ciclo(
+            meta={
+                "gasto_meta": 50,
+                "impressoes": 10000,
+                "clicks": 200,
+                "compras_pixel": 8,
+                "receita_meta_pixel": 180,
+            },
+            ml={"ok": True, "receita_ml": 150, "pedidos_ml": 3},
+            periodo_dias=1,
+        )
+        self.assertEqual(out["roas_real"], 3.0)
+        self.assertEqual(out["cpa_ml"], round(50 / 3, 2))
+        self.assertEqual(out["ticket_ml"], 50.0)
+        self.assertEqual(out["conversao_imp_pct"], 0.03)
+        self.assertEqual(out["conversao_click_pct"], 1.5)
+        self.assertGreaterEqual(out["eficiencia_pct"], 100.0)
+        self.assertEqual(out["status"], "sustentavel")
+
+    def test_clicks_via_cpc(self):
+        n = ciclo.clicks_de_campanha({"gasto": 40, "cpc": 2, "impressoes": 0, "ctr": 0})
+        self.assertEqual(n, 20.0)
+
+    def test_agregar_campanhas(self):
+        out = ciclo.agregar_meta_campanhas(
+            [
+                {"metricas": {"gasto": 10, "impressoes": 1000, "cpc": 1, "compras": 1, "receita": 20, "ctr": 1}},
+                {"gasto": 10, "impressoes": 1000, "cpc": 1, "compras": 1, "receita": 30, "ctr": 1},
+            ]
+        )
+        self.assertEqual(out["gasto_meta"], 20.0)
+        self.assertEqual(out["impressoes"], 2000)
+        self.assertEqual(out["clicks"], 20.0)
+
+    @patch("integracoes.meta.ciclo_campanhas.gauge")
+    def test_emite_eficiencia(self, mock_g):
+        efic = ciclo.avaliar_eficiencia_ciclo(
+            meta={"gasto_meta": 0, "impressoes": 0, "clicks": 0, "compras_pixel": 0, "receita_meta_pixel": 0},
+            ml={"ok": True, "receita_ml": 0, "pedidos_ml": 0},
+        )
+        ciclo.emitir_metricas_ciclo_meta(
+            {"pronto": False, "saude_conta_ok": True, "impala_ok": False},
+            eficiencia=efic,
+        )
+        nomes = [c.args[0] for c in mock_g.call_args_list]
+        self.assertIn("meta.ciclo.roas_real", nomes)
+        self.assertIn("meta.ciclo.conversao_imp_pct", nomes)
+        self.assertIn("meta.ciclo.eficiencia_pct", nomes)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -160,6 +160,7 @@ class TestVendasMetricas(unittest.TestCase):
 
 
 class TestMetaMetricas(unittest.TestCase):
+    @patch("agentes.social.agente_metricas_meta.coletar_receita_ml", return_value={"ok": True, "receita_ml": 0, "pedidos_ml": 0})
     @patch("agentes.social.agente_metricas_meta.emitir_metricas_ciclo_meta", return_value={})
     @patch("agentes.social.agente_metricas_meta.listar_metricas_por_plataforma", return_value=[])
     @patch("agentes.social.agente_metricas_meta.alertar_gestor")

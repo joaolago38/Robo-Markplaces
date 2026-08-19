@@ -13,13 +13,18 @@ from core.config import (
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
-from integracoes.meta.ciclo_campanhas import emitir_metricas_ciclo_meta
+from integracoes.meta.ciclo_campanhas import (
+    agregar_meta_campanhas,
+    avaliar_eficiencia_ciclo,
+    emitir_metricas_ciclo_meta,
+)
 from integracoes.meta.meta_ads_client import (
     listar_metricas_campanhas,
     listar_metricas_por_plataforma,
     normalizar_metrica_campanha,
     normalizar_por_plataforma,
 )
+from integracoes.social.sustentabilidade_ads_ml import coletar_receita_ml
 
 logger = logging.getLogger("agente_metricas_meta")
 
@@ -100,8 +105,14 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
         if resumo["critico"]:
             incrementar("meta.alerta_critico", float(resumo["critico"]))
         plat_rows = listar_metricas_por_plataforma(periodo_dias=periodo_dias)
+        efic = avaliar_eficiencia_ciclo(
+            meta=agregar_meta_campanhas(campanhas),
+            ml=coletar_receita_ml(periodo_dias),
+            periodo_dias=periodo_dias,
+        )
         momento = emitir_metricas_ciclo_meta(
             plataformas=normalizar_por_plataforma(plat_rows),
+            eficiencia=efic,
         )
         if isinstance(momento, dict):
             payload["ciclo"] = {
@@ -110,6 +121,7 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
                 "impala_ok": bool(momento.get("impala_ok")),
                 "fase": momento.get("fase"),
                 "motivo": momento.get("motivo"),
+                "eficiencia": momento.get("eficiencia"),
             }
     except Exception as exc:
         logger.warning("Meta metricas Datadog: %s", exc)

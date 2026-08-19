@@ -1998,6 +1998,144 @@ def _grupo_decisao_guerra_impala() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 2, "x": 10, "y": 26},
                     "id": 741054,
                 },
+                {
+                    **_qv(
+                        "ROAS real ML/Ads (receita ML / gasto Meta)",
+                        "avg:robo.meta.ciclo.roas_real{*}",
+                        aggregator="last",
+                        green_gt=2.1,
+                        yellow_gt=1.0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 28},
+                    "id": 741055,
+                },
+                {
+                    **_qv(
+                        "ROAS pixel Meta",
+                        "avg:robo.meta.ciclo.roas_pixel{*}",
+                        aggregator="last",
+                        green_gt=2.1,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 28},
+                    "id": 741056,
+                },
+                {
+                    **_qv(
+                        "Receita ML R$ (periodo)",
+                        "avg:robo.meta.ciclo.receita_ml{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 28},
+                    "id": 741057,
+                },
+                {
+                    **_qv(
+                        "Pedidos ML (periodo)",
+                        "avg:robo.meta.ciclo.pedidos_ml{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 28},
+                    "id": 741058,
+                },
+                {
+                    **_qv(
+                        "CPA ML R$ (gasto / pedido)",
+                        "avg:robo.meta.ciclo.cpa_ml{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 28},
+                    "id": 741059,
+                },
+                {
+                    **_qv(
+                        "Conv. impressao → pedido ML %",
+                        "avg:robo.meta.ciclo.conversao_imp_pct{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=3,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 28},
+                    "id": 741060,
+                },
+                {
+                    **_qv(
+                        "Eficiencia Ads×ML % (ROAS/meta)",
+                        "avg:robo.meta.ciclo.eficiencia_pct{*}",
+                        aggregator="last",
+                        green_gt=99,
+                        yellow_gt=49,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 30},
+                    "id": 741061,
+                },
+                {
+                    **_qv(
+                        "Cobertura R$ (ML - gasto Ads)",
+                        "avg:robo.meta.ciclo.cobertura_reais{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 30},
+                    "id": 741062,
+                },
+                {
+                    **_qv(
+                        "Conv. clique → pedido ML %",
+                        "avg:robo.meta.ciclo.conversao_click_pct{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 30},
+                    "id": 741063,
+                },
+                {
+                    **_qv(
+                        "Ticket medio ML R$",
+                        "avg:robo.meta.ciclo.ticket_ml{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 30},
+                    "id": 741064,
+                },
+                {
+                    **_qv(
+                        "Impressoes Meta",
+                        "avg:robo.meta.ciclo.impressoes{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 30},
+                    "id": 741065,
+                },
+                {
+                    **_qv(
+                        "Status Ads×ML (0=sem dado 1=ok 2=alerta 3=critico)",
+                        "avg:robo.meta.ciclo.status_num{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        yellow_gt=1.5,
+                        red_gt=2.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 30},
+                    "id": 741066,
+                },
             ],
         },
         "layout": {"x": 0, "y": 26, "width": 12, "height": 1},
@@ -4954,7 +5092,10 @@ def atualizar_dashboard_ecommerce() -> None:
             "para este grupo. Cache STALE não entra como mercado. "
             "IG/FB entra no ciclo só com `meta.ciclo.pronto=1` (saúde conta ML "
             "sem laranja/vermelho + Impala fase 3 Ads: 20 reviews / nota 4.8 / frente no ar); "
-            "campanhas IG/FB ficam 0 até existirem na Meta.\n\n"
+            "campanhas IG/FB ficam 0 até existirem na Meta. "
+            "Eficiência Ads×ML no mesmo grupo: ROAS real (receita ML / gasto Meta), "
+            "conversão impressão→pedido e clique→pedido, CPA, cobertura e status "
+            "(não atribui pedido a IG vs FB — sem UTM).\n\n"
             "**Decisão / oscilação:** grupo [Decisao] — Claude pulsa assertividade "
             "máxima só para expor âncoras no Datadog e volta a uso moderado. "
             "Qualquer oscilação além da margem de erro deixa o widget **vermelho** "
