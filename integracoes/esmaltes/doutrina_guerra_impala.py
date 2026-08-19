@@ -562,6 +562,12 @@ def emitir_metricas_condicoes(condicoes: dict[str, Any] | None = None) -> dict[s
             emitir_metricas_ciclo_meta(avaliar_momento_ciclo_meta(condicoes=cond))
         except Exception as exc:
             logger.warning("ciclo_campanhas_meta via doutrina: %s", exc)
+        try:
+            from integracoes.meta.claude_ciclo_meta import auxiliar_listing_mimo
+
+            auxiliar_listing_mimo(cond)
+        except Exception as exc:
+            logger.warning("claude listing MIMO via doutrina: %s", exc)
         return cond
     except Exception as exc:
         logger.warning("emitir_metricas_condicoes: %s", exc)

@@ -146,6 +146,16 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
                 "motivo": momento.get("motivo"),
                 "eficiencia": momento.get("eficiencia"),
             }
+            try:
+                from integracoes.meta.claude_ciclo_meta import auxiliar_ciclo_meta
+
+                payload["claude"] = auxiliar_ciclo_meta(
+                    momento,
+                    eficiencia=efic if isinstance(efic, dict) else None,
+                    campanhas_total=int(resumo.get("total") or 0),
+                )
+            except Exception as exc:
+                logger.warning("Meta Claude ciclo: %s", exc)
         datadog_ok = True
     except Exception as exc:
         logger.warning("Meta metricas Datadog: %s", exc)

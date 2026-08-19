@@ -239,7 +239,9 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     "meta_metricas": (
         "Lê métricas das campanhas Meta Ads (gasto, CTR, ROAS) e alerta campanhas "
         "em atenção ou críticas. No orquestrador costuma alertar só o crítico. "
-        "IG/FB só entra no ciclo com saúde da conta ML ok e Impala na fase 3 Ads."
+        "IG/FB só entra no ciclo com saúde da conta ML ok e Impala na fase 3 Ads. "
+        "Claude: briefing no flip pronto=1, copy IG/FB (não publica), eficiência "
+        "alerta/crítico e digest diário enquanto estiver bloqueado."
     ),
     "trafego_manicures": (
         "Debug/API: tráfego pago manicures. Alerta costuma ficar off — "
@@ -313,7 +315,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
     ),
     "alerta_pendencias_loja": (
         "P0 da loja: envio pendente, pergunta que o chat não fechou, claim ou cor "
-        "laranja. Sai no ciclo 30 min; o mesmo estado espera 30 min."
+        "laranja. Sai no ciclo 30 min; o mesmo estado espera 30 min. "
+        "Pergunta/chat falho: rascunho Claude no Telegram (não publica no ML)."
     ),
     "chat_ml": (
         "Lê e processa mensagens do chat do Mercado Livre. Telegram sobretudo em "

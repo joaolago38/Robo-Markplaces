@@ -26,6 +26,16 @@ class TestClassificarP0(unittest.TestCase):
         self.assertIn("Envio pendente", msg)
         self.assertIn("Pergunta em aberto", msg)
 
+    def test_mensagem_inclui_rascunho(self):
+        pend = classificar_pendencias_p0(perguntas_pendentes=1)
+        pend["rascunhos"] = [
+            {"pergunta": "Tem Carmed?", "rascunho": "Confira no anúncio o kit MIMO + Carmed."}
+        ]
+        msg = montar_mensagem_p0(pend)
+        self.assertIn("Rascunho Claude", msg)
+        self.assertIn("Tem Carmed?", msg)
+        self.assertIn("não publicou", msg.lower())
+
     def test_cor_laranja(self):
         out = classificar_pendencias_p0(level_id="2_orange")
         self.assertTrue(out["tem_p0"])
@@ -70,10 +80,11 @@ class TestEmitirP0(unittest.TestCase):
         self.assertTrue(out["tem_p0"])
         self.assertEqual(len(out["itens"]), 3)
 
+    @patch("integracoes.ml.ml_client.listar_perguntas_nao_respondidas", return_value=[])
     @patch("integracoes.ml.ml_client.contar_claims_abertos", return_value={"ok": True, "total": 0})
     @patch("integracoes.ml.ml_client.contar_envios_pendentes", return_value={"ok": True, "total": 2})
     @patch("integracoes.ml.alerta_pendencias_loja.emitir_alerta_p0", return_value=True)
-    def test_ciclo_usa_envios_da_api(self, mock_emit, _env, _cl):
+    def test_ciclo_usa_envios_da_api(self, mock_emit, _env, _cl, _perg):
         from integracoes.ml.alerta_pendencias_loja import emitir_alerta_p0_do_ciclo
 
         out = emitir_alerta_p0_do_ciclo(
@@ -97,6 +108,24 @@ class TestEmitirP0(unittest.TestCase):
         self.assertIn("ml.loja.p0.envios", nomes)
         tem = next(c for c in mock_gauge.call_args_list if c.args[0] == "ml.loja.p0.tem")
         self.assertEqual(tem.args[1], 0.0)
+
+    @patch.dict("os.environ", {"TEST_P0_RASCUNHO": "1"})
+    @patch("integracoes.ml.alerta_pendencias_loja.CLAUDE_P0_RASCUNHO", True)
+    @patch("core.resumo_ia.sintetizar_claude", return_value="Confira o anúncio do kit MIMO.")
+    @patch("core.produto_lookup.buscar_produto_por_ref", return_value={"nome": "Kit MIMO", "sku": "IMP-MIMO-003"})
+    def test_rascunho_nao_inventa_e_nao_vazio(self, _prod, mock_ia):
+        from integracoes.ml.alerta_pendencias_loja import rascunhar_perguntas_p0
+
+        out = rascunhar_perguntas_p0(
+            [{"id": "Q1", "item_id": "MLB1", "text": "Tem Carmed no kit?"}],
+            max_n=2,
+        )
+        self.assertEqual(len(out), 1)
+        self.assertIn("MIMO", out[0]["rascunho"])
+        mock_ia.assert_called_once()
+        self.assertEqual(mock_ia.call_args.kwargs.get("origem"), "p0_rascunho_pergunta")
+        self.assertTrue(mock_ia.call_args.kwargs.get("forcar_modelo"))
+        self.assertIn("haiku", str(mock_ia.call_args.kwargs.get("modelo") or "").lower())
 
 
 if __name__ == "__main__":

@@ -144,8 +144,14 @@ def _payload_para_contexto_claude(payload: dict) -> dict:
     mp = payload.get("marketplaces") or {}
     gatilho = payload.get("gatilho_ads") or {}
     repricing = payload.get("repricing") or {}
+    ciclo = payload.get("ciclo_meta") if isinstance(payload.get("ciclo_meta"), dict) else {}
     return {
         "kpis_24h": payload.get("kpis_24h"),
+        "ciclo_meta": {
+            "pronto": ciclo.get("pronto"),
+            "motivo": ciclo.get("motivo"),
+            "fase": ciclo.get("fase"),
+        },
         "marketplaces_resumo": mp.get("resumo") or {},
         "marketplaces_status": {
             nome: {"status": av.get("status"), "score": av.get("score")}
@@ -325,6 +331,19 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
         "modo": {"repricing_dry_run": dry_run_repricing, "nfe_dry_run": dry_run_nfe},
     }
 
+    try:
+        from integracoes.meta.ciclo_campanhas import avaliar_momento_ciclo_meta
+        from integracoes.meta.claude_ciclo_meta import auxiliar_digest_bloqueio
+
+        ciclo_meta = avaliar_momento_ciclo_meta()
+        payload["ciclo_meta"] = {
+            "pronto": bool(ciclo_meta.get("pronto")),
+            "motivo": ciclo_meta.get("motivo"),
+            "fase": ciclo_meta.get("fase"),
+        }
+        payload["claude_ciclo_meta"] = auxiliar_digest_bloqueio(ciclo_meta)
+    except Exception as exc:
+        logger.warning("Operacao24h ciclo Meta Claude: %s", exc)
     resumo_ia = _sintetizar_claude_operacao(payload)
     bloco_notas = _formatar_notas_repricing(repricing)
     aplicados = int(repricing.get("total_aplicados_sucesso") or 0)
