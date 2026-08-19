@@ -99,6 +99,8 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.saude.anuncios_ativos_conta",
             "robo.ml.integridade.ids_busca",
             "robo.ml.integridade.paging_total",
+            "robo.ml.saude.conta_ok",
+            "robo.meta.ciclo.pronto",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_SAUDE_CONTA_ML_ID)
@@ -109,6 +111,12 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         self.assertIn("robo.ml.loja.p0.tem", blob)
         self.assertIn("robo.ml.loja.p0.telegram_ok", blob)
         self.assertIn("robo.ml.loja.p0.telegram_skip", blob)
+        self.assertIn("robo.meta.rodadas", blob)
+        self.assertIn("robo.meta.ciclo.pronto", blob)
+        self.assertIn("robo.ml.saude.conta_ok", blob)
+        self.assertIn("robo.meta.ciclo.impala_ok", blob)
+        self.assertIn("robo.meta.campanhas_plataforma{plataforma:instagram}", blob)
+        self.assertIn("robo.meta.campanhas_plataforma{plataforma:facebook}", blob)
 
     def test_grupo_ruptura_outra_marca(self):
         grupo = dd._grupo_ruptura_outra_marca()
@@ -174,6 +182,17 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.impala.guerra.canal_liberado{marketplace:amazon}",
             "robo.cruzeiro.mercado.seller_vendas_dia",
             "robo.cruzeiro.mercado.seller_anuncios",
+            "robo.meta.ciclo.pronto",
+            "robo.meta.ciclo.saude_conta_ok",
+            "robo.meta.ciclo.impala_ok",
+            "robo.meta.campanhas_total",
+            "robo.meta.campanhas_plataforma{plataforma:instagram}",
+            "robo.meta.campanhas_plataforma{plataforma:facebook}",
+            "robo.meta.ciclo.roas_real",
+            "robo.meta.ciclo.receita_ml",
+            "robo.meta.ciclo.conversao_imp_pct",
+            "robo.meta.ciclo.eficiencia_pct",
+            "robo.meta.ciclo.cpa_ml",
         ):
             self.assertIn(metric, blob, msg=metric)
 

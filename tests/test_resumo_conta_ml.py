@@ -68,8 +68,10 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertIn("ml.saude.catalogo_foco_vazio", nomes)
         self.assertIn("ml.saude.anuncios_ativos_conta", nomes)
         self.assertIn("ml.saude.anuncios_pausados_conta", nomes)
+        self.assertIn("ml.saude.conta_ok", nomes)
         pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
         self.assertEqual(pares["ml.saude.ok"], 1.0)
+        self.assertEqual(pares["ml.saude.conta_ok"], 1.0)
         self.assertEqual(pares["ml.saude.vendas_completadas"], 12.0)
         self.assertEqual(pares["ml.saude.claims_rate_pct"], 1.0)
         self.assertEqual(pares["ml.saude.todos_pausados"], 0.0)
@@ -77,7 +79,26 @@ class TestResumoContaMl(unittest.TestCase):
     def test_emitir_metricas_saude_falha(self):
         with patch("core.datadog_metrics.gauge") as mock_g:
             rc.emitir_metricas_saude_conta({"ok": False})
-        self.assertEqual(mock_g.call_args.args, ("ml.saude.ok", 0.0))
+        pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
+        self.assertEqual(pares["ml.saude.ok"], 0.0)
+        self.assertEqual(pares["ml.saude.conta_ok"], 0.0)
+
+    def test_emitir_metricas_saude_conta_laranja(self):
+        resumo = {
+            "ok": True,
+            "reputacao": {
+                "cor": "Laranja",
+                "level_id": "2_orange",
+                "claims_rate": 0.0,
+                "atraso_rate": 0.0,
+                "cancelamentos_rate": 0.0,
+            },
+        }
+        with patch("core.datadog_metrics.gauge") as mock_g:
+            rc.emitir_metricas_saude_conta(resumo)
+        pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
+        self.assertEqual(pares["ml.saude.ok"], 1.0)
+        self.assertEqual(pares["ml.saude.conta_ok"], 0.0)
 
     @patch("integracoes.ml.integridade_dados_ml.executar", return_value={"pct": 100.0, "atinge_meta": True, "espelho_confiavel": True, "meta_pct": 99.99, "corrigidos": 0})
     @patch("integracoes.ml.ml_product_ads.listar_campanhas", return_value=[{"status": "IDLE"}])

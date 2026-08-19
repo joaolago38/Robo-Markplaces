@@ -307,7 +307,8 @@ class TestCondicoesGuerra(unittest.TestCase):
         self.assertTrue(out["liberar"]["golpe_preco"])
 
     @patch("integracoes.esmaltes.doutrina_guerra_impala.gauge")
-    def test_emitir_condicoes_fase_0(self, mock_g):
+    @patch("integracoes.meta.claude_ciclo_meta.auxiliar_listing_mimo", return_value={"ok": True, "pulado": "test"})
+    def test_emitir_condicoes_fase_0(self, _mimo, mock_g):
         cond = dg.avaliar_condicoes_guerra(
             produtos=[
                 _kit("IMP-MIMO-003", nome="Kit 3 Mimo + Carmed"),

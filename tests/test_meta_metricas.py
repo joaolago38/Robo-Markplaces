@@ -9,9 +9,13 @@ from agentes.social.agente_metricas_meta import executar
 
 
 class MetaMetricasTests(unittest.TestCase):
+    @patch("agentes.social.agente_metricas_meta.escrever_json_atomico")
+    @patch("agentes.social.agente_metricas_meta.coletar_receita_ml", return_value={"ok": True, "receita_ml": 0, "pedidos_ml": 0})
+    @patch("agentes.social.agente_metricas_meta.emitir_metricas_ciclo_meta", return_value={"pronto": False})
+    @patch("agentes.social.agente_metricas_meta.listar_metricas_por_plataforma", return_value=[])
     @patch("agentes.social.agente_metricas_meta.alertar_gestor")
     @patch("agentes.social.agente_metricas_meta.listar_metricas_campanhas")
-    def test_classifica_campanha_critica(self, mock_listar, _mock_alertar):
+    def test_classifica_campanha_critica(self, mock_listar, _mock_alertar, *_mocks):
         mock_listar.return_value = [
             {
                 "campaign_id": "1",
@@ -28,8 +32,12 @@ class MetaMetricasTests(unittest.TestCase):
         self.assertEqual(out["resumo"]["total"], 1)
         self.assertEqual(out["campanhas"][0]["status"], "critico")
 
+    @patch("agentes.social.agente_metricas_meta.escrever_json_atomico")
+    @patch("agentes.social.agente_metricas_meta.coletar_receita_ml", return_value={"ok": True, "receita_ml": 0, "pedidos_ml": 0})
+    @patch("agentes.social.agente_metricas_meta.emitir_metricas_ciclo_meta", return_value={"pronto": False})
+    @patch("agentes.social.agente_metricas_meta.listar_metricas_por_plataforma", return_value=[])
     @patch("agentes.social.agente_metricas_meta.listar_metricas_campanhas")
-    def test_classifica_campanha_saudavel(self, mock_listar):
+    def test_classifica_campanha_saudavel(self, mock_listar, _plat, _emit, _ml, mock_hb):
         mock_listar.return_value = [
             {
                 "campaign_id": "2",
@@ -44,6 +52,12 @@ class MetaMetricasTests(unittest.TestCase):
         ]
         out = executar(alertar_quando_atencao=False, periodo_dias=1)
         self.assertEqual(out["campanhas"][0]["status"], "saudavel")
+        mock_hb.assert_called_once()
+        snap = mock_hb.call_args[0][1]
+        self.assertIn("timestamp", snap)
+        self.assertTrue(snap["ok"])
+        self.assertEqual(snap["campanhas"], 1)
+        self.assertFalse(snap["pronto"])
 
 
 if __name__ == "__main__":

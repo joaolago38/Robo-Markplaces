@@ -297,6 +297,37 @@ CLAUDE_LUCRO_ML_MOMENTOS = os.getenv("CLAUDE_LUCRO_ML_MOMENTOS", "1").strip().lo
     "false",
     "no",
 )
+# Claude no ciclo IG/FB: briefing no flip pronto, copy, eficiência, digest, listing MIMO.
+# Não decide o gate (pronto/saude/impala). Não publica anúncio.
+CLAUDE_CICLO_META = os.getenv("CLAUDE_CICLO_META", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CLAUDE_CICLO_META_COPY = os.getenv("CLAUDE_CICLO_META_COPY", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CLAUDE_CICLO_META_EFIC = os.getenv("CLAUDE_CICLO_META_EFIC", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CLAUDE_MIMO_LISTING = os.getenv("CLAUDE_MIMO_LISTING", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CLAUDE_P0_RASCUNHO = os.getenv("CLAUDE_P0_RASCUNHO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+CLAUDE_CICLO_META_DIGEST_SEG = int(os.getenv("CLAUDE_CICLO_META_DIGEST_SEG", str(24 * 3600)))
+CLAUDE_CICLO_META_EFIC_SEG = int(os.getenv("CLAUDE_CICLO_META_EFIC_SEG", str(24 * 3600)))
+CLAUDE_CICLO_META_COPY_SEG = int(os.getenv("CLAUDE_CICLO_META_COPY_SEG", str(24 * 3600)))
+CLAUDE_MIMO_LISTING_SEG = int(os.getenv("CLAUDE_MIMO_LISTING_SEG", str(24 * 3600)))
 # Limites de decisão do ecossistema (Alibaba + USD + vendas + saúde ML × CNAE/CNPJ)
 DECISION_LIMITS_ATIVO = os.getenv("DECISION_LIMITS_ATIVO", "1").strip().lower() not in (
     "0",

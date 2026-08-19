@@ -3,19 +3,52 @@ agentes/social/agente_metricas_meta.py
 Valida campanhas Meta (Instagram/Facebook) e gera alertas/recomendações.
 """
 import logging
+from datetime import datetime, timezone
 
+from core.atomic_io import escrever_json_atomico
 from core.config import (
     META_CPC_MAXIMO,
     META_CTR_MINIMO,
     META_FREQ_MAXIMA,
     META_GASTO_MINIMO_ALERTA,
     META_ROAS_MINIMO,
+    ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
-from integracoes.meta.meta_ads_client import listar_metricas_campanhas, normalizar_metrica_campanha
+from integracoes.meta.ciclo_campanhas import (
+    agregar_meta_campanhas,
+    avaliar_eficiencia_ciclo,
+    emitir_metricas_ciclo_meta,
+)
+from integracoes.meta.meta_ads_client import (
+    listar_metricas_campanhas,
+    listar_metricas_por_plataforma,
+    normalizar_metrica_campanha,
+    normalizar_por_plataforma,
+)
+from integracoes.social.sustentabilidade_ads_ml import coletar_receita_ml
 
 logger = logging.getLogger("agente_metricas_meta")
+HEARTBEAT_PATH = ROOT / "logs" / "meta_metricas_ultima.json"
+
+
+def _heartbeat(payload: dict, datadog_ok: bool) -> None:
+    """Snapshot para o Vigia (best-effort). Escreve mesmo com Meta Ads sem token."""
+    try:
+        resumo = payload.get("resumo") if isinstance(payload.get("resumo"), dict) else {}
+        ciclo = payload.get("ciclo") if isinstance(payload.get("ciclo"), dict) else {}
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": bool(datadog_ok),
+                "campanhas": int(resumo.get("total") or 0),
+                "pronto": bool(ciclo.get("pronto")) if ciclo else None,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Meta heartbeat: %s", exc)
 
 
 def _avaliar_campanha(c: dict) -> dict:
@@ -81,6 +114,7 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
         "critico": sum(1 for c in campanhas if c["status"] == "critico"),
     }
     payload = {"resumo": resumo, "campanhas": campanhas}
+    datadog_ok = False
     try:
         incrementar("meta.rodadas")
         gauge("meta.campanhas_total", float(resumo["total"]))
@@ -93,8 +127,39 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
             gauge("meta.roas_medio", float(sum(roas_vals) / len(roas_vals)))
         if resumo["critico"]:
             incrementar("meta.alerta_critico", float(resumo["critico"]))
+        plat_rows = listar_metricas_por_plataforma(periodo_dias=periodo_dias)
+        efic = avaliar_eficiencia_ciclo(
+            meta=agregar_meta_campanhas(campanhas),
+            ml=coletar_receita_ml(periodo_dias),
+            periodo_dias=periodo_dias,
+        )
+        momento = emitir_metricas_ciclo_meta(
+            plataformas=normalizar_por_plataforma(plat_rows),
+            eficiencia=efic,
+        )
+        if isinstance(momento, dict):
+            payload["ciclo"] = {
+                "pronto": bool(momento.get("pronto")),
+                "saude_conta_ok": bool(momento.get("saude_conta_ok")),
+                "impala_ok": bool(momento.get("impala_ok")),
+                "fase": momento.get("fase"),
+                "motivo": momento.get("motivo"),
+                "eficiencia": momento.get("eficiencia"),
+            }
+            try:
+                from integracoes.meta.claude_ciclo_meta import auxiliar_ciclo_meta
+
+                payload["claude"] = auxiliar_ciclo_meta(
+                    momento,
+                    eficiencia=efic if isinstance(efic, dict) else None,
+                    campanhas_total=int(resumo.get("total") or 0),
+                )
+            except Exception as exc:
+                logger.warning("Meta Claude ciclo: %s", exc)
+        datadog_ok = True
     except Exception as exc:
         logger.warning("Meta metricas Datadog: %s", exc)
+    _heartbeat(payload, datadog_ok)
     logger.info("Métricas Meta: %s", payload)
     return payload
 

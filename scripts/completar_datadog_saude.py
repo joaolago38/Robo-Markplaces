@@ -976,6 +976,70 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 11},
                     "id": 720027,
                 },
+                {
+                    **_qv(
+                        "Meta Rodadas",
+                        "sum:robo.meta.rodadas{*}.as_count()",
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 13},
+                    "id": 720028,
+                },
+                {
+                    **_qv(
+                        "Ciclo IG/FB pronto",
+                        "avg:robo.meta.ciclo.pronto{*}",
+                        aggregator="avg",
+                        yellow_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 13},
+                    "id": 720029,
+                },
+                {
+                    **_qv(
+                        "Saude conta (ciclo)",
+                        "avg:robo.ml.saude.conta_ok{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 13},
+                    "id": 720030,
+                },
+                {
+                    **_qv(
+                        "Impala ads ok",
+                        "avg:robo.meta.ciclo.impala_ok{*}",
+                        aggregator="avg",
+                        yellow_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 13},
+                    "id": 720031,
+                },
+                {
+                    **_qv(
+                        "Campanhas IG",
+                        "avg:robo.meta.campanhas_plataforma{plataforma:instagram}",
+                        aggregator="avg",
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 13},
+                    "id": 720032,
+                },
+                {
+                    **_qv(
+                        "Campanhas FB",
+                        "avg:robo.meta.campanhas_plataforma{plataforma:facebook}",
+                        aggregator="avg",
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 13},
+                    "id": 720033,
+                },
             ],
         },
         "layout": {"x": 0, "y": 20, "width": 12, "height": 1},
@@ -1930,6 +1994,211 @@ def _grupo_decisao_guerra_impala() -> dict[str, Any]:
                     ),
                     "layout": {"height": 3, "width": 6, "x": 6, "y": 23},
                     "id": 741048,
+                },
+                {
+                    **_qv(
+                        "Momento IG/FB no ciclo (1=saude ML + Impala ads)",
+                        "avg:robo.meta.ciclo.pronto{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 26},
+                    "id": 741049,
+                },
+                {
+                    **_qv(
+                        "Saude conta ML (gate IG/FB)",
+                        "avg:robo.meta.ciclo.saude_conta_ok{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 26},
+                    "id": 741050,
+                },
+                {
+                    **_qv(
+                        "Impala ads-ready fase 3+ (gate IG/FB)",
+                        "avg:robo.meta.ciclo.impala_ok{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 26},
+                    "id": 741051,
+                },
+                {
+                    **_qv(
+                        "Meta campanhas (0 ate ligar)",
+                        "avg:robo.meta.campanhas_total{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 26},
+                    "id": 741052,
+                },
+                {
+                    **_qv(
+                        "Campanhas Instagram",
+                        "avg:robo.meta.campanhas_plataforma{plataforma:instagram}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 26},
+                    "id": 741053,
+                },
+                {
+                    **_qv(
+                        "Campanhas Facebook",
+                        "avg:robo.meta.campanhas_plataforma{plataforma:facebook}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 26},
+                    "id": 741054,
+                },
+                {
+                    **_qv(
+                        "ROAS real ML/Ads (receita ML / gasto Meta)",
+                        "avg:robo.meta.ciclo.roas_real{*}",
+                        aggregator="last",
+                        green_gt=2.1,
+                        yellow_gt=1.0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 28},
+                    "id": 741055,
+                },
+                {
+                    **_qv(
+                        "ROAS pixel Meta",
+                        "avg:robo.meta.ciclo.roas_pixel{*}",
+                        aggregator="last",
+                        green_gt=2.1,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 28},
+                    "id": 741056,
+                },
+                {
+                    **_qv(
+                        "Receita ML R$ (periodo)",
+                        "avg:robo.meta.ciclo.receita_ml{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 28},
+                    "id": 741057,
+                },
+                {
+                    **_qv(
+                        "Pedidos ML (periodo)",
+                        "avg:robo.meta.ciclo.pedidos_ml{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 28},
+                    "id": 741058,
+                },
+                {
+                    **_qv(
+                        "CPA ML R$ (gasto / pedido)",
+                        "avg:robo.meta.ciclo.cpa_ml{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 28},
+                    "id": 741059,
+                },
+                {
+                    **_qv(
+                        "Conv. impressao → pedido ML %",
+                        "avg:robo.meta.ciclo.conversao_imp_pct{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=3,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 28},
+                    "id": 741060,
+                },
+                {
+                    **_qv(
+                        "Eficiencia Ads×ML % (ROAS/meta)",
+                        "avg:robo.meta.ciclo.eficiencia_pct{*}",
+                        aggregator="last",
+                        green_gt=99,
+                        yellow_gt=49,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 30},
+                    "id": 741061,
+                },
+                {
+                    **_qv(
+                        "Cobertura R$ (ML - gasto Ads)",
+                        "avg:robo.meta.ciclo.cobertura_reais{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 30},
+                    "id": 741062,
+                },
+                {
+                    **_qv(
+                        "Conv. clique → pedido ML %",
+                        "avg:robo.meta.ciclo.conversao_click_pct{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 30},
+                    "id": 741063,
+                },
+                {
+                    **_qv(
+                        "Ticket medio ML R$",
+                        "avg:robo.meta.ciclo.ticket_ml{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 30},
+                    "id": 741064,
+                },
+                {
+                    **_qv(
+                        "Impressoes Meta",
+                        "avg:robo.meta.ciclo.impressoes{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 30},
+                    "id": 741065,
+                },
+                {
+                    **_qv(
+                        "Status Ads×ML (0=sem dado 1=ok 2=alerta 3=critico)",
+                        "avg:robo.meta.ciclo.status_num{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        yellow_gt=1.5,
+                        red_gt=2.5,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 30},
+                    "id": 741066,
                 },
             ],
         },
@@ -4158,6 +4427,29 @@ def _grupo_saude_conta_ml() -> dict[str, Any]:
                     "layout": {"height": 2, "width": 3, "x": 9, "y": 11},
                     "id": 780029,
                 },
+                {
+                    **_qv(
+                        "Saude conta (cor/taxas, 0/1)",
+                        "avg:robo.ml.saude.conta_ok{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 13},
+                    "id": 780030,
+                },
+                {
+                    **_qv(
+                        "Momento IG/FB no ciclo",
+                        "avg:robo.meta.ciclo.pronto{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 13},
+                    "id": 780031,
+                },
             ],
         },
         "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
@@ -4861,7 +5153,13 @@ def atualizar_dashboard_ecommerce() -> None:
             "canal_liberado por marketplace (ML referente; Shopee/Magalu/Amazon só fase 3+), "
             "margem/lucro do catálogo + Cruzeiro spa + pipeline onda 2. "
             "Rivais comparáveis só com amostra viva. Telegram aponta "
-            "para este grupo. Cache STALE não entra como mercado.\n\n"
+            "para este grupo. Cache STALE não entra como mercado. "
+            "IG/FB entra no ciclo só com `meta.ciclo.pronto=1` (saúde conta ML "
+            "sem laranja/vermelho + Impala fase 3 Ads: 20 reviews / nota 4.8 / frente no ar); "
+            "campanhas IG/FB ficam 0 até existirem na Meta. "
+            "Eficiência Ads×ML no mesmo grupo: ROAS real (receita ML / gasto Meta), "
+            "conversão impressão→pedido e clique→pedido, CPA, cobertura e status "
+            "(não atribui pedido a IG vs FB — sem UTM).\n\n"
             "**Decisão / oscilação:** grupo [Decisao] — Claude pulsa assertividade "
             "máxima só para expor âncoras no Datadog e volta a uso moderado. "
             "Qualquer oscilação além da margem de erro deixa o widget **vermelho** "

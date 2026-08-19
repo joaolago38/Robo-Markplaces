@@ -6,9 +6,10 @@ Cooldown 30 min no mesmo estado; estado novo fura na hora.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
-from core.config import ML_LOJA_P0_ALERTA, ML_LOJA_P0_COOLDOWN_SEG
+from core.config import CLAUDE_P0_RASCUNHO, ML_LOJA_P0_ALERTA, ML_LOJA_P0_COOLDOWN_SEG
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
 
@@ -88,7 +89,77 @@ def montar_mensagem_p0(pendencias: dict[str, Any]) -> str:
     ]
     for item in pendencias.get("itens") or []:
         linhas.append(f"• {item}")
+    rascunhos = [r for r in (pendencias.get("rascunhos") or []) if isinstance(r, dict) and r.get("rascunho")]
+    if rascunhos:
+        linhas.append("")
+        linhas.append("_Rascunho Claude (colar no painel — o robô não publicou):_")
+        for r in rascunhos[:2]:
+            pergunta = str(r.get("pergunta") or "")[:160]
+            linhas.append(f"• Pergunta: {pergunta}")
+            linhas.append(f"  → {r.get('rascunho')}")
     return "\n".join(linhas)
+
+
+def rascunhar_perguntas_p0(perguntas: list[dict[str, Any]] | None, *, max_n: int = 2) -> list[dict[str, Any]]:
+    """Haiku/síntese para pergunta em aberto. Nunca chama responder_pergunta."""
+    if not CLAUDE_P0_RASCUNHO:
+        return []
+    if os.environ.get("PYTEST_CURRENT_TEST") and not os.environ.get("TEST_P0_RASCUNHO"):
+        return []
+    from core.produto_lookup import buscar_produto_por_ref
+    from core.resumo_ia import sintetizar_claude
+    from integracoes.meta.claude_ciclo_meta import resolver_ia_ciclo_meta
+
+    out: list[dict[str, Any]] = []
+    rows = [p for p in (perguntas or []) if isinstance(p, dict)]
+    for p in rows[: max(0, int(max_n))]:
+        texto = str(p.get("text") or "").strip()
+        if len(texto) < 3:
+            continue
+        item_id = str(p.get("item_id") or "")
+        produto: dict[str, Any] = {}
+        try:
+            produto = buscar_produto_por_ref(item_id, canal="mercadolivre") or {}
+        except Exception:
+            produto = {}
+        ctx = {
+            "pergunta": texto,
+            "item_id": item_id,
+            "produto": {
+                "nome": produto.get("nome") or produto.get("titulo"),
+                "sku": produto.get("sku"),
+                "preco": produto.get("preco"),
+            },
+        }
+        rota = resolver_ia_ciclo_meta("p0", texto=texto)
+        rascunho = sintetizar_claude(
+            "Rascunho para o gestor colar no painel do Mercado Livre. "
+            "O robô NÃO publica esta resposta. Até 4 linhas. "
+            "Não invente preço, frete, prazo, desconto, Full ou estoque. "
+            "Se estoque/preço não vier no JSON, oriente a ver o anúncio. "
+            "Fase 0: só MIMO Carmed; sem francesinha/sortidas.",
+            ctx,
+            "",
+            max_tokens=int(rota["max_tokens"]),
+            origem="p0_rascunho_pergunta",
+            enriquecer_ml=True,
+            proposito="chat_ml",
+            forcar_profundidade="minima" if rota["familia"] == "haiku" else "padrao",
+            forcar_modelo=True,
+            modelo=rota["modelo"],
+            somente_ia=True,
+        )
+        if rascunho:
+            out.append(
+                {
+                    "id": str(p.get("id") or ""),
+                    "pergunta": texto,
+                    "rascunho": rascunho,
+                    "modelo": rota["modelo"],
+                    "familia": rota["familia"],
+                }
+            )
+    return out
 
 
 def emitir_metricas_p0(pendencias: dict[str, Any]) -> None:
@@ -179,6 +250,15 @@ def emitir_alerta_p0_do_ciclo(
         cancelamentos_rate=float(cancel.get("rate") or rep.get("cancelamentos_rate") or 0),
         claims_rate=float(claims_m.get("rate") or rep.get("claims_rate") or 0),
     )
+    if pend.get("tem_p0") and CLAUDE_P0_RASCUNHO and (perg_n > 0 or chat_falhas > 0):
+        try:
+            perguntas = ml_client.listar_perguntas_nao_respondidas() or []
+            rascunhos = rascunhar_perguntas_p0(perguntas, max_n=2)
+            if rascunhos:
+                pend["rascunhos"] = rascunhos
+                incrementar("ml.loja.p0.rascunho_ok", float(len(rascunhos)))
+        except Exception as exc:
+            logger.warning("P0 rascunho Claude: %s", exc)
     enviado = emitir_alerta_p0(pend, enviar=enviar)
     return {**pend, "enviado": enviado}
 

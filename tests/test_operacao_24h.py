@@ -26,6 +26,14 @@ class TestSintetizarOperacao24h(unittest.TestCase):
     def test_payload_para_contexto_inclui_kpis(self):
         ctx = _payload_para_contexto_claude(_PAYLOAD_MIN)
         self.assertEqual(ctx["kpis_24h"]["receita_24h"], 100)
+        self.assertIn("ciclo_meta", ctx)
+
+    def test_payload_inclui_motivo_ciclo_meta(self):
+        ctx = _payload_para_contexto_claude(
+            {**_PAYLOAD_MIN, "ciclo_meta": {"pronto": False, "motivo": "Publicar MIMO", "fase": 0}}
+        )
+        self.assertEqual(ctx["ciclo_meta"]["motivo"], "Publicar MIMO")
+        self.assertFalse(ctx["ciclo_meta"]["pronto"])
 
     @patch("core.resumo_ia.cfg.ANTHROPIC_API_KEY", "")
     def test_fallback_sem_api_key(self, *_):
@@ -60,6 +68,8 @@ class TestSintetizarOperacao24h(unittest.TestCase):
 
 
 class Operacao24hTests(unittest.TestCase):
+    @patch("integracoes.meta.ciclo_campanhas.avaliar_momento_ciclo_meta", return_value={"pronto": False, "motivo": "Publicar MIMO", "fase": 0})
+    @patch("integracoes.meta.claude_ciclo_meta.auxiliar_digest_bloqueio", return_value={"ok": True, "pulado": "test"})
     @patch("integracoes.ml.ml_client.buscar_reputacao_vendedor", return_value={})
     @patch("integracoes.ml.ml_client.listar_meus_anuncios", return_value=[])
     @patch("agentes.operacao_24h.alertar_gestor")
@@ -86,6 +96,8 @@ class Operacao24hTests(unittest.TestCase):
         mock_alerta,
         _mock_listar,
         _mock_rep,
+        _digest,
+        _ciclo,
     ):
         mock_produtos.return_value = [{"sku": "A", "preco": 20, "custo": 10}]
         mock_resumo.return_value = {"ok": True, "data": {"receita": 200, "pedidos": 4}}
@@ -105,6 +117,8 @@ class Operacao24hTests(unittest.TestCase):
         msg = mock_alerta.call_args[0][0]
         self.assertIn("Resumo IA", msg)
 
+    @patch("integracoes.meta.ciclo_campanhas.avaliar_momento_ciclo_meta", return_value={"pronto": False, "fase": 0})
+    @patch("integracoes.meta.claude_ciclo_meta.auxiliar_digest_bloqueio", return_value={"ok": True})
     @patch("agentes.operacao_24h.alertar_gestor")
     @patch("agentes.operacao_24h._faturar_pedidos_lojahub")
     @patch("agentes.operacao_24h.executar_repricing_marketplaces")
@@ -133,6 +147,8 @@ class Operacao24hTests(unittest.TestCase):
         mock_repricing,
         mock_faturar,
         _mock_alerta,
+        _digest,
+        _ciclo,
     ):
         mock_produtos.return_value = []
         mock_resumo.return_value = {"ok": False, "data": {}}

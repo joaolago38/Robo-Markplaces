@@ -153,5 +153,15 @@
     "max_horas": 2,
     "critico": false,
     "ignorar_ausente": true
+  },
+  {
+    "id": "meta_metricas",
+    "ativo": true,
+    "nome": "Métricas Meta Ads (ciclo IG/FB)",
+    "path": "logs/meta_metricas_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 2,
+    "critico": true,
+    "ignorar_ausente": true
   }
 ]
