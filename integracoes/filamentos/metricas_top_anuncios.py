@@ -14,6 +14,7 @@ from collections import defaultdict
 from typing import Any
 
 from core.datadog_metrics import gauge
+from integracoes.ml.analise_anuncio_concorrente import vendas_por_dia_de_anuncio
 
 
 def _tag_seller(seller_id: str) -> str:
@@ -117,13 +118,35 @@ def emitir_top_anuncios(
     por_seller: dict[str, dict[str, float]] = defaultdict(
         lambda: {
             "vendas": 0.0,
+            "vendas_dia": 0.0,
             "receita": 0.0,
             "anuncios": 0.0,
             "lucro": 0.0,
             "margem": 0.0,
             "preco_min": 0.0,
+            "com_vpd": 0.0,
         }
     )
+
+    for p in base:
+        seller = str(p.get("seller_id") or "").strip() or "desconhecido"
+        bucket = por_seller[seller]
+        vendas_all = float(_i(p.get("quantidade_vendida")))
+        preco_all = _f(p.get("preco"))
+        receita_all = _f(p.get("receita_proxy") or (preco_all * vendas_all))
+        lucro_all = _f(p.get("lucro_proxy") or p.get("margem_brl"))
+        margem_all = _f(p.get("margem_brl") or p.get("lucro_proxy"))
+        vpd = vendas_por_dia_de_anuncio(p)
+        bucket["vendas"] += vendas_all
+        bucket["vendas_dia"] += vpd
+        bucket["receita"] += receita_all
+        bucket["lucro"] += lucro_all
+        bucket["margem"] += margem_all
+        bucket["anuncios"] += 1.0
+        if vpd > 0:
+            bucket["com_vpd"] += 1.0
+        if preco_all > 0 and (bucket["preco_min"] <= 0 or preco_all < bucket["preco_min"]):
+            bucket["preco_min"] = preco_all
 
     for i, p in enumerate(ordenados, 1):
         seller = str(p.get("seller_id") or "").strip()
@@ -146,15 +169,6 @@ def emitir_top_anuncios(
             gauge(f"{prefixo}.top_lucro", lucro, tags=tags)
         if margem:
             gauge(f"{prefixo}.top_margem", margem, tags=tags)
-
-        bucket = por_seller[seller or "desconhecido"]
-        bucket["vendas"] += vendas
-        bucket["receita"] += receita
-        bucket["lucro"] += lucro
-        bucket["margem"] += margem
-        bucket["anuncios"] += 1.0
-        if preco > 0 and (bucket["preco_min"] <= 0 or preco < bucket["preco_min"]):
-            bucket["preco_min"] = preco
 
     for i, p in enumerate(por_margem, 1):
         seller = str(p.get("seller_id") or "").strip()
@@ -189,6 +203,7 @@ def emitir_top_anuncios(
             tags.append(_tag_nick(nick))
         txs = _f(perfil.get("transactions_total"))
         gauge(f"{prefixo}.seller_vendas", float(bucket["vendas"]), tags=tags)
+        gauge(f"{prefixo}.seller_vendas_dia", float(bucket["vendas_dia"]), tags=tags)
         gauge(f"{prefixo}.seller_receita", float(bucket["receita"]), tags=tags)
         gauge(f"{prefixo}.seller_anuncios", float(bucket["anuncios"]), tags=tags)
         if bucket["lucro"]:
@@ -200,12 +215,18 @@ def emitir_top_anuncios(
         if txs:
             gauge(f"{prefixo}.seller_transacoes", txs, tags=tags)
 
+    amostra_vpd = int(sum(b.get("com_vpd") or 0 for b in por_seller.values()))
+    max_vpd = max((float(b.get("vendas_dia") or 0) for _, b in sellers_ord), default=0.0)
     gauge(f"{prefixo}.top_anuncios_emitidos", float(len(ordenados)))
     gauge(f"{prefixo}.top_sellers_emitidos", float(len(sellers_ord)))
+    gauge(f"{prefixo}.seller_vendas_dia_max", max_vpd)
+    gauge(f"{prefixo}.vendas_dia_amostra", float(amostra_vpd))
     return {
         "top_anuncios": len(ordenados),
         "top_sellers": len(sellers_ord),
         "sellers_perfil": len(perfis),
+        "vendas_dia_amostra": amostra_vpd,
+        "seller_vendas_dia_max": max_vpd,
     }
 
 

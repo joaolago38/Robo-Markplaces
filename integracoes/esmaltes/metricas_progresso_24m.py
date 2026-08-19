@@ -65,9 +65,17 @@ def emitir_realizado_vendas(analise: dict[str, Any], *, dias: int = 2) -> None:
         gauge("progresso.janela_dias", float(janela))
         gauge("progresso.lucro_janela", round(lucro, 2))
         gauge("progresso.lucro_mes_estimado", round(lucro * fator_mes, 2))
-        gauge("progresso.lucro_mes_impala", round(lucro_impala * fator_mes, 2))
-        gauge("progresso.lucro_mes_masterprint", round(lucro_mp * fator_mes, 2))
-        gauge("progresso.cruzeiro_unid_dia", round(qtd_crz / janela, 4))
+        gauge(
+            "progresso.lucro_mes_impala",
+            round(lucro_impala * fator_mes, 2),
+            tags=["marca:impala", "fase:1"],
+        )
+        gauge(
+            "progresso.lucro_mes_masterprint",
+            round(lucro_mp * fator_mes, 2),
+            tags=["marca:masterprint", "fase:2"],
+        )
+        gauge("progresso.cruzeiro_unid_dia", round(qtd_crz / janela, 4), tags=["marca:impala", "fase:1"])
     except Exception as exc:
         logger.warning("emitir_realizado_vendas: %s", exc)
 
@@ -75,7 +83,11 @@ def emitir_realizado_vendas(analise: dict[str, Any], *, dias: int = 2) -> None:
 def emitir_petg_funil(unidades_7d: float) -> None:
     """Ritmo PETG = unidades do funil próprio nos últimos 7d / 7."""
     try:
-        gauge("progresso.petg_unid_dia", round(float(unidades_7d or 0) / 7.0, 4))
+        gauge(
+            "progresso.petg_unid_dia",
+            round(float(unidades_7d or 0) / 7.0, 4),
+            tags=["marca:masterprint", "fase:2"],
+        )
     except Exception as exc:
         logger.warning("emitir_petg_funil: %s", exc)
 

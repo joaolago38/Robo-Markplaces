@@ -237,12 +237,17 @@ def emitir_metricas_batalha_impala(
     batalha: dict[str, Any] | None = None,
     *,
     kits_unicos: list[dict[str, Any]] | None = None,
+    anuncios_impala: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Monta (se preciso) e envia gauges. Nunca lança."""
     try:
+        anuncios = [a for a in (anuncios_impala or []) if isinstance(a, dict)]
         if batalha is None:
-            anuncios = extrair_anuncios_impala(kits_unicos or [])
+            if not anuncios:
+                anuncios = extrair_anuncios_impala(kits_unicos or [])
             batalha = montar_batalha(anuncios_impala=anuncios)
+        elif not anuncios and kits_unicos:
+            anuncios = extrair_anuncios_impala(kits_unicos)
 
         gauge("impala.batalha.anuncios_unicos", float(batalha.get("anuncios_unicos") or 0))
         gauge("impala.batalha.sellers_unicos", float(batalha.get("sellers_unicos") or 0))
@@ -281,6 +286,13 @@ def emitir_metricas_batalha_impala(
             if c.get("fonte_rival") == "ao_vivo" and c.get("gap_pct") is not None:
                 gauge("impala.batalha.gap_vs_rival_pct", float(c["gap_pct"]), tags=tags)
             gauge("impala.batalha.rivais_no_tam", float(c.get("rivais_no_tam") or 0), tags=tags)
+
+        try:
+            from integracoes.esmaltes.metricas_sellers_mercado import emitir_sellers_mercado
+
+            emitir_sellers_mercado("impala.batalha", anuncios, top_n=10)
+        except Exception as exc:
+            logger.warning("sellers mercado impala: %s", exc)
 
         incrementar("impala.batalha.rodadas")
         return {"ok": True, **{k: batalha[k] for k in batalha if k not in ("comparacoes", "top_anuncios", "por_tamanho")}}
@@ -341,7 +353,7 @@ def processar_e_persistir(
         escrever_json_atomico(SNAPSHOT_PATH, payload)
     except Exception as exc:
         logger.warning("snapshot batalha: %s", exc)
-    emit = emitir_metricas_batalha_impala(batalha)
+    emit = emitir_metricas_batalha_impala(batalha, anuncios_impala=anuncios_reais)
     try:
         gauge("impala.guerra.overlay", 1.0 if overlay else 0.0)
     except Exception:

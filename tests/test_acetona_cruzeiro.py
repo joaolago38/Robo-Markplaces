@@ -34,15 +34,40 @@ class AnaliseAcetonaCruzeiroTests(unittest.TestCase):
         out = aa.analisar_termo(item, anuncios)
         self.assertEqual(out["vendedores_cruzeiro"], 2)
         self.assertEqual(out["total_cruzeiro"], 2)
+        self.assertEqual(len(out["anuncios_cruzeiro"]), 2)
         self.assertIsNotNone(out["margem_media_mercado_pct"])
         self.assertGreater(out["margem_media_mercado_pct"], 0)
 
     def test_consolidar_vendedores_unicos(self):
-        r1 = {"ok": True, "vendedores_ids": ["S1", "S2"], "margem_media_mercado_pct": 50.0, "preco_medio_cruzeiro": 12.0, "unidades_vendidas_cruzeiro": 10}
-        r2 = {"ok": True, "vendedores_ids": ["S2", "S3"], "margem_media_mercado_pct": 40.0, "preco_medio_cruzeiro": 14.0, "unidades_vendidas_cruzeiro": 5}
+        r1 = {
+            "ok": True,
+            "vendedores_ids": ["S1", "S2"],
+            "margem_media_mercado_pct": 50.0,
+            "preco_medio_cruzeiro": 12.0,
+            "unidades_vendidas_cruzeiro": 10,
+            "anuncios_cruzeiro": [
+                {"item_id": "MLB1", "seller_id": "S1", "quantidade_vendida": 10},
+                {"item_id": "MLB2", "seller_id": "S2", "quantidade_vendida": 4},
+            ],
+        }
+        r2 = {
+            "ok": True,
+            "vendedores_ids": ["S2", "S3"],
+            "margem_media_mercado_pct": 40.0,
+            "preco_medio_cruzeiro": 14.0,
+            "unidades_vendidas_cruzeiro": 5,
+            "anuncios_cruzeiro": [
+                {"item_id": "MLB2", "seller_id": "S2", "quantidade_vendida": 8},
+                {"item_id": "MLB3", "seller_id": "S3", "quantidade_vendida": 1},
+            ],
+        }
         c = aa.consolidar_acetona([r1, r2])
         self.assertEqual(c["vendedores_cruzeiro_unicos"], 3)
         self.assertEqual(c["margem_media_mercado_pct"], 45.0)
+        ids = {a["item_id"] for a in c["anuncios_cruzeiro"]}
+        self.assertEqual(ids, {"MLB1", "MLB2", "MLB3"})
+        by = {a["item_id"]: a for a in c["anuncios_cruzeiro"]}
+        self.assertEqual(by["MLB2"]["quantidade_vendida"], 8)
 
     def test_resumir_impala(self):
         produtos = [

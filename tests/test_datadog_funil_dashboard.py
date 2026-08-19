@@ -39,6 +39,8 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.conversao_manicures.leads_novos",
             "robo.conversao_manicures.escrita_pronta",
             "robo.conversao_manicures.roas_real",
+            "robo.impala.batalha.seller_vendas_dia",
+            "robo.impala.batalha.seller_anuncios",
         ):
             self.assertIn(metric, blob, msg=metric)
 
@@ -152,6 +154,8 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.impala.guerra.canal_liberado{marketplace:shopee}",
             "robo.impala.guerra.canal_liberado{marketplace:magalu}",
             "robo.impala.guerra.canal_liberado{marketplace:amazon}",
+            "robo.cruzeiro.mercado.seller_vendas_dia",
+            "robo.cruzeiro.mercado.seller_anuncios",
         ):
             self.assertIn(metric, blob, msg=metric)
 
@@ -202,20 +206,39 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         grupo = dd._grupo_progresso_24m()
         blob = str(grupo)
         for metric in (
-            "robo.progresso.lucro_mes_estimado",
+            "robo.progresso.lucro_mes_impala",
             "robo.progresso.meta_lucro_ano1_mes",
             "robo.progresso.meta_lucro_alvo_mes",
-            "robo.progresso.lucro_mes_impala",
-            "robo.progresso.lucro_mes_masterprint",
             "robo.progresso.cruzeiro_unid_dia",
             "robo.progresso.meta_cruzeiro_unid_dia",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertNotIn("robo.progresso.lucro_mes_masterprint", blob)
+        self.assertNotIn("robo.progresso.petg_unid_dia", blob)
+        self.assertEqual(grupo["id"], dd.GROUP_PROGRESSO_24M_ID)
+        self.assertIn("[Fase 1 / Impala]", blob)
+        self.assertIn("query1 / query2 * 100", blob)
+
+    def test_grupo_progresso_fase2_masterprint(self):
+        grupo = dd._grupo_progresso_fase2_masterprint()
+        blob = str(grupo)
+        for metric in (
+            "robo.progresso.lucro_mes_masterprint",
             "robo.progresso.petg_unid_dia",
             "robo.progresso.meta_petg_unid_dia",
         ):
             self.assertIn(metric, blob, msg=metric)
-        self.assertEqual(grupo["id"], dd.GROUP_PROGRESSO_24M_ID)
-        self.assertIn("[Progresso 24 meses]", blob)
-        self.assertIn("query1 / query2 * 100", blob)
+        self.assertNotIn("robo.progresso.lucro_mes_impala", blob)
+        self.assertNotIn("robo.progresso.cruzeiro_unid_dia", blob)
+        self.assertEqual(grupo["id"], dd.GROUP_PROGRESSO_FASE2_ID)
+        self.assertIn("[Fase 2 / Masterprint]", blob)
+
+    def test_grupo_mercado_masterprint_seller_vendas_dia(self):
+        grupo = dd._grupo_mercado_masterprint()
+        blob = str(grupo)
+        self.assertIn("robo.masterprint_petg.seller_vendas_dia", blob)
+        self.assertIn("robo.filamentos.ml.masterprint.seller_vendas_dia", blob)
+        self.assertIn("funil.unidades_7d", blob)
 
 
 if __name__ == "__main__":

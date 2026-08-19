@@ -55,6 +55,13 @@ class TestMetricasProgresso24m(unittest.TestCase):
         self.assertEqual(vals["progresso.lucro_mes_impala"], 552.9)
         self.assertEqual(vals["progresso.lucro_mes_masterprint"], 47.1)
         self.assertEqual(vals["progresso.cruzeiro_unid_dia"], 1.0)
+        tags_por_nome = {
+            c.args[0]: (c.kwargs.get("tags") or []) for c in mock_g.call_args_list
+        }
+        self.assertIn("marca:impala", tags_por_nome["progresso.lucro_mes_impala"])
+        self.assertIn("fase:1", tags_por_nome["progresso.lucro_mes_impala"])
+        self.assertIn("marca:masterprint", tags_por_nome["progresso.lucro_mes_masterprint"])
+        self.assertIn("fase:2", tags_por_nome["progresso.lucro_mes_masterprint"])
 
     @patch("integracoes.esmaltes.metricas_progresso_24m.gauge")
     def test_emitir_realizado_zero(self, mock_g):

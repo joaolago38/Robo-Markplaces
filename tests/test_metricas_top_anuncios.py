@@ -25,6 +25,8 @@ class TestMetricasTopAnuncios(unittest.TestCase):
                 "marca": "Masterprint",
                 "material": "PETG",
                 "margem_brl": 30,
+                "vendas_por_dia": 2.5,
+                "catalog_date_created": "2024-01-01T00:00:00Z",
             },
             {
                 "item_id": "MLB222",
@@ -43,6 +45,7 @@ class TestMetricasTopAnuncios(unittest.TestCase):
         nomes = [c.args[0] for c in mock_gauge.call_args_list]
         self.assertIn("masterprint_petg.top_vendas", nomes)
         self.assertIn("masterprint_petg.seller_vendas", nomes)
+        self.assertIn("masterprint_petg.seller_vendas_dia", nomes)
         self.assertIn("masterprint_petg.top_margem_rank", nomes)
         for c in mock_gauge.call_args_list:
             tags = c.kwargs.get("tags") or []

@@ -136,6 +136,20 @@ def analisar_termo(
             key=lambda x: int(x.get("quantidade_vendida") or 0),
             reverse=True,
         )[:5],
+        "anuncios_cruzeiro": [
+            {
+                "item_id": a.get("item_id"),
+                "titulo": str(a.get("titulo") or "")[:120],
+                "seller_id": a.get("seller_id"),
+                "quantidade_vendida": a.get("quantidade_vendida"),
+                "preco": a.get("preco"),
+                "date_created": a.get("date_created"),
+                "catalog_date_created": a.get("catalog_date_created"),
+                "vendas_por_dia": a.get("vendas_por_dia"),
+            }
+            for a in cruzeiro
+            if isinstance(a, dict)
+        ],
         "ok": bool(cruzeiro or classificados),
     }
 
@@ -143,8 +157,18 @@ def analisar_termo(
 def consolidar_acetona(resultados: list[dict[str, Any]]) -> dict[str, Any]:
     ok = [r for r in resultados if r.get("ok")]
     vendedores_global: set[str] = set()
+    anuncios_por_id: dict[str, dict[str, Any]] = {}
     for r in ok:
         vendedores_global.update(r.get("vendedores_ids") or [])
+        for a in r.get("anuncios_cruzeiro") or r.get("destaques_cruzeiro") or []:
+            if not isinstance(a, dict):
+                continue
+            iid = str(a.get("item_id") or "").strip()
+            chave = iid or f"{a.get('seller_id')}:{a.get('titulo')}"
+            prev = anuncios_por_id.get(chave)
+            vend = int(a.get("quantidade_vendida") or 0)
+            if not prev or vend > int(prev.get("quantidade_vendida") or 0):
+                anuncios_por_id[chave] = a
 
     margens = [r["margem_media_mercado_pct"] for r in ok if r.get("margem_media_mercado_pct") is not None]
     precos = [r["preco_medio_cruzeiro"] for r in ok if r.get("preco_medio_cruzeiro")]
@@ -157,6 +181,7 @@ def consolidar_acetona(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "unidades_vendidas_cruzeiro": vendidos,
         "margem_media_mercado_pct": round(sum(margens) / len(margens), 1) if margens else None,
         "preco_medio_cruzeiro": round(sum(precos) / len(precos), 2) if precos else None,
+        "anuncios_cruzeiro": list(anuncios_por_id.values()),
         "resultados": ok,
     }
 
