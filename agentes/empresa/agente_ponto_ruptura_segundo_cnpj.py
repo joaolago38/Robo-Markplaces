@@ -125,7 +125,9 @@ def _emitir_metricas(resultado: dict[str, Any]) -> None:
         foco_n = 0
     gauge("ponto_ruptura.foco_vazio", 1.0 if foco_n <= 0 else 0.0)
     gauge("cnae_preparacao.pronto", 1.0 if cnae.get("pronto") else 0.0)
-    gauge("cnae_preparacao.gaps", float(cnae.get("gaps_n") or 0))
+    # Monitor CNAE olha só códigos fiscais; KYC vai em cnae_preparacao.kyc_gaps.
+    gauge("cnae_preparacao.gaps", float(cnae.get("gaps_cnae_n") or 0))
+    gauge("cnae_preparacao.kyc_gaps", float(cnae.get("gaps_kyc_n") or 0))
     gauge(
         "cnae_preparacao.seller_masterprint",
         1.0 if cnae.get("seller_masterprint") else 0.0,

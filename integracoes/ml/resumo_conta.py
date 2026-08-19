@@ -11,7 +11,7 @@ from typing import Any
 
 from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID
 from integracoes.ml import ml_client
-from integracoes.ml.filtro_anuncios_conta import ultimo_filtro_anuncios
+from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco, ultimo_filtro_anuncios
 
 logger = logging.getLogger("resumo_conta_ml")
 
@@ -114,18 +114,25 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
         reputacao = _texto_reputacao(rep)
 
         perguntas = ml_client.listar_perguntas_nao_respondidas()
-        anuncios = ml_client.listar_meus_anuncios(statuses=("active", "paused"))
+        anuncios_todos = ml_client.listar_meus_anuncios(
+            statuses=("active", "paused"),
+            aplicar_foco=False,
+        )
         try:
             from integracoes.ml.integridade_dados_ml import executar as auditar_ml
 
-            integridade = auditar_ml(anuncios=anuncios)
+            integridade = auditar_ml(anuncios=anuncios_todos)
         except Exception as exc:
             logger.info("integridade ML: %s", exc)
             integridade = {"pct": 0.0, "atinge_meta": False, "espelho_confiavel": False}
+        anuncios, _ = filtrar_anuncios_foco(anuncios_todos)
         filtro = ultimo_filtro_anuncios()
         ignorados_fora_foco = int(filtro.get("ignorados") or 0)
         ativos = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "active")
         pausados = sum(1 for a in anuncios if str(a.get("status") or "").lower() == "paused")
+        from integracoes.ml.tipo_anuncio_ml import contar_prateleiras
+
+        prateleiras = contar_prateleiras(anuncios)
         sugestoes_preco_ids = ml_client.listar_itens_com_sugestao_preco()
         envios = ml_client.contar_envios_pendentes()
         claims = ml_client.contar_claims_abertos()
@@ -218,6 +225,8 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             "anuncios_ativos": ativos,
             "anuncios_pausados": pausados,
             "anuncios_total": len(anuncios),
+            "anuncios_premium": int(prateleiras.get("premium") or 0),
+            "anuncios_classico": int(prateleiras.get("classico") or 0),
             "anuncios_ignorados_fora_foco": ignorados_fora_foco,
             "anuncios_a_melhorar": a_melhorar,
             "anuncios_a_melhorar_total": len(a_melhorar),
@@ -242,6 +251,7 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
                     "preco": float(a.get("preco") or 0),
                     "vendidos": int(a.get("sold_quantity") or 0),
                     "status": str(a.get("status") or ""),
+                    "listing_type_id": str(a.get("listing_type_id") or ""),
                 }
                 for a in anuncios[:8]
             ],
@@ -272,6 +282,8 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
     gauge("ml.saude.sem_cor", 1.0 if rep.get("sem_cor") else 0.0)
     gauge("ml.saude.anuncios_ativos", float(resumo.get("anuncios_ativos") or 0))
     gauge("ml.saude.anuncios_pausados", float(resumo.get("anuncios_pausados") or 0))
+    gauge("ml.saude.anuncios_premium", float(resumo.get("anuncios_premium") or 0))
+    gauge("ml.saude.anuncios_classico", float(resumo.get("anuncios_classico") or 0))
     gauge(
         "ml.saude.anuncios_ignorados_fora_foco",
         float(resumo.get("anuncios_ignorados_fora_foco") or 0),
@@ -321,6 +333,8 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
         f"(de {int(resumo.get('anuncios_total') or resumo.get('anuncios_ativos') or 0)} listados)",
         f"  • Ativos (foco): *{int(resumo.get('anuncios_ativos') or 0)}* · "
         f"Pausados (foco): *{int(resumo.get('anuncios_pausados') or 0)}*",
+        f"  • Exposição: *{int(resumo.get('anuncios_premium') or 0)}* Premium · "
+        f"*{int(resumo.get('anuncios_classico') or 0)}* Clássico",
         f"  • Preços c/ sugestão ML: *{int(resumo.get('precos_pendencias_total') or 0)}*",
         f"  • Publicidade (campanhas idle/pausadas): *{int(resumo.get('publicidade_recomendacoes') or 0)}*",
         "",

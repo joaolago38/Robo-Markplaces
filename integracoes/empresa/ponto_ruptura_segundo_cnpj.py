@@ -307,10 +307,18 @@ def coletar_preparacao_cnae(
         ),
     ]
     gaps = [c for c in itens if not c["ok"]]
+    gaps_cnae = [
+        c
+        for c in gaps
+        if "_cnae_" in str(c.get("id") or "") or str(c.get("id") or "").endswith("_cnae_cosmetico")
+    ]
+    gaps_kyc = [c for c in gaps if str(c.get("id") or "") == "masterprint_seller_ml"]
     return {
         "itens": itens,
         "gaps": gaps,
         "gaps_n": len(gaps),
+        "gaps_cnae_n": len(gaps_cnae),
+        "gaps_kyc_n": len(gaps_kyc),
         "pronto": len(gaps) == 0,
         "seller_masterprint": seller_mp,
         "cnpj_masterprint": formatar_cnpj(str(masterprint.get("cnpj") or "23811261000197")),

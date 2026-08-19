@@ -1,0 +1,188 @@
+{
+  "versao": 1,
+  "atualizado": "2026-08-18",
+  "nota": "Tamanho de caixa para envio ML. Códigos S20 e S03 já existiam no catálogo (família CaixasNet). Frasco Impala 7,5 ml e Carmed são estimativa geométrica — conferir com 1 kit físico antes de comprar caixa em quantidade.",
+  "pecas_estimadas_cm": {
+    "esmalte_impala_7_5ml": {
+      "comprimento": 3.4,
+      "largura": 3.4,
+      "altura": 8.2,
+      "fonte": "frasco vidro 7,5 ml + tampa, folga de papel"
+    },
+    "carmed_stick": {
+      "comprimento": 2.2,
+      "largura": 2.2,
+      "altura": 7.2,
+      "fonte": "stick labial típico (complemento MIMO)"
+    }
+  },
+  "modelos": {
+    "S20": {
+      "codigo": "S20-16x11x10",
+      "comprimento_cm": 16,
+      "largura_cm": 11,
+      "altura_cm": 10,
+      "uso": "kits 3 a 8 esmaltes (em pé, 1 camada)",
+      "origem": "já cadastrado em IMP-PERL-004"
+    },
+    "S03": {
+      "codigo": "S03-31x20x11.5",
+      "comprimento_cm": 31,
+      "largura_cm": 20,
+      "altura_cm": 11.5,
+      "uso": "kits 10 a 30 esmaltes (em pé, 1 camada)",
+      "origem": "já cadastrado em IMP-VR-015 / SORT-010 / NUDE / CLAS / ATAC-030"
+    }
+  },
+  "por_sku": {
+    "IMP-MIMO-003": {
+      "modelo": "S20",
+      "codigo": "S20-16x11x10",
+      "cm": "16×11×10",
+      "conteudo": "3 esmaltes + 1 Carmed",
+      "layout": "3 frascos em fileira (≈11 cm) + Carmed ao lado; altura 8,2 < 10",
+      "peso_g": 280,
+      "status": "definido_agora",
+      "cabe": true
+    },
+    "IMP-PERL-004": {
+      "modelo": "S20",
+      "codigo": "S20-16x11x10",
+      "cm": "16×11×10",
+      "conteudo": "4 esmaltes (2×2)",
+      "layout": "2×2 frascos; já estava no catálogo",
+      "peso_g": 380,
+      "status": "ja_no_catalogo",
+      "cabe": true
+    },
+    "IMP-BAIL-005": {
+      "modelo": "S20",
+      "codigo": "S20-16x11x10",
+      "cm": "16×11×10",
+      "conteudo": "5 esmaltes + complemento (R$ 5)",
+      "layout": "2+3 frascos; complemento no vão. Validar volume do brinde.",
+      "peso_g": 375,
+      "status": "definido_agora",
+      "cabe": true
+    },
+    "IMP-JUPAES-006": {
+      "modelo": "S20",
+      "codigo": "S20-16x11x10",
+      "cm": "16×11×10",
+      "conteudo": "6 esmaltes (2×3)",
+      "layout": "2×3: ≈11,2 × 7,6 × 8,2 cm úteis; S20 16×11×10 fecha",
+      "peso_g": 450,
+      "status": "definido_agora",
+      "cabe": true
+    },
+    "IMP-SORT-006": {
+      "modelo": "S20",
+      "codigo": "S20-16x11x10",
+      "cm": "16×11×10",
+      "conteudo": "6 esmaltes",
+      "layout": "igual JUPAES",
+      "peso_g": 450,
+      "status": "definido_agora",
+      "cabe": true
+    },
+    "IMP-SORT-006B": {
+      "modelo": "S20",
+      "codigo": "S20-16x11x10",
+      "cm": "16×11×10",
+      "conteudo": "6 esmaltes",
+      "layout": "igual JUPAES",
+      "peso_g": 450,
+      "status": "definido_agora",
+      "cabe": true
+    },
+    "IMP-POV-008": {
+      "modelo": "S20",
+      "codigo": "S20-16x11x10",
+      "cm": "16×11×10",
+      "conteudo": "8 esmaltes (2×4)",
+      "layout": "2×4: ≈14,6 × 7,6 × 8,2. Justo no comprimento 16 cm — montar 1 kit teste.",
+      "peso_g": 600,
+      "status": "definido_agora_validar_fisico",
+      "cabe": true
+    },
+    "IMP-ATAC-010": {
+      "modelo": "S03",
+      "codigo": "S03-31x20x11.5",
+      "cm": "31×20×11,5",
+      "conteudo": "10 esmaltes",
+      "layout": "mesma família dos kits 10 já no catálogo",
+      "peso_g": 750,
+      "status": "definido_agora",
+      "cabe": true
+    },
+    "IMP-NUDE-010": {
+      "modelo": "S03",
+      "codigo": "S03-31x20x11.5",
+      "cm": "31×20×11,5",
+      "conteudo": "10 esmaltes",
+      "layout": "já no catálogo",
+      "peso_g": 950,
+      "status": "ja_no_catalogo",
+      "cabe": true
+    },
+    "IMP-SORT-010": {
+      "modelo": "S03",
+      "codigo": "S03-31x20x11.5",
+      "cm": "31×20×11,5",
+      "conteudo": "10 esmaltes",
+      "layout": "já no catálogo",
+      "peso_g": 950,
+      "status": "ja_no_catalogo",
+      "cabe": true
+    },
+    "IMP-CLAS-012": {
+      "modelo": "S03",
+      "codigo": "S03-31x20x11.5",
+      "cm": "31×20×11,5",
+      "conteudo": "12 esmaltes",
+      "layout": "já no catálogo",
+      "peso_g": 1100,
+      "status": "ja_no_catalogo",
+      "cabe": true
+    },
+    "IMP-VR-015": {
+      "modelo": "S03",
+      "codigo": "S03-31x20x11.5",
+      "cm": "31×20×11,5",
+      "conteudo": "15 esmaltes",
+      "layout": "já no catálogo — kit fora da frente (margem real negativa)",
+      "peso_g": 1200,
+      "status": "ja_no_catalogo",
+      "cabe": true
+    },
+    "IMP-COLC-015": {
+      "modelo": "S03",
+      "codigo": "S03-31x20x11.5",
+      "cm": "31×20×11,5",
+      "conteudo": "15 esmaltes",
+      "layout": "igual VR-015",
+      "peso_g": 1125,
+      "status": "definido_agora",
+      "cabe": true
+    },
+    "IMP-ATAC-030": {
+      "modelo": "S03",
+      "codigo": "S03-31x20x11.5",
+      "cm": "31×20×11,5",
+      "conteudo": "30 esmaltes",
+      "layout": "1 camada em pé: 31×20 cabe ~9×5 posições; 30 ocupam. Já no catálogo.",
+      "peso_g": 2200,
+      "status": "ja_no_catalogo",
+      "cabe": true
+    }
+  },
+  "envio_ml": {
+    "anunciar_dimensoes": "usar cm do modelo (S20 16×11×10 ou S03 31×20×11,5)",
+    "anunciar_peso": "campo peso_gramas do produto (já no JSON)",
+    "frente": {
+      "IMP-MIMO-003": "S20 16×11×10 · 280 g",
+      "IMP-PERL-004": "S20 16×11×10 · 380 g",
+      "IMP-JUPAES-006": "S20 16×11×10 · 450 g"
+    }
+  }
+}

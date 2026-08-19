@@ -336,7 +336,13 @@ def executar(item_id: str = "", acos_atual: float = 0.0, full_ativo: bool = Fals
         avaliacoes = int(metrics.get("total_ratings", 0))
         nota = float(metrics.get("average_rating", 0.0))
         if not full_ativo:
-            full_ativo = bool(metrics.get("power_seller_status") in ("gold", "platinum"))
+            try:
+                from integracoes.ml.ml_client import listar_meus_anuncios
+                from integracoes.ml.tipo_anuncio_ml import algum_anuncio_full
+
+                full_ativo = algum_anuncio_full(listar_meus_anuncios())
+            except Exception:
+                full_ativo = False
         resultado = avaliar_momento_ads(avaliacoes, nota, acos_atual, full_ativo)
     except Exception:
         try:

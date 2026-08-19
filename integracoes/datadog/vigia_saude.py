@@ -446,15 +446,19 @@ def analisar_saude(
         a.get("gravidade") == "critica" for a in inatividades
     ) or any(e.get("gravidade") == "critica" for e in erros)
 
+    inatividades_criticas = [a for a in inatividades if a.get("gravidade") == "critica"]
     inatividades_relevantes = [a for a in inatividades if _gravidade_relevante(a.get("gravidade"))]
     agentes_problema = listar_agentes_com_problema(
         inatividades_relevantes,
         erros,
-        agentes_falha_ciclo=agentes_falha_ciclo if inatividades_relevantes or erros else [],
+        agentes_falha_ciclo=agentes_falha_ciclo if inatividades_criticas or erros else [],
     )
 
     return {
-        "ok": not inatividades_relevantes and not erros,
+        # Saúde do Datadog só cai se heartbeat crítico ou erro aberto.
+        # Jobs semanais/diários atrasados (gravidade alta/média) continuam
+        # contados em total_inatividades, sem zerar robo.vigia_datadog.saudavel.
+        "ok": not inatividades_criticas and not erros,
         "tem_critico": tem_critico,
         "inatividades": inatividades,
         "erros": erros,
@@ -464,8 +468,8 @@ def analisar_saude(
         "mensagem_critica": montar_mensagem_critica(
             inatividades,
             erros,
-            agentes_falha_ciclo=agentes_falha_ciclo if inatividades_relevantes or erros else [],
+            agentes_falha_ciclo=agentes_falha_ciclo if inatividades_criticas or erros else [],
         )
-        if (inatividades or erros)
+        if tem_critico
         else "",
     }

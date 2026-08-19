@@ -13,6 +13,9 @@ from core import github_secrets as gs
 
 
 class TestGithubSecrets(unittest.TestCase):
+    def setUp(self):
+        gs._aviso_gh_token = False
+
     def test_sem_gh_cli_retorna_false_e_loga_error(self):
         with patch.object(gs.shutil, "which", return_value=None):
             with self.assertLogs("github_secrets", level="ERROR") as logs:
@@ -24,10 +27,22 @@ class TestGithubSecrets(unittest.TestCase):
         with patch.object(gs.shutil, "which", return_value="/usr/bin/gh"):
             with patch.object(gs.subprocess, "run") as run:
                 with patch.dict(os.environ, env, clear=False):
-                    with self.assertLogs("github_secrets", level="ERROR") as logs:
+                    with self.assertLogs("github_secrets", level="WARNING") as logs:
                         self.assertFalse(gs.sync_secrets_github("at", "rt", prefix="ML"))
         run.assert_not_called()
         self.assertTrue(any("GH_TOKEN vazio" in line for line in logs.output))
+
+    def test_actions_sem_gh_token_avisa_uma_vez_por_processo(self):
+        env = {"GITHUB_ACTIONS": "true", "GH_TOKEN": "", "GH_REPO": "org/repo"}
+        with patch.object(gs.shutil, "which", return_value="/usr/bin/gh"):
+            with patch.object(gs.subprocess, "run") as run:
+                with patch.dict(os.environ, env, clear=False):
+                    with self.assertLogs("github_secrets", level="WARNING") as logs:
+                        self.assertFalse(gs.sync_secrets_github("at", "rt", prefix="ML"))
+                        self.assertFalse(gs.sync_secrets_github("at", "rt", prefix="BLING"))
+        run.assert_not_called()
+        avisos = [line for line in logs.output if "GH_TOKEN vazio" in line]
+        self.assertEqual(len(avisos), 1)
 
     def test_actions_com_pat_grava_access_e_refresh(self):
         env = {"GITHUB_ACTIONS": "true", "GH_TOKEN": "ghp_x", "GH_REPO": "org/repo"}

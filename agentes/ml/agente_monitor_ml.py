@@ -176,13 +176,16 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
     itens: list[dict] = []
 
     try:
-        anuncios = ml_client.listar_meus_anuncios()
+        from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco
+
+        anuncios_todos = ml_client.listar_meus_anuncios(aplicar_foco=False)
         try:
             from integracoes.ml.integridade_dados_ml import executar as auditar_ml
 
-            auditar_ml(anuncios=anuncios)
+            auditar_ml(anuncios=anuncios_todos)
         except Exception as exc:
             logger.info("integridade ML: %s", exc)
+        anuncios, _ = filtrar_anuncios_foco(anuncios_todos)
         anuncios = anuncios[:limite_itens]
     except Exception as exc:
         logger.error("monitor_ml listar_meus_anuncios: %s", exc)
@@ -204,6 +207,13 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
         except Exception as exc:
             logger.error("monitor_ml menor_preco %s: %s", item_id, exc)
             menor_concorrente = 0.0
+        try:
+            menor_qualquer = ml_client.buscar_menor_preco_concorrente(
+                item_id, mesma_prateleira=False
+            )
+        except Exception as exc:
+            logger.error("monitor_ml menor_preco_qualquer %s: %s", item_id, exc)
+            menor_qualquer = menor_concorrente
 
         try:
             concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
@@ -228,11 +238,15 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
         visitas_30 = int(metricas.get("visitas_30d") or 0)
         estoque = metricas.get("estoque")
         prioridade = 0.0
+        meu_tipo = str(
+            metricas.get("listing_type_id") or anuncio.get("listing_type_id") or ""
+        )
 
         analise: dict[str, Any] = {
             "item_id": item_id,
             "titulo": metricas.get("titulo") or anuncio.get("titulo", ""),
             "sku": anuncio.get("sku", ""),
+            "listing_type_id": meu_tipo,
             "meu_preco": meu_preco,
             "menor_concorrente": menor_concorrente,
             "concorrentes": concorrentes,
@@ -263,11 +277,24 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             if diff > LIMIAR_PRECO_CONCORRENTE * 100:
                 msg = (
                     f"Item {item_id}: preço R$ {meu_preco:.2f} está {diff:.1f}% acima do "
-                    f"concorrente (R$ {menor_concorrente:.2f}) — revisar preço."
+                    f"concorrente na mesma exposição (R$ {menor_concorrente:.2f}) — revisar preço."
                 )
                 analise["alertas"].append(msg)
                 recomendacoes.append(msg)
                 prioridade = max(prioridade, diff)
+
+        if (
+            menor_qualquer > 0
+            and (menor_concorrente <= 0 or menor_qualquer + 0.005 < menor_concorrente)
+        ):
+            from integracoes.ml.tipo_anuncio_ml import rotulo_prateleira
+
+            msg = (
+                f"Item {item_id}: menor do catálogo R$ {menor_qualquer:.2f} é outra "
+                f"exposição (seu anúncio: {rotulo_prateleira(meu_tipo)}) — não igualar preço."
+            )
+            analise["alertas"].append(msg)
+            recomendacoes.append(msg)
 
         if (
             menor_concorrente > 0

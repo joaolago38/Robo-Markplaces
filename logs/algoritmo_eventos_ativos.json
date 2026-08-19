@@ -1,30 +1,6 @@
 {
-  "timestamp": "2026-08-18T15:04:58.005297+00:00",
+  "timestamp": "2026-08-19T11:36:24.719992+00:00",
   "eventos": [
-    {
-      "tipo": "priorizar_chat",
-      "marketplace": "mercadolivre",
-      "motivo": "pendencias=0 status=critico score=10",
-      "criado_em": "2026-08-18T13:55:46.387898+00:00",
-      "expira_em": "2026-08-18T19:55:46.387898+00:00",
-      "prioridade": 1
-    },
-    {
-      "tipo": "congelar_repricing",
-      "marketplace": "mercadolivre",
-      "motivo": "score=10 claims=0.0000 status=critico",
-      "criado_em": "2026-08-18T13:55:46.387898+00:00",
-      "expira_em": "2026-08-19T13:55:46.387898+00:00",
-      "prioridade": 1
-    },
-    {
-      "tipo": "priorizar_chat",
-      "marketplace": "shopee",
-      "motivo": "pendencias=0 status=critico score=20",
-      "criado_em": "2026-08-18T13:55:46.727552+00:00",
-      "expira_em": "2026-08-18T19:55:46.727552+00:00",
-      "prioridade": 1
-    },
     {
       "tipo": "congelar_repricing",
       "marketplace": "shopee",
@@ -34,19 +10,35 @@
       "prioridade": 1
     },
     {
+      "tipo": "priorizar_chat",
+      "marketplace": "mercadolivre",
+      "motivo": "pendencias=0 status=critico score=10",
+      "criado_em": "2026-08-19T11:36:24.155384+00:00",
+      "expira_em": "2026-08-19T17:36:24.155384+00:00",
+      "prioridade": 1
+    },
+    {
+      "tipo": "priorizar_chat",
+      "marketplace": "shopee",
+      "motivo": "pendencias=0 status=critico score=20",
+      "criado_em": "2026-08-19T11:36:24.715683+00:00",
+      "expira_em": "2026-08-19T17:36:24.715683+00:00",
+      "prioridade": 1
+    },
+    {
       "tipo": "revisar_listing",
       "marketplace": "mercadolivre",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-08-17T11:31:51.253708+00:00",
-      "expira_em": "2026-08-19T11:31:51.253708+00:00",
+      "criado_em": "2026-08-19T11:36:24.155384+00:00",
+      "expira_em": "2026-08-21T11:36:24.155384+00:00",
       "prioridade": 2
     },
     {
       "tipo": "revisar_listing",
       "marketplace": "shopee",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-08-17T11:31:51.582041+00:00",
-      "expira_em": "2026-08-19T11:31:51.582041+00:00",
+      "criado_em": "2026-08-19T11:36:24.715683+00:00",
+      "expira_em": "2026-08-21T11:36:24.715683+00:00",
       "prioridade": 2
     }
   ]

@@ -97,6 +97,34 @@ class TestAlgoritmoEventos(unittest.TestCase):
                 sem, _ = ev.deve_congelar_repricing("amazon")
                 self.assertFalse(sem)
 
+    def test_persistir_solta_congelamento_quando_canal_saudavel(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "eventos.json"
+            agora = datetime.now(timezone.utc)
+            freeze = {
+                "tipo": "congelar_repricing",
+                "marketplace": "mercadolivre",
+                "motivo": "score=10",
+                "criado_em": agora.isoformat(),
+                "expira_em": (agora + timedelta(hours=24)).isoformat(),
+                "prioridade": 1,
+            }
+            with patch.object(ev, "EVENTOS_PATH", path):
+                ev.persistir_eventos([freeze])
+                self.assertTrue(ev.deve_congelar_repricing()[0])
+                merged = ev.persistir_eventos(
+                    [],
+                    avaliacoes={
+                        "mercadolivre": {
+                            "status": "saudavel",
+                            "score": 100,
+                            "metrics": {"configurado": True, "claims_rate": 0.0},
+                        }
+                    },
+                )
+                self.assertEqual(merged, [])
+                self.assertFalse(ev.deve_congelar_repricing()[0])
+
 
 class TestContratoImpulso(unittest.TestCase):
     def test_fail_closed_sem_mlb(self):

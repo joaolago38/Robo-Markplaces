@@ -1,0 +1,1174 @@
+{
+  "gerado_em": "2026-08-18",
+  "fonte": [
+    "catalogo/produtos.json",
+    "catalogo/doutrina_guerra_impala.json",
+    "catalogo/caixas_kits_impala.json",
+    "integracoes/empresa/ponto_ruptura_segundo_cnpj.py",
+    "integracoes/ml/tipo_anuncio_ml.py"
+  ],
+  "conta": {
+    "seller_id": "1651424153",
+    "cnpj_impala": "52.668.583/0001-27",
+    "cnae_impala": "4772500",
+    "cnpj_masterprint": "23.811.261/0001-97",
+    "segundo_cnpj": "só opera depois do veredito liberado",
+    "anuncios_impala_live": 0,
+    "vendas_completadas": 0,
+    "reputacao_cor": "sem cor (0 vendas)"
+  },
+  "margem": {
+    "taxa_ml_pct": 18.0,
+    "piso_guerra_pct": 15.0,
+    "formula_real": "(preco * 0.82 - custo_total) / preco",
+    "nota": "margem_trabalho_pct no JSON é planilha; o robô usa margem real"
+  },
+  "frente_guerra": [
+    {
+      "sku": "IMP-MIMO-003",
+      "nome": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+      "titulo_ml": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+      "papel": "entrada",
+      "arma": "diferenciar",
+      "frente": true,
+      "preco_congelado": true,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 44.9,
+      "preco_fase2": 49.9,
+      "preco_fase3": 53.89,
+      "custo_total": 28.13,
+      "custo_esmaltes": 8.61,
+      "custo_complemento": 7.0,
+      "custo_embalagem_caixa": 3.52,
+      "frete_estimado": 9.0,
+      "lucro_liquido": 8.69,
+      "margem_real_pct": 19.3,
+      "margem_trabalho_pct_planilha": 23.3,
+      "lucro_ref_ml_planilha": 10.48,
+      "piso_15_pct": 41.99,
+      "preco_ml_mercado": 49.9,
+      "acima_piso": true,
+      "estoque_json": 0,
+      "valida_unidades": 10,
+      "invest_validacao_reais": 281.3,
+      "cores": [
+        "Admire",
+        "Sutileza",
+        "Amor Profundo"
+      ],
+      "acao_pos_validar": "PERL no mesmo ciclo a R$39,90. JUPAES só após 1º pedido. Não lançar SORT.",
+      "segmento": "Validação — CREMOSO",
+      "peso_gramas": 280,
+      "caixa": {
+        "codigo": "S20-16x11x10",
+        "modelo": "S20",
+        "cm": "16×11×10",
+        "conteudo": "3 esmaltes + 1 Carmed",
+        "layout": "3 frascos em fileira (≈11 cm) + Carmed ao lado; altura 8,2 < 10",
+        "status": "definido_agora",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-PERL-004",
+      "nome": "Kit 4 Esmaltes Impala Perolado Tendência",
+      "titulo_ml": "Kit 4 Esmaltes Impala Perolado Tendência Tons da Moda Manicure",
+      "papel": "preco",
+      "arma": "igualar_faixa",
+      "frente": true,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 39.9,
+      "preco_fase2": 42.0,
+      "preco_fase3": 46.9,
+      "custo_total": 26.23,
+      "custo_esmaltes": 11.48,
+      "custo_complemento": 0.0,
+      "custo_embalagem_caixa": 3.75,
+      "frete_estimado": 11.0,
+      "lucro_liquido": 6.49,
+      "margem_real_pct": 16.3,
+      "margem_trabalho_pct_planilha": 42.8,
+      "lucro_ref_ml_planilha": 17.96,
+      "piso_15_pct": 39.15,
+      "preco_ml_mercado": 42.0,
+      "acima_piso": true,
+      "estoque_json": 0,
+      "valida_unidades": 0,
+      "invest_validacao_reais": 0.0,
+      "cores": [
+        "Sonho",
+        "Polar",
+        "Lua",
+        "Dengo"
+      ],
+      "acao_pos_validar": "",
+      "segmento": "Varejo - Temático - Tendência",
+      "peso_gramas": 380,
+      "caixa": {
+        "codigo": "S20-16x11x10",
+        "modelo": "S20",
+        "cm": "16×11×10",
+        "conteudo": "4 esmaltes (2×2)",
+        "layout": "2×2 frascos; já estava no catálogo",
+        "status": "ja_no_catalogo",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-JUPAES-006",
+      "nome": "Kit 6 Ju Paes — Virando o Jogo",
+      "titulo_ml": "Kit 6 Ju Paes — Virando o Jogo",
+      "papel": "giro",
+      "arma": "listing",
+      "frente": true,
+      "preco_congelado": true,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 64.9,
+      "preco_fase2": 69.9,
+      "preco_fase3": 75.49,
+      "custo_total": 41.42,
+      "custo_esmaltes": 21.54,
+      "custo_complemento": 1.0,
+      "custo_embalagem_caixa": 7.88,
+      "frete_estimado": 13.0,
+      "lucro_liquido": 11.8,
+      "margem_real_pct": 18.2,
+      "margem_trabalho_pct_planilha": 19.1,
+      "lucro_ref_ml_planilha": 12.39,
+      "piso_15_pct": 61.82,
+      "preco_ml_mercado": 69.9,
+      "acima_piso": true,
+      "estoque_json": 0,
+      "valida_unidades": 10,
+      "invest_validacao_reais": 434.2,
+      "cores": [
+        "Cartas na Manga",
+        "Aposta Alta",
+        "Peça Rara",
+        "Sorte Lançada",
+        "Xeque-Mate",
+        "Plot Twist"
+      ],
+      "acao_pos_validar": "Subir para R$69,90 (Fase 2) + explorar sazonalidade",
+      "segmento": "Validação — JU PAES",
+      "peso_gramas": 450,
+      "caixa": {
+        "codigo": "S20-16x11x10",
+        "modelo": "S20",
+        "cm": "16×11×10",
+        "conteudo": "6 esmaltes (2×3)",
+        "layout": "2×3: ≈11,2 × 7,6 × 8,2 cm úteis; S20 16×11×10 fecha",
+        "status": "definido_agora",
+        "cabe": true
+      }
+    }
+  ],
+  "catalogo_fora_da_frente": [
+    {
+      "sku": "IMP-ATAC-010",
+      "nome": "Kit 10 Atacado Manicure",
+      "titulo_ml": "Kit 10 Atacado Manicure",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 69.9,
+      "preco_fase2": 74.9,
+      "preco_fase3": 80.89,
+      "custo_total": 52.94,
+      "custo_esmaltes": 28.7,
+      "custo_complemento": 1.0,
+      "custo_embalagem_caixa": 8.74,
+      "frete_estimado": 14.5,
+      "lucro_liquido": 4.38,
+      "margem_real_pct": 6.3,
+      "margem_trabalho_pct_planilha": 10.3,
+      "lucro_ref_ml_planilha": 7.17,
+      "piso_15_pct": 79.01,
+      "preco_ml_mercado": 74.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 20,
+      "invest_validacao_reais": 1058.8,
+      "cores": [
+        "Teu Cheiro",
+        "Recomeços",
+        "Aconchego",
+        "Primor",
+        "Descomplicado",
+        "Admire",
+        "Mantra",
+        "Amor Profundo",
+        "Sutileza",
+        "Xodó"
+      ],
+      "acao_pos_validar": "Subir para R$74,90 (Fase 2) + lançar Kit 15 Coleção Completa",
+      "segmento": "Validação — CREMOSO",
+      "peso_gramas": 750,
+      "caixa": {
+        "codigo": "S03-31x20x11.5",
+        "modelo": "S03",
+        "cm": "31×20×11,5",
+        "conteudo": "10 esmaltes",
+        "layout": "mesma família dos kits 10 já no catálogo",
+        "status": "definido_agora",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-ATAC-030",
+      "nome": "Kit 30 Esmaltes Impala Atacado Cores Clássicas",
+      "titulo_ml": "Kit 30 Esmaltes Impala Atacado Coleção Cores Mais Vendidas Manicure Profissional Reposição",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 119.9,
+      "preco_fase2": 131.31,
+      "preco_fase3": 145.0,
+      "custo_total": 126.65,
+      "custo_esmaltes": 86.1,
+      "custo_complemento": 0.0,
+      "custo_embalagem_caixa": 21.55,
+      "frete_estimado": 19.0,
+      "lucro_liquido": -28.33,
+      "margem_real_pct": -23.6,
+      "margem_trabalho_pct_planilha": 12.6,
+      "lucro_ref_ml_planilha": 16.57,
+      "piso_15_pct": 189.03,
+      "preco_ml_mercado": 131.31,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 0,
+      "invest_validacao_reais": 0.0,
+      "cores": [],
+      "acao_pos_validar": "",
+      "segmento": "B2B - Atacado - Reposição Manicure",
+      "peso_gramas": 2200,
+      "caixa": {
+        "codigo": "S03-31x20x11.5",
+        "modelo": "S03",
+        "cm": "31×20×11,5",
+        "conteudo": "30 esmaltes",
+        "layout": "1 camada em pé: 31×20 cabe ~9×5 posições; 30 ocupam. Já no catálogo.",
+        "status": "ja_no_catalogo",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-BAIL-005",
+      "nome": "Kit 5 Bailarina Completo",
+      "titulo_ml": "Kit 5 Bailarina Completo",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 48.9,
+      "preco_fase2": 52.9,
+      "preco_fase3": 57.13,
+      "custo_total": 34.78,
+      "custo_esmaltes": 14.35,
+      "custo_complemento": 5.0,
+      "custo_embalagem_caixa": 4.43,
+      "frete_estimado": 11.0,
+      "lucro_liquido": 5.32,
+      "margem_real_pct": 10.9,
+      "margem_trabalho_pct_planilha": 14.9,
+      "lucro_ref_ml_planilha": 7.27,
+      "piso_15_pct": 51.91,
+      "preco_ml_mercado": 52.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 10,
+      "invest_validacao_reais": 347.8,
+      "cores": [
+        "Ballet Clássico",
+        "Pliê",
+        "Collant",
+        "Na Ponta do Pé",
+        "Tutu"
+      ],
+      "acao_pos_validar": "Subir para R$52,90 (Fase 2) + destacar diferencial vs concorrente",
+      "segmento": "Validação — BAILARINA",
+      "peso_gramas": 375,
+      "caixa": {
+        "codigo": "S20-16x11x10",
+        "modelo": "S20",
+        "cm": "16×11×10",
+        "conteudo": "5 esmaltes + complemento (R$ 5)",
+        "layout": "2+3 frascos; complemento no vão. Validar volume do brinde.",
+        "status": "definido_agora",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-CLAS-012",
+      "nome": "Kit 12 Esmaltes Impala Clássicos do Dia a Dia",
+      "titulo_ml": "Kit 12 Esmaltes Impala Clássicos Manicure Profissional Cores Dia a Dia Atacado Reposição",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 54.9,
+      "preco_fase2": 59.9,
+      "preco_fase3": 64.9,
+      "custo_total": 61.55,
+      "custo_esmaltes": 34.44,
+      "custo_complemento": 0.0,
+      "custo_embalagem_caixa": 11.11,
+      "frete_estimado": 16.0,
+      "lucro_liquido": -16.53,
+      "margem_real_pct": -30.1,
+      "margem_trabalho_pct_planilha": 16.2,
+      "lucro_ref_ml_planilha": 9.68,
+      "piso_15_pct": 91.87,
+      "preco_ml_mercado": 59.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 0,
+      "invest_validacao_reais": 0.0,
+      "cores": [
+        "Preto",
+        "Vinho",
+        "Beterraba",
+        "Branco",
+        "Nude Clássico",
+        "Inocense",
+        "Tomate",
+        "Gatinha",
+        "Zaz",
+        "Patins",
+        "Le Rose",
+        "Donata"
+      ],
+      "acao_pos_validar": "",
+      "segmento": "Manicure - Reposição mensal - Exclusivo",
+      "peso_gramas": 1100,
+      "caixa": {
+        "codigo": "S03-31x20x11.5",
+        "modelo": "S03",
+        "cm": "31×20×11,5",
+        "conteudo": "12 esmaltes",
+        "layout": "já no catálogo",
+        "status": "ja_no_catalogo",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-COLC-015",
+      "nome": "Kit 15 Cores da Sua Moda",
+      "titulo_ml": "Kit 15 Cores da Sua Moda",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 79.9,
+      "preco_fase2": 89.9,
+      "preco_fase3": 97.09,
+      "custo_total": 69.63,
+      "custo_esmaltes": 43.05,
+      "custo_complemento": 1.0,
+      "custo_embalagem_caixa": 9.58,
+      "frete_estimado": 16.0,
+      "lucro_liquido": -4.11,
+      "margem_real_pct": -5.1,
+      "margem_trabalho_pct_planilha": -1.2,
+      "lucro_ref_ml_planilha": -0.92,
+      "piso_15_pct": 103.93,
+      "preco_ml_mercado": 89.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 20,
+      "invest_validacao_reais": 1392.6,
+      "cores": [
+        "Teu Cheiro",
+        "Recomeços",
+        "Aconchego",
+        "Primor",
+        "Descomplicado",
+        "Admire",
+        "Mantra",
+        "Amor Profundo",
+        "Sutileza",
+        "Xodó",
+        "Acalanto",
+        "Flutua",
+        "Equilíbrio",
+        "Compaixão",
+        "Laguna"
+      ],
+      "acao_pos_validar": "Subir para R$89,90 (Fase 2) + avaliação ML Full",
+      "segmento": "Validação — CREMOSO",
+      "peso_gramas": 1125,
+      "caixa": {
+        "codigo": "S03-31x20x11.5",
+        "modelo": "S03",
+        "cm": "31×20×11,5",
+        "conteudo": "15 esmaltes",
+        "layout": "igual VR-015",
+        "status": "definido_agora",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-NUDE-010",
+      "nome": "Kit 10 Esmaltes Impala Nude e Claro Profissional",
+      "titulo_ml": "Kit 10 Esmaltes Impala Nude Claro Cremoso Manicure Profissional Cruelty Free Atacado",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 49.9,
+      "preco_fase2": 52.0,
+      "preco_fase3": 57.9,
+      "custo_total": 53.15,
+      "custo_esmaltes": 28.7,
+      "custo_complemento": 0.0,
+      "custo_embalagem_caixa": 9.95,
+      "frete_estimado": 14.5,
+      "lucro_liquido": -12.23,
+      "margem_real_pct": -24.5,
+      "margem_trabalho_pct_planilha": 17.2,
+      "lucro_ref_ml_planilha": 8.94,
+      "piso_15_pct": 79.33,
+      "preco_ml_mercado": 52.0,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 0,
+      "invest_validacao_reais": 0.0,
+      "cores": [
+        "Nude Clássico",
+        "Inocense",
+        "Le Rose",
+        "Patins",
+        "Serena",
+        "Café Café",
+        "Coffee",
+        "Sutileza",
+        "Lua",
+        "Sonho"
+      ],
+      "acao_pos_validar": "",
+      "segmento": "Manicure - Profissional - Neutro (recompra)",
+      "peso_gramas": 950,
+      "caixa": {
+        "codigo": "S03-31x20x11.5",
+        "modelo": "S03",
+        "cm": "31×20×11,5",
+        "conteudo": "10 esmaltes",
+        "layout": "já no catálogo",
+        "status": "ja_no_catalogo",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-POV-008",
+      "nome": "Kit 8 POV — Coleção Gen Z",
+      "titulo_ml": "Kit 8 POV — Coleção Gen Z",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 74.9,
+      "preco_fase2": 82.9,
+      "preco_fase3": 89.53,
+      "custo_total": 51.06,
+      "custo_esmaltes": 28.72,
+      "custo_complemento": 1.0,
+      "custo_embalagem_caixa": 8.34,
+      "frete_estimado": 13.0,
+      "lucro_liquido": 10.36,
+      "margem_real_pct": 13.8,
+      "margem_trabalho_pct_planilha": 17.8,
+      "lucro_ref_ml_planilha": 13.35,
+      "piso_15_pct": 76.21,
+      "preco_ml_mercado": 82.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 10,
+      "invest_validacao_reais": 510.6,
+      "cores": [
+        "Minha Vibe",
+        "Look do Dia",
+        "Meu Dump",
+        "Arrume-se Comigo",
+        "For You Page",
+        "Entregou Tudo",
+        "Daily Vlog",
+        "Clean Girl"
+      ],
+      "acao_pos_validar": "Subir para R$82,90 (Fase 2) + segmentar público Gen Z",
+      "segmento": "Validação — POV",
+      "peso_gramas": 600,
+      "caixa": {
+        "codigo": "S20-16x11x10",
+        "modelo": "S20",
+        "cm": "16×11×10",
+        "conteudo": "8 esmaltes (2×4)",
+        "layout": "2×4: ≈14,6 × 7,6 × 8,2. Justo no comprimento 16 cm — montar 1 kit teste.",
+        "status": "definido_agora_validar_fisico",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-SORT-006",
+      "nome": "Kit 6 Sortido — Cores da Moda",
+      "titulo_ml": "Kit 6 Sortido — Cores da Moda",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 49.9,
+      "preco_fase2": 54.9,
+      "preco_fase3": 59.29,
+      "custo_total": 37.1,
+      "custo_esmaltes": 17.22,
+      "custo_complemento": 1.0,
+      "custo_embalagem_caixa": 7.88,
+      "frete_estimado": 13.0,
+      "lucro_liquido": 3.82,
+      "margem_real_pct": 7.7,
+      "margem_trabalho_pct_planilha": 7.6,
+      "lucro_ref_ml_planilha": 3.81,
+      "piso_15_pct": 55.37,
+      "preco_ml_mercado": 54.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 15,
+      "invest_validacao_reais": 586.5,
+      "cores": [
+        "Admire",
+        "Sutileza",
+        "Amor Profundo",
+        "Aconchego",
+        "Xodó",
+        "Acalanto"
+      ],
+      "acao_pos_validar": "Subir para R$54,90 (Fase 2) + ligar Product Ads R$10/dia",
+      "segmento": "Validação — CREMOSO",
+      "peso_gramas": 450,
+      "caixa": {
+        "codigo": "S20-16x11x10",
+        "modelo": "S20",
+        "cm": "16×11×10",
+        "conteudo": "6 esmaltes",
+        "layout": "igual JUPAES",
+        "status": "definido_agora",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-SORT-006B",
+      "nome": "Kit 6 Sortido — Tons Neutros",
+      "titulo_ml": "Kit 6 Sortido — Tons Neutros",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 49.9,
+      "preco_fase2": 54.9,
+      "preco_fase3": 59.29,
+      "custo_total": 37.1,
+      "custo_esmaltes": 17.22,
+      "custo_complemento": 1.0,
+      "custo_embalagem_caixa": 7.88,
+      "frete_estimado": 13.0,
+      "lucro_liquido": 3.82,
+      "margem_real_pct": 7.7,
+      "margem_trabalho_pct_planilha": 7.6,
+      "lucro_ref_ml_planilha": 3.81,
+      "piso_15_pct": 55.37,
+      "preco_ml_mercado": 54.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 15,
+      "invest_validacao_reais": 586.5,
+      "cores": [
+        "Primor",
+        "Descomplicado",
+        "Teu Cheiro",
+        "Recomeços",
+        "Laguna",
+        "Equilíbrio"
+      ],
+      "acao_pos_validar": "Subir para R$54,90 (Fase 2) + criar anúncio ancoragem c/ removedor",
+      "segmento": "Validação — CREMOSO",
+      "peso_gramas": 450,
+      "caixa": {
+        "codigo": "S20-16x11x10",
+        "modelo": "S20",
+        "cm": "16×11×10",
+        "conteudo": "6 esmaltes",
+        "layout": "igual JUPAES",
+        "status": "definido_agora",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-SORT-010",
+      "nome": "Kit 10 Esmaltes Impala Sortidas Atacado Manicure",
+      "titulo_ml": "Kit 10 Esmaltes Impala Sortidas Atacado Manicure Profissional Cores Mais Vendidas",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 48.0,
+      "preco_fase2": 52.0,
+      "preco_fase3": 55.9,
+      "custo_total": 53.15,
+      "custo_esmaltes": 28.7,
+      "custo_complemento": 0.0,
+      "custo_embalagem_caixa": 9.95,
+      "frete_estimado": 14.5,
+      "lucro_liquido": -13.79,
+      "margem_real_pct": -28.7,
+      "margem_trabalho_pct_planilha": 11.8,
+      "lucro_ref_ml_planilha": 5.66,
+      "piso_15_pct": 79.33,
+      "preco_ml_mercado": 48.0,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 0,
+      "invest_validacao_reais": 0.0,
+      "cores": [
+        "Vinho",
+        "Zaz",
+        "Nude Clássico",
+        "Patins",
+        "Inocense",
+        "Beterraba",
+        "Tomate",
+        "Branco",
+        "Le Rose",
+        "Gatinha"
+      ],
+      "acao_pos_validar": "",
+      "segmento": "Atacado - Manicure - Volume",
+      "peso_gramas": 950,
+      "caixa": {
+        "codigo": "S03-31x20x11.5",
+        "modelo": "S03",
+        "cm": "31×20×11,5",
+        "conteudo": "10 esmaltes",
+        "layout": "já no catálogo",
+        "status": "ja_no_catalogo",
+        "cabe": true
+      }
+    },
+    {
+      "sku": "IMP-VR-015",
+      "nome": "Kit 15 Esmaltes Impala Vermelho e Rosa",
+      "titulo_ml": "Kit 15 Esmaltes Impala Vermelho Rosa Manicure Profissional Cores Tendência Atacado",
+      "papel": "catalogo",
+      "arma": "—",
+      "frente": false,
+      "preco_congelado": false,
+      "mlb": "MLB_PREENCHER",
+      "preco_fase1": 69.9,
+      "preco_fase2": 72.9,
+      "preco_fase3": 79.9,
+      "custo_total": 71.9,
+      "custo_esmaltes": 43.05,
+      "custo_complemento": 0.0,
+      "custo_embalagem_caixa": 12.85,
+      "frete_estimado": 16.0,
+      "lucro_liquido": -14.58,
+      "margem_real_pct": -20.9,
+      "margem_trabalho_pct_planilha": 16.1,
+      "lucro_ref_ml_planilha": 11.73,
+      "piso_15_pct": 107.31,
+      "preco_ml_mercado": 72.9,
+      "acima_piso": false,
+      "estoque_json": 0,
+      "valida_unidades": 0,
+      "invest_validacao_reais": 0.0,
+      "cores": [
+        "Amante",
+        "Amor",
+        "Atração",
+        "Beleza Rara",
+        "Beterraba",
+        "Boneca De Luxo",
+        "Dádiva",
+        "Delicado",
+        "Devaneio",
+        "Fascinação",
+        "Gatinha",
+        "Le Rose",
+        "Prazeres",
+        "Tomate",
+        "Vibrações"
+      ],
+      "acao_pos_validar": "",
+      "segmento": "Varejo - Manicure - Presente (líder absoluto ML)",
+      "peso_gramas": 1200,
+      "caixa": {
+        "codigo": "S03-31x20x11.5",
+        "modelo": "S03",
+        "cm": "31×20×11,5",
+        "conteudo": "15 esmaltes",
+        "layout": "já no catálogo — kit fora da frente (margem real negativa)",
+        "status": "ja_no_catalogo",
+        "cabe": true
+      }
+    }
+  ],
+  "caixas": {
+    "versao": 1,
+    "atualizado": "2026-08-18",
+    "nota": "Tamanho de caixa para envio ML. Códigos S20 e S03 já existiam no catálogo (família CaixasNet). Frasco Impala 7,5 ml e Carmed são estimativa geométrica — conferir com 1 kit físico antes de comprar caixa em quantidade.",
+    "pecas_estimadas_cm": {
+      "esmalte_impala_7_5ml": {
+        "comprimento": 3.4,
+        "largura": 3.4,
+        "altura": 8.2,
+        "fonte": "frasco vidro 7,5 ml + tampa, folga de papel"
+      },
+      "carmed_stick": {
+        "comprimento": 2.2,
+        "largura": 2.2,
+        "altura": 7.2,
+        "fonte": "stick labial típico (complemento MIMO)"
+      }
+    },
+    "modelos": {
+      "S20": {
+        "codigo": "S20-16x11x10",
+        "comprimento_cm": 16,
+        "largura_cm": 11,
+        "altura_cm": 10,
+        "uso": "kits 3 a 8 esmaltes (em pé, 1 camada)",
+        "origem": "já cadastrado em IMP-PERL-004"
+      },
+      "S03": {
+        "codigo": "S03-31x20x11.5",
+        "comprimento_cm": 31,
+        "largura_cm": 20,
+        "altura_cm": 11.5,
+        "uso": "kits 10 a 30 esmaltes (em pé, 1 camada)",
+        "origem": "já cadastrado em IMP-VR-015 / SORT-010 / NUDE / CLAS / ATAC-030"
+      }
+    },
+    "por_sku": {
+      "IMP-MIMO-003": {
+        "modelo": "S20",
+        "codigo": "S20-16x11x10",
+        "cm": "16×11×10",
+        "conteudo": "3 esmaltes + 1 Carmed",
+        "layout": "3 frascos em fileira (≈11 cm) + Carmed ao lado; altura 8,2 < 10",
+        "peso_g": 280,
+        "status": "definido_agora",
+        "cabe": true
+      },
+      "IMP-PERL-004": {
+        "modelo": "S20",
+        "codigo": "S20-16x11x10",
+        "cm": "16×11×10",
+        "conteudo": "4 esmaltes (2×2)",
+        "layout": "2×2 frascos; já estava no catálogo",
+        "peso_g": 380,
+        "status": "ja_no_catalogo",
+        "cabe": true
+      },
+      "IMP-BAIL-005": {
+        "modelo": "S20",
+        "codigo": "S20-16x11x10",
+        "cm": "16×11×10",
+        "conteudo": "5 esmaltes + complemento (R$ 5)",
+        "layout": "2+3 frascos; complemento no vão. Validar volume do brinde.",
+        "peso_g": 375,
+        "status": "definido_agora",
+        "cabe": true
+      },
+      "IMP-JUPAES-006": {
+        "modelo": "S20",
+        "codigo": "S20-16x11x10",
+        "cm": "16×11×10",
+        "conteudo": "6 esmaltes (2×3)",
+        "layout": "2×3: ≈11,2 × 7,6 × 8,2 cm úteis; S20 16×11×10 fecha",
+        "peso_g": 450,
+        "status": "definido_agora",
+        "cabe": true
+      },
+      "IMP-SORT-006": {
+        "modelo": "S20",
+        "codigo": "S20-16x11x10",
+        "cm": "16×11×10",
+        "conteudo": "6 esmaltes",
+        "layout": "igual JUPAES",
+        "peso_g": 450,
+        "status": "definido_agora",
+        "cabe": true
+      },
+      "IMP-SORT-006B": {
+        "modelo": "S20",
+        "codigo": "S20-16x11x10",
+        "cm": "16×11×10",
+        "conteudo": "6 esmaltes",
+        "layout": "igual JUPAES",
+        "peso_g": 450,
+        "status": "definido_agora",
+        "cabe": true
+      },
+      "IMP-POV-008": {
+        "modelo": "S20",
+        "codigo": "S20-16x11x10",
+        "cm": "16×11×10",
+        "conteudo": "8 esmaltes (2×4)",
+        "layout": "2×4: ≈14,6 × 7,6 × 8,2. Justo no comprimento 16 cm — montar 1 kit teste.",
+        "peso_g": 600,
+        "status": "definido_agora_validar_fisico",
+        "cabe": true
+      },
+      "IMP-ATAC-010": {
+        "modelo": "S03",
+        "codigo": "S03-31x20x11.5",
+        "cm": "31×20×11,5",
+        "conteudo": "10 esmaltes",
+        "layout": "mesma família dos kits 10 já no catálogo",
+        "peso_g": 750,
+        "status": "definido_agora",
+        "cabe": true
+      },
+      "IMP-NUDE-010": {
+        "modelo": "S03",
+        "codigo": "S03-31x20x11.5",
+        "cm": "31×20×11,5",
+        "conteudo": "10 esmaltes",
+        "layout": "já no catálogo",
+        "peso_g": 950,
+        "status": "ja_no_catalogo",
+        "cabe": true
+      },
+      "IMP-SORT-010": {
+        "modelo": "S03",
+        "codigo": "S03-31x20x11.5",
+        "cm": "31×20×11,5",
+        "conteudo": "10 esmaltes",
+        "layout": "já no catálogo",
+        "peso_g": 950,
+        "status": "ja_no_catalogo",
+        "cabe": true
+      },
+      "IMP-CLAS-012": {
+        "modelo": "S03",
+        "codigo": "S03-31x20x11.5",
+        "cm": "31×20×11,5",
+        "conteudo": "12 esmaltes",
+        "layout": "já no catálogo",
+        "peso_g": 1100,
+        "status": "ja_no_catalogo",
+        "cabe": true
+      },
+      "IMP-VR-015": {
+        "modelo": "S03",
+        "codigo": "S03-31x20x11.5",
+        "cm": "31×20×11,5",
+        "conteudo": "15 esmaltes",
+        "layout": "já no catálogo — kit fora da frente (margem real negativa)",
+        "peso_g": 1200,
+        "status": "ja_no_catalogo",
+        "cabe": true
+      },
+      "IMP-COLC-015": {
+        "modelo": "S03",
+        "codigo": "S03-31x20x11.5",
+        "cm": "31×20×11,5",
+        "conteudo": "15 esmaltes",
+        "layout": "igual VR-015",
+        "peso_g": 1125,
+        "status": "definido_agora",
+        "cabe": true
+      },
+      "IMP-ATAC-030": {
+        "modelo": "S03",
+        "codigo": "S03-31x20x11.5",
+        "cm": "31×20×11,5",
+        "conteudo": "30 esmaltes",
+        "layout": "1 camada em pé: 31×20 cabe ~9×5 posições; 30 ocupam. Já no catálogo.",
+        "peso_g": 2200,
+        "status": "ja_no_catalogo",
+        "cabe": true
+      }
+    },
+    "envio_ml": {
+      "anunciar_dimensoes": "usar cm do modelo (S20 16×11×10 ou S03 31×20×11,5)",
+      "anunciar_peso": "campo peso_gramas do produto (já no JSON)",
+      "frente": {
+        "IMP-MIMO-003": "S20 16×11×10 · 280 g",
+        "IMP-PERL-004": "S20 16×11×10 · 380 g",
+        "IMP-JUPAES-006": "S20 16×11×10 · 450 g"
+      }
+    }
+  },
+  "doutrina": {
+    "versao": 1,
+    "nome": "guerra_por_faixa",
+    "cnpj": "52668583000127",
+    "piso_margem_pct": 15,
+    "taxa_ml": 0.18,
+    "gap_igualar_pct": 3,
+    "sku_preco": "IMP-PERL-004",
+    "sku_entrada": "IMP-MIMO-003",
+    "sku_giro": "IMP-JUPAES-006",
+    "skus_frente": [
+      "IMP-MIMO-003",
+      "IMP-PERL-004",
+      "IMP-JUPAES-006"
+    ],
+    "preco_congelado": [
+      "IMP-MIMO-003",
+      "IMP-JUPAES-006"
+    ],
+    "margem_por_fase": {
+      "1": 0.1,
+      "2": 0.18,
+      "3": 0.25
+    },
+    "kits": {
+      "IMP-MIMO-003": {
+        "papel": "entrada",
+        "arma": "diferenciar",
+        "preco_fase1": 44.9
+      },
+      "IMP-PERL-004": {
+        "papel": "preco",
+        "arma": "igualar_faixa",
+        "preco_fase1": 39.9
+      },
+      "IMP-JUPAES-006": {
+        "papel": "giro",
+        "arma": "listing",
+        "exige_pedido_vencedor": true,
+        "preco_fase1": 64.9
+      }
+    },
+    "classificacoes": [
+      "ignorar",
+      "diferenciar",
+      "igualar_faixa",
+      "nao_perseguir"
+    ],
+    "gatilhos": {
+      "gap_pct_min": 3,
+      "estoque_ml_min": 30,
+      "estoque_validacao": 10,
+      "estoque_ideal": 60,
+      "reviews_ads": 20,
+      "nota_ads": 4.8,
+      "acos_max": 0.2
+    },
+    "cenario_mais_possivel": "abrir_frente_mimo_carmed",
+    "fases": [
+      {
+        "id": 0,
+        "nome": "abrir_frente",
+        "fazer": "Publicar MIMO R$44,90 com titulo Kit 3 Esmaltes Impala Mimo + Carmed Manicure; estoque 10 (validacao) depois 30",
+        "agentes": [
+          "radar_diferencial",
+          "monitor_concorrentes",
+          "contrato_impulso",
+          "ads_gatilho"
+        ]
+      },
+      {
+        "id": 1,
+        "nome": "no_ar",
+        "fazer": "PERL no ar no mesmo ciclo (R$39,90 congelado). Ads off. Chat/perguntas em dia.",
+        "agentes": [
+          "golpe_guerra",
+          "monitor_concorrentes",
+          "resumo_conta_ml"
+        ]
+      },
+      {
+        "id": 2,
+        "nome": "primeiro_pedido",
+        "fazer": "Com 1 pedido vencedor: publicar JUPAES R$64,90. Combo removedor no copy.",
+        "agentes": [
+          "esmaltes_operacao",
+          "promocoes_manicures",
+          "crescimento"
+        ]
+      },
+      {
+        "id": 3,
+        "nome": "ads",
+        "fazer": "Ligar Ads so com 20 reviews, nota 4.8, MLB guerra e ACOS<=20%. Budget R$10/dia.",
+        "agentes": [
+          "ads_gatilho",
+          "contrato_impulso"
+        ]
+      },
+      {
+        "id": 4,
+        "nome": "guerra_preco",
+        "fazer": "So PERL iguala se mercado_confiavel=1, rival kit 4 perolado ao vivo, gap>=3% e preco >= piso 15% (R$39,15).",
+        "agentes": [
+          "golpe_guerra",
+          "radar_diferencial",
+          "repricing_impala"
+        ]
+      },
+      {
+        "id": 5,
+        "nome": "ruptura",
+        "fazer": "Outra marca / 2o CNPJ so com frente viva, reviews, estoque 30+ e radar nao cego.",
+        "agentes": [
+          "ponto_ruptura_outra_marca",
+          "ponto_ruptura_segundo_cnpj"
+        ]
+      }
+    ],
+    "canais": {
+      "referente": "mercadolivre",
+      "todos": [
+        "mercadolivre",
+        "shopee",
+        "magalu",
+        "amazon"
+      ],
+      "fase_minima_secundario": 3,
+      "taxa_pct": {
+        "mercadolivre": 18.0,
+        "shopee": 14.0
+      }
+    },
+    "nao_fazer_global": [
+      "Igualar francesinha/tratamento",
+      "Ligar Ads sem MLB da frente",
+      "Publicar JUPAES antes do 1o pedido",
+      "Baixar MIMO abaixo de R$41,99 (piso 15%)",
+      "Tratar cache STALE como rival ao vivo",
+      "Publicar Impala em Shopee/Magalu/Amazon antes da fase 3 (20 reviews / 4.8 no ML)",
+      "Copiar preco do ML para outro canal sem recalcular piso pela taxa do canal"
+    ]
+  },
+  "tipo_anuncio": {
+    "frente": "Premium (gold_pro). JSON assume taxa 18%.",
+    "classico": "gold_special — não igualar preço Premium vs Clássico",
+    "full": "logistic_type fulfillment — não é Mercado Líder (power_seller)",
+    "taxa_estimada_pct": {
+      "gold_special": 12.0,
+      "gold_pro": 18.0,
+      "gold_premium": 18.0
+    }
+  },
+  "ruptura_segundo_cnpj": {
+    "kits_validacao": [
+      "IMP-MIMO-003",
+      "IMP-PERL-004"
+    ],
+    "fora": [
+      "IMP-SORT-006"
+    ],
+    "estoque_min": 30,
+    "avaliacoes_min": 20,
+    "avaliacoes_aproximando": 10,
+    "nota_min": 4.8,
+    "acos_max_pct": 20,
+    "vereditos": [
+      "ainda_nao",
+      "aproximando",
+      "liberado"
+    ],
+    "checks": [
+      {
+        "id": "avaliacoes",
+        "minimo": ">=20 com anúncio foco"
+      },
+      {
+        "id": "nota",
+        "minimo": ">=4,8 e >=1 review no foco"
+      },
+      {
+        "id": "mlb",
+        "minimo": "MLB reais MIMO e PERL"
+      },
+      {
+        "id": "estoque",
+        "minimo": ">=30 un. em cada kit de validação"
+      },
+      {
+        "id": "pedidos",
+        "minimo": ">=1 pedido próprio Impala"
+      },
+      {
+        "id": "ads_acos",
+        "minimo": "<=20% se snapshot Ads visível"
+      },
+      {
+        "id": "claims",
+        "minimo": "<2 se API visível"
+      },
+      {
+        "id": "anuncios_foco",
+        "minimo": ">=1 anúncio kit ativo"
+      },
+      {
+        "id": "saude_conta",
+        "minimo": "sem laranja/vermelho; taxas <5%"
+      }
+    ],
+    "cnae_preparacao": {
+      "impala_cosmetico": "4772-5/00",
+      "masterprint_informatica": "4751-2/01",
+      "masterprint_resinas": "4689-3/02",
+      "masterprint_papelaria": "4761-0/03"
+    }
+  },
+  "outra_marca_mesmo_cnpj": {
+    "agente": "ponto_ruptura_outra_marca.py",
+    "exige": "Impala liberado + doutrina fase 5 + anúncio foco + radar >=5 outras marcas"
+  },
+  "monitores": [
+    {
+      "agente": "resumo_conta_ml",
+      "quando": "09:00 BRT"
+    },
+    {
+      "agente": "monitor_ml",
+      "quando": "a cada 2 h"
+    },
+    {
+      "agente": "monitor_sem_venda_ml",
+      "quando": "10:00 BRT"
+    },
+    {
+      "agente": "monitor_concorrentes + radar + golpe",
+      "quando": "a cada 4 h"
+    },
+    {
+      "agente": "ads_gatilho",
+      "quando": "08:00 BRT"
+    },
+    {
+      "agente": "operacao_24h / repricing",
+      "quando": "a cada 2 h"
+    },
+    {
+      "agente": "ponto_ruptura_segundo_cnpj",
+      "quando": "08:05 BRT"
+    }
+  ],
+  "nao_fazer": [
+    "Igualar francesinha/tratamento",
+    "Ligar Ads sem MLB da frente",
+    "Publicar JUPAES antes do 1o pedido",
+    "Baixar MIMO abaixo de R$41,99 (piso 15%)",
+    "Tratar cache STALE como rival ao vivo",
+    "Publicar Impala em Shopee/Magalu/Amazon antes da fase 3 (20 reviews / 4.8 no ML)",
+    "Copiar preco do ML para outro canal sem recalcular piso pela taxa do canal"
+  ]
+}
