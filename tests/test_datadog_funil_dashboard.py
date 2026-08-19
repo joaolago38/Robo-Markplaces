@@ -111,6 +111,12 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         self.assertIn("robo.ml.loja.p0.tem", blob)
         self.assertIn("robo.ml.loja.p0.telegram_ok", blob)
         self.assertIn("robo.ml.loja.p0.telegram_skip", blob)
+        self.assertIn("robo.meta.rodadas", blob)
+        self.assertIn("robo.meta.ciclo.pronto", blob)
+        self.assertIn("robo.ml.saude.conta_ok", blob)
+        self.assertIn("robo.meta.ciclo.impala_ok", blob)
+        self.assertIn("robo.meta.campanhas_plataforma{plataforma:instagram}", blob)
+        self.assertIn("robo.meta.campanhas_plataforma{plataforma:facebook}", blob)
 
     def test_grupo_ruptura_outra_marca(self):
         grupo = dd._grupo_ruptura_outra_marca()

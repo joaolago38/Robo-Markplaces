@@ -200,6 +200,8 @@ def emitir_metricas_ciclo_meta(
         gauge("meta.ciclo.pronto", 1.0 if mom.get("pronto") else 0.0)
         gauge("meta.ciclo.saude_conta_ok", 1.0 if mom.get("saude_conta_ok") else 0.0)
         gauge("meta.ciclo.impala_ok", 1.0 if mom.get("impala_ok") else 0.0)
+        # Mesmo sinal no ciclo 30 min: resumo_conta (diário) sozinho deixa o widget N/A.
+        gauge("ml.saude.conta_ok", 1.0 if mom.get("saude_conta_ok") else 0.0)
         if plataformas is not None:
             plat = plataformas if isinstance(plataformas, dict) else {}
             for nome in PLATAFORMAS:

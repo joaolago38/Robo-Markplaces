@@ -3,13 +3,16 @@ agentes/social/agente_metricas_meta.py
 Valida campanhas Meta (Instagram/Facebook) e gera alertas/recomendações.
 """
 import logging
+from datetime import datetime, timezone
 
+from core.atomic_io import escrever_json_atomico
 from core.config import (
     META_CPC_MAXIMO,
     META_CTR_MINIMO,
     META_FREQ_MAXIMA,
     META_GASTO_MINIMO_ALERTA,
     META_ROAS_MINIMO,
+    ROOT,
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import alertar_gestor
@@ -27,6 +30,25 @@ from integracoes.meta.meta_ads_client import (
 from integracoes.social.sustentabilidade_ads_ml import coletar_receita_ml
 
 logger = logging.getLogger("agente_metricas_meta")
+HEARTBEAT_PATH = ROOT / "logs" / "meta_metricas_ultima.json"
+
+
+def _heartbeat(payload: dict, datadog_ok: bool) -> None:
+    """Snapshot para o Vigia (best-effort). Escreve mesmo com Meta Ads sem token."""
+    try:
+        resumo = payload.get("resumo") if isinstance(payload.get("resumo"), dict) else {}
+        ciclo = payload.get("ciclo") if isinstance(payload.get("ciclo"), dict) else {}
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": bool(datadog_ok),
+                "campanhas": int(resumo.get("total") or 0),
+                "pronto": bool(ciclo.get("pronto")) if ciclo else None,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Meta heartbeat: %s", exc)
 
 
 def _avaliar_campanha(c: dict) -> dict:
@@ -92,6 +114,7 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
         "critico": sum(1 for c in campanhas if c["status"] == "critico"),
     }
     payload = {"resumo": resumo, "campanhas": campanhas}
+    datadog_ok = False
     try:
         incrementar("meta.rodadas")
         gauge("meta.campanhas_total", float(resumo["total"]))
@@ -123,8 +146,10 @@ def executar(alertar_quando_atencao: bool = False, periodo_dias: int = 1) -> dic
                 "motivo": momento.get("motivo"),
                 "eficiencia": momento.get("eficiencia"),
             }
+        datadog_ok = True
     except Exception as exc:
         logger.warning("Meta metricas Datadog: %s", exc)
+    _heartbeat(payload, datadog_ok)
     logger.info("Métricas Meta: %s", payload)
     return payload
 

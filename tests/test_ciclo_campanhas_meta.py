@@ -88,6 +88,7 @@ class CicloCampanhasMetaTests(unittest.TestCase):
         ciclo.emitir_metricas_ciclo_meta(mom, plataformas={})
         pares = {(c.args[0], tuple(c.kwargs.get("tags") or [])): c.args[1] for c in mock_g.call_args_list}
         self.assertEqual(pares[("meta.ciclo.pronto", ())], 0.0)
+        self.assertEqual(pares[("ml.saude.conta_ok", ())], 1.0)
         self.assertEqual(pares[("meta.campanhas_plataforma", ("plataforma:instagram",))], 0.0)
         self.assertEqual(pares[("meta.campanhas_plataforma", ("plataforma:facebook",))], 0.0)
 
@@ -100,6 +101,7 @@ class CicloCampanhasMetaTests(unittest.TestCase):
         ciclo.emitir_metricas_ciclo_meta(mom)
         nomes = [c.args[0] for c in mock_g.call_args_list]
         self.assertIn("meta.ciclo.pronto", nomes)
+        self.assertIn("ml.saude.conta_ok", nomes)
         self.assertNotIn("meta.campanhas_plataforma", nomes)
 
     @patch("integracoes.meta.ciclo_campanhas.gauge")
