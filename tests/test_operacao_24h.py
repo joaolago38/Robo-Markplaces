@@ -60,6 +60,8 @@ class TestSintetizarOperacao24h(unittest.TestCase):
 
 
 class Operacao24hTests(unittest.TestCase):
+    @patch("integracoes.ml.ml_client.buscar_reputacao_vendedor", return_value={})
+    @patch("integracoes.ml.ml_client.listar_meus_anuncios", return_value=[])
     @patch("agentes.operacao_24h.alertar_gestor")
     @patch("agentes.operacao_24h._faturar_pedidos_lojahub")
     @patch("agentes.operacao_24h.executar_repricing_marketplaces")
@@ -82,6 +84,8 @@ class Operacao24hTests(unittest.TestCase):
         mock_repricing,
         mock_faturar,
         mock_alerta,
+        _mock_listar,
+        _mock_rep,
     ):
         mock_produtos.return_value = [{"sku": "A", "preco": 20, "custo": 10}]
         mock_resumo.return_value = {"ok": True, "data": {"receita": 200, "pedidos": 4}}
@@ -112,10 +116,12 @@ class Operacao24hTests(unittest.TestCase):
     @patch("agentes.operacao_24h.listar_produtos")
     @patch("agentes.operacao_24h.listar_campanhas")
     @patch("integracoes.ml.ml_client.buscar_reputacao_vendedor")
+    @patch("integracoes.ml.ml_client.listar_meus_anuncios", return_value=[])
     @patch("agentes.operacao_24h.verificar_gatilho_ads")
     def test_acos_agregado_alimenta_gatilho_pausar(
         self,
         mock_gatilho,
+        _mock_listar,
         mock_reputacao,
         mock_campanhas,
         mock_produtos,
@@ -156,6 +162,7 @@ class Operacao24hTests(unittest.TestCase):
         acos_passado = mock_gatilho.call_args.kwargs.get("acos_atual")
         self.assertAlmostEqual(acos_passado, acos_esperado, places=4)
         self.assertGreater(acos_passado, ACOS_MAXIMO)
+        self.assertFalse(mock_gatilho.call_args.kwargs.get("full_ativo"))
 
     @patch("agentes.operacao_24h.emitir_nfe_pedido")
     @patch("agentes.operacao_24h.listar_pedidos_prontos_faturar")

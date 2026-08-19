@@ -89,6 +89,66 @@ class TestAnalisar(unittest.TestCase):
         self.assertIn("concorrentes", conc)
         self.assertEqual(conc["concorrentes"][0]["titulo"], "Concorrente")
 
+    @patch.object(mon, "time")
+    @patch.object(mon, "alertar_gestor", return_value=True)
+    @patch.object(mon.ml_client, "_enabled", return_value=True)
+    @patch.object(mon.ml_client, "buscar_sugestao_preco", return_value={})
+    @patch.object(mon.ml_client, "buscar_acos_ads", return_value=0.0)
+    @patch.object(mon.ml_client, "buscar_detalhes_concorrentes", return_value=[])
+    @patch.object(mon.ml_client, "buscar_menor_preco_concorrente")
+    @patch.object(
+        mon.ml_client,
+        "buscar_metricas_item",
+        return_value={
+            "preco": 44.9,
+            "visitas_7d": 10,
+            "visitas_30d": 100,
+            "titulo": "Kit MIMO",
+            "listing_type_id": "gold_pro",
+        },
+    )
+    @patch.object(
+        mon.ml_client,
+        "listar_meus_anuncios",
+        return_value=[
+            {
+                "item_id": "MLB1",
+                "titulo": "Kit MIMO",
+                "preco": 44.9,
+                "listing_type_id": "gold_pro",
+            }
+        ],
+    )
+    @patch.object(mon.ml_product_ads, "campanhas_acos_acima_limite", return_value=[])
+    @patch.object(mon.ml_product_ads, "listar_campanhas", return_value=[])
+    @patch.object(mon.ml_product_ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "adv1"})
+    @patch.object(mon.ml_client, "buscar_reputacao_vendedor", return_value={})
+    @patch.object(mon.ml_client, "listar_perguntas_nao_respondidas", return_value=[])
+    @patch.object(mon.ml_client, "obter_saude_conta", return_value={"pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 0})
+    def test_nao_alerta_igualar_preco_de_outra_prateleira(
+        self,
+        _saude,
+        _perguntas,
+        _rep,
+        _adv,
+        _camp,
+        _acos_lim,
+        _listar,
+        _metricas,
+        mock_menor,
+        *_rest,
+    ):
+
+        def _menor(_item_id, mesma_prateleira=True):
+            return 50.0 if mesma_prateleira else 22.0
+
+        mock_menor.side_effect = _menor
+        out = mon.analisar(enviar_alerta=False, limite_itens=1)
+        self.assertTrue(out["ok"])
+        recs = " ".join(out["recomendacoes"])
+        self.assertIn("não igualar preço", recs)
+        self.assertNotIn("revisar preço", recs.lower())
+
     @patch.object(mon, "analisar", return_value={"ok": True, "resumo": "ok", "recomendacoes": [], "enviado": True})
     def test_main_imprime_resumo(self, *_):
         self.assertEqual(mon.main(), 0)

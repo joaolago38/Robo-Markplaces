@@ -151,6 +151,7 @@ class TestMlClient(unittest.TestCase):
 
     def setUp(self):
         ml_client._cache_concorrentes.clear()
+        ml_client._cache_item_tipo.clear()
 
     @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)

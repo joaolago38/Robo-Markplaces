@@ -42,6 +42,12 @@ def _campo_igual(nome: str, local: Any, vivo: Any) -> bool:
     return str(local or "").strip() == str(vivo or "").strip()
 
 
+def _item_id_anuncio(anuncio: dict[str, Any] | None) -> str:
+    if not isinstance(anuncio, dict):
+        return ""
+    return str(anuncio.get("item_id") or anuncio.get("id") or "").strip()
+
+
 def _aplicar_vivo(anuncio: dict[str, Any], vivo: dict[str, Any]) -> int:
     """Copia campos vivos para o anúncio. Retorna quantos campos divergiam."""
     n = 0
@@ -92,10 +98,13 @@ def auditar_espelho(
     else:
         falhas.append(f"cobertura:{ids_ok}/{ids_busca} faltando={len(faltando)}")
 
-    amostra = [a for a in rows if str(a.get("item_id") or "").strip()][: max(0, int(amostra_max))]
+    amostra = [a for a in rows if _item_id_anuncio(a)][: max(0, int(amostra_max))]
+    if ids_ok > 0 and not amostra:
+        checks_total += 1
+        falhas.append(f"amostra_vazia:ids_ok={ids_ok}")
     por_id: dict[str, dict[str, Any]] = {}
     if usar_lote and amostra:
-        ids_amostra = [str(a.get("item_id") or "").strip() for a in amostra]
+        ids_amostra = [_item_id_anuncio(a) for a in amostra]
         ids_amostra = [i for i in ids_amostra if i]
         try:
             vivos, faltando_get = ml_client._hidratar_anuncios_por_ids(ids_amostra)
@@ -109,7 +118,7 @@ def auditar_espelho(
                 por_id[str(extra["item_id"])] = extra
 
     for anuncio in amostra:
-        iid = str(anuncio.get("item_id") or "").strip()
+        iid = _item_id_anuncio(anuncio)
         checks_total += 1
         if usar_lote:
             vivo = por_id.get(iid) or {}
@@ -127,13 +136,16 @@ def auditar_espelho(
 
     pct = 100.0 if checks_total <= 0 else round(100.0 * checks_ok / checks_total, 4)
     atinge = pct + 1e-9 >= META_PCT
+    conferiu_campos = len(amostra) > 0 or ids_ok == 0
     out = {
         "ok": True,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "pct": pct,
         "meta_pct": META_PCT,
         "atinge_meta": atinge,
-        "espelho_confiavel": atinge and bool(meta.get("ok") or meta.get("motivo") == "nao_configurado"),
+        "espelho_confiavel": atinge
+        and conferiu_campos
+        and bool(meta.get("ok") or meta.get("motivo") == "nao_configurado"),
         "checks_ok": checks_ok,
         "checks_total": checks_total,
         "corrigidos": corrigidos,
@@ -155,6 +167,7 @@ def emitir_metricas(resultado: dict[str, Any]) -> None:
     gauge("ml.integridade.checks_ok", _f(resultado.get("checks_ok")))
     gauge("ml.integridade.checks_total", _f(resultado.get("checks_total")))
     gauge("ml.integridade.corrigidos", _f(resultado.get("corrigidos")))
+    gauge("ml.integridade.amostra", _f(resultado.get("amostra")))
     if resultado.get("atinge_meta"):
         incrementar("ml.integridade.ok")
     else:
@@ -169,6 +182,13 @@ def executar(*, anuncios: list[dict[str, Any]] | None = None, amostra_max: int =
             statuses=("active", "paused"),
             aplicar_foco=False,
         )
+    elif not any(_item_id_anuncio(a) for a in rows if isinstance(a, dict)):
+        meta = ml_client.ultima_listagem_anuncios()
+        if int(meta.get("ids_ok") or 0) > 0:
+            rows = ml_client.listar_meus_anuncios(
+                statuses=("active", "paused"),
+                aplicar_foco=False,
+            )
     resultado = auditar_espelho(rows, amostra_max=amostra_max)
     emitir_metricas(resultado)
     try:

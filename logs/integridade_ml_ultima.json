@@ -1,17 +1,20 @@
 {
   "ok": true,
-  "timestamp": "2026-08-18T15:04:58.495497+00:00",
-  "pct": 100.0,
+  "timestamp": "2026-08-18T17:10:38.262720+00:00",
+  "pct": 33.3333,
   "meta_pct": 99.99,
-  "atinge_meta": true,
-  "espelho_confiavel": true,
-  "checks_ok": 2,
-  "checks_total": 2,
+  "atinge_meta": false,
+  "espelho_confiavel": false,
+  "checks_ok": 1,
+  "checks_total": 3,
   "corrigidos": 0,
-  "amostra": 0,
-  "ids_busca": 9,
-  "ids_ok": 9,
+  "amostra": 1,
+  "ids_busca": 0,
+  "ids_ok": 0,
   "faltando": [],
-  "falhas": [],
+  "falhas": [
+    "listagem:falhou",
+    "get:MLB1"
+  ],
   "motivo_listagem": ""
 }

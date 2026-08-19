@@ -61,6 +61,8 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertIn("ml.saude.vendas_completadas", nomes)
         self.assertIn("ml.saude.avaliacoes", nomes)
         self.assertIn("ml.saude.anuncios_ativos", nomes)
+        self.assertIn("ml.saude.anuncios_premium", nomes)
+        self.assertIn("ml.saude.anuncios_classico", nomes)
         self.assertIn("ml.saude.todos_pausados", nomes)
         self.assertIn("ml.saude.anuncios_ignorados_fora_foco", nomes)
         self.assertIn("ml.saude.catalogo_foco_vazio", nomes)
@@ -99,6 +101,7 @@ class TestResumoContaMl(unittest.TestCase):
                 "preco": 9.9,
                 "sold_quantity": 0,
                 "status": "active",
+                "listing_type_id": "gold_pro",
             }
         ],
     )
@@ -128,6 +131,9 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertIn("Anúncios a melhorar", msg)
         self.assertIn("LOJA_TESTE", msg)
         self.assertIn("MLB1", msg)
+        self.assertEqual(resumo["anuncios_premium"], 1)
+        self.assertEqual(resumo["anuncios_classico"], 0)
+        self.assertIn("Premium", msg)
         self.assertIn("API claims indisponivel", msg)
         self.assertIn("Integridade ML", msg)
         self.assertIn("99.99", msg)

@@ -99,5 +99,39 @@ class TestContextoDecisaoAds(unittest.TestCase):
         self.assertTrue(kwargs["contexto_decisao"].get("sazonalidade_out_dez"))
 
 
+class TestExecutarFullLogistico(unittest.TestCase):
+    @patch.object(gatilho, "_metricas_e_heartbeat")
+    @patch.object(gatilho, "avaliar_momento_ads", return_value={"decisao": "aguardar"})
+    @patch.object(gatilho, "_calcular_acos_agregado", return_value=0.1)
+    @patch.object(
+        gatilho,
+        "buscar_reputacao_vendedor",
+        return_value={
+            "metrics": {"total_ratings": 10, "average_rating": 4.8},
+            "power_seller_status": "gold",
+        },
+    )
+    @patch("integracoes.ml.ml_client.listar_meus_anuncios", return_value=[])
+    def test_executar_lider_sem_full_nao_marca_full(self, _listar, _rep, _acos, mock_avaliar, _hb):
+        gatilho.executar()
+        self.assertFalse(mock_avaliar.call_args.args[3])
+
+    @patch.object(gatilho, "_metricas_e_heartbeat")
+    @patch.object(gatilho, "avaliar_momento_ads", return_value={"decisao": "aguardar"})
+    @patch.object(gatilho, "_calcular_acos_agregado", return_value=0.1)
+    @patch.object(
+        gatilho,
+        "buscar_reputacao_vendedor",
+        return_value={"metrics": {"total_ratings": 10, "average_rating": 4.8}},
+    )
+    @patch(
+        "integracoes.ml.ml_client.listar_meus_anuncios",
+        return_value=[{"logistic_type": "fulfillment", "listing_type_id": "gold_special"}],
+    )
+    def test_executar_detecta_full_pela_logistica(self, _listar, _rep, _acos, mock_avaliar, _hb):
+        gatilho.executar()
+        self.assertTrue(mock_avaliar.call_args.args[3])
+
+
 if __name__ == "__main__":
     unittest.main()

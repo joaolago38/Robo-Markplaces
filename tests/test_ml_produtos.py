@@ -140,6 +140,8 @@ class TestListarMeusAnuncios(unittest.TestCase):
                         "price": 19.9,
                         "seller_sku": "SKU-A",
                         "status": "active",
+                        "listing_type_id": "gold_pro",
+                        "shipping": {"logistic_type": "fulfillment"},
                     },
                 },
                 {
@@ -163,6 +165,8 @@ class TestListarMeusAnuncios(unittest.TestCase):
         self.assertEqual(out[0]["preco"], 19.9)
         self.assertEqual(out[0]["status"], "active")
         self.assertEqual(out[0]["sku"], "SKU-A")
+        self.assertEqual(out[0]["listing_type_id"], "gold_pro")
+        self.assertEqual(out[0]["logistic_type"], "fulfillment")
         self.assertEqual(out[1]["item_id"], "MLB2")
         self.assertEqual(out[1]["status"], "paused")
 

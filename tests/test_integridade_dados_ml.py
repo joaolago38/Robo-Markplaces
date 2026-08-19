@@ -135,11 +135,79 @@ class TestIntegridadeDadosMl(unittest.TestCase):
                     "checks_ok": 3,
                     "checks_total": 3,
                     "corrigidos": 0,
+                    "amostra": 1,
                 }
             )
         nomes = [c.args[0] for c in g.call_args_list]
         self.assertIn("ml.integridade.pct", nomes)
+        self.assertIn("ml.integridade.amostra", nomes)
         inc.assert_called_once_with("ml.integridade.ok")
+
+    def test_amostra_vazia_com_ids_ok_nao_atinge_meta(self):
+        """Foco vazio + listagem hidratada não pode virar 100% sem GET /items."""
+        out = integ.auditar_espelho(
+            [],
+            meta_listagem={
+                "ok": True,
+                "ids_busca": 9,
+                "ids_ok": 9,
+                "ids_faltando": [],
+            },
+            buscar_item=lambda _iid: {"item_id": "MLB1"},
+        )
+        self.assertEqual(out["amostra"], 0)
+        self.assertFalse(out["atinge_meta"])
+        self.assertFalse(out["espelho_confiavel"])
+        self.assertTrue(any(f.startswith("amostra_vazia:") for f in out["falhas"]))
+        self.assertLess(out["pct"], integ.META_PCT)
+
+    def test_conta_vazia_real_atinge_meta(self):
+        out = integ.auditar_espelho(
+            [],
+            meta_listagem={"ok": True, "ids_busca": 0, "ids_ok": 0, "ids_faltando": []},
+            buscar_item=lambda _iid: {},
+        )
+        self.assertEqual(out["amostra"], 0)
+        self.assertTrue(out["atinge_meta"])
+        self.assertTrue(out["espelho_confiavel"])
+
+    def test_aceita_id_como_item_id(self):
+        anuncios = [{"id": "MLB1", "titulo": "Kit", "preco": 1, "status": "active", "sold_quantity": 0, "estoque": 1}]
+        vivo = {"item_id": "MLB1", "titulo": "Kit", "preco": 1, "status": "active", "sold_quantity": 0, "estoque": 1}
+        out = integ.auditar_espelho(
+            anuncios,
+            meta_listagem={"ok": True, "ids_busca": 1, "ids_ok": 1, "ids_faltando": []},
+            buscar_item=lambda _iid: vivo,
+        )
+        self.assertEqual(out["amostra"], 1)
+        self.assertTrue(out["atinge_meta"])
+
+    def test_executar_relisa_sem_foco_quando_lote_filtrado(self):
+        hidratados = [
+            {
+                "item_id": "MLB9",
+                "titulo": "Bolsa",
+                "preco": 10.0,
+                "status": "active",
+                "sold_quantity": 0,
+                "estoque": 1,
+            }
+        ]
+        with patch.object(
+            ml_client,
+            "ultima_listagem_anuncios",
+            return_value={"ok": True, "ids_busca": 1, "ids_ok": 1, "ids_faltando": []},
+        ), patch.object(
+            ml_client, "listar_meus_anuncios", return_value=hidratados
+        ) as listar, patch.object(
+            ml_client, "_hidratar_anuncios_por_ids", return_value=(hidratados, [])
+        ), patch.object(integ, "emitir_metricas"), patch.object(
+            integ, "escrever_json_atomico"
+        ):
+            out = integ.executar(anuncios=[], amostra_max=5)
+        listar.assert_called_once_with(statuses=("active", "paused"), aplicar_foco=False)
+        self.assertEqual(out["amostra"], 1)
+        self.assertTrue(out["atinge_meta"])
 
 
 class TestListarAnunciosIntegridade(unittest.TestCase):

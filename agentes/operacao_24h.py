@@ -265,18 +265,25 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     pedidos_faturar = listar_pedidos_prontos_faturar(limit=100)
     kpis = _calcular_kpis_24h(produtos, pedidos_faturar, analytics)
 
-    # Busca reputação real da conta ML para alertas e gatilho de ads
+    # Reputação da conta e Full logístico (não confundir Full com Mercado Líder).
+    _total_avaliacoes = 0
+    _nota_media = 0.0
+    _full_ativo = False
     try:
         from integracoes.ml.ml_client import buscar_reputacao_vendedor
         _rep = buscar_reputacao_vendedor()
         _metrics = _rep.get("metrics", {})
         _total_avaliacoes = int(_metrics.get("total_ratings", 0) or 0)
         _nota_media = float(_metrics.get("average_rating", 0.0) or 0.0)
-        _full_ativo = bool(_metrics.get("power_seller_status") in ("gold", "platinum"))
     except Exception as _e:
         logger.warning("Não foi possível buscar reputação ML: %s", _e)
-        _total_avaliacoes = 0
-        _nota_media = 0.0
+    try:
+        from integracoes.ml.ml_client import listar_meus_anuncios
+        from integracoes.ml.tipo_anuncio_ml import algum_anuncio_full
+
+        _full_ativo = algum_anuncio_full(listar_meus_anuncios())
+    except Exception as _e:
+        logger.warning("Não foi possível detectar Full nos anúncios ML: %s", _e)
         _full_ativo = False
 
     try:

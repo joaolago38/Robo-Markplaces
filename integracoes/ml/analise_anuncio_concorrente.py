@@ -194,6 +194,7 @@ def montar_metricas(
     vendas: int = 0,
     date_created: str | None = None,
     taxa_pct: float | None = None,
+    listing_type_id: str | None = None,
     reviews: dict[str, Any] | None = None,
     visitas: dict[str, Any] | None = None,
     catalog_date_created: str | None = None,
@@ -204,6 +205,10 @@ def montar_metricas(
     # Prefere idade do anúncio; senão do catálogo (como LojaHub usa para vendas/dia)
     dias_base = dias_anuncio if dias_anuncio is not None else dias_catalogo
     vendas_i = _i(vendas)
+    if taxa_pct is None and listing_type_id:
+        from integracoes.ml.tipo_anuncio_ml import taxa_estimada_pct
+
+        taxa_pct = taxa_estimada_pct(listing_type_id)
     rec = estimar_receitas(preco, vendas_i, taxa_pct=taxa_pct)
     rev = reviews or {}
     vis = visitas or {}
@@ -275,6 +280,7 @@ def enriquecer_anuncio(
         vendas=vendas,
         date_created=date_created,
         taxa_pct=taxa_pct,
+        listing_type_id=str(row.get("listing_type_id") or ""),
         reviews=reviews,
         visitas=visitas,
         catalog_date_created=catalog_created,

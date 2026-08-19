@@ -806,6 +806,7 @@ def buscar_item_publico(item_id: str) -> dict:
             "sold_quantity": int(item.get("sold_quantity", 0) or 0),
             "sku": str(item.get("seller_sku", "") or ""),
             "listing_type_id": str(item.get("listing_type_id", "") or ""),
+            "logistic_type": str((item.get("shipping") or {}).get("logistic_type") or ""),
             "seller_id": str((item.get("seller_id") or "")).strip(),
             "permalink": str(item.get("permalink", "") or ""),
         }
@@ -844,6 +845,7 @@ def _extrair_seller_id(row: dict) -> str:
 
 _CACHE_CONCORRENTES_TTL_S = 60
 _cache_concorrentes: dict[str, tuple[float, list[dict]]] = {}
+_cache_item_tipo: dict[str, dict[str, str]] = {}
 
 
 def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
@@ -859,6 +861,11 @@ def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
     ri = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
     ri.raise_for_status()
     body = ri.json() or {}
+    ship = body.get("shipping") if isinstance(body.get("shipping"), dict) else {}
+    _cache_item_tipo[item_id] = {
+        "listing_type_id": str(body.get("listing_type_id") or ""),
+        "logistic_type": str(ship.get("logistic_type") or ""),
+    }
     catalog_pid = body.get("catalog_product_id")
     if not catalog_pid:
         _cache_concorrentes[item_id] = (time.monotonic(), [])
@@ -904,6 +911,8 @@ def _normalizar_concorrente(row: dict) -> dict:
         "frete_gratis": bool(shipping.get("free_shipping", False)),
         "condicao": str(row.get("condition", "") or ""),
         "quantidade_vendida": vendidos,
+        "listing_type_id": str(row.get("listing_type_id", "") or ""),
+        "logistic_type": str(shipping.get("logistic_type") or ""),
     }
 
 
@@ -927,23 +936,36 @@ def buscar_detalhes_concorrentes(item_id: str, limite: int = 5) -> list[dict]:
         return []
 
 
-def buscar_menor_preco_concorrente(item_id: str) -> float:
+def buscar_menor_preco_concorrente(
+    item_id: str,
+    *,
+    mesma_prateleira: bool = True,
+) -> float:
     """
-    Busca o menor preço praticado por outros vendedores no mesmo anúncio/produto.
-    Retorna 0.0 se não encontrar ou em caso de erro.
-    Nunca lança exceção.
+    Menor preço de outros vendedores no mesmo catálogo.
+    Por padrão só compara Premium com Premium e Clássico com Clássico.
+    Tipo desconhecido não filtra. Retorna 0.0 se vazio ou erro.
     """
     if not _enabled() or not (item_id or "").strip():
         return 0.0
     try:
+        from integracoes.ml.tipo_anuncio_ml import listing_type_id_de
+        from integracoes.ml.tipo_anuncio_ml import mesma_prateleira as _mesma
+
+        iid = item_id.strip()
+        linhas = _listar_linhas_concorrentes_catalogo(iid)
+        meu_tipo = str((_cache_item_tipo.get(iid) or {}).get("listing_type_id") or "")
         precos: list[float] = []
-        for row in _listar_linhas_concorrentes_catalogo(item_id):
+        for row in linhas:
             try:
                 p = float(row.get("price") or 0)
             except (TypeError, ValueError):
                 continue
-            if p > 0:
-                precos.append(p)
+            if p <= 0:
+                continue
+            if mesma_prateleira and not _mesma(meu_tipo, listing_type_id_de(row)):
+                continue
+            precos.append(p)
         return min(precos) if precos else 0.0
     except Exception as exc:
         _log_erro_leitura_item("buscar_menor_preco_concorrente", item_id, exc)
@@ -970,6 +992,8 @@ def _normalizar_resultado_busca(row: dict) -> dict:
         "quantidade_vendida": vendidos,
         "seller_id": str(seller.get("id", "") or ""),
         "permalink": str(row.get("permalink", "") or ""),
+        "listing_type_id": str(row.get("listing_type_id", "") or ""),
+        "logistic_type": str(shipping.get("logistic_type") or ""),
     }
 
 
@@ -1148,6 +1172,7 @@ def _normalizar_corpo_item_ml(b: dict) -> dict:
         estoque = int(b.get("available_quantity", 0) or 0)
     except (TypeError, ValueError):
         estoque = int(float(b.get("available_quantity") or 0))
+    ship = b.get("shipping") if isinstance(b.get("shipping"), dict) else {}
     return {
         "item_id": str(b.get("id", "")),
         "titulo": str(b.get("title", "") or ""),
@@ -1160,6 +1185,8 @@ def _normalizar_corpo_item_ml(b: dict) -> dict:
         "user_product_id": str(b.get("user_product_id", "") or ""),
         "family_name": str(b.get("family_name", "") or ""),
         "category_id": str(b.get("category_id", "") or ""),
+        "listing_type_id": str(b.get("listing_type_id", "") or ""),
+        "logistic_type": str(ship.get("logistic_type") or ""),
     }
 
 
@@ -1167,7 +1194,7 @@ def _hidratar_anuncios_por_ids(item_ids: list[str]) -> tuple[list[dict], list[st
     """GET /items em lote; retenta IDs que não vieram 200. Devolve (itens, faltando)."""
     attrs = (
         "id,title,price,seller_sku,status,sold_quantity,available_quantity,"
-        "date_created,user_product_id,family_name,category_id"
+        "date_created,user_product_id,family_name,category_id,listing_type_id,shipping"
     )
     por_id: dict[str, dict] = {}
 
