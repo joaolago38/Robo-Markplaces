@@ -145,6 +145,18 @@ class TestOrquestrador(unittest.TestCase):
         self.assertIn("Orquestrador 30min", mock_alertar.call_args.args[0])
 
     @patch.object(orq, "alertar_gestor")
+    @patch.object(orq, "executar_registro", return_value={"ok": True})
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    def test_ciclo_ok_nao_envia_resumo_telegram(self, _exec, mock_alertar):
+        out = orq.executar(
+            enviar_resumo_telegram=True,
+            agentes=[self._agente_fake("a1")],
+        )
+        self.assertEqual(out["falhas"], 0)
+        self.assertFalse(out["resumo_telegram_enviado"])
+        mock_alertar.assert_not_called()
+
+    @patch.object(orq, "alertar_gestor")
     @patch.object(orq, "executar_registro", side_effect=RuntimeError("boom"))
     @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
     def test_isolamento_falha_agente(self, *_):

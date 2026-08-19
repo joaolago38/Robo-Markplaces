@@ -52,6 +52,9 @@ def executar(*, enviar_alerta: bool = True, forcar: bool = False) -> dict[str, A
 
         enviado = False
         if enviar_alerta and RESUMO_CONTA_ML_ALERTA and resumo.get("ok") and msg:
+            from integracoes.ml.alerta_pendencias_loja import emitir_alerta_p0_do_resumo
+
+            emitir_alerta_p0_do_resumo(resumo, enviar=True)
             chave = "ml:resumo_conta:forcar" if forcar else chave_resumo_periodo(
                 "ml:resumo_conta", horas_por_bucket=20
             )

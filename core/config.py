@@ -317,6 +317,13 @@ RESUMO_CONTA_ML_ALERTA = os.getenv("RESUMO_CONTA_ML_ALERTA", "1").strip().lower(
 )
 RESUMO_CONTA_ML_COOLDOWN_SEG = int(os.getenv("RESUMO_CONTA_ML_COOLDOWN_SEG", "72000"))
 RESUMO_CONTA_ML_MAX_PERFORMANCE = int(os.getenv("RESUMO_CONTA_ML_MAX_PERFORMANCE", "80"))
+# P0 da loja (envio / pergunta aberta / laranja) no ciclo 30 min — não espera o resumo 20 h
+ML_LOJA_P0_ALERTA = os.getenv("ML_LOJA_P0_ALERTA", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+ML_LOJA_P0_COOLDOWN_SEG = int(os.getenv("ML_LOJA_P0_COOLDOWN_SEG", "1800"))
 # 1 = ignora bolsas/legado na listagem de anúncios; reputação da conta segue valendo
 ML_IGNORAR_ANUNCIOS_FORA_FOCO = os.getenv("ML_IGNORAR_ANUNCIOS_FORA_FOCO", "1").strip().lower() not in (
     "0",

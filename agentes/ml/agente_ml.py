@@ -34,6 +34,7 @@ from integracoes.ml.ml_client import (
 logger = logging.getLogger("agente_ml")
 _TAG_ML = ["marketplace:mercadolivre"]
 HEARTBEAT_PATH = ROOT / "logs" / "chat_ultima.json"
+_ultimo_ciclo_chat: dict[str, int] = {"respondidas": 0, "falhas": 0, "fila": 0}
 
 
 def pergunta_valida(texto: str) -> bool:
@@ -215,6 +216,12 @@ def ciclo_chat():
     if falhas:
         incrementar("chat.falha", float(falhas), tags=_TAG_ML)
     incrementar("chat.rodadas", tags=_TAG_ML)
+    global _ultimo_ciclo_chat
+    _ultimo_ciclo_chat = {
+        "respondidas": int(ok),
+        "falhas": int(falhas),
+        "fila": len(perguntas or []),
+    }
     try:
         from datetime import datetime, timezone
 
@@ -273,9 +280,28 @@ def executar():
     logger.info("Agente ML iniciado")
 
     ctx = carregar_contexto_fechamento_ml()
+    chat_ok = ciclo_chat()
+    reputacao = verificar_reputacao()
+    p0: dict = {}
+    try:
+        from integracoes.ml.alerta_pendencias_loja import emitir_alerta_p0_do_ciclo
+
+        p0 = emitir_alerta_p0_do_ciclo(
+            chat_falhas=int(_ultimo_ciclo_chat.get("falhas") or 0),
+            perguntas_pendentes=max(
+                0,
+                int(_ultimo_ciclo_chat.get("fila") or 0)
+                - int(_ultimo_ciclo_chat.get("respondidas") or 0),
+            ),
+            reputacao=reputacao if isinstance(reputacao, dict) else {},
+        )
+    except Exception as exc:
+        logger.warning("P0 loja ML: %s", exc)
+        p0 = {"tem_p0": False, "erro": str(exc)}
     out = {
-        "chat": ciclo_chat(),
-        "reputacao": verificar_reputacao(),
+        "chat": chat_ok,
+        "reputacao": reputacao,
+        "p0_loja": p0,
         "contexto_fechamento": {
             "ok": ctx.get("ok"),
             "link_valido": ctx.get("link_valido"),

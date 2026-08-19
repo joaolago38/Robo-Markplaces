@@ -286,7 +286,7 @@ def executar_ciclo(
     except Exception as exc:
         logger.warning("Orquestrador: falha ao gravar heartbeat: %s", exc)
 
-    if enviar_resumo_telegram and resultados:
+    if enviar_resumo_telegram and resultados and falhas > 0:
         msg = _montar_resumo_telegram(ciclo, titulo=titulo_resumo)
         ciclo["resumo_telegram_enviado"] = bool(
             alertar_gestor(
