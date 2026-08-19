@@ -185,7 +185,6 @@ def resolver_ia_ciclo_meta(
             motivo = "p0_intencao_compra"
     if familia == "sonnet":
         from core.claude_roteador import restante_orcamento_usd
-
         from core.config import CLAUDE_ESCALONAR_RESTANTE_MIN_USD
 
         resta = restante_orcamento_usd()
