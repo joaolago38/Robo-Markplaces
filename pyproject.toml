@@ -41,6 +41,7 @@ omit = [
     "agentes/importacao/agente_comparar_portos_alibaba.py",
     "agentes/importacao/agente_hub_paraguai_marketplace.py",
     "agentes/importacao/agente_tributacao_py_br.py",
+    "agentes/importacao/agente_logistica_china_ml.py",
     "agentes/escritorio/agente_monitor_masterprint_escritorio.py",
     "agentes/masterprint/agente_sync_tabela_pedidos.py",
     "agentes/esmaltes/agente_sync_planilhas_ecommerce.py",

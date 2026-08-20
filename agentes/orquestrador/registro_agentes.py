@@ -147,6 +147,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
     ),
     # alibaba / alibaba_inteligencia NÃO entram no registro — só via alibaba_sourcing.
     # comparar_portos_alibaba = sob demanda (CLI com --fob/--produto-id); sem FOB falha.
+    # logistica_china_ml = CLI/manual; toggle LOGISTICA_CHINA_ML_ATIVO=0 (default).
     # hub_paraguai / tributacao_py_br = estrutura futura (CLI/manual, sem cron).
     AgenteRegistrado(
         "ml_tendencias_importacao",
