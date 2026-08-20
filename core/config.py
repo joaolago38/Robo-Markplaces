@@ -1157,6 +1157,15 @@ IMPORTACAO_CHINA_ROTA_REGIONAL = os.getenv("IMPORTACAO_CHINA_ROTA_REGIONAL", "1"
     "false",
     "no",
 )
+# China → portos BR → hub Full ML (40HC). Default OFF — sem cron. CLI: --forcar
+LOGISTICA_CHINA_ML_CATALOGO = os.getenv(
+    "LOGISTICA_CHINA_ML_CATALOGO", "catalogo/logistica_china_ml.json"
+)
+LOGISTICA_CHINA_ML_ATIVO = os.getenv("LOGISTICA_CHINA_ML_ATIVO", "0").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 
 # Alibaba inteligência (câmbio + landed + margem)
 ALIBABA_MARGEM_MIN_PCT = float(os.getenv("ALIBABA_MARGEM_MIN_PCT", "18.0"))
@@ -1271,7 +1280,7 @@ ORQUESTRADOR_EXCLUIR = {
         "relatorio_estrategia_ml,ads_gatilho,resumo_conta_ml,relatorio_manha_ml,"
         "montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,"
         "leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,"
-        "alibaba_sourcing,comparar_portos_alibaba,"
+        "alibaba_sourcing,comparar_portos_alibaba,logistica_china_ml,"
         "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,"
         "inteligencia_precos,monitor_ml,monitor_concorrentes,monitor_sem_venda_ml,monitor_mercado_esmaltes,panorama,"
         "sincronizar_estoque,repricing,repricing_impala,operacao_24h,"

@@ -69,6 +69,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Compara importação com referência Alibaba (FOB) em qualquer porto ou "
         "aeroporto do Brasil — aéreo e marítimo — sob demanda (sem cron)."
     ),
+    "logistica_china_ml": (
+        "Ranqueia portos brasileiros para 40HC da China até o hub Full do "
+        "Mercado Livre (oceano + AFRMM + local + rodoviário). Toggle desligado "
+        "por padrão. Sem cron."
+    ),
     "hub_paraguai_marketplace": (
         "Estrutura futura (hub PY × marketplaces). Sem cron — só CLI/manual quando ativar."
     ),
@@ -362,6 +367,7 @@ HORARIOS_AGENTES: dict[str, str] = {
     "alibaba_inteligencia": "Debug/CLI — consulta Alibaba.com desligada",
     "alibaba_sourcing": "DESLIGADO (sem consulta Alibaba.com); só workflow_dispatch manual",
     "comparar_portos_alibaba": "Sob demanda / CLI; fora do orquestrador 30 min",
+    "logistica_china_ml": "DESLIGADO (LOGISTICA_CHINA_ML_ATIVO=0); só CLI --forcar",
     "hub_paraguai_marketplace": "Planejado — sem cron",
     "tributacao_py_br": "Futuro Mercosul — sem cron",
     "ml_tendencias_importacao": "DESLIGADO junto com alibaba_sourcing (sem consulta Alibaba.com)",
@@ -470,6 +476,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("alibaba:sourcing", "alibaba_sourcing"),
     ("portos_alibaba", "comparar_portos_alibaba"),
     ("portos_br", "comparar_portos_alibaba"),
+    ("logistica_china_ml", "logistica_china_ml"),
+    ("portos_ml", "logistica_china_ml"),
     ("alibaba:", "alibaba"),
     ("importacao:ml_tendencias", "ml_tendencias_importacao"),
     ("ml_tendencias", "ml_tendencias_importacao"),

@@ -1,0 +1,354 @@
+{
+  "versao": 1,
+  "descricao": "Custo logístico 40HC China → portos BR → hubs Full do Mercado Livre. Sem FOB nem II/IPI/PIS/COFINS (quase iguais entre portos). Planejamento — confirme booking/THC/ICMS.",
+  "aviso_legal": "Faixa oceânica de agosto/2026 (In Time e armadores). Rodoviário 40HC é piso ANTT-like. Não substitui cotação formal.",
+  "cambio_fallback_usd_brl": 5.5,
+  "afrmm_pct": 8.0,
+  "ocean_coleta": "ago/2026",
+  "inland_40hc": {
+    "piso_brl": 2200,
+    "brl_por_km_ate_400": 8.0,
+    "brl_por_km_acima_400": 5.5
+  },
+  "playbook": {
+    "sudeste": "szx_santos_cajamar",
+    "sul": "szx_navegantes_gcr",
+    "nordeste": "szx_suape_recife_so_full_local"
+  },
+  "origens_china": [
+    {
+      "id": "szx",
+      "nome": "Shenzhen / Yantian",
+      "regiao": "Guangdong",
+      "perfil": "Eletrônicos, consumo, filamento — origem padrão Alibaba",
+      "ocean_mult": 1.0
+    },
+    {
+      "id": "nsa",
+      "nome": "Nansha / Guangzhou",
+      "regiao": "Guangdong",
+      "perfil": "Mesma malha do sul se a fábrica estiver em Guangzhou",
+      "ocean_mult": 1.01
+    },
+    {
+      "id": "nbo",
+      "nome": "Ningbo-Zhoushan",
+      "regiao": "Zhejiang",
+      "perfil": "Industrial; oceano às vezes um pouco menor",
+      "ocean_mult": 0.99
+    },
+    {
+      "id": "sha",
+      "nome": "Shanghai",
+      "regiao": "Leste",
+      "perfil": "Mais escalas; não vale se a fábrica for de Guangdong",
+      "ocean_mult": 1.0
+    },
+    {
+      "id": "xmn",
+      "nome": "Xiamen",
+      "regiao": "Fujian",
+      "perfil": "Só se o fornecedor estiver em Fujian",
+      "ocean_mult": 1.02
+    },
+    {
+      "id": "tao",
+      "nome": "Qingdao",
+      "regiao": "Norte",
+      "perfil": "Oceano às vezes menor; some se a carga vier do sul da China",
+      "ocean_mult": 0.96
+    }
+  ],
+  "hubs_ml": [
+    {
+      "id": "americana",
+      "nome": "Americana (próprio)",
+      "papel": "CEP 13467-694 — base atual do robô",
+      "regiao": "sudeste"
+    },
+    {
+      "id": "cajamar",
+      "nome": "Cajamar Full",
+      "papel": "Maior CD do ML no Brasil",
+      "regiao": "sudeste"
+    },
+    {
+      "id": "campinas",
+      "nome": "Campinas Full",
+      "papel": "Interior SP — perto da base",
+      "regiao": "sudeste"
+    },
+    {
+      "id": "aracari",
+      "nome": "Araçariguama Full",
+      "papel": "Castelo Branco / oeste SP",
+      "regiao": "sudeste"
+    },
+    {
+      "id": "extrema",
+      "nome": "Extrema Full",
+      "papel": "Divisa MG — Fernão Dias",
+      "regiao": "sudeste"
+    },
+    {
+      "id": "gcr",
+      "nome": "Gov. Celso Ramos Full",
+      "papel": "Hub Sul do ML (SC)",
+      "regiao": "sul"
+    },
+    {
+      "id": "recife",
+      "nome": "Recife Full",
+      "papel": "Hub Nordeste (PE)",
+      "regiao": "nordeste"
+    },
+    {
+      "id": "fortaleza",
+      "nome": "Fortaleza Full",
+      "papel": "Hub Ceará",
+      "regiao": "nordeste"
+    }
+  ],
+  "portos_br": [
+    {
+      "codigo": "BRSSZ",
+      "ocean_usd_40hc": 4500,
+      "transit_dias": "30-39",
+      "rota": "direta",
+      "km": {
+        "americana": 180,
+        "cajamar": 95,
+        "campinas": 170,
+        "aracari": 110,
+        "extrema": 220,
+        "gcr": 750,
+        "recife": 2450,
+        "fortaleza": 2900
+      }
+    },
+    {
+      "codigo": "BRPNG",
+      "ocean_usd_40hc": 4550,
+      "transit_dias": "32-40",
+      "rota": "direta",
+      "km": {
+        "americana": 480,
+        "cajamar": 500,
+        "campinas": 470,
+        "aracari": 520,
+        "extrema": 620,
+        "gcr": 350,
+        "recife": 2700,
+        "fortaleza": 3100
+      }
+    },
+    {
+      "codigo": "BRNVT",
+      "ocean_usd_40hc": 4500,
+      "transit_dias": "33-39",
+      "rota": "direta",
+      "km": {
+        "americana": 690,
+        "cajamar": 700,
+        "campinas": 680,
+        "aracari": 710,
+        "extrema": 800,
+        "gcr": 79,
+        "recife": 2800,
+        "fortaleza": 3200
+      }
+    },
+    {
+      "codigo": "BRITP",
+      "ocean_usd_40hc": 4500,
+      "transit_dias": "33-39",
+      "rota": "direta",
+      "km": {
+        "americana": 720,
+        "cajamar": 730,
+        "campinas": 710,
+        "aracari": 740,
+        "extrema": 830,
+        "gcr": 120,
+        "recife": 2850,
+        "fortaleza": 3250
+      }
+    },
+    {
+      "codigo": "BRITJ",
+      "ocean_usd_40hc": 4500,
+      "transit_dias": "33-39",
+      "rota": "direta",
+      "km": {
+        "americana": 700,
+        "cajamar": 710,
+        "campinas": 690,
+        "aracari": 720,
+        "extrema": 810,
+        "gcr": 90,
+        "recife": 2820,
+        "fortaleza": 3220
+      }
+    },
+    {
+      "codigo": "BRRIO",
+      "ocean_usd_40hc": 4550,
+      "transit_dias": "30-38",
+      "rota": "direta",
+      "km": {
+        "americana": 500,
+        "cajamar": 430,
+        "campinas": 490,
+        "aracari": 460,
+        "extrema": 380,
+        "gcr": 1100,
+        "recife": 2300,
+        "fortaleza": 2700
+      }
+    },
+    {
+      "codigo": "BRRIG",
+      "ocean_usd_40hc": 4600,
+      "transit_dias": "35-45",
+      "rota": "direta",
+      "km": {
+        "americana": 1200,
+        "cajamar": 1220,
+        "campinas": 1180,
+        "aracari": 1240,
+        "extrema": 1320,
+        "gcr": 480,
+        "recife": 3300,
+        "fortaleza": 3700
+      }
+    },
+    {
+      "codigo": "BRSUA",
+      "ocean_usd_40hc": 5200,
+      "transit_dias": "40-55",
+      "rota": "transbordo",
+      "km": {
+        "americana": 2450,
+        "cajamar": 2500,
+        "campinas": 2420,
+        "aracari": 2550,
+        "extrema": 2480,
+        "gcr": 3000,
+        "recife": 45,
+        "fortaleza": 800
+      }
+    },
+    {
+      "codigo": "BRPEC",
+      "ocean_usd_40hc": 5300,
+      "transit_dias": "40-55",
+      "rota": "transbordo",
+      "km": {
+        "americana": 2850,
+        "cajamar": 2900,
+        "campinas": 2820,
+        "aracari": 2950,
+        "extrema": 2880,
+        "gcr": 3400,
+        "recife": 800,
+        "fortaleza": 60
+      }
+    },
+    {
+      "codigo": "BRSSB",
+      "ocean_usd_40hc": 5150,
+      "transit_dias": "40-55",
+      "rota": "transbordo",
+      "km": {
+        "americana": 1750,
+        "cajamar": 1800,
+        "campinas": 1720,
+        "aracari": 1850,
+        "extrema": 1680,
+        "gcr": 2300,
+        "recife": 800,
+        "fortaleza": 1400
+      }
+    },
+    {
+      "codigo": "BRVIX",
+      "ocean_usd_40hc": 5300,
+      "transit_dias": "45-60",
+      "rota": "transbordo",
+      "km": {
+        "americana": 900,
+        "cajamar": 880,
+        "campinas": 920,
+        "aracari": 940,
+        "extrema": 700,
+        "gcr": 1400,
+        "recife": 1900,
+        "fortaleza": 2300
+      }
+    },
+    {
+      "codigo": "BRVDC",
+      "ocean_usd_40hc": 5400,
+      "transit_dias": "45-60",
+      "rota": "transbordo",
+      "km": {
+        "americana": 2950,
+        "cajamar": 3000,
+        "campinas": 2920,
+        "aracari": 3050,
+        "extrema": 2980,
+        "gcr": 3500,
+        "recife": 2000,
+        "fortaleza": 1600
+      }
+    },
+    {
+      "codigo": "BRIOA",
+      "ocean_usd_40hc": 5400,
+      "transit_dias": "45-60",
+      "rota": "rara",
+      "km": {
+        "americana": 3000,
+        "cajamar": 3050,
+        "campinas": 2970,
+        "aracari": 3100,
+        "extrema": 3030,
+        "gcr": 3600,
+        "recife": 1200,
+        "fortaleza": 900
+      }
+    },
+    {
+      "codigo": "BRMAO",
+      "ocean_usd_40hc": 5800,
+      "transit_dias": "45-60",
+      "rota": "rara",
+      "km": {
+        "americana": 3200,
+        "cajamar": 3250,
+        "campinas": 3180,
+        "aracari": 3300,
+        "extrema": 3230,
+        "gcr": 3800,
+        "recife": 2800,
+        "fortaleza": 2600
+      }
+    },
+    {
+      "codigo": "BRSSO",
+      "ocean_usd_40hc": 4800,
+      "transit_dias": "—",
+      "rota": "rara",
+      "km": {
+        "americana": 280,
+        "cajamar": 220,
+        "campinas": 300,
+        "aracari": 200,
+        "extrema": 340,
+        "gcr": 850,
+        "recife": 2550,
+        "fortaleza": 3000
+      }
+    }
+  ]
+}
