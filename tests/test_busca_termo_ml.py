@@ -360,5 +360,48 @@ class TestTituloRelevante(unittest.TestCase):
         self.assertEqual(len(out), 1)
 
 
+@pytest.mark.usefixtures("env_tokens")
+class TestCacheStaleHidrata(unittest.TestCase):
+    def test_ttl_vencido_hidrata_ids(self):
+        cache = {
+            "kit impala": {
+                "timestamp": "2026-07-10T16:53:36+00:00",
+                "resultados": [
+                    {
+                        "item_id": "MLB3715746005",
+                        "titulo": "Kit Impala",
+                        "preco": 22.5,
+                    }
+                ],
+            }
+        }
+        hidratado = [
+            {
+                "item_id": "MLB3715746005",
+                "titulo": "Kit Impala",
+                "preco": 24.9,
+                "fonte_busca": "items_ids",
+            }
+        ]
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_PRODUCTS", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False
+        ), patch.object(
+            busca_termo_ml, "ler_json", return_value=cache
+        ), patch.object(
+            ml_client, "hidratar_itens", return_value=hidratado
+        ) as mock_hid:
+            out = busca_termo_ml.executar_busca_termo("kit impala", limite=5)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["item_id"], "MLB3715746005")
+        self.assertEqual(out[0]["preco"], 24.9)
+        mock_hid.assert_called()
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -87,8 +87,6 @@ def _item_id_ml_valido(valor: Any) -> bool:
 
 def _item_ids_da_entrada(entrada: dict) -> list[str]:
     """MLBs rivais no JSON (item_ids / mlb_rivais / item_id_concorrente)."""
-    vistos: set[str] = set()
-    out: list[str] = []
     brutos: list[Any] = []
     for chave in ("item_ids", "mlb_rivais"):
         raw = entrada.get(chave)
@@ -99,6 +97,29 @@ def _item_ids_da_entrada(entrada: dict) -> list[str]:
     for chave in ("item_id_concorrente", "watch_item_id", "mlb_concorrente"):
         if entrada.get(chave):
             brutos.append(entrada.get(chave))
+    return _normalizar_item_ids(brutos)
+
+
+def _item_ids_do_historico(entrada_hist: dict[str, Any] | None) -> list[str]:
+    if not isinstance(entrada_hist, dict):
+        return []
+    brutos: list[Any] = []
+    raw = entrada_hist.get("item_ids")
+    if isinstance(raw, list):
+        brutos.extend(raw)
+    for chave in ("anuncios", "concorrentes_amostra"):
+        rows = entrada_hist.get(chave)
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if isinstance(row, dict):
+                brutos.append(row.get("item_id") or row.get("id"))
+    return _normalizar_item_ids(brutos)
+
+
+def _normalizar_item_ids(brutos: list[Any]) -> list[str]:
+    vistos: set[str] = set()
+    out: list[str] = []
     for bruto in brutos:
         texto = str(bruto or "").strip().upper().replace("-", "")
         if not _item_id_ml_valido(texto) or texto in vistos:
@@ -106,6 +127,16 @@ def _item_ids_da_entrada(entrada: dict) -> list[str]:
         vistos.add(texto)
         out.append(texto)
     return out
+
+
+def _item_ids_de_anuncios(rows: list[Any]) -> list[str]:
+    return _normalizar_item_ids(
+        [
+            (row.get("item_id") or row.get("id"))
+            for row in rows
+            if isinstance(row, dict)
+        ]
+    )
 
 
 def _rotulo_preco_referencia(origem: str) -> str:
@@ -238,6 +269,8 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(termos, list):
         termos = None
     item_ids = _item_ids_da_entrada(entrada)
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    item_ids = _normalizar_item_ids([*item_ids, *_item_ids_do_historico(anterior)])
     meu_preco, origem_preco = _resolver_preco_referencia(entrada)
     rotulo = _rotulo_preco_referencia(origem_preco)
     limite = int(entrada.get("limite_resultados") or 20)
@@ -263,8 +296,9 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         except Exception as exc:
             logger.warning("enriquecer métricas loja %s: %s", eid, exc)
     menor = float(analise.get("preco_min") or 0)
-    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
     menor_ant = float(anterior.get("menor_preco") or 0)
+    ids_achados = _item_ids_de_anuncios(anuncios) or item_ids
+    amostra_cega = not anuncios
 
     alertas: list[str] = []
     if _pode_alertar_gap_preco(origem_preco):
@@ -302,10 +336,12 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
     )
     historico[eid] = {
-        "menor_preco": menor,
+        "menor_preco": menor if menor > 0 else menor_ant,
         "meu_preco": meu_preco,
         "origem_preco": origem_preco,
         "total_concorrentes": len(anuncios),
+        "item_ids": ids_achados or _item_ids_do_historico(anterior),
+        "amostra_cega": amostra_cega,
         "seller_id": seller_id,
         "nickname": analise.get("nickname") or nickname,
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
@@ -313,7 +349,14 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         "perfil": analise.get("perfil"),
     }
 
-    _tags = [f"produto:{eid}", f"seller:{seller_id}", "tipo:loja", f"origem_preco:{origem_preco}"]
+    _tags = [
+        f"produto:{eid}",
+        f"seller:{seller_id}",
+        "tipo:loja",
+        f"origem_preco:{origem_preco}",
+        f"amostra_cega:{1 if amostra_cega else 0}",
+    ]
+    gauge("mercado.amostra_cega", 1.0 if amostra_cega else 0.0, tags=_tags)
     if menor > 0:
         gauge("mercado.menor_preco_concorrente", menor, tags=_tags)
     gauge("mercado.total_concorrentes", float(len(anuncios)), tags=_tags)
@@ -335,6 +378,8 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         "ameacas_preco": analise.get("ameacas_preco") or [],
         "perfil": analise.get("perfil"),
         "alertas": alertas,
+        "amostra_cega": amostra_cega,
+        "item_ids": ids_achados,
     }
 
 
@@ -516,6 +561,8 @@ def _monitorar_entrada(
     nome = str(entrada.get("nome") or eid)
     termo = str(entrada.get("termo_busca") or "").strip()
     item_ids = _item_ids_da_entrada(entrada)
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    item_ids = _normalizar_item_ids([*item_ids, *_item_ids_do_historico(anterior)])
     meu_preco, origem_preco = _resolver_preco_referencia(entrada)
     rotulo = _rotulo_preco_referencia(origem_preco)
     limite = int(entrada.get("limite_resultados") or 10)
@@ -523,9 +570,10 @@ def _monitorar_entrada(
     if not termo and not item_ids:
         return {"id": eid, "ok": False, "erro": "termo_busca vazio", "alertas": []}
 
+    concorrentes: list[dict[str, Any]] = []
     if item_ids:
         concorrentes = ml_client.hidratar_itens(item_ids, limite=limite)
-    else:
+    if not concorrentes and termo:
         concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
     try:
         from integracoes.ml.busca_termo_ml import filtrar_por_relevancia_titulo
@@ -547,12 +595,14 @@ def _monitorar_entrada(
         except Exception as exc:
             logger.warning("enriquecer métricas termo %r: %s", termo[:40], exc)
     menor = _menor_preco(concorrentes)
-    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
     menor_ant = float(anterior.get("menor_preco") or 0)
+    ids_achados = _item_ids_de_anuncios(concorrentes) or item_ids
+    amostra_cega = not concorrentes
 
     alertas: list[str] = []
     if (
-        _pode_alertar_gap_preco(origem_preco)
+        not amostra_cega
+        and _pode_alertar_gap_preco(origem_preco)
         and menor > 0
         and meu_preco > menor
     ):
@@ -581,10 +631,12 @@ def _monitorar_entrada(
         {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
     )
     historico[eid] = {
-        "menor_preco": menor,
+        "menor_preco": menor if menor > 0 else menor_ant,
         "meu_preco": meu_preco,
         "origem_preco": origem_preco,
         "total_concorrentes": len(concorrentes),
+        "item_ids": ids_achados or _item_ids_do_historico(anterior),
+        "amostra_cega": amostra_cega,
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
         "leituras": leituras_ant[-5:],
     }
@@ -592,7 +644,12 @@ def _monitorar_entrada(
     # ── Datadog ──────────────────────────────────────────────────────────
     # tag `produto` usa o `id` do JSON (ex.: "kit3-mimo-carmed") para
     # aparecer como facet no Metrics Explorer e facilitar filtrar por SKU.
-    _tags = [f"produto:{eid}", f"origem_preco:{origem_preco}"]
+    _tags = [
+        f"produto:{eid}",
+        f"origem_preco:{origem_preco}",
+        f"amostra_cega:{1 if amostra_cega else 0}",
+    ]
+    gauge("mercado.amostra_cega", 1.0 if amostra_cega else 0.0, tags=_tags)
     if meu_preco > 0:
         gauge("mercado.meu_preco", meu_preco, tags=_tags)
     if menor > 0:
@@ -619,6 +676,8 @@ def _monitorar_entrada(
         "concorrentes_amostra": concorrentes[:5],
         "anuncios": concorrentes,
         "alertas": alertas,
+        "amostra_cega": amostra_cega,
+        "item_ids": ids_achados,
     }
 
 

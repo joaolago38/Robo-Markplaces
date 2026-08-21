@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "gerado_em": "2026-08-21T10:28:59.632297-03:00",
+  "gerado_em": "2026-08-21T11:16:35.542675-03:00",
   "lucro_alvo_pct": 20.0,
   "cambio_usd_brl": 5.5,
   "hub": {
@@ -276,7 +276,7 @@
         },
         "tributacao_py_br": {
           "ok": true,
-          "gerado_em": "2026-08-21T10:28:59.258333-03:00",
+          "gerado_em": "2026-08-21T11:16:35.257412-03:00",
           "fonte_preco": "fob_usd_x_cambio",
           "quantidade": 300,
           "preco_origem_unit_brl": 24.75,
@@ -784,7 +784,7 @@
         },
         "tributacao_py_br": {
           "ok": true,
-          "gerado_em": "2026-08-21T10:28:59.351072-03:00",
+          "gerado_em": "2026-08-21T11:16:35.364606-03:00",
           "fonte_preco": "fob_usd_x_cambio",
           "quantidade": 300,
           "preco_origem_unit_brl": 27.5,
@@ -1292,7 +1292,7 @@
         },
         "tributacao_py_br": {
           "ok": true,
-          "gerado_em": "2026-08-21T10:28:59.429372-03:00",
+          "gerado_em": "2026-08-21T11:16:35.426864-03:00",
           "fonte_preco": "fob_usd_x_cambio",
           "quantidade": 300,
           "preco_origem_unit_brl": 27.5,
@@ -1800,7 +1800,7 @@
         },
         "tributacao_py_br": {
           "ok": true,
-          "gerado_em": "2026-08-21T10:28:59.529175-03:00",
+          "gerado_em": "2026-08-21T11:16:35.490806-03:00",
           "fonte_preco": "fob_usd_x_cambio",
           "quantidade": 200,
           "preco_origem_unit_brl": 38.5,
