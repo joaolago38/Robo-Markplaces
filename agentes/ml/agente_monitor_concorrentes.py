@@ -85,6 +85,29 @@ def _item_id_ml_valido(valor: Any) -> bool:
     return digits.isdigit() and len(digits) >= 6
 
 
+def _item_ids_da_entrada(entrada: dict) -> list[str]:
+    """MLBs rivais no JSON (item_ids / mlb_rivais / item_id_concorrente)."""
+    vistos: set[str] = set()
+    out: list[str] = []
+    brutos: list[Any] = []
+    for chave in ("item_ids", "mlb_rivais"):
+        raw = entrada.get(chave)
+        if isinstance(raw, list):
+            brutos.extend(raw)
+        elif raw:
+            brutos.append(raw)
+    for chave in ("item_id_concorrente", "watch_item_id", "mlb_concorrente"):
+        if entrada.get(chave):
+            brutos.append(entrada.get(chave))
+    for bruto in brutos:
+        texto = str(bruto or "").strip().upper().replace("-", "")
+        if not _item_id_ml_valido(texto) or texto in vistos:
+            continue
+        vistos.add(texto)
+        out.append(texto)
+    return out
+
+
 def _rotulo_preco_referencia(origem: str) -> str:
     """Evita 'seu preço' quando não há anúncio vivo — usa 'preço alvo' do catálogo/JSON."""
     if origem == "anuncio_vivo":
@@ -214,6 +237,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     termos = entrada.get("termos_busca")
     if not isinstance(termos, list):
         termos = None
+    item_ids = _item_ids_da_entrada(entrada)
     meu_preco, origem_preco = _resolver_preco_referencia(entrada)
     rotulo = _rotulo_preco_referencia(origem_preco)
     limite = int(entrada.get("limite_resultados") or 20)
@@ -226,6 +250,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         nickname=nickname,
         termos=termos,
         limite_por_termo=limite,
+        item_ids=item_ids or None,
     )
     anuncios = analise.get("anuncios") or []
     # analisar_loja já enriquece métricas; garante amostra se veio sem
@@ -490,14 +515,18 @@ def _monitorar_entrada(
     eid = str(entrada.get("id") or "").strip()
     nome = str(entrada.get("nome") or eid)
     termo = str(entrada.get("termo_busca") or "").strip()
+    item_ids = _item_ids_da_entrada(entrada)
     meu_preco, origem_preco = _resolver_preco_referencia(entrada)
     rotulo = _rotulo_preco_referencia(origem_preco)
     limite = int(entrada.get("limite_resultados") or 10)
 
-    if not termo:
+    if not termo and not item_ids:
         return {"id": eid, "ok": False, "erro": "termo_busca vazio", "alertas": []}
 
-    concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+    if item_ids:
+        concorrentes = ml_client.hidratar_itens(item_ids, limite=limite)
+    else:
+        concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
     try:
         from integracoes.ml.busca_termo_ml import filtrar_por_relevancia_titulo
 

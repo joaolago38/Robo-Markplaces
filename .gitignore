@@ -225,3 +225,6 @@ logs/claude_uso_orcamento.json
 logs/datadog_log_cooldown.json
 # Probes / scratch locais
 _tmp_*.py
+
+# Catálogos de fornecedor para prospecção ML — PDFs/cotações locais, nunca versionar
+catalogos_ml_propecao/

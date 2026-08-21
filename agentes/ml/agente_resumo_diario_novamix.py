@@ -80,6 +80,7 @@ def executar(enviar_alerta: bool = True, executar_ads: bool = True) -> dict[str,
             entrada.get("nickname") or entrada.get("nome") or NOVAMIX_RESUMO_DIARIO_NICKNAME
         ).strip()
         termos = entrada.get("termos_busca") if isinstance(entrada.get("termos_busca"), list) else None
+        item_ids = entrada.get("item_ids") if isinstance(entrada.get("item_ids"), list) else None
         limite = int(entrada.get("limite_resultados") or 20)
 
         logger.info("Resumo diário Novamix: seller=%s nick=%s", seller_id, nickname)
@@ -89,6 +90,7 @@ def executar(enviar_alerta: bool = True, executar_ads: bool = True) -> dict[str,
             termos=termos,
             limite_por_termo=limite,
             enriquecer_metricas=NOVAMIX_RESUMO_DIARIO_ENRIQUECER,
+            item_ids=item_ids,
         )
 
         historico = ler_json(HISTORY_PATH, default={})

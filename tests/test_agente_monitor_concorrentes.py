@@ -184,6 +184,7 @@ class TestResolverPrecoReferencia(unittest.TestCase):
         self.assertFalse(mon._item_id_ml_valido("MLB_PREENCHER"))
         self.assertFalse(mon._item_id_ml_valido("MLB1"))
         self.assertTrue(mon._item_id_ml_valido("MLB123456789"))
+        self.assertEqual(mon._item_ids_da_entrada({"item_ids": ["MLB_PREENCHER", "MLB123456789"]}), ["MLB123456789"])
 
     @patch.object(mon.ml_client, "buscar_metricas_item", return_value={"preco": 47.5})
     def test_preco_vivo_quando_item_valido(self, *_):
@@ -304,6 +305,36 @@ class TestWatchlistItem(unittest.TestCase):
         mon.alertar_gestor.assert_called_once()
         msg = mon.alertar_gestor.call_args[0][0]
         self.assertIn("Watchlist MLB", msg)
+
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", True)
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(mon, "_carregar_historico", return_value={})
+    @patch.object(
+        mon,
+        "_carregar_lista",
+        return_value=[
+            {
+                "id": "kit-ids",
+                "ativo": True,
+                "nome": "Kit via MLB",
+                "termo_busca": "kit esmalte impala",
+                "item_ids": ["MLB123456789"],
+                "meu_preco": 44.9,
+                "limite_resultados": 5,
+            }
+        ],
+    )
+    @patch.object(
+        mon.ml_client,
+        "hidratar_itens",
+        return_value=[{"item_id": "MLB123456789", "titulo": "Kit Impala", "preco": 42.0}],
+    )
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo")
+    def test_termo_usa_item_ids_sem_busca(self, mock_termo, *_):
+        out = mon.executar(enviar_alerta=False, enriquecer_metricas=False)
+        self.assertTrue(out["ok"])
+        mock_termo.assert_not_called()
+        self.assertEqual(out["resultados"][0]["total_concorrentes"], 1)
 
     @patch.object(mon, "_salvar_historico")
     @patch.object(mon, "_carregar_historico", return_value={})
