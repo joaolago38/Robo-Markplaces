@@ -74,12 +74,62 @@ class AnaliseLojaTests(unittest.TestCase):
                 "fonte_busca": "products_api",
             },
         ]
-        with patch.object(al.ml_client, "_enabled", return_value=True), patch(
+        with patch.object(al.ml_client, "_enabled", return_value=True), patch.object(
+            al.ml_client, "hidratar_itens", return_value=[]
+        ), patch.object(
+            al.ml_client, "listar_ids_anuncios_vendedor", return_value=[]
+        ), patch(
             "integracoes.ml.busca_termo_ml._buscar_via_products_api", return_value=rows
         ):
             out = al.coletar_anuncios_loja("1666381510", termos=["kit impala"], limite_por_termo=5)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["item_id"], "A")
+
+    def test_coleta_prioriza_item_ids(self):
+        hidratado = [
+            {
+                "item_id": "MLB1234567",
+                "titulo": "Kit Impala Novamix",
+                "preco": 41.0,
+                "seller_id": "1666381510",
+                "quantidade_vendida": 8,
+                "permalink": "https://mlb/MLB1234567",
+                "fonte_busca": "items_ids",
+            }
+        ]
+        with patch.object(al.ml_client, "_enabled", return_value=True), patch.object(
+            al.ml_client, "hidratar_itens", return_value=hidratado
+        ) as mock_hid, patch.object(
+            al.ml_client, "listar_ids_anuncios_vendedor"
+        ) as mock_loja, patch(
+            "integracoes.ml.busca_termo_ml._buscar_via_products_api"
+        ) as mock_prod:
+            out = al.coletar_anuncios_loja(
+                "1666381510",
+                termos=["NOVAMIX_COMERCIAL esmalte"],
+                item_ids=["MLB1234567"],
+                limite_por_termo=5,
+            )
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["item_id"], "MLB1234567")
+        mock_hid.assert_called()
+        mock_loja.assert_not_called()
+        mock_prod.assert_not_called()
+
+    @patch.object(al, "buscar_perfil_loja", return_value={"ok": True, "nickname": "NOVAMIX_COMERCIAL"})
+    @patch.object(al, "coletar_anuncios_loja", return_value=[])
+    @patch.object(al, "_comparar_com_catalogo", return_value=[])
+    def test_analisar_loja_nao_busca_nickname(self, _cmp, mock_coletar, _perfil):
+        al.analisar_loja(
+            "1666381510",
+            nickname="NOVAMIX_COMERCIAL",
+            termos=["kit esmalte impala"],
+            enriquecer_metricas=False,
+        )
+        kwargs = mock_coletar.call_args.kwargs
+        termos = kwargs.get("termos") or []
+        self.assertTrue(all("novamix" not in str(t).lower() for t in termos))
+        self.assertEqual(termos, ["kit esmalte impala"])
 
     def test_montar_mensagem_com_metricas(self):
         msg = al.montar_mensagem_analise(

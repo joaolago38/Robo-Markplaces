@@ -1,44 +1,44 @@
 {
-  "timestamp": "2026-08-20T11:13:12.136837+00:00",
+  "timestamp": "2026-08-21T13:29:55.930548+00:00",
   "eventos": [
-    {
-      "tipo": "congelar_repricing",
-      "marketplace": "shopee",
-      "motivo": "score=20 claims=0.0000 status=critico",
-      "criado_em": "2026-08-19T14:02:29.732858+00:00",
-      "expira_em": "2026-08-20T14:02:29.732858+00:00",
-      "prioridade": 1
-    },
     {
       "tipo": "priorizar_chat",
       "marketplace": "mercadolivre",
       "motivo": "pendencias=0 status=critico score=10",
-      "criado_em": "2026-08-20T11:13:11.767204+00:00",
-      "expira_em": "2026-08-20T17:13:11.767204+00:00",
+      "criado_em": "2026-08-21T13:29:34.358609+00:00",
+      "expira_em": "2026-08-21T19:29:34.358609+00:00",
       "prioridade": 1
     },
     {
       "tipo": "priorizar_chat",
       "marketplace": "shopee",
       "motivo": "pendencias=0 status=critico score=20",
-      "criado_em": "2026-08-20T11:13:12.114916+00:00",
-      "expira_em": "2026-08-20T17:13:12.114916+00:00",
+      "criado_em": "2026-08-21T13:29:55.920438+00:00",
+      "expira_em": "2026-08-21T19:29:55.920438+00:00",
+      "prioridade": 1
+    },
+    {
+      "tipo": "congelar_repricing",
+      "marketplace": "shopee",
+      "motivo": "score=20 claims=0.0000 status=critico",
+      "criado_em": "2026-08-21T13:29:55.920438+00:00",
+      "expira_em": "2026-08-22T13:29:55.920438+00:00",
       "prioridade": 1
     },
     {
       "tipo": "revisar_listing",
       "marketplace": "mercadolivre",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-08-19T11:36:24.155384+00:00",
-      "expira_em": "2026-08-21T11:36:24.155384+00:00",
+      "criado_em": "2026-08-21T13:29:34.358609+00:00",
+      "expira_em": "2026-08-23T13:29:34.358609+00:00",
       "prioridade": 2
     },
     {
       "tipo": "revisar_listing",
       "marketplace": "shopee",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-08-19T11:36:24.715683+00:00",
-      "expira_em": "2026-08-21T11:36:24.715683+00:00",
+      "criado_em": "2026-08-21T13:29:55.920438+00:00",
+      "expira_em": "2026-08-23T13:29:55.920438+00:00",
       "prioridade": 2
     }
   ]

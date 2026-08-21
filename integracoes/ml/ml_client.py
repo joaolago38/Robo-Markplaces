@@ -779,40 +779,163 @@ def buscar_metricas_item(item_id: str) -> dict:
     return out
 
 
+def _item_id_ml_norm(valor: Any) -> str:
+    texto = str(valor or "").strip().upper().replace("-", "")
+    if not texto or "PREENCHER" in texto:
+        return ""
+    if not texto.startswith("MLB"):
+        return ""
+    digits = texto[3:]
+    if not digits.isdigit():
+        return ""
+    return texto
+
+
+def _normalizar_item_publico(item: dict, *, item_id: str = "") -> dict:
+    iid = _item_id_ml_norm(item_id or item.get("id") or item.get("item_id"))
+    if not iid:
+        return {}
+    estoque_raw = item.get("available_quantity", 0)
+    try:
+        estoque_int = int(estoque_raw)
+    except (TypeError, ValueError):
+        estoque_int = int(float(estoque_raw or 0))
+    seller = item.get("seller") if isinstance(item.get("seller"), dict) else {}
+    seller_id = str(item.get("seller_id") or seller.get("id") or "").strip()
+    try:
+        preco = float(item.get("price") or 0)
+    except (TypeError, ValueError):
+        preco = 0.0
+    try:
+        sold = int(item.get("sold_quantity") or 0)
+    except (TypeError, ValueError):
+        sold = 0
+    return {
+        "item_id": iid,
+        "titulo": str(item.get("title") or item.get("titulo") or ""),
+        "status": str(item.get("status") or ""),
+        "preco": preco,
+        "estoque": estoque_int,
+        "sold_quantity": sold,
+        "quantidade_vendida": sold,
+        "sku": str(item.get("seller_sku") or ""),
+        "listing_type_id": str(item.get("listing_type_id") or ""),
+        "logistic_type": str((item.get("shipping") or {}).get("logistic_type") or ""),
+        "seller_id": seller_id,
+        "permalink": str(item.get("permalink") or ""),
+        "fonte_busca": "items_ids",
+    }
+
+
 def buscar_item_publico(item_id: str) -> dict:
     """
     GET /items/{id} — preço, status, sold_quantity, estoque.
     Em rivais o app atual costuma receber 403; visitas ficam em buscar_visitas_item.
     Nunca lança exceção.
     """
-    if not _enabled() or not (item_id or "").strip():
+    iid = _item_id_ml_norm(item_id)
+    if not _enabled() or not iid:
         return {}
     try:
-        iid = item_id.strip()
         r_item = _request_ml("GET", f"{BASE}/items/{iid}", timeout=20)
         r_item.raise_for_status()
-        item = r_item.json() or {}
-        estoque_raw = item.get("available_quantity", 0)
-        try:
-            estoque_int = int(estoque_raw)
-        except (TypeError, ValueError):
-            estoque_int = int(float(estoque_raw or 0))
-        return {
-            "item_id": iid,
-            "titulo": str(item.get("title", "") or ""),
-            "status": str(item.get("status", "") or ""),
-            "preco": float(item.get("price", 0) or 0),
-            "estoque": estoque_int,
-            "sold_quantity": int(item.get("sold_quantity", 0) or 0),
-            "sku": str(item.get("seller_sku", "") or ""),
-            "listing_type_id": str(item.get("listing_type_id", "") or ""),
-            "logistic_type": str((item.get("shipping") or {}).get("logistic_type") or ""),
-            "seller_id": str((item.get("seller_id") or "")).strip(),
-            "permalink": str(item.get("permalink", "") or ""),
-        }
+        return _normalizar_item_publico(r_item.json() or {}, item_id=iid)
     except Exception as exc:
-        _log_erro_leitura_item("buscar_item_publico", item_id, exc)
+        _log_erro_leitura_item("buscar_item_publico", iid, exc)
         return {}
+
+
+def hidratar_itens(item_ids: list[str] | tuple[str, ...] | None, *, limite: int = 20) -> list[dict]:
+    """
+    GET /items?ids=MLB1,MLB2 (até 20). Não usa /sites/search (403 PolicyAgent).
+    IDs inválidos/PREENCHER são ignorados. Nunca lança.
+    """
+    if not _enabled():
+        return []
+    vistos: set[str] = set()
+    ids: list[str] = []
+    for bruto in item_ids or []:
+        iid = _item_id_ml_norm(bruto)
+        if not iid or iid in vistos:
+            continue
+        vistos.add(iid)
+        ids.append(iid)
+        if len(ids) >= max(1, min(20, limite)):
+            break
+    if not ids:
+        return []
+    try:
+        r = _request_ml(
+            "GET",
+            f"{BASE}/items",
+            params={"ids": ",".join(ids)},
+            timeout=25,
+        )
+        if r.status_code != 200:
+            logger.info("ML hidratar_itens HTTP %s ids=%s", r.status_code, len(ids))
+            return [row for iid in ids if (row := buscar_item_publico(iid))]
+        body = r.json()
+    except Exception as exc:
+        logger.info("ML hidratar_itens erro: %s", exc)
+        return [row for iid in ids if (row := buscar_item_publico(iid))]
+
+    out: list[dict] = []
+    if isinstance(body, list):
+        blocos: list[Any] = body
+    elif isinstance(body, dict):
+        blocos = list(body.values())
+    else:
+        blocos = []
+    for bloco in blocos:
+        if not isinstance(bloco, dict):
+            continue
+        codigo = bloco.get("code")
+        payload = bloco.get("body") if isinstance(bloco.get("body"), dict) else bloco
+        if codigo not in (None, 200):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        norm = _normalizar_item_publico(payload)
+        if norm.get("item_id") and float(norm.get("preco") or 0) > 0:
+            out.append(norm)
+    return out
+
+
+def listar_ids_anuncios_vendedor(seller_id: str | int, *, limite: int = 50) -> list[str]:
+    """
+    GET /users/{id}/items/search — itens ativos do vendedor.
+    Em loja alheia costuma 403 (token é da nossa conta). Nunca lança.
+    """
+    sid = str(seller_id or "").strip()
+    if not _enabled() or not sid:
+        return []
+    try:
+        r = _request_ml(
+            "GET",
+            f"{BASE}/users/{sid}/items/search",
+            params={"status": "active", "limit": max(1, min(100, limite))},
+            timeout=25,
+        )
+        if r.status_code in (401, 403):
+            logger.debug(
+                "ML listar_ids_anuncios_vendedor seller=%s HTTP %s — só a própria conta lista itens",
+                sid,
+                r.status_code,
+            )
+            return []
+        r.raise_for_status()
+        data = r.json() or {}
+        results = data.get("results") or []
+        ids: list[str] = []
+        for row in results:
+            bruto = row if isinstance(row, str) else (row.get("id") if isinstance(row, dict) else "")
+            iid = _item_id_ml_norm(bruto)
+            if iid:
+                ids.append(iid)
+        return ids
+    except Exception as exc:
+        logger.debug("ML listar_ids_anuncios_vendedor seller=%s: %s", sid, exc)
+        return []
 
 
 def buscar_descricao_item(item_id: str) -> str:
@@ -1002,6 +1125,7 @@ def buscar_concorrentes_por_termo(
     limite: int = 10,
     *,
     item_id_referencia: str | None = None,
+    item_ids: list[str] | tuple[str, ...] | None = None,
 ) -> list[dict]:
     """
     Pesquisa o Mercado Livre por palavra-chave.
@@ -1010,9 +1134,16 @@ def buscar_concorrentes_por_termo(
     autenticado. Por padrão não chama esse endpoint: usa /products/search e,
     se vazio, catálogo / Brave / DuckDuckGo. Opt-in: ML_BUSCA_TERMO_SITES_SEARCH=1.
 
+    Se `item_ids` vier preenchido, hidrata GET /items?ids= e nem tenta busca por termo.
+
     Exclui resultados do próprio vendedor (ML_SELLER_ID) quando configurado.
     Retorna lista vazia em caso de termo vazio ou erro. Nunca lança exceção.
     """
+    ids = [i for i in (item_ids or []) if _item_id_ml_norm(i)]
+    if ids:
+        hidratados = hidratar_itens(ids, limite=max(1, min(50, limite)))
+        if hidratados:
+            return hidratados
     termo = (termo or "").strip()
     if not termo:
         return []

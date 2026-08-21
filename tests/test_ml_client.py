@@ -481,6 +481,70 @@ class TestMlAnuncioStatus(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertEqual(out["motivo"], "claims_indisponivel")
 
+    def test_item_id_norm_ignora_preencher(self):
+        self.assertEqual(ml_client._item_id_ml_norm("MLB_PREENCHER"), "")
+        self.assertEqual(ml_client._item_id_ml_norm("MLB-1234567"), "MLB1234567")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_hidratar_itens_multiget(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            [
+                {
+                    "code": 200,
+                    "body": {
+                        "id": "MLB1234567",
+                        "title": "Kit Impala",
+                        "price": 44.9,
+                        "sold_quantity": 3,
+                        "seller_id": "99",
+                        "permalink": "https://mlb/MLB1234567",
+                    },
+                },
+                {"code": 403, "body": {"message": "forbidden"}},
+            ]
+        )
+        out = ml_client.hidratar_itens(["MLB1234567", "MLB_PREENCHER", "MLB999888777"])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["item_id"], "MLB1234567")
+        self.assertEqual(out[0]["preco"], 44.9)
+        self.assertEqual(out[0]["fonte_busca"], "items_ids")
+        params = mock_req.call_args.kwargs.get("params") or {}
+        self.assertIn("MLB1234567", params.get("ids", ""))
+        self.assertNotIn("PREENCHER", params.get("ids", ""))
+
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_buscar_concorrentes_prioriza_item_ids(self, _en):
+        with patch.object(
+            ml_client,
+            "hidratar_itens",
+            return_value=[{"item_id": "MLB1234567", "preco": 40.0, "titulo": "X"}],
+        ) as mock_hid:
+            out = ml_client.buscar_concorrentes_por_termo(
+                "kit esmalte",
+                limite=5,
+                item_ids=["MLB1234567"],
+            )
+        self.assertEqual(len(out), 1)
+        mock_hid.assert_called_once()
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_listar_ids_vendedor_403(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 403
+        mock_req.return_value = r
+        self.assertEqual(ml_client.listar_ids_anuncios_vendedor("1666381510"), [])
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_listar_ids_vendedor_ok(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"results": ["MLB1234567", {"id": "MLB7654321"}]})
+        self.assertEqual(
+            ml_client.listar_ids_anuncios_vendedor("111"),
+            ["MLB1234567", "MLB7654321"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -569,8 +569,8 @@ def executar_busca_termo(
         return cache
 
     logger.warning(
-        "ML busca termo=%r sem resultados — API 403/bloqueada e fallbacks vazios "
-        "(products/catálogo/brave/ddg/cache)",
+        "ML busca termo=%r sem resultados — products/catálogo/brave/ddg/cache vazios "
+        "(/sites/search não é usado; 403 PolicyAgent)",
         termo,
     )
     return []
