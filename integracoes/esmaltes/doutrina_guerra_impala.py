@@ -5,6 +5,7 @@ Regra de engajamento: guerra por faixa. Só PERL iguala preço.
 from __future__ import annotations
 
 import logging
+import math
 import re
 from typing import Any
 
@@ -499,6 +500,53 @@ def avaliar_condicoes_guerra(
     }
 
 
+def calcular_opex_payback(doutrina: dict[str, Any] | None = None) -> dict[str, Any]:
+    """R$ 800 operacional → meses/kits no ritmo da doutrina (não sobe preço)."""
+    d = doutrina if isinstance(doutrina, dict) else carregar_doutrina()
+    opex = d.get("opex") if isinstance(d.get("opex"), dict) else {}
+    valor = _f(opex.get("valor_brl"), 800.0)
+    lucro_mimo = _f(opex.get("lucro_mimo"), 10.83)
+    lucro_perl = _f(opex.get("lucro_perl"), 6.49)
+    ritmo_mimo = max(0, int(_f(opex.get("ritmo_mimo_mes"), 30)))
+    ritmo_perl = max(0, int(_f(opex.get("ritmo_perl_mes"), 30)))
+    lucro_mes = round(ritmo_mimo * lucro_mimo + ritmo_perl * lucro_perl, 2)
+    meses_ritmo = round(valor / lucro_mes, 2) if lucro_mes > 0 else 0.0
+    kits_mimo = int(math.ceil(valor / lucro_mimo)) if lucro_mimo > 0 else 0
+    lucro_par = lucro_mimo + lucro_perl
+    pares_mix = int(math.ceil(valor / lucro_par)) if lucro_par > 0 else 0
+    return {
+        "valor_brl": valor,
+        "tipo": str(opex.get("tipo") or "unico"),
+        "lucro_mimo": lucro_mimo,
+        "lucro_perl": lucro_perl,
+        "ritmo_mimo_mes": ritmo_mimo,
+        "ritmo_perl_mes": ritmo_perl,
+        "lucro_mes_ritmo": lucro_mes,
+        "meses_payback_ritmo": meses_ritmo,
+        "kits_payback_mimo": kits_mimo,
+        "pares_payback_mix": pares_mix,
+    }
+
+
+def emitir_metricas_opex(payback: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Gauges robo.impala.opex.* — heartbeat do catálogo / decisão de guerra."""
+    try:
+        pb = payback if isinstance(payback, dict) and "valor_brl" in payback else calcular_opex_payback()
+        gauge("impala.opex.valor", float(pb["valor_brl"]))
+        gauge("impala.opex.lucro_kit", float(pb["lucro_mimo"]), tags=["kit:mimo003"])
+        gauge("impala.opex.lucro_kit", float(pb["lucro_perl"]), tags=["kit:perl004"])
+        gauge("impala.opex.lucro_mes_ritmo", float(pb["lucro_mes_ritmo"]))
+        gauge("impala.opex.meses_payback_ritmo", float(pb["meses_payback_ritmo"]))
+        gauge("impala.opex.kits_payback_mimo", float(pb["kits_payback_mimo"]))
+        gauge("impala.opex.pares_payback_mix", float(pb["pares_payback_mix"]))
+        gauge("impala.opex.ritmo_mimo_mes", float(pb["ritmo_mimo_mes"]))
+        gauge("impala.opex.ritmo_perl_mes", float(pb["ritmo_perl_mes"]))
+        return {"ok": True, **pb}
+    except Exception as exc:
+        logger.warning("emitir_metricas_opex: %s", exc)
+        return {"ok": False, "erro": str(exc)}
+
+
 _FRENTE_KIT_TAGS = (
     ("IMP-MIMO-003", "kit:mimo003"),
     ("IMP-PERL-004", "kit:perl004"),
@@ -568,6 +616,7 @@ def emitir_metricas_condicoes(condicoes: dict[str, Any] | None = None) -> dict[s
             auxiliar_listing_mimo(cond)
         except Exception as exc:
             logger.warning("claude listing MIMO via doutrina: %s", exc)
+        emitir_metricas_opex()
         return cond
     except Exception as exc:
         logger.warning("emitir_metricas_condicoes: %s", exc)

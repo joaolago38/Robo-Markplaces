@@ -326,6 +326,17 @@ class TestCondicoesGuerra(unittest.TestCase):
         self.assertEqual(nomes["impala.guerra.liberar_ads"], 0.0)
         self.assertEqual(nomes["impala.guerra.publicar_agora"], 1.0)
         self.assertEqual(nomes["impala.guerra.titulo_atracao"], 0.0)
+        self.assertEqual(nomes["impala.opex.valor"], 800.0)
+        self.assertEqual(nomes["impala.opex.meses_payback_ritmo"], 1.54)
+        self.assertEqual(nomes["impala.opex.kits_payback_mimo"], 74.0)
+
+    def test_opex_payback_ritmo_doutrina(self):
+        pb = dg.calcular_opex_payback()
+        self.assertEqual(pb["valor_brl"], 800.0)
+        self.assertEqual(pb["lucro_mes_ritmo"], 519.6)
+        self.assertEqual(pb["meses_payback_ritmo"], 1.54)
+        self.assertEqual(pb["kits_payback_mimo"], 74)
+        self.assertEqual(pb["pares_payback_mix"], 47)
 
     def test_titulo_mimo_atracao(self):
         fraco = "Kit 3 Mimo + Carmed"

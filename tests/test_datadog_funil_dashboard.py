@@ -196,6 +196,23 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         ):
             self.assertIn(metric, blob, msg=metric)
 
+    def test_grupo_opex_impala(self):
+        grupo = dd._grupo_opex_impala()
+        blob = str(grupo)
+        for metric in (
+            "robo.impala.opex.valor",
+            "robo.impala.opex.meses_payback_ritmo",
+            "robo.impala.opex.lucro_mes_ritmo",
+            "robo.impala.opex.lucro_kit{kit:mimo003}",
+            "robo.impala.opex.lucro_kit{kit:perl004}",
+            "robo.impala.opex.kits_payback_mimo",
+            "robo.impala.opex.pares_payback_mix",
+            "robo.progresso.lucro_mes_impala",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_OPEX_IMPALA_ID)
+        self.assertIn("query1 / query2", blob)
+
     def test_grupo_decisao_oscilacao(self):
         grupo = dd._grupo_decisao_oscilacao()
         blob = str(grupo)

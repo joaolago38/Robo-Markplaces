@@ -1,7 +1,7 @@
 {
-  "versao": 1,
-  "atualizado": "2026-08-18",
-  "nota": "Tamanho de caixa para envio ML. Códigos S20 e S03 já existiam no catálogo (família CaixasNet). Frasco Impala 7,5 ml e Carmed são estimativa geométrica — conferir com 1 kit físico antes de comprar caixa em quantidade.",
+  "versao": 2,
+  "atualizado": "2026-08-21",
+  "nota": "Tamanho de caixa para envio ML. Códigos S20 e S03 (CaixasNet). Frasco Impala 7,5 ml e Carmed: estimativa geométrica — montar 1 kit físico antes de comprar caixa em quantidade.",
   "pecas_estimadas_cm": {
     "esmalte_impala_7_5ml": {
       "comprimento": 3.4,
@@ -39,20 +39,28 @@
       "modelo": "S20",
       "codigo": "S20-16x11x10",
       "cm": "16×11×10",
-      "conteudo": "3 esmaltes + 1 Carmed",
-      "layout": "3 frascos em fileira (≈11 cm) + Carmed ao lado; altura 8,2 < 10",
+      "interno_cm": "16 × 11 × 10",
+      "conteudo": "3 esmaltes + 1 Carmed Fini",
+      "layout": "Eixo 16 cm: 3 frascos em pé (3×3,4=10,2) + Carmed (2,2) = 12,4; sobra 3,6 para saco bolha/kraft. Largura 11 > 3,4. Altura 10 > 8,2 (tampa). Não alinhar os 3 no lado de 11 cm — fica com 0,8 cm no total.",
+      "ocupacao_cm": "12,4 × 3,4 × 8,2",
       "peso_g": 280,
-      "status": "definido_agora",
+      "anunciar_ml": "16 × 11 × 10 cm · 0,280 kg",
+      "qtd_pedido_validacao": 24,
+      "status": "dimensionado_2026-08-21",
       "cabe": true
     },
     "IMP-PERL-004": {
       "modelo": "S20",
       "codigo": "S20-16x11x10",
       "cm": "16×11×10",
-      "conteudo": "4 esmaltes (2×2)",
-      "layout": "2×2 frascos; já estava no catálogo",
+      "interno_cm": "16 × 11 × 10",
+      "conteudo": "4 esmaltes 2×2 (Sonho/Polar/Lua/Dengo)",
+      "layout": "2×2 em pé: 6,8 × 6,8 × 8,2. Cabe folgado; preencher vão com kraft. Mesma caixa do MIMO.",
+      "ocupacao_cm": "6,8 × 6,8 × 8,2",
       "peso_g": 380,
-      "status": "ja_no_catalogo",
+      "anunciar_ml": "16 × 11 × 10 cm · 0,380 kg",
+      "qtd_pedido_validacao": 24,
+      "status": "dimensionado_2026-08-21",
       "cabe": true
     },
     "IMP-BAIL-005": {
@@ -183,6 +191,14 @@
       "IMP-MIMO-003": "S20 16×11×10 · 280 g",
       "IMP-PERL-004": "S20 16×11×10 · 380 g",
       "IMP-JUPAES-006": "S20 16×11×10 · 450 g"
+    },
+    "comprar_caixas_pedido_validacao": {
+      "modelo": "S20-16x11x10",
+      "fornecedor": "CaixasNet",
+      "qtd": 24,
+      "uso": "12 MIMO + 12 PERL (10 no ar + folga). Mesma caixa nos dois kits.",
+      "custo_un_planilha": 0.98,
+      "protecao": "saco bolha no frasco + kraft + fita gomada (planilha Embalagem Detalhada)"
     }
   }
 }

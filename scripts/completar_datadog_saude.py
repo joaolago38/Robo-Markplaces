@@ -64,6 +64,7 @@ GROUP_MARCA_KIT_TENDENCIA_ID = 700015
 GROUP_KITS_MANICURE_ID = 700016
 GROUP_DECISAO_OSCILACAO_ID = 700017
 GROUP_PROGRESSO_24M_ID = 700019
+GROUP_OPEX_IMPALA_ID = 700021
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -1574,6 +1575,132 @@ def _grupo_batalha_impala() -> dict[str, Any]:
             ],
         },
         "layout": {"x": 0, "y": 24, "width": 12, "height": 1},
+    }
+
+
+def _grupo_opex_impala() -> dict[str, Any]:
+    """Payback do operacional unico (R$ 800) no ritmo da doutrina — nao sobe preco."""
+    ts = _ts_overlay(
+        "Opex R$ 800 vs lucro Impala / mes (realizado 0 ate o 1o pedido)",
+        [
+            ("opex unico", "avg:robo.impala.opex.valor{*}"),
+            ("lucro ritmo 30+30", "avg:robo.impala.opex.lucro_mes_ritmo{*}"),
+            ("lucro realizado / mes", "avg:robo.progresso.lucro_mes_impala{*}"),
+        ],
+        palette="cool",
+    )
+    return {
+        "id": GROUP_OPEX_IMPALA_ID,
+        "definition": {
+            "title": "[Opex Impala] R$ 800 unico — em quantos meses as vendas pagam",
+            "type": "group",
+            "background_color": "vivid_green",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Opex unico (R$)",
+                        "avg:robo.impala.opex.valor{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 742001,
+                },
+                {
+                    **_qv(
+                        "Meses no ritmo 30+30",
+                        "avg:robo.impala.opex.meses_payback_ritmo{*}",
+                        aggregator="last",
+                        red_gt=6,
+                        yellow_gt=3,
+                        green_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 742002,
+                },
+                {
+                    **_qv_formula(
+                        "Meses no ritmo real (vazio = 0 venda)",
+                        [
+                            ("query1", "avg:robo.impala.opex.valor{*}"),
+                            ("query2", "avg:robo.progresso.lucro_mes_impala{*}"),
+                        ],
+                        "query1 / query2",
+                        aggregator="last",
+                        red_gt=6,
+                        yellow_gt=3,
+                        green_gt=0,
+                        precision=1,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 742003,
+                },
+                {
+                    **_qv(
+                        "Lucro mix / mes (ritmo)",
+                        "avg:robo.impala.opex.lucro_mes_ritmo{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 742004,
+                },
+                {
+                    **_qv(
+                        "Lucro MIMO / kit",
+                        "avg:robo.impala.opex.lucro_kit{kit:mimo003}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 742005,
+                },
+                {
+                    **_qv(
+                        "Lucro PERL / kit",
+                        "avg:robo.impala.opex.lucro_kit{kit:perl004}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 742006,
+                },
+                {
+                    **_qv(
+                        "Kits MIMO para pagar",
+                        "avg:robo.impala.opex.kits_payback_mimo{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 742007,
+                },
+                {
+                    **_qv(
+                        "Pares MIMO+PERL para pagar",
+                        "avg:robo.impala.opex.pares_payback_mix{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 742008,
+                },
+                {
+                    **ts,
+                    "layout": {"height": 3, "width": 12, "x": 0, "y": 4},
+                    "id": 742009,
+                },
+            ],
+        },
     }
 
 
@@ -5146,6 +5273,9 @@ def atualizar_dashboard_ecommerce() -> None:
             "compatíveis com o que o ML oferece, com índice de compra Impala, economia "
             "vs avulso e condição (qtd≥3 + margem ≥ piso + padrão Impala). "
             "MIMO entra por extra Carmed (economia vs avulso pode ser negativa).\n\n"
+            "**Opex Impala:** grupo [Opex Impala] — R$ 800 operacional único. "
+            "Meses até o lucro de MIMO+PERL pagar (ritmo doutrina 30+30 ≈ 2 meses; "
+            "caixa real fica vazia até o 1º pedido). Não sobe preço para absorver.\n\n"
             "**Decisão guerra Impala:** grupo [Decisao guerra Impala] — fase 0–5 "
             "(0=abrir MIMO, não é erro), publicar_agora (gate, não os 20 kits), "
             "título de atração (Impala+esmalte+Carmed+manicure), Carmed no ar, "
@@ -5181,8 +5311,10 @@ def atualizar_dashboard_ecommerce() -> None:
     )
     prog = _grupo_progresso_24m()
     prog["layout"] = {"x": 0, "y": 1, "width": 12, "height": 1}
+    opex = _grupo_opex_impala()
+    opex["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
     cat = _grupo_catalogo_impala()
-    cat["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    cat["layout"] = {"x": 0, "y": 3, "width": 12, "height": 1}
     bat = _grupo_batalha_impala()
     bat["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     guerra = _grupo_decisao_guerra_impala()
@@ -5206,6 +5338,7 @@ def atualizar_dashboard_ecommerce() -> None:
         "title": DASH_ECOMMERCE_TITLE,
         "description": (
             "ABA FASE 1 IMPALA: progresso Impala (teto 2.5k→20k, Cruzeiro 12/d; sem PETG/Masterprint), "
+            "opex R$ 800 (meses ate vendas pagarem), "
             "catalogo Impala, batalha, decisao guerra (margem+extra), ads, saude da conta ML, "
             "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
             "kits Impala manicure, oscilacao/cuidado para decidir. "
@@ -5215,6 +5348,7 @@ def atualizar_dashboard_ecommerce() -> None:
         "widgets": [
             note,
             prog,
+            opex,
             com,
             cat,
             bat,
