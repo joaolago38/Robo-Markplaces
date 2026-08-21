@@ -464,6 +464,42 @@ def _chave_cache(termo: str) -> str:
     return termo.strip().lower()
 
 
+def _ids_do_cache(termo: str, *, ignorar_ttl: bool = False) -> list[str]:
+    """MLBs gravados no cache local, mesmo com TTL vencido (para hidratar GET /items)."""
+    if not ML_BUSCA_TERMO_FALLBACK_CACHE:
+        return []
+    data = ler_json(_CACHE_PATH, default={})
+    if not isinstance(data, dict):
+        return []
+    entry = data.get(_chave_cache(termo))
+    if not isinstance(entry, dict):
+        return []
+    if not ignorar_ttl:
+        ts = entry.get("timestamp")
+        try:
+            dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            idade = (datetime.now(timezone.utc) - dt.astimezone(timezone.utc)).total_seconds()
+            if idade > max(60, ML_BUSCA_TERMO_CACHE_TTL_SEG):
+                return []
+        except (TypeError, ValueError):
+            return []
+    rows = entry.get("resultados") or []
+    if not isinstance(rows, list):
+        return []
+    vistos: set[str] = set()
+    ids: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        iid = extrair_item_id_ml(str(row.get("item_id") or row.get("id") or ""))
+        if iid and _item_id_valido(iid) and iid not in vistos:
+            vistos.add(iid)
+            ids.append(iid)
+    return ids
+
+
 def _ler_cache(termo: str, limite: int) -> list[dict[str, Any]]:
     if not ML_BUSCA_TERMO_FALLBACK_CACHE:
         return []
@@ -567,6 +603,22 @@ def executar_busca_termo(
     cache = _ler_cache(termo, limite)
     if cache:
         return cache
+
+    # Cache com TTL vencido ainda tem MLB: hidrata preço ao vivo via GET /items.
+    ids_stale = _ids_do_cache(termo, ignorar_ttl=True)
+    if ids_stale:
+        try:
+            hidratados = ml_client.hidratar_itens(ids_stale, limite=limite)
+        except Exception as exc:
+            logger.debug("ML hidratar cache stale termo=%r: %s", termo[:60], exc)
+            hidratados = []
+        if hidratados:
+            logger.info(
+                "ML busca termo=%r fonte=cache_ids_hidratados resultados=%d",
+                termo,
+                len(hidratados),
+            )
+            return hidratados
 
     logger.warning(
         "ML busca termo=%r sem resultados — products/catálogo/brave/ddg/cache vazios "

@@ -336,6 +336,72 @@ class TestWatchlistItem(unittest.TestCase):
         mock_termo.assert_not_called()
         self.assertEqual(out["resultados"][0]["total_concorrentes"], 1)
 
+    @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", True)
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(
+        mon,
+        "_carregar_historico",
+        return_value={"kit-hist": {"item_ids": ["MLB123456789"], "menor_preco": 41.0}},
+    )
+    @patch.object(
+        mon,
+        "_carregar_lista",
+        return_value=[
+            {
+                "id": "kit-hist",
+                "ativo": True,
+                "nome": "Kit hist",
+                "termo_busca": "kit esmalte impala",
+                "meu_preco": 44.9,
+                "limite_resultados": 5,
+            }
+        ],
+    )
+    @patch.object(
+        mon.ml_client,
+        "hidratar_itens",
+        return_value=[{"item_id": "MLB123456789", "titulo": "Kit Impala", "preco": 41.0}],
+    )
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo")
+    def test_reusa_item_ids_do_historico(self, mock_termo, mock_hid, _lista, _hist, mock_salvar, *_):
+        out = mon.executar(enviar_alerta=False, enriquecer_metricas=False)
+        self.assertTrue(out["ok"])
+        mock_termo.assert_not_called()
+        mock_hid.assert_called()
+        gravado = mock_salvar.call_args[0][0]
+        self.assertIn("MLB123456789", gravado["kit-hist"]["item_ids"])
+        self.assertFalse(gravado["kit-hist"]["amostra_cega"])
+
+    @patch.object(mon, "_salvar_historico")
+    @patch.object(
+        mon,
+        "_carregar_historico",
+        return_value={"kit-hist": {"item_ids": ["MLB123456789"], "menor_preco": 41.0}},
+    )
+    @patch.object(
+        mon,
+        "_carregar_lista",
+        return_value=[
+            {
+                "id": "kit-hist",
+                "ativo": True,
+                "nome": "Kit hist",
+                "termo_busca": "kit esmalte impala",
+                "meu_preco": 44.9,
+                "limite_resultados": 5,
+            }
+        ],
+    )
+    @patch.object(mon.ml_client, "hidratar_itens", return_value=[])
+    @patch.object(mon.ml_client, "buscar_concorrentes_por_termo", return_value=[])
+    def test_amostra_cega_preserva_item_ids(self, _termo, _hid, _lista, _hist, mock_salvar):
+        out = mon.executar(enviar_alerta=False, enriquecer_metricas=False)
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["resultados"][0]["amostra_cega"])
+        gravado = mock_salvar.call_args[0][0]
+        self.assertEqual(gravado["kit-hist"]["item_ids"], ["MLB123456789"])
+        self.assertEqual(gravado["kit-hist"]["menor_preco"], 41.0)
+
     @patch.object(mon, "_salvar_historico")
     @patch.object(mon, "_carregar_historico", return_value={})
     @patch.object(
