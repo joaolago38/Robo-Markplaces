@@ -91,6 +91,15 @@
       "shopee": 14.0
     }
   },
+  "opex": {
+    "valor_brl": 800,
+    "tipo": "unico",
+    "ritmo_mimo_mes": 30,
+    "ritmo_perl_mes": 30,
+    "lucro_mimo": 10.83,
+    "lucro_perl": 6.49,
+    "nota": "Operacional único. Dilui no acumulado. PERL não recebe rateio. Lucro MIMO = Flash (não Carmed). Relógio começa no 1º pedido."
+  },
   "nao_fazer_global": [
     "Igualar francesinha/tratamento",
     "Ligar Ads sem MLB da frente",

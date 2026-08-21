@@ -196,6 +196,23 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         ):
             self.assertIn(metric, blob, msg=metric)
 
+    def test_grupo_opex_impala(self):
+        grupo = dd._grupo_opex_impala()
+        blob = str(grupo)
+        for metric in (
+            "robo.impala.opex.valor",
+            "robo.impala.opex.meses_payback_ritmo",
+            "robo.impala.opex.lucro_mes_ritmo",
+            "robo.impala.opex.lucro_kit{kit:mimo003}",
+            "robo.impala.opex.lucro_kit{kit:perl004}",
+            "robo.impala.opex.kits_payback_mimo",
+            "robo.impala.opex.pares_payback_mix",
+            "robo.progresso.lucro_mes_impala",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_OPEX_IMPALA_ID)
+        self.assertIn("query1 / query2", blob)
+
     def test_grupo_decisao_oscilacao(self):
         grupo = dd._grupo_decisao_oscilacao()
         blob = str(grupo)
@@ -229,6 +246,28 @@ class DatadogFunilDashboardTests(unittest.TestCase):
     def test_monitor_integridade_ml(self):
         nomes = [m["name"] for m in dd._monitores_desejados()]
         self.assertTrue(any("Integridade dados ML" in n for n in nomes))
+
+    def test_monitor_gh_secret_set_ignora_token_vazio(self):
+        specs = dd._monitores_desejados()
+        alvo = next(m for m in specs if "GH_TOKEN gravacao Secret" in m["name"])
+        self.assertIn("motivo:gh_secret_set", alvo["query"])
+        self.assertNotIn("gh_token_vazio", alvo["query"])
+        self.assertIn("NAO dispara", alvo["message"])
+        for m in specs:
+            self.assertNotIn(
+                "motivo:gh_token_vazio",
+                m["query"],
+                msg=m["name"],
+            )
+
+    def test_grupo_tokens_separa_secret_set_de_vazio(self):
+        grupo = dd._grupo_tokens()
+        blob = str(grupo)
+        self.assertIn("robo.token.sync_github_falha{motivo:gh_secret_set}", blob)
+        self.assertIn("robo.token.sync_github_falha{motivo:gh_token_vazio}", blob)
+        self.assertIn("ruido, sem alarme", blob)
+        ids = [w["id"] for w in grupo["definition"]["widgets"]]
+        self.assertEqual(len(ids), len(set(ids)))
 
     def test_monitor_oscilacao(self):
         nomes = [m["name"] for m in dd._monitores_desejados()]
