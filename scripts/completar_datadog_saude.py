@@ -527,7 +527,9 @@ def _grupo_tokens() -> dict[str, Any]:
         "- **Bling 401 auto-renovado** — esperado; robo renova na sequencia.\n"
         "- **ML busca 403** — restricao do `/sites/MLB/search`, **nao** e token; "
         "cai em catalogo/Brave/DDG.\n"
-        "- **429** — rate limit (cotacao USD, PNCP)."
+        "- **429** — rate limit (cotacao USD, PNCP).\n"
+        "- **gh secret set** — PAT recusado ao gravar Secret; alarme P1. "
+        "**GH_TOKEN vazio** em job sem PAT e ruido esperado (nao alarma)."
     )
     return {
         "id": GROUP_TOKENS_ID,
@@ -666,6 +668,55 @@ def _grupo_tokens() -> dict[str, Any]:
                     },
                     "layout": {"height": 3, "width": 6, "x": 0, "y": 4},
                     "id": 200005,
+                },
+                {
+                    **_qv(
+                        "gh secret set falhou (alarme)",
+                        "sum:robo.token.sync_github_falha{motivo:gh_secret_set}.as_count()",
+                        green_gt=None,
+                        red_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 7},
+                    "id": 200009,
+                },
+                {
+                    **_qv(
+                        "GH_TOKEN vazio (ruido, sem alarme)",
+                        "sum:robo.token.sync_github_falha{motivo:gh_token_vazio}.as_count()",
+                        green_gt=None,
+                        yellow_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 7},
+                    "id": 200010,
+                },
+                {
+                    "definition": {
+                        "title": "sync GitHub Secret por motivo",
+                        "type": "timeseries",
+                        "legend_columns": ["value", "sum"],
+                        "legend_layout": "horizontal",
+                        "show_legend": True,
+                        "requests": [
+                            {
+                                "display_type": "bars",
+                                "formulas": [{"formula": "query1"}],
+                                "queries": [
+                                    {
+                                        "data_source": "metrics",
+                                        "name": "query1",
+                                        "query": (
+                                            "sum:robo.token.sync_github_falha{*} "
+                                            "by {motivo}.as_count()"
+                                        ),
+                                    }
+                                ],
+                                "response_format": "timeseries",
+                                "style": {"palette": "semantic"},
+                            }
+                        ],
+                    },
+                    "layout": {"height": 2, "width": 6, "x": 6, "y": 7},
+                    "id": 200011,
                 },
             ],
         },
@@ -5647,6 +5698,27 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "priority": 1,
         },
         {
+            "name": "[Robo] GH_TOKEN gravacao Secret falhou",
+            "type": "query alert",
+            "query": (
+                "sum(last_2h):sum:robo.token.sync_github_falha"
+                "{motivo:gh_secret_set}.as_count() > 0"
+            ),
+            "message": (
+                "gh secret set falhou (PAT secrets:write recusado ou gh CLI). "
+                "O aviso GH_TOKEN vazio de jobs sem PAT NAO dispara este monitor. "
+                "Confira secrets.GH_TOKEN no workflow renovar_tokens.\n" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:token", "monitor:gh_secret_set", "severity:p1"],
+            "options": {
+                "thresholds": {"critical": 0},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 1,
+        },
+        {
             "name": "[Robo] Chat falhas",
             "type": "query alert",
             "query": "sum(last_2h):sum:robo.chat.falha{*}.as_count() > 3",
@@ -5706,7 +5778,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             ),
             "tags": [TAG_MONITOR, "monitor:ads", "prioridad:p2"],
             "options": {
-                "thresholds": {"critical": 0},
+                "thresholds": {"critical": 0.5},
                 "notify_no_data": False,
                 "require_full_window": False,
                 "include_tags": True,
