@@ -73,7 +73,13 @@
     "seller_id": "1666381510",
     "nickname": "NOVAMIX_COMERCIAL",
     "url_loja": "https://lista.mercadolivre.com.br/pagina/novamix_comercial",
-    "item_ids": [],
+    "item_ids": [
+      "MLB3607560029",
+      "MLB3948390421",
+      "MLB5162302300",
+      "MLB5192919860",
+      "MLB6012346870"
+    ],
     "termos_busca": [
       "kit 3 esmaltes impala mimo",
       "kit 4 esmaltes impala perolado",
@@ -85,7 +91,7 @@
     "limite_resultados": 20,
     "meu_preco": 44.90,
     "sku": "IMP-MIMO-003",
-    "notas": "SP — Mercado Líder Platinum. Coleta por seller_id + item_ids (colar MLB da loja). Não buscar o nickname como termo (403)."
+    "notas": "SP — Mercado Líder Platinum. item_ids do catálogo /products (seller 1666381510). Atualizar com: python scripts/colar_mlb_novamix.py MLB… --aplicar. Não buscar o nickname como termo (403)."
   },
   {
     "id": "watch-template-kit-mimo",
