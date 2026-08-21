@@ -1,6 +1,94 @@
 {
   "erros": [
     {
+      "fingerprint": "0c5b8a9e2afb31343c0a",
+      "primeira_vez": "2026-08-21T16:00:46.337695+00:00",
+      "ultima_vez": "2026-08-21T16:00:46.337695+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB6012346870 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB6012346870 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "9c4d23823377e5494a83",
+      "primeira_vez": "2026-07-28T17:02:29.076270+00:00",
+      "ultima_vez": "2026-08-21T16:00:40.071731+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token ML: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 11
+    },
+    {
+      "fingerprint": "10b423f688e9d2288334",
+      "primeira_vez": "2026-07-28T17:02:28.112038+00:00",
+      "ultima_vez": "2026-08-21T16:00:39.044202+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 11
+    },
+    {
+      "fingerprint": "1c3e33df7044b87d0f0d",
+      "primeira_vez": "2026-08-21T16:00:32.072070+00:00",
+      "ultima_vez": "2026-08-21T16:00:32.072070+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB5192919860 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB5192919860 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "2483be17473af88a6777",
+      "primeira_vez": "2026-08-21T16:00:17.589733+00:00",
+      "ultima_vez": "2026-08-21T16:00:17.589733+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB5162302300 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB5162302300 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "10453257e54948524b95",
+      "primeira_vez": "2026-08-21T16:00:03.094755+00:00",
+      "ultima_vez": "2026-08-21T16:00:03.094755+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB3948390421 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB3948390421 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "863d5f0edbc6d38263bf",
+      "primeira_vez": "2026-08-21T15:59:48.430185+00:00",
+      "ultima_vez": "2026-08-21T15:59:48.430185+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB3607560029 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items/MLB3607560029 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "ocorrencias": 1
+    },
+    {
+      "fingerprint": "c21fa4e1e3233deb8e8c",
+      "primeira_vez": "2026-08-21T15:59:34.502607+00:00",
+      "ultima_vez": "2026-08-21T15:59:34.502607+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP GET api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items?ids=MLB3607560029%2CMLB3948390421%2CMLB5162302300%2CMLB5192919860%2CMLB6012346870 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
+      "status": "error",
+      "error_kind": "SSLError",
+      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items?ids=MLB3607560029%2CMLB3948390421%2CMLB5162302300%2CMLB5192919860%2CMLB6012346870 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to g",
+      "ocorrencias": 1
+    },
+    {
       "fingerprint": "5b3e3ad32aa0d6ed8be2",
       "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
       "ultima_vez": "2026-08-19T17:11:53.577100+00:00",
@@ -175,28 +263,6 @@
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /users/1651424153 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
       "ocorrencias": 2
-    },
-    {
-      "fingerprint": "9c4d23823377e5494a83",
-      "primeira_vez": "2026-07-28T17:02:29.076270+00:00",
-      "ultima_vez": "2026-08-15T15:38:39.452568+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token ML: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
-    },
-    {
-      "fingerprint": "10b423f688e9d2288334",
-      "primeira_vez": "2026-07-28T17:02:28.112038+00:00",
-      "ultima_vez": "2026-08-15T15:38:38.301471+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.mercadolibre.com falhou: HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "status": "error",
-      "error_kind": "SSLError",
-      "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /oauth/token (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))",
-      "ocorrencias": 5
     },
     {
       "fingerprint": "3c8afe3961ceba0bfac9",
@@ -1583,73 +1649,7 @@
       "error_kind": "ConnectionError",
       "error_message": "HTTPSConnectionPool(host='007batidos.com.br', port=443): Max retries exceeded with url: /estoque.php (Caused by NameResolutionError(\"HTTPSConnection(host='007batidos.com.br', port=443): Failed to resolve '007batidos.com.br' ([Errno 11002] getaddrinfo failed)\"))",
       "ocorrencias": 1
-    },
-    {
-      "fingerprint": "f8bfa5248a18bae1685a",
-      "primeira_vez": "2026-07-07T20:59:56.540276+00:00",
-      "ultima_vez": "2026-07-07T21:00:54.255854+00:00",
-      "logger": "agente_monitor_tendencias_esmaltes",
-      "mensagem": "Agente tendências esmaltes erro: 'mencoes_web'",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "4eeb2777e2f0df7a6442",
-      "primeira_vez": "2026-07-05T21:32:37.857324+00:00",
-      "ultima_vez": "2026-07-06T11:39:58.607483+00:00",
-      "logger": "claude",
-      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_leilao): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "status": "error",
-      "error_kind": "HTTPError",
-      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "ocorrencias": 9
-    },
-    {
-      "fingerprint": "c5b72b54a08a65a56f1b",
-      "primeira_vez": "2026-07-05T21:32:36.784114+00:00",
-      "ultima_vez": "2026-07-06T11:39:57.169824+00:00",
-      "logger": "agente_leilao_veiculo",
-      "mensagem": "Agente leilão veículos erro: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "33e3e52faccc20bdedf0",
-      "primeira_vez": "2026-07-05T23:00:32.683215+00:00",
-      "ultima_vez": "2026-07-05T23:00:32.683215+00:00",
-      "logger": "claude",
-      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_sumare): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "status": "error",
-      "error_kind": "HTTPError",
-      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "c5815e54cd35b0e512eb",
-      "primeira_vez": "2026-07-05T21:32:38.531132+00:00",
-      "ultima_vez": "2026-07-05T21:32:38.531132+00:00",
-      "logger": "claude",
-      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_alibaba_margem): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "status": "error",
-      "error_kind": "HTTPError",
-      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "ocorrencias": 1
-    },
-    {
-      "fingerprint": "dbc45fbf50f9a4113c56",
-      "primeira_vez": "2026-07-05T21:32:37.892274+00:00",
-      "ultima_vez": "2026-07-05T21:32:38.145361+00:00",
-      "logger": "claude",
-      "mensagem": "Claude erro (estruturado, tool=avaliacao_parametros_alibaba): 401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "status": "error",
-      "error_kind": "HTTPError",
-      "error_message": "401 Client Error: Unauthorized for url: https://api.anthropic.com/v1/messages",
-      "ocorrencias": 3
     }
   ],
-  "atualizado_em": "2026-08-19T17:11:53.577100+00:00"
+  "atualizado_em": "2026-08-21T16:00:46.337695+00:00"
 }
