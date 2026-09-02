@@ -18,7 +18,6 @@ from core.claude_ml.dosagem import (
     system_com_decisao,
 )
 from core.claude_ml.enriquecedor import enriquecer_contexto_claude
-from core.claude_ml.playbooks import id_playbook, montar_instrucoes
 from core.claude_ml.estado import (
     _snapshot,  # noqa: F401 — reexport p/ testes
     carregar_estado_ml,
@@ -26,6 +25,7 @@ from core.claude_ml.estado import (
 from core.claude_ml.numeros import cfg_bool as _cfg_bool
 from core.claude_ml.numeros import num as _num
 from core.claude_ml.numeros import primeiro_num as _primeiro_num
+from core.claude_ml.playbooks import id_playbook, montar_instrucoes
 from core.claude_ml.stress import stress_produto
 
 __all__ = [
