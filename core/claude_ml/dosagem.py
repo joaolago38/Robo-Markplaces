@@ -64,6 +64,7 @@ def dosar_analise_para_decisao(
             "motivo": "dosagem_desligada",
             "foco_decisao": ["FAZER", "NAO_FAZER", "OBSERVAR"],
             "instrucoes": SYSTEM_DECISAO,
+            "playbook_id": None,
         }
 
     estado = estado_ml or {}
@@ -130,6 +131,14 @@ def dosar_analise_para_decisao(
     elif stress_n == "alto":
         foco = ["AJUSTAR_PRECO_OU_ESTOQUE", "PRIORIZAR_SKU_MARGEM", "NAO_FAZER_SE_GUERRA"]
 
+    playbook_id = None
+    try:
+        from core.claude_ml.playbooks import anexar_playbook
+
+        instrucoes, playbook_id = anexar_playbook(instrucoes, proposito=prop)
+    except Exception:
+        playbook_id = None
+
     return {
         "profundidade": profundidade,
         "fator_tokens": PROFUNDIDADE_TOKENS[profundidade],
@@ -138,6 +147,7 @@ def dosar_analise_para_decisao(
         "stress_produto": stress_n,
         "foco_decisao": foco,
         "instrucoes": instrucoes,
+        "playbook_id": playbook_id,
         "assertividade_maxima": profundidade == "ampliada"
         and (ruptura or forcada == "ampliada"),
     }

@@ -169,6 +169,12 @@ CLAUDE_ANALISE_SCORE_MEDIO = int(os.getenv("CLAUDE_ANALISE_SCORE_MEDIO", "40"))
 CLAUDE_ANALISE_SCORE_ALTO_CAPTACAO = int(os.getenv("CLAUDE_ANALISE_SCORE_ALTO_CAPTACAO", "85"))
 # Gasto Meta (R$) a partir do qual pressão de captacao sobe dosagem no ML
 CLAUDE_ANALISE_GASTO_META_PRESSAO = float(os.getenv("CLAUDE_ANALISE_GASTO_META_PRESSAO", "30"))
+# Playbooks de decisão ML (um por proposito; nunca o catálogo inteiro no prompt)
+CLAUDE_ML_PLAYBOOKS_ATIVO = os.getenv("CLAUDE_ML_PLAYBOOKS_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 # 1 = no chat ML, se análise alta, NÃO usa template fixo (frete/atacado) — vai pro Sonnet
 CLAUDE_ANALISE_FURA_TEMPLATE = os.getenv("CLAUDE_ANALISE_FURA_TEMPLATE", "1").strip().lower() in (
     "1",

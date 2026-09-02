@@ -18,6 +18,7 @@ from core.claude_ml.dosagem import (
     system_com_decisao,
 )
 from core.claude_ml.enriquecedor import enriquecer_contexto_claude
+from core.claude_ml.playbooks import id_playbook, montar_instrucoes
 from core.claude_ml.estado import (
     _snapshot,  # noqa: F401 — reexport p/ testes
     carregar_estado_ml,
@@ -34,6 +35,8 @@ __all__ = [
     "max_tokens_dosados",
     "enriquecer_contexto_claude",
     "system_com_decisao",
+    "id_playbook",
+    "montar_instrucoes",
     "_SYSTEM_DECISAO",
     "_PROFUNDIDADE_TOKENS",
     "_cfg_bool",

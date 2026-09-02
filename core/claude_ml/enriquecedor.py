@@ -73,6 +73,14 @@ def enriquecer_contexto_claude(
 
     base["estado_ml"] = estado
     base["situacao_produto"] = st
+    anuncios = estado.get("anuncios") if isinstance(estado.get("anuncios"), dict) else {}
+    base["anuncios_ml"] = anuncios.get("itens") or []
+    base["anuncios_ml_resumo"] = {
+        "total": anuncios.get("total"),
+        "publicados": anuncios.get("publicados"),
+        "pendente_mlb": anuncios.get("pendente_mlb"),
+        "fonte": anuncios.get("fonte"),
+    }
     base["empresa_cnpj"] = empresa_bloco
     base["dois_cnpjs_operacao"] = dois_cnpjs
     base["dosagem_analise"] = {
@@ -87,4 +95,23 @@ def enriquecer_contexto_claude(
         f"profundidade={dosagem['profundidade']} | foque em: "
         + ", ".join(dosagem["foco_decisao"][:4])
     )
+    pid = dosagem.get("playbook_id")
+    if pid:
+        try:
+            from core.claude_ml.playbooks import campos_do_json, montar_instrucoes
+
+            campos = campos_do_json(
+                contexto=base,
+                consolidado=consolidado if isinstance(consolidado, dict) else None,
+                produto=produto if isinstance(produto, dict) else None,
+                estado_ml=estado if isinstance(estado, dict) else None,
+                proposito=proposito,
+            )
+            base["playbook_ml"] = {
+                "id": pid,
+                "campos": campos,
+                "instrucoes": montar_instrucoes(pid, campos=campos),
+            }
+        except Exception as exc:
+            logger.debug("playbook_ml no contexto: %s", exc)
     return base, dosagem
