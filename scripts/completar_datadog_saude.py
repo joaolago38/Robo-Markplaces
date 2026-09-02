@@ -5701,12 +5701,13 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "name": "[Robo] GH_TOKEN gravacao Secret falhou",
             "type": "query alert",
             "query": (
-                "sum(last_2h):sum:robo.token.sync_github_falha"
-                "{motivo:gh_secret_set}.as_count() > 0"
+                "sum(last_2h):default_zero(sum:robo.token.sync_github_falha"
+                "{motivo:gh_secret_set}.as_count()) > 0"
             ),
             "message": (
                 "gh secret set falhou (PAT secrets:write recusado ou gh CLI). "
                 "O aviso GH_TOKEN vazio de jobs sem PAT NAO dispara este monitor. "
+                "Sem pontos = zero falhas (OK), nao e monitor quebrado. "
                 "Confira secrets.GH_TOKEN no workflow renovar_tokens.\n" + msg_base
             ),
             "tags": [TAG_MONITOR, "monitor:token", "monitor:gh_secret_set", "severity:p1"],

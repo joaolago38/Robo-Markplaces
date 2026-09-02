@@ -43,7 +43,8 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         "Consumo Claude (orçamento US$)",
         "infra",
         "agentes.infra.agente_consumo_claude:executar",
-        notas="Painel usado/resta no Telegram; hard stop no claude_client",
+        {"enviar_alerta": False},
+        notas="Datadog a cada ciclo; Telegram fica no workflow de 6h",
     ),
     AgenteRegistrado("vendas_whatsapp", "Vendas WhatsApp", "vendas", "agentes.vendas_notificador:executar"),
     AgenteRegistrado(

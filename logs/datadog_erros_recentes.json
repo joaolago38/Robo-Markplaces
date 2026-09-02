@@ -1,6 +1,61 @@
 {
   "erros": [
     {
+      "fingerprint": "00741e254c2078712423",
+      "primeira_vez": "2026-07-14T11:45:30.521735+00:00",
+      "ultima_vez": "2026-09-02T20:58:13.882250+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram token inválido (getMe/circuit) — confirmação NEGADA. Regenere no @BotFather e atualize TELEGRAM_TOKEN (secrets + .env). Rode: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 4
+    },
+    {
+      "fingerprint": "6b85b1f7cafada7d7627",
+      "primeira_vez": "2026-07-13T23:45:54.620789+00:00",
+      "ultima_vez": "2026-09-02T20:58:13.867707+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram não configurado — confirmação NEGADA (não auto-aprova Ads)",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 6
+    },
+    {
+      "fingerprint": "ee9e1449eb1e2b213968",
+      "primeira_vez": "2026-07-05T20:44:29.109362+00:00",
+      "ultima_vez": "2026-09-02T20:58:13.817925+00:00",
+      "logger": "notificador",
+      "mensagem": "notificar_venda_whatsapp: boom",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 9
+    },
+    {
+      "fingerprint": "c0666657a88010b25c8c",
+      "primeira_vez": "2026-07-05T20:44:29.080934+00:00",
+      "ultima_vez": "2026-09-02T20:58:13.790672+00:00",
+      "logger": "notificador",
+      "mensagem": "Telegram erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 7
+    },
+    {
+      "fingerprint": "030d99f650404eaf4f17",
+      "primeira_vez": "2026-07-05T20:46:21.505854+00:00",
+      "ultima_vez": "2026-09-02T20:58:13.758705+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.magalu.com falhou: timeout",
+      "status": "error",
+      "error_kind": "RuntimeError",
+      "error_message": "timeout",
+      "ocorrencias": 5
+    },
+    {
       "fingerprint": "0c5b8a9e2afb31343c0a",
       "primeira_vez": "2026-08-21T16:00:46.337695+00:00",
       "ultima_vez": "2026-08-21T16:00:46.337695+00:00",
@@ -573,50 +628,6 @@
       "ocorrencias": 3
     },
     {
-      "fingerprint": "00741e254c2078712423",
-      "primeira_vez": "2026-07-14T11:45:30.521735+00:00",
-      "ultima_vez": "2026-08-08T22:10:26.043292+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram token inválido (getMe/circuit) — confirmação NEGADA. Regenere no @BotFather e atualize TELEGRAM_TOKEN (secrets + .env). Rode: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 3
-    },
-    {
-      "fingerprint": "6b85b1f7cafada7d7627",
-      "primeira_vez": "2026-07-13T23:45:54.620789+00:00",
-      "ultima_vez": "2026-08-08T22:10:26.030011+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram não configurado — confirmação NEGADA (não auto-aprova Ads)",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
-    },
-    {
-      "fingerprint": "ee9e1449eb1e2b213968",
-      "primeira_vez": "2026-07-05T20:44:29.109362+00:00",
-      "ultima_vez": "2026-08-08T22:10:25.998779+00:00",
-      "logger": "notificador",
-      "mensagem": "notificar_venda_whatsapp: boom",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 8
-    },
-    {
-      "fingerprint": "c0666657a88010b25c8c",
-      "primeira_vez": "2026-07-05T20:44:29.080934+00:00",
-      "ultima_vez": "2026-08-08T22:10:25.981252+00:00",
-      "logger": "notificador",
-      "mensagem": "Telegram erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 6
-    },
-    {
       "fingerprint": "ceb0597e581d107c2a9f",
       "primeira_vez": "2026-07-05T20:44:28.386684+00:00",
       "ultima_vez": "2026-08-08T22:10:25.621860+00:00",
@@ -637,17 +648,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 136
-    },
-    {
-      "fingerprint": "030d99f650404eaf4f17",
-      "primeira_vez": "2026-07-05T20:46:21.505854+00:00",
-      "ultima_vez": "2026-08-08T22:10:19.367165+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.magalu.com falhou: timeout",
-      "status": "error",
-      "error_kind": "RuntimeError",
-      "error_message": "timeout",
-      "ocorrencias": 4
     },
     {
       "fingerprint": "4ff070dcfb581720bea0",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-08-21T16:00:46.337695+00:00"
+  "atualizado_em": "2026-09-02T20:58:13.882250+00:00"
 }

@@ -196,6 +196,29 @@ class TestNotificadorFoto(unittest.TestCase):
         self.assertTrue(primeira)
         self.assertFalse(segunda)
 
+    @patch.object(
+        notificador,
+        "request",
+        side_effect=Exception(
+            "HTTPSConnectionPool(host='api.telegram.org', port=443): "
+            "Max retries exceeded with url: /botSECRET123/sendPhoto "
+            "(Caused by ProtocolError('Connection aborted.', "
+            "TimeoutError('The write operation timed out')))"
+        ),
+    )
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_foto_timeout_log_warning_mascara_token(self, mock_request):
+        with self.assertLogs("notificador", level="WARNING") as logs:
+            ok = notificador._enviar_foto("g1", str(self.foto), "cap")
+        self.assertFalse(ok)
+        joined = "\n".join(logs.output)
+        self.assertNotIn("SECRET123", joined)
+        self.assertIn("bot***", joined)
+        self.assertTrue(any("sendPhoto timeout" in line for line in logs.output))
+        self.assertFalse(any("ERROR" in line for line in logs.output))
+        mock_request.assert_called()
+
 
 class TestNotificadorPerguntarGestor(unittest.TestCase):
     @patch.object(notificador, "TELEGRAM_TOKEN", "")

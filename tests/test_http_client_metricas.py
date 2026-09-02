@@ -62,6 +62,57 @@ class TestHttpClientMetricas(unittest.TestCase):
         mock_gauge.assert_not_called()
         mock_incrementar.assert_not_called()
 
+    @patch("core.http_client.incrementar")
+    @patch("core.http_client.gauge")
+    @patch("core.http_client._SESSION.request")
+    def test_404_product_ads_nao_incrementa_http_erro(
+        self, mock_request, mock_gauge, mock_incrementar
+    ):
+        mock_request.return_value = MagicMock(status_code=404)
+        http_client.request(
+            "GET",
+            "https://api.mercadolibre.com/advertising/advertisers?product_id=PADS",
+        )
+        mock_incrementar.assert_not_called()
+        mock_gauge.assert_called_once()
+
+    @patch("core.http_client.incrementar")
+    @patch("core.http_client.gauge")
+    @patch("core.http_client._SESSION.request")
+    def test_404_items_ml_ainda_incrementa_http_erro(
+        self, mock_request, mock_gauge, mock_incrementar
+    ):
+        mock_request.return_value = MagicMock(status_code=404)
+        http_client.request("GET", "https://api.mercadolibre.com/items/MLB123")
+        mock_incrementar.assert_called_once()
+        self.assertEqual(mock_incrementar.call_args.args[0], "http.erro")
+
+    @patch("core.http_client.incrementar")
+    @patch("core.http_client.gauge")
+    @patch(
+        "core.http_client._SESSION.request",
+        side_effect=RuntimeError(
+            "HTTPSConnectionPool(host='api.telegram.org', port=443): "
+            "Max retries exceeded with url: /botSECRET123/sendPhoto "
+            "(Caused by ProtocolError('Connection aborted.', "
+            "TimeoutError('The write operation timed out')))"
+        ),
+    )
+    def test_excecao_telegram_mascara_token_e_timeout_e_warning(
+        self, mock_request, mock_gauge, mock_incrementar
+    ):
+        url = "https://api.telegram.org/botSECRET123/sendPhoto"
+        with self.assertLogs("http_client", level="WARNING") as logs:
+            with self.assertRaises(RuntimeError):
+                http_client.request("POST", url)
+        joined = "\n".join(logs.output)
+        self.assertNotIn("SECRET123", joined)
+        self.assertIn("bot***", joined)
+        self.assertTrue(any("WARNING" in line for line in logs.output))
+        self.assertFalse(any("ERROR" in line for line in logs.output))
+        mock_incrementar.assert_called_once()
+        self.assertEqual(mock_incrementar.call_args.args[0], "http.exception")
+
 
 if __name__ == "__main__":
     unittest.main()

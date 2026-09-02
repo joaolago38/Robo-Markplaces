@@ -17,7 +17,7 @@ from core.config import (
 )
 from core.horario import agora_brasil, formatar_data_hora_br
 from core.http_client import request
-from core.http_errors import mascarar_url_telegram
+from core.http_errors import eh_timeout_rede, mascarar_url_telegram
 from core.telegram_gate import pode_enviar, registrar_falha_envio, verificar_token
 
 logger = logging.getLogger("notificador")
@@ -244,7 +244,9 @@ def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
     except Exception as e:
         err = mascarar_url_telegram(str(e))
         registrar_falha_envio(err)
-        if "404" not in err:
+        if eh_timeout_rede(e):
+            logger.warning("Telegram sendPhoto timeout: %s", err)
+        elif "404" not in err:
             logger.error("Telegram sendPhoto erro: %s", err)
         _metric_telegram(False, canal="foto", motivo="http")
         return False

@@ -51,11 +51,23 @@ def log_http_erro_listagem(logger: logging.Logger, contexto: str, resposta) -> N
         logger.error("%s HTTP %s: %s", contexto, status, corpo)
 
 
+def eh_timeout_rede(exc: BaseException) -> bool:
+    """Timeout de conexão/leitura (inclui ProtocolError com TimeoutError interno)."""
+    if isinstance(exc, TimeoutError):
+        return True
+    nome = type(exc).__name__.lower()
+    txt = str(exc).lower()
+    if "timeout" in nome:
+        return True
+    return "timed out" in txt or "timeout" in txt
+
+
 def mascarar_url_telegram(texto: str) -> str:
-    """Remove o token do bot de URLs/logs do Telegram."""
+    """Remove o token do bot de URLs/logs do Telegram (com host ou só /bot<token>/)."""
     if not texto:
         return texto
-    return re.sub(r"(api\.telegram\.org/bot)[^/\s]+", r"\1***", str(texto))
+    t = re.sub(r"(api\.telegram\.org/bot)[^/\s]+", r"\1***", str(texto))
+    return re.sub(r"(/bot)[^/\s]+", r"\1***", t)
 
 
 def mascarar_segredos_http(texto: str) -> str:

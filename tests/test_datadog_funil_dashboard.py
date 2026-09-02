@@ -251,6 +251,7 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         specs = dd._monitores_desejados()
         alvo = next(m for m in specs if "GH_TOKEN gravacao Secret" in m["name"])
         self.assertIn("motivo:gh_secret_set", alvo["query"])
+        self.assertIn("default_zero", alvo["query"])
         self.assertNotIn("gh_token_vazio", alvo["query"])
         self.assertIn("NAO dispara", alvo["message"])
         for m in specs:

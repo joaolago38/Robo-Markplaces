@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-08-21T19:40:57.831373+00:00",
+    "timestamp": "2026-09-02T21:35:05.436604+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -18,7 +18,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-08-21T19:40:54.185904+00:00",
+    "timestamp": "2026-09-02T21:35:00.360098+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -34,25 +34,84 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-08-21T19:41:36.797847+00:00",
+    "timestamp": "2026-09-02T21:35:14.870849+00:00",
     "resultados": [
       {
-        "item_id": "MLB2",
-        "titulo": "Kit Impala Concorrente",
-        "preco": 35.0,
-        "frete_gratis": true,
-        "condicao": "new",
-        "quantidade_vendida": 5,
-        "seller_id": "888",
-        "permalink": "",
-        "listing_type_id": "",
-        "logistic_type": "",
-        "fonte_busca": "api"
+        "item_id": "MLB4795826219",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 59.9,
+        "quantidade_vendida": 0,
+        "seller_id": "192161274",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4795826219",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB5399622062",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 68.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5399622062",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4180976933",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 85.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4180976933",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB7144006914",
+        "titulo": "Kit Impala Disney Channel Hannah Montana Esmalte",
+        "preco": 29.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7144006914",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB75354806",
+        "catalog_date_created": "2026-07-10T19:32:30Z",
+        "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB7144286198",
+        "titulo": "Kit Impala Disney Channel Hannah Montana Esmalte",
+        "preco": 31.9,
+        "quantidade_vendida": 0,
+        "seller_id": "260326852",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7144286198",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB75354806",
+        "catalog_date_created": "2026-07-10T19:32:30Z",
+        "listing_type_id": "gold_pro"
+      },
+      {
+        "item_id": "MLB5171686585",
+        "titulo": "Kit Impala Harmonia De Tons Roxo E Rosa",
+        "preco": 23.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1495866222",
+        "permalink": "https://produto.mercadolivre.com.br/MLB5171686585",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB77560420",
+        "catalog_date_created": "2026-08-18T00:06:14Z",
+        "listing_type_id": "gold_special"
       }
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-08-21T19:40:54.086578+00:00",
+    "timestamp": "2026-09-02T21:35:00.170459+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -70,7 +129,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-08-21T19:40:54.110800+00:00",
+    "timestamp": "2026-09-02T21:35:00.214274+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",

@@ -92,6 +92,15 @@ CLAUDE_ECONOMICO = os.getenv("CLAUDE_ECONOMICO", "0").strip().lower() in (
 )
 # Orçamento local (US$) — hard stop + alertas Telegram
 CLAUDE_ORCAMENTO_USD = float(os.getenv("CLAUDE_ORCAMENTO_USD", "8.99"))
+# Saldo restante visto no console Anthropic (US$). Semente para o Datadog:
+# só reancora quando o valor muda. A Cost API (Admin key) vai descontando o mês.
+_raw_saldo_console = (os.getenv("CLAUDE_SALDO_CONSOLE_USD") or "").strip().replace(",", ".")
+try:
+    CLAUDE_SALDO_CONSOLE_USD = float(_raw_saldo_console) if _raw_saldo_console else None
+except ValueError:
+    CLAUDE_SALDO_CONSOLE_USD = None
+if CLAUDE_SALDO_CONSOLE_USD is not None and CLAUDE_SALDO_CONSOLE_USD < 0:
+    CLAUDE_SALDO_CONSOLE_USD = None
 CLAUDE_ORCAMENTO_ATIVO = os.getenv("CLAUDE_ORCAMENTO_ATIVO", "1").strip().lower() not in (
     "0",
     "false",
@@ -1275,7 +1284,7 @@ ORQUESTRADOR_EXCLUIR = {
     for x in os.getenv(
         "ORQUESTRADOR_EXCLUIR",
         # Rotinas com workflow próprio / secundárias — não repetir no ciclo 30min
-        "vigia_datadog,consumo_claude,promocoes_manicures,conversao_manicures,"
+        "vigia_datadog,promocoes_manicures,conversao_manicures,"
         "necessidade_manicures,"
         "relatorio_estrategia_ml,ads_gatilho,resumo_conta_ml,relatorio_manha_ml,"
         "montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,"

@@ -340,15 +340,14 @@ class TestClaudeOrcamento(unittest.TestCase):
         self.assertTrue(ok)
 
     @patch.object(o, "_talvez_alertar")
-    def test_cost_api_positiva_nao_reativa(self, _alerta):
+    def test_cost_api_positiva_reativa(self, _alerta):
         from core import claude_toggle as tog
 
         tog.inativar_por_saldo()
         with patch.object(tog, "_cfg_env_ativo", return_value=True):
             o.aplicar_saldo_console(8.57, gasto_mes_usd=0.4, emitir_datadog=False, fonte_saldo="console_api")
-            ok, motivo = tog.claude_esta_ativo()
-        self.assertFalse(ok)
-        self.assertIn("sem_credito", motivo)
+            ok, _ = tog.claude_esta_ativo()
+        self.assertTrue(ok)
 
     @patch("core.claude_billing.sondar_credito_disponivel", return_value={"ok": True, "com_credito": True, "motivo": "ok"})
     def test_sonda_sucesso_religa(self, _sonda):
@@ -377,6 +376,48 @@ class TestClaudeOrcamento(unittest.TestCase):
         o.aplicar_saldo_console(0.0, emitir_datadog=False, fonte_saldo="console_api")
         r = o.marcar_saldo_zerado_console(motivo="api_credit_too_low")
         self.assertAlmostEqual(float(r["restante_usd"]), 0.0, places=2)
+
+    @patch("core.claude_billing.consultar_custo_mes_console")
+    def test_sincronizar_nao_inventa_teto_8_99(self, mock_consulta):
+        mock_consulta.return_value = {"ok": True, "gasto_mes_usd": 1.0, "fonte": "console_api"}
+        out = o.sincronizar_saldo_real(emitir_datadog=False)
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "sem_snapshot_console")
+        self.assertIsNone(o.carregar_estado().get("saldo_console_usd"))
+        self.assertNotIn("creditos_usd", out)
+
+    @patch("core.claude_billing.consultar_custo_mes_console")
+    def test_env_ancora_saldo_e_nao_reseta_no_mesmo_valor(self, mock_consulta):
+        mock_consulta.return_value = {"ok": False, "motivo": "sem_admin_api_key"}
+        with patch.dict("os.environ", {"CLAUDE_SALDO_CONSOLE_USD": "5"}, clear=False):
+            out1 = o.sincronizar_saldo_real(emitir_datadog=False)
+            self.assertTrue(out1.get("ancora_env"))
+            self.assertAlmostEqual(out1["resumo"]["restante_usd"], 5.0, places=2)
+            with patch.object(o, "_talvez_alertar"):
+                o.registrar_uso(
+                    modelo="claude-haiku-4-5",
+                    input_tokens=100_000,
+                    output_tokens=0,
+                    origem="teste",
+                )
+            resto_apos_uso = o.resumo()["restante_usd"]
+            self.assertLess(resto_apos_uso, 5.0)
+            out2 = o.sincronizar_saldo_real(emitir_datadog=False)
+            self.assertFalse(out2.get("ancora_env"))
+            self.assertAlmostEqual(out2["resumo"]["restante_usd"], resto_apos_uso, places=4)
+
+    def test_carregar_estado_nao_sobrescreve_snapshot_sem_fonte(self):
+        self.path.write_text(
+            '{"orcamento_usd": 5.0, "consumido_usd": 0, "saldo_console_usd": 5.0,'
+            ' "gasto_mes_console_usd": 0,'
+            ' "resultados": {"ok": 0, "falha": 0, "fallback": 0, "vazio": 0, "bloqueado": 0},'
+            ' "por_origem": {}, "por_modelo": {}}',
+            encoding="utf-8",
+        )
+        with patch.object(o, "_cfg") as cfg:
+            cfg.return_value.CLAUDE_ORCAMENTO_USD = 8.99
+            e = o.carregar_estado()
+        self.assertAlmostEqual(float(e["orcamento_usd"]), 5.0, places=2)
 
 
 if __name__ == "__main__":

@@ -76,6 +76,15 @@ class TestClaudeToggle(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("pausa_manual", motivo)
 
+    @patch.object(t, "_cfg_env_ativo", return_value=True)
+    def test_economia_creditos_e_religada_pelo_saldo(self, _):
+        t.definir_ativo(False, motivo="economia_creditos", atualizado_por="cli")
+        st = t.reativar_por_saldo()
+        self.assertTrue(st["ativo"])
+        ok, motivo = t.claude_esta_ativo()
+        self.assertTrue(ok)
+        self.assertEqual(motivo, "")
+
 
 class TestPodeChamarToggle(unittest.TestCase):
     @patch("core.claude_toggle.claude_esta_ativo", return_value=(False, "pausa_manual"))

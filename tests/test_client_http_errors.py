@@ -70,6 +70,27 @@ class TestMascararSegredosHttp(unittest.TestCase):
         self.assertNotIn("segredo123", out)
         self.assertIn("access_token=***", out)
 
+    def test_mascarar_telegram_path_sem_host(self):
+        from core.http_errors import mascarar_segredos_http
+
+        bruto = (
+            "Max retries exceeded with url: /botSECRET123/sendPhoto "
+            "(TimeoutError('The write operation timed out'))"
+        )
+        out = mascarar_segredos_http(bruto)
+        self.assertNotIn("SECRET123", out)
+        self.assertIn("/bot***/sendPhoto", out)
+
+    def test_eh_timeout_rede_protocol_error(self):
+        from core.http_errors import eh_timeout_rede
+
+        exc = RuntimeError(
+            "ProtocolError('Connection aborted.', TimeoutError('The write operation timed out'))"
+        )
+        self.assertTrue(eh_timeout_rede(exc))
+        self.assertTrue(eh_timeout_rede(TimeoutError("timed out")))
+        self.assertFalse(eh_timeout_rede(RuntimeError("HTTP 403")))
+
 
 if __name__ == "__main__":
     unittest.main()

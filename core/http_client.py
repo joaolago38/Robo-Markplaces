@@ -20,6 +20,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from core.datadog_metrics import gauge, incrementar
+from core.http_errors import eh_timeout_rede, mascarar_segredos_http
 from core.log_opcional import (
     erro_opcional,
     host_pncp,
@@ -60,6 +61,24 @@ def _silenciar_host_ruidoso(host: str) -> tuple[bool, str]:
     if host_pncp(host) and not log_erros_pncp_ativos():
         return True, "LOG_ERROS_PNCP"
     return False, ""
+
+
+def _path_url(url: str) -> str:
+    try:
+        return (urlparse(url).path or "").lower()
+    except Exception:
+        return ""
+
+
+def _http_erro_ads_404_conhecido(url: str, status: int) -> bool:
+    """404 de Product Ads/advertiser é config (escopo), não falha transitória."""
+    if status != 404:
+        return False
+    host = _host_simplificado(url).lower()
+    if "mercadolibre.com" not in host and "mercadolivre.com" not in host:
+        return False
+    path = _path_url(url)
+    return "advertising" in path or "product_ads" in path
 
 
 def _origem_http(host: str) -> str:
@@ -107,6 +126,8 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
         silenciar, flag = _silenciar_host_ruidoso(host)
         if not silenciar:
             incrementar("http.exception", tags=tags_base)
+        msg = mascarar_segredos_http(str(exc))
+        extra = {"error_kind": type(exc).__name__, "error_message": msg}
         # Scrapers / PNCP falham com frequência — não poluir Datadog com flag off.
         if silenciar:
             erro_opcional(
@@ -115,17 +136,25 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
                 "HTTP %s %s falhou: %s",
                 metodo,
                 host,
-                exc,
+                msg,
                 flag_hint=flag,
-                extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
+                extra=extra,
+            )
+        elif origem == "telegram" and eh_timeout_rede(exc):
+            logger.warning(
+                "HTTP %s %s falhou (timeout): %s",
+                metodo,
+                host,
+                msg,
+                extra=extra,
             )
         else:
             logger.error(
                 "HTTP %s %s falhou: %s",
                 metodo,
                 host,
-                exc,
-                extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
+                msg,
+                extra=extra,
             )
         raise
 
@@ -134,7 +163,7 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
     _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag=faixa_status)
     if response.status_code >= 400:
         silenciar, _flag = _silenciar_host_ruidoso(host)
-        if not silenciar:
+        if not silenciar and not _http_erro_ads_404_conhecido(url, response.status_code):
             incrementar(
                 "http.erro",
                 tags=[*tags_base, f"status_code:{response.status_code}"],
