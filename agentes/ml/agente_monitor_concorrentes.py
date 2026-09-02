@@ -244,7 +244,6 @@ def _classificar_variacao_preco(
         fallback = f"tendência de baixa ({quedas}ª queda seguida)"
     elif quedas >= 2:
         fallback = "tendência de baixa (2 quedas seguidas)"
-    from core.claude_client import MODELO_RAPIDO
     from core.resumo_ia import sintetizar_claude
 
     prompt = (
@@ -252,7 +251,12 @@ def _classificar_variacao_preco(
         "(ex.: 'queda pontual' vs 'tendência de baixa (3ª queda seguida)')."
     )
     texto = sintetizar_claude(
-        prompt, contexto, fallback, max_tokens=60, modelo=MODELO_RAPIDO
+        prompt,
+        contexto,
+        fallback,
+        max_tokens=60,
+        proposito="monitor_concorrentes",
+        origem="monitor_concorrentes.variacao_preco",
     )
     return (texto or "").strip() or None
 

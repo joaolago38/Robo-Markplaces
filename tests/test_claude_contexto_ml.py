@@ -94,6 +94,8 @@ class TestClaudeContextoMl(unittest.TestCase):
         )
         self.assertIn("estado_ml", ctx)
         self.assertIn("situacao_produto", ctx)
+        self.assertIn("anuncios_ml", ctx)
+        self.assertIn("anuncios_ml_resumo", ctx)
         self.assertIn("dosagem_analise", ctx)
         self.assertIn("orientacao_decisao", ctx)
         self.assertEqual(ctx["estado_ml"]["nivel"], "atencao")

@@ -93,6 +93,21 @@ def carregar_estado_ml(*, ao_vivo: bool = False) -> dict[str, Any]:
         except Exception as exc:
             logger.debug("estado_ml ao_vivo falhou: %s", exc)
 
+    anuncios: dict[str, Any] = {"total": 0, "publicados": 0, "pendente_mlb": 0, "fonte": "vazio", "itens": []}
+    try:
+        from core.claude_ml.anuncios import bloco_anuncios_ml
+
+        anuncios = bloco_anuncios_ml(
+            resumo_conta=resumo_conta if isinstance(resumo_conta, dict) else None,
+            sem_venda=sem_venda if isinstance(sem_venda, dict) else None,
+            ao_vivo=ao_vivo,
+        )
+        if int(anuncios.get("pendente_mlb") or 0) > 0:
+            alertas.append(f"{int(anuncios['pendente_mlb'])} anúncio(s) sem MLB válido")
+            nivel = _subir(nivel, "atencao")
+    except Exception as exc:
+        logger.debug("anuncios no estado_ml: %s", exc)
+
     return {
         "marketplace": "mercadolivre",
         "nivel": nivel,
@@ -134,4 +149,5 @@ def carregar_estado_ml(*, ao_vivo: bool = False) -> dict[str, Any]:
             "manha_tem_dados": bool(manha),
         },
         "fonte": "snapshots_logs" + ("+api" if saude_vivo else ""),
+        "anuncios": anuncios,
     }

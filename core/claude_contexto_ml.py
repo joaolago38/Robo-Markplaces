@@ -25,6 +25,7 @@ from core.claude_ml.estado import (
 from core.claude_ml.numeros import cfg_bool as _cfg_bool
 from core.claude_ml.numeros import num as _num
 from core.claude_ml.numeros import primeiro_num as _primeiro_num
+from core.claude_ml.playbooks import id_playbook, montar_instrucoes
 from core.claude_ml.stress import stress_produto
 
 __all__ = [
@@ -34,6 +35,8 @@ __all__ = [
     "max_tokens_dosados",
     "enriquecer_contexto_claude",
     "system_com_decisao",
+    "id_playbook",
+    "montar_instrucoes",
     "_SYSTEM_DECISAO",
     "_PROFUNDIDADE_TOKENS",
     "_cfg_bool",

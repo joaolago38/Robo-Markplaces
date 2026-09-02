@@ -153,7 +153,7 @@ def classificar_resultado_texto(texto: str | None) -> str:
 
 def _estado_vazio() -> dict[str, Any]:
     c = _cfg()
-    orc = float(getattr(c, "CLAUDE_ORCAMENTO_USD", 8.99) or 8.99)
+    orc = float(getattr(c, "CLAUDE_ORCAMENTO_USD", 22.0) or 22.0)
     return {
         "orcamento_usd": orc,
         "consumido_usd": 0.0,
@@ -179,11 +179,11 @@ def carregar_estado() -> dict[str, Any]:
     base = _estado_vazio()
     base.update(data)
     c = _cfg()
-    # Snapshot do painel/API prevalece sobre CLAUDE_ORCAMENTO_USD (teto 8.99).
+    # Snapshot do painel/API prevalece sobre CLAUDE_ORCAMENTO_USD (teto local).
     tem_snapshot = base.get("saldo_console_usd") is not None
     if str(base.get("fonte_saldo") or "") not in _FONTES_SALDO_EXTERNO and not tem_snapshot:
         base["orcamento_usd"] = float(
-            getattr(c, "CLAUDE_ORCAMENTO_USD", base["orcamento_usd"]) or 8.99
+            getattr(c, "CLAUDE_ORCAMENTO_USD", base["orcamento_usd"]) or 22.0
         )
     if not isinstance(base.get("resultados"), dict):
         base["resultados"] = _estado_vazio()["resultados"]
@@ -193,7 +193,7 @@ def carregar_estado() -> dict[str, Any]:
 def _numeros_console(e: dict[str, Any]) -> tuple[float, float, float]:
     """
     (orcamento, consumido, restante) alinhados ao painel/API.
-    Evita publicar CLAUDE_ORCAMENTO_USD (8.99) quando o cache local zerou
+    Evita publicar CLAUDE_ORCAMENTO_USD quando o cache local zerou
     o consumido mas ainda há snapshot de créditos.
     """
     orc = float(e.get("orcamento_usd") or 0)
@@ -401,7 +401,7 @@ def registrar_uso(
             if fonte in _FONTES_CONSOLE and estado.get("orcamento_usd") is not None:
                 orc = float(estado.get("orcamento_usd") or 0)
             else:
-                orc = float(getattr(c, "CLAUDE_ORCAMENTO_USD", 8.99) or 8.99)
+                orc = float(getattr(c, "CLAUDE_ORCAMENTO_USD", 22.0) or 22.0)
                 estado["orcamento_usd"] = orc
             used_antes = float(estado.get("consumido_usd") or 0)
             pct_antes = (used_antes / orc * 100) if orc > 0 else 0.0
@@ -848,7 +848,7 @@ def ancorar_saldo_env_se_mudou(*, gasto_mes_usd: float | None = None) -> bool:
 def sincronizar_saldo_real(*, emitir_datadog: bool = True) -> dict[str, Any]:
     """
     Puxa o gasto do mês na Cost API e republica restante/consumido no Datadog.
-    Sem Admin key: não inventa 8.99 — usa snapshot / âncora do env.
+    Sem Admin key: não inventa o teto local — usa snapshot / âncora do env.
     """
     consulta: dict[str, Any] = {"ok": False, "motivo": "consulta_falhou"}
     try:

@@ -191,6 +191,7 @@ def _analisar_com_ia(coleta: dict[str, Any], nicho: dict[str, Any]) -> dict[str,
         max_tokens=900,
         contexto=json.dumps(contexto, ensure_ascii=False, indent=2),
         system=_SYSTEM_ANALISE,
+        proposito="descoberta_produtos",
     )
     if isinstance(estruturado, dict) and estruturado.get("publico_alvo"):
         return estruturado

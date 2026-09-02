@@ -25,6 +25,7 @@ class TestClassificarVariacao(unittest.TestCase):
         out = monitor._classificar_variacao_preco("kit1", "Kit", "termo", 28.0, historico)
         self.assertIn("tendência", out.lower())
         mock_sint.assert_called_once()
+        self.assertEqual(mock_sint.call_args.kwargs.get("proposito"), "monitor_concorrentes")
 
     def test_sem_historico_suficiente_retorna_none(self):
         historico = {"kit1": {"menor_preco": 30}}

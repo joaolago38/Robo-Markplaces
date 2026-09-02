@@ -267,6 +267,7 @@ def _pedir_sugestoes_claude(
         system=system_com_decisao(SYSTEM_OTIMIZADOR, dosagem),
         origem=origem,
         exigir_contexto=True,
+        proposito="otimizar_listing",
     )
     lista_sugestoes = (sugestoes_estruturadas or {}).get("sugestoes") or []
     try:
@@ -302,6 +303,7 @@ def _pedir_sugestoes_claude(
         system=system_com_decisao(SYSTEM_DESCRICAO, dosagem),
         origem=origem,
         exigir_contexto=True,
+        proposito="otimizar_listing",
     )
     ia_titulo = sugestoes_estruturadas is None
     ia_desc = _ia_falhou(sugestao_descricao)

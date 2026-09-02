@@ -18,7 +18,7 @@ from typing import Any
 
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.catalogo_produtos import carregar_produtos_para_operacao
-from core.claude_client import MODELO_RAPIDO, perguntar_estruturado
+from core.claude_client import perguntar_estruturado
 from core.config import (
     ACETONA_CRUZEIRO_ALERTA_COOLDOWN_SEG,
     ACETONA_CRUZEIRO_ALERTA_RESUMO,
@@ -163,7 +163,7 @@ def _gerar_estrategias_claude(
         max_tokens=max_tokens_dosados(900, dosagem),
         contexto=json.dumps(ctx, ensure_ascii=False, indent=2),
         system=system_com_decisao(_SYSTEM_ESTRATEGIA, dosagem),
-        modelo=MODELO_RAPIDO,
+        proposito="acetona_cruzeiro",
     )
 
 

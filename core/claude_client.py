@@ -152,12 +152,22 @@ def perguntar(
     exigir_contexto: bool = False,
     forcar_chamada: bool = False,
     temperature: float | None = None,
+    proposito: str | None = None,
 ) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
     if exigir_contexto and not contexto_suficiente(contexto):
         logger.info("Claude pulado: contexto insuficiente (origem=%s)", origem or "?")
         return "⚠️ Claude pulado: contexto insuficiente."
+    if proposito:
+        try:
+            from core.claude_roteador import resolver_modelo_chamada
+
+            modelo, forcar_modelo = resolver_modelo_chamada(
+                proposito=proposito, modelo=modelo, forcar_modelo=forcar_modelo
+            )
+        except Exception as exc:
+            logger.debug("roteamento perguntar: %s", exc)
     modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso
@@ -303,6 +313,7 @@ def perguntar_estruturado(
     forcar_modelo: bool = False,
     origem: str | None = None,
     exigir_contexto: bool = False,
+    proposito: str | None = None,
 ) -> dict | None:
     """
     Como `perguntar`, mas força a resposta a seguir `schema` (JSON Schema
@@ -317,6 +328,15 @@ def perguntar_estruturado(
     if exigir_contexto and not contexto_suficiente(contexto):
         logger.info("Claude estruturado pulado: contexto insuficiente (origem=%s)", origem or "?")
         return None
+    if proposito:
+        try:
+            from core.claude_roteador import resolver_modelo_chamada
+
+            modelo, forcar_modelo = resolver_modelo_chamada(
+                proposito=proposito, modelo=modelo, forcar_modelo=forcar_modelo
+            )
+        except Exception as exc:
+            logger.debug("roteamento estruturado: %s", exc)
     modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso

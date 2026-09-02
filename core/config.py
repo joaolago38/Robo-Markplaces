@@ -76,22 +76,22 @@ CLAUDE_ATIVO = os.getenv("CLAUDE_ATIVO", "0").strip().lower() not in (
     "no",
     "off",
 )
-# Modelos Claude — Haiku ≈ bem mais barato que Sonnet
+# Haiku no volume; Sonnet nas decisões que cruzam o algoritmo do ML.
+# CLAUDE_ECONOMICO=1 força Haiku em tudo (não usar — perde assertividade).
 CLAUDE_MODELO = (
-    os.getenv("CLAUDE_MODELO", "claude-sonnet-4-5").strip() or "claude-sonnet-4-5"
+    os.getenv("CLAUDE_MODELO", "claude-haiku-4-5").strip() or "claude-haiku-4-5"
 )
 CLAUDE_MODELO_RAPIDO = (
     os.getenv("CLAUDE_MODELO_RAPIDO", "claude-haiku-4-5").strip() or "claude-haiku-4-5"
 )
-# 1 = força Haiku (MODELO_RAPIDO) em TODAS as chamadas — reduz custo
 CLAUDE_ECONOMICO = os.getenv("CLAUDE_ECONOMICO", "0").strip().lower() in (
     "1",
     "true",
     "yes",
     "on",
 )
-# Orçamento local (US$) — hard stop + alertas Telegram
-CLAUDE_ORCAMENTO_USD = float(os.getenv("CLAUDE_ORCAMENTO_USD", "8.99"))
+# Teto local US$/mês (faixa 18–25). Hard stop + alertas Telegram.
+CLAUDE_ORCAMENTO_USD = float(os.getenv("CLAUDE_ORCAMENTO_USD", "22"))
 # Saldo restante visto no console Anthropic (US$). Semente para o Datadog:
 # só reancora quando o valor muda. A Cost API (Admin key) vai descontando o mês.
 _raw_saldo_console = (os.getenv("CLAUDE_SALDO_CONSOLE_USD") or "").strip().replace(",", ".")
@@ -132,8 +132,8 @@ CLAUDE_ESCALONAR_ML = os.getenv("CLAUDE_ESCALONAR_ML", "1").strip().lower() in (
     "yes",
     "on",
 )
-# Só sobe de modelo se restante do orçamento local >= este piso (US$)
-CLAUDE_ESCALONAR_RESTANTE_MIN_USD = float(os.getenv("CLAUDE_ESCALONAR_RESTANTE_MIN_USD", "1.50"))
+# Reserva Sonnet no fim do mês (não deixar o teto esgotar só em Haiku)
+CLAUDE_ESCALONAR_RESTANTE_MIN_USD = float(os.getenv("CLAUDE_ESCALONAR_RESTANTE_MIN_USD", "4"))
 # Preço do anúncio (R$) a partir do qual chat ML vendedor escala
 CLAUDE_ESCALONAR_PRECO_MIN = float(os.getenv("CLAUDE_ESCALONAR_PRECO_MIN", "40.0"))
 # 1 = Sonnet na escolha de oferta só se análise alta OU Ads alerta/crítico (não sempre)
@@ -169,6 +169,12 @@ CLAUDE_ANALISE_SCORE_MEDIO = int(os.getenv("CLAUDE_ANALISE_SCORE_MEDIO", "40"))
 CLAUDE_ANALISE_SCORE_ALTO_CAPTACAO = int(os.getenv("CLAUDE_ANALISE_SCORE_ALTO_CAPTACAO", "85"))
 # Gasto Meta (R$) a partir do qual pressão de captacao sobe dosagem no ML
 CLAUDE_ANALISE_GASTO_META_PRESSAO = float(os.getenv("CLAUDE_ANALISE_GASTO_META_PRESSAO", "30"))
+# Playbooks de decisão ML (um por proposito; nunca o catálogo inteiro no prompt)
+CLAUDE_ML_PLAYBOOKS_ATIVO = os.getenv("CLAUDE_ML_PLAYBOOKS_ATIVO", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 # 1 = no chat ML, se análise alta, NÃO usa template fixo (frete/atacado) — vai pro Sonnet
 CLAUDE_ANALISE_FURA_TEMPLATE = os.getenv("CLAUDE_ANALISE_FURA_TEMPLATE", "1").strip().lower() in (
     "1",

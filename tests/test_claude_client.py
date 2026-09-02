@@ -314,6 +314,23 @@ class TestClaudeResponderGerar(unittest.TestCase):
         self.assertTrue(out.startswith("⚠️"))
         mock_zerar.assert_called()
 
+    @patch.object(claude_client, "request")
+    @patch.object(claude_client, "ANTHROPIC_API_KEY", "k")
+    def test_proposito_listing_usa_sonnet(self, mock_request, *_):
+        mock_request.return_value = _mock_resp({"content": [{"text": "ok"}]})
+        with patch(
+            "core.claude_roteador.resolver_modelo_chamada",
+            return_value=("claude-sonnet-4-5", True),
+        ):
+            claude_client.perguntar("p", proposito="otimizar_listing")
+            claude_client.perguntar_estruturado(
+                "p", {"type": "object"}, "t", proposito="descoberta_produtos"
+            )
+        modelos = [
+            c.kwargs["json"]["model"] for c in mock_request.call_args_list
+        ]
+        self.assertEqual(modelos, ["claude-sonnet-4-5", "claude-sonnet-4-5"])
+
 
 if __name__ == "__main__":
     unittest.main()

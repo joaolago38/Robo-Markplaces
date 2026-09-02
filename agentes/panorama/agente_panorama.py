@@ -419,14 +419,20 @@ def _sintetizar_claude(contexto: str, fallback: str) -> str:
             "Ao comentar concorrência, use APENAS os campos presentes no JSON "
             "(ex.: titulo, preco, frete_gratis, condicao, quantidade_vendida em "
             "mercado_livre.monitor.concorrencia[].concorrentes). "
-            "Não invente dados que não estejam no contexto."
+            "Não invente dados que não estejam no contexto. "
+            "Sugira FAZER/NÃO FAZER/OBSERVAR — o gestor autoriza; não publique nem ligue Ads."
         )
+        from core.claude_roteador import resolver_modelo_vendas
+
+        rota = resolver_modelo_vendas(proposito="panorama")
         resposta = perguntar(
             prompt,
             max_tokens=800,
             contexto=contexto,
             origem="panorama.agente_panorama",
             exigir_contexto=True,
+            modelo=rota.get("modelo"),
+            forcar_modelo=bool(rota.get("forcar_modelo")),
         )
         if not resposta or resposta.startswith("⚠️") or "API" in resposta:
             return fallback

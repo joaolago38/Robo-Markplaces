@@ -30,8 +30,9 @@ class TestClaudeOrcamento(unittest.TestCase):
 
     @patch.object(o, "_talvez_alertar")
     def test_registrar_e_restante(self, _alerta):
+        teto = 22.0
         with patch.object(o, "_cfg") as cfg:
-            cfg.return_value.CLAUDE_ORCAMENTO_USD = 8.99
+            cfg.return_value.CLAUDE_ORCAMENTO_USD = teto
             cfg.return_value.CLAUDE_ORCAMENTO_ATIVO = True
             cfg.return_value.CLAUDE_PRECO_HAIKU_IN = 1.0
             cfg.return_value.CLAUDE_PRECO_HAIKU_OUT = 5.0
@@ -41,12 +42,15 @@ class TestClaudeOrcamento(unittest.TestCase):
                 output_tokens=0,
                 origem="agentes.teste",
             )
-        self.assertTrue(out["ok"])
-        self.assertAlmostEqual(out["custo_usd"], 1.0, places=4)
-        r = o.resumo()
-        self.assertAlmostEqual(r["consumido_usd"], 1.0, places=4)
-        self.assertAlmostEqual(r["restante_usd"], 7.99, places=4)
-        self.assertIn("agentes.teste", r["por_origem"])
+            self.assertTrue(out["ok"])
+            self.assertAlmostEqual(out["custo_usd"], 1.0, places=4)
+            r = out["resumo"]
+            self.assertAlmostEqual(r["consumido_usd"], 1.0, places=4)
+            self.assertAlmostEqual(r["orcamento_usd"], teto, places=4)
+            self.assertAlmostEqual(r["restante_usd"], teto - 1.0, places=4)
+            self.assertIn("agentes.teste", r["por_origem"])
+            r2 = o.resumo()
+            self.assertAlmostEqual(r2["restante_usd"], teto - 1.0, places=4)
 
     @patch.object(o, "_talvez_alertar")
     def test_hard_stop(self, _alerta):

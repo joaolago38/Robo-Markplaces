@@ -136,6 +136,23 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             self.assertIn("modo: restore", texto, nome)
             self.assertIn("modo: save", texto, nome)
 
+    def test_nenhum_step_tem_with_duplicado(self):
+        """Dois `with:` no mesmo step quebram o workflow em 0s (sem job)."""
+        import re
+
+        for path in sorted(WORKFLOWS_DIR.glob("*.yml")):
+            with_count = 0
+            for i, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if re.match(r"^      - ", raw):
+                    with_count = 0
+                elif re.match(r"^        with:", raw):
+                    with_count += 1
+                    self.assertLessEqual(
+                        with_count,
+                        1,
+                        f"{path.name}:{i} tem `with:` duplicado no mesmo step",
+                    )
+
     def test_agentes_pesados_tem_cron_proprio(self):
         esperados = {
             "inteligencia_precos.yml": "20 */2 * * *",
@@ -149,6 +166,17 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             self.assertIn("schedule:", texto, nome)
             self.assertIn(cron, texto, nome)
             self.assertNotIn(f"group: {_GROUP_TOKEN}", texto, nome)
+
+    def test_politica_claude_nao_forca_haiku_barato(self):
+        """Teto US$ 22 + ECONOMICO=0: Sonnet nas decisões ML, Haiku no volume."""
+        for path in sorted(WORKFLOWS_DIR.glob("*.yml")):
+            texto = path.read_text(encoding="utf-8")
+            self.assertNotIn(
+                'CLAUDE_ECONOMICO: "1"',
+                texto,
+                f"{path.name} força Haiku em todas as chamadas",
+            )
+            self.assertNotIn("|| '8.99'", texto, f"{path.name} ainda usa teto US$ 8.99")
 
 
 if __name__ == "__main__":

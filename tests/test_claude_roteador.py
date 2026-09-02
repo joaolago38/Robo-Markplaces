@@ -120,6 +120,47 @@ class TestClaudeRoteador(unittest.TestCase):
         self.assertTrue(r.texto_indica_venda("quanto custa o frete Full?"))
         self.assertFalse(r.texto_indica_venda("oi"))
 
+    def test_ruptura_escala_sonnet(self):
+        with patch.object(r, "restante_orcamento_usd", return_value=12.0), patch.object(
+            r, "_cfg"
+        ) as cfg:
+            cfg.return_value.CLAUDE_ESCALONAR_ML = True
+            cfg.return_value.CLAUDE_ESCALONAR_RESTANTE_MIN_USD = 4.0
+            cfg.return_value.CLAUDE_MODELO_RAPIDO = "claude-haiku-4-5"
+            cfg.return_value.CLAUDE_MODELO_VENDAS = "claude-sonnet-4-5"
+            out = r.resolver_modelo_vendas(proposito="ruptura_impala")
+        self.assertTrue(out["escalou"])
+        self.assertEqual(out["modelo"], "claude-sonnet-4-5")
+        self.assertEqual(out["motivo"], "complexidade_algoritmo_ml")
+
+    def test_chat_nao_casa_com_algoritmo_ml(self):
+        self.assertFalse(r.proposito_exige_sonnet("chat_ml"))
+        self.assertTrue(r.proposito_exige_sonnet("acetona_cruzeiro"))
+        self.assertTrue(r.proposito_exige_sonnet("repricing"))
+        self.assertTrue(r.proposito_exige_sonnet("otimizar_listing"))
+        self.assertTrue(r.proposito_exige_sonnet("descoberta_produtos"))
+
+    def test_resolver_modelo_chamada_listing_sobe_sonnet(self):
+        with patch.object(r, "restante_orcamento_usd", return_value=12.0), patch.object(
+            r, "_cfg"
+        ) as cfg:
+            cfg.return_value.CLAUDE_ESCALONAR_ML = True
+            cfg.return_value.CLAUDE_ESCALONAR_RESTANTE_MIN_USD = 4.0
+            cfg.return_value.CLAUDE_MODELO_RAPIDO = "claude-haiku-4-5"
+            cfg.return_value.CLAUDE_MODELO_VENDAS = "claude-sonnet-4-5"
+            modelo, forcar = r.resolver_modelo_chamada(proposito="otimizar_listing")
+        self.assertEqual(modelo, "claude-sonnet-4-5")
+        self.assertTrue(forcar)
+
+    def test_resolver_modelo_chamada_respeita_forcar(self):
+        modelo, forcar = r.resolver_modelo_chamada(
+            proposito="otimizar_listing",
+            modelo="claude-haiku-4-5",
+            forcar_modelo=True,
+        )
+        self.assertEqual(modelo, "claude-haiku-4-5")
+        self.assertTrue(forcar)
+
 
 if __name__ == "__main__":
     unittest.main()

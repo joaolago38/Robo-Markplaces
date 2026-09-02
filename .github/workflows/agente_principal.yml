@@ -92,6 +92,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
@@ -149,6 +153,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           CLAUDE_ORCAMENTO_ATIVO: "1"
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
@@ -264,6 +272,10 @@ jobs:
           AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}

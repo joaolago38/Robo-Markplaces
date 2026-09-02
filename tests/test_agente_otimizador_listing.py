@@ -62,6 +62,7 @@ class TestAnalisarItem(unittest.TestCase):
         desc_call = mock_perguntar.call_args
         system = desc_call.kwargs.get("system") or ""
         self.assertIn(opt.SYSTEM_DESCRICAO[:40], system)
+        self.assertEqual(desc_call.kwargs.get("proposito"), "otimizar_listing")
 
     @patch("core.claude_client.perguntar_estruturado", return_value=None)
     @patch.object(opt, "perguntar", return_value="⚠️ Erro na IA: falha de comunicação com o provedor.")
