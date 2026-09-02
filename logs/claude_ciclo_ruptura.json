@@ -1,7 +1,7 @@
 {
-  "fase": "moderada",
+  "fase": "maxima",
   "exposto_datadog": true,
   "exposto_em": "2026-08-15T00:15:59.406656+00:00",
-  "ultimo_pulso_maxima_em": "2026-09-02T23:01:51.941950+00:00",
-  "timestamp": "2026-09-02T23:01:51.986377+00:00"
+  "ultimo_pulso_maxima_em": "2026-09-02T23:13:30.205630+00:00",
+  "timestamp": "2026-09-02T23:13:30.205647+00:00"
 }
