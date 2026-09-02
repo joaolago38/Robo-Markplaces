@@ -99,6 +99,17 @@ def sintetizar_claude(
         if exigir_contexto and not contexto_suficiente(ctx_str):
             logger.info("sintetizar_claude: contexto insuficiente — fallback (origem=%s)", origem or "?")
             return _falha()
+        if proposito and not forcar_modelo:
+            try:
+                from core.claude_roteador import resolver_modelo_vendas
+
+                rota = resolver_modelo_vendas(proposito=proposito)
+                if rota.get("escalou"):
+                    modelo = rota.get("modelo") or modelo
+                    forcar_modelo = True
+            except Exception as exc:
+                logger.debug("roteamento claude: %s", exc)
+
         prompt_completo = f"{GUARDRAIL}\n\n{prompt}\n\n{GUARDRAIL}"
         resposta = perguntar(
             prompt_completo,

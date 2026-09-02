@@ -197,7 +197,7 @@ class TestMontarBriefing(unittest.TestCase):
     @patch("core.resumo_ia.sintetizar_claude", return_value="FAZER: PERL-004. NÃO FAZER: Ads.")
     @patch("integracoes.esmaltes.claude_ciclo_ruptura.fase_claude_ruptura", return_value="maxima")
     def test_claude_ruptura_forca_assertividade_maxima(self, _fase, mock_sint):
-        from core.config import CLAUDE_MODELO
+        from core.config import CLAUDE_MODELO_VENDAS
 
         out = br._claude_ruptura({"veredito": "ainda_nao", "ancora_numerica": {"margem_erro_pp": 0.5}}, "fb")
         self.assertIn("FAZER", out)
@@ -209,7 +209,7 @@ class TestMontarBriefing(unittest.TestCase):
         self.assertTrue(kwargs.get("somente_ia"))
         self.assertEqual(kwargs.get("proposito"), "ruptura_impala")
         self.assertEqual(kwargs.get("origem"), "ruptura_impala")
-        self.assertEqual(kwargs.get("modelo"), CLAUDE_MODELO)
+        self.assertEqual(kwargs.get("modelo"), CLAUDE_MODELO_VENDAS)
 
     @patch("core.resumo_ia.sintetizar_claude", return_value="OBSERVAR: saude 21. NÃO FAZER: Ads.")
     @patch("integracoes.esmaltes.claude_ciclo_ruptura.fase_claude_ruptura", return_value="moderada")

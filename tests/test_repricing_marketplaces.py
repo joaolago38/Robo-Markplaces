@@ -169,6 +169,20 @@ class RepricingMarketplacesTests(unittest.TestCase):
             com_nota["ajustes"][0]["novo_preco"],
         )
 
+    @patch("core.resumo_ia.sintetizar_claude", return_value="concorrente sem frete — gestor decide")
+    @patch.object(repricing, "_amostra_concorrente_monitor", return_value={"preco": 20.0, "frete_gratis": False})
+    def test_nota_concorrencia_proposito_repricing(self, _am, mock_sint):
+        out = repricing._gerar_nota_concorrencia(
+            "Kit",
+            50.0,
+            40.0,
+            45.0,
+            "SKU1",
+            {"SKU1": {"termo_busca": "kit", "nome": "x"}},
+        )
+        self.assertIn("gestor", out)
+        self.assertEqual(mock_sint.call_args.kwargs.get("proposito"), "repricing")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,6 +36,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY:       ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO:            ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_ECONOMICO:        ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO:           ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS:    ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD:    ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           ML_CLIENT_ID:            ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET:        ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN:         ${{ secrets.ML_ACCESS_TOKEN }}

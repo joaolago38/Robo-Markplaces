@@ -54,10 +54,13 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_ADMIN_API_KEY: ${{ secrets.ANTHROPIC_ADMIN_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
-          CLAUDE_ECONOMICO: "1"
-          CLAUDE_MODELO: claude-haiku-4-5
-          CLAUDE_MODELO_RAPIDO: claude-haiku-4-5
-          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '8.99' }}
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_RAPIDO: ${{ vars.CLAUDE_MODELO_RAPIDO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ESCALONAR_ML: ${{ vars.CLAUDE_ESCALONAR_ML || '1' }}
+          CLAUDE_ESCALONAR_RESTANTE_MIN_USD: ${{ vars.CLAUDE_ESCALONAR_RESTANTE_MIN_USD || '4' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           CLAUDE_SALDO_CONSOLE_USD: ${{ vars.CLAUDE_SALDO_CONSOLE_USD }}
           CLAUDE_ORCAMENTO_ATIVO: "1"
           CLAUDE_ORCAMENTO_ALERTA: "1"

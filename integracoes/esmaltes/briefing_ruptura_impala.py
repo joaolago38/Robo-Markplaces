@@ -443,7 +443,7 @@ def _claude_ruptura(
     from core.claude_ml.dosagem import SYSTEM_RUPTURA
     from core.config import (
         CLAUDE_LUCRO_ML_MOMENTOS,
-        CLAUDE_MODELO,
+        CLAUDE_MODELO_VENDAS,
         RUPTURA_CLAUDE,
         RUPTURA_CLAUDE_ASSERTIVIDADE_MAXIMA,
         RUPTURA_CLAUDE_IGNORAR_TOGGLE,
@@ -494,7 +494,7 @@ def _claude_ruptura(
         proposito="ruptura_impala" if maxima else "ruptura_impala_moderada",
         forcar_profundidade="ampliada" if maxima else "padrao",
         forcar_modelo=maxima,
-        modelo=CLAUDE_MODELO if maxima else None,
+        modelo=CLAUDE_MODELO_VENDAS if maxima else None,
         forcar_chamada=forcar,
         temperature=0.0 if maxima else None,
         system=SYSTEM_RUPTURA,

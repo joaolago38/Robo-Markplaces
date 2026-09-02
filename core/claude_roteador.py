@@ -2,8 +2,9 @@
 core/claude_roteador.py
 Ponto de mudança Haiku → modelo de vendas (Sonnet) para eficiência no ML.
 
-Regra: Haiku no volume; Sonnet só quando a decisão impacta conversão/venda
-e ainda há orçamento local suficiente.
+Regra: Haiku no volume; Sonnet quando a decisão cruza o algoritmo do ML
+(ranking, Ads, preço, listing) ou conversão quente — e ainda há orçamento.
+O gestor autoriza o FAZER; o modelo não publica.
 """
 from __future__ import annotations
 
@@ -27,6 +28,48 @@ _RE_INTENCAO_VENDA = re.compile(
     r")",
     re.IGNORECASE,
 )
+
+# Decisões que cruzam ranking/reputação/Ads/preço do ML → Sonnet (gestor decide).
+_RE_SONNET_ALGORITMO_ML = re.compile(
+    r"("
+    r"ruptura|guerra|"
+    r"panorama|analise_ml|sintese_ml|"
+    r"pricing|precos|repricing|"
+    r"ads_gatilho|midia_paga|"
+    r"auditor_anuncio|otimizar_listing|"
+    r"monitor_concorrentes|analise_loja|"
+    r"descoberta|inteligencia_precos|"
+    r"playbook|demanda_alta|"
+    r"acetona"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def proposito_exige_sonnet(proposito: str | None) -> bool:
+    return bool(_RE_SONNET_ALGORITMO_ML.search(proposito or ""))
+
+
+def resolver_modelo_chamada(
+    *,
+    proposito: str | None = None,
+    modelo: str | None = None,
+    forcar_modelo: bool = False,
+) -> tuple[str | None, bool]:
+    """
+    Haiku no volume; Sonnet se o propósito cruzar o algoritmo do ML.
+    Quem já passou forcar_modelo+modelo não é sobrescrito.
+    """
+    if forcar_modelo and str(modelo or "").strip():
+        return modelo, True
+    if not str(proposito or "").strip():
+        return modelo, forcar_modelo
+    rota = resolver_modelo_vendas(proposito=str(proposito))
+    if rota.get("escalou"):
+        return rota.get("modelo") or modelo, True
+    escolhido = modelo or rota.get("modelo")
+    return escolhido, False
+
 
 _CANAIS_ML = frozenset(
     {
@@ -103,11 +146,22 @@ def resolver_modelo_vendas(
         base["motivo"] = "escalonamento_desligado"
         return base
 
-    piso = float(getattr(c, "CLAUDE_ESCALONAR_RESTANTE_MIN_USD", 1.5) or 1.5)
+    piso = float(getattr(c, "CLAUDE_ESCALONAR_RESTANTE_MIN_USD", 4.0) or 4.0)
     resta = restante_orcamento_usd()
     if resta is not None and resta < piso:
         base["motivo"] = f"orcamento_baixo:{resta:.2f}<{piso:.2f}"
         return base
+
+    if proposito_exige_sonnet(proposito):
+        return {
+            "modelo": vendas,
+            "escalou": True,
+            "motivo": "complexidade_algoritmo_ml",
+            "proposito": proposito,
+            "forcar_modelo": True,
+            "restante_usd": resta,
+            "analise": analise,
+        }
 
     if analise is None:
         try:

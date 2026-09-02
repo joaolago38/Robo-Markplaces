@@ -22,7 +22,9 @@ SYSTEM_DECISAO = (
     "clara (FAZER / NÃO FAZER / OBSERVAR) com 1–2 ações no máximo. "
     "Shopee, Magalu e Amazon só depois da saúde ML (20 reviews / 4.8); "
     "não copie preço do ML para outro canal sem recalcular o piso da taxa. "
-    "Nunca invente métricas de saúde, vendas ou preços ausentes no JSON."
+    "Nunca invente métricas de saúde, vendas ou preços ausentes no JSON. "
+    "Você sugere; o gestor autoriza. Não publique anúncio, não ligue Ads, "
+    "não altere preço no ar e não troque CNPJ."
 )
 
 SYSTEM_RUPTURA = (

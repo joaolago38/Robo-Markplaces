@@ -167,6 +167,17 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             self.assertIn(cron, texto, nome)
             self.assertNotIn(f"group: {_GROUP_TOKEN}", texto, nome)
 
+    def test_politica_claude_nao_forca_haiku_barato(self):
+        """Teto US$ 22 + ECONOMICO=0: Sonnet nas decisões ML, Haiku no volume."""
+        for path in sorted(WORKFLOWS_DIR.glob("*.yml")):
+            texto = path.read_text(encoding="utf-8")
+            self.assertNotIn(
+                'CLAUDE_ECONOMICO: "1"',
+                texto,
+                f"{path.name} força Haiku em todas as chamadas",
+            )
+            self.assertNotIn("|| '8.99'", texto, f"{path.name} ainda usa teto US$ 8.99")
+
 
 if __name__ == "__main__":
     unittest.main()

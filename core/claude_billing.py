@@ -4,7 +4,7 @@ Consulta o gasto real do mês na Anthropic (Usage & Cost Admin API).
 
 O saldo pré-pago restante NÃO tem endpoint público. O custo do mês (centavos → US$)
 sim: GET /v1/organizations/cost_report. Com isso o orçamento local/Datadog deixa
-de publicar o teto CLAUDE_ORCAMENTO_USD (8.99) como se fosse crédito.
+de publicar o teto CLAUDE_ORCAMENTO_USD como se fosse crédito.
 
 Requer ANTHROPIC_ADMIN_API_KEY (sk-ant-admin…). Contas individuais sem org
 não têm Admin API — a sincronização cai no último snapshot do painel.
@@ -42,7 +42,7 @@ def resposta_indica_sem_credito(status: int, texto: str) -> bool:
 def sondar_credito_disponivel() -> dict[str, Any]:
     """
     Probe barato (Haiku, 1 token) para saber se a Anthropic ainda recusa por crédito.
-    Não usa o teto local 8.99. Nunca lança.
+    Não usa o teto local como se fosse crédito restante. Nunca lança.
     """
     from core.config import ANTHROPIC_API_KEY, CLAUDE_MODELO_RAPIDO
 

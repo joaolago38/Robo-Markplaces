@@ -1,20 +1,18 @@
 {
   "ok": true,
-  "timestamp": "2026-09-02T22:51:30.106272+00:00",
-  "pct": 50.0,
+  "timestamp": "2026-09-02T23:11:23.105457+00:00",
+  "pct": 100.0,
   "meta_pct": 99.99,
-  "atinge_meta": false,
-  "espelho_confiavel": false,
-  "checks_ok": 1,
-  "checks_total": 2,
+  "atinge_meta": true,
+  "espelho_confiavel": true,
+  "checks_ok": 40,
+  "checks_total": 40,
   "corrigidos": 0,
-  "amostra": 0,
-  "ids_busca": 0,
-  "ids_ok": 0,
-  "paging_total": 0,
+  "amostra": 38,
+  "ids_busca": 38,
+  "ids_ok": 38,
+  "paging_total": 38,
   "faltando": [],
-  "falhas": [
-    "listagem:falhou"
-  ],
+  "falhas": [],
   "motivo_listagem": ""
 }

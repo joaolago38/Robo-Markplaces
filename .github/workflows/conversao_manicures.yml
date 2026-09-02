@@ -63,7 +63,10 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
-          CLAUDE_MODELO_RAPIDO: claude-haiku-4-5
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO_RAPIDO: ${{ vars.CLAUDE_MODELO_RAPIDO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           CLAUDE_ORCAMENTO_ATIVO: "1"
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}

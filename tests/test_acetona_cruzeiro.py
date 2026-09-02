@@ -100,6 +100,18 @@ class AnaliseAcetonaCruzeiroTests(unittest.TestCase):
         self.assertIn("735.940", painel)
         self.assertIn("Bundle", painel)
 
+    @patch("agentes.esmaltes.agente_monitor_acetona_cruzeiro.perguntar_estruturado", return_value={"visao_mercado": "ok"})
+    @patch(
+        "core.claude_contexto_ml.enriquecer_contexto_claude",
+        return_value=({}, {"profundidade": "padrao", "foco_decisao": ["FAZER"], "nivel_ml": "ok"}),
+    )
+    def test_estrategias_claude_proposito_acetona(self, _enr, mock_est):
+        from agentes.esmaltes import agente_monitor_acetona_cruzeiro as ag
+
+        ag._gerar_estrategias_claude({"ok": True}, {"mei": 1}, [])
+        self.assertEqual(mock_est.call_args.kwargs.get("proposito"), "acetona_cruzeiro")
+        self.assertNotIn("modelo", mock_est.call_args.kwargs)
+
     @patch("agentes.esmaltes.agente_monitor_acetona_cruzeiro._gerar_estrategias_claude")
     @patch("agentes.esmaltes.agente_monitor_acetona_cruzeiro._monitorar_item")
     @patch("agentes.esmaltes.agente_monitor_acetona_cruzeiro._carregar_itens")

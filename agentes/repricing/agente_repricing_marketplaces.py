@@ -231,7 +231,14 @@ def _gerar_nota_concorrencia(
         "(ex.: concorrente sem frete grátis e baixo volume — considere manter preço). "
         "Não altere nem recomende bloquear o ajuste — apenas informe."
     )
-    nota = sintetizar_claude(prompt, contexto, fallback, max_tokens=80)
+    nota = sintetizar_claude(
+        prompt,
+        contexto,
+        fallback,
+        max_tokens=80,
+        proposito="repricing",
+        origem="repricing.nota_concorrencia",
+    )
     return (nota or "")[:200] or None
 
 
