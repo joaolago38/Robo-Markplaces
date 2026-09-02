@@ -1,22 +1,35 @@
 {
-  "timestamp": "2026-08-21T19:44:13.388929+00:00",
+  "timestamp": "2026-09-02T21:35:09.541517+00:00",
   "diagnostico": {
     "ativo": true,
     "fonte": "superbid",
-    "leiloes_ok": 0,
-    "leiloes_falha": 1,
-    "lotes_veiculo": 0,
-    "modo_coleta": "ddg",
+    "leiloes_ok": 1,
+    "leiloes_falha": 0,
+    "lotes_veiculo": 1,
+    "modo_coleta": "direto",
     "erro": null,
     "lotes_com_documento": 0,
-    "lotes_sem_documento": 0,
+    "lotes_sem_documento": 1,
     "lance_minimo_brl": 500.0
   },
-  "lotes": [],
+  "lotes": [
+    {
+      "hash": "7b9bfaaaadfd2de4",
+      "titulo": "chevrolet-785921",
+      "url": "https://www.superbid.net/evento/chevrolet-785921",
+      "lance_brl": null,
+      "lance_lista_brl": null,
+      "tem_documento": false,
+      "comitente": "Superbid",
+      "tipo_comitente": "leiloeiro",
+      "fonte": "html",
+      "abaixo_lance_minimo": false
+    }
+  ],
   "resultado": {
     "leiloes_encontrados": 1,
-    "leiloes_coletados_ok": 0,
-    "modo_coleta": "ddg",
-    "lotes_veiculo_documento": 0
+    "leiloes_coletados_ok": 1,
+    "modo_coleta": "direto",
+    "lotes_veiculo_documento": 1
   }
 }

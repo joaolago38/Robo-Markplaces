@@ -594,16 +594,27 @@
       "usd_brl": 5.18,
       "fonte": "fallback",
       "consultado_em": "2026-08-20T11:13:18.983808+00:00"
+    },
+    {
+      "usd_brl": 5.0952,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-02T21:35:08.567176+00:00"
+    },
+    {
+      "usd_brl": 5.0952,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-02T21:35:08.652221+00:00"
     }
   ],
   "ultima": {
     "ok": true,
-    "usd_brl": 5.18,
-    "fonte": "fallback",
-    "variacao_pct": null,
-    "consultado_em": "2026-08-20T11:13:18.983808+00:00",
-    "idade_seg": 117037,
-    "confiavel": false,
-    "aviso": "API de câmbio indisponível — usando último valor ou padrão"
+    "usd_brl": 5.0952,
+    "fonte": "awesomeapi",
+    "variacao_pct": -1.138946,
+    "consultado_em": "2026-09-02T21:35:08.652221+00:00",
+    "idade_seg": 0,
+    "confiavel": true,
+    "alta": "5.168",
+    "baixa": "5.0877"
   }
 }
