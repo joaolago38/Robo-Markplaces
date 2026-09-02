@@ -136,6 +136,23 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             self.assertIn("modo: restore", texto, nome)
             self.assertIn("modo: save", texto, nome)
 
+    def test_nenhum_step_tem_with_duplicado(self):
+        """Dois `with:` no mesmo step quebram o workflow em 0s (sem job)."""
+        import re
+
+        for path in sorted(WORKFLOWS_DIR.glob("*.yml")):
+            with_count = 0
+            for i, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if re.match(r"^      - ", raw):
+                    with_count = 0
+                elif re.match(r"^        with:", raw):
+                    with_count += 1
+                    self.assertLessEqual(
+                        with_count,
+                        1,
+                        f"{path.name}:{i} tem `with:` duplicado no mesmo step",
+                    )
+
     def test_agentes_pesados_tem_cron_proprio(self):
         esperados = {
             "inteligencia_precos.yml": "20 */2 * * *",
