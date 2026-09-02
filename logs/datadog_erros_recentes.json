@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "5b3e3ad32aa0d6ed8be2",
+      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
+      "ultima_vez": "2026-09-02T22:49:16.097962+00:00",
+      "logger": "telegram_gate",
+      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 36
+    },
+    {
       "fingerprint": "00741e254c2078712423",
       "primeira_vez": "2026-07-14T11:45:30.521735+00:00",
       "ultima_vez": "2026-09-02T20:58:13.882250+00:00",
@@ -142,17 +153,6 @@
       "error_kind": "SSLError",
       "error_message": "HTTPSConnectionPool(host='api.mercadolibre.com', port=443): Max retries exceeded with url: /items?ids=MLB3607560029%2CMLB3948390421%2CMLB5162302300%2CMLB5192919860%2CMLB6012346870 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to g",
       "ocorrencias": 1
-    },
-    {
-      "fingerprint": "5b3e3ad32aa0d6ed8be2",
-      "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-08-19T17:11:53.577100+00:00",
-      "logger": "telegram_gate",
-      "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 35
     },
     {
       "fingerprint": "756da4368769a7f0c621",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-09-02T20:58:13.882250+00:00"
+  "atualizado_em": "2026-09-02T22:49:16.097962+00:00"
 }
