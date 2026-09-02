@@ -29,6 +29,8 @@ TOGGLE_PATH = ROOT / "logs" / "claude_toggle.json"
 POR_SALDO = "saldo"
 MOTIVO_SEM_CREDITO = "sem_credito"
 MOTIVO_SALDO_OK = "saldo_ok"
+MOTIVO_ECONOMIA_CREDITOS = "economia_creditos"
+_MOTIVOS_SALDO = (MOTIVO_SEM_CREDITO, MOTIVO_SALDO_OK, MOTIVO_ECONOMIA_CREDITOS, "economia")
 
 
 def _cfg_env_ativo() -> bool:
@@ -40,7 +42,7 @@ def _cfg_env_ativo() -> bool:
 def _gerido_por_saldo(data: dict[str, Any]) -> bool:
     por = str(data.get("atualizado_por") or "")
     motivo = str(data.get("motivo") or "")
-    return por == POR_SALDO or motivo in (MOTIVO_SEM_CREDITO, MOTIVO_SALDO_OK)
+    return por == POR_SALDO or motivo in _MOTIVOS_SALDO
 
 
 def estado_toggle() -> dict[str, Any]:

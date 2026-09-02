@@ -37,6 +37,32 @@ logger = logging.getLogger("agente_consumo_claude")
 SNAPSHOT_PATH = ROOT / "logs" / "consumo_claude_ultima.json"
 
 
+def _religar_claude_se_houver_credito(r: dict[str, Any]) -> None:
+    """Com restante ≥ US$2, tira pausa de saldo/economia (não desfaz pausa_manual)."""
+    restante = float(r.get("restante_usd") or 0)
+    if restante < 2.0:
+        return
+    try:
+        from core.claude_toggle import definir_ativo, estado_toggle, reativar_por_saldo
+
+        st = estado_toggle()
+        if st.get("ativo"):
+            return
+        reativar_por_saldo()
+        st2 = estado_toggle()
+        if st2.get("ativo"):
+            logger.info("Claude religado (restante US$ %.2f)", restante)
+            return
+        motivo = str(st.get("arquivo_motivo") or st.get("motivo") or "")
+        if motivo in ("pausa_manual", "fora_de_horario"):
+            logger.info("Claude pausado (%s) — não religo só por crédito", motivo)
+            return
+        definir_ativo(True, motivo="saldo_ok", atualizado_por="saldo")
+        logger.info("Claude religado (restante US$ %.2f, era %s)", restante, motivo)
+    except Exception:
+        logger.debug("religar Claude por crédito falhou", exc_info=True)
+
+
 def executar(
     *,
     enviar_alerta: bool = True,
@@ -54,6 +80,11 @@ def executar(
                         "Claude Datadog alinhado à Cost API restante=US$ %s",
                         (sync.get("resumo") or {}).get("restante_usd"),
                     )
+                elif sync.get("ancora_env"):
+                    logger.info(
+                        "Claude Datadog ancorado no console (env) restante=US$ %s",
+                        (sync.get("resumo") or {}).get("restante_usd"),
+                    )
                 else:
                     logger.info(
                         "Claude Datadog sem Cost API (%s) — usando snapshot do painel",
@@ -64,6 +95,7 @@ def executar(
             talvez_sondar_saldo()
         except Exception:
             logger.debug("sonda saldo no painel Claude falhou", exc_info=True)
+        _religar_claude_se_houver_credito(r)
         graficos = gerar_graficos_consumo(r)
         ranking = graficos.get("ranking") or ranking_consumo_por_agente(r)
         msg = montar_mensagem_telegram(r, titulo="Claude — orçamento + assertividade")

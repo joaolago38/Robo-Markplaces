@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-08-21T19:41:51.172576+00:00",
+  "timestamp": "2026-09-02T21:24:57.516854+00:00",
   "ok": false,
   "falhas": 1,
   "pulados": 0,
-  "total": 1,
+  "total": 2,
   "agentes_falha": [
     {
-      "id": "lento",
-      "nome": "lento",
-      "erro": "timeout 1s"
+      "id": "a2",
+      "nome": "a2",
+      "erro": "ok"
     }
   ]
 }

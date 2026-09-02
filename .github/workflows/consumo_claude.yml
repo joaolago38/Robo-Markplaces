@@ -57,13 +57,18 @@ jobs:
           CLAUDE_ECONOMICO: "1"
           CLAUDE_MODELO: claude-haiku-4-5
           CLAUDE_MODELO_RAPIDO: claude-haiku-4-5
-          CLAUDE_ORCAMENTO_USD: "8.99"
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '8.99' }}
+          CLAUDE_SALDO_CONSOLE_USD: ${{ vars.CLAUDE_SALDO_CONSOLE_USD }}
           CLAUDE_ORCAMENTO_ATIVO: "1"
           CLAUDE_ORCAMENTO_ALERTA: "1"
           CLAUDE_ORCAMENTO_ALERTA_TODAS: "1"
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Ligar Claude no cache
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: python scripts/toggle_claude.py on --motivo saldo_ok --por consumo_claude
       - name: Publicar orçamento Claude
         if: always()
         continue-on-error: true

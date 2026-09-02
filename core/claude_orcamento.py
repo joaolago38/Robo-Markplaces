@@ -2,7 +2,7 @@
 core/claude_orcamento.py
 Orçamento local Claude (tokens → US$) + hard stop + alertas Telegram.
 
-Saldo real: Cost Admin API (gasto do mês) + último snapshot do painel.
+Saldo real: semente CLAUDE_SALDO_CONSOLE_USD + Cost Admin API (gasto do mês).
 Sem Admin key o Datadog publica o snapshot (não o teto CLAUDE_ORCAMENTO_USD).
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ MAX_EVENTOS = 200
 MAX_HIST_PONTOS = 60
 _FONTES_CONSOLE = ("console_painel", "console_api")
 _FONTES_SALDO_EXTERNO = ("console_painel", "console_api", "api_probe")
-_FONTES_REATIVA_TOGGLE = ("console_painel", "api_probe")
+_FONTES_REATIVA_TOGGLE = ("console_painel", "console_api", "api_probe")
 _SONDA_INTERVALO_SEG = 1800
 _PISO_PROBE_USD = 0.01
 
@@ -179,8 +179,9 @@ def carregar_estado() -> dict[str, Any]:
     base = _estado_vazio()
     base.update(data)
     c = _cfg()
-    # Saldo do painel/API Anthropic prevalece sobre CLAUDE_ORCAMENTO_USD do .env
-    if str(base.get("fonte_saldo") or "") not in _FONTES_SALDO_EXTERNO:
+    # Snapshot do painel/API prevalece sobre CLAUDE_ORCAMENTO_USD (teto 8.99).
+    tem_snapshot = base.get("saldo_console_usd") is not None
+    if str(base.get("fonte_saldo") or "") not in _FONTES_SALDO_EXTERNO and not tem_snapshot:
         base["orcamento_usd"] = float(
             getattr(c, "CLAUDE_ORCAMENTO_USD", base["orcamento_usd"]) or 8.99
         )
@@ -708,6 +709,7 @@ def aplicar_saldo_console(
     limite_mes_usd: float | None = None,
     emitir_datadog: bool = True,
     fonte_saldo: str = "console_painel",
+    marcar_env_usd: float | None = None,
 ) -> dict[str, Any]:
     """
     Alinha o orçamento local ao saldo do painel ou da Cost API.
@@ -740,6 +742,8 @@ def aplicar_saldo_console(
             estado["prompt_cache_ativo"] = bool(prompt_cache_ativo)
         if limite_mes_usd is not None:
             estado["limite_mes_console_usd"] = float(limite_mes_usd)
+        if marcar_env_usd is not None:
+            estado["saldo_env_aplicado_usd"] = round(float(marcar_env_usd), 4)
         estado["saldo_sincronizado_em"] = datetime.now(timezone.utc).isoformat()
         estado["atualizado_em"] = estado["saldo_sincronizado_em"]
         return estado
@@ -793,21 +797,73 @@ def marcar_saldo_zerado_console(*, motivo: str = "api_credit_too_low") -> dict[s
     return aplicar_saldo_console(0.0, emitir_datadog=True, fonte_saldo="console_api")
 
 
+def ler_saldo_console_env() -> float | None:
+    """Saldo restante informado no env (GitHub var / .env). None se vazio."""
+    raw = (os.getenv("CLAUDE_SALDO_CONSOLE_USD") or "").strip().replace(",", ".")
+    if not raw:
+        return None
+    try:
+        valor = float(raw)
+    except ValueError:
+        return None
+    if valor < 0:
+        return None
+    return round(valor, 4)
+
+
+def ancorar_saldo_env_se_mudou(*, gasto_mes_usd: float | None = None) -> bool:
+    """
+    Aplica CLAUDE_SALDO_CONSOLE_USD só quando o valor muda.
+    Recarregar o mesmo 5.00 não reseta o restante depois do gasto local/API.
+    """
+    seed = ler_saldo_console_env()
+    if seed is None:
+        return False
+    e = carregar_estado()
+    aplicado = e.get("saldo_env_aplicado_usd")
+    try:
+        aplicado_f = float(aplicado) if aplicado is not None else None
+    except (TypeError, ValueError):
+        aplicado_f = None
+    if aplicado_f is not None and abs(aplicado_f - seed) < 0.005:
+        return False
+    gasto = gasto_mes_usd
+    if gasto is None:
+        g = e.get("gasto_mes_console_usd")
+        gasto = float(g) if g is not None else 0.0
+    aplicar_saldo_console(
+        seed,
+        gasto_mes_usd=gasto,
+        emitir_datadog=False,
+        fonte_saldo="console_painel",
+        marcar_env_usd=seed,
+    )
+    logger.info(
+        "Claude: âncora de saldo console US$ %.2f (CLAUDE_SALDO_CONSOLE_USD)",
+        seed,
+    )
+    return True
+
+
 def sincronizar_saldo_real(*, emitir_datadog: bool = True) -> dict[str, Any]:
     """
     Puxa o gasto do mês na Cost API e republica restante/consumido no Datadog.
-    Sem Admin key: não inventa 8.99 — `resumo()` já usa o snapshot do painel.
+    Sem Admin key: não inventa 8.99 — usa snapshot / âncora do env.
     """
+    consulta: dict[str, Any] = {"ok": False, "motivo": "consulta_falhou"}
     try:
         from core.claude_billing import consultar_custo_mes_console
 
         consulta = consultar_custo_mes_console()
     except Exception as exc:
         logger.warning("sync saldo Claude falhou: %s", exc)
-        r = resumo()
-        if emitir_datadog:
-            emitir_metricas_claude_datadog(r)
-        return {"ok": False, "motivo": type(exc).__name__, "resumo": r}
+        consulta = {"ok": False, "motivo": type(exc).__name__}
+
+    gasto_api: float | None = None
+    if consulta.get("ok"):
+        gasto_api = float(consulta.get("gasto_mes_usd") or 0)
+
+    ancora_env = ancorar_saldo_env_se_mudou(gasto_mes_usd=gasto_api)
 
     if not consulta.get("ok"):
         r = resumo()
@@ -816,17 +872,29 @@ def sincronizar_saldo_real(*, emitir_datadog: bool = True) -> dict[str, Any]:
         return {
             "ok": False,
             "motivo": consulta.get("motivo") or "consulta_falhou",
+            "ancora_env": ancora_env,
             "resumo": r,
         }
 
-    gasto = float(consulta.get("gasto_mes_usd") or 0)
+    gasto = float(gasto_api or 0)
     estado = carregar_estado()
     saldo = estado.get("saldo_console_usd")
     gasto_ant = estado.get("gasto_mes_console_usd")
-    if saldo is not None and gasto_ant is not None:
+    if saldo is None:
+        r = resumo()
+        if emitir_datadog:
+            emitir_metricas_claude_datadog(r)
+        return {
+            "ok": False,
+            "motivo": "sem_snapshot_console",
+            "ancora_env": ancora_env,
+            "gasto_mes_usd": gasto,
+            "resumo": r,
+        }
+    if gasto_ant is not None:
         pack = float(saldo) + float(gasto_ant)
     else:
-        pack = float(getattr(_cfg(), "CLAUDE_ORCAMENTO_USD", 0) or 0)
+        pack = float(saldo) + gasto
     creditos = max(0.0, round(pack - gasto, 6))
     r = aplicar_saldo_console(
         creditos,
@@ -844,6 +912,7 @@ def sincronizar_saldo_real(*, emitir_datadog: bool = True) -> dict[str, Any]:
         "fonte": "console_api",
         "creditos_usd": creditos,
         "gasto_mes_usd": gasto,
+        "ancora_env": ancora_env,
         "resumo": r,
     }
 
