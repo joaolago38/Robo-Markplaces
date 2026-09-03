@@ -44,6 +44,8 @@ _WORKFLOWS_FILA_PROPRIA = (
     "monitor_sem_venda_ml.yml",
     "monitor_ml.yml",
     "monitor_concorrentes_ml.yml",
+    "monitor_buybox.yml",
+    "playbook_ml_operacao.yml",
     "monitor_mercado_esmaltes.yml",
 )
 
@@ -158,6 +160,8 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             "inteligencia_precos.yml": "20 */2 * * *",
             "monitor_ml.yml": "15 */2 * * *",
             "monitor_concorrentes_ml.yml": "30 */4 * * *",
+            "monitor_buybox.yml": "0 */2 * * *",
+            "playbook_ml_operacao.yml": "0 11 * * *",
             "monitor_sem_venda_ml.yml": "0 13 * * *",
             "monitor_mercado_esmaltes.yml": "0 12 * * *",
         }

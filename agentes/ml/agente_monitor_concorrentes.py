@@ -10,17 +10,31 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+from core.atomic_io import escrever_json_atomico
 from core.config import (
     MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO,
     MONITOR_CONCORRENTES_ARQUIVO,
     MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT,
     ROOT,
 )
-from core.datadog_metrics import gauge, incrementar
+from core.datadog_metrics import gauge, incrementar, tag_produto
 from core.notificador import alertar_gestor
 from integracoes.ml import ml_client
+from integracoes.ml.analise_anuncio_concorrente import (
+    calcular_margem_real,
+    emitir_metricas_margem_real,
+)
+from integracoes.ml.agrupador_reclamacoes import (
+    agrupar_padroes_reclamacao,
+    emitir_metricas_reclamacao,
+)
+from integracoes.ml.coleta_avaliacoes import buscar_avaliacoes_item, buscar_perguntas_item
+from integracoes.ml.coleta_demanda_ml import calcular_tendencia_demanda, registrar_snapshot_demanda
+from integracoes.ml.contexto_playbook_operacao import LACUNAS_PATH
 
 logger = logging.getLogger("agente_monitor_concorrentes")
+
+_MAX_ITENS_TEXTO_AVALIACAO = 2
 
 HISTORY_PATH = ROOT / "logs" / "concorrentes_ml_history.json"
 
@@ -61,6 +75,146 @@ def _salvar_historico(historico: dict[str, Any]) -> None:
         tmp.replace(HISTORY_PATH)
     except Exception as exc:
         logger.error("Erro ao salvar histórico: %s", exc)
+
+
+def _custo_unitario_entrada(entrada: dict) -> float | None:
+    if "custo_unitario" not in (entrada or {}):
+        return None
+    raw = entrada.get("custo_unitario")
+    if raw is None or raw == "":
+        return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _aplicar_lacunas_monitor(
+    entrada: dict,
+    anuncios: list[dict[str, Any]],
+    *,
+    termo: str,
+    meu_preco: float,
+) -> dict[str, Any]:
+    """
+    Texto de reviews/perguntas, padrões de reclamação, tendência de demanda
+    e margem real (CMV do JSON). Nunca lança.
+    """
+    vazio: dict[str, Any] = {
+        "avaliacoes_texto": [],
+        "perguntas": [],
+        "padroes_reclamacao": [],
+        "tendencia_demanda": {
+            "tendencia": "indeterminado",
+            "motivo": "historico insuficiente",
+        },
+        "margem_real": calcular_margem_real(meu_preco, None),
+    }
+    try:
+        custo = _custo_unitario_entrada(entrada)
+        vazio["margem_real"] = calcular_margem_real(meu_preco, custo)
+        avaliacoes: list[dict[str, Any]] = []
+        perguntas: list[dict[str, Any]] = []
+        vistos: set[str] = set()
+        for prod in anuncios or []:
+            if not isinstance(prod, dict):
+                continue
+            iid = str(prod.get("item_id") or prod.get("id") or "").strip().upper()
+            if not iid or iid in vistos:
+                continue
+            vistos.add(iid)
+            avaliacoes.extend(buscar_avaliacoes_item(iid, limite=20))
+            perguntas.extend(buscar_perguntas_item(iid, limite=20))
+            if len(vistos) >= _MAX_ITENS_TEXTO_AVALIACAO:
+                break
+        padroes = agrupar_padroes_reclamacao(avaliacoes, perguntas)
+        eid = str(entrada.get("id") or "").strip()
+        tags_prod = []
+        tp = tag_produto(eid or termo)
+        if tp:
+            tags_prod.append(tp)
+        emitir_metricas_reclamacao(padroes, tags=tags_prod)
+        emitir_metricas_margem_real(vazio["margem_real"], tags=tags_prod)
+        gauge("ml.reviews.n", float(len(avaliacoes)), tags=tags_prod)
+        gauge("ml.perguntas.n", float(len(perguntas)), tags=tags_prod)
+        if termo:
+            registrar_snapshot_demanda(termo, anuncios)
+            tendencia = calcular_tendencia_demanda(termo, dias=14, produto_id=eid)
+        else:
+            tendencia = vazio["tendencia_demanda"]
+        return {
+            "avaliacoes_texto": avaliacoes,
+            "perguntas": perguntas,
+            "padroes_reclamacao": padroes,
+            "tendencia_demanda": tendencia,
+            "margem_real": vazio["margem_real"],
+        }
+    except Exception as exc:
+        logger.warning("lacunas monitor: %s", exc)
+        return vazio
+
+
+def _anexar_lacunas_hist(bloco: dict[str, Any], lacunas: dict[str, Any]) -> None:
+    bloco["tendencia_demanda"] = lacunas.get("tendencia_demanda")
+    bloco["padroes_reclamacao"] = lacunas.get("padroes_reclamacao")
+    bloco["margem_real"] = lacunas.get("margem_real")
+
+
+def _persistir_lacunas_ciclo(resultados: list[dict[str, Any]]) -> None:
+    try:
+        itens = []
+        for r in resultados:
+            if not isinstance(r, dict) or not r.get("ok"):
+                continue
+            itens.append(
+                {
+                    "id": r.get("id"),
+                    "nome": r.get("nome"),
+                    "termo_busca": r.get("termo_busca"),
+                    "tendencia_demanda": r.get("tendencia_demanda"),
+                    "padroes_reclamacao": r.get("padroes_reclamacao") or [],
+                    "margem_real": r.get("margem_real"),
+                    "n_avaliacoes_texto": len(r.get("avaliacoes_texto") or []),
+                    "n_perguntas": len(r.get("perguntas") or []),
+                }
+            )
+        escrever_json_atomico(
+            LACUNAS_PATH,
+            {"timestamp": datetime.now(timezone.utc).isoformat(), "itens": itens},
+        )
+    except Exception as exc:
+        logger.warning("persistir lacunas: %s", exc)
+
+
+def _linhas_telegram_lacunas(resultados: list[dict[str, Any]]) -> list[str]:
+    linhas: list[str] = []
+    for r in resultados:
+        if not isinstance(r, dict) or not r.get("ok"):
+            continue
+        nome = str(r.get("nome") or r.get("id") or "?")
+        tend = r.get("tendencia_demanda") if isinstance(r.get("tendencia_demanda"), dict) else {}
+        tid = str(tend.get("tendencia") or "")
+        if tid in {"alta", "queda"}:
+            conf = tend.get("confiabilidade") or "n/d"
+            var = tend.get("variacao_pct")
+            linhas.append(
+                f"{nome}: demanda {tid} ({var}% em 14d, confiabilidade {conf})"
+            )
+        padroes = r.get("padroes_reclamacao") or []
+        if padroes:
+            top = ", ".join(
+                f"{p.get('padrao')}×{p.get('frequencia')}"
+                for p in padroes[:3]
+                if isinstance(p, dict)
+            )
+            if top:
+                linhas.append(f"{nome}: reclamações {top} (palavra-chave, revisar)")
+        margem = r.get("margem_real") if isinstance(r.get("margem_real"), dict) else {}
+        if margem.get("margem_disponivel"):
+            linhas.append(
+                f"{nome}: margem real R$ {margem.get('margem_rs')} ({margem.get('margem_pct')}%)"
+            )
+    return linhas[:12]
 
 
 def _pct_variacao(anterior: float, atual: float) -> float:
@@ -339,6 +493,10 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     leituras_ant.append(
         {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
     )
+    termo_loja = ""
+    if isinstance(termos, list) and termos:
+        termo_loja = str(termos[0] or "")
+    lacunas = _aplicar_lacunas_monitor(entrada, anuncios, termo=termo_loja, meu_preco=meu_preco)
     historico[eid] = {
         "menor_preco": menor if menor > 0 else menor_ant,
         "meu_preco": meu_preco,
@@ -352,6 +510,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         "leituras": leituras_ant[-5:],
         "perfil": analise.get("perfil"),
     }
+    _anexar_lacunas_hist(historico[eid], lacunas)
 
     _tags = [
         f"produto:{eid}",
@@ -367,7 +526,7 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
     if alertas:
         incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
 
-    return {
+    payload = {
         "id": eid,
         "ok": True,
         "tipo": "loja",
@@ -385,6 +544,8 @@ def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
         "amostra_cega": amostra_cega,
         "item_ids": ids_achados,
     }
+    payload.update(lacunas)
+    return payload
 
 
 def _monitorar_item_watchlist(
@@ -514,6 +675,13 @@ def _monitorar_item_watchlist(
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
         "leituras": leituras_ant[-5:],
     }
+    lacunas = _aplicar_lacunas_monitor(
+        entrada,
+        [{"item_id": watch_id, "preco": preco, "avaliacoes": avaliacoes}],
+        termo=str(entrada.get("termo_busca") or watch_id),
+        meu_preco=meu_preco,
+    )
+    _anexar_lacunas_hist(historico[eid], lacunas)
 
     _tags = [
         f"produto:{eid}",
@@ -527,7 +695,7 @@ def _monitorar_item_watchlist(
     if alertas:
         incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
 
-    return {
+    payload = {
         "id": eid,
         "ok": True,
         "tipo": "item",
@@ -545,6 +713,8 @@ def _monitorar_item_watchlist(
         "alertas": alertas,
         "permalink": pub.get("permalink"),
     }
+    payload.update(lacunas)
+    return payload
 
 
 def _monitorar_entrada(
@@ -634,6 +804,7 @@ def _monitorar_entrada(
     leituras_ant.append(
         {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
     )
+    lacunas = _aplicar_lacunas_monitor(entrada, concorrentes, termo=termo, meu_preco=meu_preco)
     historico[eid] = {
         "menor_preco": menor if menor > 0 else menor_ant,
         "meu_preco": meu_preco,
@@ -644,6 +815,7 @@ def _monitorar_entrada(
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
         "leituras": leituras_ant[-5:],
     }
+    _anexar_lacunas_hist(historico[eid], lacunas)
 
     # ── Datadog ──────────────────────────────────────────────────────────
     # tag `produto` usa o `id` do JSON (ex.: "kit3-mimo-carmed") para
@@ -666,7 +838,7 @@ def _monitorar_entrada(
         incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
     # ─────────────────────────────────────────────────────────────────────
 
-    return {
+    payload = {
         "id": eid,
         "ok": True,
         "tipo": "termo",
@@ -683,6 +855,8 @@ def _monitorar_entrada(
         "amostra_cega": amostra_cega,
         "item_ids": ids_achados,
     }
+    payload.update(lacunas)
+    return payload
 
 
 def executar(
@@ -707,6 +881,7 @@ def executar(
             alertas_todos.extend(resultado.get("alertas") or [])
 
         _salvar_historico(historico)
+        _persistir_lacunas_ciclo(resultados)
 
         amostra: list[dict[str, Any]] = []
         for r in resultados:
@@ -733,7 +908,8 @@ def executar(
             logger.warning("novos kits Impala apos concorrentes: %s", exc)
 
         enviado = False
-        if enviar_alerta and alertas_todos:
+        linhas_lacunas = _linhas_telegram_lacunas(resultados)
+        if enviar_alerta and (alertas_todos or linhas_lacunas):
             from core.telegram_explicacao import cabecalho_agente
 
             watch = [a for a in alertas_todos if "[watchlist]" in a]
@@ -749,6 +925,11 @@ def executar(
             if demais:
                 blocos.append("*Radar por termo / loja*")
                 blocos.extend(f"• {a}" for a in demais)
+            if linhas_lacunas:
+                if demais or watch:
+                    blocos.append("")
+                blocos.append("*Demanda / reclamações / margem (dado do robô, não JoomPulse)*")
+                blocos.extend(f"• {a}" for a in linhas_lacunas)
             msg = "\n".join(blocos).strip()
             enviado = bool(alertar_gestor(msg, agente_id="monitor_concorrentes"))
 

@@ -1,0 +1,70 @@
+name: Playbooks ML operacao
+
+# Demanda, rival, reclamação, faixas de preço e panorama — JSON do robô.
+# Copy, vídeo, branding e FAQ continuam no CLI: --playbook seo_titulo (etc).
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 08:00 BRT (UTC-3) = 11:00 UTC — depois do relatório manhã
+    - cron: "0 11 * * *"
+
+concurrency:
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  CLAUDE_ATIVO: "1"
+
+jobs:
+  playbooks:
+    name: Lote operacional Claude x ML
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar historicos de mercado
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/concorrentes_ml_history.json
+            logs/demanda_historico.json
+            logs/buybox_history.json
+            logs/lacunas_ml_ultima.json
+          key: playbook-ml-${{ github.run_id }}
+          restore-keys: |
+            playbook-ml-
+            concorrentes-ml-
+            buybox-ml-
+      - name: Rodar lote de playbooks
+        run: python -m agentes.ml.agente_playbook_claude --lote
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: playbook-ml-lote
+          path: logs/playbook_claude_lote_ultima.json
+          retention-days: 30

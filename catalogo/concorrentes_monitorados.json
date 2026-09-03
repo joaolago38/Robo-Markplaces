@@ -6,6 +6,8 @@
     "termo_busca": "kit 3 esmaltes impala mimo carmed",
     "sku": "IMP-MIMO-003",
     "meu_preco": 44.90,
+    "custo_unitario": 28.13,
+    "catalog_product_id": "MLB41490081",
     "limite_resultados": 20
   },
   {
@@ -15,6 +17,7 @@
     "termo_busca": "kit 4 esmaltes impala perolado",
     "sku": "IMP-PERL-004",
     "meu_preco": 39.90,
+    "custo_unitario": 26.23,
     "limite_resultados": 20
   },
   {
@@ -24,6 +27,7 @@
     "termo_busca": "kit 6 esmaltes impala ju paes",
     "sku": "IMP-JUPAES-006",
     "meu_preco": 64.90,
+    "custo_unitario": 41.42,
     "limite_resultados": 15
   },
   {

@@ -195,6 +195,52 @@ class ColetaDemandaMlTests(unittest.TestCase):
         self.assertTrue(any("Rivais" in linha for linha in linhas))
         self.assertTrue(any("50" in linha for linha in linhas))
 
+    def test_tendencia_historico_insuficiente(self):
+        with patch.object(cd, "ler_json", return_value={}):
+            out = cd.calcular_tendencia_demanda("kit impala", dias=14)
+        self.assertEqual(out["tendencia"], "indeterminado")
+        self.assertEqual(out["motivo"], "historico insuficiente")
+
+    def test_tendencia_alta_baixa_confiabilidade(self):
+        snaps = [
+            {"timestamp": "2026-08-25T00:00:00+00:00", "soma_avaliacoes_visiveis": 10},
+            {"timestamp": "2026-09-01T00:00:00+00:00", "soma_avaliacoes_visiveis": 15},
+        ]
+        with patch.object(cd, "ler_json", return_value={"kit": {"snapshots": snaps}}):
+            with patch.object(cd, "emitir_metricas_tendencia_demanda") as mock_e:
+                out = cd.calcular_tendencia_demanda("kit", dias=14, produto_id="IMP-MIMO-003")
+        self.assertEqual(out["tendencia"], "alta")
+        self.assertEqual(out["variacao_pct"], 50.0)
+        self.assertEqual(out["confiabilidade"], "baixa")
+        mock_e.assert_called_once()
+        self.assertEqual(mock_e.call_args.kwargs.get("produto_id"), "IMP-MIMO-003")
+
+    def test_emitir_metricas_tendencia_demanda(self):
+        with patch("integracoes.ml.coleta_demanda_ml.gauge") as mock_g:
+            cd.emitir_metricas_tendencia_demanda(
+                "kit impala",
+                {"tendencia": "queda", "variacao_pct": -12.5, "confiabilidade": "media"},
+                produto_id="IMP-MIMO-003",
+            )
+        nomes = [c.args[0] for c in mock_g.call_args_list]
+        self.assertIn("demanda.tendencia", nomes)
+        self.assertIn("demanda.variacao_pct", nomes)
+        tags = mock_g.call_args_list[0].kwargs["tags"]
+        self.assertIn("produto:imp-mimo-003", tags)
+
+    def test_registrar_snapshot_demanda(self):
+        produtos = [
+            {"preco": 10, "avaliacoes": 2},
+            {"preco": 30, "metricas": {"avaliacoes": 1}},
+        ]
+        with patch.object(cd, "ler_json", return_value={}):
+            with patch.object(cd, "escrever_json_atomico") as mock_w:
+                snap = cd.registrar_snapshot_demanda("kit x", produtos)
+        self.assertEqual(snap["total_resultados"], 2)
+        self.assertEqual(snap["preco_medio"], 20.0)
+        self.assertEqual(snap["soma_avaliacoes_visiveis"], 3)
+        mock_w.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

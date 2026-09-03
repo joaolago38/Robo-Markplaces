@@ -11,10 +11,15 @@ import re
 from collections import defaultdict
 from typing import Any
 
-from core.datadog_metrics import gauge
+from core.atomic_io import escrever_json_atomico, ler_json
+from core.config import ROOT
+from core.datadog_metrics import gauge, tag_produto
 from integracoes.ml import ml_client
 
 logger = logging.getLogger("coleta_demanda_ml")
+
+DEMANDA_HIST_PATH = ROOT / "logs" / "demanda_historico.json"
+_MAX_DEMAND_SNAPS = 400
 
 
 def _i(val: Any, default: int = 0) -> int:
@@ -468,3 +473,183 @@ def emitir_metricas_demanda(
             emitir_petg_funil(float(unidades))
     except Exception as exc:
         logger.debug("progresso petg: %s", exc)
+
+
+_TENDENCIA_NUM = {"alta": 1.0, "estavel": 0.0, "queda": -1.0}
+
+
+def emitir_metricas_tendencia_demanda(
+    termo: str,
+    out: dict[str, Any],
+    *,
+    produto_id: str = "",
+) -> None:
+    """Gauges robo.demanda.* (não confundir com ml_tendencias_importacao)."""
+    tag = tag_produto(produto_id or termo)
+    tags = [tag] if tag else []
+    bloco = out if isinstance(out, dict) else {}
+    tendencia = str(bloco.get("tendencia") or "")
+    hist_ok = 1.0 if tendencia in _TENDENCIA_NUM else 0.0
+    gauge("demanda.historico_ok", hist_ok, tags=tags)
+    if not hist_ok:
+        return
+    gauge("demanda.tendencia", _TENDENCIA_NUM[tendencia], tags=tags)
+    var = bloco.get("variacao_pct")
+    if var is not None:
+        try:
+            gauge("demanda.variacao_pct", float(var), tags=tags)
+        except (TypeError, ValueError):
+            pass
+    conf = str(bloco.get("confiabilidade") or "")
+    if conf == "alta":
+        conf_n = 1.0
+    elif conf == "media":
+        conf_n = 0.5
+    else:
+        conf_n = 0.0
+    gauge("demanda.confiavel", conf_n, tags=tags)
+
+
+def _preco_medio_produtos(produtos: list[dict[str, Any]]) -> float | None:
+    precos: list[float] = []
+    for prod in produtos or []:
+        if not isinstance(prod, dict):
+            continue
+        try:
+            p = float(prod.get("preco") or prod.get("price") or 0)
+        except (TypeError, ValueError):
+            continue
+        if p > 0:
+            precos.append(p)
+    if not precos:
+        return None
+    return round(sum(precos) / len(precos), 2)
+
+
+def _soma_avaliacoes_visiveis(produtos: list[dict[str, Any]]) -> int:
+    total = 0
+    for prod in produtos or []:
+        if not isinstance(prod, dict):
+            continue
+        met = prod.get("metricas") if isinstance(prod.get("metricas"), dict) else {}
+        n = prod.get("avaliacoes")
+        if n is None:
+            n = met.get("avaliacoes")
+        total += _i(n)
+    return total
+
+
+def registrar_snapshot_demanda(termo: str, produtos: list[dict[str, Any]]) -> dict[str, Any]:
+    """Append em logs/demanda_historico.json. Nunca lança."""
+    chave = str(termo or "").strip()
+    from datetime import datetime, timezone
+
+    snap = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "termo": chave,
+        "total_resultados": len([p for p in (produtos or []) if isinstance(p, dict)]),
+        "preco_medio": _preco_medio_produtos(produtos),
+        "soma_avaliacoes_visiveis": _soma_avaliacoes_visiveis(produtos),
+    }
+    if not chave:
+        return snap
+    try:
+        hist = ler_json(DEMANDA_HIST_PATH, default={})
+        if not isinstance(hist, dict):
+            hist = {}
+        bloco = hist.get(chave) if isinstance(hist.get(chave), dict) else {}
+        snaps = list(bloco.get("snapshots") or [])
+        snaps.append(snap)
+        hist[chave] = {"snapshots": snaps[-_MAX_DEMAND_SNAPS:]}
+        escrever_json_atomico(DEMANDA_HIST_PATH, hist)
+        return snap
+    except Exception as exc:
+        logger.warning("registrar snapshot demanda %s: %s", chave, exc)
+        return snap
+
+
+def calcular_tendencia_demanda(
+    termo: str,
+    dias: int = 14,
+    *,
+    produto_id: str = "",
+) -> dict[str, Any]:
+    """
+    Variação de soma_avaliacoes_visiveis no período (proxy de atividade).
+    confiabilidade=baixa se houver menos de 5 snapshots na janela.
+    Sem histórico: tendencia=indeterminado — nunca inventa.
+    """
+    chave = str(termo or "").strip()
+    insuficiente = {
+        "tendencia": "indeterminado",
+        "motivo": "historico insuficiente",
+        "variacao_pct": None,
+        "confiabilidade": "baixa",
+    }
+    if not chave:
+        emitir_metricas_tendencia_demanda(termo, insuficiente, produto_id=produto_id)
+        return insuficiente
+    try:
+        from datetime import datetime, timedelta, timezone
+
+        hist = ler_json(DEMANDA_HIST_PATH, default={})
+        bloco = hist.get(chave) if isinstance(hist, dict) and isinstance(hist.get(chave), dict) else {}
+        snaps = [s for s in (bloco.get("snapshots") or []) if isinstance(s, dict)]
+
+        def _ts(raw: Any) -> datetime | None:
+            texto = str(raw or "").strip().replace("Z", "+00:00")
+            if not texto:
+                return None
+            try:
+                dt = datetime.fromisoformat(texto)
+            except (TypeError, ValueError):
+                return None
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+
+        corte = datetime.now(timezone.utc) - timedelta(days=max(1, int(dias)))
+        janela: list[dict[str, Any]] = []
+        for snap in snaps:
+            ts = _ts(snap.get("timestamp"))
+            if ts is None or ts < corte:
+                continue
+            janela.append(snap)
+        janela.sort(key=lambda s: _ts(s.get("timestamp")) or datetime.min.replace(tzinfo=timezone.utc))
+        if len(janela) < 2:
+            emitir_metricas_tendencia_demanda(chave, insuficiente, produto_id=produto_id)
+            return insuficiente
+        antigo = _i(janela[0].get("soma_avaliacoes_visiveis"))
+        novo = _i(janela[-1].get("soma_avaliacoes_visiveis"))
+        if antigo <= 0:
+            emitir_metricas_tendencia_demanda(chave, insuficiente, produto_id=produto_id)
+            return insuficiente
+        variacao = round(100.0 * (novo - antigo) / antigo, 1)
+        if abs(variacao) < 5:
+            tendencia = "estavel"
+        elif variacao > 0:
+            tendencia = "alta"
+        else:
+            tendencia = "queda"
+        n = len(janela)
+        if n < 5:
+            conf = "baixa"
+        elif n < 10:
+            conf = "media"
+        else:
+            conf = "alta"
+        saida = {
+            "tendencia": tendencia,
+            "variacao_pct": variacao,
+            "confiabilidade": conf,
+            "snapshots": n,
+            "dias": int(dias),
+            "soma_inicial": antigo,
+            "soma_atual": novo,
+        }
+        emitir_metricas_tendencia_demanda(chave, saida, produto_id=produto_id)
+        return saida
+    except Exception as exc:
+        logger.warning("tendencia demanda %s: %s", chave, exc)
+        emitir_metricas_tendencia_demanda(chave, insuficiente, produto_id=produto_id)
+        return insuficiente

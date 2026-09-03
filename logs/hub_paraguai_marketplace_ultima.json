@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "gerado_em": "2026-09-03T08:18:10.353520-03:00",
+  "gerado_em": "2026-09-03T09:13:50.929458-03:00",
   "status_hub": "planejado",
   "hub": {
     "ok": true,
@@ -221,7 +221,7 @@
       },
       "tributacao_py_br": {
         "ok": true,
-        "gerado_em": "2026-09-03T08:18:10.304428-03:00",
+        "gerado_em": "2026-09-03T09:13:50.815002-03:00",
         "fonte_preco": "fob_usd_x_cambio",
         "quantidade": 200,
         "preco_origem_unit_brl": 16.5,
@@ -730,7 +730,7 @@
         },
         "tributacao_py_br": {
           "ok": true,
-          "gerado_em": "2026-09-03T08:18:10.315632-03:00",
+          "gerado_em": "2026-09-03T09:13:50.825834-03:00",
           "fonte_preco": "fob_usd_x_cambio",
           "quantidade": 200,
           "preco_origem_unit_brl": 16.5,
