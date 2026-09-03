@@ -80,6 +80,10 @@ class TestDatadogMetrics(unittest.TestCase):
         self.assertFalse(any(t.startswith("novos:") for t in tags))
         self.assertFalse(any(t.startswith("falhas:") for t in tags))
 
+    def test_tag_produto(self):
+        self.assertEqual(datadog_metrics.tag_produto("Kit Impala 24"), "produto:kit-impala-24")
+        self.assertIsNone(datadog_metrics.tag_produto("   "))
+
     @patch("core.datadog_metrics.requests.post")
     @patch("core.config.DD_API_KEY", "dd-key-test")
     @patch("core.config.DD_METRICS_ENABLED", True)

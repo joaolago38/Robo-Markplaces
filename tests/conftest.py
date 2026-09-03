@@ -19,6 +19,7 @@ _HTTP_REQUEST_PATHS = (
     "integracoes.shopee.shopee_client.request",
     "integracoes.lojahub.lojahub_client.request",
     "integracoes.meta.meta_client.request",
+    "integracoes.ml.coleta_avaliacoes.request",
 )
 
 _ENV_TOKEN_DEFAULTS = {

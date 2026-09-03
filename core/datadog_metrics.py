@@ -15,6 +15,7 @@ import contextlib
 import json
 import logging
 import os
+import re
 import time
 
 import requests
@@ -50,6 +51,12 @@ def reset_falhas_envio() -> None:
     global _falhas_envio, _ultimo_aviso_falha_ts
     _falhas_envio = 0
     _ultimo_aviso_falha_ts = 0.0
+
+
+def tag_produto(valor: str) -> str | None:
+    """Tag produto: de baixa cardinalidade (termo: é descartado no envio)."""
+    slug = re.sub(r"[^a-z0-9]+", "-", str(valor or "").strip().lower()).strip("-")[:40]
+    return f"produto:{slug}" if slug else None
 
 
 def _sanitizar_tags(tags: list[str] | None) -> list[str]:

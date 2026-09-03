@@ -385,14 +385,22 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
         logger.info("Enriquecidos com avaliações: %s anúncio(s)", n_aval)
 
         from integracoes.ml.coleta_demanda_ml import (
+            calcular_tendencia_demanda,
             coletar_funil_proprio,
             emitir_metricas_demanda,
             enriquecer_visitas_amostra,
             montar_pontos_cegos,
+            registrar_snapshot_demanda,
         )
 
         n_vis = enriquecer_visitas_amostra(resultados, limite=12)
         logger.info("Enriquecidos com visitas: %s anúncio(s)", n_vis)
+        for r in resultados:
+            termo_r = str(r.get("termo_busca") or "").strip()
+            if not termo_r:
+                continue
+            registrar_snapshot_demanda(termo_r, r.get("produtos") or [])
+            r["tendencia_demanda"] = calcular_tendencia_demanda(termo_r, dias=14)
 
         consolidado = consolidar_varredura(resultados)
         from core.config import FILAMENTOS_SOURCING_TAXA_ML_PCT

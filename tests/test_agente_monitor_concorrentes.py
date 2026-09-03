@@ -34,6 +34,20 @@ def _isolar_batalha(test_case) -> None:
             return_value={"ok": True, "alertas": [], "n_novos": 0},
         )
     )
+    stack.enter_context(
+        patch.object(
+            mon,
+            "_aplicar_lacunas_monitor",
+            return_value={
+                "avaliacoes_texto": [],
+                "perguntas": [],
+                "padroes_reclamacao": [],
+                "tendencia_demanda": {"tendencia": "indeterminado", "motivo": "historico insuficiente"},
+                "margem_real": {"margem_disponivel": False, "motivo": "custo_unitario nao informado"},
+            },
+        )
+    )
+    stack.enter_context(patch.object(mon, "_persistir_lacunas_ciclo"))
     test_case.addCleanup(stack.close)
 
 
@@ -433,6 +447,22 @@ class TestNovosKitsImpalaNoMonitor(unittest.TestCase):
         )
         p.start()
         self.addCleanup(p.stop)
+        p2 = patch.object(
+            mon,
+            "_aplicar_lacunas_monitor",
+            return_value={
+                "avaliacoes_texto": [],
+                "perguntas": [],
+                "padroes_reclamacao": [],
+                "tendencia_demanda": {"tendencia": "indeterminado"},
+                "margem_real": {"margem_disponivel": False},
+            },
+        )
+        p2.start()
+        self.addCleanup(p2.stop)
+        p3 = patch.object(mon, "_persistir_lacunas_ciclo")
+        p3.start()
+        self.addCleanup(p3.stop)
 
     @patch.object(mon, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", True)
     @patch.object(mon, "alertar_gestor", return_value=True)
@@ -455,6 +485,45 @@ class TestNovosKitsImpalaNoMonitor(unittest.TestCase):
         mock_proc.assert_called_once()
         self.assertTrue(mock_proc.call_args.kwargs.get("enviar_alerta"))
         self.assertTrue(mock_proc.call_args.kwargs.get("persistir"))
+
+
+class TestAplicarLacunasMonitor(unittest.TestCase):
+    def test_margem_e_padroes(self):
+        entrada = {"custo_unitario": 28.13, "meu_preco": 44.90}
+        anuncios = [{"item_id": "MLB1", "preco": 30.0, "avaliacoes": 4}]
+        with patch.object(
+            mon,
+            "buscar_avaliacoes_item",
+            return_value=[{"texto": "Demorou a entrega", "nota_estrelas": 2}],
+        ):
+            with patch.object(mon, "buscar_perguntas_item", return_value=[]):
+                with patch.object(mon, "registrar_snapshot_demanda", return_value={}):
+                    with patch.object(
+                        mon,
+                        "calcular_tendencia_demanda",
+                        return_value={"tendencia": "alta", "variacao_pct": 10.0, "confiabilidade": "baixa"},
+                    ):
+                        out = mon._aplicar_lacunas_monitor(
+                            entrada, anuncios, termo="kit impala", meu_preco=44.90
+                        )
+        self.assertTrue(out["margem_real"]["margem_disponivel"])
+        self.assertEqual(out["tendencia_demanda"]["tendencia"], "alta")
+        self.assertTrue(any(p["padrao"] == "atraso" for p in out["padroes_reclamacao"]))
+
+    def test_linhas_telegram_lacunas(self):
+        linhas = mon._linhas_telegram_lacunas(
+            [
+                {
+                    "ok": True,
+                    "nome": "Kit",
+                    "tendencia_demanda": {"tendencia": "alta", "variacao_pct": 20, "confiabilidade": "baixa"},
+                    "padroes_reclamacao": [{"padrao": "atraso", "frequencia": 3}],
+                    "margem_real": {"margem_disponivel": True, "margem_rs": 8.69, "margem_pct": 19.4},
+                }
+            ]
+        )
+        self.assertTrue(any("demanda alta" in x for x in linhas))
+        self.assertTrue(any("atraso" in x for x in linhas))
 
 
 if __name__ == "__main__":

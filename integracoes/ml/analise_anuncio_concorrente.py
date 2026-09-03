@@ -23,6 +23,7 @@ from core.config import (
     ML_ANALISE_ANUNCIO_TAXA_PCT,
     ML_SELLER_ID,
 )
+from core.datadog_metrics import gauge
 from core.http_client import request
 from integracoes.ml import ml_client
 
@@ -131,6 +132,56 @@ def estimar_receitas(
     }
 
 
+def calcular_margem_real(
+    preco_venda: float,
+    custo_unitario: float | None,
+    taxa_comissao_pct: float = 18.0,
+) -> dict[str, Any]:
+    """
+    Margem após comissão estimada. custo_unitario é o CMV do operador (preenchido
+    à mão no JSON), nunca o custo do rival e nunca inventado.
+    """
+    if custo_unitario is None:
+        return {"margem_disponivel": False, "motivo": "custo_unitario nao informado"}
+    p = _f(preco_venda)
+    c = _f(custo_unitario)
+    t = max(0.0, min(99.0, _f(taxa_comissao_pct, 18.0)))
+    liquido = round(p * (1.0 - t / 100.0), 2)
+    margem_rs = round(liquido - c, 2)
+    margem_pct = round(100.0 * margem_rs / p, 1) if p > 0 else None
+    return {
+        "margem_disponivel": True,
+        "preco_venda": round(p, 2),
+        "custo_unitario": round(c, 2),
+        "taxa_comissao_pct": t,
+        "receita_liquida_un": liquido,
+        "margem_rs": margem_rs,
+        "margem_pct": margem_pct,
+    }
+
+
+def emitir_metricas_margem_real(
+    out: dict[str, Any],
+    tags: list[str] | None = None,
+) -> None:
+    """Gauges robo.mercado.margem_real_* (CMV do JSON vs preço, distinto do catálogo Impala)."""
+    base = list(tags or [])
+    bloco = out if isinstance(out, dict) else {}
+    if not bloco.get("margem_disponivel"):
+        gauge("mercado.margem_real_disponivel", 0.0, tags=base)
+        return
+    gauge("mercado.margem_real_disponivel", 1.0, tags=base)
+    if bloco.get("margem_pct") is not None:
+        try:
+            gauge("mercado.margem_real_pct", float(bloco["margem_pct"]), tags=base)
+        except (TypeError, ValueError):
+            pass
+    try:
+        gauge("mercado.margem_real_rs", float(bloco.get("margem_rs") or 0), tags=base)
+    except (TypeError, ValueError):
+        pass
+
+
 def buscar_reviews_item(item_id: str) -> dict[str, Any]:
     """Reviews/nota públicos. Nunca lança."""
     iid = str(item_id or "").strip().upper()
@@ -229,6 +280,7 @@ def montar_metricas(
     reviews: dict[str, Any] | None = None,
     visitas: dict[str, Any] | None = None,
     catalog_date_created: str | None = None,
+    custo_unitario: float | None = None,
 ) -> dict[str, Any]:
     """Monta o bloco de métricas (puro, sem I/O)."""
     dias_anuncio = dias_desde(date_created)
@@ -257,6 +309,11 @@ def montar_metricas(
         "visitas_30d": vis.get("visitas_30d") if vis.get("disponivel") else None,
         "visitas_disponivel": bool(vis.get("disponivel")),
         **rec,
+        **(
+            calcular_margem_real(preco, custo_unitario, taxa_comissao_pct=rec["taxa_estimada_pct"])
+            if custo_unitario is not None
+            else calcular_margem_real(preco, None)
+        ),
         "fonte_metricas": "estimativa_oficial",
         "limitacao": (
             "sold_quantity/reviews de rivais costumam vir 403; "
@@ -315,6 +372,7 @@ def enriquecer_anuncio(
         reviews=reviews,
         visitas=visitas,
         catalog_date_created=catalog_created,
+        custo_unitario=row.get("custo_unitario"),
     )
     if reviews.get("ok"):
         row["avaliacoes"] = reviews.get("avaliacoes")

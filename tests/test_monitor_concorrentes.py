@@ -52,7 +52,8 @@ class TestClassificarVariacao(unittest.TestCase):
             "limite_resultados": 5,
         }
         with patch.object(monitor, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False):
-            out = monitor._monitorar_entrada(entrada, historico, enriquecer_metricas=False)
+            with patch.object(monitor, "_aplicar_lacunas_monitor", return_value={}):
+                out = monitor._monitorar_entrada(entrada, historico, enriquecer_metricas=False)
         self.assertTrue(any("[queda pontual]" in a for a in out["alertas"]))
 
     @patch.object(monitor, "_classificar_variacao_preco", return_value=None)
@@ -71,7 +72,8 @@ class TestClassificarVariacao(unittest.TestCase):
             "limite_resultados": 5,
         }
         with patch.object(monitor, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False):
-            out = monitor._monitorar_entrada(entrada, historico, enriquecer_metricas=False)
+            with patch.object(monitor, "_aplicar_lacunas_monitor", return_value={}):
+                out = monitor._monitorar_entrada(entrada, historico, enriquecer_metricas=False)
         for a in out["alertas"]:
             self.assertNotIn("[", a)
 

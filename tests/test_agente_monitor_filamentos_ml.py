@@ -177,6 +177,12 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
         ), patch(
             "integracoes.ml.coleta_demanda_ml.emitir_metricas_demanda",
         ), patch(
+            "integracoes.ml.coleta_demanda_ml.registrar_snapshot_demanda",
+            return_value={},
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.calcular_tendencia_demanda",
+            return_value={"tendencia": "indeterminado", "motivo": "historico insuficiente"},
+        ), patch(
             "integracoes.ml.acoes_funil_ml.processar_e_persistir_acoes",
             return_value={"ok": True, "acoes": [], "criticas": 0, "alerta_enviado": False},
         ):
@@ -385,6 +391,12 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             },
         ), patch(
             "integracoes.ml.coleta_demanda_ml.emitir_metricas_demanda",
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.registrar_snapshot_demanda",
+            return_value={},
+        ), patch(
+            "integracoes.ml.coleta_demanda_ml.calcular_tendencia_demanda",
+            return_value={"tendencia": "indeterminado", "motivo": "historico insuficiente"},
         ), patch(
             "integracoes.ml.acoes_funil_ml.processar_e_persistir_acoes",
             return_value={"ok": True, "acoes": [], "criticas": 0, "alerta_enviado": False},

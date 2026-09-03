@@ -19,6 +19,27 @@ class MetricasPurasTests(unittest.TestCase):
         self.assertEqual(rec["receita_bruta_total"], 20555.0)
         self.assertEqual(rec["receita_liquida_total"], 17885.0)
 
+    def test_margem_real_sem_custo(self):
+        out = aa.calcular_margem_real(44.90, None, taxa_comissao_pct=18)
+        self.assertFalse(out["margem_disponivel"])
+        self.assertEqual(out["motivo"], "custo_unitario nao informado")
+
+    def test_margem_real_com_custo(self):
+        out = aa.calcular_margem_real(44.90, 28.13, taxa_comissao_pct=18)
+        self.assertTrue(out["margem_disponivel"])
+        self.assertEqual(out["margem_rs"], 8.69)
+        self.assertEqual(out["margem_pct"], 19.4)
+
+    def test_emitir_metricas_margem_real(self):
+        with patch("integracoes.ml.analise_anuncio_concorrente.gauge") as mock_g:
+            aa.emitir_metricas_margem_real(
+                {"margem_disponivel": True, "margem_pct": 19.4, "margem_rs": 8.69},
+                tags=["produto:imp-mimo-003"],
+            )
+        nomes = [c.args[0] for c in mock_g.call_args_list]
+        self.assertIn("mercado.margem_real_pct", nomes)
+        self.assertIn("mercado.margem_real_rs", nomes)
+
     def test_vendas_por_dia(self):
         self.assertEqual(aa.estimar_vendas_por_dia(500, 22), 22.73)
         self.assertIsNone(aa.estimar_vendas_por_dia(0, 22))

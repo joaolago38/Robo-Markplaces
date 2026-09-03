@@ -48,10 +48,21 @@ class RelatorioManhaMlTests(unittest.TestCase):
                 }
             ]
         }
-        conc = {"resultados": [{"nome": "Kit 5", "menor_preco": 44.0, "meu_preco": 48.90}], "alertas": []}
+        conc = {
+            "resultados": [
+                {
+                    "nome": "Kit 5",
+                    "menor_preco": 44.0,
+                    "meu_preco": 48.90,
+                    "tendencia_demanda": {"tendencia": "alta", "variacao_pct": 12},
+                }
+            ],
+            "alertas": [],
+        }
         anita = {"resultados": []}
         msg = rel._montar_relatorio(ml, precos, conc, anita)
         self.assertIn("Relatório manhã", msg)
+        self.assertIn("demanda alta", msg)
         self.assertIn("Propostas de preço", msg)
         self.assertIn("IMP-BAIL-005", msg)
         self.assertIn("45,90", msg)

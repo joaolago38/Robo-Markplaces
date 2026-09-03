@@ -125,10 +125,23 @@ def _montar_secao_concorrentes_termo(conc: dict[str, Any]) -> list[str]:
         linhas.append(f"• {alerta}")
     if not alertas:
         for r in resultados[:4]:
+            tend = ""
+            td = r.get("tendencia_demanda") if isinstance(r.get("tendencia_demanda"), dict) else {}
+            if td.get("tendencia") in {"alta", "queda", "estavel"}:
+                tend = f" | demanda {td.get('tendencia')}"
             linhas.append(
                 f"• {r.get('nome', '?')}: menor {_fmt_brl(r.get('menor_preco'))} "
-                f"(seu {_fmt_brl(r.get('meu_preco'))})"
+                f"(seu {_fmt_brl(r.get('meu_preco'))}){tend}"
             )
+            padroes = r.get("padroes_reclamacao") or []
+            if padroes:
+                top = ", ".join(
+                    f"{p.get('padrao')}×{p.get('frequencia')}"
+                    for p in padroes[:2]
+                    if isinstance(p, dict)
+                )
+                if top:
+                    linhas.append(f"  reclamações: {top}")
     return linhas
 
 

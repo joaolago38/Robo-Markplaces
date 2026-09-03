@@ -257,10 +257,12 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         )
 
         from integracoes.ml.coleta_demanda_ml import (
+            calcular_tendencia_demanda,
             coletar_funil_proprio,
             emitir_metricas_demanda,
             enriquecer_visitas_lista,
             montar_pontos_cegos,
+            registrar_snapshot_demanda,
         )
 
         produtos = consolidado.get("produtos") or []
@@ -276,6 +278,12 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         consolidado["anuncios_com_visitas"] = sum(
             1 for p in produtos if int(p.get("visitas_7d") or 0) > 0
         )
+        for r in resultados:
+            termo_r = str(r.get("termo_busca") or "").strip()
+            if not termo_r:
+                continue
+            registrar_snapshot_demanda(termo_r, r.get("produtos") or [])
+            r["tendencia_demanda"] = calcular_tendencia_demanda(termo_r, dias=14)
         funil = coletar_funil_proprio(
             dias=7,
             max_anuncios=20,
