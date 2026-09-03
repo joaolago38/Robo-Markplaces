@@ -35,6 +35,32 @@ logger = logging.getLogger("busca_termo_ml")
 _MLB_ID_RE = re.compile(r"MLB-?\d+", re.I)
 _PLACEHOLDER_IDS = frozenset({"", "MLB_PREENCHER"})
 _CACHE_PATH = ROOT / "logs" / "ml_busca_termo_cache.json"
+_MARCAS_BUSCA = frozenset(
+    {
+        "impala",
+        "anita",
+        "risque",
+        "risqué",
+        "colorama",
+        "dailus",
+        "carmed",
+        "mimo",
+        "bailarina",
+    }
+)
+_STOPWORDS_BUSCA = frozenset(
+    {
+        "manicure",
+        "manicures",
+        "profissional",
+        "atacado",
+        "completo",
+        "sortido",
+        "sortidos",
+        "tendencia",
+        "tendência",
+    }
+)
 
 
 def extrair_item_id_ml(texto: str) -> str | None:
@@ -62,6 +88,42 @@ def _palavras_termo(termo: str) -> list[str]:
     return [p for p in termo.lower().split() if len(p) >= 3]
 
 
+def _marcas_no_termo(termo: str) -> list[str]:
+    return [p for p in _palavras_termo(termo) if p in _MARCAS_BUSCA]
+
+
+def _variantes_termo(termo: str) -> list[str]:
+    """Original + termo sem stopwords + marca (+ esmalte). Dedup preservando ordem."""
+    original = (termo or "").strip()
+    if not original:
+        return []
+    vistos: set[str] = set()
+    out: list[str] = []
+
+    def _add(texto: str) -> None:
+        chave = " ".join((texto or "").lower().split())
+        if not chave or chave in vistos:
+            return
+        vistos.add(chave)
+        out.append(chave)
+
+    _add(original)
+    palavras = _palavras_termo(original)
+    sem_stop = [p for p in palavras if p not in _STOPWORDS_BUSCA]
+    if sem_stop:
+        _add(" ".join(sem_stop))
+    sem_kit = [p for p in sem_stop if p != "kit"]
+    if sem_kit and sem_kit != sem_stop:
+        _add(" ".join(sem_kit))
+    marcas = _marcas_no_termo(original)
+    if marcas:
+        extra = ["esmalte"] if any(p.startswith("esmalte") for p in palavras) else []
+        _add(" ".join(marcas + extra))
+        for marca in marcas:
+            _add(marca)
+    return out
+
+
 def _titulo_relevante(termo: str, titulo: str) -> bool:
     """
     Exige relevância mínima no título.
@@ -79,27 +141,35 @@ def _titulo_relevante(termo: str, titulo: str) -> bool:
     minimo = max(2, (len(palavras) + 1) // 2)
     if hits < minimo:
         return False
-    # Marcas/quantidades comuns: se presentes no termo, devem estar no título
     obrigatorias = {
         p
         for p in palavras
-        if p in {"impala", "anita", "risque", "colorama", "dailus", "carmed", "mimo", "bailarina"}
-        or (p.isdigit() and int(p) >= 3)
+        if p in _MARCAS_BUSCA or (p.isdigit() and int(p) >= 3)
     }
     if obrigatorias and not all(p in texto for p in obrigatorias):
         return False
     return True
 
 
+def _titulo_relevante_marca(termo: str, titulo: str) -> bool:
+    """Passada frouxa: marca no título, ou qualquer núcleo se o termo não tem marca."""
+    texto = (titulo or "").lower()
+    marcas = _marcas_no_termo(termo)
+    if marcas:
+        return all(m in texto for m in marcas)
+    nucleo = [p for p in _palavras_termo(termo) if p not in _STOPWORDS_BUSCA and p != "kit"]
+    if not nucleo:
+        return True
+    return any(p in texto for p in nucleo)
+
+
 def filtrar_por_relevancia_titulo(termo: str, resultados: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Filtra resultados cujo título não casa com o termo de busca."""
-    out: list[dict[str, Any]] = []
-    for row in resultados or []:
-        if not isinstance(row, dict):
-            continue
-        if _titulo_relevante(termo, str(row.get("titulo") or "")):
-            out.append(row)
-    return out
+    """Filtra resultados cujo título não casa com o termo. Se o filtro rígido zerar, tenta só a marca."""
+    rows = [r for r in (resultados or []) if isinstance(r, dict)]
+    estritos = [r for r in rows if _titulo_relevante(termo, str(r.get("titulo") or ""))]
+    if estritos:
+        return estritos
+    return [r for r in rows if _titulo_relevante_marca(termo, str(r.get("titulo") or ""))]
 
 
 def _normalizar_catalogo_para_busca(row: dict[str, Any]) -> dict[str, Any]:
@@ -375,57 +445,63 @@ def _buscar_via_products_api(termo: str, limite: int) -> list[dict[str, Any]]:
     return encontrados
 
 
-def _buscar_via_brave(termo: str, limite: int) -> list[dict[str, Any]]:
-    if not ML_BUSCA_TERMO_FALLBACK_BRAVE:
-        return []
-    brutos = brave_buscar_ml(termo, limite=max(limite * 3, 15))
+def _enriquecer_hits_externos(
+    termo: str,
+    brutos: list[dict[str, Any]],
+    fonte: str,
+    limite: int,
+) -> tuple[list[dict[str, Any]], str]:
+    """
+    Extrai MLB, hidrata GET /items, filtra título.
+    Retorna (resultados, etapa) etapa: ok | vazio | filtro_zerou
+    """
     if not brutos:
-        return []
+        return [], "vazio"
 
-    encontrados: list[dict[str, Any]] = []
-    for hit in brutos:
-        url = hit.get("url") or ""
-        titulo_ext = hit.get("titulo") or ""
-        iid = extrair_item_id_ml(url) or extrair_item_id_ml(titulo_ext)
-        if not iid:
-            continue
-        norm = _enriquecer_item(iid)
-        if not norm:
-            continue
-        if not _titulo_relevante(termo, str(norm.get("titulo") or titulo_ext)):
-            continue
-        norm = dict(norm)
-        norm["fonte_busca"] = "brave"
-        encontrados.append(norm)
-        if len(encontrados) >= limite:
-            break
-    return encontrados
-
-
-def _buscar_via_ddg(termo: str, limite: int) -> list[dict[str, Any]]:
-    query = f"site:mercadolivre.com.br {termo}"
-    brutos = ddg_buscar(query, max_resultados=max(limite * 3, 15), contexto="ml_busca_termo")
-    if not brutos:
-        return []
-
-    encontrados: list[dict[str, Any]] = []
+    estritos: list[dict[str, Any]] = []
+    frouxos: list[dict[str, Any]] = []
+    hidratou = False
     for hit in brutos:
         url = hit.get("url") or hit.get("link") or ""
-        titulo_ddg = hit.get("title") or hit.get("titulo") or ""
-        iid = extrair_item_id_ml(url) or extrair_item_id_ml(titulo_ddg)
+        titulo_ext = hit.get("titulo") or hit.get("title") or ""
+        iid = extrair_item_id_ml(url) or extrair_item_id_ml(str(titulo_ext))
         if not iid:
             continue
         norm = _enriquecer_item(iid)
         if not norm:
             continue
-        if not _titulo_relevante(termo, str(norm.get("titulo") or titulo_ddg)):
-            continue
-        norm = dict(norm)
-        norm["fonte_busca"] = "ddg"
-        encontrados.append(norm)
-        if len(encontrados) >= limite:
+        hidratou = True
+        titulo = str(norm.get("titulo") or titulo_ext)
+        row = dict(norm)
+        row["fonte_busca"] = fonte
+        if _titulo_relevante(termo, titulo):
+            estritos.append(row)
+        elif _titulo_relevante_marca(termo, titulo):
+            frouxos.append(row)
+        if len(estritos) >= limite:
             break
-    return encontrados
+
+    escolhidos = (estritos or frouxos)[:limite]
+    if escolhidos:
+        return escolhidos, "ok"
+    if hidratou:
+        return [], "filtro_zerou"
+    return [], "vazio"
+
+
+def _buscar_via_brave(termo: str, limite: int) -> tuple[list[dict[str, Any]], str]:
+    if not ML_BUSCA_TERMO_FALLBACK_BRAVE:
+        return [], "off"
+    brutos = brave_buscar_ml(termo, limite=max(limite * 3, 15))
+    return _enriquecer_hits_externos(termo, brutos, "brave", limite)
+
+
+def _buscar_via_ddg(termo: str, limite: int) -> tuple[list[dict[str, Any]], str]:
+    if not ML_BUSCA_TERMO_FALLBACK_DDG:
+        return [], "off"
+    query = f"site:mercadolivre.com.br {termo}"
+    brutos = ddg_buscar(query, max_resultados=max(limite * 3, 15), contexto="ml_busca_termo")
+    return _enriquecer_hits_externos(termo, brutos, "ddg", limite)
 
 
 def _buscar_via_catalogo(termo: str, limite: int, item_id_referencia: str | None) -> list[dict[str, Any]]:
@@ -446,10 +522,9 @@ def _buscar_via_catalogo(termo: str, limite: int, item_id_referencia: str | None
     for ref in refs:
         linhas = ml_client.buscar_detalhes_concorrentes(ref, limite=limite)
         for row in linhas:
-            norm = _normalizar_catalogo_para_busca(row)
-            if _titulo_relevante(termo, norm.get("titulo", "")):
-                combinado.append(norm)
+            combinado.append(_normalizar_catalogo_para_busca(row))
 
+    combinado = filtrar_por_relevancia_titulo(termo, combinado)
     if combinado:
         logger.debug(
             "ML busca termo=%r fallback catálogo refs=%s linhas=%d",
@@ -561,15 +636,28 @@ def executar_busca_termo(
         return []
 
     limite = max(1, min(50, limite))
+    variantes = _variantes_termo(termo)
+    etapas: list[str] = []
 
     # /products/search funciona com token; /sites/search costuma 403 (PolicyAgent).
     try:
-        via_products = _buscar_via_products_api(termo, limite)
-        if via_products:
-            _gravar_cache(termo, via_products)
-            return via_products
+        via_products: list[dict[str, Any]] = []
+        for variante in variantes:
+            via_products = _buscar_via_products_api(variante, limite)
+            if via_products:
+                if variante != variantes[0]:
+                    logger.info(
+                        "ML busca termo=%r fonte=products_api variante=%r resultados=%d",
+                        termo[:60],
+                        variante,
+                        len(via_products),
+                    )
+                _gravar_cache(termo, via_products)
+                return via_products
+        etapas.append("products_vazio")
     except Exception as exc:
         logger.warning("ML products fallback erro termo=%r: %s", termo[:60], exc)
+        etapas.append("products_erro")
 
     if ML_BUSCA_TERMO_SITES_SEARCH:
         try:
@@ -578,15 +666,23 @@ def executar_busca_termo(
                 logger.debug("ML busca termo=%r fonte=api resultados=%d", termo, len(api))
                 _gravar_cache(termo, api)
                 return api
+            etapas.append("sites_search_vazio")
         except Exception as exc:
             ml_client._log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
+            etapas.append("sites_search_erro")
 
     combinado: list[dict[str, Any]] = []
     combinado.extend(_buscar_via_catalogo(termo, limite, item_id_referencia))
-    combinado.extend(_buscar_via_brave(termo, limite))
 
-    if ML_BUSCA_TERMO_FALLBACK_DDG:
-        combinado.extend(_buscar_via_ddg(termo, limite))
+    ddg_etapa = "off"
+    brave_etapa = "off"
+    for variante in variantes:
+        if len(combinado) >= limite:
+            break
+        br, brave_etapa = _buscar_via_brave(variante, limite)
+        combinado.extend(br)
+        dg, ddg_etapa = _buscar_via_ddg(variante, limite)
+        combinado.extend(dg)
 
     combinado = _dedupe_por_item(combinado)[:limite]
     if combinado:
@@ -599,6 +695,13 @@ def executar_busca_termo(
         )
         _gravar_cache(termo, combinado)
         return combinado
+
+    if brave_etapa not in ("off", "ok"):
+        etapas.append(f"brave_{brave_etapa}")
+    if ddg_etapa not in ("off", "ok"):
+        etapas.append(f"ddg_{ddg_etapa}")
+    if not any(e.startswith("catalogo") for e in etapas):
+        etapas.append("catalogo_vazio")
 
     cache = _ler_cache(termo, limite)
     if cache:
@@ -619,10 +722,15 @@ def executar_busca_termo(
                 len(hidratados),
             )
             return hidratados
+        etapas.append("cache_stale_vazio")
+    else:
+        etapas.append("cache_vazio")
 
     logger.warning(
-        "ML busca termo=%r sem resultados — products/catálogo/brave/ddg/cache vazios "
+        "ML busca termo=%r sem resultados etapa=%s variantes=%s "
         "(/sites/search não é usado; 403 PolicyAgent)",
         termo,
+        "+".join(etapas) or "todas_vazias",
+        ",".join(variantes[:4]),
     )
     return []
