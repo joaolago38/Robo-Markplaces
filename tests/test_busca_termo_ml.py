@@ -214,6 +214,53 @@ class TestExecutarBuscaTermo(unittest.TestCase):
         self.assertEqual(out[0]["preco"], 30.99)
         self.assertEqual(out[0]["seller_id"], "1666381510")
 
+    def test_products_retry_variante_marca(self):
+        def fake_req(_method, url, **kwargs):
+            params = kwargs.get("params") or {}
+            q = str(params.get("q") or "")
+            if "/products/search" in url:
+                if q == "colorama":
+                    return _mock_resp(
+                        {"results": [{"id": "MLB41490081", "name": "Esmalte Colorama"}]}
+                    )
+                return _mock_resp({"results": []})
+            if url.endswith("/products/MLB41490081"):
+                return _mock_resp(
+                    {
+                        "id": "MLB41490081",
+                        "name": "Esmalte Colorama",
+                        "date_created": "2024-10-04T03:32:02Z",
+                    }
+                )
+            if url.endswith("/products/MLB41490081/items"):
+                return _mock_resp(
+                    {
+                        "results": [
+                            {
+                                "item_id": "MLB999",
+                                "seller_id": 888,
+                                "price": 9.9,
+                                "sold_quantity": 10,
+                            }
+                        ]
+                    }
+                )
+            return _mock_resp({"results": []})
+
+        with patch.object(ml_client, "_enabled", return_value=True), patch.object(
+            ml_client, "_request_ml", side_effect=fake_req
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_CATALOGO", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_BRAVE", False
+        ), patch.object(
+            busca_termo_ml, "ML_BUSCA_TERMO_FALLBACK_DDG", False
+        ):
+            out = busca_termo_ml.executar_busca_termo("kit esmalte colorama", limite=5)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["item_id"], "MLB999")
+        self.assertEqual(out[0]["fonte_busca"], "products_api")
+
     def test_fallback_catalogo(self):
         with patch.object(ml_client, "_enabled", return_value=True), patch.object(
             ml_client, "_request_ml"
@@ -358,6 +405,21 @@ class TestTituloRelevante(unittest.TestCase):
         ]
         out = busca_termo_ml.filtrar_por_relevancia_titulo("kit impala bailarina", rows)
         self.assertEqual(len(out), 1)
+
+    def test_filtro_relaxa_para_marca_quando_titulo_curto(self):
+        rows = [
+            {"titulo": "Colorama 50ml cremoso", "preco": 8},
+            {"titulo": "Cabo USB", "preco": 10},
+        ]
+        out = busca_termo_ml.filtrar_por_relevancia_titulo("kit esmalte colorama", rows)
+        self.assertEqual(len(out), 1)
+        self.assertIn("Colorama", out[0]["titulo"])
+
+    def test_variantes_incluem_marca(self):
+        vars_ = busca_termo_ml._variantes_termo("kit esmalte colorama manicure")
+        self.assertIn("kit esmalte colorama manicure", vars_)
+        self.assertIn("colorama", vars_)
+        self.assertTrue(any("colorama" in v and "esmalte" in v for v in vars_))
 
 
 @pytest.mark.usefixtures("env_tokens")

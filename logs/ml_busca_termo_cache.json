@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-09-02T23:13:33.081002+00:00",
+    "timestamp": "2026-09-03T11:18:09.804400+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -18,7 +18,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-09-02T23:13:29.671885+00:00",
+    "timestamp": "2026-09-03T11:18:02.166419+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -34,7 +34,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-09-02T23:13:39.274171+00:00",
+    "timestamp": "2026-09-03T11:18:17.628981+00:00",
     "resultados": [
       {
         "item_id": "MLB4795826219",
@@ -111,7 +111,7 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-09-02T23:13:29.545178+00:00",
+    "timestamp": "2026-09-03T11:18:01.935229+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -129,7 +129,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-09-02T23:13:29.574775+00:00",
+    "timestamp": "2026-09-03T11:18:01.994936+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
@@ -4312,6 +4312,23 @@
         "catalog_product_id": "MLB61673368",
         "catalog_date_created": "2025-11-04T14:37:20Z",
         "listing_type_id": "gold_special"
+      }
+    ]
+  },
+  "kit esmalte colorama": {
+    "timestamp": "2026-09-03T11:18:02.239467+00:00",
+    "resultados": [
+      {
+        "item_id": "MLB999",
+        "titulo": "Esmalte Colorama",
+        "preco": 9.9,
+        "quantidade_vendida": 10,
+        "seller_id": "888",
+        "permalink": "https://produto.mercadolivre.com.br/MLB999",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB41490081",
+        "catalog_date_created": "2024-10-04T03:32:02Z",
+        "listing_type_id": ""
       }
     ]
   }
