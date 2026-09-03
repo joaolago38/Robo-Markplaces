@@ -385,12 +385,12 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
         logger.info("Enriquecidos com avaliações: %s anúncio(s)", n_aval)
 
         from integracoes.ml.coleta_demanda_ml import (
+            calcular_tendencia_demanda,
             coletar_funil_proprio,
             emitir_metricas_demanda,
             enriquecer_visitas_amostra,
             montar_pontos_cegos,
             registrar_snapshot_demanda,
-            calcular_tendencia_demanda,
         )
 
         n_vis = enriquecer_visitas_amostra(resultados, limite=12)

@@ -16,11 +16,11 @@ from typing import Any
 
 from core.atomic_io import escrever_json_atomico
 from core.catalogo_produtos import carregar_produtos_catalogo
-from core.datadog_metrics import gauge
 from core.claude_client import mlb_invalido
 from core.claude_contexto_ml import enriquecer_contexto_claude
 from core.claude_ml.playbooks import PLAYBOOKS, montar_instrucoes
 from core.config import ROOT
+from core.datadog_metrics import gauge
 from core.resumo_ia import sintetizar_claude
 
 logger = logging.getLogger("agente_playbook_claude")

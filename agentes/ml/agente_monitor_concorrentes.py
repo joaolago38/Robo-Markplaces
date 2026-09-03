@@ -20,13 +20,13 @@ from core.config import (
 from core.datadog_metrics import gauge, incrementar, tag_produto
 from core.notificador import alertar_gestor
 from integracoes.ml import ml_client
-from integracoes.ml.analise_anuncio_concorrente import (
-    calcular_margem_real,
-    emitir_metricas_margem_real,
-)
 from integracoes.ml.agrupador_reclamacoes import (
     agrupar_padroes_reclamacao,
     emitir_metricas_reclamacao,
+)
+from integracoes.ml.analise_anuncio_concorrente import (
+    calcular_margem_real,
+    emitir_metricas_margem_real,
 )
 from integracoes.ml.coleta_avaliacoes import buscar_avaliacoes_item, buscar_perguntas_item
 from integracoes.ml.coleta_demanda_ml import calcular_tendencia_demanda, registrar_snapshot_demanda
