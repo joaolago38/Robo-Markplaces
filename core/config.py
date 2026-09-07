@@ -334,6 +334,13 @@ CLAUDE_MIMO_LISTING = os.getenv("CLAUDE_MIMO_LISTING", "1").strip().lower() not 
     "false",
     "no",
 )
+# 0 = sem Haiku de lembrete (digest/listing MIMO) enquanto não houver 1ª venda Impala.
+# Ligar 1 depois do primeiro pedido pago. Título âncora já está no catálogo.
+CLAUDE_FASE0_NAG = os.getenv("CLAUDE_FASE0_NAG", "0").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
 CLAUDE_P0_RASCUNHO = os.getenv("CLAUDE_P0_RASCUNHO", "1").strip().lower() not in (
     "0",
     "false",

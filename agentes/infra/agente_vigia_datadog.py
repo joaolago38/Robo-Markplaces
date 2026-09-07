@@ -68,6 +68,23 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         gauge("vigia_datadog.erros_abertos", float(analise.get("total_erros") or 0))
         gauge("vigia_datadog.saudavel", 1.0 if analise.get("ok") else 0.0)
 
+        inativos_ids = {
+            str(a.get("fonte_id") or "").strip()
+            for a in (analise.get("inatividades") or [])
+            if str(a.get("fonte_id") or "").strip()
+        }
+        if inativos_ids:
+            logger.warning("Vigia inativos: %s", ",".join(sorted(inativos_ids)))
+        for fonte in fontes:
+            fid = str(fonte.get("id") or "").strip()
+            if not fid:
+                continue
+            gauge(
+                "vigia_datadog.fonte_ok",
+                0.0 if fid in inativos_ids else 1.0,
+                tags=[f"fonte:{fid}"],
+            )
+
         if not os.environ.get("PYTEST_CURRENT_TEST"):
             try:
                 from integracoes.datadog.oscilacao_decisao import avaliar_de_snapshots

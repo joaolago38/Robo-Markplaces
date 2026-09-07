@@ -25,6 +25,7 @@ from core.config import (
     CLAUDE_CICLO_META_DIGEST_SEG,
     CLAUDE_CICLO_META_EFIC,
     CLAUDE_CICLO_META_EFIC_SEG,
+    CLAUDE_FASE0_NAG,
     CLAUDE_MIMO_LISTING,
     CLAUDE_MIMO_LISTING_SEG,
     META_ACCESS_TOKEN,
@@ -153,6 +154,11 @@ def detectar_flip_pronto(pronto: bool, estado: dict[str, Any] | None = None) -> 
 def _pular_ia() -> bool:
     """Suíte pytest não gasta crédito (mesmo com ANTHROPIC_API_KEY no .env)."""
     return bool(os.environ.get("PYTEST_CURRENT_TEST"))
+
+
+def _nag_antes_venda_liberado() -> bool:
+    """Lembrete Haiku (digest/listing) só depois da 1ª venda, ou se CLAUDE_FASE0_NAG=1."""
+    return bool(CLAUDE_FASE0_NAG)
 
 
 def _modelos() -> tuple[str, str]:
@@ -520,6 +526,9 @@ def auxiliar_digest_bloqueio(momento: dict[str, Any] | None = None) -> dict[str,
         if mom.get("pronto"):
             out["pulado"] = "ja_pronto"
             return out
+        if not _nag_antes_venda_liberado():
+            out["pulado"] = "ate_primeira_venda"
+            return out
         estado = _ler()
         if not _passou(estado.get("digest_em"), CLAUDE_CICLO_META_DIGEST_SEG):
             out["pulado"] = "cooldown"
@@ -556,6 +565,9 @@ def auxiliar_listing_mimo(condicoes: dict[str, Any] | None) -> dict[str, Any]:
     precisa = fase < 3 and (not checks.get("mlb_mimo") or not checks.get("titulo_atracao"))
     if not precisa:
         out["pulado"] = "titulo_ok_ou_fase"
+        return out
+    if not _nag_antes_venda_liberado():
+        out["pulado"] = "ate_primeira_venda"
         return out
     estado = _ler()
     if not _passou(estado.get("mimo_listing_em"), CLAUDE_MIMO_LISTING_SEG):

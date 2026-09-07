@@ -96,6 +96,7 @@ class AuxiliarCicloTests(unittest.TestCase):
 
 
 class DigestEListingTests(unittest.TestCase):
+    @patch("integracoes.meta.claude_ciclo_meta._nag_antes_venda_liberado", return_value=True)
     @patch("integracoes.meta.claude_ciclo_meta._pular_ia", return_value=False)
     @patch("integracoes.meta.claude_ciclo_meta._gravar")
     @patch("integracoes.meta.claude_ciclo_meta._ler", return_value={})
@@ -116,6 +117,7 @@ class DigestEListingTests(unittest.TestCase):
         self.assertEqual(out.get("pulado"), "ja_pronto")
         mock_alert.assert_not_called()
 
+    @patch("integracoes.meta.claude_ciclo_meta._nag_antes_venda_liberado", return_value=True)
     @patch("integracoes.meta.claude_ciclo_meta._pular_ia", return_value=False)
     @patch("integracoes.meta.claude_ciclo_meta._gravar")
     @patch("integracoes.meta.claude_ciclo_meta._ler", return_value={})
@@ -139,6 +141,29 @@ class DigestEListingTests(unittest.TestCase):
             {"fase": 3, "checks": {"mlb_mimo": True, "titulo_atracao": True}}
         )
         self.assertEqual(out.get("pulado"), "titulo_ok_ou_fase")
+
+    @patch("integracoes.meta.claude_ciclo_meta._alertar")
+    @patch("integracoes.meta.claude_ciclo_meta._sintetizar")
+    def test_digest_pula_ate_primeira_venda(self, mock_sint, mock_alert):
+        out = ccm.auxiliar_digest_bloqueio(
+            {"pronto": False, "fase": 0, "motivo": "Publicar MIMO"}
+        )
+        self.assertEqual(out.get("pulado"), "ate_primeira_venda")
+        mock_sint.assert_not_called()
+        mock_alert.assert_not_called()
+
+    @patch("integracoes.meta.claude_ciclo_meta._alertar")
+    @patch("integracoes.meta.claude_ciclo_meta._sintetizar")
+    def test_listing_pula_ate_primeira_venda(self, mock_sint, mock_alert):
+        out = ccm.auxiliar_listing_mimo(
+            {
+                "fase": 0,
+                "checks": {"mlb_mimo": False, "titulo_atracao": False},
+            }
+        )
+        self.assertEqual(out.get("pulado"), "ate_primeira_venda")
+        mock_sint.assert_not_called()
+        mock_alert.assert_not_called()
 
 
 class ResolverIaCicloTests(unittest.TestCase):
