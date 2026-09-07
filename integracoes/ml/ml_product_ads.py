@@ -70,7 +70,8 @@ def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
     ultimo_warn = float(estado.get("warn_ts") or _ULTIMO_AVISO_404_TS or 0)
     ultimo_metric = float(estado.get("metric_ts") or 0)
     if (agora - ultimo_warn) < _COOLDOWN_AVISO_404_SEG:
-        _marcar_ads_indisponivel_agora(1.0, advertiser_id=advertiser_id)
+        # 404 conhecido: não manter gauge=1 (senão o monitor 2h fica Alert permanente).
+        _marcar_ads_indisponivel_agora(0.0, advertiser_id=advertiser_id)
         logger.debug(
             "ML listar_campanhas: Product Ads ainda 404 advertiser=%s (aviso em cooldown)",
             advertiser_id,

@@ -261,6 +261,27 @@ class DatadogFunilDashboardTests(unittest.TestCase):
                 msg=m["name"],
             )
 
+    def test_monitores_esparsos_usam_default_zero(self):
+        specs = {m["name"]: m for m in dd._monitores_desejados()}
+        orq = specs["[Robo] Orquestrador sem ciclos (2h)"]
+        self.assertIn("max:robo.orquestrador.ciclo.pulse", orq["query"])
+        self.assertIn("last_6h", orq["query"])
+        self.assertTrue(orq["options"].get("notify_no_data"))
+        self.assertEqual(orq["options"].get("no_data_timeframe"), 360)
+        ads = specs["[Robo] Product Ads indisponivel (404/escopo)"]
+        self.assertIn("robo.ads.indisponivel", ads["query"])
+        self.assertIn("default_zero", ads["query"])
+        self.assertNotIn("indisponivel_agora", ads["query"])
+        self.assertEqual(ads["options"]["thresholds"]["critical"], 0)
+        p0 = specs["[Robo] Catalogo Impala margem real P0 baixa"]
+        self.assertIn("guerra:true", p0["query"])
+        guerra = specs["[Robo] Catalogo Impala guerra sem MLB"]
+        self.assertIn("JUPAES", guerra["message"])
+        self.assertIn("entrada/preco", guerra["message"])
+        self.assertIn("default_zero", specs["[Robo] Telegram falhas de envio"]["query"])
+        vigia = specs["[Robo] Vigia Datadog nao saudavel"]
+        self.assertIn("last_6h", vigia["query"])
+
     def test_grupo_tokens_separa_secret_set_de_vazio(self):
         grupo = dd._grupo_tokens()
         blob = str(grupo)

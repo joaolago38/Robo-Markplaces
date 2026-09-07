@@ -5,7 +5,7 @@
     "nome": "Orquestrador 30min",
     "path": "logs/orquestrador_ultimo_ciclo.json",
     "campo": "timestamp",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": true
   },
   {
@@ -14,7 +14,7 @@
     "nome": "Operação 24h",
     "path": "logs/operacao_24h_ultima.json",
     "campo": "timestamp",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": true
   },
   {
@@ -23,7 +23,7 @@
     "nome": "Conectividade marketplaces",
     "path": "logs/conectividade_ultima.json",
     "campo": "timestamp",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": true
   },
   {
@@ -32,7 +32,7 @@
     "nome": "Renovação de tokens",
     "path": "logs/renovacao_tokens_ultima.json",
     "campo": "timestamp",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": true
   },
   {
@@ -41,7 +41,7 @@
     "nome": "Vigia Datadog",
     "path": "logs/datadog_vigia_history.json",
     "campo": "ultima_varredura",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": true
   },
   {
@@ -80,7 +80,7 @@
     "nome": "Sincronizar estoque marketplaces",
     "path": "logs/estoque_ultima.json",
     "campo": "timestamp",
-    "max_horas": 3,
+    "max_horas": 6,
     "critico": true,
     "ignorar_ausente": true
   },
@@ -130,7 +130,7 @@
     "nome": "Chat marketplaces",
     "path": "logs/chat_ultima.json",
     "campo": "timestamp",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": true,
     "ignorar_ausente": true
   },
@@ -150,7 +150,7 @@
     "nome": "Notificação vendas WhatsApp",
     "path": "logs/vendas_whatsapp_ultima.json",
     "campo": "timestamp",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": false,
     "ignorar_ausente": true
   },
@@ -160,7 +160,7 @@
     "nome": "Métricas Meta Ads (ciclo IG/FB)",
     "path": "logs/meta_metricas_ultima.json",
     "campo": "timestamp",
-    "max_horas": 2,
+    "max_horas": 6,
     "critico": true,
     "ignorar_ausente": true
   }

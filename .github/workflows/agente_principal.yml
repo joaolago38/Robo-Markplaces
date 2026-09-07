@@ -92,6 +92,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_FASE0_NAG: ${{ vars.CLAUDE_FASE0_NAG || '0' }}
           CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
           CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
           CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
@@ -153,6 +154,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_FASE0_NAG: ${{ vars.CLAUDE_FASE0_NAG || '0' }}
           CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
           CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
           CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
@@ -272,6 +274,7 @@ jobs:
           AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_FASE0_NAG: ${{ vars.CLAUDE_FASE0_NAG || '0' }}
           CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
           CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
           CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}

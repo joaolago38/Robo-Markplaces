@@ -5567,16 +5567,16 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Orquestrador sem ciclos (2h)",
             "type": "query alert",
-            "query": "avg(last_2h):avg:robo.orquestrador.ciclo.pulse{*} < 1",
+            "query": "max(last_6h):max:robo.orquestrador.ciclo.pulse{*} < 1",
             "message": (
-                "Nenhum ciclo do orquestrador em 2h. "
-                "Verifique GitHub Actions orquestrador_30min.\n" + msg_base
+                "Nenhum ciclo do orquestrador em 6h (janela larga por atraso do "
+                "Actions). Verifique GitHub Actions orquestrador_30min.\n" + msg_base
             ),
             "tags": [TAG_MONITOR, "monitor:orquestrador", "severity:p2"],
             "options": {
                 "thresholds": {"critical": 1},
                 "notify_no_data": True,
-                "no_data_timeframe": 150,
+                "no_data_timeframe": 360,
                 "require_full_window": False,
                 "include_tags": True,
             },
@@ -5585,7 +5585,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Vigia Datadog nao saudavel",
             "type": "query alert",
-            "query": "avg(last_1h):avg:robo.vigia_datadog.saudavel{*} < 1",
+            "query": "avg(last_6h):avg:robo.vigia_datadog.saudavel{*} < 1",
             "message": (
                 "Vigia reportou saude=0 (inatividades/erros abertos). "
                 "Veja logs Vigia e fontes em catalogo/datadog_vigia_fontes.json.\n"
@@ -5641,7 +5641,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Telegram falhas de envio",
             "type": "query alert",
-            "query": "sum(last_1h):sum:robo.telegram.envio_erro{*}.as_count() > 2",
+            "query": "sum(last_1h):default_zero(sum:robo.telegram.envio_erro{*}.as_count()) > 2",
             "message": (
                 "Falhas no Telegram. Verifique TELEGRAM_TOKEN / chat_id "
                 "(python scripts/diagnostico_telegram.py).\n" + msg_base
@@ -5658,7 +5658,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] NF-e erros",
             "type": "query alert",
-            "query": "sum(last_6h):sum:robo.nfe.erro{*}.as_count() > 2",
+            "query": "sum(last_6h):default_zero(sum:robo.nfe.erro{*}.as_count()) > 2",
             "message": "Erros na emissao de NF-e (Bling). Revise faturamento/Lojahub.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:nfe", "severity:p1"],
             "options": {
@@ -5672,7 +5672,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Estoque falha aplicacao",
             "type": "query alert",
-            "query": "sum(last_6h):sum:robo.estoque.falha_aplicacao{*}.as_count() > 0",
+            "query": "sum(last_6h):default_zero(sum:robo.estoque.falha_aplicacao{*}.as_count()) > 0",
             "message": "Falha ao aplicar estoque em canal. Risco de oversell/ruptura.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:estoque", "severity:p1"],
             "options": {
@@ -5686,7 +5686,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Token falha (OAuth)",
             "type": "query alert",
-            "query": "sum(last_2h):sum:robo.token.falha{*}.as_count() > 0",
+            "query": "sum(last_2h):default_zero(sum:robo.token.falha{*}.as_count()) > 0",
             "message": "Falha ao renovar/usar token OAuth. Verifique secrets.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:token", "severity:p1"],
             "options": {
@@ -5722,7 +5722,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Chat falhas",
             "type": "query alert",
-            "query": "sum(last_2h):sum:robo.chat.falha{*}.as_count() > 3",
+            "query": "sum(last_2h):default_zero(sum:robo.chat.falha{*}.as_count()) > 3",
             "message": "Falhas ao responder chat (ML/Shopee/Magalu/Amazon).\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:chat", "severity:p2"],
             "options": {
@@ -5736,7 +5736,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Repricing falha aplicacao",
             "type": "query alert",
-            "query": "sum(last_6h):sum:robo.repricing.falha_aplicacao{*}.as_count() > 0",
+            "query": "sum(last_6h):default_zero(sum:robo.repricing.falha_aplicacao{*}.as_count()) > 0",
             "message": "Falha ao aplicar repricing. Margem/preco podem estar desatualizados.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:repricing", "severity:p2"],
             "options": {
@@ -5753,7 +5753,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             # So falha de escrita real. HTTP 404 de listagem/escopo Ads e config
             # conhecida e nao deve manter P1 em Alert permanente.
             # Nome mantido para upsert atualizar o monitor 21629780 existente.
-            "query": "sum(last_24h):sum:robo.ads.falha{*}.as_count() > 0",
+            "query": "sum(last_24h):default_zero(sum:robo.ads.falha{*}.as_count()) > 0",
             "message": (
                 "Falha ao aplicar Product Ads (escrita). "
                 "404 de listagem/escopo NAO dispara este monitor — "
@@ -5771,15 +5771,18 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Product Ads indisponivel (404/escopo)",
             "type": "query alert",
-            "query": "avg(last_2h):avg:robo.ads.indisponivel_agora{*} > 0.5",
+            "query": (
+                "sum(last_7d):default_zero(sum:robo.ads.indisponivel{*}.as_count()) > 0"
+            ),
             "message": (
                 "Product Ads ML retornou HTTP 404 (escopo advertising / advertiser). "
                 "Corrija no DevCenter e regenere o token. "
+                "Lembrete semanal (nao fica Alert 24/7). "
                 "Gatilho NAO pede aprovacao Telegram enquanto isto persistir.\n" + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:ads", "prioridad:p2"],
             "options": {
-                "thresholds": {"critical": 0.5},
+                "thresholds": {"critical": 0},
                 "notify_no_data": False,
                 "require_full_window": False,
                 "include_tags": True,
@@ -5789,7 +5792,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Conectividade falhas",
             "type": "query alert",
-            "query": "sum(last_2h):sum:robo.conectividade.falha{*}.as_count() > 5",
+            "query": "sum(last_2h):default_zero(sum:robo.conectividade.falha{*}.as_count()) > 5",
             "message": "Muitas falhas de conectividade marketplace.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:conectividade", "severity:p2"],
             "options": {
@@ -5822,7 +5825,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Dados degradados",
             "type": "query alert",
-            "query": "sum(last_2h):sum:robo.dados.degradado{*}.as_count() > 5",
+            "query": "sum(last_2h):default_zero(sum:robo.dados.degradado{*}.as_count()) > 5",
             "message": "APIs retornando dados degradados/truncados.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:dados", "severity:p3"],
             "options": {
@@ -5836,7 +5839,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Vendas WhatsApp busca falhou",
             "type": "query alert",
-            "query": "sum(last_2h):sum:robo.vendas.busca_falhou{*}.as_count() > 0",
+            "query": "sum(last_2h):default_zero(sum:robo.vendas.busca_falhou{*}.as_count()) > 0",
             "message": (
                 "Busca de pedidos falhou (API generica) — vendas podem nao ser notificadas. "
                 "Auth Magalu/invalid_grant NAO entra aqui (vai para busca_auth_quebrada + "
@@ -5854,7 +5857,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Vendas auth quebrada (OAuth)",
             "type": "query alert",
-            "query": "sum(last_6h):sum:robo.vendas.busca_auth_quebrada{*}.as_count() > 0",
+            "query": "sum(last_6h):default_zero(sum:robo.vendas.busca_auth_quebrada{*}.as_count()) > 0",
             "message": (
                 "Busca de pedidos falhou por auth (401/403/invalid_grant). "
                 "Renove OAuth do canal (tipicamente Magalu). "
@@ -5872,7 +5875,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Brave cota esgotada",
             "type": "query alert",
-            "query": "sum(last_1d):sum:robo.brave.quota_esgotada{*}.as_count() > 0",
+            "query": "sum(last_1d):default_zero(sum:robo.brave.quota_esgotada{*}.as_count()) > 0",
             "message": (
                 "Cota mensal Brave esgotada (hard-stop). "
                 "Suba plano, BRAVE_QUOTA_MES, ou BRAVE_QUOTA_HARD_STOP=0.\n" + msg_base
@@ -5889,7 +5892,7 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Brave HTTP 429",
             "type": "query alert",
-            "query": "sum(last_6h):sum:robo.brave.http_429{*}.as_count() > 2",
+            "query": "sum(last_6h):default_zero(sum:robo.brave.http_429{*}.as_count()) > 2",
             "message": "Brave Search retornou 429 (rate/cota). Verifique painel Brave.\n" + msg_base,
             "tags": [TAG_MONITOR, "monitor:brave", "severity:p2"],
             "options": {
@@ -5905,8 +5908,9 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "type": "query alert",
             "query": "avg(last_1d):avg:robo.catalogo.guerra_sem_mlb{*} > 0",
             "message": (
-                "SKU(s) de guerra Impala ainda sem MLB (MLB_PREENCHER). "
-                "Publique MIMO-003 / PERL-004 / JU PAES-006 antes de ads/promocao.\n" + msg_ecom
+                "SKU(s) de guerra na onda atual (entrada/preco) ainda sem MLB. "
+                "Publique MIMO-003 / PERL-004. JUPAES (giro) so conta depois do 1o pedido.\n"
+                + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p1"],
             "options": {
@@ -5920,10 +5924,11 @@ def _monitores_desejados() -> list[dict[str, Any]]:
         {
             "name": "[Robo] Catalogo Impala margem real P0 baixa",
             "type": "query alert",
-            "query": "avg(last_1d):avg:robo.catalogo.margem_real_pct{prio:p0} < 10",
+            "query": "avg(last_1d):avg:robo.catalogo.margem_real_pct{prio:p0,guerra:true} < 10",
             "message": (
-                "Margem real media dos kits P0 abaixo de 10%. "
-                "Revise preco F1 / Full / taxa vs custo_total.\n" + msg_ecom
+                "Margem real media dos kits P0 de guerra abaixo de 10%. "
+                "Revise preco F1 / Full / taxa vs custo_total (nao inclui kits P0 "
+                "fora da guerra, ex. VR-015 com frete no custo).\n" + msg_ecom
             ),
             "tags": [TAG_MONITOR, "monitor:catalogo", "severity:p2"],
             "options": {

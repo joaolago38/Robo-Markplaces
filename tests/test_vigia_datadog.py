@@ -376,6 +376,33 @@ class VigiaDatadogTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertTrue(out["tem_critico"])
 
+    @patch("agentes.infra.agente_vigia_datadog.gauge")
+    @patch("integracoes.datadog.vigia_saude.analisar_saude")
+    def test_agente_emite_fonte_ok(self, mock_analise, mock_gauge):
+        from agentes.infra import agente_vigia_datadog as ag
+
+        mock_analise.return_value = {
+            "ok": False,
+            "tem_critico": True,
+            "total_inatividades": 1,
+            "total_erros": 0,
+            "mensagem_critica": "",
+            "inatividades": [{"fonte_id": "orquestrador"}],
+            "erros": [],
+        }
+        fontes = [{"id": "orquestrador"}, {"id": "conectividade"}]
+        with patch("agentes.infra.agente_vigia_datadog.carregar_fontes", return_value=fontes):
+            with patch("agentes.infra.agente_vigia_datadog.escrever_json_atomico"):
+                with patch("agentes.infra.agente_vigia_datadog.ler_json", return_value={}):
+                    with patch.object(ag, "gestor_telegram_configurado", return_value=False):
+                        ag.executar(enviar_alerta=False)
+        pares = [
+            (c.args[0], c.args[1], tuple(c.kwargs.get("tags") or []))
+            for c in mock_gauge.call_args_list
+        ]
+        self.assertIn(("vigia_datadog.fonte_ok", 0.0, ("fonte:orquestrador",)), pares)
+        self.assertIn(("vigia_datadog.fonte_ok", 1.0, ("fonte:conectividade",)), pares)
+
     @patch("integracoes.datadog.vigia_saude.analisar_saude")
     def test_main_nao_falha_se_problemas_sem_flag(self, mock_analise):
         from agentes.infra import agente_vigia_datadog as ag

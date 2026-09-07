@@ -139,6 +139,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_ADMIN_API_KEY: ${{ secrets.ANTHROPIC_ADMIN_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_FASE0_NAG: ${{ vars.CLAUDE_FASE0_NAG || '0' }}
           CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           CLAUDE_SALDO_CONSOLE_USD: ${{ vars.CLAUDE_SALDO_CONSOLE_USD }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}

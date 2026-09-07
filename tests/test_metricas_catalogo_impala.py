@@ -134,6 +134,19 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertGreaterEqual(snap["guerra_acima_piso15"], 1)
         self.assertGreater(snap["lucro_ref_total"], 0)
 
+    def test_guerra_sem_mlb_ignora_papel_giro(self):
+        guerra = [
+            {"sku": "IMP-PERL-004", "papel": "entrada"},
+            {"sku": "IMP-NUDE-010", "papel": "giro"},
+        ]
+        snap = m.montar_snapshot_catalogo(
+            produtos=self.produtos, guerra=guerra
+        )
+        self.assertEqual(snap["guerra_sem_mlb"], 1)
+        by = {k["sku"]: k for k in snap["kits"]}
+        self.assertFalse(by["IMP-NUDE-010"]["mlb_ok"])
+        self.assertEqual(by["IMP-NUDE-010"]["papel"], "giro")
+
     @patch("integracoes.esmaltes.metricas_catalogo_impala.incrementar")
     @patch("integracoes.esmaltes.metricas_catalogo_impala.gauge")
     def test_emitir_chama_gauges(self, mock_gauge, mock_inc):

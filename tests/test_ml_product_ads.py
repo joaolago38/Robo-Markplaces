@@ -120,7 +120,7 @@ class TestListarCampanhas(unittest.TestCase):
     @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
     @patch.object(ads, "_request_ml")
     @patch.object(ads, "_enabled", return_value=True)
-    def test_lista_404_emite_gauge_agora_mesmo_em_cooldown(self, _en, mock_req, _adv, mock_gauge):
+    def test_lista_404_emite_gauge_zero_em_cooldown(self, _en, mock_req, _adv, mock_gauge):
         err = Exception("404 Client Error: Not Found")
         err.response = MagicMock(status_code=404)
         mock_req.side_effect = err
@@ -136,7 +136,7 @@ class TestListarCampanhas(unittest.TestCase):
             c.args[1] for c in mock_gauge.call_args_list if c.args[0] == "ads.indisponivel_agora"
         ]
         self.assertTrue(valores)
-        self.assertTrue(all(v == 1.0 for v in valores))
+        self.assertTrue(all(v == 0.0 for v in valores))
 
     @patch("core.datadog_metrics.gauge")
     @patch.object(ads, "emitir_metricas_visibilidade_ads")

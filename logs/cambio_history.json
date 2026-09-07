@@ -674,17 +674,27 @@
       "usd_brl": 5.0821,
       "fonte": "awesomeapi",
       "consultado_em": "2026-09-03T12:26:35.243252+00:00"
+    },
+    {
+      "usd_brl": 5.1259,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-07T12:28:02.745948+00:00"
+    },
+    {
+      "usd_brl": 5.1259,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-07T12:28:02.846139+00:00"
     }
   ],
   "ultima": {
     "ok": true,
-    "usd_brl": 5.0821,
+    "usd_brl": 5.1259,
     "fonte": "awesomeapi",
-    "variacao_pct": -0.217942,
-    "consultado_em": "2026-09-03T12:26:35.243252+00:00",
+    "variacao_pct": 0.019515,
+    "consultado_em": "2026-09-07T12:28:02.846139+00:00",
     "idade_seg": 0,
     "confiavel": true,
-    "alta": "5.0936",
-    "baixa": "5.0706"
+    "alta": "5.1259",
+    "baixa": "5.1249"
   }
 }

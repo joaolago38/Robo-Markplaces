@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-03T12:26:35.128190+00:00",
+  "timestamp": "2026-09-07T12:28:01.657727+00:00",
   "diagnostico": {
     "ativo": true,
     "fonte": "superbid",
@@ -14,9 +14,9 @@
   },
   "lotes": [
     {
-      "hash": "7b9bfaaaadfd2de4",
-      "titulo": "chevrolet-785921",
-      "url": "https://www.superbid.net/evento/chevrolet-785921",
+      "hash": "8c7f8e0acf4a305d",
+      "titulo": "chevrolet-796185",
+      "url": "https://www.superbid.net/evento/chevrolet-796185",
       "lance_brl": null,
       "lance_lista_brl": null,
       "tem_documento": false,

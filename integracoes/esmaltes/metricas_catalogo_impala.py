@@ -19,6 +19,8 @@ from integracoes.esmaltes.crescimento_esmaltes import _mlb_valido
 logger = logging.getLogger("metricas_catalogo_impala")
 
 _RE_KIT = re.compile(r"[^a-z0-9]+")
+# Papéis já na onda de publicação. "giro" (ex.: JUPAES) espera 1º pedido MIMO/PERL.
+_PAPEIS_GUERRA_LANCAR_AGORA = frozenset({"entrada", "preco"})
 
 
 def kit_tag(sku: str) -> str:
@@ -130,7 +132,7 @@ def montar_snapshot_catalogo(
 
         papel = papel_por_sku.get(sku_u, "catalogo")
         if sku_u in skus_guerra:
-            if not mlb_ok:
+            if not mlb_ok and papel in _PAPEIS_GUERRA_LANCAR_AGORA:
                 guerra_sem_mlb += 1
             if ez:
                 guerra_estoque_z += 1
@@ -270,6 +272,7 @@ def emitir_metricas_catalogo_impala(
                 f"prio:{k['prio']}",
                 k["kit_tag"],
                 f"guerra:{str(bool(k['guerra'])).lower()}",
+                f"publicado:{'sim' if k['mlb_ok'] else 'nao'}",
             ]
             gauge("catalogo.score", float(k["score"]), tags=tags)
             gauge("catalogo.vd_dia_ref", float(k["vd_dia_ref"]), tags=tags)
