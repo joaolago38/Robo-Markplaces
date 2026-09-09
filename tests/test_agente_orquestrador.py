@@ -64,6 +64,7 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertNotIn("ponto_ruptura_outra_marca", ids)
         self.assertNotIn("monitor_cnpj_cnae", ids)
         self.assertIn("chat_ml", ids)
+        self.assertIn("integridade_ml", ids)
         self.assertNotIn("monitor_mercado_esmaltes", ids)
         self.assertNotIn("monitor_concorrentes", ids)
         self.assertNotIn("inteligencia_precos", ids)
@@ -113,6 +114,7 @@ class TestRegistroAgentes(unittest.TestCase):
         self.assertIn("monitor_concorrentes", ids)
         self.assertIn("inteligencia_precos", ids)
         self.assertIn("monitor_ml", ids)
+        self.assertIn("integridade_ml", ids)
         self.assertIn("monitor_sem_venda_ml", ids)
         self.assertIn("panorama", ids)
 

@@ -112,6 +112,7 @@ _LOGGER_META = {
     "sinais_comprador": ("multi", "integracao"),
     "sincronizar_estoque_marketplaces": ("mercadolivre_e_outros", "agente"),
     "agente_monitor_ml": ("mercadolivre", "agente"),
+    "agente_observabilidade_ml": ("mercadolivre", "agente"),
     "agente_relatorio_manha_ml": ("mercadolivre", "agente"),
     "agente_relatorio_estrategia_ml": ("mercadolivre", "agente"),
     "agente_ads_gatilho": ("mercadolivre_ads", "agente"),

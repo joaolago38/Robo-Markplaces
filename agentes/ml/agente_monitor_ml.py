@@ -183,9 +183,9 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             aplicar_foco=False,
         )
         try:
-            from integracoes.ml.integridade_dados_ml import executar as auditar_ml
+            from agentes.ml.agente_observabilidade_ml import executar as obs_ml
 
-            auditar_ml(anuncios=anuncios_todos)
+            obs_ml(anuncios=anuncios_todos)
         except Exception as exc:
             logger.info("integridade ML: %s", exc)
         anuncios, _ = filtrar_anuncios_foco(anuncios_todos)

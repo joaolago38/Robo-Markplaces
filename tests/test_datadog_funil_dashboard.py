@@ -111,6 +111,8 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         grupo = dd._grupo_pontos_cegos()
         blob = str(grupo)
         self.assertIn("robo.ml.loja.p0.tem", blob)
+        self.assertIn("robo.http.erro_conhecido", blob)
+        self.assertIn("robo.http.erro", blob)
         self.assertIn("robo.ml.loja.p0.telegram_ok", blob)
         self.assertIn("robo.ml.loja.p0.telegram_skip", blob)
         self.assertIn("robo.meta.rodadas", blob)

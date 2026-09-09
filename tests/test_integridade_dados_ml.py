@@ -143,6 +143,7 @@ class TestIntegridadeDadosMl(unittest.TestCase):
         self.assertIn("ml.integridade.amostra", nomes)
         self.assertIn("ml.integridade.ids_busca", nomes)
         self.assertIn("ml.integridade.paging_total", nomes)
+        self.assertIn("ml.saude.dados_api_ok", nomes)
         inc.assert_called_once_with("ml.integridade.ok")
 
     def test_paginacao_incompleta_nao_atinge_meta(self):

@@ -31,6 +31,13 @@ def _resolver_fn(registro: AgenteRegistrado) -> Callable[..., Any]:
 _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
     AgenteRegistrado("conectividade", "Conectividade marketplaces", "infra", "agentes.conectividade_marketplaces:executar"),
     AgenteRegistrado(
+        "integridade_ml",
+        "Integridade dados ML + catálogo",
+        "monitor",
+        "agentes.ml.agente_observabilidade_ml:executar",
+        notas="Heartbeat vigia + gauges dados_api_ok / frente_publicada (ciclo 30 min)",
+    ),
+    AgenteRegistrado(
         "vigia_datadog",
         "Vigia Datadog",
         "infra",
