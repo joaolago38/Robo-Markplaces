@@ -19,6 +19,7 @@
     "resumo_conta_ml",
     "alerta_pendencias_loja",
     "integridade_dados_ml",
+    "agente_observabilidade_ml",
     "agente_relatorio_manha_ml",
     "agente_ads_gatilho",
     "agente_otimizador_listing",

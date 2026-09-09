@@ -952,6 +952,26 @@ def _grupo_pontos_cegos() -> dict[str, Any]:
                 },
                 {
                     **_qv(
+                        "HTTP 4xx conhecido ML",
+                        "sum:robo.http.erro_conhecido{*}.as_count()",
+                        green_gt=None,
+                        yellow_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 15},
+                    "id": 720034,
+                },
+                {
+                    **_qv(
+                        "HTTP erro (nao classificado)",
+                        "sum:robo.http.erro{*}.as_count()",
+                        green_gt=None,
+                        red_gt=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 15},
+                    "id": 720035,
+                },
+                {
+                    **_qv(
                         "Estoque Falha",
                         "sum:robo.estoque.falha_aplicacao{*}.as_count()",
                         green_gt=None,
