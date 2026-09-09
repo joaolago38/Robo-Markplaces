@@ -100,6 +100,8 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.integridade.ids_busca",
             "robo.ml.integridade.paging_total",
             "robo.ml.saude.conta_ok",
+            "robo.ml.saude.dados_api_ok",
+            "robo.catalogo.frente_publicada",
             "robo.meta.ciclo.pronto",
         ):
             self.assertIn(metric, blob, msg=metric)

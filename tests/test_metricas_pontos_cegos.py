@@ -201,6 +201,8 @@ class TestVigiaFiltrosNotificador(unittest.TestCase):
         self.assertIn("ponto_ruptura_segundo_cnpj", ids)
         self.assertIn("ponto_ruptura_outra_marca", ids)
         self.assertIn("integridade_ml", ids)
+        integ = next(f for f in fontes if f.get("id") == "integridade_ml")
+        self.assertGreaterEqual(float(integ.get("max_horas") or 0), 6)
         self.assertIn("chat", ids)
         self.assertIn("nfe", ids)
         self.assertIn("vendas_whatsapp", ids)

@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
@@ -29,6 +31,8 @@ jobs:
       - name: Rodar teste de integracao
         run: python scripts/testar_integracao.py
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO:        ${{ vars.CLAUDE_ATIVO || '1' }}
           BLING_CLIENT_ID:     ${{ secrets.BLING_CLIENT_ID }}

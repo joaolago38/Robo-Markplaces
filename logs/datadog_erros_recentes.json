@@ -3,13 +3,24 @@
     {
       "fingerprint": "5b3e3ad32aa0d6ed8be2",
       "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-09-07T12:27:56.357307+00:00",
+      "ultima_vez": "2026-09-09T11:53:13.894650+00:00",
       "logger": "telegram_gate",
       "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 40
+      "ocorrencias": 41
+    },
+    {
+      "fingerprint": "030d99f650404eaf4f17",
+      "primeira_vez": "2026-07-05T20:46:21.505854+00:00",
+      "ultima_vez": "2026-09-09T11:53:12.671806+00:00",
+      "logger": "http_client",
+      "mensagem": "HTTP POST api.magalu.com falhou: timeout",
+      "status": "error",
+      "error_kind": "RuntimeError",
+      "error_message": "timeout",
+      "ocorrencias": 6
     },
     {
       "fingerprint": "00741e254c2078712423",
@@ -54,17 +65,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 7
-    },
-    {
-      "fingerprint": "030d99f650404eaf4f17",
-      "primeira_vez": "2026-07-05T20:46:21.505854+00:00",
-      "ultima_vez": "2026-09-02T20:58:13.758705+00:00",
-      "logger": "http_client",
-      "mensagem": "HTTP POST api.magalu.com falhou: timeout",
-      "status": "error",
-      "error_kind": "RuntimeError",
-      "error_message": "timeout",
-      "ocorrencias": 5
     },
     {
       "fingerprint": "0c5b8a9e2afb31343c0a",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-09-07T12:27:56.357307+00:00"
+  "atualizado_em": "2026-09-09T11:53:13.894650+00:00"
 }

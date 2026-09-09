@@ -16,6 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
@@ -64,6 +66,8 @@ jobs:
       - name: Rodar agente necessidade manicures
         run: python -m agentes.social.agente_necessidade_manicures
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}

@@ -1,28 +1,28 @@
 {
-  "timestamp": "2026-09-07T12:27:56.343274+00:00",
+  "timestamp": "2026-09-09T12:16:30.701760+00:00",
   "eventos": [
     {
       "tipo": "priorizar_chat",
       "marketplace": "mercadolivre",
       "motivo": "pendencias=0 status=critico score=10",
-      "criado_em": "2026-09-07T12:27:55.964635+00:00",
-      "expira_em": "2026-09-07T18:27:55.964635+00:00",
+      "criado_em": "2026-09-09T12:02:34.418280+00:00",
+      "expira_em": "2026-09-09T18:02:34.418280+00:00",
       "prioridade": 1
     },
     {
       "tipo": "priorizar_chat",
       "marketplace": "shopee",
       "motivo": "pendencias=0 status=critico score=20",
-      "criado_em": "2026-09-07T12:27:56.325700+00:00",
-      "expira_em": "2026-09-07T18:27:56.325700+00:00",
+      "criado_em": "2026-09-09T12:02:34.766487+00:00",
+      "expira_em": "2026-09-09T18:02:34.766487+00:00",
       "prioridade": 1
     },
     {
       "tipo": "congelar_repricing",
       "marketplace": "shopee",
       "motivo": "score=20 claims=0.0000 status=critico",
-      "criado_em": "2026-09-07T12:27:56.325700+00:00",
-      "expira_em": "2026-09-08T12:27:56.325700+00:00",
+      "criado_em": "2026-09-09T12:02:34.766487+00:00",
+      "expira_em": "2026-09-10T12:02:34.766487+00:00",
       "prioridade": 1
     },
     {

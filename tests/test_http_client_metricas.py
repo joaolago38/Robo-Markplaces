@@ -73,8 +73,43 @@ class TestHttpClientMetricas(unittest.TestCase):
             "GET",
             "https://api.mercadolibre.com/advertising/advertisers?product_id=PADS",
         )
-        mock_incrementar.assert_not_called()
+        mock_incrementar.assert_called_once()
+        self.assertEqual(mock_incrementar.call_args.args[0], "http.erro_conhecido")
+        tags = mock_incrementar.call_args.kwargs.get("tags") or []
+        self.assertIn("motivo:ads_404", tags)
         mock_gauge.assert_called_once()
+
+    @patch("core.http_client.incrementar")
+    @patch("core.http_client.gauge")
+    @patch("core.http_client._SESSION.request")
+    def test_403_sites_search_nao_incrementa_http_erro(
+        self, mock_request, mock_gauge, mock_incrementar
+    ):
+        mock_request.return_value = MagicMock(status_code=403)
+        http_client.request(
+            "GET",
+            "https://api.mercadolibre.com/sites/MLB/search?q=kit",
+        )
+        mock_incrementar.assert_called_once()
+        self.assertEqual(mock_incrementar.call_args.args[0], "http.erro_conhecido")
+        tags = mock_incrementar.call_args.kwargs.get("tags") or []
+        self.assertIn("motivo:search_403", tags)
+
+    @patch("core.http_client.incrementar")
+    @patch("core.http_client.gauge")
+    @patch("core.http_client._SESSION.request")
+    def test_400_performance_ml_nao_incrementa_http_erro(
+        self, mock_request, mock_gauge, mock_incrementar
+    ):
+        mock_request.return_value = MagicMock(status_code=400)
+        http_client.request(
+            "GET",
+            "https://api.mercadolibre.com/items/MLB123/performance",
+        )
+        mock_incrementar.assert_called_once()
+        self.assertEqual(mock_incrementar.call_args.args[0], "http.erro_conhecido")
+        tags = mock_incrementar.call_args.kwargs.get("tags") or []
+        self.assertIn("motivo:performance", tags)
 
     @patch("core.http_client.incrementar")
     @patch("core.http_client.gauge")

@@ -272,6 +272,7 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
     if not resumo.get("ok"):
         gauge("ml.saude.ok", 0.0)
         gauge("ml.saude.conta_ok", 0.0)
+        gauge("ml.saude.dados_api_ok", 0.0)
         return
     from integracoes.empresa.ponto_ruptura_segundo_cnpj import _f, _saude_conta_ok
 
@@ -318,10 +319,20 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
     gauge("ml.saude.envios_pendentes", float(resumo.get("envios_pendentes") or 0))
     gauge("ml.saude.claims_abertos", float(resumo.get("pos_venda_claims") or 0))
     gauge("ml.saude.precos_pendencias", float(resumo.get("precos_pendencias_total") or 0))
+    ativos_conta = int(resumo.get("anuncios_ativos_conta") or 0)
+    pausados_conta = int(resumo.get("anuncios_pausados_conta") or 0)
+    gauge(
+        "ml.saude.dados_api_ok",
+        1.0 if (ativos_conta + pausados_conta) > 0 else 0.0,
+    )
     gauge("ml.saude.todos_pausados", 1.0 if (
         int(resumo.get("anuncios_pausados") or 0) > 0
         and int(resumo.get("anuncios_ativos") or 0) == 0
     ) else 0.0)
+    gauge(
+        "ml.saude.todos_pausados_conta",
+        1.0 if pausados_conta > 0 and ativos_conta == 0 else 0.0,
+    )
 
 
 def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
@@ -375,12 +386,23 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
         linhas.append("  _Ao alcançar 10 vendas você terá cor de reputação._")
     ignorados = int(resumo.get("anuncios_ignorados_fora_foco") or 0)
     if ignorados > 0:
+        n_conta = int(resumo.get("anuncios_ativos_conta") or 0) + int(
+            resumo.get("anuncios_pausados_conta") or 0
+        )
+        extra_api = (
+            f" API listou {n_conta} da conta (legado/pausados) — dados ML ok."
+            if n_conta > 0
+            else ""
+        )
         linhas.append(
-            f"  _{ignorados} anúncio(s) de bolsas/legado ignorados. "
+            f"  _{ignorados} anúncio(s) de bolsas/legado ignorados.{extra_api} "
             "Radar só vê Impala/Masterprint. Reputação da conta continua valendo._"
         )
     if int(resumo.get("anuncios_total") or 0) == 0 and ignorados > 0:
-        linhas.append("  _Nenhum anúncio do foco no ar. Publique os kits Impala quando estiver pronto._")
+        linhas.append(
+            "  _Nenhum anúncio do foco no ar. MIMO-003 / PERL-004 ainda sem MLB "
+            "(item_id MLB_PREENCHER). Publique os kits Impala quando o estoque estiver pronto._"
+        )
     elif int(resumo.get("anuncios_pausados") or 0) > 0 and int(resumo.get("anuncios_ativos") or 0) == 0:
         linhas.append(
             "  ⚠️ *Todos os anúncios do foco estão pausados* — reative para voltar a vender."

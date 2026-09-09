@@ -72,13 +72,27 @@ def _path_url(url: str) -> str:
 
 def _http_erro_ads_404_conhecido(url: str, status: int) -> bool:
     """404 de Product Ads/advertiser é config (escopo), não falha transitória."""
-    if status != 404:
-        return False
+    return _motivo_http_ml_conhecido(url, status) == "ads_404"
+
+
+def _motivo_http_ml_conhecido(url: str, status: int) -> str | None:
+    """
+    4xx operacional do Mercado Livre — não infla robo.http.erro.
+    ads_404: Product Ads sem escopo no DevCenter.
+    search_403: /sites/*/search PolicyAgent.
+    performance: GET /performance em anúncio pausado/legado.
+    """
     host = _host_simplificado(url).lower()
     if "mercadolibre.com" not in host and "mercadolivre.com" not in host:
-        return False
+        return None
     path = _path_url(url)
-    return "advertising" in path or "product_ads" in path
+    if status == 404 and ("advertising" in path or "product_ads" in path):
+        return "ads_404"
+    if status == 403 and "/sites/" in path and "search" in path:
+        return "search_403"
+    if status in (400, 404) and "/performance" in path:
+        return "performance"
+    return None
 
 
 def _origem_http(host: str) -> str:
@@ -163,9 +177,16 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
     _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag=faixa_status)
     if response.status_code >= 400:
         silenciar, _flag = _silenciar_host_ruidoso(host)
-        if not silenciar and not _http_erro_ads_404_conhecido(url, response.status_code):
-            incrementar(
-                "http.erro",
-                tags=[*tags_base, f"status_code:{response.status_code}"],
-            )
+        if silenciar:
+            pass
+        else:
+            motivo = _motivo_http_ml_conhecido(url, response.status_code)
+            tags_erro = [*tags_base, f"status_code:{response.status_code}"]
+            if motivo:
+                incrementar(
+                    "http.erro_conhecido",
+                    tags=[*tags_erro, f"motivo:{motivo}"],
+                )
+            else:
+                incrementar("http.erro", tags=tags_erro)
     return response

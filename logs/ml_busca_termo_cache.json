@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-09-07T12:28:01.120371+00:00",
+    "timestamp": "2026-09-09T12:16:34.243792+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -18,7 +18,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-09-07T12:27:56.887004+00:00",
+    "timestamp": "2026-09-09T12:16:31.193055+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -34,7 +34,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-09-07T12:28:11.443727+00:00",
+    "timestamp": "2026-09-09T12:16:43.191942+00:00",
     "resultados": [
       {
         "item_id": "MLB5399622062",
@@ -43,18 +43,6 @@
         "quantidade_vendida": 0,
         "seller_id": "260326852",
         "permalink": "https://produto.mercadolivre.com.br/MLB5399622062",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB50257549",
-        "catalog_date_created": "2025-05-22T05:07:07Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4795826219",
-        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
-        "preco": 69.9,
-        "quantidade_vendida": 0,
-        "seller_id": "192161274",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4795826219",
         "fonte_busca": "products_api",
         "catalog_product_id": "MLB50257549",
         "catalog_date_created": "2025-05-22T05:07:07Z",
@@ -131,11 +119,23 @@
         "catalog_product_id": "MLB74725520",
         "catalog_date_created": "2026-07-01T00:13:11Z",
         "listing_type_id": "gold_special"
+      },
+      {
+        "item_id": "MLB4866195249",
+        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
+        "preco": 53.31,
+        "quantidade_vendida": 0,
+        "seller_id": "1944386901",
+        "permalink": "https://produto.mercadolivre.com.br/MLB4866195249",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB74725520",
+        "catalog_date_created": "2026-07-01T00:13:11Z",
+        "listing_type_id": "gold_special"
       }
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-09-07T12:27:56.709206+00:00",
+    "timestamp": "2026-09-09T12:16:31.018908+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -153,7 +153,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-09-07T12:27:56.750674+00:00",
+    "timestamp": "2026-09-09T12:16:31.058737+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
@@ -4340,7 +4340,7 @@
     ]
   },
   "kit esmalte colorama": {
-    "timestamp": "2026-09-07T12:27:56.969464+00:00",
+    "timestamp": "2026-09-09T12:16:31.263187+00:00",
     "resultados": [
       {
         "item_id": "MLB999",
