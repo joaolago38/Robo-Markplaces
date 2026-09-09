@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from integracoes.ml import coleta_demanda_ml as cd
@@ -202,9 +203,16 @@ class ColetaDemandaMlTests(unittest.TestCase):
         self.assertEqual(out["motivo"], "historico insuficiente")
 
     def test_tendencia_alta_baixa_confiabilidade(self):
+        agora = datetime.now(timezone.utc)
         snaps = [
-            {"timestamp": "2026-08-25T00:00:00+00:00", "soma_avaliacoes_visiveis": 10},
-            {"timestamp": "2026-09-01T00:00:00+00:00", "soma_avaliacoes_visiveis": 15},
+            {
+                "timestamp": (agora - timedelta(days=13)).isoformat(),
+                "soma_avaliacoes_visiveis": 10,
+            },
+            {
+                "timestamp": (agora - timedelta(days=6)).isoformat(),
+                "soma_avaliacoes_visiveis": 15,
+            },
         ]
         with patch.object(cd, "ler_json", return_value={"kit": {"snapshots": snaps}}):
             with patch.object(cd, "emitir_metricas_tendencia_demanda") as mock_e:

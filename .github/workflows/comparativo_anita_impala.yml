@@ -14,6 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
@@ -54,6 +56,8 @@ jobs:
       - name: Rodar comparativo Anita vs Impala
         run: python -m agentes.esmaltes.agente_comparativo_anita_impala
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}

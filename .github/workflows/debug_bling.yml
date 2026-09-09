@@ -7,6 +7,8 @@ on:
   workflow_dispatch:
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
@@ -29,6 +31,8 @@ jobs:
       - name: Rodar debug do Bling
         run: python scripts/debug_bling_refresh.py
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}

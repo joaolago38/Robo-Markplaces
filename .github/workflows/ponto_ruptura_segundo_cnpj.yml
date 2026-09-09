@@ -20,6 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
   DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
@@ -76,6 +78,8 @@ jobs:
           fi
           python -m agentes.empresa.agente_ponto_ruptura_segundo_cnpj $ARGS
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
@@ -98,6 +102,8 @@ jobs:
           fi
           python -m agentes.esmaltes.agente_ponto_ruptura_outra_marca $ARGS
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}

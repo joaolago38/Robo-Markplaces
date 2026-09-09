@@ -69,11 +69,38 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertIn("ml.saude.anuncios_ativos_conta", nomes)
         self.assertIn("ml.saude.anuncios_pausados_conta", nomes)
         self.assertIn("ml.saude.conta_ok", nomes)
+        self.assertIn("ml.saude.dados_api_ok", nomes)
+        self.assertIn("ml.saude.todos_pausados_conta", nomes)
         pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
         self.assertEqual(pares["ml.saude.ok"], 1.0)
         self.assertEqual(pares["ml.saude.conta_ok"], 1.0)
         self.assertEqual(pares["ml.saude.vendas_completadas"], 12.0)
         self.assertEqual(pares["ml.saude.claims_rate_pct"], 1.0)
+        self.assertEqual(pares["ml.saude.todos_pausados"], 0.0)
+        self.assertEqual(pares["ml.saude.dados_api_ok"], 0.0)
+
+    def test_emitir_metricas_legado_pausado_api_ok(self):
+        resumo = {
+            "ok": True,
+            "anuncios_ativos": 0,
+            "anuncios_pausados": 0,
+            "anuncios_total": 0,
+            "anuncios_ativos_conta": 0,
+            "anuncios_pausados_conta": 38,
+            "anuncios_ignorados_fora_foco": 38,
+            "reputacao": {
+                "cor": "Verde",
+                "claims_rate": 0,
+                "atraso_rate": 0,
+                "cancelamentos_rate": 0,
+            },
+        }
+        with patch("core.datadog_metrics.gauge") as mock_g:
+            rc.emitir_metricas_saude_conta(resumo)
+        pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
+        self.assertEqual(pares["ml.saude.dados_api_ok"], 1.0)
+        self.assertEqual(pares["ml.saude.catalogo_foco_vazio"], 1.0)
+        self.assertEqual(pares["ml.saude.todos_pausados_conta"], 1.0)
         self.assertEqual(pares["ml.saude.todos_pausados"], 0.0)
 
     def test_emitir_metricas_saude_falha(self):
@@ -82,6 +109,7 @@ class TestResumoContaMl(unittest.TestCase):
         pares = {c.args[0]: c.args[1] for c in mock_g.call_args_list}
         self.assertEqual(pares["ml.saude.ok"], 0.0)
         self.assertEqual(pares["ml.saude.conta_ok"], 0.0)
+        self.assertEqual(pares["ml.saude.dados_api_ok"], 0.0)
 
     def test_emitir_metricas_saude_conta_laranja(self):
         resumo = {
@@ -209,6 +237,8 @@ class TestResumoContaMl(unittest.TestCase):
             "anuncios_ativos": 0,
             "anuncios_pausados": 0,
             "anuncios_ignorados_fora_foco": 38,
+            "anuncios_ativos_conta": 0,
+            "anuncios_pausados_conta": 38,
             "precos_pendencias_total": 0,
             "publicidade_recomendacoes": 0,
             "envios_pendentes": 0,
@@ -228,6 +258,8 @@ class TestResumoContaMl(unittest.TestCase):
         }
         msg = rc.montar_mensagem_telegram(resumo)
         self.assertIn("38 anúncio(s) de bolsas/legado ignorados", msg)
+        self.assertIn("API listou 38 da conta", msg)
+        self.assertIn("MIMO-003 / PERL-004 ainda sem MLB", msg)
         self.assertIn("Reputação da conta continua valendo", msg)
         self.assertIn("Nenhum anúncio do foco no ar", msg)
         self.assertNotIn("reative para voltar a vender", msg)

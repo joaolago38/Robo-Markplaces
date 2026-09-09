@@ -259,6 +259,10 @@ def emitir_metricas_catalogo_impala(
         gauge("catalogo.estoque_zero", float(snap["estoque_zero"]))
         gauge("catalogo.guerra_total", float(snap["guerra_total"]))
         gauge("catalogo.guerra_sem_mlb", float(snap["guerra_sem_mlb"]))
+        gauge(
+            "catalogo.frente_publicada",
+            1.0 if int(snap["guerra_sem_mlb"] or 0) == 0 else 0.0,
+        )
         gauge("catalogo.guerra_estoque_zero", float(snap["guerra_estoque_zero"]))
         # Soma dos custos unitários do catálogo (= capital de custo / investido em produto)
         gauge("catalogo.custo_investido", float(snap.get("custo_investido") or 0))

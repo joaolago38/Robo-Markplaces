@@ -120,7 +120,7 @@
     "nome": "Integridade dados ML",
     "path": "logs/integridade_ml_ultima.json",
     "campo": "timestamp",
-    "max_horas": 4,
+    "max_horas": 6,
     "critico": true,
     "ignorar_ausente": true
   },

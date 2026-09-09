@@ -158,6 +158,7 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         nomes = [c.args[0] for c in mock_gauge.call_args_list]
         self.assertIn("catalogo.kits_total", nomes)
         self.assertIn("catalogo.guerra_sem_mlb", nomes)
+        self.assertIn("catalogo.frente_publicada", nomes)
         self.assertIn("catalogo.margem_trabalho_pct", nomes)
         self.assertIn("catalogo.margem_real_pct", nomes)
         self.assertIn("catalogo.custo_investido", nomes)

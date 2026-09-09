@@ -62,6 +62,8 @@ jobs:
       - name: Rodar monitor busca kit esmaltes
         run: python -m agentes.esmaltes.agente_monitor_busca_kit_esmaltes
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
