@@ -252,6 +252,29 @@ class TestClaudePerguntar(unittest.TestCase):
         mock_request.assert_not_called()
         mock_emit.assert_called()
 
+    def test_extrair_tokens_cache_aninhado(self):
+        tin, tout = claude_client._extrair_tokens_usage(
+            {
+                "input_tokens": 10,
+                "output_tokens": 4,
+                "cache_creation": {
+                    "ephemeral_5m_input_tokens": 100,
+                    "ephemeral_1h_input_tokens": 20,
+                },
+            }
+        )
+        self.assertEqual(tin, 130)
+        self.assertEqual(tout, 4)
+
+    def test_tokens_para_registro_estima_sem_usage(self):
+        tin, tout = claude_client.tokens_para_registro(
+            {},
+            texto_in="abcd" * 10,
+            texto_out="xy" * 8,
+        )
+        self.assertGreater(tin, 0)
+        self.assertGreater(tout, 0)
+
     def test_mlb_invalido_placeholder(self):
         self.assertTrue(claude_client.mlb_invalido("MLB_PREENCHER"))
         self.assertTrue(claude_client.mlb_invalido(""))

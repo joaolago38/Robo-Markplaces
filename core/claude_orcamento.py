@@ -84,6 +84,10 @@ def detectar_origem() -> str:
         "claude_orcamento.py",
         "claude_client.py",
         "resumo_ia.py",
+        "claude_toggle.py",
+        "claude_roteador.py",
+        "claude_contexto_ml.py",
+        "claude_billing.py",
     )
     for fr in traceback.extract_stack():
         path = (fr.filename or "").replace("\\", "/")
@@ -489,7 +493,7 @@ def _talvez_alertar(reg: dict[str, Any]) -> None:
         return
     limiares = list(reg.get("limiares") or [])
     res = reg.get("resumo") or {}
-    # alerta a cada chamada se flag verbose
+    # 1 = Telegram a cada chamada (origem, modelo, custo).
     verbose = bool(getattr(c, "CLAUDE_ORCAMENTO_ALERTA_TODAS", True))
     deve = verbose or bool(limiares) or bool(res.get("bloqueado"))
     if not deve:

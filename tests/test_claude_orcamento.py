@@ -4,7 +4,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from core import claude_orcamento as o
 
@@ -140,6 +140,41 @@ class TestClaudeOrcamento(unittest.TestCase):
         )
         self.assertIn("Assertividade", msg)
         self.assertIn("66.7", msg)
+
+    def test_talvez_alertar_nao_envia_em_toda_chamada(self):
+        cfg = Mock()
+        cfg.CLAUDE_ORCAMENTO_ALERTA = True
+        cfg.CLAUDE_ORCAMENTO_ALERTA_TODAS = False
+        with patch.object(o, "_cfg", return_value=cfg), patch(
+            "core.notificador.alertar_gestor"
+        ) as alertar:
+            o._talvez_alertar(
+                {
+                    "ok": True,
+                    "custo_usd": 0.01,
+                    "origem": "agentes.teste",
+                    "modelo": "claude-haiku-4-5",
+                    "resumo": {"bloqueado": False},
+                    "limiares": [],
+                }
+            )
+        alertar.assert_not_called()
+
+    def test_talvez_alertar_envia_no_limiar(self):
+        cfg = Mock()
+        cfg.CLAUDE_ORCAMENTO_ALERTA = True
+        cfg.CLAUDE_ORCAMENTO_ALERTA_TODAS = False
+        with patch.object(o, "_cfg", return_value=cfg), patch(
+            "core.notificador.alertar_gestor"
+        ) as alertar, patch.object(o, "montar_mensagem_telegram", return_value="x"):
+            o._talvez_alertar(
+                {
+                    "ok": True,
+                    "resumo": {"bloqueado": False},
+                    "limiares": [75],
+                }
+            )
+        alertar.assert_called_once()
 
     def test_estimar_haiku(self):
         with patch.object(o, "_cfg") as cfg:

@@ -111,8 +111,8 @@ CLAUDE_ORCAMENTO_ALERTA = os.getenv("CLAUDE_ORCAMENTO_ALERTA", "1").strip().lowe
     "false",
     "no",
 )
-# 1 = manda Telegram a cada chamada (monitoramento fino nesta fase)
-CLAUDE_ORCAMENTO_ALERTA_TODAS = os.getenv("CLAUDE_ORCAMENTO_ALERTA_TODAS", "0").strip().lower() not in (
+# 1 = Telegram a cada chamada Claude. 0 = só limiar, hard-stop e digest 6h.
+CLAUDE_ORCAMENTO_ALERTA_TODAS = os.getenv("CLAUDE_ORCAMENTO_ALERTA_TODAS", "1").strip().lower() not in (
     "0",
     "false",
     "no",
