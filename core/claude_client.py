@@ -168,12 +168,11 @@ def tokens_para_registro(
     texto_in: str = "",
     texto_out: str = "",
 ) -> tuple[int, int]:
-    """Usage da API; se vier zerado numa resposta útil, estima pelo texto."""
+    """Usage da API; se in e out vierem zerados, estima pelo texto (com teto)."""
     tin, tout = _extrair_tokens_usage(uso)
-    if tin <= 0:
-        tin = estimar_tokens_texto(texto_in)
-    if tout <= 0:
-        tout = estimar_tokens_texto(texto_out)
+    if tin <= 0 and tout <= 0:
+        tin = min(estimar_tokens_texto(texto_in), 50_000)
+        tout = min(estimar_tokens_texto(texto_out), 8_000)
     return tin, tout
 
 
@@ -361,6 +360,7 @@ def perguntar_estruturado(
     origem: str | None = None,
     exigir_contexto: bool = False,
     proposito: str | None = None,
+    forcar_chamada: bool = False,
 ) -> dict | None:
     """
     Como `perguntar`, mas força a resposta a seguir `schema` (JSON Schema
@@ -388,7 +388,7 @@ def perguntar_estruturado(
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso
 
-        ok_orc, motivo_orc = pode_chamar()
+        ok_orc, motivo_orc = pode_chamar(origem=origem, forcar=forcar_chamada)
         if not ok_orc:
             logger.warning("Claude estruturado bloqueado: %s", motivo_orc)
             registrar_uso(

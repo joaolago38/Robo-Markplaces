@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-09-09T12:50:24.637410+00:00",
+    "timestamp": "2026-09-10T12:54:47.715266+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -18,7 +18,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-09-09T12:50:27.831360+00:00",
+    "timestamp": "2026-09-10T12:54:41.296482+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -34,7 +34,7 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-09-09T12:50:33.543262+00:00",
+    "timestamp": "2026-09-10T12:54:57.496399+00:00",
     "resultados": [
       {
         "item_id": "MLB5399622062",
@@ -83,59 +83,11 @@
         "catalog_product_id": "MLB75354806",
         "catalog_date_created": "2026-07-10T19:32:30Z",
         "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7399075168",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 46.99,
-        "quantidade_vendida": 0,
-        "seller_id": "1735981530",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7399075168",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB4986360821",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 47.99,
-        "quantidade_vendida": 0,
-        "seller_id": "144167726",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4986360821",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4979931813",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 53.24,
-        "quantidade_vendida": 0,
-        "seller_id": "3143409372",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4979931813",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4866195249",
-        "titulo": "Kit Impala Cacau Show Completo Com 5 Esmaltes",
-        "preco": 53.31,
-        "quantidade_vendida": 0,
-        "seller_id": "1944386901",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4866195249",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB74725520",
-        "catalog_date_created": "2026-07-01T00:13:11Z",
-        "listing_type_id": "gold_special"
       }
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-09-09T12:50:27.458426+00:00",
+    "timestamp": "2026-09-10T12:54:41.114861+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -153,7 +105,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-09-09T12:50:27.591701+00:00",
+    "timestamp": "2026-09-10T12:54:41.173966+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
@@ -4340,7 +4292,7 @@
     ]
   },
   "kit esmalte colorama": {
-    "timestamp": "2026-09-09T12:50:27.944529+00:00",
+    "timestamp": "2026-09-10T12:54:41.348650+00:00",
     "resultados": [
       {
         "item_id": "MLB999",

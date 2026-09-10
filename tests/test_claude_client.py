@@ -275,6 +275,15 @@ class TestClaudePerguntar(unittest.TestCase):
         self.assertGreater(tin, 0)
         self.assertGreater(tout, 0)
 
+    def test_tokens_para_registro_respeita_usage_parcial(self):
+        tin, tout = claude_client.tokens_para_registro(
+            {"input_tokens": 12, "output_tokens": 0},
+            texto_in="x" * 4000,
+            texto_out="y" * 4000,
+        )
+        self.assertEqual(tin, 12)
+        self.assertEqual(tout, 0)
+
     def test_mlb_invalido_placeholder(self):
         self.assertTrue(claude_client.mlb_invalido("MLB_PREENCHER"))
         self.assertTrue(claude_client.mlb_invalido(""))
