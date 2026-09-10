@@ -78,30 +78,43 @@ def estimar_custo_usd(modelo: str, input_tokens: int, output_tokens: int) -> flo
     return round(custo, 6)
 
 
+def _origem_do_path(path: str, low: str, marcador: str) -> str | None:
+    needle = "/" + marcador
+    if needle in low:
+        idx = low.index(needle) + 1
+    elif low.startswith(marcador):
+        idx = 0
+    else:
+        return None
+    return path[idx + len(marcador) :].replace(".py", "").replace("/", ".")[:80]
+
+
 def detectar_origem() -> str:
-    """Heurística: primeiro frame em agentes/ ou integracoes/ (Windows + Linux/Actions)."""
+    """Primeiro frame em agentes/integracoes/api; core/ só se não houver domínio."""
     skip_arquivos = (
         "claude_orcamento.py",
         "claude_client.py",
         "resumo_ia.py",
+        "claude_toggle.py",
+        "claude_roteador.py",
+        "claude_contexto_ml.py",
+        "claude_billing.py",
     )
+    frames: list[tuple[str, str]] = []
     for fr in traceback.extract_stack():
         path = (fr.filename or "").replace("\\", "/")
         low = path.lower()
-        if "/tests/" in low or "\\tests\\" in (fr.filename or "").lower():
+        if "/tests/" in low:
             continue
         if any(low.endswith(nome) for nome in skip_arquivos):
             continue
-        for marcador in ("agentes/", "integracoes/", "api/", "core/"):
-            needle = "/" + marcador
-            if needle in low:
-                idx = low.index(needle) + 1
-            elif low.startswith(marcador):
-                idx = 0
-            else:
-                continue
-            trecho = path[idx + len(marcador) :]
-            return trecho.replace(".py", "").replace("/", ".")[:80]
+        frames.append((path, low))
+    for marcadores in (("agentes/", "integracoes/", "api/"), ("core/",)):
+        for path, low in frames:
+            for marcador in marcadores:
+                trecho = _origem_do_path(path, low, marcador)
+                if trecho:
+                    return trecho
     return "desconhecido"
 
 
@@ -489,9 +502,12 @@ def _talvez_alertar(reg: dict[str, Any]) -> None:
         return
     limiares = list(reg.get("limiares") or [])
     res = reg.get("resumo") or {}
-    # alerta a cada chamada se flag verbose
+    # 1 = Telegram a cada chamada real (origem, modelo, custo).
     verbose = bool(getattr(c, "CLAUDE_ORCAMENTO_ALERTA_TODAS", True))
-    deve = verbose or bool(limiares) or bool(res.get("bloqueado"))
+    chamada_bloqueada = (reg.get("resultado") or "").strip().lower() == "bloqueado"
+    deve = bool(limiares) or bool(res.get("bloqueado")) or (
+        verbose and not chamada_bloqueada
+    )
     if not deve:
         return
     try:

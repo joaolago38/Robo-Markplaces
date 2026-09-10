@@ -4,7 +4,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from core import claude_orcamento as o
 
@@ -141,6 +141,59 @@ class TestClaudeOrcamento(unittest.TestCase):
         self.assertIn("Assertividade", msg)
         self.assertIn("66.7", msg)
 
+    def test_talvez_alertar_nao_envia_em_toda_chamada(self):
+        cfg = Mock()
+        cfg.CLAUDE_ORCAMENTO_ALERTA = True
+        cfg.CLAUDE_ORCAMENTO_ALERTA_TODAS = False
+        with patch.object(o, "_cfg", return_value=cfg), patch(
+            "core.notificador.alertar_gestor"
+        ) as alertar:
+            o._talvez_alertar(
+                {
+                    "ok": True,
+                    "custo_usd": 0.01,
+                    "origem": "agentes.teste",
+                    "modelo": "claude-haiku-4-5",
+                    "resumo": {"bloqueado": False},
+                    "limiares": [],
+                }
+            )
+        alertar.assert_not_called()
+
+    def test_talvez_alertar_envia_no_limiar(self):
+        cfg = Mock()
+        cfg.CLAUDE_ORCAMENTO_ALERTA = True
+        cfg.CLAUDE_ORCAMENTO_ALERTA_TODAS = False
+        with patch.object(o, "_cfg", return_value=cfg), patch(
+            "core.notificador.alertar_gestor"
+        ) as alertar, patch.object(o, "montar_mensagem_telegram", return_value="x"):
+            o._talvez_alertar(
+                {
+                    "ok": True,
+                    "resumo": {"bloqueado": False},
+                    "limiares": [75],
+                }
+            )
+        alertar.assert_called_once()
+
+    def test_talvez_alertar_nao_envia_chamada_bloqueada_mesmo_com_todas(self):
+        cfg = Mock()
+        cfg.CLAUDE_ORCAMENTO_ALERTA = True
+        cfg.CLAUDE_ORCAMENTO_ALERTA_TODAS = True
+        with patch.object(o, "_cfg", return_value=cfg), patch(
+            "core.notificador.alertar_gestor"
+        ) as alertar:
+            o._talvez_alertar(
+                {
+                    "ok": True,
+                    "resultado": "bloqueado",
+                    "custo_usd": 0.0,
+                    "resumo": {"bloqueado": False},
+                    "limiares": [],
+                }
+            )
+        alertar.assert_not_called()
+
     def test_estimar_haiku(self):
         with patch.object(o, "_cfg") as cfg:
             cfg.return_value.CLAUDE_PRECO_HAIKU_IN = 1.0
@@ -259,6 +312,21 @@ class TestClaudeOrcamento(unittest.TestCase):
             return_value=[
                 _Fr("/home/runner/work/repo/agentes/ml/agente_monitor_ml.py"),
                 _Fr("/home/runner/work/repo/core/claude_client.py"),
+            ],
+        ):
+            self.assertEqual(o.detectar_origem(), "ml.agente_monitor_ml")
+
+    def test_detectar_origem_prefere_agente_sobre_core(self):
+        class _Fr:
+            def __init__(self, filename):
+                self.filename = filename
+
+        with patch(
+            "core.claude_orcamento.traceback.extract_stack",
+            return_value=[
+                _Fr("/repo/core/config.py"),
+                _Fr("/repo/agentes/ml/agente_monitor_ml.py"),
+                _Fr("/repo/core/claude_client.py"),
             ],
         ):
             self.assertEqual(o.detectar_origem(), "ml.agente_monitor_ml")

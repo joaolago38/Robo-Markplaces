@@ -3,6 +3,7 @@ core/claude_client.py
 Cliente centralizado para o Claude (Anthropic).
 Nunca lança exceção — erro retorna string de fallback.
 """
+import json
 import logging
 import time
 
@@ -122,14 +123,56 @@ def contexto_suficiente(contexto: str | None, *, minimo: int = CONTEXTO_MINIMO_C
     return len((contexto or "").strip()) >= int(minimo)
 
 
+def _int_usage(d: dict, *keys: str) -> int:
+    total = 0
+    for key in keys:
+        try:
+            total += int(d.get(key) or 0)
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def estimar_tokens_texto(texto: str | None) -> int:
+    """Heurística ~4 caracteres/token quando a API não manda usage."""
+    n = len((texto or "").strip())
+    if n <= 0:
+        return 0
+    return max(1, (n + 3) // 4)
+
+
 def _extrair_tokens_usage(uso: dict | None) -> tuple[int, int]:
-    """Soma input (incl. cache) + output do usage Anthropic."""
+    """Soma input (incl. cache aninhado) + output do usage Anthropic."""
     if not isinstance(uso, dict):
         return 0, 0
-    tin = int(uso.get("input_tokens") or 0)
-    tin += int(uso.get("cache_creation_input_tokens") or 0)
-    tin += int(uso.get("cache_read_input_tokens") or 0)
-    tout = int(uso.get("output_tokens") or 0)
+    tin = _int_usage(
+        uso,
+        "input_tokens",
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+    )
+    cache = uso.get("cache_creation")
+    if isinstance(cache, dict) and _int_usage(uso, "cache_creation_input_tokens") == 0:
+        tin += _int_usage(
+            cache,
+            "ephemeral_5m_input_tokens",
+            "ephemeral_1h_input_tokens",
+        )
+    tout = _int_usage(uso, "output_tokens")
+    return tin, tout
+
+
+def tokens_para_registro(
+    uso: dict | None,
+    *,
+    texto_in: str = "",
+    texto_out: str = "",
+) -> tuple[int, int]:
+    """Usage da API; se in e out vierem zerados, estima pelo texto (com teto)."""
+    tin, tout = _extrair_tokens_usage(uso)
+    if tin <= 0 and tout <= 0:
+        tin = min(estimar_tokens_texto(texto_in), 50_000)
+        tout = min(estimar_tokens_texto(texto_out), 8_000)
     return tin, tout
 
 
@@ -233,10 +276,6 @@ def perguntar(
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
-        tin, tout = _extrair_tokens_usage(uso)
-        if uso:
-            incrementar("ia.tokens_entrada", tin, tags=_tags)
-            incrementar("ia.tokens_saida", tout, tags=_tags)
         conteudo_resposta = data.get("content", [])
         if not conteudo_resposta:
             incrementar("ia.resposta_vazia", tags=_tags)
@@ -244,12 +283,19 @@ def perguntar(
             texto = "⚠️ Erro na IA: resposta vazia."
         else:
             texto = conteudo_resposta[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
+        tin, tout = tokens_para_registro(
+            uso,
+            texto_in=mensagem_texto,
+            texto_out="" if texto.startswith("⚠️") else texto,
+        )
+        if tin or tout:
+            incrementar("ia.tokens_entrada", tin, tags=_tags)
+            incrementar("ia.tokens_saida", tout, tags=_tags)
         try:
             from core.claude_orcamento import classificar_resultado_texto as _cls
             from core.claude_orcamento import registrar_uso as _reg
 
             resultado = _cls(texto)
-            # Texto útil conta como ok mesmo se usage vier sem tokens (API/cache).
             _reg(
                 modelo=modelo_efetivo,
                 input_tokens=tin,
@@ -314,6 +360,7 @@ def perguntar_estruturado(
     origem: str | None = None,
     exigir_contexto: bool = False,
     proposito: str | None = None,
+    forcar_chamada: bool = False,
 ) -> dict | None:
     """
     Como `perguntar`, mas força a resposta a seguir `schema` (JSON Schema
@@ -341,7 +388,7 @@ def perguntar_estruturado(
     try:
         from core.claude_orcamento import pode_chamar, registrar_uso
 
-        ok_orc, motivo_orc = pode_chamar()
+        ok_orc, motivo_orc = pode_chamar(origem=origem, forcar=forcar_chamada)
         if not ok_orc:
             logger.warning("Claude estruturado bloqueado: %s", motivo_orc)
             registrar_uso(
@@ -391,22 +438,31 @@ def perguntar_estruturado(
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
-        tin, tout = _extrair_tokens_usage(uso)
-        if uso:
-            incrementar("ia.tokens_entrada", tin, tags=_tags)
-            incrementar("ia.tokens_saida", tout, tags=_tags)
         resultado_final = "falha"
         payload_out = None
         for bloco in data.get("content", []):
             if bloco.get("type") == "tool_use" and bloco.get("name") == tool_name:
                 payload_out = bloco.get("input") or {}
-                # Payload estruturado útil = ok (não castigar por usage sem tokens).
                 resultado_final = "ok" if payload_out else "vazio"
                 break
         if payload_out is None:
             incrementar("ia.resposta_vazia", tags=_tags)
             logger.error("Claude não retornou tool_use esperado (%s): %s", tool_name, data)
             resultado_final = "falha"
+        texto_out = ""
+        if payload_out:
+            try:
+                texto_out = json.dumps(payload_out, ensure_ascii=False)
+            except Exception:
+                texto_out = str(payload_out)
+        tin, tout = tokens_para_registro(
+            uso,
+            texto_in=mensagem_texto,
+            texto_out=texto_out,
+        )
+        if tin or tout:
+            incrementar("ia.tokens_entrada", tin, tags=_tags)
+            incrementar("ia.tokens_saida", tout, tags=_tags)
         try:
             from core.claude_orcamento import registrar_uso
 

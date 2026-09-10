@@ -240,7 +240,73 @@ flowchart LR
 
 - Métricas com tags de baixa cardinalidade (`agente:`, `ok:`, `origem:`)  
 - Vigia detecta erros e inatividade  
-- Cooldown em alertas Telegram para evitar spam
+- Cooldown em alertas Telegram para evitar spam (`logs/alertas_cooldown.json`)
+
+### 8.1 O que vai para o Telegram
+
+Tudo passa por `core/notificador.py`. **Não vai JSON de pedido, token de marketplace nem dump de API.** Vai uma mensagem de texto (Markdown legado, até 4096 caracteres) para `https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage`.
+
+```mermaid
+flowchart LR
+  AG[Agentes] --> N[core.notificador]
+  N --> Gestor["Gestor TELEGRAM_GESTOR_CHAT_ID"]
+  N --> Geral["Chat geral TELEGRAM_CHAT_ID"]
+  N --> Manicures["Manicures TELEGRAM_MANICURES_CHAT_ID"]
+```
+
+#### Payload HTTP
+
+**Texto** (`_enviar`):
+
+- `chat_id` — um dos três chats
+- `text` — mensagem já montada (título + corpo)
+- `parse_mode`: `Markdown` (se o Telegram rejeitar, reenvia o texto original sem formatação)
+
+**Foto** (`_enviar_foto` / `enviar_foto_gestor`): `sendPhoto` com PNG/JPG e `caption` até 1024 caracteres (gráficos para o gestor).
+
+**Confirmação Ads** (`perguntar_gestor_e_aguardar`): mesmo `sendMessage` + teclado inline SIM/NÃO (`callback_data`: `ads_sim` / `ads_nao`). Opcionalmente 1–2 linhas de contexto geradas pelo Claude a partir de um `contexto_decisao` (gatilho, sazonalidade) — **não o dict inteiro**.
+
+Envelope que o notificador **sempre** prefixa:
+
+- Gestor: `Gestor {data/hora BRT}` + corpo (`alertar_gestor`)
+- Chat geral: `Alerta {data/hora BRT}` + corpo (`alertar`)
+- Manicures: `Promo manicures {data/hora BRT}` + corpo (`enviar_telegram_manicures`)
+- Crítico: `CRÍTICO` e pode ir **gestor + chat geral** se os IDs forem diferentes (`alertar_critico`)
+
+Se `TELEGRAM_EXPLICACAO_AGENTES=1` (padrão), depois do título entram os blocos “O que este agente faz” e “Quando roda” (`core/telegram_explicacao.py`).
+
+#### Três destinos
+
+| Canal | Secret | Função |
+|--------|--------|--------|
+| Gestor | `TELEGRAM_GESTOR_CHAT_ID` | Quase todos os relatórios e alertas (`alertar_gestor`) |
+| Chat geral | `TELEGRAM_CHAT_ID` | `alertar` / parte do `alertar_critico` |
+| Manicures | `TELEGRAM_MANICURES_CHAT_ID` | Promoções (`enviar_telegram_manicures`) — não é o chat do gestor |
+
+#### O que não vai no Telegram
+
+- Token do bot não vai no texto; só na URL da API.
+- Prompt, system e JSON enviados ao Claude **não** vão ao Telegram (só Datadog/logs locais).
+- Venda nova do dia a dia: **WhatsApp**, não Telegram (`agentes/vendas_notificador.py`). Telegram só se a **busca de pedidos falhar** (auth quebrada ou API fora).
+- Fatura/saldo Mercado Pago no resumo da conta: nota de que isso fica no painel, não no card.
+- Agentes marcados “sem Telegram no cron” (ex.: `monitor_anita`, `resumo_diario_novamix`; `kits_concorrentes_unificado` só grava JSON).
+
+#### Conteúdo típico por família (gestor)
+
+Cada agente monta um **resumo em português**, com SKU, nome, preço, %, MLB, links e contagens — não o pedido completo.
+
+- **Conta ML** (`integracoes/ml/resumo_conta.py`): nickname, seller_id, perguntas pendentes, anúncios a melhorar / ativos / pausados, Premium vs Clássico, sugestões de preço, Ads idle, envios, claims, reputação (cor, vendas, nota, claims rate, Mercado Líder).
+- **Margem de vendas**: alerta por item abaixo do mínimo (produto, marketplace, valor, margem) + resumo do período.
+- **Impala / esmaltes**: KPIs (kits % receita, margem), kits sem MLB, checklist, comparativo Anita, golpe de guerra, radar diferencial, kits sugeridos, busca de cores.
+- **Manicures (grupo)**: texto de promoção de kits Impala (catálogo ML); o gestor pode receber pedido de SIM antes (`necessidade_manicures`).
+- **Ads ML**: pergunta de confirmação antes de ligar/pausar/escalar Product Ads.
+- **Ciclo 30 min** (`orquestrador`): consolidado do que passou/falhou — não o relatório completo de cada agente.
+- **Operação / estoque / repricing**: snapshot ou falha de aplicação (contagens tipo `1/1`, SKUs).
+- **Claude**: **não** vai prompt, contexto JSON nem a resposta completa da API. O digest 6h (`agente_consumo_claude`) manda US$ usado/restante, assertividade e gráficos. Com `CLAUDE_ORCAMENTO_ALERTA_TODAS=1` (padrão) também alerta a cada chamada (origem, modelo, custo). Limiar e hard-stop continuam. Alguns agentes ainda colam um **resumo curto** da síntese (operação 24h, playbook, confirmação Ads).
+- **Datadog / conectividade**: erros, silêncio, falha de API.
+- **Outros ramos** (quando o cron está ligado): leilão/FIPE, licitações, filamentos/Masterprint, CNPJ/CNAE, importação (formato texto de landed/porto — vários desses estão desligados no cron).
+
+Para a API do Telegram vão só: **chat_id + texto** (e às vezes foto/legenda ou botões SIM/NÃO). O texto é um briefing operacional truncado em 4096 caracteres, com data BRT e (em geral) a explicação do agente.
 
 ## 9. Deploy e CI
 
