@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from integracoes.esmaltes.metricas_catalogo_impala import kit_tag
+
 
 def _f(val: Any, default: float = 0.0) -> float:
     try:
@@ -164,3 +166,45 @@ def montar_mensagem_sem_venda(analise: dict[str, Any]) -> str:
     if len(itens) > 12:
         linhas.append(f"• … +{len(itens) - 12} outros")
     return "\n".join(linhas)
+
+
+def emitir_metricas_sem_venda(analise: dict[str, Any] | None) -> None:
+    """Gauges Impala: totais + ranking por kit (sem tag sku)."""
+    try:
+        from core.datadog_metrics import gauge
+
+        data = analise if isinstance(analise, dict) else {}
+        base = ["cnpj:impala"]
+        gauge("ml.sem_venda.total", float(data.get("total_sem_venda") or 0), tags=base)
+        gauge(
+            "ml.sem_venda.anuncios_ativos",
+            float(data.get("total_anuncios") or 0),
+            tags=base,
+        )
+        gauge(
+            "ml.sem_venda.com_venda",
+            float(data.get("total_com_venda") or 0),
+            tags=base,
+        )
+        por_acao = data.get("por_acao") or {}
+        if isinstance(por_acao, dict):
+            for acao, n in por_acao.items():
+                acao_tag = str(acao or "x").strip().lower().replace(" ", "_")[:32]
+                gauge(
+                    "ml.sem_venda.acao_n",
+                    float(n or 0),
+                    tags=[*base, f"acao:{acao_tag}"],
+                )
+        for row in data.get("itens") or []:
+            if not isinstance(row, dict):
+                continue
+            sku = str(row.get("sku") or "").strip()
+            tags = [*base, kit_tag(sku)]
+            gauge(
+                "ml.sem_venda.visitas",
+                float(row.get("visitas_30d") or 0),
+                tags=tags,
+            )
+            gauge("ml.sem_venda.flag", 1.0, tags=tags)
+    except Exception:
+        pass

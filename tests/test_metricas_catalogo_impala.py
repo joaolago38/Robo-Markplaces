@@ -133,6 +133,8 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertGreaterEqual(snap["kits_acima_piso15"], 1)
         self.assertGreaterEqual(snap["guerra_acima_piso15"], 1)
         self.assertGreater(snap["lucro_ref_total"], 0)
+        self.assertGreaterEqual(snap["estoque_critico"], 2)
+        self.assertEqual(by["IMP-VR-015"]["estoque_unidades"], 5)
 
     def test_guerra_sem_mlb_ignora_papel_giro(self):
         guerra = [
@@ -166,6 +168,9 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertIn("catalogo.custo_total", nomes)
         self.assertIn("catalogo.kits_acima_piso15", nomes)
         self.assertIn("catalogo.lucro_ref_total", nomes)
+        self.assertIn("catalogo.estoque_critico", nomes)
+        self.assertIn("catalogo.estoque_unidades", nomes)
+        self.assertIn("catalogo.estoque_critico_flag", nomes)
         self.assertIn("impala.pipeline.lucro_op", nomes)
         # nenhuma tag sku:
         for c in mock_gauge.call_args_list:

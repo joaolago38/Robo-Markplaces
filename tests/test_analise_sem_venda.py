@@ -57,6 +57,24 @@ class TestAnaliseSemVenda(unittest.TestCase):
             "baixar_preco_ou_listing",
         )
 
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_metricas_sem_sku(self, mock_g):
+        out = sv.analisar_anuncios_sem_venda(
+            [{"item_id": "MLB1", "titulo": "Kit A", "preco": 48.9, "sku": "IMP-MIMO-003"}],
+            set(),
+            {"MLB1": {"visitas_30d": 50}},
+        )
+        sv.emitir_metricas_sem_venda(out)
+        nomes = [c.args[0] for c in mock_g.call_args_list]
+        self.assertIn("ml.sem_venda.total", nomes)
+        self.assertIn("ml.sem_venda.visitas", nomes)
+        for c in mock_g.call_args_list:
+            tags = c.kwargs.get("tags") or []
+            self.assertFalse(any(str(t).startswith("sku:") for t in tags))
+            self.assertTrue(any(str(t) == "cnpj:impala" for t in tags))
+            if c.args[0] == "ml.sem_venda.visitas":
+                self.assertIn("kit:mimo003", tags)
+
 
 class TestAgenteSemVenda(unittest.TestCase):
     @patch.object(ag, "alertar_gestor", return_value=True)

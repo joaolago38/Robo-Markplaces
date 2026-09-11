@@ -270,6 +270,7 @@ _LOGGER_META = {
     "vendas_notificador": ("multi", "agente"),
     "agente_monitor_margem_vendas": ("multi", "agente"),
     "analise_margem_vendas": ("multi", "integracao"),
+    "metricas_periodo_cnpj": ("multi", "integracao"),
     "agente_panorama": ("multi", "agente"),
     "relatorio_financeiro": ("multi", "agente"),
     "operacao_24h": ("infra", "agente"),

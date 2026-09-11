@@ -221,6 +221,29 @@ def executar(
         produtos = _carregar_produtos()
         analise = analisar_pedidos(pedidos, produtos, margem_min_pct=min_pct)
         _emitir_metricas(analise, dias=janela)
+        try:
+            from integracoes.vendas.metricas_periodo_cnpj import (
+                CNPJ_IMPALA,
+                CNPJ_MASTERPRINT,
+                emitir_periodo_cnpj,
+            )
+
+            pedidos_30, ok_30 = _buscar_pedidos(30)
+            emitir_periodo_cnpj(
+                CNPJ_IMPALA,
+                pedidos_30,
+                fonte_ok=any(ok_30.values()),
+                tag_produto="kit",
+            )
+            emitir_periodo_cnpj(
+                CNPJ_MASTERPRINT,
+                {},
+                fonte_ok=False,
+                tag_produto="prod",
+            )
+        except Exception as exc:
+            logger.debug("métricas período CNPJ: %s", exc)
+
 
         alertas_enviados = 0
         resumo_enviado = False

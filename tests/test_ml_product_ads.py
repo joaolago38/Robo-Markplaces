@@ -288,6 +288,42 @@ class TestVisibilidadeCtrCvr(unittest.TestCase):
         for c in mock_gauge.call_args_list:
             self.assertNotIn("tags", c.kwargs)
 
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_ads_hoje_por_campanha(self, mock_gauge):
+        ads.emitir_metricas_ads_hoje(
+            [
+                {
+                    "id": "C-99",
+                    "status": "active",
+                    "cost": 12.5,
+                    "prints": 100,
+                    "clicks": 4,
+                    "units_quantity": 1,
+                    "total_amount": 40,
+                }
+            ],
+            fonte_ok=True,
+        )
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ads.hoje.gasto", nomes)
+        self.assertIn("ads.hoje.ranking_gasto", nomes)
+        self.assertIn("ads.hoje.ativas_n", nomes)
+        for c in mock_gauge.call_args_list:
+            tags = c.kwargs.get("tags") or []
+            self.assertFalse(any(str(t).startswith("sku:") for t in tags))
+            if c.args[0] == "ads.hoje.ranking_gasto":
+                self.assertIn("camp:c99", tags)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_ads_hoje_sem_fonte(self, mock_gauge):
+        ads.emitir_metricas_ads_hoje(
+            [{"id": "C1", "cost": 9}],
+            fonte_ok=False,
+        )
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ads.hoje.fonte_ok", nomes)
+        self.assertNotIn("ads.hoje.ranking_gasto", nomes)
+
 
 if __name__ == "__main__":
     unittest.main()
