@@ -11,7 +11,8 @@ from typing import Any
 from core.atomic_io import escrever_json_atomico, ler_json
 from core.config import GOLPE_GUERRA_CLAUDE, ROOT
 from core.datadog_metrics import gauge, incrementar
-from integracoes.esmaltes.golpe_guerra_impala import fallback_fazer, montar_golpe as _montar
+from integracoes.esmaltes.golpe_guerra_impala import fallback_fazer
+from integracoes.esmaltes.golpe_guerra_impala import montar_golpe as _montar
 from integracoes.filamentos.doutrina_guerra_masterprint import (
     CNPJ_MASTERPRINT,
     TAGS_CNPJ,

@@ -20,11 +20,23 @@ from integracoes.esmaltes.doutrina_guerra_impala import (
     CLASSIF_NAO_PERSEGUIR,
     _f,
     _id_fase,
-    carregar_doutrina as _carregar,
     classificar_golpe,
     frente_skus,
     piso_preco,
     sku_preco_guerra,
+)
+from integracoes.esmaltes.doutrina_guerra_impala import (
+    carregar_doutrina as _carregar,
+)
+
+__all__ = (
+    "CLASSIF_DIFERENCIAR",
+    "CLASSIF_IGNORAR",
+    "CLASSIF_IGUALAR",
+    "CLASSIF_NAO_PERSEGUIR",
+    "classificar_golpe",
+    "piso_preco",
+    "sku_preco_guerra",
 )
 
 logger = logging.getLogger("doutrina_guerra_masterprint")
