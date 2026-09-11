@@ -32,7 +32,6 @@ from core.notificador import (
     manicures_telegram_configurado,
     perguntar_gestor_e_aguardar,
 )
-from core.whatsapp import enviar_grupo_manicures, whatsapp_grupo_manicures_configurado
 from integracoes.social.necessidade_manicures import (
     casar_necessidades_com_ml,
     montar_mensagem_gestor,
@@ -69,8 +68,7 @@ def _enviar_canais(escolhida: dict[str, Any]) -> dict[str, Any]:
     if not wa and not tg:
         out["motivo"] = "copy_vazia"
         return out
-    if whatsapp_grupo_manicures_configurado() and wa:
-        out["whatsapp"] = bool(enviar_grupo_manicures(wa))
+    out["whatsapp"] = False
     if manicures_telegram_configurado() and tg:
         out["telegram"] = bool(
             enviar_telegram_manicures(

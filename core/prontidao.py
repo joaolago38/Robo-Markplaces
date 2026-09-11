@@ -54,28 +54,12 @@ def pode_alertar_esmaltes() -> tuple[bool, str]:
     return True, "ok"
 
 
-def whatsapp_grupo_manicures_pronto() -> bool:
-    """True se Evolution API e JID do grupo manicures estão configurados."""
-    try:
-        from core.whatsapp import whatsapp_grupo_manicures_configurado
-
-        return bool(whatsapp_grupo_manicures_configurado())
-    except Exception:
-        return False
-
-
 def pode_divulgar_promocoes_manicures() -> tuple[bool, str]:
     """
-    Libera divulgação quando há ao menos um canal (grupo WA ou Telegram manicures)
-    e o recurso está ativo em PROMOCOES_MANICURES_ATIVO.
+    Libera divulgação no Telegram das manicures (criativo WhatsApp é postagem manual).
     """
     if not PROMOCOES_MANICURES_ATIVO:
         return False, "promocoes_desativadas"
-    wa = whatsapp_grupo_manicures_pronto()
-    tg = manicures_telegram_configurado()
-    if not wa and not tg:
-        return (
-            False,
-            "nenhum_canal (defina WHATSAPP_GRUPO_MANICURES_ID + Evolution ou TELEGRAM_MANICURES_CHAT_ID)",
-        )
+    if not manicures_telegram_configurado():
+        return False, "nenhum_canal (defina TELEGRAM_MANICURES_CHAT_ID)"
     return True, "ok"

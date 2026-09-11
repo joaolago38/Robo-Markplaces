@@ -351,6 +351,44 @@ def alertar_critico(
     return ok
 
 
+def notificar_venda_gestor(
+    marketplace: str,
+    pedido_id: str,
+    produto: str,
+    valor: float,
+    quantidade: int = 1,
+) -> bool:
+    """Aviso de venda no Telegram do gestor."""
+    try:
+        destino = (TELEGRAM_GESTOR_CHAT_ID or TELEGRAM_CHAT_ID or "").strip()
+        if not (TELEGRAM_TOKEN or "").strip() or not destino:
+            logger.warning("Telegram gestor/chat vazio — venda não notificada")
+            return False
+        hora = formatar_data_hora_br()
+        emoji_marketplace = {
+            "mercadolivre": "🛒",
+            "shopee": "🛍️",
+            "magalu": "🏪",
+            "amazon": "📦",
+        }.get(str(marketplace or "").lower(), "🏬")
+        try:
+            valor_n = float(valor or 0)
+        except (TypeError, ValueError):
+            valor_n = 0.0
+        msg = (
+            f"{emoji_marketplace} *Nova venda — {str(marketplace).title()}*\n"
+            f"🕐 {hora}\n\n"
+            f"📦 Produto: {produto}\n"
+            f"🔢 Qtd: {quantidade}\n"
+            f"💰 Valor: R$ {valor_n:.2f}\n"
+            f"🔖 Pedido: {pedido_id}"
+        )
+        return _enviar(destino, msg)
+    except Exception as exc:
+        logger.error("notificar_venda_gestor: %s", exc)
+        return False
+
+
 def notificar_venda_whatsapp(
     marketplace: str,
     pedido_id: str,
@@ -358,20 +396,14 @@ def notificar_venda_whatsapp(
     valor: float,
     quantidade: int = 1,
 ) -> bool:
-    """Notifica nova venda no WhatsApp (Evolution ou Meta). Nunca lança exceção."""
-    try:
-        from core.whatsapp import notificar_venda
-
-        return notificar_venda(
-            marketplace=marketplace,
-            pedido_id=pedido_id,
-            produto=produto,
-            valor=valor,
-            quantidade=quantidade,
-        )
-    except Exception as exc:
-        logger.error("notificar_venda_whatsapp: %s", exc)
-        return False
+    """Compat: aviso de venda vai ao Telegram do gestor (não ao WhatsApp)."""
+    return notificar_venda_gestor(
+        marketplace=marketplace,
+        pedido_id=pedido_id,
+        produto=produto,
+        valor=valor,
+        quantidade=quantidade,
+    )
 
 
 def _responder_callback(callback_query_id: str, texto: str) -> None:

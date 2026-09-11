@@ -97,14 +97,22 @@ class TestNotificadorAlertar(unittest.TestCase):
         m_gestor.assert_called_once()
         m_alert.assert_not_called()
 
-    @patch("core.whatsapp.notificar_venda", return_value=True)
-    def test_NT06_notificar_venda_whatsapp_delega_whatsapp(self, mock_nv):
+    @patch.object(notificador, "_enviar", return_value=True)
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "gestor1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_NT06_notificar_venda_vai_ao_telegram_gestor(self, *_):
         ok = notificador.notificar_venda_whatsapp("ml", "PED-1", "Kit", 59.90)
         self.assertTrue(ok)
-        mock_nv.assert_called_once()
+        notificador._enviar.assert_called_once()
+        destino, msg = notificador._enviar.call_args[0]
+        self.assertEqual(destino, "gestor1")
+        self.assertIn("PED-1", msg)
+        self.assertIn("Nova venda", msg)
 
-    @patch("core.whatsapp.notificar_venda", side_effect=Exception("boom"))
-    def test_NT07_notificar_venda_whatsapp_false_em_excecao(self, _mock_nv):
+    @patch.object(notificador, "_enviar", side_effect=Exception("boom"))
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "gestor1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_NT07_notificar_venda_false_em_excecao(self, *_):
         ok = notificador.notificar_venda_whatsapp("ml", "PED-1", "Kit", 59.90)
         self.assertFalse(ok)
 

@@ -68,7 +68,7 @@ class TestCrescimentoEsmaltes(unittest.TestCase):
         )
         ids = [c["id"] for c in check]
         self.assertIn("publicar_kits_mlb", ids)
-        self.assertIn("config_whatsapp", ids)
+        self.assertNotIn("config_whatsapp", ids)
 
     def test_sugeridos_pendentes(self):
         montar = {

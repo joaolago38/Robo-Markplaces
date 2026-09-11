@@ -440,11 +440,11 @@ def diagnosticar_canais(cfg: dict[str, Any]) -> dict[str, Any]:
     """
     canais = {
         "whatsapp": {
-            "pronto": bool(cfg.get("wa")),
-            "status": "ok" if cfg.get("wa") else "config_pendente",
-            "nota": "WHATSAPP_* + GRUPO_MANICURES_ID" if not cfg.get("wa") else "grupo ok",
-            "toggle": "CONVERSAO_MANICURES_ENVIAR_WA",
-            "toggle_ligado": bool(cfg.get("enviar_wa")),
+            "pronto": True,
+            "status": "ok",
+            "nota": "postagem_manual — robô não envia ao grupo",
+            "toggle": None,
+            "toggle_ligado": False,
         },
         "telegram_manicures": {
             "pronto": bool(cfg.get("tg_manicures")),
@@ -500,9 +500,9 @@ def diagnosticar_canais(cfg: dict[str, Any]) -> dict[str, Any]:
             "toggle_ligado": bool(cfg.get("reply_meta")),
         },
         "reply_wa": {
-            "pronto": bool(cfg.get("reply_wa") and cfg.get("wa")),
+            "pronto": bool(cfg.get("reply_wa") and cfg.get("wa_meta")),
             "status": "ok" if cfg.get("reply_wa") else "desligado",
-            "nota": "CONVERSAO_MANICURES_REPLY_WA=1",
+            "nota": "CONVERSAO_MANICURES_REPLY_WA=1 + WhatsApp Cloud (Meta)",
             "toggle": "CONVERSAO_MANICURES_REPLY_WA",
             "toggle_ligado": bool(cfg.get("reply_wa")),
         },
@@ -522,7 +522,7 @@ def diagnosticar_canais(cfg: dict[str, Any]) -> dict[str, Any]:
         "como_ativar": [
             "1) Preencha item_id MLB real na campanha/catálogo (sem MLB_PREENCHER)",
             "2) CONVERSAO_MANICURES_ESCRITA=1 (master)",
-            "3) Ligue só o canal pronto: ENVIAR_WA / ENVIAR_TG / PUBLICAR_FB / PUBLICAR_IG / REPLY_* / CHAT_ML",
+            "3) Ligue só o canal pronto: ENVIAR_TG / PUBLICAR_FB / PUBLICAR_IG / REPLY_* / CHAT_ML",
         ],
     }
 

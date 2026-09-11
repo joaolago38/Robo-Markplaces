@@ -53,7 +53,7 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         {"enviar_alerta": False},
         notas="Datadog a cada ciclo; Telegram fica no workflow de 6h",
     ),
-    AgenteRegistrado("vendas_whatsapp", "Vendas WhatsApp", "vendas", "agentes.vendas_notificador:executar"),
+    AgenteRegistrado("vendas_whatsapp", "Vendas Telegram (gestor)", "vendas", "agentes.vendas_notificador:executar"),
     AgenteRegistrado(
         "monitor_margem_vendas",
         "Margem das vendas (Telegram)",

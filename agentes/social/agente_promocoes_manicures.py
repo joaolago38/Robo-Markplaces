@@ -1,7 +1,7 @@
 """
 agentes/social/agente_promocoes_manicures.py
 Divulga promoções de esmaltes Impala no Mercado Livre para manicures
-via grupo WhatsApp e canal Telegram, com mensagens pré-definidas no catálogo.
+via Telegram (criativo WhatsApp fica para postagem manual).
 
 Catálogo: catalogo/promocoes_manicures_ml.json
 
@@ -22,7 +22,6 @@ from core.config import PROMOCOES_MANICURES_COOLDOWN_SEG, PROMOCOES_MANICURES_IN
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor, enviar_telegram_manicures, gestor_telegram_configurado
 from core.prontidao import pode_divulgar_promocoes_manicures
-from core.whatsapp import enviar_grupo_manicures, whatsapp_grupo_manicures_configurado
 from integracoes.social.promocoes_manicures import (
     campanhas_liberadas,
     carregar_campanhas,
@@ -204,9 +203,7 @@ def executar(
         escrever_json_atomico(SNAPSHOT_PATH, montado)
         return resultado
 
-    if whatsapp_grupo_manicures_configurado():
-        resultado["whatsapp"] = bool(enviar_grupo_manicures(str(montado.get("texto_whatsapp") or "")))
-
+    resultado["whatsapp"] = False
     resultado["telegram"] = bool(
         enviar_telegram_manicures(
             str(montado.get("texto_telegram") or montado.get("texto") or ""),
@@ -249,7 +246,7 @@ def executar(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Divulga promoções ML para manicures (WhatsApp + Telegram)")
+    parser = argparse.ArgumentParser(description="Divulga promoções ML para manicures (Telegram; WA manual)")
     parser.add_argument("--sem-envio", action="store_true", help="Monta mensagem sem enviar")
     parser.add_argument("--campanha", default="", help="ID fixo da campanha (opcional)")
     parser.add_argument("--forcar", action="store_true", help="Ignora intervalo mínimo entre envios")

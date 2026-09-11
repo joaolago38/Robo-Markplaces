@@ -227,8 +227,8 @@ def diagnostico_canais(
     diag = (data.get("diagnostico") or {}).get("canais") or {}
     pendentes = list((data.get("diagnostico") or {}).get("pendentes") or [])
     return {
-        "pendentes": pendentes,
-        "whatsapp_ok": (diag.get("whatsapp") or {}).get("pronto") is True,
+        "pendentes": [p for p in pendentes if p != "whatsapp"],
+        "whatsapp_ok": True,
         "instagram_ok": (diag.get("instagram") or {}).get("pronto") is True,
         "telegram_manicures_ok": (diag.get("telegram_manicures") or {}).get("pronto") is True,
     }
@@ -269,16 +269,6 @@ def montar_checklist(
                 "titulo": f"Criar/publicar {len(sugeridos)} kit(s) sugeridos sem anúncio",
                 "detalhe": ", ".join(str(s.get("nome_sugerido")) for s in sugeridos[:3]),
                 "tipo": "ops",
-            }
-        )
-    if not canais.get("whatsapp_ok"):
-        itens.append(
-            {
-                "id": "config_whatsapp",
-                "prioridade": 1,
-                "titulo": "Configurar WhatsApp grupo manicures",
-                "detalhe": "WHATSAPP_* + WHATSAPP_GRUPO_MANICURES_ID",
-                "tipo": "config",
             }
         )
     if not canais.get("instagram_ok"):
@@ -355,7 +345,7 @@ def montar_relatorio(
     eco = ler_json(ECOSSISTEMA_PATH, default={})
     score_eco = (eco or {}).get("score_ecossistema") if isinstance(eco, dict) else None
 
-    critico = bool(sem_mlb or sugeridos or not canais.get("whatsapp_ok"))
+    critico = bool(sem_mlb or sugeridos)
     return {
         "ok": True,
         "timestamp": datetime.now(timezone.utc).isoformat(),

@@ -74,7 +74,6 @@ jobs:
           BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
-          WHATSAPP_GRUPO_MANICURES_ID: ${{ secrets.WHATSAPP_GRUPO_MANICURES_ID }}
           TELEGRAM_MANICURES_CHAT_ID: ${{ secrets.TELEGRAM_MANICURES_CHAT_ID }}
       - name: Publicar heartbeats de saude
         if: always()
