@@ -163,6 +163,11 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "Classifica o golpe da frente Impala (ignorar, diferenciar, igualar na faixa "
         "ou nao perseguir). Telegram só no disparo. Nao altera preco sozinho."
     ),
+    "golpe_guerra_masterprint": (
+        "Mesma doutrina no CNPJ Masterprint (23.811.261/0001-97): PETG Preto entra, "
+        "Branco é o único que iguala preço, Azul é giro. Telegram só no disparo. "
+        "Não altera preço sozinho."
+    ),
     "simulacao_guerra_impala": (
         "Sala de guerra operacional: trata MIMO/PERL/JUPAES como no ar "
         "(estoque 60, rivais ao vivo). Overlay em memória — não grava item id. "
@@ -392,6 +397,10 @@ HORARIOS_AGENTES: dict[str, str] = {
     "decisao_dia_esmaltes": "Debug manual (sem Telegram) — produção via esmaltes_operacao",
     "esmaltes_operacao": "3x/dia às 08:00, 14:00 e 21:00 BRT — único Telegram Impala",
     "golpe_guerra_impala": "No golpe (monitor concorrentes 30 min); cooldown 6h por SKU+classe",
+    "golpe_guerra_masterprint": (
+        "No monitor PETG (08:15 BRT) e no snapshot da batalha filamentos; "
+        "cooldown 6h por SKU+classe. 2º CNPJ."
+    ),
     "simulacao_guerra_impala": "Sob demanda / CLI — nao entra no cron",
     "radar_diferencial_impala": "No monitor concorrentes (30 min) + orquestrador visao atuacao; cooldown 6h no Telegram",
     "kits_concorrentes_unificado": "A cada 30 min (orquestrador), depois do radar; sem Telegram — só o JSON",
@@ -513,6 +522,8 @@ _CHAVE_PARA_AGENTE: tuple[tuple[str, str], ...] = (
     ("operacao_esmaltes", "esmaltes_operacao"),
     ("golpe_guerra_impala", "golpe_guerra_impala"),
     ("golpe_guerra", "golpe_guerra_impala"),
+    ("golpe_guerra_masterprint", "golpe_guerra_masterprint"),
+    ("golpe_petg", "golpe_guerra_masterprint"),
     ("simulacao_guerra_impala", "simulacao_guerra_impala"),
     ("simulacao_guerra", "simulacao_guerra_impala"),
     ("radar_diferencial_impala", "radar_diferencial_impala"),

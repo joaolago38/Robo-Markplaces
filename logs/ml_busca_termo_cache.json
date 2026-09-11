@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-09-10T12:54:47.715266+00:00",
+    "timestamp": "2026-09-11T13:20:04.626682+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -18,7 +18,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-09-10T12:54:41.296482+00:00",
+    "timestamp": "2026-09-11T13:19:08.615991+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -34,60 +34,25 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-09-10T12:54:57.496399+00:00",
+    "timestamp": "2026-09-11T13:20:08.054555+00:00",
     "resultados": [
       {
-        "item_id": "MLB5399622062",
-        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
-        "preco": 68.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB5399622062",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB50257549",
-        "catalog_date_created": "2025-05-22T05:07:07Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB4180976933",
-        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
-        "preco": 85.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB4180976933",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB50257549",
-        "catalog_date_created": "2025-05-22T05:07:07Z",
-        "listing_type_id": "gold_pro"
-      },
-      {
-        "item_id": "MLB7144006914",
-        "titulo": "Kit Impala Disney Channel Hannah Montana Esmalte",
-        "preco": 29.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7144006914",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB75354806",
-        "catalog_date_created": "2026-07-10T19:32:30Z",
-        "listing_type_id": "gold_special"
-      },
-      {
-        "item_id": "MLB7144286198",
-        "titulo": "Kit Impala Disney Channel Hannah Montana Esmalte",
-        "preco": 31.9,
-        "quantidade_vendida": 0,
-        "seller_id": "260326852",
-        "permalink": "https://produto.mercadolivre.com.br/MLB7144286198",
-        "fonte_busca": "products_api",
-        "catalog_product_id": "MLB75354806",
-        "catalog_date_created": "2026-07-10T19:32:30Z",
-        "listing_type_id": "gold_pro"
+        "item_id": "MLB2",
+        "titulo": "Kit Impala Concorrente",
+        "preco": 35.0,
+        "frete_gratis": true,
+        "condicao": "new",
+        "quantidade_vendida": 5,
+        "seller_id": "888",
+        "permalink": "",
+        "listing_type_id": "",
+        "logistic_type": "",
+        "fonte_busca": "api"
       }
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-09-10T12:54:41.114861+00:00",
+    "timestamp": "2026-09-11T13:20:00.725145+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -105,7 +70,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-09-10T12:54:41.173966+00:00",
+    "timestamp": "2026-09-11T13:20:00.764636+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
@@ -4292,7 +4257,7 @@
     ]
   },
   "kit esmalte colorama": {
-    "timestamp": "2026-09-10T12:54:41.348650+00:00",
+    "timestamp": "2026-09-11T13:20:00.838228+00:00",
     "resultados": [
       {
         "item_id": "MLB999",

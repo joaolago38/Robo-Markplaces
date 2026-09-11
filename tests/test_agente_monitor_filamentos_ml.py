@@ -165,7 +165,7 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             "integracoes.ml.coleta_demanda_ml.enriquecer_visitas_amostra",
             return_value=0,
         ), patch(
-            "integracoes.ml.coleta_demanda_ml.coletar_funil_proprio",
+            "integracoes.ml.coleta_demanda_ml.resolver_funil_proprio_cnpj2",
             return_value={
                 "ok": True,
                 "dias": 7,
@@ -380,7 +380,7 @@ class AgenteMonitorFilamentosMlTests(unittest.TestCase):
             "integracoes.ml.coleta_demanda_ml.enriquecer_visitas_amostra",
             return_value=0,
         ), patch(
-            "integracoes.ml.coleta_demanda_ml.coletar_funil_proprio",
+            "integracoes.ml.coleta_demanda_ml.resolver_funil_proprio_cnpj2",
             return_value={
                 "ok": True,
                 "dias": 7,

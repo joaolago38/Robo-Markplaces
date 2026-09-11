@@ -44,6 +44,10 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar heartbeats de saude
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
       - name: Restaurar cota Brave
         uses: actions/cache@v4
         with:
@@ -92,6 +96,11 @@ jobs:
           BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Publicar heartbeats de saude
+        if: always()
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save
       - name: Publicar snapshot
         if: always()
         continue-on-error: true

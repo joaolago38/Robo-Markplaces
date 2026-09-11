@@ -386,11 +386,11 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
 
         from integracoes.ml.coleta_demanda_ml import (
             calcular_tendencia_demanda,
-            coletar_funil_proprio,
             emitir_metricas_demanda,
             enriquecer_visitas_amostra,
             montar_pontos_cegos,
             registrar_snapshot_demanda,
+            resolver_funil_proprio_cnpj2,
         )
 
         n_vis = enriquecer_visitas_amostra(resultados, limite=12)
@@ -412,7 +412,7 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
         )
         consolidado["avaliacoes_enriquecidas"] = n_aval
         consolidado["visitas_enriquecidas"] = n_vis
-        funil = coletar_funil_proprio(
+        funil = resolver_funil_proprio_cnpj2(
             dias=7,
             max_anuncios=20,
             filtro_titulo=r"filamento|pla|petg|tpu|abs|masterprint",

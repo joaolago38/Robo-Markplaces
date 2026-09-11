@@ -1,0 +1,81 @@
+{
+  "ok": true,
+  "timestamp": "2026-09-11T13:29:55.778850+00:00",
+  "doutrina": "guerra_por_faixa_filamento",
+  "frente": [
+    "231020001",
+    "231020002",
+    "231020003"
+  ],
+  "disparar": false,
+  "golpe": {
+    "sku": "231020001",
+    "classificacao": "ignorar",
+    "arma": "observar",
+    "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+    "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+    "motivo": "sem MLB — guerra de preço ainda não começou",
+    "disparar": false,
+    "score": 0.0,
+    "gap_pct": 0.0,
+    "rival_min": null,
+    "piso_preco": 63.83,
+    "nosso_preco": 79.9,
+    "mlb_ok": false,
+    "kit_tag": "kit:preto"
+  },
+  "golpes": [
+    {
+      "sku": "231020001",
+      "classificacao": "ignorar",
+      "arma": "observar",
+      "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+      "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+      "motivo": "sem MLB — guerra de preço ainda não começou",
+      "disparar": false,
+      "score": 0.0,
+      "gap_pct": 0.0,
+      "rival_min": null,
+      "piso_preco": 63.83,
+      "nosso_preco": 79.9,
+      "mlb_ok": false,
+      "kit_tag": "kit:preto"
+    },
+    {
+      "sku": "231020002",
+      "classificacao": "ignorar",
+      "arma": "observar",
+      "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+      "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+      "motivo": "sem MLB — guerra de preço ainda não começou",
+      "disparar": false,
+      "score": 0.0,
+      "gap_pct": 0.0,
+      "rival_min": null,
+      "piso_preco": 63.83,
+      "nosso_preco": 74.9,
+      "mlb_ok": false,
+      "kit_tag": "kit:branco"
+    },
+    {
+      "sku": "231020003",
+      "classificacao": "ignorar",
+      "arma": "observar",
+      "fazer": "Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica",
+      "nao_fazer": "Reagir a rival sem anúncio próprio; Ads; 2º CNPJ",
+      "motivo": "sem MLB — guerra de preço ainda não começou",
+      "disparar": false,
+      "score": 0.0,
+      "gap_pct": 0.0,
+      "rival_min": null,
+      "piso_preco": 63.83,
+      "nosso_preco": 79.9,
+      "mlb_ok": false,
+      "kit_tag": "kit:azul"
+    }
+  ],
+  "n_frente": 3,
+  "ramo": "masterprint",
+  "cnpj": "23811261000197",
+  "mensagem": "⚔ *Masterprint — golpe PETG*\n\n_O que este agente faz:_\n_Mesma doutrina no CNPJ Masterprint (23.811.261/0001-97): PETG Preto entra, Branco é o único que iguala preço, Azul é giro. Telegram só no disparo. Não altera preço sozinho._\n\n_Quando roda:_\n_No monitor PETG (08:15 BRT) e no snapshot da batalha filamentos; cooldown 6h por SKU+classe. 2º CNPJ._\nCNPJ `23811261000197`\nClassificação: *ignorar*\nSKU: `231020001` · arma *observar*\nFAZER: Publicar MLB da frente (decisão do dia) — golpe de preço não se aplica\nNÃO FAZER: Reagir a rival sem anúncio próprio; Ads; 2º CNPJ\n_Não altera preço sozinho. Só PETG Branco (231020002) iguala na faixa._"
+}

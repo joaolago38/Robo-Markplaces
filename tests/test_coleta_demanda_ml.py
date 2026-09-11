@@ -114,6 +114,117 @@ class ColetaDemandaMlTests(unittest.TestCase):
         self.assertIn("Pontos cegos", txt)
         self.assertIn("10.0%", txt)
 
+    def test_montar_pontos_cegos_identidade_seller_vazio(self):
+        ident = {
+            "seller_masterprint": "",
+            "seller_ok": False,
+            "conta_conectada_ok": False,
+            "motivo": "seller_kyc_vazio",
+            "detalhe": "seller Masterprint vazio (KYC)",
+        }
+        pc = cd.montar_pontos_cegos(
+            consolidado={},
+            funil=cd.funil_proprio_indisponivel_cnpj2(ident),
+            contexto="masterprint_petg",
+            identidade_cnpj2=ident,
+        )
+        ids = {i["id"]: i for i in pc["itens"]}
+        self.assertEqual(ids["funil_proprio"]["status"], "cego")
+        self.assertIn("seller_kyc_vazio", ids["funil_proprio"]["detalhe"])
+        self.assertEqual(ids["seller_masterprint"]["status"], "cego")
+        self.assertEqual(ids["conta_conectada"]["status"], "cego")
+
+    def test_montar_pontos_cegos_conta_impala_com_seller(self):
+        ident = {
+            "seller_masterprint": "999888",
+            "seller_ok": True,
+            "conta_conectada_ok": False,
+            "motivo": "conta_impala",
+            "detalhe": "token/seller live é Impala",
+        }
+        pc = cd.montar_pontos_cegos(
+            contexto="masterprint_petg",
+            identidade_cnpj2=ident,
+            funil={
+                "ok": False,
+                "motivo": "conta_impala",
+                "motivo_detalhe": ident["detalhe"],
+            },
+        )
+        ids = {i["id"]: i["status"] for i in pc["itens"]}
+        self.assertEqual(ids["seller_masterprint"], "ok")
+        self.assertEqual(ids["conta_conectada"], "cego")
+        self.assertEqual(ids["funil_proprio"], "cego")
+
+    @patch.object(cd, "coletar_funil_proprio")
+    @patch.object(cd, "avaliar_identidade_cnpj2")
+    def test_resolver_funil_nao_coleta_sem_kyc(self, mock_id, mock_fun):
+        mock_id.return_value = {
+            "seller_ok": False,
+            "conta_conectada_ok": False,
+            "motivo": "seller_kyc_vazio",
+            "detalhe": "vazio",
+            "coletar_funil_proprio": False,
+        }
+        out = cd.resolver_funil_proprio_cnpj2()
+        mock_fun.assert_not_called()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "seller_kyc_vazio")
+
+    @patch.object(
+        cd,
+        "coletar_funil_proprio",
+        return_value={
+            "ok": True,
+            "pedidos_ok": True,
+            "visitas_ok": True,
+            "totais": {},
+        },
+    )
+    @patch.object(cd, "avaliar_identidade_cnpj2")
+    def test_resolver_funil_coleta_quando_masterprint(self, mock_id, mock_fun):
+        mock_id.return_value = {
+            "seller_ok": True,
+            "conta_conectada_ok": True,
+            "motivo": "ok",
+            "coletar_funil_proprio": True,
+        }
+        out = cd.resolver_funil_proprio_cnpj2(filtro_titulo="petg")
+        mock_fun.assert_called_once()
+        self.assertTrue(out["ok"])
+
+    @patch("core.marketplace_cnpj.identificar_cnpj_conectado")
+    @patch("core.empresa.overrides.aplicar_overrides_env", side_effect=lambda e: e)
+    @patch("core.empresa.catalogo.empresa_por_id")
+    def test_avaliar_identidade_seller_vazio(self, mock_emp, _ov, mock_id):
+        mock_emp.return_value = {"ml": {"seller_id": ""}}
+        mock_id.return_value = {
+            "identificado": True,
+            "empresa_id": "esmaltes_impala",
+            "cnpj": "52668583000127",
+            "ambiguo": False,
+        }
+        out = cd.avaliar_identidade_cnpj2()
+        self.assertEqual(out["motivo"], "seller_kyc_vazio")
+        self.assertFalse(out["coletar_funil_proprio"])
+
+    @patch("core.marketplace_cnpj.identificar_cnpj_conectado")
+    @patch("core.empresa.overrides.aplicar_overrides_env", side_effect=lambda e: e)
+    @patch("core.empresa.catalogo.empresa_por_id")
+    def test_avaliar_identidade_conta_impala(self, mock_emp, _ov, mock_id):
+        mock_emp.return_value = {"ml": {"seller_id": "999"}}
+        mock_id.return_value = {
+            "identificado": True,
+            "empresa_id": "esmaltes_impala",
+            "cnpj": "52668583000127",
+            "ambiguo": False,
+        }
+        out = cd.avaliar_identidade_cnpj2()
+        self.assertEqual(out["motivo"], "conta_impala")
+        self.assertTrue(out["seller_ok"])
+        self.assertFalse(out["conta_conectada_ok"])
+        self.assertFalse(out["coletar_funil_proprio"])
+
     @patch.object(cd.ml_client, "buscar_visitas_item")
     def test_enriquecer_visitas_amostra(self, mock_vis):
         mock_vis.return_value = {

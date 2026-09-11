@@ -20,6 +20,16 @@ logger = logging.getLogger("coleta_demanda_ml")
 
 DEMANDA_HIST_PATH = ROOT / "logs" / "demanda_historico.json"
 _MAX_DEMAND_SNAPS = 400
+CNPJ_MASTERPRINT = "23811261000197"
+CNPJ_IMPALA = "52668583000127"
+_CONTEXTOS_CNPJ2 = frozenset(
+    {
+        "masterprint_petg",
+        "masterprint_escritorio",
+        "filamentos_ml",
+        "filamentos.ml",
+    }
+)
 
 
 def _i(val: Any, default: int = 0) -> int:
@@ -247,12 +257,139 @@ def coletar_funil_proprio(
     }
 
 
+def _contexto_cnpj2(contexto: str) -> bool:
+    c = str(contexto or "").strip().lower()
+    return c in _CONTEXTOS_CNPJ2 or c.startswith("masterprint")
+
+
+def avaliar_identidade_cnpj2() -> dict[str, Any]:
+    """Seller KYC + conta autenticada vs Masterprint (2º CNPJ)."""
+    seller = ""
+    try:
+        from core.empresa.catalogo import empresa_por_id
+        from core.empresa.overrides import aplicar_overrides_env
+
+        emp = aplicar_overrides_env(empresa_por_id("masterprint") or {})
+        ml = emp.get("ml") if isinstance(emp.get("ml"), dict) else {}
+        seller = str(ml.get("seller_id") or "").strip()
+    except Exception as exc:
+        logger.debug("seller masterprint: %s", exc)
+
+    ident: dict[str, Any] = {}
+    try:
+        from core.marketplace_cnpj import identificar_cnpj_conectado
+
+        ident = identificar_cnpj_conectado("mercadolivre")
+    except Exception as exc:
+        logger.debug("identificar cnpj: %s", exc)
+        ident = {}
+
+    empresa_id = str(ident.get("empresa_id") or "")
+    try:
+        from core.empresa.cnpj_utils import digitos
+
+        cnpj = digitos(str(ident.get("cnpj") or ""))
+    except Exception:
+        cnpj = "".join(ch for ch in str(ident.get("cnpj") or "") if ch.isdigit())
+
+    ambiguo = bool(ident.get("ambiguo"))
+    eh_mp = (not ambiguo) and (
+        empresa_id == "masterprint" or cnpj == CNPJ_MASTERPRINT
+    )
+    eh_impala = empresa_id == "esmaltes_impala" or cnpj == CNPJ_IMPALA
+
+    if not seller:
+        motivo = "seller_kyc_vazio"
+        detalhe = "seller Masterprint vazio (KYC) — preencha MASTERPRINT_ML_SELLER_ID"
+    elif ambiguo:
+        motivo = "ambiguo"
+        detalhe = str(ident.get("motivo") or "mesmo seller nos dois CNPJs")
+    elif not eh_mp:
+        motivo = "conta_impala" if eh_impala else "conta_nao_masterprint"
+        detalhe = (
+            "token/seller live é Impala — não misturar funil com o 2º CNPJ"
+            if eh_impala
+            else str(ident.get("motivo") or "conta autenticada não é Masterprint")
+        )
+    else:
+        motivo = "ok"
+        detalhe = str(ident.get("motivo") or "conta live casa com Masterprint")
+
+    return {
+        "seller_masterprint": seller,
+        "seller_ok": bool(seller),
+        "conta_conectada_ok": bool(seller) and eh_mp,
+        "empresa_id": empresa_id,
+        "cnpj": cnpj,
+        "ambiguo": ambiguo,
+        "motivo": motivo,
+        "detalhe": detalhe,
+        "coletar_funil_proprio": motivo == "ok",
+    }
+
+
+def funil_proprio_indisponivel_cnpj2(
+    ident: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    bloco = ident if isinstance(ident, dict) else avaliar_identidade_cnpj2()
+    return {
+        "ok": False,
+        "motivo": str(bloco.get("motivo") or "seller_kyc_vazio"),
+        "motivo_detalhe": str(bloco.get("detalhe") or ""),
+        "dias": 7,
+        "pedidos_ok": False,
+        "visitas_ok": False,
+        "totais": {},
+        "itens": [],
+        "identidade_cnpj2": bloco,
+    }
+
+
+def resolver_funil_proprio_cnpj2(
+    *,
+    dias: int = 7,
+    max_anuncios: int = 20,
+    filtro_titulo: str | None = None,
+) -> dict[str, Any]:
+    """Funil próprio só se a conta autenticada for o seller Masterprint."""
+    ident = avaliar_identidade_cnpj2()
+    if not ident.get("coletar_funil_proprio"):
+        return funil_proprio_indisponivel_cnpj2(ident)
+    out = coletar_funil_proprio(
+        dias=dias, max_anuncios=max_anuncios, filtro_titulo=filtro_titulo
+    )
+    out["identidade_cnpj2"] = ident
+    return out
+
+
+def _itens_identidade_cnpj2(ident: dict[str, Any]) -> list[dict[str, Any]]:
+    seller_ok = bool(ident.get("seller_ok"))
+    conta_ok = bool(ident.get("conta_conectada_ok"))
+    seller = str(ident.get("seller_masterprint") or "")
+    detalhe = str(ident.get("detalhe") or ident.get("motivo") or "")
+    return [
+        {
+            "id": "seller_masterprint",
+            "rotulo": "Seller ML Masterprint (KYC 2º CNPJ)",
+            "status": "ok" if seller_ok else "cego",
+            "detalhe": seller if seller_ok else detalhe,
+        },
+        {
+            "id": "conta_conectada",
+            "rotulo": "Conta ML autenticada = Masterprint",
+            "status": "ok" if conta_ok else "cego",
+            "detalhe": detalhe,
+        },
+    ]
+
+
 def montar_pontos_cegos(
     *,
     consolidado: dict[str, Any] | None = None,
     funil: dict[str, Any] | None = None,
     visitas_enriquecidas: int = 0,
     contexto: str = "mercado",
+    identidade_cnpj2: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Flags estruturados do que a API entrega vs ponto cego."""
     cons = consolidado or {}
@@ -321,6 +458,13 @@ def montar_pontos_cegos(
             "detalhe": "escopo claims indisponível neste app",
         },
     ]
+    if _contexto_cnpj2(contexto):
+        ident = identidade_cnpj2
+        if not isinstance(ident, dict):
+            ident = (fun.get("identidade_cnpj2") if isinstance(fun, dict) else None)
+        if not isinstance(ident, dict):
+            ident = avaliar_identidade_cnpj2()
+        itens.extend(_itens_identidade_cnpj2(ident))
     cegos = sum(1 for x in itens if x["status"] == "cego")
     return {
         "contexto": contexto,
@@ -341,7 +485,9 @@ def formatar_secao_funil(funil: dict[str, Any] | None) -> list[str]:
         return []
     linhas = ["", "*Funil próprio (seus anúncios)*"]
     if not funil.get("ok"):
-        linhas.append(f"_{funil.get('motivo') or 'indisponível'}_")
+        linhas.append(
+            f"_{funil.get('motivo_detalhe') or funil.get('motivo') or 'indisponível'}_"
+        )
         return linhas
     dias = _i(funil.get("dias"), 7)
     tot = funil.get("totais") or {}

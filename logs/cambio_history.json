@@ -734,17 +734,67 @@
       "usd_brl": 5.1268,
       "fonte": "awesomeapi",
       "consultado_em": "2026-09-10T12:54:48.534129+00:00"
+    },
+    {
+      "usd_brl": 5.0864,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:00:27.695926+00:00"
+    },
+    {
+      "usd_brl": 5.0879,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:00:48.334834+00:00"
+    },
+    {
+      "usd_brl": 5.0811,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:19:13.309765+00:00"
+    },
+    {
+      "usd_brl": 5.0811,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:19:13.368552+00:00"
+    },
+    {
+      "usd_brl": 5.0811,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:20:05.013208+00:00"
+    },
+    {
+      "usd_brl": 5.0811,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:20:05.097780+00:00"
+    },
+    {
+      "usd_brl": 5.0776,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:29:31.780293+00:00"
+    },
+    {
+      "usd_brl": 5.0776,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:29:31.837730+00:00"
+    },
+    {
+      "usd_brl": 5.0776,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:29:57.280386+00:00"
+    },
+    {
+      "usd_brl": 5.0776,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T13:29:57.337882+00:00"
     }
   ],
   "ultima": {
     "ok": true,
-    "usd_brl": 5.1268,
+    "usd_brl": 5.0776,
     "fonte": "awesomeapi",
-    "variacao_pct": 0.430963,
-    "consultado_em": "2026-09-10T12:54:48.534129+00:00",
+    "variacao_pct": -0.503598,
+    "consultado_em": "2026-09-11T13:29:57.337882+00:00",
     "idade_seg": 0,
     "confiavel": true,
-    "alta": "5.1383",
-    "baixa": "5.1028"
+    "alta": "5.122",
+    "baixa": "5.0711"
   }
 }

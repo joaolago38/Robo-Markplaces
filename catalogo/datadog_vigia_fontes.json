@@ -95,6 +95,46 @@
       "ignorar_ausente": true
     },
     {
+      "id": "golpe_guerra_masterprint",
+      "ativo": true,
+      "nome": "Golpe guerra PETG 2º CNPJ",
+      "path": "logs/golpe_guerra_masterprint_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "filamentos_batalha",
+      "ativo": true,
+      "nome": "Batalha filamentos Masterprint",
+      "path": "logs/filamentos_batalha_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "monitor_masterprint_petg",
+      "ativo": true,
+      "nome": "Monitor Masterprint PETG",
+      "path": "logs/masterprint_petg_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "monitor_masterprint_escritorio",
+      "ativo": true,
+      "nome": "Monitor Masterprint escritório",
+      "path": "logs/masterprint_escritorio_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
       "id": "ponto_ruptura_segundo_cnpj",
       "ativo": true,
       "nome": "Ponto de ruptura 2º CNPJ + CNAE",

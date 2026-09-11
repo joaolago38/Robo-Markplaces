@@ -291,6 +291,14 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Anúncios Masterprint PETG: total ativos, mais rentáveis e maior ganho",
     ),
     AgenteRegistrado(
+        "golpe_guerra_masterprint",
+        "Golpe guerra PETG (2º CNPJ)",
+        "monitor",
+        "agentes.filamentos.agente_golpe_guerra_masterprint:executar",
+        {"enviar_alerta": True},
+        notas="Classifica golpe PETG Preto/Branco/Azul; Telegram só no disparo; não altera preço",
+    ),
+    AgenteRegistrado(
         "monitor_masterprint_escritorio",
         "Monitor Masterprint pincéis/apagadores ML",
         "monitor",

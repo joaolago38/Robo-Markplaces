@@ -34,6 +34,8 @@ class TestSaudeHeartbeatsCache(unittest.TestCase):
             self.assertIn(path, action, path)
         self.assertNotIn(VIGIA_HISTORY, catalogo)
         self.assertNotIn(VIGIA_HISTORY, action)
+        self.assertIn("logs/masterprint_petg_ultima.json", catalogo)
+        self.assertIn("logs/masterprint_escritorio_ultima.json", catalogo)
         self.assertIn("actions/cache/restore@v4", action)
         self.assertIn("actions/cache/save@v4", action)
         self.assertNotIn("uses: actions/cache@v4", action)
