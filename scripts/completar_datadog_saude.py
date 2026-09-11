@@ -1960,7 +1960,9 @@ def _grupo_agora_impala() -> dict[str, Any]:
                             "**Conta ML Impala.** Estoque do catálogo (limite "
                             "`ESTOQUE_CRITICO`). Sem venda = anúncios ativos sem pedido "
                             "no período do monitor. Ads do dia = Product Ads calendário "
-                            "BRT — não é Meta Ads. Masterprint não entra aqui."
+                            "BRT — não é Meta Ads. Masterprint não entra aqui. "
+                            "Amarelo em estoque sem dado / pedidos sem data = ponto cego, "
+                            "não zero real."
                         ),
                         "background_color": "yellow",
                         "font_size": "14",
@@ -2111,6 +2113,41 @@ def _grupo_agora_impala() -> dict[str, Any]:
                     "id": 782013,
                 },
                 {
+                    **_qv(
+                        "Estoque sem dado",
+                        "avg:robo.catalogo.estoque_desconhecido{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 6},
+                    "id": 782017,
+                },
+                {
+                    **_qv(
+                        "Sem venda fonte OK",
+                        "avg:robo.ml.sem_venda.fonte_ok{cnpj:impala}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 6},
+                    "id": 782018,
+                },
+                {
+                    **_qv(
+                        "Pedidos sem data",
+                        "avg:robo.vendas.periodo.sem_data{cnpj:impala}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 6},
+                    "id": 782019,
+                },
+                {
                     **_toplist_metric(
                         "Estoque mais baixo (unid.)",
                         "avg:robo.catalogo.estoque_unidades{*} by {kit}",
@@ -2118,7 +2155,7 @@ def _grupo_agora_impala() -> dict[str, Any]:
                         order="asc",
                         limit=10,
                     ),
-                    "layout": {"height": 4, "width": 4, "x": 0, "y": 6},
+                    "layout": {"height": 4, "width": 4, "x": 0, "y": 8},
                     "id": 782014,
                 },
                 {
@@ -2128,7 +2165,7 @@ def _grupo_agora_impala() -> dict[str, Any]:
                         aggregator="avg",
                         limit=10,
                     ),
-                    "layout": {"height": 4, "width": 4, "x": 4, "y": 6},
+                    "layout": {"height": 4, "width": 4, "x": 4, "y": 8},
                     "id": 782015,
                 },
                 {
@@ -2138,7 +2175,7 @@ def _grupo_agora_impala() -> dict[str, Any]:
                         aggregator="avg",
                         limit=10,
                     ),
-                    "layout": {"height": 4, "width": 4, "x": 8, "y": 6},
+                    "layout": {"height": 4, "width": 4, "x": 8, "y": 8},
                     "id": 782016,
                 },
             ],

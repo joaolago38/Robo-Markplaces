@@ -4,9 +4,12 @@ Detecta anúncios próprios sem venda no período e sugere ação (preço/ads/li
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from integracoes.esmaltes.metricas_catalogo_impala import kit_tag
+
+_RE_ANUN = re.compile(r"[^a-z0-9]+")
 
 
 def _f(val: Any, default: float = 0.0) -> float:
@@ -168,6 +171,15 @@ def montar_mensagem_sem_venda(analise: dict[str, Any]) -> str:
     return "\n".join(linhas)
 
 
+def _tag_sem_venda(row: dict[str, Any]) -> str:
+    """kit: do SKU; sem SKU usa anun: do item_id (não colapsa tudo em kit:x)."""
+    sku = str(row.get("sku") or "").strip()
+    if sku:
+        return kit_tag(sku)
+    compact = _RE_ANUN.sub("", str(row.get("item_id") or "").strip().lower())
+    return f"anun:{(compact or 'x')[:16]}"
+
+
 def emitir_metricas_sem_venda(analise: dict[str, Any] | None) -> None:
     """Gauges Impala: totais + ranking por kit (sem tag sku)."""
     try:
@@ -175,6 +187,8 @@ def emitir_metricas_sem_venda(analise: dict[str, Any] | None) -> None:
 
         data = analise if isinstance(analise, dict) else {}
         base = ["cnpj:impala"]
+        fonte_ok = bool(data.get("ok", True)) and "erro" not in data
+        gauge("ml.sem_venda.fonte_ok", 1.0 if fonte_ok else 0.0, tags=base)
         gauge("ml.sem_venda.total", float(data.get("total_sem_venda") or 0), tags=base)
         gauge(
             "ml.sem_venda.anuncios_ativos",
@@ -198,8 +212,7 @@ def emitir_metricas_sem_venda(analise: dict[str, Any] | None) -> None:
         for row in data.get("itens") or []:
             if not isinstance(row, dict):
                 continue
-            sku = str(row.get("sku") or "").strip()
-            tags = [*base, kit_tag(sku)]
+            tags = [*base, _tag_sem_venda(row)]
             gauge(
                 "ml.sem_venda.visitas",
                 float(row.get("visitas_30d") or 0),

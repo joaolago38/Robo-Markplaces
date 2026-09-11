@@ -392,6 +392,9 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.ml.sem_venda.visitas{cnpj:impala} by {kit}",
             "robo.ads.hoje.gasto{cnpj:impala,janela:dia}",
             "robo.ads.hoje.ranking_gasto{cnpj:impala,janela:dia} by {camp}",
+            "robo.catalogo.estoque_desconhecido{*}",
+            "robo.ml.sem_venda.fonte_ok{cnpj:impala}",
+            "robo.vendas.periodo.sem_data{cnpj:impala}",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertNotIn("cnpj:masterprint", blob)

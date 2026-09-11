@@ -74,6 +74,25 @@ class TestAnaliseSemVenda(unittest.TestCase):
             self.assertTrue(any(str(t) == "cnpj:impala" for t in tags))
             if c.args[0] == "ml.sem_venda.visitas":
                 self.assertIn("kit:mimo003", tags)
+        nomes = [c.args[0] for c in mock_g.call_args_list]
+        self.assertIn("ml.sem_venda.fonte_ok", nomes)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_sem_sku_usa_anun(self, mock_g):
+        out = sv.analisar_anuncios_sem_venda(
+            [{"item_id": "MLB987654", "titulo": "X", "preco": 10}],
+            set(),
+            {"MLB987654": {"visitas_30d": 3}},
+        )
+        sv.emitir_metricas_sem_venda(out)
+        tags_visitas = [
+            c.kwargs.get("tags") or []
+            for c in mock_g.call_args_list
+            if c.args[0] == "ml.sem_venda.visitas"
+        ]
+        self.assertTrue(tags_visitas)
+        self.assertIn("anun:mlb987654", tags_visitas[0])
+        self.assertFalse(any("kit:x" in t for t in tags_visitas[0]))
 
 
 class TestAgenteSemVenda(unittest.TestCase):

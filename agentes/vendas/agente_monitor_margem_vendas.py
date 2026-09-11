@@ -226,13 +226,15 @@ def executar(
                 CNPJ_IMPALA,
                 CNPJ_MASTERPRINT,
                 emitir_periodo_cnpj,
+                pedidos_e_fonte_impala,
             )
 
             pedidos_30, ok_30 = _buscar_pedidos(30)
+            so_ml, ml_ok = pedidos_e_fonte_impala(pedidos_30, ok_30)
             emitir_periodo_cnpj(
                 CNPJ_IMPALA,
-                pedidos_30,
-                fonte_ok=any(ok_30.values()),
+                so_ml,
+                fonte_ok=ml_ok,
                 tag_produto="kit",
             )
             emitir_periodo_cnpj(
@@ -243,6 +245,19 @@ def executar(
             )
         except Exception as exc:
             logger.debug("métricas período CNPJ: %s", exc)
+            try:
+                from integracoes.vendas.metricas_periodo_cnpj import (
+                    CNPJ_IMPALA,
+                    CNPJ_MASTERPRINT,
+                    emitir_periodo_cnpj,
+                )
+
+                emitir_periodo_cnpj(CNPJ_IMPALA, {}, fonte_ok=False, tag_produto="kit")
+                emitir_periodo_cnpj(
+                    CNPJ_MASTERPRINT, {}, fonte_ok=False, tag_produto="prod"
+                )
+            except Exception:
+                pass
 
 
         alertas_enviados = 0
