@@ -26,8 +26,10 @@ from integracoes.ml.ml_client import buscar_acos_ads, buscar_reputacao_vendedor
 from integracoes.ml.ml_product_ads import (
     aplicar_decisao_campanhas,
     campanhas_acos_acima_limite,
+    emitir_metricas_ads_hoje,
     listar_campanhas,
     probe_escrita_product_ads,
+    ultima_listagem_ok,
 )
 
 logger = logging.getLogger("agente_ads_gatilho")
@@ -351,6 +353,15 @@ def executar(item_id: str = "", acos_atual: float = 0.0, full_ativo: bool = Fals
             pass
         raise
     _metricas_e_heartbeat(resultado)
+    try:
+        campanhas_dia = listar_campanhas(dias=1, emitir_visibilidade=False)
+        emitir_metricas_ads_hoje(campanhas_dia, fonte_ok=ultima_listagem_ok())
+    except Exception as exc:
+        logger.debug("ads hoje: %s", exc)
+        try:
+            emitir_metricas_ads_hoje([], fonte_ok=False)
+        except Exception:
+            pass
     return resultado
 
 

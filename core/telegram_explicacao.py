@@ -350,8 +350,8 @@ EXPLICACOES_AGENTES: dict[str, str] = {
         "real de conectividade (alerta crítico)."
     ),
     "vendas_whatsapp": (
-        "Notifica vendas relevantes no WhatsApp do time. Telegram só se a API de "
-        "pedidos falhar — o canal principal é WhatsApp."
+        "Avisa venda nova no Telegram do gestor. Criativos no grupo WhatsApp "
+        "são postagem manual."
     ),
 }
 

@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "gerado_em": "2026-09-11T10:38:24.529004-03:00",
+  "gerado_em": "2026-09-11T13:45:07.450585-03:00",
   "cambio_usd_brl": 5.5,
   "lucro_alvo_pct": 20.0,
   "regime_maquila": false,
@@ -17,7 +17,7 @@
       "quantidade": 300,
       "cruzamento": {
         "ok": true,
-        "gerado_em": "2026-09-11T10:38:24.500381-03:00",
+        "gerado_em": "2026-09-11T13:45:07.417688-03:00",
         "fonte_preco": "fob_usd_x_cambio",
         "quantidade": 300,
         "preco_origem_unit_brl": 24.75,
@@ -268,7 +268,7 @@
       "quantidade": 300,
       "cruzamento": {
         "ok": true,
-        "gerado_em": "2026-09-11T10:38:24.510892-03:00",
+        "gerado_em": "2026-09-11T13:45:07.429954-03:00",
         "fonte_preco": "fob_usd_x_cambio",
         "quantidade": 300,
         "preco_origem_unit_brl": 27.5,
@@ -519,7 +519,7 @@
       "quantidade": 300,
       "cruzamento": {
         "ok": true,
-        "gerado_em": "2026-09-11T10:38:24.519887-03:00",
+        "gerado_em": "2026-09-11T13:45:07.441057-03:00",
         "fonte_preco": "fob_usd_x_cambio",
         "quantidade": 300,
         "preco_origem_unit_brl": 27.5,
@@ -770,7 +770,7 @@
       "quantidade": 200,
       "cruzamento": {
         "ok": true,
-        "gerado_em": "2026-09-11T10:38:24.528942-03:00",
+        "gerado_em": "2026-09-11T13:45:07.450518-03:00",
         "fonte_preco": "fob_usd_x_cambio",
         "quantidade": 200,
         "preco_origem_unit_brl": 38.5,

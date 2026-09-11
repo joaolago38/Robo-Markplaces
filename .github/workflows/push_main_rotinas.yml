@@ -122,10 +122,6 @@ jobs:
           AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
-          WHATSAPP_API_TYPE: ${{ secrets.WHATSAPP_API_TYPE }}
-          WHATSAPP_API_URL: ${{ secrets.WHATSAPP_API_URL }}
-          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
-          WHATSAPP_INSTANCE: ${{ secrets.WHATSAPP_INSTANCE }}
           WHATSAPP_NUMERO_DESTINO: ${{ secrets.WHATSAPP_NUMERO_DESTINO }}
           WHATSAPP_BUSINESS_TOKEN: ${{ secrets.WHATSAPP_BUSINESS_TOKEN }}
           WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}

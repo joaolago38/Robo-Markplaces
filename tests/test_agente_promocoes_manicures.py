@@ -73,8 +73,6 @@ class AgentePromocoesManicuresTests(unittest.TestCase):
     @patch.object(agente, "escrever_json_atomico")
     @patch.object(agente, "incrementar")
     @patch.object(agente, "enviar_telegram_manicures", return_value=True)
-    @patch.object(agente, "enviar_grupo_manicures", return_value=True)
-    @patch.object(agente, "whatsapp_grupo_manicures_configurado", return_value=True)
     @patch.object(agente, "_carregar_historico", return_value={})
     @patch.object(agente, "montar_mensagem_campanha", return_value=_MONTADO)
     @patch.object(agente, "campanhas_liberadas", return_value=[_CAMPANHA])
@@ -84,11 +82,11 @@ class AgentePromocoesManicuresTests(unittest.TestCase):
         return_value=(True, "liberado_guerra"),
     )
     @patch("integracoes.ml.contrato_impulso_ml.carregar_contrato", return_value={"ok": True, "ativo": True})
-    def test_envia_wa_e_telegram(self, *_mocks):
+    def test_envia_telegram(self, *_mocks):
         out = agente.executar(enviar=True)
         self.assertTrue(out["ok"])
         self.assertTrue(out["enviado"])
-        self.assertTrue(out["whatsapp"])
+        self.assertFalse(out["whatsapp"])
         self.assertTrue(out["telegram"])
 
 

@@ -39,6 +39,7 @@ class TestConversaoCore(unittest.TestCase):
         )
         self.assertIn("facebook", d["pendentes"])
         self.assertIn("instagram", d["pendentes"])
+        self.assertNotIn("whatsapp", d["pendentes"])
         self.assertTrue(d["checklist_meta"])
         self.assertFalse(d["escrita_habilitada"])
         self.assertTrue(d["como_ativar"])
@@ -74,15 +75,15 @@ class TestConversaoCore(unittest.TestCase):
     def test_avaliar_prontidao_pronta(self):
         diag = conv.diagnosticar_canais(
             {
-                "wa": True,
-                "tg_manicures": False,
+                "wa_meta": False,
+                "tg_manicures": True,
                 "fb": False,
                 "ig": False,
                 "ig_imagem": False,
                 "claude": True,
                 "ml": True,
-                "enviar_wa": True,
-                "enviar_tg": False,
+                "enviar_wa": False,
+                "enviar_tg": True,
                 "publicar_fb": False,
                 "publicar_ig": False,
                 "reply_meta": False,
@@ -97,7 +98,7 @@ class TestConversaoCore(unittest.TestCase):
             escrita=True,
         )
         self.assertTrue(out["pronta_para_escrita"])
-        self.assertIn("whatsapp", out["canais_armados"])
+        self.assertIn("telegram_manicures", out["canais_armados"])
 
     @patch.object(conv, "ANTHROPIC_API_KEY", "")
     @patch.object(conv, "campanhas_liberadas")
@@ -298,16 +299,14 @@ class TestAgenteConversao(unittest.TestCase):
         "agentes.social.agente_conversao_manicures._sinal_ads",
         return_value={"campanhas": 0, "sustentabilidade": {"status": "sustentavel", "roas_real": 3.0}},
     )
-    @patch("agentes.social.agente_conversao_manicures.whatsapp_grupo_manicures_configurado", return_value=True)
-    @patch("agentes.social.agente_conversao_manicures.manicures_telegram_configurado", return_value=False)
+    @patch("agentes.social.agente_conversao_manicures.manicures_telegram_configurado", return_value=True)
     @patch("agentes.social.agente_conversao_manicures.ANTHROPIC_API_KEY", "sk-test")
-    @patch("agentes.social.agente_conversao_manicures.CONVERSAO_MANICURES_ENVIAR_WA", True)
+    @patch("agentes.social.agente_conversao_manicures.CONVERSAO_MANICURES_ENVIAR_TG", True)
     @patch("agentes.social.agente_conversao_manicures.CONVERSAO_MANICURES_ESCRITA", True)
     @patch("agentes.social.agente_conversao_manicures.CONVERSAO_MANICURES_ATIVO", True)
     def test_executar_escrita_pronta_envia(
         self,
         _tg,
-        _wa,
         _ads,
         mock_oferta,
         mock_inbox,

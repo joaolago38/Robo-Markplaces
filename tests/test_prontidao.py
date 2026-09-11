@@ -53,7 +53,6 @@ class ProntidaoTests(unittest.TestCase):
         self.assertEqual(motivo, "promocoes_desativadas")
 
     @patch("core.prontidao.PROMOCOES_MANICURES_ATIVO", True)
-    @patch.object(prontidao, "whatsapp_grupo_manicures_pronto", return_value=False)
     @patch("core.prontidao.manicures_telegram_configurado", return_value=False)
     def test_promocoes_sem_canal(self, *_):
         pode, motivo = prontidao.pode_divulgar_promocoes_manicures()
@@ -61,7 +60,6 @@ class ProntidaoTests(unittest.TestCase):
         self.assertIn("nenhum_canal", motivo)
 
     @patch("core.prontidao.PROMOCOES_MANICURES_ATIVO", True)
-    @patch.object(prontidao, "whatsapp_grupo_manicures_pronto", return_value=False)
     @patch("core.prontidao.manicures_telegram_configurado", return_value=True)
     def test_promocoes_so_telegram(self, *_):
         pode, motivo = prontidao.pode_divulgar_promocoes_manicures()

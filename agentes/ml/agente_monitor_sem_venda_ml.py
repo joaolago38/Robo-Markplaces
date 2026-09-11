@@ -23,10 +23,14 @@ from core.config import (
     MONITOR_SEM_VENDA_VISITAS_ALTAS,
     ROOT,
 )
-from core.datadog_metrics import gauge, incrementar
+from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor, chave_resumo_periodo, gestor_telegram_configurado
 from core.telegram_explicacao import inserir_explicacao
-from integracoes.ml.analise_sem_venda import analisar_anuncios_sem_venda, montar_mensagem_sem_venda
+from integracoes.ml.analise_sem_venda import (
+    analisar_anuncios_sem_venda,
+    emitir_metricas_sem_venda,
+    montar_mensagem_sem_venda,
+)
 from integracoes.ml.ml_client import buscar_metricas_item, listar_meus_anuncios, listar_pedidos_detalhado
 
 logger = logging.getLogger("agente_monitor_sem_venda_ml")
@@ -87,8 +91,7 @@ def executar(
         )
 
         try:
-            gauge("ml.sem_venda.total", float(analise.get("total_sem_venda") or 0))
-            gauge("ml.sem_venda.anuncios_ativos", float(analise.get("total_anuncios") or 0))
+            emitir_metricas_sem_venda(analise)
             if analise.get("total_sem_venda"):
                 incrementar("ml.sem_venda.alertas", 1.0)
         except Exception:

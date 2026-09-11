@@ -124,17 +124,7 @@ def _acao_fazer(
                 ),
                 "sku": s.get("sku"),
             }
-    # 2) WhatsApp
-    canais = crescimento.get("canais") or {}
-    if not canais.get("whatsapp_ok"):
-        return {
-            "veredito": "fazer",
-            "codigo": "ligar_whatsapp_manicures",
-            "titulo": "Ligar WhatsApp grupo manicures",
-            "detalhe": "WHATSAPP_* + GRUPO — canal de recompra B2B.",
-            "sku": "",
-        }
-    # 3) Impulsionar primeiro SKU guerra liberado
+    # 2) Impulsionar primeiro SKU guerra liberado
     for s in guerra_status:
         if s.get("pode_impulsionar"):
             return {
@@ -224,12 +214,6 @@ def _custo_nao_fazer(*, fazer: dict[str, Any], crescimento: dict[str, Any]) -> d
             "veredito": "custo",
             "titulo": "Sem MLB: zero promoção válida e share parado vs Anita",
             "detalhe": "Cada dia sem anúncio = manicure compra kit da concorrência.",
-        }
-    if codigo == "ligar_whatsapp_manicures":
-        return {
-            "veredito": "custo",
-            "titulo": "Sem WA: perde recompra B2B (o que paga o ecossistema)",
-            "detalhe": "ML sozinho vira leilão de preço; canal próprio fecha margem.",
         }
     if codigo == "impulsionar_sku_guerra":
         return {

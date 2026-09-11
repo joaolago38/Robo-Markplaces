@@ -1,6 +1,6 @@
 """
 agentes/vendas_notificador.py
-Verifica novas vendas em todos os marketplaces e envia notificação WhatsApp.
+Verifica novas vendas em todos os marketplaces e avisa no Telegram do gestor.
 Mantém controle de pedidos já notificados para não duplicar mensagens.
 Nunca lança exceção.
 """
@@ -15,7 +15,7 @@ from core.config import ROOT, SPEC
 from core.datadog_metrics import incrementar
 from core.log_opcional import erro_opcional, log_erros_pedidos_ativos
 from core.notificador import alertar_critico
-from core.whatsapp import notificar_venda
+from core.notificador import notificar_venda_gestor as notificar_venda
 
 logger = logging.getLogger("vendas_notificador")
 
@@ -90,8 +90,8 @@ def _checar_busca_falhou(
             from core.notificador import alertar_gestor
 
             alertar_gestor(
-                f"🔐 {marketplace}: OAuth/token inválido — vendas WhatsApp deste canal "
-                "podem estar cegas.\nRenove o token nos secrets. "
+                f"🔐 {marketplace}: OAuth/token inválido — aviso de venda no Telegram "
+                "deste canal pode estar cego.\nRenove o token nos secrets. "
                 "(Não conta no monitor P1 de busca genérica.)",
                 chave=f"falha_pedidos_auth:{marketplace}",
                 cooldown_segundos=86400,
@@ -126,7 +126,7 @@ def _notificar_novos_pedidos(
     marketplace: str, pedidos: list[dict], notificados: set[str]
 ) -> set[str]:
     """
-    Para cada pedido da lista, envia WhatsApp se ainda não foi notificado.
+    Para cada pedido da lista, avisa no Telegram do gestor se ainda não foi notificado.
     Retorna conjunto com as chaves recém-notificadas (marketplace:order_id).
     """
     novos: set[str] = set()
@@ -163,7 +163,7 @@ def _notificar_novos_pedidos(
         if ok:
             novos.add(chave)
             logger.info(
-                "WhatsApp notificado: %s pedido %s valor R$ %.2f",
+                "Telegram venda: %s pedido %s valor R$ %.2f",
                 marketplace,
                 pedido_id,
                 valor,
@@ -173,7 +173,7 @@ def _notificar_novos_pedidos(
             except Exception:
                 pass
         else:
-            logger.warning("WhatsApp FALHOU: %s pedido %s", marketplace, pedido_id)
+            logger.warning("Telegram venda FALHOU: %s pedido %s", marketplace, pedido_id)
             try:
                 incrementar("vendas.falha_whatsapp", tags=[f"marketplace:{marketplace}"])
             except Exception:
@@ -235,7 +235,7 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
 
 def executar() -> dict:
     """
-    Verifica novas vendas em todos os marketplaces e notifica via WhatsApp.
+    Verifica novas vendas em todos os marketplaces e notifica via Telegram.
     Retorna resumo com total de notificações enviadas por marketplace.
 
     Todo o ciclo (ler quem já foi notificado → buscar pedidos novos →
@@ -243,7 +243,7 @@ def executar() -> dict:
     entre processos: sem isso, duas execuções concorrentes (ex.: a API
     viva chamando isto ao mesmo tempo que um workflow agendado) podem
     ler o mesmo estado antigo e uma sobrescrever o "salvar" da outra —
-    o que faria o WhatsApp notificar a mesma venda duas vezes.
+                 o que faria o Telegram notificar a mesma venda duas vezes.
     """
     with lock_exclusivo(_LOCK_PATH):
         notificados = _carregar_notificados()
@@ -314,7 +314,7 @@ def executar() -> dict:
             _salvar_notificados(notificados)
 
     total = sum(resumo.values())
-    logger.info("Notificações WhatsApp enviadas: %d | Detalhe: %s", total, resumo)
+    logger.info("Notificações Telegram de venda: %d | Detalhe: %s", total, resumo)
     try:
         from datetime import datetime, timezone
 
@@ -329,7 +329,7 @@ def executar() -> dict:
             },
         )
     except Exception as exc:
-        logger.warning("Vendas WhatsApp heartbeat: %s", exc)
+        logger.warning("Vendas Telegram heartbeat: %s", exc)
     return {"total_notificacoes": total, "por_marketplace": resumo}
 
 

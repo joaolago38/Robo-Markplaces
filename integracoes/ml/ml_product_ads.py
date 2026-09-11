@@ -5,6 +5,7 @@ Product Ads do Mercado Livre — leitura e controle de campanhas (status/orçame
 from __future__ import annotations
 
 import logging
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -31,6 +32,10 @@ _COOLDOWN_404_PATH = ROOT / "logs" / "ads_product_ads_404.json"
 
 def ultima_listagem_codigo() -> str:
     return str(_ULTIMA_LISTAGEM.get("codigo") or "")
+
+
+def ultima_listagem_ok() -> bool:
+    return bool(_ULTIMA_LISTAGEM.get("ok"))
 
 
 def _estado_404() -> dict:
@@ -239,12 +244,74 @@ def emitir_metricas_visibilidade_ads(campanhas: list[dict] | None) -> None:
         pass
 
 
+_RE_CAMP = re.compile(r"[^a-z0-9]+")
+_STATUS_ATIVA = frozenset({"active", "enabled", "started", "running"})
+
+
+def _camp_tag(campaign_id: str) -> str:
+    compact = _RE_CAMP.sub("", str(campaign_id or "").strip().lower())
+    return f"camp:{(compact or 'x')[:16]}"
+
+
+def emitir_metricas_ads_hoje(
+    campanhas: list[dict] | None,
+    *,
+    fonte_ok: bool = True,
+) -> None:
+    """Product Ads do dia calendário (BRT). Conta Impala; não misturar Masterprint."""
+    try:
+        from core.datadog_metrics import gauge
+
+        base = ["cnpj:impala", "janela:dia"]
+        gauge("ads.hoje.fonte_ok", 1.0 if fonte_ok else 0.0, tags=base)
+        rows = [c for c in (campanhas or []) if isinstance(c, dict)]
+        if not fonte_ok:
+            for nome in (
+                "ads.hoje.campanhas_n",
+                "ads.hoje.ativas_n",
+                "ads.hoje.gasto",
+                "ads.hoje.prints",
+                "ads.hoje.clicks",
+                "ads.hoje.unidades",
+                "ads.hoje.receita",
+            ):
+                gauge(nome, 0.0, tags=base)
+            return
+        ativas = [
+            c
+            for c in rows
+            if str(c.get("status") or "").strip().lower() in _STATUS_ATIVA
+        ]
+        gasto = sum(float(c.get("cost") or 0) for c in rows)
+        prints = sum(int(c.get("prints") or 0) for c in rows)
+        clicks = sum(int(c.get("clicks") or 0) for c in rows)
+        unidades = sum(int(c.get("units_quantity") or 0) for c in rows)
+        receita = sum(float(c.get("total_amount") or 0) for c in rows)
+        gauge("ads.hoje.campanhas_n", float(len(rows)), tags=base)
+        gauge("ads.hoje.ativas_n", float(len(ativas)), tags=base)
+        gauge("ads.hoje.gasto", gasto, tags=base)
+        gauge("ads.hoje.prints", float(prints), tags=base)
+        gauge("ads.hoje.clicks", float(clicks), tags=base)
+        gauge("ads.hoje.unidades", float(unidades), tags=base)
+        gauge("ads.hoje.receita", receita, tags=base)
+        for c in rows:
+            cid = str(c.get("id") or "").strip()
+            if not cid:
+                continue
+            tags = [*base, _camp_tag(cid)]
+            gauge("ads.hoje.ranking_gasto", float(c.get("cost") or 0), tags=tags)
+            gauge("ads.hoje.ranking_unidades", float(c.get("units_quantity") or 0), tags=tags)
+    except Exception:
+        pass
+
+
 def listar_campanhas(
     advertiser_id: str = "",
     *,
     dias: int = 14,
     limit: int = 50,
     offset: int = 0,
+    emitir_visibilidade: bool = True,
 ) -> list[dict]:
     """Lista campanhas Product Ads com métricas do período. Nunca lança exceção."""
     global _ULTIMA_LISTAGEM
@@ -295,7 +362,8 @@ def listar_campanhas(
         }
         campanhas = [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
         _marcar_ads_indisponivel_agora(0.0, advertiser_id=advertiser_id)
-        emitir_metricas_visibilidade_ads(campanhas)
+        if emitir_visibilidade:
+            emitir_metricas_visibilidade_ads(campanhas)
         return campanhas
     except Exception as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
@@ -308,7 +376,8 @@ def listar_campanhas(
                 "advertiser_id": advertiser_id,
             }
             _avisar_ads_indisponivel_404(advertiser_id)
-            emitir_metricas_visibilidade_ads([])
+            if emitir_visibilidade:
+                emitir_metricas_visibilidade_ads([])
             # Não incrementa ads.probe_falha: 404 de config conhecida poluía
             # o monitor P1 até o escopo Ads ser corrigido no DevCenter.
         else:

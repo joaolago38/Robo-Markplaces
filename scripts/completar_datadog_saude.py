@@ -66,6 +66,9 @@ GROUP_KITS_MANICURE_ID = 700016
 GROUP_DECISAO_OSCILACAO_ID = 700017
 GROUP_PROGRESSO_24M_ID = 700019
 GROUP_OPEX_IMPALA_ID = 700021
+GROUP_VENDAS_PERIODO_IMPALA_ID = 700022
+GROUP_AGORA_IMPALA_ID = 700023
+GROUP_VENDAS_PERIODO_MP_ID = 760007
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -1770,6 +1773,373 @@ def _grupo_opex_impala() -> dict[str, Any]:
                     **ts,
                     "layout": {"height": 3, "width": 12, "x": 0, "y": 4},
                     "id": 742009,
+                },
+            ],
+        },
+    }
+
+
+def _grupo_vendas_periodo(
+    *,
+    group_id: int,
+    titulo: str,
+    cnpj: str,
+    dim: str,
+    id_base: int,
+    nota: str,
+) -> dict[str, Any]:
+    """Pedidos reais: dia calendário BRT, 7d e 30d + ranking (kit ou prod)."""
+    filt = f"cnpj:{cnpj}"
+    widgets: list[dict[str, Any]] = [
+        {
+            "id": id_base,
+            "definition": {
+                "type": "note",
+                "content": nota,
+                "background_color": "yellow",
+                "font_size": "14",
+                "text_align": "left",
+                "show_tick": False,
+                "has_padding": True,
+            },
+            "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+        },
+        {
+            **_qv(
+                "Fonte pedidos OK",
+                f"avg:robo.vendas.periodo.fonte_ok{{{filt}}}",
+                aggregator="avg",
+                green_gt=0,
+                precision=0,
+            ),
+            "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+            "id": id_base + 1,
+        },
+    ]
+    x = 2
+    for i, (rotulo, janela) in enumerate(
+        (("hoje BRT", "dia"), ("7 dias", "semana"), ("30 dias", "mes"))
+    ):
+        fjan = f"{filt},janela:{janela}"
+        widgets.append(
+            {
+                **_qv(
+                    f"Receita {rotulo} R$",
+                    f"avg:robo.vendas.periodo.receita{{{fjan}}}",
+                    aggregator="avg",
+                    green_gt=0,
+                    precision=2,
+                ),
+                "layout": {"height": 2, "width": 2, "x": x, "y": 2},
+                "id": id_base + 2 + i,
+            }
+        )
+        x += 2
+    x = 0
+    for i, (rotulo, janela) in enumerate(
+        (("hoje", "dia"), ("7d", "semana"), ("30d", "mes"))
+    ):
+        fjan = f"{filt},janela:{janela}"
+        widgets.append(
+            {
+                **_qv(
+                    f"Unid. {rotulo}",
+                    f"avg:robo.vendas.periodo.unidades{{{fjan}}}",
+                    aggregator="avg",
+                    green_gt=0,
+                    precision=0,
+                ),
+                "layout": {"height": 2, "width": 2, "x": x, "y": 4},
+                "id": id_base + 5 + i,
+            }
+        )
+        widgets.append(
+            {
+                **_qv(
+                    f"Pedidos {rotulo}",
+                    f"avg:robo.vendas.periodo.pedidos{{{fjan}}}",
+                    aggregator="avg",
+                    green_gt=0,
+                    precision=0,
+                ),
+                "layout": {"height": 2, "width": 2, "x": x + 6, "y": 4},
+                "id": id_base + 8 + i,
+            }
+        )
+        x += 2
+    y = 6
+    wid = id_base + 11
+    for janela, rotulo in (("dia", "hoje"), ("semana", "7 dias"), ("mes", "30 dias")):
+        fjan = f"{filt},janela:{janela}"
+        widgets.append(
+            {
+                **_toplist_metric(
+                    f"Mais vendidos {rotulo} (unid.)",
+                    f"avg:robo.vendas.periodo.ranking_unidades{{{fjan}}} by {{{dim}}}",
+                    aggregator="avg",
+                    limit=10,
+                ),
+                "layout": {"height": 4, "width": 6, "x": 0, "y": y},
+                "id": wid,
+            }
+        )
+        widgets.append(
+            {
+                **_toplist_metric(
+                    f"Mais vendidos {rotulo} (R$)",
+                    f"avg:robo.vendas.periodo.ranking_receita{{{fjan}}} by {{{dim}}}",
+                    aggregator="avg",
+                    limit=10,
+                ),
+                "layout": {"height": 4, "width": 6, "x": 6, "y": y},
+                "id": wid + 1,
+            }
+        )
+        y += 4
+        wid += 2
+    return {
+        "id": group_id,
+        "definition": {
+            "title": titulo,
+            "type": "group",
+            "background_color": "vivid_green",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": widgets,
+        },
+    }
+
+
+def _grupo_vendas_periodo_impala() -> dict[str, Any]:
+    return _grupo_vendas_periodo(
+        group_id=GROUP_VENDAS_PERIODO_IMPALA_ID,
+        titulo="[Vendas realizadas] Impala — dia / 7d / 30d + ranking",
+        cnpj="impala",
+        dim="kit",
+        id_base=780001,
+        nota=(
+            "**Conta ML Impala (CNPJ 52.668.583/0001-27)** — pedidos pagos da API, "
+            "não proxy de rivais. Dia = calendário Brasília. Ranking por kit "
+            "(sem tag sku). Atualiza no monitor de margem."
+        ),
+    )
+
+
+def _grupo_vendas_periodo_masterprint() -> dict[str, Any]:
+    return _grupo_vendas_periodo(
+        group_id=GROUP_VENDAS_PERIODO_MP_ID,
+        titulo="[Vendas realizadas] Masterprint — dia / 7d / 30d + ranking",
+        cnpj="masterprint",
+        dim="prod",
+        id_base=761001,
+        nota=(
+            "**2o CNPJ 23.811.261/0001-97.** Sem token ML Masterprint a fonte fica 0 "
+            "e o ranking vazio — **não inventa pedido**. Preenche quando houver "
+            "OAuth próprio. Não misturar com Impala. Pulso agora (estoque / sem venda "
+            "/ ads do dia) está na aba Fase 1 — conta ML conectada."
+        ),
+    )
+
+
+def _grupo_agora_impala() -> dict[str, Any]:
+    """O que está acontecendo agora: estoque crítico, anúncios sem venda, ads do dia."""
+    return {
+        "id": GROUP_AGORA_IMPALA_ID,
+        "definition": {
+            "title": "[Agora] Estoque critico / sem venda / ads do dia",
+            "type": "group",
+            "background_color": "vivid_yellow",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "id": 782001,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Conta ML Impala.** Estoque do catálogo (limite "
+                            "`ESTOQUE_CRITICO`). Sem venda = anúncios ativos sem pedido "
+                            "no período do monitor. Ads do dia = Product Ads calendário "
+                            "BRT — não é Meta Ads. Masterprint não entra aqui."
+                        ),
+                        "background_color": "yellow",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+                },
+                {
+                    **_qv(
+                        "Estoque critico (kits)",
+                        "avg:robo.catalogo.estoque_critico{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        red_gt=2,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 2},
+                    "id": 782002,
+                },
+                {
+                    **_qv(
+                        "Estoque zero",
+                        "avg:robo.catalogo.estoque_zero{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 2},
+                    "id": 782003,
+                },
+                {
+                    **_qv(
+                        "Guerra estoque 0",
+                        "avg:robo.catalogo.guerra_estoque_zero{*}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 2},
+                    "id": 782004,
+                },
+                {
+                    **_qv(
+                        "Anuncios sem venda",
+                        "avg:robo.ml.sem_venda.total{cnpj:impala}",
+                        aggregator="avg",
+                        green_gt=None,
+                        yellow_gt=0,
+                        red_gt=2,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 2},
+                    "id": 782005,
+                },
+                {
+                    **_qv(
+                        "Anuncios ativos",
+                        "avg:robo.ml.sem_venda.anuncios_ativos{cnpj:impala}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 2},
+                    "id": 782006,
+                },
+                {
+                    **_qv(
+                        "Ads hoje fonte OK",
+                        "avg:robo.ads.hoje.fonte_ok{cnpj:impala}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 2},
+                    "id": 782007,
+                },
+                {
+                    **_qv(
+                        "Ads hoje gasto R$",
+                        "avg:robo.ads.hoje.gasto{cnpj:impala,janela:dia}",
+                        aggregator="avg",
+                        green_gt=None,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 4},
+                    "id": 782008,
+                },
+                {
+                    **_qv(
+                        "Ads hoje impressoes",
+                        "avg:robo.ads.hoje.prints{cnpj:impala,janela:dia}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 4},
+                    "id": 782009,
+                },
+                {
+                    **_qv(
+                        "Ads hoje cliques",
+                        "avg:robo.ads.hoje.clicks{cnpj:impala,janela:dia}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 4},
+                    "id": 782010,
+                },
+                {
+                    **_qv(
+                        "Ads hoje unid.",
+                        "avg:robo.ads.hoje.unidades{cnpj:impala,janela:dia}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 4},
+                    "id": 782011,
+                },
+                {
+                    **_qv(
+                        "Ads hoje receita R$",
+                        "avg:robo.ads.hoje.receita{cnpj:impala,janela:dia}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 4},
+                    "id": 782012,
+                },
+                {
+                    **_qv(
+                        "Campanhas ativas hoje",
+                        "avg:robo.ads.hoje.ativas_n{cnpj:impala,janela:dia}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 4},
+                    "id": 782013,
+                },
+                {
+                    **_toplist_metric(
+                        "Estoque mais baixo (unid.)",
+                        "avg:robo.catalogo.estoque_unidades{*} by {kit}",
+                        aggregator="avg",
+                        order="asc",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 4, "x": 0, "y": 6},
+                    "id": 782014,
+                },
+                {
+                    **_toplist_metric(
+                        "Sem venda — visitas 30d",
+                        "avg:robo.ml.sem_venda.visitas{cnpj:impala} by {kit}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 4, "x": 4, "y": 6},
+                    "id": 782015,
+                },
+                {
+                    **_toplist_metric(
+                        "Ads hoje gasto por campanha",
+                        "avg:robo.ads.hoje.ranking_gasto{cnpj:impala,janela:dia} by {camp}",
+                        aggregator="avg",
+                        limit=10,
+                    ),
+                    "layout": {"height": 4, "width": 4, "x": 8, "y": 6},
+                    "id": 782016,
                 },
             ],
         },
@@ -5498,6 +5868,11 @@ def atualizar_dashboard_ecommerce() -> None:
             "**Opex Impala:** grupo [Opex Impala] — R$ 800 operacional único. "
             "Meses até o lucro de MIMO+PERL pagar (ritmo doutrina 30+30 ≈ 2 meses; "
             "caixa real fica vazia até o 1º pedido). Não sobe preço para absorver.\n\n"
+            "**Vendas realizadas:** grupo [Vendas realizadas] Impala — receita, "
+            "unidades e pedidos de hoje (BRT), 7d e 30d + ranking dos kits "
+            "mais vendidos. Pedidos da conta conectada, não rivais.\n\n"
+            "**Agora:** grupo [Agora] — estoque crítico / zero, anúncios sem venda "
+            "e Product Ads do dia (gasto, cliques, unidades).\n\n"
             "**Decisão guerra Impala:** grupo [Decisao guerra Impala] — fase 0–5 "
             "(0=abrir MIMO, não é erro), publicar_agora (gate, não os 20 kits), "
             "título de atração (Impala+esmalte+Carmed+manicure), Carmed no ar, "
@@ -5535,6 +5910,10 @@ def atualizar_dashboard_ecommerce() -> None:
     prog["layout"] = {"x": 0, "y": 1, "width": 12, "height": 1}
     opex = _grupo_opex_impala()
     opex["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    vendas = _grupo_vendas_periodo_impala()
+    vendas["layout"] = {"x": 0, "y": 3, "width": 12, "height": 1}
+    agora = _grupo_agora_impala()
+    agora["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     cat = _grupo_catalogo_impala()
     cat["layout"] = {"x": 0, "y": 3, "width": 12, "height": 1}
     bat = _grupo_batalha_impala()
@@ -5562,6 +5941,8 @@ def atualizar_dashboard_ecommerce() -> None:
             "ABA FASE 1 IMPALA: progresso Impala (teto 2.5k→20k, Cruzeiro 12/d; sem PETG/Masterprint), "
             "opex R$ 800 (meses ate vendas pagarem), "
             "catalogo Impala, batalha, decisao guerra (margem+extra), ads, saude da conta ML, "
+            "vendas dia/7d/30d + ranking de kits, "
+            "agora (estoque critico / sem venda / ads do dia), "
             "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
             "kits Impala manicure, oscilacao/cuidado para decidir. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · "
@@ -5571,6 +5952,8 @@ def atualizar_dashboard_ecommerce() -> None:
             note,
             prog,
             opex,
+            vendas,
+            agora,
             com,
             cat,
             bat,
@@ -5611,6 +5994,9 @@ def atualizar_dashboard_masterprint() -> None:
             "Métricas `robo.masterprint.guerra.*` (tag cnpj:23811261000197).\n"
             "**Progresso fase 2:** grupo [Fase 2 / Masterprint] — lucro Masterprint "
             "(SKU que não é IMP/CRZ/BUNDLE) e PETG unid/dia vs 6.\n"
+            "**Vendas realizadas:** grupo [Vendas realizadas] Masterprint — dia/7d/30d "
+            "e ranking da **conta do 2o CNPJ**. Sem token ML próprio fica fonte=0 "
+            "(não copia pedido Impala nem sold_quantity de rival).\n"
             "**Funil:** visitas→unidades→conversão% + ações críticas "
             "(otimizador prioriza IDs).\n"
             "**Atenção:** vendas/receita/lucro de concorrentes ficam **n/d** (API ML 403). "
@@ -5625,6 +6011,8 @@ def atualizar_dashboard_masterprint() -> None:
     )
     prog = _grupo_progresso_fase2_masterprint()
     prog["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    vendas_mp = _grupo_vendas_periodo_masterprint()
+    vendas_mp["layout"] = {"x": 0, "y": 3, "width": 12, "height": 1}
     guerra = _grupo_guerra_masterprint()
     guerra["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     funil = _grupo_funil_demanda_masterprint()
@@ -5641,9 +6029,10 @@ def atualizar_dashboard_masterprint() -> None:
         "description": (
             "ABA FASE 2 MASTERPRINT: progresso PETG/filamento, guerra 2o CNPJ, "
             "funil visitas→vendas, catalogo e mercado ML. Sem métricas Impala. "
+            "Vendas dia/7d/30d do 2o CNPJ quando houver token ML próprio. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA FASE 1 IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, prog, guerra, funil, com, cat, merc],
+        "widgets": [note, prog, vendas_mp, guerra, funil, com, cat, merc],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],

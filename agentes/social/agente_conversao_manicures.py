@@ -46,6 +46,8 @@ from core.config import (
     META_PAGE_ID,
     ML_ACCESS_TOKEN,
     ROOT,
+    WHATSAPP_BUSINESS_TOKEN,
+    WHATSAPP_PHONE_ID,
 )
 from core.datadog_metrics import gauge, incrementar
 from core.notificador import (
@@ -54,12 +56,7 @@ from core.notificador import (
     enviar_telegram_manicures,
     manicures_telegram_configurado,
 )
-from core.whatsapp import (
-    buscar_mensagens_grupo_recentes,
-    enviar_grupo_manicures,
-    enviar_mensagem,
-    whatsapp_grupo_manicures_configurado,
-)
+from core.whatsapp import enviar_mensagem
 from integracoes.meta.meta_ads_client import listar_metricas_campanhas
 from integracoes.meta.meta_client import publicar_facebook, publicar_instagram
 from integracoes.meta.meta_inbox import coletar_inbox_meta, responder_comentario
@@ -178,9 +175,6 @@ def _processar_inbox(
     for c in meta.get("comentarios") or []:
         coletados.append(c)
 
-    for m in buscar_mensagens_grupo_recentes(limite=40):
-        coletados.append(m)
-
     novos = 0
     respondidos = 0
     enfileirados = 0
@@ -236,8 +230,6 @@ def _processar_inbox(
                 autor = str(item.get("autor") or "").split("@")[0]
                 if autor.isdigit() and len(autor) >= 10:
                     enviou = bool(enviar_mensagem(autor, str(classif.get("resposta"))))
-                else:
-                    enviou = bool(enviar_grupo_manicures(str(classif.get("resposta"))))
 
         if enviou:
             respondidos += 1
@@ -362,8 +354,7 @@ def _envios_ativos(
     fb_txt = str(oferta.get("copy_facebook") or "")
     ig_txt = str(oferta.get("copy_instagram") or "")
 
-    if whatsapp_grupo_manicures_configurado() and wa_txt and CONVERSAO_MANICURES_ENVIAR_WA:
-        out["whatsapp"] = bool(enviar_grupo_manicures(wa_txt))
+    out["whatsapp"] = False
 
     if manicures_telegram_configurado() and wa_txt and CONVERSAO_MANICURES_ENVIAR_TG:
         # telegram aceita markdown leve — usa facebook copy
@@ -415,7 +406,7 @@ def executar(
 
         diag = diagnosticar_canais(
             {
-                "wa": whatsapp_grupo_manicures_configurado(),
+                "wa_meta": bool(WHATSAPP_BUSINESS_TOKEN and WHATSAPP_PHONE_ID),
                 "tg_manicures": manicures_telegram_configurado(),
                 "fb": bool(META_ACCESS_TOKEN and META_PAGE_ID),
                 "ig": bool(META_ACCESS_TOKEN and META_INSTAGRAM_ID),

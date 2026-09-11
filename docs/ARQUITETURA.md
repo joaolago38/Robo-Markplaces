@@ -34,10 +34,9 @@ flowchart TB
     AM["Amazon"]
     BL["Bling ERP"]
     ALI["Alibaba"]
-    META["Meta Ads / Inbox"]
+    META["Meta Ads (opcional)"]
     CLAUDE["Anthropic Claude"]
-    TG["Telegram gestor"]
-    WA["WhatsApp"]
+    TG["Telegram gestor / manicures"]
     DD["Datadog"]
     AWS["AWS opcional<br/>Lambda · DynamoDB · SSM"]
   end
@@ -52,7 +51,7 @@ flowchart TB
   AG --> INT
   AG --> CAT
   INT --> ML & SH & MG & AM & BL & ALI & META
-  CORE --> CLAUDE & TG & WA & DD
+  CORE --> CLAUDE & TG & DD
   CORE --> AWS
 ```
 
@@ -98,8 +97,8 @@ flowchart TB
   CHAT --- C1[chat ML/Shopee/Magalu/Amazon · auto_respostas]
   OP --- O1[estoque · repricing · inteligência preços · operação 24h]
   MON --- M1[ML · esmaltes · filamentos · Alibaba · leilões · veículos · licitações · descoberta]
-  SOC --- S1[Meta · manicures · promoções · conversão]
-  VEN --- V1[WhatsApp · margem vendas]
+  SOC --- S1[promoções manicures Telegram · conversão · Meta Ads opcional]
+  VEN --- V1[Telegram gestor · margem vendas]
 ```
 
 Agentes de escrita destrutiva ou rotinas diárias ficam de fora do ciclo de 30 min (ex.: publicador, relatório financeiro semanal) e rodam em workflows dedicados.
@@ -287,7 +286,7 @@ Se `TELEGRAM_EXPLICACAO_AGENTES=1` (padrão), depois do título entram os blocos
 
 - Token do bot não vai no texto; só na URL da API.
 - Prompt, system e JSON enviados ao Claude **não** vão ao Telegram (só Datadog/logs locais).
-- Venda nova do dia a dia: **WhatsApp**, não Telegram (`agentes/vendas_notificador.py`). Telegram só se a **busca de pedidos falhar** (auth quebrada ou API fora).
+- Venda nova do dia a dia: **Telegram do gestor** (`agentes/vendas_notificador.py`). Sem Evolution / grupo WhatsApp automático.
 - Fatura/saldo Mercado Pago no resumo da conta: nota de que isso fica no painel, não no card.
 - Agentes marcados “sem Telegram no cron” (ex.: `monitor_anita`, `resumo_diario_novamix`; `kits_concorrentes_unificado` só grava JSON).
 
@@ -298,7 +297,7 @@ Cada agente monta um **resumo em português**, com SKU, nome, preço, %, MLB, li
 - **Conta ML** (`integracoes/ml/resumo_conta.py`): nickname, seller_id, perguntas pendentes, anúncios a melhorar / ativos / pausados, Premium vs Clássico, sugestões de preço, Ads idle, envios, claims, reputação (cor, vendas, nota, claims rate, Mercado Líder).
 - **Margem de vendas**: alerta por item abaixo do mínimo (produto, marketplace, valor, margem) + resumo do período.
 - **Impala / esmaltes**: KPIs (kits % receita, margem), kits sem MLB, checklist, comparativo Anita, golpe de guerra, radar diferencial, kits sugeridos, busca de cores.
-- **Manicures (grupo)**: texto de promoção de kits Impala (catálogo ML); o gestor pode receber pedido de SIM antes (`necessidade_manicures`).
+- **Manicures**: copy de promoção (Telegram das manicures se configurado); postagem no grupo WhatsApp é **manual**. Gestor pode receber pedido de SIM antes (`necessidade_manicures`). Sem Graph/Page/IG automático para o grupo.
 - **Ads ML**: pergunta de confirmação antes de ligar/pausar/escalar Product Ads.
 - **Ciclo 30 min** (`orquestrador`): consolidado do que passou/falhou — não o relatório completo de cada agente.
 - **Operação / estoque / repricing**: snapshot ou falha de aplicação (contagens tipo `1/1`, SKUs).
@@ -333,7 +332,7 @@ flowchart TB
 |---------|---------------------|-------------------------|
 | Chat & atendimento | `agente_ml`, Shopee, Magalu, Amazon, auto_respostas | ML/Shopee/Magalu/Amazon, Bling, Claude |
 | Preço & estoque | repricing, sync estoque, inteligência preços | Bling + canais |
-| Esmaltes / manicures | Anita, kits, Impala, acetona, Meta, ecossistema, crescimento, decisão do dia, contrato impulso | ML, Meta, planilhas |
+| Esmaltes / manicures | Anita, kits, Impala, acetona, ecossistema, crescimento, decisão do dia, contrato impulso | ML, Telegram, planilhas |
 | Filamentos 3D | monitor filamentos + cruzamento Alibaba | ML, Alibaba, câmbio |
 | Importação | Alibaba, ML×Alibaba, cálculo aéreo | Alibaba, ML, câmbio |
 | Veículos / leilões | Sumaré, FIPE, carros batidos | scrapers / sites |

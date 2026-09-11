@@ -352,6 +352,51 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         self.assertEqual(grupo["id"], dd.GROUP_PROGRESSO_FASE2_ID)
         self.assertIn("[Fase 2 / Masterprint]", blob)
 
+    def test_grupo_vendas_periodo_impala(self):
+        grupo = dd._grupo_vendas_periodo_impala()
+        blob = str(grupo)
+        for metric in (
+            "robo.vendas.periodo.fonte_ok{cnpj:impala}",
+            "robo.vendas.periodo.receita{cnpj:impala,janela:dia}",
+            "robo.vendas.periodo.receita{cnpj:impala,janela:semana}",
+            "robo.vendas.periodo.receita{cnpj:impala,janela:mes}",
+            "robo.vendas.periodo.unidades{cnpj:impala,janela:dia}",
+            "robo.vendas.periodo.pedidos{cnpj:impala,janela:mes}",
+            "robo.vendas.periodo.ranking_unidades{cnpj:impala,janela:semana} by {kit}",
+            "robo.vendas.periodo.ranking_receita{cnpj:impala,janela:mes} by {kit}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertNotIn("cnpj:masterprint", blob)
+        self.assertEqual(grupo["id"], dd.GROUP_VENDAS_PERIODO_IMPALA_ID)
+
+    def test_grupo_vendas_periodo_masterprint(self):
+        grupo = dd._grupo_vendas_periodo_masterprint()
+        blob = str(grupo)
+        for metric in (
+            "robo.vendas.periodo.fonte_ok{cnpj:masterprint}",
+            "robo.vendas.periodo.receita{cnpj:masterprint,janela:dia}",
+            "robo.vendas.periodo.ranking_unidades{cnpj:masterprint,janela:semana} by {prod}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertNotIn("cnpj:impala", blob)
+        self.assertEqual(grupo["id"], dd.GROUP_VENDAS_PERIODO_MP_ID)
+
+    def test_grupo_agora_impala(self):
+        grupo = dd._grupo_agora_impala()
+        blob = str(grupo)
+        for metric in (
+            "robo.catalogo.estoque_critico{*}",
+            "robo.catalogo.estoque_zero{*}",
+            "robo.catalogo.estoque_unidades{*} by {kit}",
+            "robo.ml.sem_venda.total{cnpj:impala}",
+            "robo.ml.sem_venda.visitas{cnpj:impala} by {kit}",
+            "robo.ads.hoje.gasto{cnpj:impala,janela:dia}",
+            "robo.ads.hoje.ranking_gasto{cnpj:impala,janela:dia} by {camp}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertNotIn("cnpj:masterprint", blob)
+        self.assertEqual(grupo["id"], dd.GROUP_AGORA_IMPALA_ID)
+
     def test_grupo_mercado_masterprint_seller_vendas_dia(self):
         grupo = dd._grupo_mercado_masterprint()
         blob = str(grupo)

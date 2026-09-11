@@ -12,7 +12,7 @@ import re
 from typing import Any
 
 from core.atomic_io import ler_json
-from core.config import ROOT, TAXA_CANAL_PADRAO_PCT
+from core.config import ESTOQUE_CRITICO, ROOT, TAXA_CANAL_PADRAO_PCT
 from core.datadog_metrics import gauge, incrementar
 from integracoes.esmaltes.crescimento_esmaltes import _mlb_valido
 
@@ -72,6 +72,19 @@ def gap_mercado_pct(produto: dict[str, Any]) -> float | None:
     return round(100.0 * (mercado - preco) / mercado, 2)
 
 
+def _estoque_unidades(produto: dict[str, Any]) -> int | None:
+    """Unidades conhecidas (total do kit ou estoque ML). None = não informado."""
+    ml = (produto.get("canais") or {}).get("mercadolivre") or {}
+    for bruto in (produto.get("estoque_total"), ml.get("estoque")):
+        if bruto is None:
+            continue
+        try:
+            return int(bruto)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
 def _estoque_zero(produto: dict[str, Any]) -> bool:
     ml = (produto.get("canais") or {}).get("mercadolivre") or {}
     est_ml = ml.get("estoque")
@@ -107,8 +120,9 @@ def montar_snapshot_catalogo(
     skus_guerra = set(papel_por_sku)
 
     kits: list[dict[str, Any]] = []
-    p0 = p1 = sem_mlb = estoque_z = 0
+    p0 = p1 = sem_mlb = estoque_z = estoque_crit = 0
     guerra_sem_mlb = guerra_estoque_z = 0
+    limite_crit = int(ESTOQUE_CRITICO)
 
     for p in produtos:
         if not isinstance(p, dict):
@@ -126,9 +140,13 @@ def montar_snapshot_catalogo(
         mlb_ok = _mlb_valido(_item_id(p))
         if not mlb_ok:
             sem_mlb += 1
+        unidades = _estoque_unidades(p)
         ez = _estoque_zero(p)
         if ez:
             estoque_z += 1
+        critico = unidades is not None and unidades <= limite_crit
+        if critico:
+            estoque_crit += 1
 
         papel = papel_por_sku.get(sku_u, "catalogo")
         if sku_u in skus_guerra:
@@ -145,6 +163,8 @@ def montar_snapshot_catalogo(
                 "kit_tag": kit_tag(sku_u),
                 "guerra": sku_u in skus_guerra,
                 "mlb_ok": mlb_ok,
+                "estoque_unidades": unidades,
+                "estoque_critico": critico,
                 "estoque_zero": ez,
                 "score": _f(p.get("score_alavancagem")),
                 "vd_dia_ref": _f(p.get("vd_dia_ml_ref")),
@@ -186,6 +206,7 @@ def montar_snapshot_catalogo(
         "kits_p1": p1,
         "sem_mlb": sem_mlb,
         "estoque_zero": estoque_z,
+        "estoque_critico": estoque_crit,
         "guerra_total": len(skus_guerra),
         "guerra_sem_mlb": guerra_sem_mlb,
         "guerra_estoque_zero": guerra_estoque_z,
@@ -257,6 +278,7 @@ def emitir_metricas_catalogo_impala(
         gauge("catalogo.kits_p1", float(snap["kits_p1"]))
         gauge("catalogo.sem_mlb", float(snap["sem_mlb"]))
         gauge("catalogo.estoque_zero", float(snap["estoque_zero"]))
+        gauge("catalogo.estoque_critico", float(snap.get("estoque_critico") or 0))
         gauge("catalogo.guerra_total", float(snap["guerra_total"]))
         gauge("catalogo.guerra_sem_mlb", float(snap["guerra_sem_mlb"]))
         gauge(
@@ -288,6 +310,10 @@ def emitir_metricas_catalogo_impala(
             gauge("catalogo.fase", float(k["fase"]), tags=tags)
             gauge("catalogo.lucro_ref_ml", float(k["lucro_ref_ml"]), tags=tags)
             gauge("catalogo.mlb_ok", 1.0 if k["mlb_ok"] else 0.0, tags=tags)
+            if k.get("estoque_unidades") is not None:
+                gauge("catalogo.estoque_unidades", float(k["estoque_unidades"]), tags=tags)
+            if k.get("estoque_critico"):
+                gauge("catalogo.estoque_critico_flag", 1.0, tags=tags)
             if k.get("invest_validacao_reais") is not None:
                 gauge(
                     "catalogo.invest_validacao",

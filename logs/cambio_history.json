@@ -794,17 +794,77 @@
       "usd_brl": 5.0823,
       "fonte": "awesomeapi",
       "consultado_em": "2026-09-11T13:38:20.577031+00:00"
+    },
+    {
+      "usd_brl": 5.101,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:08:37.846830+00:00"
+    },
+    {
+      "usd_brl": 5.101,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:08:37.928350+00:00"
+    },
+    {
+      "usd_brl": 5.0992,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:14:15.209936+00:00"
+    },
+    {
+      "usd_brl": 5.0992,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:14:15.376063+00:00"
+    },
+    {
+      "usd_brl": 5.0993,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:24:54.037314+00:00"
+    },
+    {
+      "usd_brl": 5.0993,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:24:54.108291+00:00"
+    },
+    {
+      "usd_brl": 5.1002,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:27:16.942537+00:00"
+    },
+    {
+      "usd_brl": 5.1002,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:27:17.104898+00:00"
+    },
+    {
+      "usd_brl": 5.1025,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:38:47.282744+00:00"
+    },
+    {
+      "usd_brl": 5.1025,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:38:47.387544+00:00"
+    },
+    {
+      "usd_brl": 5.1007,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:45:02.797525+00:00"
+    },
+    {
+      "usd_brl": 5.1007,
+      "fonte": "awesomeapi",
+      "consultado_em": "2026-09-11T16:45:02.876253+00:00"
     }
   ],
   "ultima": {
     "ok": true,
-    "usd_brl": 5.0823,
+    "usd_brl": 5.1007,
     "fonte": "awesomeapi",
-    "variacao_pct": -0.4115,
-    "consultado_em": "2026-09-11T13:38:20.577031+00:00",
+    "variacao_pct": -0.050949,
+    "consultado_em": "2026-09-11T16:45:02.876253+00:00",
     "idade_seg": 0,
     "confiavel": true,
-    "alta": "5.122",
+    "alta": "5.1176",
     "baixa": "5.0711"
   }
 }
