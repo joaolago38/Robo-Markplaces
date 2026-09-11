@@ -788,6 +788,31 @@ DECISAO_DIA_ESMALTES_GUERRA_CATALOGO = os.getenv(
 DOUTRINA_GUERRA_IMPALA_CATALOGO = os.getenv(
     "DOUTRINA_GUERRA_IMPALA_CATALOGO", "catalogo/doutrina_guerra_impala.json"
 )
+DOUTRINA_GUERRA_MASTERPRINT_CATALOGO = os.getenv(
+    "DOUTRINA_GUERRA_MASTERPRINT_CATALOGO",
+    "catalogo/doutrina_guerra_masterprint.json",
+)
+SKUS_GUERRA_MASTERPRINT_CATALOGO = os.getenv(
+    "SKUS_GUERRA_MASTERPRINT_CATALOGO",
+    "catalogo/skus_guerra_masterprint.json",
+)
+GOLPE_GUERRA_MASTERPRINT_ATIVO = os.getenv(
+    "GOLPE_GUERRA_MASTERPRINT_ATIVO", "1"
+).strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+GOLPE_GUERRA_MASTERPRINT_ALERTA = os.getenv(
+    "GOLPE_GUERRA_MASTERPRINT_ALERTA", "1"
+).strip().lower() not in (
+    "0",
+    "false",
+    "no",
+)
+GOLPE_GUERRA_MASTERPRINT_COOLDOWN_SEG = int(
+    os.getenv("GOLPE_GUERRA_MASTERPRINT_COOLDOWN_SEG", "21600")
+)
 GOLPE_GUERRA_IMPALA_ATIVO = os.getenv("GOLPE_GUERRA_IMPALA_ATIVO", "1").strip().lower() not in (
     "0",
     "false",
@@ -1303,7 +1328,7 @@ ORQUESTRADOR_EXCLUIR = {
         "montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,"
         "leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,"
         "alibaba_sourcing,comparar_portos_alibaba,logistica_china_ml,"
-        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,"
+        "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,golpe_guerra_masterprint,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,"
         "inteligencia_precos,monitor_ml,monitor_concorrentes,monitor_sem_venda_ml,monitor_mercado_esmaltes,panorama,"
         "sincronizar_estoque,repricing,repricing_impala,operacao_24h,"
         "chat_shopee,chat_magalu,chat_amazon,auto_respostas",

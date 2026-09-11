@@ -132,6 +132,8 @@ class TestWorkflowsConcurrency(unittest.TestCase):
             "ads_gatilho_ml.yml",
             "sincronizar_estoque.yml",
             "ponto_ruptura_segundo_cnpj.yml",
+            "monitor_masterprint_petg.yml",
+            "monitor_masterprint_escritorio.yml",
         ):
             texto = (WORKFLOWS_DIR / nome).read_text(encoding="utf-8")
             self.assertIn("./.github/actions/saude-heartbeats", texto, nome)

@@ -1,0 +1,111 @@
+{
+  "versao": 1,
+  "nome": "guerra_por_faixa_filamento",
+  "ramo": "masterprint",
+  "cnpj": "23811261000197",
+  "cnpj_formatado": "23.811.261/0001-97",
+  "cnpj_gate_impala": "52668583000127",
+  "piso_margem_pct": 15,
+  "taxa_ml": 0.18,
+  "gap_igualar_pct": 3,
+  "sku_preco": "231020002",
+  "sku_entrada": "231020001",
+  "sku_giro": "231020003",
+  "skus_frente": ["231020001", "231020002", "231020003"],
+  "preco_congelado": ["231020001", "231020003"],
+  "margem_por_fase": {
+    "1": 0.10,
+    "2": 0.18,
+    "3": 0.25
+  },
+  "kits": {
+    "231020001": {
+      "papel": "entrada",
+      "arma": "diferenciar",
+      "preco_fase1": 79.9,
+      "cor": "preto",
+      "material": "PETG"
+    },
+    "231020002": {
+      "papel": "preco",
+      "arma": "igualar_faixa",
+      "preco_fase1": 74.9,
+      "cor": "branco",
+      "material": "PETG"
+    },
+    "231020003": {
+      "papel": "giro",
+      "arma": "listing",
+      "exige_pedido_vencedor": true,
+      "preco_fase1": 79.9,
+      "cor": "azul",
+      "material": "PETG"
+    }
+  },
+  "classificacoes": ["ignorar", "diferenciar", "igualar_faixa", "nao_perseguir"],
+  "gatilhos": {
+    "gap_pct_min": 3,
+    "estoque_ml_min": 30,
+    "estoque_validacao": 10,
+    "estoque_ideal": 60,
+    "reviews_ads": 20,
+    "nota_ads": 4.8,
+    "acos_max": 0.2
+  },
+  "cenario_mais_possivel": "abrir_frente_petg_preto",
+  "fases": [
+    {
+      "id": 0,
+      "nome": "abrir_frente",
+      "fazer": "Publicar PETG Preto 1kg R$79,90 (estoque 10 validação, depois 30). CNPJ Masterprint 23.811.261/0001-97 — só depois da ruptura Impala.",
+      "agentes": ["monitor_masterprint_petg", "golpe_guerra_masterprint", "ponto_ruptura_segundo_cnpj"]
+    },
+    {
+      "id": 1,
+      "nome": "no_ar",
+      "fazer": "PETG Branco no ar no mesmo ciclo (R$74,90 congelado até golpe). Ads off.",
+      "agentes": ["golpe_guerra_masterprint", "monitor_masterprint_petg"]
+    },
+    {
+      "id": 2,
+      "nome": "primeiro_pedido",
+      "fazer": "Com 1 pedido vencedor: publicar PETG Azul R$79,90. Listing, não preço.",
+      "agentes": ["monitor_masterprint_petg"]
+    },
+    {
+      "id": 3,
+      "nome": "ads",
+      "fazer": "Ligar Ads só com 20 reviews, nota 4.8, MLB da frente e ACOS<=20%.",
+      "agentes": ["ads_gatilho"]
+    },
+    {
+      "id": 4,
+      "nome": "guerra_preco",
+      "fazer": "Só PETG Branco (231020002) iguala se mercado_confiavel=1, rival PETG 1kg branco ao vivo, gap>=3% e preco >= piso 15%.",
+      "agentes": ["golpe_guerra_masterprint"]
+    },
+    {
+      "id": 5,
+      "nome": "ruptura",
+      "fazer": "PLA/TPU e outras cores só com frente PETG viva, reviews e radar não cego.",
+      "agentes": ["monitor_filamentos_ml"]
+    }
+  ],
+  "canais": {
+    "referente": "mercadolivre",
+    "todos": ["mercadolivre"],
+    "fase_minima_secundario": 3,
+    "taxa_pct": {
+      "mercadolivre": 18.0
+    }
+  },
+  "nao_fazer_global": [
+    "Igualar dump de PETG genérico abaixo do piso 15%",
+    "Mexer preço de Preto ou Azul (só Branco iguala)",
+    "Publicar Azul antes do 1o pedido",
+    "Tratar cache STALE como rival ao vivo",
+    "Operar o 2o CNPJ antes da ruptura Impala",
+    "Ligar Ads sem MLB da frente PETG",
+    "Aplicar preço com repricing_impala — golpe Masterprint só alerta até existir aplicador do 2º CNPJ"
+  ]
+}

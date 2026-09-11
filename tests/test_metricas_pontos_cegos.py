@@ -200,6 +200,8 @@ class TestVigiaFiltrosNotificador(unittest.TestCase):
         self.assertIn("estoque", ids)
         self.assertIn("ads_gatilho", ids)
         self.assertIn("ponto_ruptura_segundo_cnpj", ids)
+        self.assertIn("monitor_masterprint_petg", ids)
+        self.assertIn("monitor_masterprint_escritorio", ids)
         self.assertIn("ponto_ruptura_outra_marca", ids)
         self.assertIn("integridade_ml", ids)
         integ = next(f for f in fontes if f.get("id") == "integridade_ml")

@@ -52,6 +52,23 @@ class DatadogFunilDashboardTests(unittest.TestCase):
     def test_monitor_funil_nas_desejadas(self):
         nomes = [m["name"] for m in dd._monitores_desejados()]
         self.assertTrue(any("Funil ML" in n for n in nomes))
+        self.assertTrue(any("Guerra PETG" in n for n in nomes))
+
+    def test_grupo_guerra_masterprint_2o_cnpj(self):
+        grupo = dd._grupo_guerra_masterprint()
+        blob = str(grupo)
+        for metric in (
+            "robo.masterprint.guerra.fase",
+            "robo.masterprint.guerra.golpe_disparar",
+            "robo.masterprint.guerra.liberar_golpe_preco",
+            "robo.masterprint.guerra.mlb_frente",
+            "robo.masterprint.guerra.mercado_confiavel",
+            "robo.masterprint.guerra.publicar_agora",
+            "robo.masterprint.batalha.anuncios_unicos",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_MP_GUERRA_ID)
+        self.assertIn("23.811.261", blob)
 
     def test_monitores_cnae_e_ponto_ruptura(self):
         nomes = [m["name"] for m in dd._monitores_desejados()]

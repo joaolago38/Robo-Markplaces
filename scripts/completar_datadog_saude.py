@@ -57,6 +57,7 @@ GROUP_MP_MERCADO_ID = 760002
 GROUP_MP_COMERCIAL_ID = 760003
 GROUP_MP_FUNIL_ID = 760004
 GROUP_PROGRESSO_FASE2_ID = 760005
+GROUP_MP_GUERRA_ID = 760006
 GROUP_PONTO_RUPTURA_ID = 700012
 GROUP_SAUDE_CONTA_ML_ID = 700013
 GROUP_RUPTURA_OUTRA_MARCA_ID = 700014
@@ -3069,6 +3070,133 @@ def _grupo_catalogo_masterprint() -> dict[str, Any]:
     }
 
 
+def _grupo_guerra_masterprint() -> dict[str, Any]:
+    """Doutrina de guerra PETG no 2º CNPJ (Preto entra, Branco iguala, Azul giro)."""
+    return {
+        "id": GROUP_MP_GUERRA_ID,
+        "definition": {
+            "title": "[Fase 2 · Guerra PETG] 2o CNPJ 23.811.261/0001-97",
+            "type": "group",
+            "background_color": "vivid_orange",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "id": 760600,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Guerra de preço Masterprint** — mesma regra da Impala, outro CNPJ.\n"
+                            "PETG **Preto** (231020001) = entrada. **Branco** (231020002) = único que "
+                            "iguala (gap ≥ 3% + rival ao vivo + ≥ piso 15%). **Azul** = giro após 1º pedido.\n"
+                            "`golpe_disparar=1` só alerta Telegram; **não** aplica preço sozinho.\n"
+                            "Gate: ruptura Impala ainda trava operar o 2º CNPJ no ar."
+                        ),
+                        "background_color": "orange",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+                },
+                {
+                    **_qv(
+                        "Fase guerra PETG 0-5",
+                        "avg:robo.masterprint.guerra.fase{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 760601,
+                },
+                {
+                    **_qv(
+                        "Golpe disparar (0/1)",
+                        "avg:robo.masterprint.guerra.golpe_disparar{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        red_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 760602,
+                },
+                {
+                    **_qv(
+                        "Liberar golpe preco Branco",
+                        "avg:robo.masterprint.guerra.liberar_golpe_preco{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 2},
+                    "id": 760603,
+                },
+                {
+                    **_qv(
+                        "MLB frente PETG (0-3)",
+                        "avg:robo.masterprint.guerra.mlb_frente{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 2},
+                    "id": 760604,
+                },
+                {
+                    **_qv(
+                        "Mercado confiavel (0/1)",
+                        "avg:robo.masterprint.guerra.mercado_confiavel{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        red_lt=1,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 4},
+                    "id": 760605,
+                },
+                {
+                    **_qv(
+                        "SKUs a publicar agora",
+                        "avg:robo.masterprint.guerra.publicar_agora{*}",
+                        aggregator="last",
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 4},
+                    "id": 760606,
+                },
+                {
+                    **_qv(
+                        "Liberar Ads PETG",
+                        "avg:robo.masterprint.guerra.liberar_ads{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 4},
+                    "id": 760607,
+                },
+                {
+                    **_qv(
+                        "Anuncios amostra batalha",
+                        "avg:robo.masterprint.batalha.anuncios_unicos{*}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 4},
+                    "id": 760608,
+                },
+            ],
+        },
+        "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
+    }
+
+
 def _grupo_funil_demanda_masterprint() -> dict[str, Any]:
     """Funil próprio (visitas→vendas) + ações + blindspots + visitas rivais."""
     return {
@@ -5477,8 +5605,10 @@ def atualizar_dashboard_masterprint() -> None:
             "## Aba Fase 2 — Masterprint Filamentos / Escritorio\n\n"
             "Tudo desta aba é **Masterprint (2o CNPJ)**. Impala (esmaltes / Cruzeiro) "
             "fica só na aba Fase 1.\n\n"
-            "Leitura: **progresso PETG** → **funil próprio** → **custo/catalogo** → "
-            "**mercado ML** → **margem / preço / sellers**.\n\n"
+            "Leitura: **progresso PETG** → **guerra 2o CNPJ** → **funil próprio** → "
+            "**custo/catalogo** → **mercado ML** → **margem / preço / sellers**.\n\n"
+            "**Guerra PETG:** Preto entra, Branco iguala (gap≥3% + piso 15%), Azul giro. "
+            "Métricas `robo.masterprint.guerra.*` (tag cnpj:23811261000197).\n"
             "**Progresso fase 2:** grupo [Fase 2 / Masterprint] — lucro Masterprint "
             "(SKU que não é IMP/CRZ/BUNDLE) e PETG unid/dia vs 6.\n"
             "**Funil:** visitas→unidades→conversão% + ações críticas "
@@ -5495,23 +5625,25 @@ def atualizar_dashboard_masterprint() -> None:
     )
     prog = _grupo_progresso_fase2_masterprint()
     prog["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    guerra = _grupo_guerra_masterprint()
+    guerra["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
     funil = _grupo_funil_demanda_masterprint()
-    funil["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    funil["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     cat = _grupo_catalogo_masterprint()
-    cat["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
+    cat["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
     merc = _grupo_mercado_masterprint()
-    merc["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
+    merc["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
     com = _grupo_operacao_masterprint()
-    com["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
+    com["layout"] = {"x": 0, "y": 12, "width": 12, "height": 1}
 
     payload = {
         "title": DASH_MASTERPRINT_TITLE,
         "description": (
-            "ABA FASE 2 MASTERPRINT: progresso PETG/filamento, funil visitas→vendas, "
-            "catalogo e mercado ML. Sem métricas Impala. "
+            "ABA FASE 2 MASTERPRINT: progresso PETG/filamento, guerra 2o CNPJ, "
+            "funil visitas→vendas, catalogo e mercado ML. Sem métricas Impala. "
             f"ABA ROBO: {_url_dash(DASH_SAUDE)} · ABA FASE 1 IMPALA: {_url_dash(ecom_id)}"
         ),
-        "widgets": [note, prog, funil, com, cat, merc],
+        "widgets": [note, prog, guerra, funil, com, cat, merc],
         "layout_type": raw.get("layout_type") or "ordered",
         "template_variables": raw.get("template_variables") or [],
         "notify_list": raw.get("notify_list") or [],
@@ -5606,6 +5738,25 @@ def _monitores_desejados() -> list[dict[str, Any]]:
                 "include_tags": True,
             },
             "priority": 3,
+        },
+        {
+            "name": "[Masterprint] Guerra PETG — golpe disparou",
+            "type": "query alert",
+            "query": "avg(last_2h):avg:robo.masterprint.guerra.golpe_disparar{*} > 0.5",
+            "message": (
+                "Golpe da frente PETG (2o CNPJ 23.811.261/0001-97) disparou. "
+                "So Branco iguala preco; Telegram no disparo; o robo NAO aplica preco sozinho. "
+                "Grupo [Fase 2 · Guerra PETG] no dashboard Masterprint.\n"
+                f"Dashboard: {_url_dash(DASH_MASTERPRINT)}\n" + msg_base
+            ),
+            "tags": [TAG_MONITOR, "monitor:guerra_masterprint", "severity:p2"],
+            "options": {
+                "thresholds": {"critical": 0.5},
+                "notify_no_data": False,
+                "require_full_window": False,
+                "include_tags": True,
+            },
+            "priority": 2,
         },
         {
             "name": "[Robo] Orquestrador sem ciclos (2h)",

@@ -87,21 +87,50 @@ def sku_preco_guerra(doutrina: dict[str, Any] | None = None) -> str:
     return str(d.get("sku_preco") or "IMP-PERL-004").strip().upper()
 
 
+def _sku_mexe_nesta_doutrina(sku_u: str, d: dict[str, Any]) -> bool:
+    preco = sku_preco_guerra(d)
+    frente = frente_skus(d)
+    if sku_u in frente:
+        return sku_u == preco
+    if sku_u.startswith("IMP-") and any(s.startswith("IMP-") for s in frente):
+        return sku_u == preco
+    if sku_u.startswith("23102") and any(s.startswith("23102") for s in frente):
+        return sku_u == preco
+    return False
+
+
 def sku_pode_mexer_preco(sku: str, doutrina: dict[str, Any] | None = None) -> bool:
     """
-    PERL é o único IMP-* que iguala preço.
-    SKU fora de IMP-/frente (testes genéricos) não é restringido.
+    Só o sku_preco da doutrina da frente mexe preço (PERL na Impala,
+    PETG Branco no Masterprint). SKU fora das frentes (testes genéricos) passa.
     """
     sku_u = (sku or "").strip().upper()
     if not sku_u:
         return False
-    d = doutrina if isinstance(doutrina, dict) else carregar_doutrina()
-    preco = sku_preco_guerra(d)
+    if doutrina is not None:
+        d = doutrina if isinstance(doutrina, dict) else carregar_doutrina()
+        if sku_u in frente_skus(d) or sku_u.startswith("IMP-") or sku_u.startswith("23102"):
+            return _sku_mexe_nesta_doutrina(sku_u, d)
+        return True
+    ramified = [carregar_doutrina()]
+    try:
+        from core.config import DOUTRINA_GUERRA_MASTERPRINT_CATALOGO
+
+        ramified.append(carregar_doutrina(DOUTRINA_GUERRA_MASTERPRINT_CATALOGO))
+    except Exception:
+        pass
+    for d in ramified:
+        if not isinstance(d, dict) or not frente_skus(d):
+            continue
+        if sku_u in frente_skus(d) or (
+            sku_u.startswith("IMP-") and any(s.startswith("IMP-") for s in frente_skus(d))
+        ) or (
+            sku_u.startswith("23102")
+            and any(s.startswith("23102") for s in frente_skus(d))
+        ):
+            return _sku_mexe_nesta_doutrina(sku_u, d)
     if sku_u.startswith("IMP-"):
-        return sku_u == preco
-    frente = frente_skus(d)
-    if sku_u in frente:
-        return sku_u == preco
+        return sku_u == sku_preco_guerra()
     return True
 
 
@@ -363,6 +392,12 @@ def sku_pode_publicar_agora(
     sku_u = (sku or "").strip().upper()
     if not sku_u:
         return False, "sku_vazio"
+    if sku_u.startswith("23102"):
+        from integracoes.filamentos.doutrina_guerra_masterprint import (
+            sku_pode_publicar_agora as _pub_mp,
+        )
+
+        return _pub_mp(sku_u, condicoes=condicoes)
     if not sku_u.startswith("IMP-"):
         return True, "fora_impala"
     cond = condicoes if isinstance(condicoes, dict) else avaliar_condicoes_guerra()

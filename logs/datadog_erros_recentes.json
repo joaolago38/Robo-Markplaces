@@ -3,13 +3,24 @@
     {
       "fingerprint": "5b3e3ad32aa0d6ed8be2",
       "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-09-09T11:53:13.894650+00:00",
+      "ultima_vez": "2026-09-11T13:29:56.817027+00:00",
       "logger": "telegram_gate",
       "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 41
+      "ocorrencias": 43
+    },
+    {
+      "fingerprint": "d94cda7e7d717982cca9",
+      "primeira_vez": "2026-07-10T17:35:12.274015+00:00",
+      "ultima_vez": "2026-09-11T12:57:05.863364+00:00",
+      "logger": "agente_calculo_importacao_aerea",
+      "mensagem": "Falhou: vazio",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 7
     },
     {
       "fingerprint": "030d99f650404eaf4f17",
@@ -186,17 +197,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 18
-    },
-    {
-      "fingerprint": "d94cda7e7d717982cca9",
-      "primeira_vez": "2026-07-10T17:35:12.274015+00:00",
-      "ultima_vez": "2026-08-17T11:27:19.737690+00:00",
-      "logger": "agente_calculo_importacao_aerea",
-      "mensagem": "Falhou: vazio",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 6
     },
     {
       "fingerprint": "332aafa665eacd427749",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-09-09T11:53:13.894650+00:00"
+  "atualizado_em": "2026-09-11T13:29:56.817027+00:00"
 }

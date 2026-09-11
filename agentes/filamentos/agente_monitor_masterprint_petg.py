@@ -258,11 +258,11 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
 
         from integracoes.ml.coleta_demanda_ml import (
             calcular_tendencia_demanda,
-            coletar_funil_proprio,
             emitir_metricas_demanda,
             enriquecer_visitas_lista,
             montar_pontos_cegos,
             registrar_snapshot_demanda,
+            resolver_funil_proprio_cnpj2,
         )
 
         produtos = consolidado.get("produtos") or []
@@ -284,7 +284,7 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
                 continue
             registrar_snapshot_demanda(termo_r, r.get("produtos") or [])
             r["tendencia_demanda"] = calcular_tendencia_demanda(termo_r, dias=14)
-        funil = coletar_funil_proprio(
+        funil = resolver_funil_proprio_cnpj2(
             dias=7,
             max_anuncios=20,
             filtro_titulo=r"petg|masterprint|filamento",
@@ -376,6 +376,17 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
         except Exception as exc:
             logger.debug("metricas top anuncios petg: %s", exc)
 
+        guerra_out: dict[str, Any] | None = None
+        try:
+            from integracoes.filamentos.batalha_filamentos import processar_guerra_petg
+
+            guerra_out = processar_guerra_petg(
+                consolidado,
+                enviar_alerta=enviar_alerta,
+            )
+        except Exception as exc:
+            logger.warning("guerra masterprint PETG: %s", exc)
+
         alerta_enviado = False
         from integracoes.masterprint.ramo import chat_gestor_masterprint
 
@@ -401,6 +412,7 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             "avaliacao_ia": avaliacao_ia,
             "alerta_enviado": alerta_enviado,
             "resultados": resultados,
+            "guerra": guerra_out,
         }
     except Exception as exc:
         logger.error("Agente Masterprint PETG erro: %s", exc)
