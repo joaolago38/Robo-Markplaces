@@ -79,10 +79,12 @@ def agregar_periodo(
         j: defaultdict(lambda: {"receita": 0.0, "unidades": 0.0}) for j in _JANELAS
     }
     vistos: dict[str, set[str]] = {j: set() for j in _JANELAS}
+    sem_data = 0
 
     for ped in pedidos:
         dt = _parse_dt(ped.get("data") or ped.get("date_created"))
         if dt is None:
+            sem_data += 1
             continue
         oid = str(ped.get("order_id") or ped.get("id") or "")
         itens = ped.get("itens") if isinstance(ped.get("itens"), list) else []
@@ -122,7 +124,17 @@ def agregar_periodo(
         ]
         itens_r.sort(key=lambda x: (x[1], x[2]), reverse=True)
         ranking[janela] = itens_r[:_TOP_N]
-    return {"totais": totais, "ranking": ranking}
+    return {"totais": totais, "ranking": ranking, "sem_data": float(sem_data)}
+
+
+def pedidos_e_fonte_impala(
+    pedidos_por_mp: dict[str, list[dict[str, Any]]] | None,
+    ok_map: dict[str, bool] | None,
+) -> tuple[dict[str, list[dict[str, Any]]], bool]:
+    """Só Mercado Livre. Flatten de Shopee/Magalu no CNPJ Impala seria ponto cego."""
+    ok = bool((ok_map or {}).get("mercadolivre"))
+    lista = (pedidos_por_mp or {}).get("mercadolivre") or []
+    return {"mercadolivre": lista if ok else []}, ok
 
 
 def emitir_periodo_cnpj(
@@ -137,16 +149,23 @@ def emitir_periodo_cnpj(
     base = [f"cnpj:{slug}"]
     try:
         gauge("vendas.periodo.fonte_ok", 1.0 if fonte_ok else 0.0, tags=base)
+        gauge(
+            "vendas.periodo.token_ausente",
+            1.0 if (slug == CNPJ_MASTERPRINT and not fonte_ok) else 0.0,
+            tags=base,
+        )
         if not fonte_ok:
+            gauge("vendas.periodo.sem_data", 0.0, tags=base)
             for janela in _JANELAS:
                 tags = [*base, f"janela:{janela}"]
                 gauge("vendas.periodo.receita", 0.0, tags=tags)
                 gauge("vendas.periodo.unidades", 0.0, tags=tags)
                 gauge("vendas.periodo.pedidos", 0.0, tags=tags)
                 gauge("vendas.periodo.rank_n", 0.0, tags=tags)
-            return {"cnpj": slug, "fonte_ok": False, "totais": {}}
+            return {"cnpj": slug, "fonte_ok": False, "totais": {}, "sem_data": 0}
 
         agg = agregar_periodo(_flatten(pedidos_por_mp), tag_produto=tag_produto)
+        gauge("vendas.periodo.sem_data", float(agg.get("sem_data") or 0), tags=base)
         for janela in _JANELAS:
             tags = [*base, f"janela:{janela}"]
             tot = agg["totais"][janela]

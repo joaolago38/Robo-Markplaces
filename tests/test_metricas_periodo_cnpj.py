@@ -39,6 +39,27 @@ class TestAgregarPeriodo(unittest.TestCase):
     def test_sem_data_ignora(self):
         out = mp.agregar_periodo([_ped("x", "", "IMP-MIMO-003", 1, 10)], agora=_AGORA)
         self.assertEqual(out["totais"]["dia"]["pedidos"], 0)
+        self.assertEqual(out["sem_data"], 1)
+
+
+class TestPedidosFonteImpala(unittest.TestCase):
+    def test_ignora_shopee_mesmo_com_ok(self):
+        pedidos = {
+            "mercadolivre": [_ped("a", "2026-09-11T12:00:00-03:00", "IMP-MIMO-003", 1, 10)],
+            "shopee": [_ped("b", "2026-09-11T12:00:00-03:00", "X", 9, 99)],
+        }
+        so_ml, ok = mp.pedidos_e_fonte_impala(pedidos, {"mercadolivre": True, "shopee": True})
+        self.assertTrue(ok)
+        self.assertEqual(so_ml["mercadolivre"][0]["order_id"], "a")
+        self.assertNotIn("shopee", so_ml)
+
+    def test_ml_falhou_fonte_false(self):
+        so_ml, ok = mp.pedidos_e_fonte_impala(
+            {"mercadolivre": [_ped("a", "2026-09-11T12:00:00-03:00", "IMP-MIMO-003", 1, 10)]},
+            {"mercadolivre": False, "magalu": True},
+        )
+        self.assertFalse(ok)
+        self.assertEqual(so_ml["mercadolivre"], [])
 
 
 class TestEmitir(unittest.TestCase):
@@ -50,6 +71,7 @@ class TestEmitir(unittest.TestCase):
         self.assertFalse(out["fonte_ok"])
         nomes = [c.args[0] for c in mock_g.call_args_list]
         self.assertIn("vendas.periodo.fonte_ok", nomes)
+        self.assertIn("vendas.periodo.token_ausente", nomes)
         self.assertNotIn("vendas.periodo.ranking_unidades", nomes)
         self.assertIn("cnpj:masterprint", mock_g.call_args_list[0].kwargs["tags"])
 
@@ -66,3 +88,4 @@ class TestEmitir(unittest.TestCase):
         nomes = [c.args[0] for c in mock_g.call_args_list]
         self.assertIn("vendas.periodo.ranking_unidades", nomes)
         self.assertIn("vendas.periodo.ranking_receita", nomes)
+        self.assertIn("vendas.periodo.sem_data", nomes)

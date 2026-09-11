@@ -105,6 +105,16 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
                 }
             )
         )
+        self.assertIsNone(
+            m._estoque_unidades(
+                {"canais": {"mercadolivre": {}}}
+            )
+        )
+        snap_desc = m.montar_snapshot_catalogo(
+            produtos=[{"sku": "IMP-X-001", "canais": {"mercadolivre": {"item_id": "MLB1"}}}],
+            guerra=[],
+        )
+        self.assertEqual(snap_desc["estoque_desconhecido"], 1)
         snap = m.montar_snapshot_catalogo(
             produtos=[None, {}, {"sku": ""}, *self.produtos],  # type: ignore[list-item]
             guerra=self.guerra,
@@ -135,6 +145,7 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertGreater(snap["lucro_ref_total"], 0)
         self.assertGreaterEqual(snap["estoque_critico"], 2)
         self.assertEqual(by["IMP-VR-015"]["estoque_unidades"], 5)
+        self.assertEqual(snap["estoque_desconhecido"], 0)
 
     def test_guerra_sem_mlb_ignora_papel_giro(self):
         guerra = [
@@ -171,6 +182,7 @@ class TestMetricasCatalogoImpala(unittest.TestCase):
         self.assertIn("catalogo.estoque_critico", nomes)
         self.assertIn("catalogo.estoque_unidades", nomes)
         self.assertIn("catalogo.estoque_critico_flag", nomes)
+        self.assertIn("catalogo.estoque_desconhecido", nomes)
         self.assertIn("impala.pipeline.lucro_op", nomes)
         # nenhuma tag sku:
         for c in mock_gauge.call_args_list:

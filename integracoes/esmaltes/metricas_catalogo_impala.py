@@ -120,7 +120,7 @@ def montar_snapshot_catalogo(
     skus_guerra = set(papel_por_sku)
 
     kits: list[dict[str, Any]] = []
-    p0 = p1 = sem_mlb = estoque_z = estoque_crit = 0
+    p0 = p1 = sem_mlb = estoque_z = estoque_crit = estoque_desc = 0
     guerra_sem_mlb = guerra_estoque_z = 0
     limite_crit = int(ESTOQUE_CRITICO)
 
@@ -144,6 +144,8 @@ def montar_snapshot_catalogo(
         ez = _estoque_zero(p)
         if ez:
             estoque_z += 1
+        if unidades is None:
+            estoque_desc += 1
         critico = unidades is not None and unidades <= limite_crit
         if critico:
             estoque_crit += 1
@@ -207,6 +209,7 @@ def montar_snapshot_catalogo(
         "sem_mlb": sem_mlb,
         "estoque_zero": estoque_z,
         "estoque_critico": estoque_crit,
+        "estoque_desconhecido": estoque_desc,
         "guerra_total": len(skus_guerra),
         "guerra_sem_mlb": guerra_sem_mlb,
         "guerra_estoque_zero": guerra_estoque_z,
@@ -279,6 +282,10 @@ def emitir_metricas_catalogo_impala(
         gauge("catalogo.sem_mlb", float(snap["sem_mlb"]))
         gauge("catalogo.estoque_zero", float(snap["estoque_zero"]))
         gauge("catalogo.estoque_critico", float(snap.get("estoque_critico") or 0))
+        gauge(
+            "catalogo.estoque_desconhecido",
+            float(snap.get("estoque_desconhecido") or 0),
+        )
         gauge("catalogo.guerra_total", float(snap["guerra_total"]))
         gauge("catalogo.guerra_sem_mlb", float(snap["guerra_sem_mlb"]))
         gauge(
