@@ -16,7 +16,7 @@ marketplaces:
     ativo: false
     prioridade: 2
   - id: magalu
-    ativo: false
+    ativo: true
     prioridade: 3
   - id: amazon
     ativo: false

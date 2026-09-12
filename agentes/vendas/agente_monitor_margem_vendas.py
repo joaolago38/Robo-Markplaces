@@ -226,6 +226,7 @@ def executar(
                 CNPJ_IMPALA,
                 CNPJ_MASTERPRINT,
                 emitir_periodo_cnpj,
+                emitir_periodo_marketplace,
                 pedidos_e_fonte_impala,
             )
 
@@ -243,6 +244,12 @@ def executar(
                 fonte_ok=False,
                 tag_produto="prod",
             )
+            emitir_periodo_marketplace(
+                "magalu",
+                pedidos_30.get("magalu") or [],
+                fonte_ok=bool(ok_30.get("magalu")),
+                tag_produto="kit",
+            )
         except Exception as exc:
             logger.debug("métricas período CNPJ: %s", exc)
             try:
@@ -250,11 +257,15 @@ def executar(
                     CNPJ_IMPALA,
                     CNPJ_MASTERPRINT,
                     emitir_periodo_cnpj,
+                    emitir_periodo_marketplace,
                 )
 
                 emitir_periodo_cnpj(CNPJ_IMPALA, {}, fonte_ok=False, tag_produto="kit")
                 emitir_periodo_cnpj(
                     CNPJ_MASTERPRINT, {}, fonte_ok=False, tag_produto="prod"
+                )
+                emitir_periodo_marketplace(
+                    "magalu", [], fonte_ok=False, tag_produto="kit"
                 )
             except Exception:
                 pass

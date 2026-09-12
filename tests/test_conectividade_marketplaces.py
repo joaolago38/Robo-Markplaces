@@ -134,8 +134,10 @@ class TestExecutar(unittest.TestCase):
         # 4 falhas + 1 rodada heartbeat
         self.assertEqual(mock_incrementar.call_count, 5)
 
+    @patch.object(agente, "marketplace_spec_ativo", side_effect=lambda mid: mid == "mercadolivre")
+    @patch("core.marketplace_toggle.canal_em_operacao", return_value=False)
     @patch.object(agente, "_avaliar_um")
-    def test_executar_pula_canais_inativos_no_spec(self, mock_avaliar):
+    def test_executar_pula_canais_inativos_no_spec(self, mock_avaliar, _toggle, _spec):
         mock_avaliar.return_value = {
             "marketplace": "mercadolivre",
             "ok": True,

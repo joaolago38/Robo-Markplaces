@@ -12,6 +12,7 @@ from agentes import manutencao_marketplaces as manut
 
 
 class TestManutencaoMarketplaces(unittest.TestCase):
+    @patch.object(manut, "_MARKETPLACES_ATIVOS", set())
     @patch.object(manut, "keepalive_magalu")
     @patch.object(manut, "keepalive_shopee")
     def test_MAN01_executar_apenas_shopee_sem_magalu_inativo(self, mock_sh, mock_mg):
@@ -21,6 +22,7 @@ class TestManutencaoMarketplaces(unittest.TestCase):
         self.assertEqual(len(out["resultados"]), 1)
         mock_mg.assert_not_called()
 
+    @patch.object(manut, "_MARKETPLACES_ATIVOS", set())
     @patch.object(manut, "alertar_gestor")
     @patch.object(manut, "keepalive_magalu")
     @patch.object(manut, "keepalive_shopee")
@@ -36,6 +38,7 @@ class TestManutencaoMarketplaces(unittest.TestCase):
         mock_alert.assert_called_once()
         mock_mg.assert_not_called()
 
+    @patch.object(manut, "_MARKETPLACES_ATIVOS", set())
     @patch.object(manut, "keepalive_magalu")
     @patch.object(manut, "keepalive_shopee")
     def test_MAN03_passa_limite_dias(self, mock_sh, mock_mg):
