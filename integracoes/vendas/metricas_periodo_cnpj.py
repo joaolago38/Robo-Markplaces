@@ -182,3 +182,46 @@ def emitir_periodo_cnpj(
     except Exception as exc:
         logger.debug("emitir_periodo_cnpj %s: %s", slug, exc)
         return {"cnpj": slug, "fonte_ok": False, "erro": str(exc)[:160]}
+
+
+def emitir_periodo_marketplace(
+    marketplace: str,
+    pedidos: list[dict[str, Any]] | None,
+    *,
+    fonte_ok: bool,
+    tag_produto: str = "kit",
+) -> dict[str, Any]:
+    """Gauges `vendas.periodo.*` com tags marketplace + janela (não mistura CNPJ/ML)."""
+    slug = (marketplace or "").strip().lower() or "x"
+    base = [f"marketplace:{slug}"]
+    lista = [p for p in (pedidos or []) if isinstance(p, dict)]
+    try:
+        gauge("vendas.periodo.fonte_ok", 1.0 if fonte_ok else 0.0, tags=base)
+        if not fonte_ok:
+            gauge("vendas.periodo.sem_data", 0.0, tags=base)
+            for janela in _JANELAS:
+                tags = [*base, f"janela:{janela}"]
+                gauge("vendas.periodo.receita", 0.0, tags=tags)
+                gauge("vendas.periodo.unidades", 0.0, tags=tags)
+                gauge("vendas.periodo.pedidos", 0.0, tags=tags)
+                gauge("vendas.periodo.rank_n", 0.0, tags=tags)
+            return {"marketplace": slug, "fonte_ok": False, "totais": {}, "sem_data": 0}
+
+        agg = agregar_periodo(lista, tag_produto=tag_produto)
+        gauge("vendas.periodo.sem_data", float(agg.get("sem_data") or 0), tags=base)
+        for janela in _JANELAS:
+            tags = [*base, f"janela:{janela}"]
+            tot = agg["totais"][janela]
+            gauge("vendas.periodo.receita", round(tot["receita"], 2), tags=tags)
+            gauge("vendas.periodo.unidades", round(tot["unidades"], 2), tags=tags)
+            gauge("vendas.periodo.pedidos", float(tot["pedidos"]), tags=tags)
+            rank = agg["ranking"][janela]
+            gauge("vendas.periodo.rank_n", float(len(rank)), tags=tags)
+            for chave, unid, rec in rank:
+                ptags = [*tags, chave]
+                gauge("vendas.periodo.ranking_unidades", round(unid, 2), tags=ptags)
+                gauge("vendas.periodo.ranking_receita", round(rec, 2), tags=ptags)
+        return {"marketplace": slug, "fonte_ok": True, **agg}
+    except Exception as exc:
+        logger.debug("emitir_periodo_marketplace %s: %s", slug, exc)
+        return {"marketplace": slug, "fonte_ok": False, "erro": str(exc)[:160]}

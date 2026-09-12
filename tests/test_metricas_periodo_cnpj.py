@@ -89,3 +89,21 @@ class TestEmitir(unittest.TestCase):
         self.assertIn("vendas.periodo.ranking_unidades", nomes)
         self.assertIn("vendas.periodo.ranking_receita", nomes)
         self.assertIn("vendas.periodo.sem_data", nomes)
+
+
+class TestEmitirMarketplace(unittest.TestCase):
+    @patch.object(mp, "gauge")
+    def test_magalu_nao_usa_tag_cnpj(self, mock_g):
+        pedidos = [_ped("hoje", "2026-09-11T12:00:00-03:00", "IMP-MIMO-003", 2, 40)]
+        with patch.object(mp, "agora_brasil", return_value=_AGORA):
+            out = mp.emitir_periodo_marketplace("magalu", pedidos, fonte_ok=True)
+        self.assertTrue(out["fonte_ok"])
+        tags = mock_g.call_args_list[0].kwargs["tags"]
+        self.assertIn("marketplace:magalu", tags)
+        self.assertTrue(all("cnpj:" not in t for c in mock_g.call_args_list for t in c.kwargs["tags"]))
+
+    @patch.object(mp, "gauge")
+    def test_magalu_fonte_false_zera(self, mock_g):
+        out = mp.emitir_periodo_marketplace("magalu", [], fonte_ok=False)
+        self.assertFalse(out["fonte_ok"])
+        self.assertNotIn("vendas.periodo.ranking_unidades", [c.args[0] for c in mock_g.call_args_list])

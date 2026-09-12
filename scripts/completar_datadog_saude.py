@@ -46,6 +46,8 @@ DASH_ECOMMERCE = (os.getenv("DD_DASH_ECOMMERCE") or "j53-h48-8ea").strip()
 DASH_ECOMMERCE_TITLE = "Robo Marketplaces - Fase 1 Ecommerce Impala / ML"
 DASH_MASTERPRINT = (os.getenv("DD_DASH_MASTERPRINT") or "ggq-my7-h6g").strip()
 DASH_MASTERPRINT_TITLE = "Robo Marketplaces - Fase 2 Masterprint Filamentos / Escritorio"
+DASH_MAGALU = (os.getenv("DD_DASH_MAGALU") or "ksm-snz-c4q").strip()
+DASH_MAGALU_TITLE = "Robo Marketplaces - Magazine Luiza"
 GROUP_PONTOS_CEGOS_ID = 700005
 GROUP_TOKENS_ID = 100001
 GROUP_CATALOGO_IMPALA_ID = 700006
@@ -69,6 +71,10 @@ GROUP_OPEX_IMPALA_ID = 700021
 GROUP_VENDAS_PERIODO_IMPALA_ID = 700022
 GROUP_AGORA_IMPALA_ID = 700023
 GROUP_VENDAS_PERIODO_MP_ID = 760007
+GROUP_VENDAS_PERIODO_MAGALU_ID = 770001
+GROUP_MAGALU_SAUDE_ID = 770002
+GROUP_MAGALU_CHAT_ID = 770003
+GROUP_MAGALU_ADS_ID = 770004
 NOTE_ROBO_ID = 700009
 NOTE_ECOM_ID = 700010
 NOTE_MP_ID = 700011
@@ -237,6 +243,36 @@ def _resolver_dash_masterprint() -> str:
     DASH_MASTERPRINT = did
     print(f"OK dashboard masterprint CRIADO id={did}")
     return DASH_MASTERPRINT
+
+
+def _resolver_dash_magalu() -> str:
+    """Dashboard só Magazine Luiza — separado da aba Impala/ML."""
+    global DASH_MAGALU
+    if DASH_MAGALU:
+        return DASH_MAGALU
+    existente = _buscar_dashboard_por_titulo(DASH_MAGALU_TITLE)
+    if existente:
+        DASH_MAGALU = existente
+        return DASH_MAGALU
+    created = _post(
+        "/api/v1/dashboard",
+        {
+            "title": DASH_MAGALU_TITLE,
+            "description": (
+                "Magazine Luiza: pedidos, chat, OAuth e conectividade. "
+                "Não mistura vendas do CNPJ Impala no Mercado Livre. "
+                f"Fase 1 Impala/ML: {_url_dash(DASH_ECOMMERCE or 'j53-h48-8ea')}"
+            ),
+            "widgets": [],
+            "layout_type": "ordered",
+        },
+    )
+    did = str(created.get("id") or "").strip()
+    if not did:
+        raise RuntimeError(f"Falha ao criar dashboard Magalu: {created!r}")
+    DASH_MAGALU = did
+    print(f"OK dashboard Magalu CRIADO id={did}")
+    return DASH_MAGALU
 
 
 def _eh_grupo_ecommerce(w: dict[str, Any]) -> bool:
@@ -1783,13 +1819,14 @@ def _grupo_vendas_periodo(
     *,
     group_id: int,
     titulo: str,
-    cnpj: str,
     dim: str,
     id_base: int,
     nota: str,
+    cnpj: str = "",
+    filtro: str = "",
 ) -> dict[str, Any]:
     """Pedidos reais: dia calendário BRT, 7d e 30d + ranking (kit ou prod)."""
-    filt = f"cnpj:{cnpj}"
+    filt = (filtro or "").strip() or f"cnpj:{cnpj}"
     widgets: list[dict[str, Any]] = [
         {
             "id": id_base,
@@ -1939,6 +1976,246 @@ def _grupo_vendas_periodo_masterprint() -> dict[str, Any]:
             "/ ads do dia) está na aba Fase 1 — conta ML conectada."
         ),
     )
+
+
+def _grupo_vendas_periodo_magalu() -> dict[str, Any]:
+    return _grupo_vendas_periodo(
+        group_id=GROUP_VENDAS_PERIODO_MAGALU_ID,
+        titulo="[Vendas] Magazine Luiza — dia / 7d / 30d + ranking",
+        filtro="marketplace:magalu",
+        dim="kit",
+        id_base=771001,
+        nota=(
+            "**Só Magazine Luiza** (`marketplace:magalu`). Não entra pedido do "
+            "Mercado Livre / CNPJ Impala da aba Fase 1. Pedidos da API Magalu, "
+            "calendário Brasília. Ranking por kit. Atualiza no monitor de margem "
+            "quando o canal está ativo no spec."
+        ),
+    )
+
+
+def _grupo_saude_magalu() -> dict[str, Any]:
+    ts = _ts_overlay(
+        "Token Magalu (renovado vs falha)",
+        [
+            ("renovado", "sum:robo.token.renovado{provider:magalu}.as_count()"),
+            ("falha", "sum:robo.token.falha{provider:magalu}.as_count()"),
+        ],
+    )
+    return {
+        "id": GROUP_MAGALU_SAUDE_ID,
+        "definition": {
+            "title": "[Saude] Conectividade e OAuth Magazine",
+            "type": "group",
+            "background_color": "vivid_blue",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Conectividade Magalu",
+                        "avg:robo.conectividade.status{marketplace:magalu}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 0},
+                    "id": 772001,
+                },
+                {
+                    **_qv(
+                        "Auth Magalu falhou",
+                        "sum:robo.magalu.auth_falha{*}.as_count()",
+                        aggregator="sum",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 0},
+                    "id": 772002,
+                },
+                {
+                    **_qv(
+                        "Busca pedidos falhou",
+                        "sum:robo.vendas.busca_falhou{marketplace:magalu}.as_count()",
+                        aggregator="sum",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 6, "y": 0},
+                    "id": 772003,
+                },
+                {
+                    **_qv(
+                        "Auth pedidos quebrada",
+                        "sum:robo.vendas.busca_auth_quebrada{marketplace:magalu}.as_count()",
+                        aggregator="sum",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 9, "y": 0},
+                    "id": 772004,
+                },
+                {
+                    **_qv(
+                        "Canal guerra liberado",
+                        "avg:robo.impala.guerra.canal_liberado{marketplace:magalu}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 0, "y": 2},
+                    "id": 772005,
+                },
+                {
+                    **_qv(
+                        "CNPJ no canal Magalu",
+                        "avg:robo.marca_esmalte.cnpj_canal{marketplace:magalu}",
+                        aggregator="last",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 3, "x": 3, "y": 2},
+                    "id": 772006,
+                },
+                {
+                    **_lv(
+                        "Logs erro Magalu (24h widget)",
+                        'service:robo-markplaces (status:error OR status:warn) (magalu OR Magalu OR "Magazine Luiza")',
+                        palette="white_on_red",
+                        value=0,
+                    ),
+                    "layout": {"height": 2, "width": 6, "x": 6, "y": 2},
+                    "id": 772007,
+                },
+                {
+                    **ts,
+                    "layout": {"height": 3, "width": 12, "x": 0, "y": 4},
+                    "id": 772008,
+                },
+            ],
+        },
+    }
+
+
+def _grupo_chat_magalu() -> dict[str, Any]:
+    return {
+        "id": GROUP_MAGALU_CHAT_ID,
+        "definition": {
+            "title": "[Chat] Perguntas Magazine Luiza",
+            "type": "group",
+            "background_color": "vivid_purple",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    **_qv(
+                        "Rodadas chat Magalu",
+                        "sum:robo.chat.rodadas{marketplace:magalu}.as_count()",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 0, "y": 0},
+                    "id": 773001,
+                },
+                {
+                    **_qv(
+                        "Respondidas Magalu",
+                        "sum:robo.chat.respondidas{marketplace:magalu}.as_count()",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 4, "y": 0},
+                    "id": 773002,
+                },
+                {
+                    **_qv(
+                        "Falha chat Magalu",
+                        "sum:robo.chat.falha{marketplace:magalu}.as_count()",
+                        aggregator="sum",
+                        red_gt=0,
+                        green_gt=None,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 8, "y": 0},
+                    "id": 773003,
+                },
+                {
+                    **_qv(
+                        "Vendas notificadas Magalu",
+                        "sum:robo.vendas.notificadas{marketplace:magalu}.as_count()",
+                        aggregator="sum",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 0, "y": 2},
+                    "id": 773004,
+                },
+                {
+                    **_qv(
+                        "Receita por canal Magalu",
+                        "avg:robo.vendas.receita_por_canal{marketplace:magalu}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 4, "y": 2},
+                    "id": 773005,
+                },
+                {
+                    **_qv(
+                        "Lucro por canal Magalu",
+                        "avg:robo.vendas.lucro_por_canal{marketplace:magalu}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=2,
+                    ),
+                    "layout": {"height": 2, "width": 4, "x": 8, "y": 2},
+                    "id": 773006,
+                },
+            ],
+        },
+    }
+
+
+def _grupo_ads_magalu() -> dict[str, Any]:
+    return {
+        "id": GROUP_MAGALU_ADS_ID,
+        "definition": {
+            "title": "[Ads] Magazine — o que existe e o que não existe",
+            "type": "group",
+            "background_color": "gray",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": [
+                {
+                    "id": 774001,
+                    "definition": {
+                        "type": "note",
+                        "content": (
+                            "**Magazine Luiza OpenAPI não tem Product Ads** "
+                            "(gasto/clique/ACOS) como o Mercado Livre.\n\n"
+                            "Ads Impala (Product Ads ML + Meta IG/FB) ficam na "
+                            "[aba Fase 1 Impala / ML](https://us5.datadoghq.com/dashboard/j53-h48-8ea) "
+                            "— **não misturar** com pedido Magalu.\n\n"
+                            "Aqui o número de vendas/receita vem da API de **pedidos** "
+                            "do Magalu, não de campanha."
+                        ),
+                        "background_color": "yellow",
+                        "font_size": "14",
+                        "text_align": "left",
+                        "show_tick": False,
+                        "has_padding": True,
+                    },
+                    "layout": {"height": 4, "width": 12, "x": 0, "y": 0},
+                },
+            ],
+        },
+    }
 
 
 def _grupo_agora_impala() -> dict[str, Any]:
@@ -6081,6 +6358,55 @@ def atualizar_dashboard_masterprint() -> None:
     print(f"OK dashboard masterprint: {_url_dash(mp_id)}")
 
 
+def atualizar_dashboard_magalu() -> str:
+    """Dashboard Magazine Luiza: vendas/chat/OAuth separados do CNPJ Impala/ML."""
+    mag_id = _resolver_dash_magalu()
+    ecom_id = DASH_ECOMMERCE or _resolver_dash_ecommerce()
+    raw = _get(f"/api/v1/dashboard/{mag_id}")
+    note = _note_widget(
+        770000,
+        (
+            "## Magazine Luiza — separado do 1º CNPJ / ML\n\n"
+            "Esta aba **não** mistura pedido, ads nem ranking da "
+            f"[Fase 1 Impala / Mercado Livre]({_url_dash(ecom_id)}).\n\n"
+            "Filtro das vendas: `marketplace:magalu`. Impala/ML usa `cnpj:impala`.\n\n"
+            "**Ads:** a OpenAPI do Magalu não tem Product Ads (gasto/clique/ACOS). "
+            "Campanhas ML + Meta continuam na Fase 1.\n\n"
+            f"**Robo / tokens:** [{DASH_SAUDE}]({_url_dash(DASH_SAUDE)})"
+        ),
+        background_color="purple",
+        height=4,
+    )
+    saude = _grupo_saude_magalu()
+    saude["layout"] = {"x": 0, "y": 1, "width": 12, "height": 1}
+    vendas = _grupo_vendas_periodo_magalu()
+    vendas["layout"] = {"x": 0, "y": 2, "width": 12, "height": 1}
+    chat = _grupo_chat_magalu()
+    chat["layout"] = {"x": 0, "y": 3, "width": 12, "height": 1}
+    ads = _grupo_ads_magalu()
+    ads["layout"] = {"x": 0, "y": 4, "width": 12, "height": 1}
+    payload = {
+        "title": DASH_MAGALU_TITLE,
+        "description": (
+            "ABA MAGAZINE LUIZA: pedidos/receita/unidades dia-7d-30d, chat, "
+            "OAuth e conectividade. Sem métricas de venda do ML Impala. "
+            "Ads Magalu inexistentes na API — ver nota do grupo Ads. "
+            f"ABA FASE 1 IMPALA: {_url_dash(ecom_id)} · "
+            f"ABA ROBO: {_url_dash(DASH_SAUDE)}"
+        ),
+        "widgets": [note, saude, vendas, chat, ads],
+        "layout_type": raw.get("layout_type") or "ordered",
+        "template_variables": raw.get("template_variables") or [],
+        "notify_list": raw.get("notify_list") or [],
+        "reflow_type": raw.get("reflow_type"),
+        "tags": list({*(raw.get("tags") or []), "team:robo-markplaces"}),
+    }
+    payload = {k: v for k, v in payload.items() if v is not None}
+    _put(f"/api/v1/dashboard/{mag_id}", payload)
+    print(f"OK dashboard Magalu: {_url_dash(mag_id)}")
+    return mag_id
+
+
 def _strip_cpu_ops_dashboard() -> None:
     """Remove widget irrelevante system.cpu.user do dashboard Ops (Actions sem host)."""
     try:
@@ -6700,16 +7026,18 @@ def main() -> int:
     # Resolve dashboards primeiro para notes/links cruzados.
     ecom_id = _resolver_dash_ecommerce()
     mp_id = _resolver_dash_masterprint()
+    mag_id = _resolver_dash_magalu()
     atualizar_dashboard_ecommerce()
     atualizar_dashboard_masterprint()
+    atualizar_dashboard_magalu()
     atualizar_dashboard_saude()
     _strip_cpu_ops_dashboard()
     upsert_monitores()
     print(f"Aba Robo:         {_url_dash(DASH_SAUDE)}")
     print(f"Aba Fase 1 Impala:{_url_dash(ecom_id)}")
     print(f"Aba Fase 2 MP:    {_url_dash(mp_id)}")
+    print(f"Aba Magazine:     {_url_dash(mag_id)}")
     print("Monitores: https://us5.datadoghq.com/monitors/manage?q=tag%3Aservice%3Arobo-markplaces")
-    print("Nota: OAuth Magalu continua manual (token invalid_grant nos logs).")
     return 0
 
 

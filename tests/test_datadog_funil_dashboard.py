@@ -381,6 +381,25 @@ class DatadogFunilDashboardTests(unittest.TestCase):
         self.assertNotIn("cnpj:impala", blob)
         self.assertEqual(grupo["id"], dd.GROUP_VENDAS_PERIODO_MP_ID)
 
+    def test_grupo_vendas_periodo_magalu(self):
+        grupo = dd._grupo_vendas_periodo_magalu()
+        blob = str(grupo)
+        for metric in (
+            "robo.vendas.periodo.fonte_ok{marketplace:magalu}",
+            "robo.vendas.periodo.receita{marketplace:magalu,janela:dia}",
+            "robo.vendas.periodo.pedidos{marketplace:magalu,janela:mes}",
+            "robo.vendas.periodo.ranking_unidades{marketplace:magalu,janela:semana} by {kit}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertNotIn("cnpj:impala", blob)
+        self.assertNotIn("cnpj:masterprint", blob)
+        self.assertEqual(grupo["id"], dd.GROUP_VENDAS_PERIODO_MAGALU_ID)
+        saude = str(dd._grupo_saude_magalu())
+        self.assertIn("provider:magalu", saude)
+        self.assertIn("marketplace:magalu", saude)
+        ads = str(dd._grupo_ads_magalu())
+        self.assertIn("não tem Product Ads", ads)
+
     def test_grupo_agora_impala(self):
         grupo = dd._grupo_agora_impala()
         blob = str(grupo)
