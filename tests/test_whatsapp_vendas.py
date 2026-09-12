@@ -93,8 +93,8 @@ class TestWhatsAppVendas(unittest.TestCase):
         self.assertIn("total_notificacoes", resultado)
         self.assertIn("por_marketplace", resultado)
         self.assertEqual(resultado["por_marketplace"].get("mercadolivre", 0), 2)
-        self.assertNotIn("magalu", resultado["por_marketplace"])
-        mock_mag.assert_not_called()
+        self.assertEqual(resultado["por_marketplace"].get("magalu", 0), 0)
+        mock_mag.assert_called()
 
 
 if __name__ == "__main__":

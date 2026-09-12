@@ -1,8 +1,9 @@
 {
-  "timestamp": "2026-09-11T17:09:15.905416+00:00",
+  "timestamp": "2026-09-12T18:16:50.739193+00:00",
   "ok": true,
   "total_notificacoes": 2,
   "por_marketplace": {
-    "mercadolivre": 2
+    "mercadolivre": 2,
+    "magalu": 0
   }
 }
