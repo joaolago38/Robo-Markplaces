@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -28,7 +29,7 @@ class TestTrocarCodePorToken(unittest.TestCase):
     @patch.object(ptm, "CLIENT_SECRET", "sec")
     @patch.object(ptm, "REDIRECT_URI", "https://www.google.com")
     @patch.object(ptm, "requests")
-    def test_sucesso_form(self, mock_requests):
+    def test_sucesso_json_primeiro(self, mock_requests):
         mock_requests.post.return_value = _resp(
             200, {"access_token": "acc", "refresh_token": "ref", "expires_in": 3600}
         )
@@ -36,12 +37,13 @@ class TestTrocarCodePorToken(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(dados["access_token"], "acc")
         mock_requests.post.assert_called_once()
+        self.assertIn("json", mock_requests.post.call_args[1])
 
     @patch.object(ptm, "CLIENT_ID", "cid")
     @patch.object(ptm, "CLIENT_SECRET", "sec")
     @patch.object(ptm, "REDIRECT_URI", "https://www.google.com")
     @patch.object(ptm, "requests")
-    def test_retry_json_em_400(self, mock_requests):
+    def test_retry_form_em_400(self, mock_requests):
         mock_requests.post.side_effect = [
             _resp(400, {"error": "invalid_grant"}),
             _resp(200, {"access_token": "acc", "refresh_token": "ref", "expires_in": 3600}),
@@ -50,13 +52,29 @@ class TestTrocarCodePorToken(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(dados["access_token"], "acc")
         self.assertEqual(mock_requests.post.call_count, 2)
-        self.assertEqual(mock_requests.post.call_args_list[1][1]["json"]["grant_type"], "authorization_code")
+        self.assertEqual(mock_requests.post.call_args_list[1][1]["data"]["grant_type"], "authorization_code")
 
     @patch.object(ptm, "CLIENT_ID", "cid")
     @patch.object(ptm, "CLIENT_SECRET", "sec")
     @patch.object(ptm, "REDIRECT_URI", "https://www.google.com")
     @patch.object(ptm, "requests")
-    def test_retry_json_em_415(self, mock_requests):
+    def test_retry_basic_em_401(self, mock_requests):
+        mock_requests.post.side_effect = [
+            _resp(401, {"error": "invalid_client"}),
+            _resp(401, {"error": "invalid_client"}),
+            _resp(200, {"access_token": "acc", "refresh_token": "ref"}),
+        ]
+        resp, dados = ptm.trocar_code_por_token("CODE")
+        self.assertEqual(dados["access_token"], "acc")
+        self.assertEqual(mock_requests.post.call_count, 3)
+        headers = mock_requests.post.call_args_list[2][1]["headers"]
+        self.assertTrue(headers["Authorization"].startswith("Basic "))
+
+    @patch.object(ptm, "CLIENT_ID", "cid")
+    @patch.object(ptm, "CLIENT_SECRET", "sec")
+    @patch.object(ptm, "REDIRECT_URI", "https://www.google.com")
+    @patch.object(ptm, "requests")
+    def test_retry_form_em_415(self, mock_requests):
         mock_requests.post.side_effect = [
             _resp(415, {}),
             _resp(200, {"access_token": "acc", "refresh_token": "ref"}),
@@ -87,7 +105,12 @@ class TestMain(unittest.TestCase):
     @patch.object(ptm, "CLIENT_SECRET", "sec")
     def test_sem_code(self):
         with patch.dict(os.environ, {"MAGALU_OAUTH_CODE": ""}, clear=False):
-            self.assertEqual(ptm.main([]), 1)
+            saida = StringIO()
+            with patch("sys.stdout", saida):
+                self.assertEqual(ptm.main([]), 1)
+            texto = saida.getvalue()
+            self.assertIn("Copiar URL de autorização", texto)
+            self.assertIn("id.magalu.com/login", texto)
 
     @patch.object(ptm, "CLIENT_ID", "cid")
     @patch.object(ptm, "CLIENT_SECRET", "sec")

@@ -1117,10 +1117,14 @@ def renovar_todos_tokens() -> dict[str, dict]:
     """
     Força uma tentativa de renovação para cada marketplace suportado.
     Usado pelo script CLI / Actions para validar credenciais.
+
+    Magalu renova mesmo com spec/toggle inativo: o refresh morre se ficar
+    parado, e o canal só liga depois da fase 3 do ML. Chat/API continuam
+    bloqueados em skip_se_spec_inativo / canal_em_operacao.
     """
     ml = _renovar_token_ml()
     sp = _renovar_token_shopee() if _canal_marketplace_operando("shopee") else None
-    mg = _renovar_token_magalu() if _magalu_canal_operando() else None
+    mg = _renovar_token_magalu()
     amz = _renovar_token_amazon() if _canal_marketplace_operando("amazon") else None
     # Bling NÃO entra aqui: é renovado separadamente (renovar_token_bling_detalhado),
     # pois o refresh_token rotaciona e seria consumido duas vezes.
