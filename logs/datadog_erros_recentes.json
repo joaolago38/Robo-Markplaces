@@ -1,15 +1,48 @@
 {
   "erros": [
     {
+      "fingerprint": "590bab643bd8068fbe6f",
+      "primeira_vez": "2026-07-05T20:44:29.280472+00:00",
+      "ultima_vez": "2026-09-12T14:37:42.033571+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu manter_conta_ativa erro: keepalive",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 9
+    },
+    {
+      "fingerprint": "71ef3dfb57593f2f1d9f",
+      "primeira_vez": "2026-07-05T20:44:28.533227+00:00",
+      "ultima_vez": "2026-09-12T14:37:42.025184+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 403 — provável falta de ESCOPO/permissão (não apenas token expirado): forbidden",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 10
+    },
+    {
+      "fingerprint": "df432bc18f0b8200b0a8",
+      "primeira_vez": "2026-07-05T20:44:29.457328+00:00",
+      "ultima_vez": "2026-09-12T14:37:42.015520+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: unauthorized",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 10
+    },
+    {
       "fingerprint": "5b3e3ad32aa0d6ed8be2",
       "primeira_vez": "2026-08-02T14:13:26.337846+00:00",
-      "ultima_vez": "2026-09-11T13:29:56.817027+00:00",
+      "ultima_vez": "2026-09-12T14:37:41.785202+00:00",
       "logger": "telegram_gate",
       "mensagem": "Telegram bloqueado por 3600s — sendMessage HTTP 404. Regenere token no @BotFather e atualize TELEGRAM_TOKEN nos secrets do GitHub Actions e no .env local. Diagnóstico: python scripts/diagnostico_telegram.py",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 43
+      "ocorrencias": 44
     },
     {
       "fingerprint": "d94cda7e7d717982cca9",
@@ -461,39 +494,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 7
-    },
-    {
-      "fingerprint": "590bab643bd8068fbe6f",
-      "primeira_vez": "2026-07-05T20:44:29.280472+00:00",
-      "ultima_vez": "2026-08-15T13:19:59.182500+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu manter_conta_ativa erro: keepalive",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 8
-    },
-    {
-      "fingerprint": "71ef3dfb57593f2f1d9f",
-      "primeira_vez": "2026-07-05T20:44:28.533227+00:00",
-      "ultima_vez": "2026-08-15T13:19:59.174715+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 403 — provável falta de ESCOPO/permissão (não apenas token expirado): forbidden",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 9
-    },
-    {
-      "fingerprint": "df432bc18f0b8200b0a8",
-      "primeira_vez": "2026-07-05T20:44:29.457328+00:00",
-      "ultima_vez": "2026-08-15T13:19:59.160913+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: unauthorized",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 9
     },
     {
       "fingerprint": "8f4e62c3e4fd79e1be9d",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-09-11T13:29:56.817027+00:00"
+  "atualizado_em": "2026-09-12T14:37:42.033571+00:00"
 }

@@ -293,11 +293,11 @@ class TestTokenManagerProviders(unittest.TestCase):
         out = tm.renovar_todos_tokens()
         mock_ml.assert_called_once()
         mock_sp.assert_not_called()
-        mock_mg.assert_not_called()
+        mock_mg.assert_called_once()
         mock_amz.assert_not_called()
         self.assertTrue(out["mercadolivre"]["ok"])
         self.assertFalse(out["shopee"]["ok"])
-        self.assertFalse(out["magalu"]["ok"])
+        self.assertTrue(out["magalu"]["ok"])
         self.assertFalse(out["amazon"]["ok"])
 
     @patch.object(tm, "_renovar_token_bling", return_value=None)

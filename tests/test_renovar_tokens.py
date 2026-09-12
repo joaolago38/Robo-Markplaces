@@ -349,6 +349,27 @@ class TestAlertaTokenTravado(unittest.TestCase):
         mock_alerta.assert_called_once()
         self.assertIn("MERCADO LIVRE TRAVADO", mock_alerta.call_args[0][0])
 
+    def test_magalu_travado_dispara_alerta(self):
+        env = {
+            **self._ENV_BLING,
+            "BLING_CLIENT_ID": "", "BLING_CLIENT_SECRET": "", "BLING_REFRESH_TOKEN": "",
+            "MAGALU_CLIENT_ID": "cid", "MAGALU_CLIENT_SECRET": "sec", "MAGALU_REFRESH_TOKEN": "ref",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            with patch(
+                "core.token_manager.renovar_todos_tokens",
+                return_value={
+                    "mercadolivre": {"ok": False},
+                    "shopee": {"ok": False},
+                    "magalu": {"ok": False, "motivo": "invalid_grant"},
+                    "amazon": {"ok": False},
+                },
+            ), patch.object(mod, "alertar_critico") as mock_alerta, patch("builtins.print"):
+                code = mod.main()
+        self.assertEqual(code, 1)
+        mock_alerta.assert_called_once()
+        self.assertIn("MAGALU TRAVADO", mock_alerta.call_args[0][0])
+
     def test_sanitizar_motivo_mascara_token(self):
         out = mod._sanitizar_motivo("erro refresh_token=abc123secret")
         self.assertIn("***", out)
