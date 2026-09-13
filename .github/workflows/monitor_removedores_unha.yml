@@ -95,6 +95,7 @@ jobs:
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID: ${{ secrets.MAGALU_SELLER_ID }}
           AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
           AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
           AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}

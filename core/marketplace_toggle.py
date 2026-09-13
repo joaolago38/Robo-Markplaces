@@ -7,8 +7,9 @@ Prioridade (primeiro que decide vence):
   2. Env MARKETPLACE_<CANAL>_OPERANDO=1|0
   3. logs/marketplaces_operacao.json
 
-ML já nasce no spec. Shopee/Magalu/Amazon ficam off até o toggle
-(quando a conta estiver homologada e o CNPJ puder ser identificado).
+ML já nasce no spec. Magalu também opera quando
+`spec.marketplaces.magalu.ativo` é true (não espera a fase 3 do ML).
+Shopee/Amazon ficam off até o toggle (conta homologada + CNPJ).
 
 Uso:
   python scripts/toggle_marketplaces.py status

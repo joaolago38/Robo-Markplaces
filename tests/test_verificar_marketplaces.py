@@ -32,6 +32,12 @@ class TestTestarUm(unittest.TestCase):
         self.assertEqual(out["status_http"], 200)
         self.assertEqual(out["mensagem"], "autenticado")
 
+    def test_ok_config_magalu_nao_exige_merchant(self):
+        with patch.object(vm, "MAGALU_ACCESS_TOKEN", "tok"), patch.object(vm, "MAGALU_REFRESH_TOKEN", ""):
+            self.assertTrue(vm._ok_config_magalu())
+        with patch.object(vm, "MAGALU_ACCESS_TOKEN", ""), patch.object(vm, "MAGALU_REFRESH_TOKEN", ""):
+            self.assertFalse(vm._ok_config_magalu())
+
     def test_configurado_mas_falha_real_de_conexao(self):
         """
         Este é exatamente o cenário que a versão antiga do script não

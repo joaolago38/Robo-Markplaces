@@ -664,7 +664,7 @@ def _renovar_token_magalu():
         return None
 
 
-def get_token_magalu():
+def get_token_magalu(forcar: bool = False):
     if not _magalu_canal_operando():
         logger.info("Token Magalu não renovado — canal fora de operação (spec.inativo).")
         return None
@@ -676,8 +676,9 @@ def get_token_magalu():
 
     now = time.time()
 
-    if _token_cache_magalu["access_token"] and now < _token_cache_magalu["expires_at"]:
-        return _token_cache_magalu["access_token"]
+    if not forcar:
+        if _token_cache_magalu["access_token"] and now < _token_cache_magalu["expires_at"]:
+            return _token_cache_magalu["access_token"]
 
     novo = _renovar_token_magalu()
     return novo or cfg.MAGALU_ACCESS_TOKEN or None

@@ -92,14 +92,13 @@ def processar_perguntas():
 
 
 def monitorar_metricas():
-    logger.info("Magalu: monitorando métricas...")
-
-    devolucao = 0.01
-
-    if devolucao > 0.02:
-        alertar("Taxa de devolução alta no Magalu")
-
-    return {"devolucao": devolucao}
+    """A OpenAPI usada aqui não expõe taxa de devolução — não inventar número."""
+    logger.info("Magalu: métricas de devolução indisponíveis na API atual")
+    return {
+        "status": "indisponivel",
+        "devolucao": None,
+        "motivo": "api_sem_metrica",
+    }
 
 
 def executar():

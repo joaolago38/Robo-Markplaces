@@ -101,6 +101,18 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         self.assertIsNone(tm.get_token_magalu())
         mock_renovar.assert_not_called()
 
+    @patch.object(tm, "_magalu_canal_operando", return_value=True)
+    @patch.object(tm, "_hidratar_cache_magalu_do_store")
+    @patch.object(tm, "_magalu_refresh_disponivel", return_value="rt")
+    @patch.object(tm, "_renovar_token_magalu", return_value="novo")
+    def test_get_token_magalu_forcar_ignora_cache(self, mock_renovar, *_):
+        tm._token_cache_magalu["access_token"] = "cache"
+        tm._token_cache_magalu["expires_at"] = 1e18
+        self.assertEqual(tm.get_token_magalu(), "cache")
+        mock_renovar.assert_not_called()
+        self.assertEqual(tm.get_token_magalu(forcar=True), "novo")
+        mock_renovar.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

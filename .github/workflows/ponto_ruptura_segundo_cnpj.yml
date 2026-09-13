@@ -112,6 +112,7 @@ jobs:
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
           SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          MAGALU_SELLER_ID: ${{ secrets.MAGALU_SELLER_ID }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
           ESMALTES_CNPJ: ${{ vars.ESMALTES_CNPJ || '52668583000127' }}

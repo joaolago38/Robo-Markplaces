@@ -1,37 +1,114 @@
 {
   "erros": [
     {
+      "fingerprint": "a47e7722d566158208a7",
+      "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.567403+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 12
+    },
+    {
+      "fingerprint": "4cf9ce5d1a6aea58859b",
+      "primeira_vez": "2026-07-05T20:46:51.035012+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.553691+00:00",
+      "logger": "ml_client",
+      "mensagem": "ML listar_pedidos erro: timeout",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 5
+    },
+    {
+      "fingerprint": "b49947724f637cafec2f",
+      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.545931+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 6
+    },
+    {
+      "fingerprint": "f8696e4f2dbf51bed27c",
+      "primeira_vez": "2026-08-08T22:01:03.650702+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.539047+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 500: {'error': 'boom'}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
+      "fingerprint": "9f764d973e37fd60d5c0",
+      "primeira_vez": "2026-08-08T22:01:03.392449+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.532342+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {'error': 'invalid_grant'}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 3
+    },
+    {
       "fingerprint": "590bab643bd8068fbe6f",
       "primeira_vez": "2026-07-05T20:44:29.280472+00:00",
-      "ultima_vez": "2026-09-12T14:37:42.033571+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.396737+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu manter_conta_ativa erro: keepalive",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 9
+      "ocorrencias": 10
     },
     {
       "fingerprint": "71ef3dfb57593f2f1d9f",
       "primeira_vez": "2026-07-05T20:44:28.533227+00:00",
-      "ultima_vez": "2026-09-12T14:37:42.025184+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.389513+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 403 — provável falta de ESCOPO/permissão (não apenas token expirado): forbidden",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 10
+      "ocorrencias": 11
     },
     {
       "fingerprint": "df432bc18f0b8200b0a8",
       "primeira_vez": "2026-07-05T20:44:29.457328+00:00",
-      "ultima_vez": "2026-09-12T14:37:42.015520+00:00",
+      "ultima_vez": "2026-09-13T11:20:07.381612+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: unauthorized",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 10
+      "ocorrencias": 11
+    },
+    {
+      "fingerprint": "f5df20084dc3a1613198",
+      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
+      "ultima_vez": "2026-09-13T11:16:23.739513+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 140
+    },
+    {
+      "fingerprint": "4a23989fe4fe3fda96c3",
+      "primeira_vez": "2026-07-05T20:44:29.558386+00:00",
+      "ultima_vez": "2026-09-13T11:15:57.099112+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {  \"developerMessage\": \"Unauthorized\",  \"userMessage\": \"You are not authorized to perform this operation. Invalid or expired token.\",  \"moreInfo\": \"http://developer.apiluiza.com.br/errors/reference/30",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 6
     },
     {
       "fingerprint": "5b3e3ad32aa0d6ed8be2",
@@ -639,17 +716,6 @@
       "ocorrencias": 6
     },
     {
-      "fingerprint": "f5df20084dc3a1613198",
-      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
-      "ultima_vez": "2026-08-08T22:10:25.575076+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 136
-    },
-    {
       "fingerprint": "4ff070dcfb581720bea0",
       "primeira_vez": "2026-07-05T21:19:05.137961+00:00",
       "ultima_vez": "2026-08-08T22:08:47.497958+00:00",
@@ -738,61 +804,6 @@
       "ocorrencias": 39
     },
     {
-      "fingerprint": "a47e7722d566158208a7",
-      "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
-      "ultima_vez": "2026-08-08T22:07:42.805650+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 10
-    },
-    {
-      "fingerprint": "4cf9ce5d1a6aea58859b",
-      "primeira_vez": "2026-07-05T20:46:51.035012+00:00",
-      "ultima_vez": "2026-08-08T22:07:39.078351+00:00",
-      "logger": "ml_client",
-      "mensagem": "ML listar_pedidos erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 4
-    },
-    {
-      "fingerprint": "b49947724f637cafec2f",
-      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
-      "ultima_vez": "2026-08-08T22:07:37.686823+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
-    },
-    {
-      "fingerprint": "f8696e4f2dbf51bed27c",
-      "primeira_vez": "2026-08-08T22:01:03.650702+00:00",
-      "ultima_vez": "2026-08-08T22:07:30.721654+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 500: {'error': 'boom'}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
-      "fingerprint": "9f764d973e37fd60d5c0",
-      "primeira_vez": "2026-08-08T22:01:03.392449+00:00",
-      "ultima_vez": "2026-08-08T22:07:26.995812+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {'error': 'invalid_grant'}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 2
-    },
-    {
       "fingerprint": "023520d1a08fd72b1cef",
       "primeira_vez": "2026-07-05T20:46:22.344302+00:00",
       "ultima_vez": "2026-08-08T22:06:00.286032+00:00",
@@ -809,17 +820,6 @@
       "ultima_vez": "2026-08-08T22:05:58.844199+00:00",
       "logger": "relatorio",
       "mensagem": "Relatório erro: DB error",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
-    },
-    {
-      "fingerprint": "4a23989fe4fe3fda96c3",
-      "primeira_vez": "2026-07-05T20:44:29.558386+00:00",
-      "ultima_vez": "2026-08-08T22:04:10.599637+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {  \"developerMessage\": \"Unauthorized\",  \"userMessage\": \"You are not authorized to perform this operation. Invalid or expired token.\",  \"moreInfo\": \"http://developer.apiluiza.com.br/errors/reference/30",
       "status": "error",
       "error_kind": null,
       "error_message": null,
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-09-12T14:37:42.033571+00:00"
+  "atualizado_em": "2026-09-13T11:20:07.567403+00:00"
 }
