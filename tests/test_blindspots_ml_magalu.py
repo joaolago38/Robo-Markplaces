@@ -120,9 +120,10 @@ class TestMagaluListarPedidosDetalhado(unittest.TestCase):
         self.assertEqual(len(pedidos), 1)
         self.assertEqual(pedidos[0]["status"], "desconhecido")
 
+    @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
-    def test_status_nao_200_retorna_ok_false(self, mock_request):
+    def test_status_nao_200_retorna_ok_false(self, mock_request, _tok):
         mock_request.return_value = _resp(401, {})
         pedidos, ok = mag.listar_pedidos_detalhado(dias=7)
         self.assertFalse(ok)
@@ -161,9 +162,10 @@ class TestVendasNotificadorAlertaFalha(unittest.TestCase):
 
 
 class TestMagaluAuthNaListagem(unittest.TestCase):
+    @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
-    def test_401_marca_auth_quebrada(self, mock_request):
+    def test_401_marca_auth_quebrada(self, mock_request, _tok):
         mock_request.return_value = _resp(401, {"error": "invalid_grant"})
         pedidos, ok = mag.listar_pedidos_detalhado(dias=7)
         self.assertFalse(ok)

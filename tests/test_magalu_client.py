@@ -88,14 +88,29 @@ class TestProbeConexao(unittest.TestCase):
         url = mock_request.call_args[0][1]
         self.assertIn("https://services.magalu.com/v0/questions", url)
 
+    @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
-    def test_401(self, mock_request):
+    def test_401(self, mock_request, _tok):
         mock_request.return_value = _resp(401, text="unauthorized")
         out = mag.probe_conexao()
         self.assertFalse(out["ok"])
         self.assertEqual(out["status"], 401)
         self.assertIn("token", out["msg"].lower())
+        self.assertEqual(mock_request.call_count, 1)
+
+    @patch.object(mag, "incrementar")
+    @patch.object(mag, "get_token_magalu")
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_401_renova_uma_vez_e_repete(self, mock_request, mock_token, mock_inc):
+        mock_token.side_effect = ["tok", "tok_novo"]
+        mock_request.side_effect = [_resp(401, text="unauthorized"), _resp(200, {"data": []})]
+        out = mag.probe_conexao()
+        self.assertTrue(out["ok"])
+        self.assertEqual(mock_request.call_count, 2)
+        mock_token.assert_any_call(forcar=True)
+        mock_inc.assert_any_call("token.recuperacao_automatica", tags=["provider:magalu"])
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
@@ -352,9 +367,10 @@ class TestListarPedidos(unittest.TestCase):
         )
         self.assertEqual(mag.listar_pedidos(dias=7), [])
 
+    @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
-    def test_status_nao_200(self, mock_request):
+    def test_status_nao_200(self, mock_request, _tok):
         mock_request.return_value = _resp(401, text="unauthorized")
         self.assertEqual(mag.listar_pedidos(), [])
 

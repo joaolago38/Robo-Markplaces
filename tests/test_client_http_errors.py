@@ -35,8 +35,9 @@ class TestClientHttpErrors(unittest.TestCase):
             mag, "_canal_operando", return_value=True
         ):
             self.mock_http.return_value = make_http_response(status_code=401)
-            with self.assertLogs("magalu_client", level="ERROR"):
-                self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
+            with patch.object(mag, "get_token_magalu", return_value=None):
+                with self.assertLogs("magalu_client", level="ERROR"):
+                    self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
 
     def test_amazon_listar_mensagens_rede(self):
         with patch.object(amz, "AMAZON_ACCESS_TOKEN", "t"), patch.object(

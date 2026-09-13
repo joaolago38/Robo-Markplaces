@@ -51,7 +51,8 @@ class TestAgenteMagaluFluxo(unittest.TestCase):
 class TestAgenteMagaluMetricas(unittest.TestCase):
     def test_AMG05_monitorar_metricas_estrutura(self):
         out = agente_magalu.monitorar_metricas()
-        self.assertTrue("devolucao" in out or "status" in out)
+        self.assertEqual(out.get("status"), "indisponivel")
+        self.assertIsNone(out.get("devolucao"))
 
 
 if __name__ == "__main__":

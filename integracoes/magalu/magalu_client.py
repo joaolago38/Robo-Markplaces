@@ -11,6 +11,7 @@ https://developers.magalu.com/docs/first-steps/create-an-application/authenticat
 """
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN, MAGALU_SELLER_ID
 from core.datadog_metrics import incrementar
@@ -59,6 +60,26 @@ def _h():
     }
 
 
+def _request_magalu(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
+    """Request autenticado com retry único em 401 (renova e repete uma vez)."""
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.update(_h())
+    kwargs["headers"] = headers
+
+    r = request(method, url, timeout=timeout, **kwargs)
+    if getattr(r, "status_code", 0) != 401:
+        return r
+
+    logger.warning("Magalu HTTP 401 — renovando token e repetindo request")
+    novo = get_token_magalu(forcar=True)
+    if not novo:
+        return r
+    incrementar("token.recuperacao_automatica", tags=["provider:magalu"])
+    headers["Authorization"] = f"Bearer {novo}"
+    kwargs["headers"] = headers
+    return request(method, url, timeout=timeout, **kwargs)
+
+
 def ultima_listagem_auth_quebrada() -> bool:
     """True se a última listar_pedidos_detalhado falhou por 401/403/invalid_grant."""
     return bool(_ULTIMA_LISTAGEM_PEDIDOS.get("auth_quebrada"))
@@ -77,10 +98,9 @@ def probe_conexao() -> dict:
     if not _enabled():
         return {"ok": False, "status": 0, "msg": "Magalu não configurado"}
     try:
-        r = request(
+        r = _request_magalu(
             "GET",
             f"{BASE_SERVICES}/v0/questions",
-            headers=_h(),
             params={"limit": 1},
             timeout=15,
         )
@@ -110,10 +130,9 @@ def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: in
     offset = 0
     try:
         for _pagina in range(max(1, max_paginas)):
-            r = request(
+            r = _request_magalu(
                 "GET",
                 f"{BASE_SERVICES}/v0/questions",
-                headers=_h(),
                 params={"status": "pending", "limit": limit, "offset": offset},
                 timeout=20,
             )
@@ -145,10 +164,9 @@ def responder_pergunta(question_id: str, texto: str) -> bool:
         logger.info("Magalu não configurado para responder pergunta.")
         return False
     try:
-        r = request(
+        r = _request_magalu(
             "POST",
             f"{BASE_SERVICES}/v0/questions/{question_id}/answer",
-            headers=_h(),
             json={"text": texto},
             timeout=20,
         )
@@ -174,10 +192,9 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
         }
 
     try:
-        r = request(
+        r = _request_magalu(
             "GET",
             f"{BASE_SERVICES}/v0/questions",
-            headers=_h(),
             params={"limit": 1},
             timeout=20,
         )
@@ -240,10 +257,9 @@ def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
         logger.info("Magalu não configurado para atualização de preço.")
         return False
     try:
-        r = request(
+        r = _request_magalu(
             "PUT",
             f"{BASE}/seller/products/{sku}/price",
-            headers=_h(),
             json={"price": float(novo_preco)},
             timeout=20,
         )
@@ -264,10 +280,9 @@ def atualizar_estoque_item(sku: str, novo_estoque: int) -> bool:
         logger.info("Magalu não configurado para atualização de estoque.")
         return False
     try:
-        r = request(
+        r = _request_magalu(
             "PUT",
             f"{BASE}/seller/products/{sku}/stock",
-            headers=_h(),
             json={"quantity": int(max(0, novo_estoque))},
             timeout=20,
         )
@@ -299,10 +314,9 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     offset = 0
     try:
         for _pagina in range(max(1, max_paginas)):
-            r = request(
+            r = _request_magalu(
                 "GET",
                 f"{BASE}/seller/v1/orders",
-                headers=_h(),
                 params={"limit": limit, "offset": offset},
                 timeout=25,
             )

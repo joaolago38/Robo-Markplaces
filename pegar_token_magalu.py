@@ -15,6 +15,8 @@ Uso:
     3) Rode IMEDIATAMENTE, passando o code:
        python pegar_token_magalu.py SEU_CODE
        (ou defina MAGALU_OAUTH_CODE no ambiente)
+    4) Atualize MAGALU_ACCESS_TOKEN e MAGALU_REFRESH_TOKEN no .env e nos
+       Secrets do GitHub (o refresh é de uso único; o antigo deixa de valer).
 """
 from __future__ import annotations
 
