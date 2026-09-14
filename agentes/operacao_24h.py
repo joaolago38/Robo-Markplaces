@@ -316,7 +316,17 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     # Repricing consciente de fase
     repricing_fases = repricing_impala(dry_run=dry_run_repricing)
 
-    monitor_marketplaces = executar_algoritmo_marketplaces(alertar_quando_atencao=False)
+    monitor_marketplaces = {}
+    try:
+        monitor_marketplaces = executar_algoritmo_marketplaces(alertar_quando_atencao=False)
+    except Exception as exc:
+        logger.exception("Operacao24h: algoritmo falhou — segue NF-e/repricing")
+        monitor_marketplaces = {
+            "ok": False,
+            "erro": str(exc)[:240],
+            "resumo": {},
+            "marketplaces": {},
+        }
     repricing = executar_repricing_marketplaces(produtos=produtos, dry_run=dry_run_repricing)
     faturamento = _faturar_pedidos_lojahub(dry_run_nfe=dry_run_nfe, limite=30)
 

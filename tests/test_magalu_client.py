@@ -387,13 +387,47 @@ class TestListarPedidos(unittest.TestCase):
 
 
 class TestHelpers(unittest.TestCase):
+    def _jwt(self, tenant: str) -> str:
+        import base64
+        import json
+
+        payload = base64.urlsafe_b64encode(json.dumps({"tenant": tenant}).encode()).decode().rstrip("=")
+        return f"hdr.{payload}.sig"
+
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
     @patch.object(mag, "get_token_magalu", return_value="refreshed")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
     def test_headers_usa_token_renovado(self, *_):
         headers = mag._h()
         self.assertEqual(headers["Authorization"], "Bearer refreshed")
         self.assertNotIn("X-Seller-Id", headers)
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_headers_inclui_tenant_do_jwt(self):
+        tok = self._jwt("GENPUB.abc-tenant")
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.abc-tenant")
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok-sem-jwt")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "canal-fallback")
+    def test_headers_tenant_fallback_channel_id(self, *_):
+        headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "canal-fallback")
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_listar_pedidos_envia_x_tenant_id(self, mock_request):
+        tok = self._jwt("GENPUB.pedidos")
+        mock_request.return_value = _resp(200, {"data": []})
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            mag.listar_pedidos(dias=1)
+        headers = mock_request.call_args.kwargs.get("headers") or {}
+        self.assertEqual(headers.get("X-Tenant-Id"), "GENPUB.pedidos")
 
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")

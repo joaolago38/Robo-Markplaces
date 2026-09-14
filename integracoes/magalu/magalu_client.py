@@ -3,12 +3,13 @@ integracoes/magalu/magalu_client.py
 Cliente Magalu OpenAPI (developers.magalu.com) — Produtos, Pedidos e
 Perguntas & Respostas.
 
-IMPORTANTE: a autenticação é só `Authorization: Bearer <access_token>`.
-Não existe header de "seller id" — o token OAuth por si só já
-identifica o seller (fluxo Authorization Code, um consentimento por
-seller). Ver:
-https://developers.magalu.com/docs/first-steps/create-an-application/authentication-authorization
+IMPORTANTE: Bearer no `Authorization` identifica o seller. Pedidos
+(`/seller/v1/orders`) também exigem `X-Tenant-Id` — senão a API
+responde 422 (`Field required`). O tenant vem do claim JWT `tenant`
+(fallback: MAGALU_CHANNEL_ID). Não confundir com seller id / CNPJ.
 """
+import base64
+import json
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -31,8 +32,6 @@ _ULTIMA_LISTAGEM_PEDIDOS: dict = {"auth_quebrada": False, "status": 0}
 # https://services.magalu.com/v0/questions retornou 200, enquanto
 # https://api.magalu.com/v0/questions retorna 404 resource_not_found.
 BASE_SERVICES = "https://services.magalu.com"
-# Reservado para channel.id em endpoints de portfólio (quando confirmados na doc).
-_MAGALU_CHANNEL_ID = MAGALU_CHANNEL_ID
 
 
 def _canal_operando() -> bool:
@@ -50,14 +49,35 @@ def _enabled() -> bool:
     return _canal_operando()
 
 
+def _tenant_id(tok: str = "") -> str:
+    """Valor de X-Tenant-Id: claim JWT `tenant`, senão MAGALU_CHANNEL_ID."""
+    raw = (tok or "").strip()
+    if raw.count(".") >= 2:
+        try:
+            payload = raw.split(".")[1]
+            pad = "=" * (-len(payload) % 4)
+            data = json.loads(base64.urlsafe_b64decode(payload + pad))
+            if isinstance(data, dict):
+                tenant = str(data.get("tenant") or "").strip()
+                if tenant:
+                    return tenant
+        except Exception:
+            pass
+    return str(MAGALU_CHANNEL_ID or "").strip()
+
+
 def _h():
     tok = MAGALU_ACCESS_TOKEN
     if MAGALU_REFRESH_TOKEN:
         tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
-    return {
+    headers = {
         "Authorization": f"Bearer {tok}",
         "Content-Type": "application/json",
     }
+    tenant = _tenant_id(str(tok or ""))
+    if tenant:
+        headers["X-Tenant-Id"] = tenant
+    return headers
 
 
 def _request_magalu(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
