@@ -1,44 +1,44 @@
 {
-  "timestamp": "2026-09-12T18:16:40.287048+00:00",
+  "timestamp": "2026-09-14T11:20:19.969451+00:00",
   "eventos": [
     {
       "tipo": "priorizar_chat",
       "marketplace": "mercadolivre",
       "motivo": "pendencias=0 status=critico score=10",
-      "criado_em": "2026-09-12T18:13:49.226030+00:00",
-      "expira_em": "2026-09-13T00:13:49.226030+00:00",
+      "criado_em": "2026-09-14T11:18:25.052852+00:00",
+      "expira_em": "2026-09-14T17:18:25.052852+00:00",
       "prioridade": 1
     },
     {
       "tipo": "priorizar_chat",
       "marketplace": "shopee",
       "motivo": "pendencias=0 status=critico score=20",
-      "criado_em": "2026-09-12T18:13:49.580758+00:00",
-      "expira_em": "2026-09-13T00:13:49.580758+00:00",
+      "criado_em": "2026-09-14T11:18:25.388553+00:00",
+      "expira_em": "2026-09-14T17:18:25.388553+00:00",
       "prioridade": 1
     },
     {
       "tipo": "congelar_repricing",
       "marketplace": "shopee",
       "motivo": "score=20 claims=0.0000 status=critico",
-      "criado_em": "2026-09-12T18:13:49.580758+00:00",
-      "expira_em": "2026-09-13T18:13:49.580758+00:00",
+      "criado_em": "2026-09-14T11:18:25.388553+00:00",
+      "expira_em": "2026-09-15T11:18:25.388553+00:00",
       "prioridade": 1
     },
     {
       "tipo": "revisar_listing",
       "marketplace": "mercadolivre",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-09-11T13:19:08.048300+00:00",
-      "expira_em": "2026-09-13T13:19:08.048300+00:00",
+      "criado_em": "2026-09-14T11:18:25.052852+00:00",
+      "expira_em": "2026-09-16T11:18:25.052852+00:00",
       "prioridade": 2
     },
     {
       "tipo": "revisar_listing",
       "marketplace": "shopee",
       "motivo": "queda_score_ou_critico status=critico",
-      "criado_em": "2026-09-11T13:19:08.397219+00:00",
-      "expira_em": "2026-09-13T13:19:08.397219+00:00",
+      "criado_em": "2026-09-14T11:18:25.388553+00:00",
+      "expira_em": "2026-09-16T11:18:25.388553+00:00",
       "prioridade": 2
     }
   ]

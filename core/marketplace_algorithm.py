@@ -43,6 +43,15 @@ def _claims_conhecido(metrics: dict) -> bool:
     return metrics.get("claims_rate") is not None
 
 
+def _safe_float(val, default: float = 0.0) -> float:
+    try:
+        if val is None:
+            return float(default)
+        return float(val)
+    except (TypeError, ValueError):
+        return float(default)
+
+
 def _score_from_metrics(metrics: dict, nome: str = "") -> tuple[int, list[str], str | None]:
     """Retorna (score, penalidades, status_forcado).
 
@@ -146,12 +155,19 @@ def _detectar_variacoes_relevantes(metrics: dict, ponto_anterior: dict | None) -
         return []
 
     anterior_metrics = ponto_anterior.get("metrics", {})
-    limite = float(MARKETPLACE_VARIACAO_ALERTA_PCT)
+    limite = _safe_float(MARKETPLACE_VARIACAO_ALERTA_PCT, 5.0)
     checks = [
-        ("score", float(ponto_anterior.get("score", 0)), float(metrics.get("score_atual", 0))),
-        ("pendencias", float(anterior_metrics.get("pendencias", 0)), float(metrics.get("pendencias", 0))),
-        ("claims_rate", float(anterior_metrics.get("claims_rate", 0)), float(metrics.get("claims_rate", 0))),
+        ("score", _safe_float(ponto_anterior.get("score")), _safe_float(metrics.get("score_atual"))),
+        (
+            "pendencias",
+            _safe_float(anterior_metrics.get("pendencias")),
+            _safe_float(metrics.get("pendencias")),
+        ),
     ]
+    claims_ant = anterior_metrics.get("claims_rate")
+    claims_atual = metrics.get("claims_rate")
+    if claims_ant is not None and claims_atual is not None:
+        checks.append(("claims_rate", _safe_float(claims_ant), _safe_float(claims_atual)))
 
     variacoes = []
     for nome, anterior, atual in checks:
