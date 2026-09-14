@@ -180,6 +180,47 @@ class Operacao24hTests(unittest.TestCase):
         self.assertGreater(acos_passado, ACOS_MAXIMO)
         self.assertFalse(mock_gatilho.call_args.kwargs.get("full_ativo"))
 
+    @patch("integracoes.meta.ciclo_campanhas.avaliar_momento_ciclo_meta", return_value={"pronto": False, "motivo": "x", "fase": 0})
+    @patch("integracoes.meta.claude_ciclo_meta.auxiliar_digest_bloqueio", return_value={"ok": True})
+    @patch("integracoes.ml.ml_client.buscar_reputacao_vendedor", return_value={})
+    @patch("integracoes.ml.ml_client.listar_meus_anuncios", return_value=[])
+    @patch("agentes.operacao_24h._gravar_heartbeat_operacao")
+    @patch("agentes.operacao_24h.alertar_gestor")
+    @patch("agentes.operacao_24h._faturar_pedidos_lojahub")
+    @patch("agentes.operacao_24h.executar_repricing_marketplaces")
+    @patch("agentes.operacao_24h.executar_algoritmo_marketplaces", side_effect=TypeError("float() NoneType"))
+    @patch("agentes.operacao_24h.repricing_impala", return_value={})
+    @patch("agentes.operacao_24h.verificar_alertas_esmaltes", return_value=[])
+    @patch("agentes.operacao_24h.verificar_gatilho_ads", return_value={"decisao": "aguardar", "motivos": []})
+    @patch("agentes.operacao_24h.listar_pedidos_prontos_faturar", return_value=[])
+    @patch("agentes.operacao_24h.listar_resumo_vendas_24h", return_value={"ok": True, "data": {}})
+    @patch("agentes.operacao_24h.listar_produtos", return_value=[])
+    def test_algoritmo_exception_nao_bloqueia_nfe_nem_heartbeat(
+        self,
+        _produtos,
+        _resumo,
+        _pedidos,
+        _gatilho,
+        _alertas,
+        _impala,
+        _algoritmo,
+        mock_repricing,
+        mock_faturar,
+        mock_alerta,
+        mock_hb,
+        _anuncios,
+        _rep,
+        _digest,
+        _ciclo,
+    ):
+        mock_repricing.return_value = {"total_ajustes": 0, "ajustes": [], "total_aplicados_sucesso": 0, "total_falhas_aplicacao": 0}
+        mock_faturar.return_value = {"total": 0, "sucesso": 0, "falhas": 0, "itens": []}
+        out = executar(dry_run_repricing=True, dry_run_nfe=True)
+        self.assertFalse(out["marketplaces"].get("ok", True))
+        mock_faturar.assert_called_once()
+        mock_hb.assert_called_once()
+        mock_alerta.assert_called()
+
     @patch("agentes.operacao_24h.emitir_nfe_pedido")
     @patch("agentes.operacao_24h.listar_pedidos_prontos_faturar")
     def test_faturar_default_dry_run(self, mock_pedidos, mock_emitir):

@@ -67,6 +67,7 @@ jobs:
           SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
           MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
+          MAGALU_CHANNEL_ID: ${{ secrets.MAGALU_CHANNEL_ID }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}

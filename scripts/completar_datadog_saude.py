@@ -6568,12 +6568,13 @@ def _monitores_desejados() -> list[dict[str, Any]]:
             "type": "log alert",
             "query": (
                 'logs("service:robo-markplaces (Magalu OR \\"Magazine Luiza\\") '
-                '(401 OR 400 OR invalid_grant)")'
+                '(401 OR 400 OR 403 OR 422 OR invalid_grant)")'
                 '.index("*").rollup("count").last("1h") > 5'
             ),
             "message": (
-                "Magalu com falhas de autenticacao. "
-                "Renove OAuth Magalu nos secrets do GitHub.\n" + msg_base
+                "Magalu com falhas de autenticacao/escopo/tenant. "
+                "Renove OAuth Magalu nos secrets do GitHub; 422 = X-Tenant-Id ausente; "
+                "403 = escopo OAuth (Perguntas) ou token morto.\n" + msg_base
             ),
             "tags": [TAG_MONITOR, "monitor:magalu", "severity:p1"],
             "options": {

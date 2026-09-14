@@ -319,7 +319,7 @@ class DatadogFunilDashboardTests(unittest.TestCase):
     def test_monitor_magalu_query_pega_magazine_luiza_e_http_400(self):
         src = Path(dd.__file__).read_text(encoding="utf-8")
         self.assertIn("Magazine Luiza", src)
-        self.assertIn("401 OR 400 OR invalid_grant", src)
+        self.assertIn("401 OR 400 OR 403 OR 422 OR invalid_grant", src)
 
     def test_grupo_progresso_24m(self):
         grupo = dd._grupo_progresso_24m()
