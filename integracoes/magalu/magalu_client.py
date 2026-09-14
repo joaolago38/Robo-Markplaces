@@ -113,17 +113,26 @@ def _resposta_indica_auth_quebrada(resposta) -> bool:
     return "invalid_grant" in texto or "unauthorized" in texto
 
 
+def _ping_pedidos(*, timeout: int = 15):
+    """GET /seller/v1/orders — prova auth de vendas (open:order + X-Tenant-Id).
+
+    Não usa /v0/questions: aquele host exige escopo services:* e falha 403
+    mesmo com pedidos íntegros. Chat continua em listar_perguntas.
+    """
+    return _request_magalu(
+        "GET",
+        f"{BASE}/seller/v1/orders",
+        params={"limit": 1},
+        timeout=timeout,
+    )
+
+
 def probe_conexao() -> dict:
     """Diagnóstico sem mascarar erros HTTP como lista vazia."""
     if not _enabled():
         return {"ok": False, "status": 0, "msg": "Magalu não configurado"}
     try:
-        r = _request_magalu(
-            "GET",
-            f"{BASE_SERVICES}/v0/questions",
-            params={"limit": 1},
-            timeout=15,
-        )
+        r = _ping_pedidos(timeout=15)
         status = getattr(r, "status_code", 0)
         if status == 200:
             return {"ok": True, "status": 200, "msg": "autenticado"}
@@ -134,6 +143,12 @@ def probe_conexao() -> dict:
                 "ok": False,
                 "status": 403,
                 "msg": "sem permissão — verifique escopos OAuth do app Magalu",
+            }
+        if status == 422:
+            return {
+                "ok": False,
+                "status": 422,
+                "msg": "X-Tenant-Id ausente ou inválido — confira MAGALU_CHANNEL_ID",
             }
         return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
     except Exception as exc:
@@ -212,12 +227,7 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
         }
 
     try:
-        r = _request_magalu(
-            "GET",
-            f"{BASE_SERVICES}/v0/questions",
-            params={"limit": 1},
-            timeout=20,
-        )
+        r = _ping_pedidos(timeout=20)
         r.raise_for_status()
         registrar_acesso("magalu")
         sem_acesso_atual = dias_sem_acesso("magalu") or 0

@@ -86,7 +86,8 @@ class TestProbeConexao(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"], 200)
         url = mock_request.call_args[0][1]
-        self.assertIn("https://services.magalu.com/v0/questions", url)
+        self.assertIn("https://api.magalu.com/seller/v1/orders", url)
+        self.assertNotIn("/v0/questions", url)
 
     @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
@@ -120,6 +121,15 @@ class TestProbeConexao(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertEqual(out["status"], 403)
         self.assertIn("permissão", out["msg"].lower())
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_422_tenant(self, mock_request):
+        mock_request.return_value = _resp(422, text="X-Tenant-Id Field required")
+        out = mag.probe_conexao()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["status"], 422)
+        self.assertIn("tenant", out["msg"].lower())
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
@@ -217,6 +227,8 @@ class TestManterContaAtiva(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["acao"], "keepalive executado")
         mock_registrar.assert_called_once_with("magalu")
+        url = mock_request.call_args[0][1]
+        self.assertIn("https://api.magalu.com/seller/v1/orders", url)
 
     @patch.object(mag, "dias_sem_acesso", side_effect=[2, 2])
     @patch.object(mag, "request", side_effect=RuntimeError("keepalive"))
@@ -428,6 +440,20 @@ class TestHelpers(unittest.TestCase):
             mag.listar_pedidos(dias=1)
         headers = mock_request.call_args.kwargs.get("headers") or {}
         self.assertEqual(headers.get("X-Tenant-Id"), "GENPUB.pedidos")
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_probe_conexao_envia_x_tenant_id(self, mock_request):
+        tok = self._jwt("GENPUB.probe")
+        mock_request.return_value = _resp(200, {"data": []})
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            out = mag.probe_conexao()
+        self.assertTrue(out["ok"])
+        url = mock_request.call_args[0][1]
+        self.assertIn("https://api.magalu.com/seller/v1/orders", url)
+        headers = mock_request.call_args.kwargs.get("headers") or {}
+        self.assertEqual(headers.get("X-Tenant-Id"), "GENPUB.probe")
 
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
