@@ -24,6 +24,7 @@ def sync_secrets_github(
     access_token: str,
     refresh_token: str | None,
     prefix: str = "BLING",
+    extras: dict | None = None,
 ) -> bool:
     """Atualiza {prefix}_ACCESS_TOKEN e opcionalmente {prefix}_REFRESH_TOKEN no GitHub."""
     if not shutil.which("gh"):
@@ -51,6 +52,11 @@ def sync_secrets_github(
     pares = [(f"{prefix}_ACCESS_TOKEN", access_token)]
     if refresh_token:
         pares.append((f"{prefix}_REFRESH_TOKEN", refresh_token))
+    for nome, valor in (extras or {}).items():
+        chave = str(nome or "").strip()
+        dado = str(valor or "").strip()
+        if chave and dado:
+            pares.append((chave, dado))
 
     ok = True
     for nome, valor in pares:

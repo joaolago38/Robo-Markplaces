@@ -148,6 +148,10 @@ class TestProbeConexao(unittest.TestCase):
 
 
 class TestListarPerguntas(unittest.TestCase):
+    def setUp(self):
+        mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+        mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
@@ -178,8 +182,26 @@ class TestListarPerguntas(unittest.TestCase):
     def test_excecao(self, *_):
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
 
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    def test_pula_quando_jwt_sem_escopo_perguntas(self, mock_request):
+        import base64
+        import json
+
+        payload = base64.urlsafe_b64encode(
+            json.dumps({"scope": "open:order-order-seller:read"}).encode()
+        ).decode().rstrip("=")
+        tok = f"hdr.{payload}.sig"
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
+        mock_request.assert_not_called()
+
 
 class TestResponderPergunta(unittest.TestCase):
+    def setUp(self):
+        mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+        mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
@@ -429,6 +451,15 @@ class TestHelpers(unittest.TestCase):
     def test_headers_tenant_fallback_channel_id(self, *_):
         headers = mag._h()
         self.assertEqual(headers["X-Tenant-Id"], "canal-fallback")
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok-opaco")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_headers_tenant_live_cfg(self, *_):
+        mag._AVISO_TENANT["feito"] = False
+        with patch.object(mag.cfg, "MAGALU_CHANNEL_ID", "GENPUB.from-cfg"):
+            headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.from-cfg")
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")

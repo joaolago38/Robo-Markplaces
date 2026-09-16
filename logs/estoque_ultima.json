@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-09-14T12:12:22.970274+00:00",
-  "ok": false,
-  "dry_run": false,
-  "total_ajustes": 0,
+  "timestamp": "2026-09-16T11:47:06.678467+00:00",
+  "ok": true,
+  "dry_run": true,
+  "total_ajustes": 1,
   "total_aplicados_sucesso": 0,
   "total_falhas_aplicacao": 0,
   "skipped_placeholder_mlb": 0,
-  "produtos_sem_estoque_bling": 1
+  "produtos_sem_estoque_bling": 0
 }
