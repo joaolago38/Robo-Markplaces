@@ -3,90 +3,90 @@
     {
       "fingerprint": "a47e7722d566158208a7",
       "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.567403+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.274733+00:00",
       "logger": "ml_client",
       "mensagem": "ML listar_pedidos HTTP 401 — token inválido ou expirado: ",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 12
+      "ocorrencias": 14
     },
     {
       "fingerprint": "4cf9ce5d1a6aea58859b",
       "primeira_vez": "2026-07-05T20:46:51.035012+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.553691+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.260384+00:00",
       "logger": "ml_client",
       "mensagem": "ML listar_pedidos erro: timeout",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 5
-    },
-    {
-      "fingerprint": "b49947724f637cafec2f",
-      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.545931+00:00",
-      "logger": "magalu_client",
-      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
       "status": "error",
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 6
     },
     {
+      "fingerprint": "b49947724f637cafec2f",
+      "primeira_vez": "2026-07-05T20:46:51.486778+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.253503+00:00",
+      "logger": "magalu_client",
+      "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: ",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 7
+    },
+    {
       "fingerprint": "f8696e4f2dbf51bed27c",
       "primeira_vez": "2026-08-08T22:01:03.650702+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.539047+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.246279+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu listar_pedidos HTTP 500: {'error': 'boom'}",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 3
+      "ocorrencias": 4
     },
     {
       "fingerprint": "9f764d973e37fd60d5c0",
       "primeira_vez": "2026-08-08T22:01:03.392449+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.532342+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.239769+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: {'error': 'invalid_grant'}",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 3
+      "ocorrencias": 4
     },
     {
       "fingerprint": "590bab643bd8068fbe6f",
       "primeira_vez": "2026-07-05T20:44:29.280472+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.396737+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.183924+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu manter_conta_ativa erro: keepalive",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 10
+      "ocorrencias": 12
     },
     {
       "fingerprint": "71ef3dfb57593f2f1d9f",
       "primeira_vez": "2026-07-05T20:44:28.533227+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.389513+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.177936+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu listar_perguntas_nao_respondidas HTTP 403 — provável falta de ESCOPO/permissão (não apenas token expirado): forbidden",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 11
+      "ocorrencias": 13
     },
     {
       "fingerprint": "df432bc18f0b8200b0a8",
       "primeira_vez": "2026-07-05T20:44:29.457328+00:00",
-      "ultima_vez": "2026-09-13T11:20:07.381612+00:00",
+      "ultima_vez": "2026-09-16T11:34:26.169250+00:00",
       "logger": "magalu_client",
       "mensagem": "Magalu listar_pedidos HTTP 401 — token inválido ou expirado: unauthorized",
       "status": "error",
       "error_kind": null,
       "error_message": null,
-      "ocorrencias": 11
+      "ocorrencias": 13
     },
     {
       "fingerprint": "f5df20084dc3a1613198",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-09-13T11:20:07.567403+00:00"
+  "atualizado_em": "2026-09-16T11:34:26.274733+00:00"
 }

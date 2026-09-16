@@ -46,6 +46,42 @@ _shopee_refresh_efetivo = {"valor": None}
 _token_cache_magalu = {"access_token": None, "expires_at": 0}
 _magalu_refresh_efetivo = {"valor": None}
 
+
+def _payload_jwt(tok: str) -> dict:
+    raw = (tok or "").strip()
+    if raw.count(".") < 2:
+        return {}
+    try:
+        payload = raw.split(".")[1]
+        pad = "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload + pad))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def tenant_jwt_magalu(tok: str) -> str:
+    """Claim Magalu usado em X-Tenant-Id (não é seller id)."""
+    data = _payload_jwt(tok)
+    for chave in ("tenant", "tenant_id", "channel_id"):
+        valor = str(data.get(chave) or "").strip()
+        if valor:
+            return valor
+    return ""
+
+
+def escopos_jwt_magalu(tok: str) -> set[str]:
+    bruto = str(_payload_jwt(tok).get("scope") or "").strip()
+    return {p.strip() for p in bruto.split() if p.strip()}
+
+
+def _lembrar_tenant_magalu(tok: str = "") -> str:
+    """Mantém MAGALU_CHANNEL_ID quando o refresh devolve token opaco/sem claim."""
+    atual = tenant_jwt_magalu(tok) or str(getattr(cfg, "MAGALU_CHANNEL_ID", "") or "").strip()
+    if atual:
+        cfg.MAGALU_CHANNEL_ID = atual
+    return atual
+
 _token_cache_bling = {"access_token": None, "expires_at": 0}
 _bling_refresh_efetivo = {"valor": None}
 
@@ -527,18 +563,16 @@ def _salvar_store_magalu(access_token: str, refresh_token: str | None, expires_a
         return
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(
-            json.dumps(
-                {
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expires_at": expires_at,
-                    "atualizado_em": time.time(),
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+        tenant = _lembrar_tenant_magalu(access_token)
+        corpo = {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_at": expires_at,
+            "atualizado_em": time.time(),
+        }
+        if tenant:
+            corpo["tenant"] = tenant
+        p.write_text(json.dumps(corpo, indent=2), encoding="utf-8")
         try:
             os.chmod(p, 0o600)
         except OSError:
@@ -555,8 +589,12 @@ def _hidratar_cache_magalu_do_store() -> None:
         if store.get("access_token"):
             _token_cache_magalu["access_token"] = store["access_token"]
             _token_cache_magalu["expires_at"] = store.get("expires_at", 0)
+            _lembrar_tenant_magalu(store.get("access_token") or "")
         if store.get("refresh_token"):
             _magalu_refresh_efetivo["valor"] = store["refresh_token"]
+        tenant_store = str(store.get("tenant") or "").strip()
+        if tenant_store:
+            cfg.MAGALU_CHANNEL_ID = tenant_store
 
 
 def _magalu_refresh_disponivel() -> str | None:
@@ -622,6 +660,13 @@ def _renovar_token_magalu():
             _erro_token_mp("Magalu refresh sem access_token na resposta.")
             return None
 
+        tenant_antes = tenant_jwt_magalu(cfg.MAGALU_ACCESS_TOKEN) or str(
+            getattr(cfg, "MAGALU_CHANNEL_ID", "") or ""
+        ).strip()
+        tenant = tenant_jwt_magalu(access_token) or tenant_antes
+        if tenant:
+            cfg.MAGALU_CHANNEL_ID = tenant
+
         _token_cache_magalu["access_token"] = access_token
         _token_cache_magalu["expires_at"] = time.time() + max(60, expires_in) - 45
 
@@ -646,7 +691,8 @@ def _renovar_token_magalu():
         # sync o Secret antigo fica órfão e a próxima renovação agendada
         # falha com refresh_token inválido.
         if novo_refresh and os.getenv("GITHUB_ACTIONS") == "true":
-            if sync_secrets_github(access_token, novo_refresh, prefix="MAGALU"):
+            extras = {"MAGALU_CHANNEL_ID": tenant} if tenant else None
+            if sync_secrets_github(access_token, novo_refresh, prefix="MAGALU", extras=extras):
                 logger.info("Secrets MAGALU_* sincronizados no GitHub (rotação automática).")
             else:
                 logger.error(

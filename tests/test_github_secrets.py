@@ -49,10 +49,17 @@ class TestGithubSecrets(unittest.TestCase):
         with patch.object(gs.shutil, "which", return_value="/usr/bin/gh"):
             with patch.object(gs.subprocess, "run", return_value=MagicMock()) as run:
                 with patch.dict(os.environ, env, clear=False):
-                    self.assertTrue(gs.sync_secrets_github("at", "rt", prefix="ML"))
-        self.assertEqual(run.call_count, 2)
+                    self.assertTrue(
+                        gs.sync_secrets_github(
+                            "at",
+                            "rt",
+                            prefix="ML",
+                            extras={"MAGALU_CHANNEL_ID": "GENPUB.x"},
+                        )
+                    )
+        self.assertEqual(run.call_count, 3)
         nomes = [c.args[0][3] for c in run.call_args_list]
-        self.assertEqual(nomes, ["ML_ACCESS_TOKEN", "ML_REFRESH_TOKEN"])
+        self.assertEqual(nomes, ["ML_ACCESS_TOKEN", "ML_REFRESH_TOKEN", "MAGALU_CHANNEL_ID"])
 
     def test_gh_secret_set_falha_loga_stderr(self):
         env = {"GITHUB_ACTIONS": "true", "GH_TOKEN": "ghp_x", "GH_REPO": "org/repo"}
