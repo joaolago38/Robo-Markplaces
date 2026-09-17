@@ -150,6 +150,35 @@ class TestTokenManagerProviders(unittest.TestCase):
         )
 
     @patch.object(tm, "_salvar_store_magalu")
+    @patch.object(tm, "sync_secrets_github", return_value=True)
+    @patch.object(tm, "_magalu_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(
+        cfg,
+        MAGALU_CLIENT_ID="id",
+        MAGALU_CLIENT_SECRET="sec",
+        MAGALU_REFRESH_TOKEN="rt",
+        MAGALU_ACCESS_TOKEN="",
+        MAGALU_CHANNEL_ID="GENPUB.persistido",
+    )
+    def test_renovar_token_magalu_sync_preserva_channel_id(self, mock_request, *_mocks):
+        tm._magalu_refresh_efetivo["valor"] = "old_rt"
+        tm._token_cache_magalu.update({"access_token": None, "expires_at": 0})
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 3600},
+        )
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+            out = tm._renovar_token_magalu()
+        self.assertEqual(out, "new_at")
+        tm.sync_secrets_github.assert_called_once_with(
+            "new_at",
+            "new_rt",
+            prefix="MAGALU",
+            extras={"MAGALU_CHANNEL_ID": "GENPUB.persistido"},
+        )
+
+    @patch.object(tm, "_salvar_store_magalu")
     @patch.object(tm, "request")
     @patch.multiple(cfg, MAGALU_CLIENT_ID="id", MAGALU_CLIENT_SECRET="sec", MAGALU_REFRESH_TOKEN="rt")
     def test_renovar_token_magalu_persiste_store(self, mock_request, mock_salvar):

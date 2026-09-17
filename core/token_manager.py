@@ -691,7 +691,8 @@ def _renovar_token_magalu():
         # sync o Secret antigo fica órfão e a próxima renovação agendada
         # falha com refresh_token inválido.
         if novo_refresh and os.getenv("GITHUB_ACTIONS") == "true":
-            extras = {"MAGALU_CHANNEL_ID": tenant} if tenant else None
+            tenant_secret = tenant or str(getattr(cfg, "MAGALU_CHANNEL_ID", "") or "").strip()
+            extras = {"MAGALU_CHANNEL_ID": tenant_secret} if tenant_secret else None
             if sync_secrets_github(access_token, novo_refresh, prefix="MAGALU", extras=extras):
                 logger.info("Secrets MAGALU_* sincronizados no GitHub (rotação automática).")
             else:

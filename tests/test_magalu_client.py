@@ -461,6 +461,17 @@ class TestHelpers(unittest.TestCase):
             headers = mag._h()
         self.assertEqual(headers["X-Tenant-Id"], "GENPUB.from-cfg")
 
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok-opaco")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_headers_tenant_env_merchant_id(self, *_):
+        mag._AVISO_TENANT["feito"] = False
+        with patch.object(mag.cfg, "MAGALU_CHANNEL_ID", ""):
+            with patch.object(mag.cfg, "MAGALU_MERCHANT_ID", ""):
+                with patch.dict(os.environ, {"MAGALU_CHANNEL_ID": "", "MAGALU_MERCHANT_ID": "GENPUB.env"}, clear=False):
+                    headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.env")
+
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_CHANNEL_ID", "")

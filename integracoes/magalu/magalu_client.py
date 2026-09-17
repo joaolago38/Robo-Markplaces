@@ -9,6 +9,7 @@ responde 422 (`Field required`). O tenant vem do claim JWT `tenant`
 (fallback: MAGALU_CHANNEL_ID). Não confundir com seller id / CNPJ.
 """
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -51,26 +52,34 @@ def _enabled() -> bool:
     return _canal_operando()
 
 
+def _valor_tenant(valor: Any) -> str:
+    txt = str(valor or "").strip()
+    if not txt or txt == "...":
+        return ""
+    return txt
+
+
 def _tenant_id(tok: str = "") -> str:
     """X-Tenant-Id: JWT do token da request, senão MAGALU_CHANNEL_ID, senão cfg.
 
     JWT em `core.config` só entra por último — senão o .env de máquina
     vence o patch dos testes e um CHANNEL_ID explícito.
     """
-    for candidato in (tok, MAGALU_ACCESS_TOKEN):
+    for candidato in (tok, MAGALU_ACCESS_TOKEN, getattr(cfg, "MAGALU_ACCESS_TOKEN", "")):
         tenant = tenant_jwt_magalu(str(candidato or ""))
         if tenant:
+            cfg.MAGALU_CHANNEL_ID = tenant
             return tenant
-    local = str(MAGALU_CHANNEL_ID or "").strip()
-    if local:
-        return local
-    live = str(getattr(cfg, "MAGALU_CHANNEL_ID", "") or "").strip()
-    if live:
-        return live
-    tenant = tenant_jwt_magalu(str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or ""))
-    if tenant:
-        cfg.MAGALU_CHANNEL_ID = tenant
-        return tenant
+    for fonte in (
+        MAGALU_CHANNEL_ID,
+        getattr(cfg, "MAGALU_CHANNEL_ID", ""),
+        getattr(cfg, "MAGALU_MERCHANT_ID", ""),
+        os.getenv("MAGALU_CHANNEL_ID"),
+        os.getenv("MAGALU_MERCHANT_ID"),
+    ):
+        local = _valor_tenant(fonte)
+        if local:
+            return local
     return ""
 
 
@@ -92,9 +101,10 @@ def _headers_com_token(tok: str) -> dict:
 
 
 def _h():
-    tok = MAGALU_ACCESS_TOKEN
-    if MAGALU_REFRESH_TOKEN:
-        tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
+    tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
+    refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
+    if refresh:
+        tok = get_token_magalu() or tok
     return _headers_com_token(str(tok or ""))
 
 
@@ -118,9 +128,10 @@ def _request_magalu(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
 
 
 def _token_atual() -> str:
-    tok = MAGALU_ACCESS_TOKEN
-    if MAGALU_REFRESH_TOKEN:
-        tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
+    tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
+    refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
+    if refresh:
+        tok = get_token_magalu() or tok
     return str(tok or "")
 
 
