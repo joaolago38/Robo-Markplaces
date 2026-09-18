@@ -60,6 +60,42 @@ def _reset_telegram_gate():
 
 
 @pytest.fixture(autouse=True)
+def _magalu_isolamento_credenciais(tmp_path_factory, monkeypatch):
+    """Impede JWT/refresh/tenant do .env e cooldown em disco de vazar entre testes (xdist)."""
+    import core.config as cfg
+    import core.token_manager as tm
+    import integracoes.magalu.magalu_client as mag
+
+    mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+    mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+    mag._AVISO_TENANT["feito"] = False
+    base = tmp_path_factory.mktemp("magalu_cd")
+    for chave in (
+        "MAGALU_ACCESS_TOKEN",
+        "MAGALU_REFRESH_TOKEN",
+        "MAGALU_CHANNEL_ID",
+        "MAGALU_MERCHANT_ID",
+    ):
+        monkeypatch.setenv(chave, "")
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(tm, "_MAGALU_INVALID_GRANT_PATH", base / "invalid_grant.json"))
+        stack.enter_context(patch.object(tm, "_refresh_magalu_em_cooldown", return_value=False))
+        stack.enter_context(patch.object(mag, "_PERGUNTAS_ESCOPO_PATH", base / "perguntas_escopo.json"))
+        stack.enter_context(
+            patch.multiple(
+                cfg,
+                MAGALU_ACCESS_TOKEN="",
+                MAGALU_REFRESH_TOKEN="",
+                MAGALU_CHANNEL_ID="",
+                MAGALU_MERCHANT_ID="",
+            )
+        )
+        yield
+    mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+    mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+
+
+@pytest.fixture(autouse=True)
 def _claude_ligado_nos_testes(tmp_path_factory):
     """
     Pausa operacional (CLAUDE_ATIVO=0 / logs/claude_toggle.json) não deve quebrar CI.
