@@ -97,6 +97,11 @@ def tenant_jwt_magalu(tok: str) -> str:
     return _tenant_em_dict(_payload_jwt(tok))
 
 
+def tenant_payload_magalu(data: dict) -> str:
+    """Mesmas chaves de tenant, a partir de JSON (userinfo / token response)."""
+    return _tenant_em_dict(data if isinstance(data, dict) else {})
+
+
 def escopos_jwt_magalu(tok: str) -> set[str]:
     bruto = str(_payload_jwt(tok).get("scope") or "").strip()
     return {p.strip() for p in bruto.split() if p.strip()}

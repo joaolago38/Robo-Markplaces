@@ -25,6 +25,37 @@ def _fotos() -> list[dict[str, str]]:
     return [{"source": u.strip()} for u in raw.split(",") if u.strip()]
 
 
+def _fotos_conta_impala() -> list[dict[str, str]]:
+    """Reusa fotos de um anúncio Impala já na conta (POST /items exige pictures)."""
+    try:
+        from integracoes.ml import ml_client
+    except Exception:
+        return []
+    anuncios = ml_client.listar_meus_anuncios(statuses=("active", "paused")) or []
+    for a in anuncios:
+        titulo = str(a.get("titulo") or "").lower()
+        iid = str(a.get("item_id") or "").strip()
+        if "impala" not in titulo or not iid:
+            continue
+        try:
+            r = ml_client._request_ml("GET", f"{ml_client.BASE}/items/{iid}", timeout=20)
+            if getattr(r, "status_code", 0) != 200:
+                continue
+            pics = (r.json() or {}).get("pictures") or []
+        except Exception:
+            continue
+        urls = []
+        for p in pics:
+            if not isinstance(p, dict):
+                continue
+            u = str(p.get("secure_url") or p.get("url") or "").strip()
+            if u:
+                urls.append({"source": u})
+        if urls:
+            return urls
+    return []
+
+
 def montar_payload_item(produto: dict[str, Any], *, sku: str) -> dict[str, Any]:
     ml = (produto.get("canais") or {}).get("mercadolivre") or {}
     titulo = str(ml.get("titulo_anuncio") or produto.get("titulo_sugerido_ml") or produto.get("nome") or "")
@@ -77,6 +108,10 @@ def publicar_sku(sku: str, *, executar: bool = False) -> dict[str, Any]:
         return {"ok": False, "sku": sku_u, "erro": motivo}
 
     payload = montar_payload_item(p, sku=sku_u)
+    fotos = payload.get("pictures") or []
+    if not fotos and executar:
+        fotos = _fotos_conta_impala()
+        payload["pictures"] = fotos
     if not payload.get("pictures"):
         return {
             "ok": False,
@@ -105,7 +140,15 @@ def publicar_sku(sku: str, *, executar: bool = False) -> dict[str, Any]:
 
 
 def publicar_frente(*, executar: bool = False) -> dict[str, Any]:
+    vinculo: dict[str, Any] = {}
+    try:
+        from scripts.preparar_guerra_impala import tentar_vincular_mlb
+
+        vinculo = tentar_vincular_mlb()
+    except Exception as exc:
+        vinculo = {"erro": str(exc)}
     resultados = []
     for sku in SKUS_FRENTE:
         resultados.append(publicar_sku(sku, executar=executar))
-    return {"ok": all(r.get("ok") for r in resultados if r.get("erro") != "esperar_mimo_no_ar"), "itens": resultados}
+    ok_pub = all(r.get("ok") for r in resultados if r.get("erro") != "esperar_mimo_no_ar")
+    return {"ok": ok_pub, "vinculo": vinculo, "itens": resultados}

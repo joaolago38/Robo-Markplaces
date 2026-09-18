@@ -340,6 +340,19 @@ class TestVisibilidadeCtrCvr(unittest.TestCase):
         self.assertNotIn("ads.hoje.ranking_gasto", nomes)
 
 
+class TestProductAdsFora(unittest.TestCase):
+    @patch.object(ads, "ML_ADS_PRODUCT_ADS_FORA", True)
+    @patch.object(ads, "_enabled", return_value=True)
+    @patch.object(ads, "_request_ml")
+    def test_nao_chama_api(self, mock_req, *_):
+        out = ads.obter_advertiser()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out.get("codigo"), "escopo_ausente")
+        mock_req.assert_not_called()
+        self.assertEqual(ads.listar_campanhas(), [])
+        mock_req.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
 

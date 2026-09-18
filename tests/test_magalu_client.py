@@ -505,6 +505,19 @@ class TestHelpers(unittest.TestCase):
         with patch.object(mag, "_canal_operando", return_value=False):
             self.assertFalse(mag._enabled())
 
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_tenant_via_userinfo(self, mock_request):
+        mag._TENANT_USERINFO["valor"] = ""
+        mag._TENANT_USERINFO["tentou"] = False
+        tok = "a" * 48
+        mock_request.return_value = _resp(200, {"tenant": "GENPUB.userinfo"})
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.userinfo")
+        self.assertIn("userinfo", mock_request.call_args[0][1])
+
 
 if __name__ == "__main__":
     unittest.main()
