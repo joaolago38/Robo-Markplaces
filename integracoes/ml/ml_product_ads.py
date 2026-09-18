@@ -14,6 +14,7 @@ from core.config import (
     ML_ADS_ACOS_DIAS_LIMITE,
     ML_ADS_KILL_SWITCH,
     ML_ADS_ORCAMENTO_MAXIMO,
+    ML_ADS_PRODUCT_ADS_FORA,
     ROOT,
 )
 from core.notificador import alertar_gestor
@@ -129,6 +130,12 @@ def obter_advertiser() -> dict:
     """
     if not _enabled():
         return {"ok": False, "erro": "Mercado Livre não configurado"}
+    if ML_ADS_PRODUCT_ADS_FORA:
+        return {
+            "ok": False,
+            "erro": "Product Ads desligado (ML_ADS_PRODUCT_ADS_FORA) — escopo advertising no DevCenter",
+            "codigo": "escopo_ausente",
+        }
 
     try:
         r = _request_ml(
@@ -310,6 +317,10 @@ def listar_campanhas(
 
     if not _enabled():
         _ULTIMA_LISTAGEM = {"ok": False, "codigo": "ml_desabilitado", "advertiser_id": ""}
+        return []
+    if ML_ADS_PRODUCT_ADS_FORA:
+        _ULTIMA_LISTAGEM = {"ok": False, "codigo": "escopo_ausente", "advertiser_id": ""}
+        _marcar_ads_indisponivel_agora(0.0)
         return []
 
     if not advertiser_id:

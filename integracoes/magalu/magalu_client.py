@@ -20,7 +20,12 @@ from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
 from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
-from core.token_manager import escopos_jwt_magalu, get_token_magalu, tenant_jwt_magalu
+from core.token_manager import (
+    escopos_jwt_magalu,
+    get_token_magalu,
+    tenant_jwt_magalu,
+    tenant_payload_magalu,
+)
 
 logger = logging.getLogger("magalu_client")
 BASE = "https://api.magalu.com"
@@ -28,6 +33,7 @@ BASE = "https://api.magalu.com"
 # (vendas_notificador não deve poluir o P1 vendas.busca_falhou com invalid_grant).
 _ULTIMA_LISTAGEM_PEDIDOS: dict = {"auth_quebrada": False, "status": 0}
 _AVISO_TENANT = {"feito": False}
+_TENANT_USERINFO = {"valor": "", "tentou": False}
 _PERGUNTAS_SEM_ESCOPO = {"valor": False, "avisou": False}
 _PERGUNTAS_ESCOPO_PATH = _CFG_ROOT / "logs" / "magalu_perguntas_sem_escopo.json"
 _COOLDOWN_PERGUNTAS_ESCOPO_SEG = 12 * 3600
@@ -83,6 +89,39 @@ def _tenant_id(tok: str = "") -> str:
         local = _valor_tenant(fonte)
         if local:
             return local
+    via_info = _tenant_via_userinfo(tok)
+    if via_info:
+        return via_info
+    return ""
+
+
+def _tenant_via_userinfo(tok: str) -> str:
+    """GET /oauth/userinfo — tokens opacos não trazem claim tenant no JWT."""
+    if _TENANT_USERINFO["valor"]:
+        cfg.MAGALU_CHANNEL_ID = _TENANT_USERINFO["valor"]
+        return _TENANT_USERINFO["valor"]
+    bearer = str(tok or getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "").strip()
+    if len(bearer) < 40 or _TENANT_USERINFO["tentou"]:
+        return ""
+    _TENANT_USERINFO["tentou"] = True
+    try:
+        r = request(
+            "GET",
+            "https://id.magalu.com/oauth/userinfo",
+            headers={"Authorization": f"Bearer {bearer}", "Accept": "application/json"},
+            timeout=15,
+        )
+        if getattr(r, "status_code", 0) != 200:
+            return ""
+        corpo = r.json() if callable(getattr(r, "json", None)) else {}
+        tenant = tenant_payload_magalu(corpo if isinstance(corpo, dict) else {})
+        if tenant:
+            _TENANT_USERINFO["valor"] = tenant
+            cfg.MAGALU_CHANNEL_ID = tenant
+            logger.info("Magalu X-Tenant-Id obtido via userinfo")
+            return tenant
+    except Exception as exc:
+        logger.debug("Magalu userinfo tenant: %s", exc)
     return ""
 
 

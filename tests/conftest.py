@@ -69,6 +69,8 @@ def _magalu_isolamento_credenciais(tmp_path_factory, monkeypatch):
     mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
     mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
     mag._AVISO_TENANT["feito"] = False
+    mag._TENANT_USERINFO["valor"] = ""
+    mag._TENANT_USERINFO["tentou"] = False
     base = tmp_path_factory.mktemp("magalu_cd")
     for chave in (
         "MAGALU_ACCESS_TOKEN",

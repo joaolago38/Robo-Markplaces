@@ -130,6 +130,12 @@ class TestTenantJwtMagalu(unittest.TestCase):
         tok = self._jwt({"extra": {"tenant": "GENPUB.nested"}})
         self.assertEqual(tm.tenant_jwt_magalu(tok), "GENPUB.nested")
 
+    def test_tenant_payload_userinfo(self):
+        self.assertEqual(
+            tm.tenant_payload_magalu({"tenant": "GENPUB.from-info"}),
+            "GENPUB.from-info",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
