@@ -86,25 +86,16 @@ def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
     _ULTIMO_AVISO_404_TS = agora
     estado["warn_ts"] = agora
     estado["advertiser_id"] = advertiser_id or ""
-    if (agora - ultimo_metric) >= _COOLDOWN_METRICA_404_SEG:
-        try:
-            from core.datadog_metrics import incrementar
-
-            incrementar(
-                "ads.indisponivel",
-                tags=["motivo:http_404", f"advertiser:{advertiser_id or 'desconhecido'}"],
-            )
-            estado["metric_ts"] = agora
-        except Exception:
-            pass
+    # Não incrementa ads.indisponivel: o monitor last_7d fica Alert a semana
+    # inteira e o Actions não persiste logs/ entre jobs.
+    estado["metric_ts"] = ultimo_metric or agora
     _marcar_ads_indisponivel_agora(1.0, advertiser_id=advertiser_id)
     _salvar_estado_404(estado)
     logger.warning(
         "ML listar_campanhas: Product Ads indisponível (HTTP 404) "
-        "advertiser=%s — confira escopos advertising / ID no DevCenter "
-        "(próximos avisos em cooldown %sh)",
+        "advertiser=%s — no DevCenter conceda advertising / product_ads "
+        "e regenere o token. Sem incrementar ads.indisponivel (lembrete semanal).",
         advertiser_id,
-        _COOLDOWN_AVISO_404_SEG // 3600,
     )
 
 

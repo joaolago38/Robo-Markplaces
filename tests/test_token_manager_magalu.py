@@ -4,7 +4,9 @@ Cobre diagnóstico de erro HTTP na renovação do token Magalu.
 """
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -43,8 +45,10 @@ class TestRenovarTokenMagalu(unittest.TestCase):
     )
     def test_http_400_loga_corpo_e_retorna_none(self, mock_request, _log_on):
         mock_request.return_value = _resp(400, '{"error":"invalid_grant"}')
-        with self.assertLogs("token_manager", level="ERROR") as logs:
-            out = tm._renovar_token_magalu()
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(tm, "_MAGALU_INVALID_GRANT_PATH", Path(tmp) / "ig.json"):
+                with self.assertLogs("token_manager", level="ERROR") as logs:
+                    out = tm._renovar_token_magalu()
         self.assertIsNone(out)
         self.assertIn("HTTP 400", logs.output[0])
         self.assertIn("invalid_grant", logs.output[0])
@@ -112,6 +116,19 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         mock_renovar.assert_not_called()
         self.assertEqual(tm.get_token_magalu(forcar=True), "novo")
         mock_renovar.assert_called_once()
+
+
+class TestTenantJwtMagalu(unittest.TestCase):
+    def _jwt(self, payload: dict) -> str:
+        import base64
+        import json
+
+        raw = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        return f"h.{raw}.s"
+
+    def test_tenant_aninhado(self):
+        tok = self._jwt({"extra": {"tenant": "GENPUB.nested"}})
+        self.assertEqual(tm.tenant_jwt_magalu(tok), "GENPUB.nested")
 
 
 if __name__ == "__main__":

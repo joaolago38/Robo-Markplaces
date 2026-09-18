@@ -1,6 +1,6 @@
 {
   "esmalte impala kit manicure": {
-    "timestamp": "2026-09-16T11:47:01.595843+00:00",
+    "timestamp": "2026-09-18T11:46:49.114810+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -18,7 +18,7 @@
     ]
   },
   "kit anita": {
-    "timestamp": "2026-09-16T11:46:58.719627+00:00",
+    "timestamp": "2026-09-18T11:46:41.543080+00:00",
     "resultados": [
       {
         "item_id": "MLB9",
@@ -34,8 +34,20 @@
     ]
   },
   "kit impala": {
-    "timestamp": "2026-09-16T11:47:10.393267+00:00",
+    "timestamp": "2026-09-18T11:46:57.494696+00:00",
     "resultados": [
+      {
+        "item_id": "MLB7381234948",
+        "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
+        "preco": 59.9,
+        "quantidade_vendida": 0,
+        "seller_id": "1213484158",
+        "permalink": "https://produto.mercadolivre.com.br/MLB7381234948",
+        "fonte_busca": "products_api",
+        "catalog_product_id": "MLB50257549",
+        "catalog_date_created": "2025-05-22T05:07:07Z",
+        "listing_type_id": "gold_special"
+      },
       {
         "item_id": "MLB5399622062",
         "titulo": "Kit Impala Disney Stitch 6 Esmaltes",
@@ -87,7 +99,7 @@
     ]
   },
   "esmalte impala kit": {
-    "timestamp": "2026-09-16T11:46:56.604680+00:00",
+    "timestamp": "2026-09-18T11:46:41.421615+00:00",
     "resultados": [
       {
         "item_id": "MLB123",
@@ -105,7 +117,7 @@
     ]
   },
   "kit 5 esmaltes impala bailarina": {
-    "timestamp": "2026-09-16T11:46:56.646841+00:00",
+    "timestamp": "2026-09-18T11:46:41.452271+00:00",
     "resultados": [
       {
         "item_id": "MLB3948390421",
@@ -4292,7 +4304,7 @@
     ]
   },
   "kit esmalte colorama": {
-    "timestamp": "2026-09-16T11:46:58.755968+00:00",
+    "timestamp": "2026-09-18T11:46:41.596364+00:00",
     "resultados": [
       {
         "item_id": "MLB999",

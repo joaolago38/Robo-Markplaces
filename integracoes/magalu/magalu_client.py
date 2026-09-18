@@ -15,6 +15,7 @@ from typing import Any
 
 from core import config as cfg
 from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN, MAGALU_SELLER_ID
+from core.config import ROOT as _CFG_ROOT
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
@@ -28,6 +29,8 @@ BASE = "https://api.magalu.com"
 _ULTIMA_LISTAGEM_PEDIDOS: dict = {"auth_quebrada": False, "status": 0}
 _AVISO_TENANT = {"feito": False}
 _PERGUNTAS_SEM_ESCOPO = {"valor": False, "avisou": False}
+_PERGUNTAS_ESCOPO_PATH = _CFG_ROOT / "logs" / "magalu_perguntas_sem_escopo.json"
+_COOLDOWN_PERGUNTAS_ESCOPO_SEG = 12 * 3600
 ESCOPO_PERGUNTAS_READ = "services:questions-seller:read"
 # Endpoints com escopo "services:*" (Perguntas & Respostas, Tickets,
 # Conversations) vivem em um host separado dos endpoints "open:*"
@@ -83,6 +86,40 @@ def _tenant_id(tok: str = "") -> str:
     return ""
 
 
+def _lembrar_perguntas_sem_escopo() -> None:
+    _PERGUNTAS_SEM_ESCOPO["valor"] = True
+    try:
+        import time as _time
+
+        from core.atomic_io import escrever_json_atomico, ler_json
+
+        prev = ler_json(_PERGUNTAS_ESCOPO_PATH, default={}) or {}
+        agora = _time.time()
+        ultimo = float(prev.get("ts") or 0)
+        if ultimo and (agora - ultimo) < _COOLDOWN_PERGUNTAS_ESCOPO_SEG:
+            _PERGUNTAS_SEM_ESCOPO["avisou"] = True
+            return
+        escrever_json_atomico(
+            _PERGUNTAS_ESCOPO_PATH,
+            {"ts": agora, "escopo": ESCOPO_PERGUNTAS_READ},
+        )
+    except Exception:
+        pass
+
+
+def _perguntas_sem_escopo_em_cooldown() -> bool:
+    try:
+        import time as _time
+
+        from core.atomic_io import ler_json
+
+        data = ler_json(_PERGUNTAS_ESCOPO_PATH, default={}) or {}
+        ts = float(data.get("ts") or 0)
+        return ts > 0 and (_time.time() - ts) < _COOLDOWN_PERGUNTAS_ESCOPO_SEG
+    except Exception:
+        return False
+
+
 def _headers_com_token(tok: str) -> dict:
     headers = {
         "Authorization": f"Bearer {tok}",
@@ -136,7 +173,8 @@ def _token_atual() -> str:
 
 
 def _pode_listar_perguntas() -> bool:
-    if _PERGUNTAS_SEM_ESCOPO["valor"]:
+    if _PERGUNTAS_SEM_ESCOPO["valor"] or _perguntas_sem_escopo_em_cooldown():
+        _PERGUNTAS_SEM_ESCOPO["valor"] = True
         return False
     tok = _token_atual()
     escopos = escopos_jwt_magalu(tok)
@@ -153,6 +191,7 @@ def _pode_listar_perguntas() -> bool:
             ESCOPO_PERGUNTAS_READ,
         )
         incrementar("chat.falha", tags=["canal:magalu", "motivo:escopo_ausente"])
+        _lembrar_perguntas_sem_escopo()
     return False
 
 
@@ -166,7 +205,13 @@ def _resposta_indica_auth_quebrada(resposta) -> bool:
     if status in (401, 403):
         return True
     texto = (getattr(resposta, "text", "") or "").lower()
-    return "invalid_grant" in texto or "unauthorized" in texto
+    if "invalid_grant" in texto or "unauthorized" in texto:
+        return True
+    if status == 422 and (
+        "x-tenant-id" in texto or "tenant" in texto or "field required" in texto
+    ):
+        return True
+    return False
 
 
 def _ping_pedidos(*, timeout: int = 15):
@@ -231,7 +276,12 @@ def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: in
             )
             if status_http(r) != 200:
                 if status_http(r) == 403:
-                    _PERGUNTAS_SEM_ESCOPO["valor"] = True
+                    _lembrar_perguntas_sem_escopo()
+                    logger.warning(
+                        "Magalu listar_perguntas_nao_respondidas HTTP 403 — "
+                        "falta escopo services:questions-seller:read (próximos ciclos em cooldown)."
+                    )
+                    return out, False
                 log_http_erro_listagem(logger, "Magalu listar_perguntas_nao_respondidas", r)
                 return out, False
             body = r.json()

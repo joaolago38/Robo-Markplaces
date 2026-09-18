@@ -60,14 +60,41 @@ def _payload_jwt(tok: str) -> dict:
         return {}
 
 
+_CHAVES_TENANT_MAGALU = (
+    "tenant",
+    "tenant_id",
+    "tenantId",
+    "channel_id",
+    "channelId",
+    "channel",
+    "tid",
+)
+
+
+def _tenant_em_dict(data: dict, profundidade: int = 0) -> str:
+    if profundidade > 4 or not isinstance(data, dict):
+        return ""
+    for chave in _CHAVES_TENANT_MAGALU:
+        valor = data.get(chave)
+        if isinstance(valor, dict):
+            nested = _tenant_em_dict(valor, profundidade + 1)
+            if nested:
+                return nested
+            continue
+        txt = str(valor or "").strip()
+        if txt and txt != "...":
+            return txt
+    for valor in data.values():
+        if isinstance(valor, dict):
+            nested = _tenant_em_dict(valor, profundidade + 1)
+            if nested:
+                return nested
+    return ""
+
+
 def tenant_jwt_magalu(tok: str) -> str:
     """Claim Magalu usado em X-Tenant-Id (não é seller id)."""
-    data = _payload_jwt(tok)
-    for chave in ("tenant", "tenant_id", "channel_id"):
-        valor = str(data.get(chave) or "").strip()
-        if valor:
-            return valor
-    return ""
+    return _tenant_em_dict(_payload_jwt(tok))
 
 
 def escopos_jwt_magalu(tok: str) -> set[str]:
@@ -649,6 +676,7 @@ def _renovar_token_magalu():
                 r.status_code,
                 (r.text or "")[:500],
             )
+            _marcar_refresh_magalu_invalido(r.status_code, r.text or "")
             return None
         tokens = r.json()
 
@@ -711,6 +739,36 @@ def _renovar_token_magalu():
         return None
 
 
+_MAGALU_INVALID_GRANT_COOLDOWN_SEG = 6 * 3600
+_MAGALU_INVALID_GRANT_PATH = cfg.ROOT / "logs" / "magalu_refresh_invalid_grant.json"
+
+
+def _marcar_refresh_magalu_invalido(status: int, corpo: str) -> None:
+    texto = (corpo or "").lower()
+    if "invalid_grant" not in texto:
+        return
+    try:
+        from core.atomic_io import escrever_json_atomico
+
+        escrever_json_atomico(
+            _MAGALU_INVALID_GRANT_PATH,
+            {"ts": time.time(), "status": status, "motivo": "invalid_grant"},
+        )
+    except Exception:
+        pass
+
+
+def _refresh_magalu_em_cooldown() -> bool:
+    try:
+        from core.atomic_io import ler_json
+
+        data = ler_json(_MAGALU_INVALID_GRANT_PATH, default={})
+        ts = float((data or {}).get("ts") or 0)
+        return ts > 0 and (time.time() - ts) < _MAGALU_INVALID_GRANT_COOLDOWN_SEG
+    except Exception:
+        return False
+
+
 def get_token_magalu(forcar: bool = False):
     if not _magalu_canal_operando():
         logger.info("Token Magalu não renovado — canal fora de operação (spec.inativo).")
@@ -726,6 +784,13 @@ def get_token_magalu(forcar: bool = False):
     if not forcar:
         if _token_cache_magalu["access_token"] and now < _token_cache_magalu["expires_at"]:
             return _token_cache_magalu["access_token"]
+
+    if _refresh_magalu_em_cooldown():
+        logger.warning(
+            "Magalu refresh em cooldown após invalid_grant — "
+            "rode pegar_token_magalu.py e atualize MAGALU_* / MAGALU_CHANNEL_ID."
+        )
+        return cfg.MAGALU_ACCESS_TOKEN or _token_cache_magalu.get("access_token") or None
 
     novo = _renovar_token_magalu()
     return novo or cfg.MAGALU_ACCESS_TOKEN or None
