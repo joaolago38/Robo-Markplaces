@@ -9,11 +9,13 @@ responde 422 (`Field required`). O tenant vem do claim JWT `tenant`
 (fallback: MAGALU_CHANNEL_ID). Não confundir com seller id / CNPJ.
 """
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from core import config as cfg
 from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN, MAGALU_SELLER_ID
+from core.config import ROOT as _CFG_ROOT
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
@@ -27,6 +29,8 @@ BASE = "https://api.magalu.com"
 _ULTIMA_LISTAGEM_PEDIDOS: dict = {"auth_quebrada": False, "status": 0}
 _AVISO_TENANT = {"feito": False}
 _PERGUNTAS_SEM_ESCOPO = {"valor": False, "avisou": False}
+_PERGUNTAS_ESCOPO_PATH = _CFG_ROOT / "logs" / "magalu_perguntas_sem_escopo.json"
+_COOLDOWN_PERGUNTAS_ESCOPO_SEG = 12 * 3600
 ESCOPO_PERGUNTAS_READ = "services:questions-seller:read"
 # Endpoints com escopo "services:*" (Perguntas & Respostas, Tickets,
 # Conversations) vivem em um host separado dos endpoints "open:*"
@@ -51,27 +55,69 @@ def _enabled() -> bool:
     return _canal_operando()
 
 
+def _valor_tenant(valor: Any) -> str:
+    txt = str(valor or "").strip()
+    if not txt or txt == "...":
+        return ""
+    return txt
+
+
 def _tenant_id(tok: str = "") -> str:
     """X-Tenant-Id: JWT do token da request, senão MAGALU_CHANNEL_ID, senão cfg.
 
     JWT em `core.config` só entra por último — senão o .env de máquina
     vence o patch dos testes e um CHANNEL_ID explícito.
     """
-    for candidato in (tok, MAGALU_ACCESS_TOKEN):
+    for candidato in (tok, MAGALU_ACCESS_TOKEN, getattr(cfg, "MAGALU_ACCESS_TOKEN", "")):
         tenant = tenant_jwt_magalu(str(candidato or ""))
         if tenant:
+            cfg.MAGALU_CHANNEL_ID = tenant
             return tenant
-    local = str(MAGALU_CHANNEL_ID or "").strip()
-    if local:
-        return local
-    live = str(getattr(cfg, "MAGALU_CHANNEL_ID", "") or "").strip()
-    if live:
-        return live
-    tenant = tenant_jwt_magalu(str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or ""))
-    if tenant:
-        cfg.MAGALU_CHANNEL_ID = tenant
-        return tenant
+    for fonte in (
+        MAGALU_CHANNEL_ID,
+        getattr(cfg, "MAGALU_CHANNEL_ID", ""),
+        getattr(cfg, "MAGALU_MERCHANT_ID", ""),
+        os.getenv("MAGALU_CHANNEL_ID"),
+        os.getenv("MAGALU_MERCHANT_ID"),
+    ):
+        local = _valor_tenant(fonte)
+        if local:
+            return local
     return ""
+
+
+def _lembrar_perguntas_sem_escopo() -> None:
+    _PERGUNTAS_SEM_ESCOPO["valor"] = True
+    try:
+        import time as _time
+
+        from core.atomic_io import escrever_json_atomico, ler_json
+
+        prev = ler_json(_PERGUNTAS_ESCOPO_PATH, default={}) or {}
+        agora = _time.time()
+        ultimo = float(prev.get("ts") or 0)
+        if ultimo and (agora - ultimo) < _COOLDOWN_PERGUNTAS_ESCOPO_SEG:
+            _PERGUNTAS_SEM_ESCOPO["avisou"] = True
+            return
+        escrever_json_atomico(
+            _PERGUNTAS_ESCOPO_PATH,
+            {"ts": agora, "escopo": ESCOPO_PERGUNTAS_READ},
+        )
+    except Exception:
+        pass
+
+
+def _perguntas_sem_escopo_em_cooldown() -> bool:
+    try:
+        import time as _time
+
+        from core.atomic_io import ler_json
+
+        data = ler_json(_PERGUNTAS_ESCOPO_PATH, default={}) or {}
+        ts = float(data.get("ts") or 0)
+        return ts > 0 and (_time.time() - ts) < _COOLDOWN_PERGUNTAS_ESCOPO_SEG
+    except Exception:
+        return False
 
 
 def _headers_com_token(tok: str) -> dict:
@@ -92,9 +138,10 @@ def _headers_com_token(tok: str) -> dict:
 
 
 def _h():
-    tok = MAGALU_ACCESS_TOKEN
-    if MAGALU_REFRESH_TOKEN:
-        tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
+    tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
+    refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
+    if refresh:
+        tok = get_token_magalu() or tok
     return _headers_com_token(str(tok or ""))
 
 
@@ -118,14 +165,16 @@ def _request_magalu(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
 
 
 def _token_atual() -> str:
-    tok = MAGALU_ACCESS_TOKEN
-    if MAGALU_REFRESH_TOKEN:
-        tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
+    tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
+    refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
+    if refresh:
+        tok = get_token_magalu() or tok
     return str(tok or "")
 
 
 def _pode_listar_perguntas() -> bool:
-    if _PERGUNTAS_SEM_ESCOPO["valor"]:
+    if _PERGUNTAS_SEM_ESCOPO["valor"] or _perguntas_sem_escopo_em_cooldown():
+        _PERGUNTAS_SEM_ESCOPO["valor"] = True
         return False
     tok = _token_atual()
     escopos = escopos_jwt_magalu(tok)
@@ -142,6 +191,7 @@ def _pode_listar_perguntas() -> bool:
             ESCOPO_PERGUNTAS_READ,
         )
         incrementar("chat.falha", tags=["canal:magalu", "motivo:escopo_ausente"])
+        _lembrar_perguntas_sem_escopo()
     return False
 
 
@@ -155,7 +205,13 @@ def _resposta_indica_auth_quebrada(resposta) -> bool:
     if status in (401, 403):
         return True
     texto = (getattr(resposta, "text", "") or "").lower()
-    return "invalid_grant" in texto or "unauthorized" in texto
+    if "invalid_grant" in texto or "unauthorized" in texto:
+        return True
+    if status == 422 and (
+        "x-tenant-id" in texto or "tenant" in texto or "field required" in texto
+    ):
+        return True
+    return False
 
 
 def _ping_pedidos(*, timeout: int = 15):
@@ -220,7 +276,12 @@ def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: in
             )
             if status_http(r) != 200:
                 if status_http(r) == 403:
-                    _PERGUNTAS_SEM_ESCOPO["valor"] = True
+                    _lembrar_perguntas_sem_escopo()
+                    logger.warning(
+                        "Magalu listar_perguntas_nao_respondidas HTTP 403 — "
+                        "falta escopo services:questions-seller:read (próximos ciclos em cooldown)."
+                    )
+                    return out, False
                 log_http_erro_listagem(logger, "Magalu listar_perguntas_nao_respondidas", r)
                 return out, False
             body = r.json()

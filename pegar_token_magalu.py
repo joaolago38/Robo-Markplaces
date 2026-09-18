@@ -174,6 +174,19 @@ def main(argv: list[str] | None = None) -> int:
         print(f"MAGALU_ACCESS_TOKEN:  {dados['access_token']}")
         print(f"MAGALU_REFRESH_TOKEN: {dados.get('refresh_token', '')}")
         print(f"Expira em:            {dados.get('expires_in', '?')} segundos")
+        try:
+            from core.token_manager import tenant_jwt_magalu
+
+            tenant = tenant_jwt_magalu(str(dados.get("access_token") or ""))
+        except Exception:
+            tenant = ""
+        if tenant:
+            print(f"MAGALU_CHANNEL_ID:    {tenant}")
+        else:
+            print(
+                "MAGALU_CHANNEL_ID:    (token sem claim tenant — "
+                "preencha o secret GENPUB.* / sales-channel do portal)"
+            )
         print("=" * 55)
         return 0
 

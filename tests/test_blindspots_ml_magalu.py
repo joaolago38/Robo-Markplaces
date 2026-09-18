@@ -180,6 +180,17 @@ class TestMagaluAuthNaListagem(unittest.TestCase):
         self.assertFalse(ok)
         self.assertFalse(mag.ultima_listagem_auth_quebrada())
 
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "GENPUB.test")
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_422_tenant_marca_auth_quebrada(self, mock_request):
+        mock_request.return_value = _resp(
+            422, {"details": [{"field": "X-Tenant-Id", "message": "Field required"}]}
+        )
+        pedidos, ok = mag.listar_pedidos_detalhado(dias=7)
+        self.assertFalse(ok)
+        self.assertTrue(mag.ultima_listagem_auth_quebrada())
+
 
 if __name__ == "__main__":
     unittest.main()

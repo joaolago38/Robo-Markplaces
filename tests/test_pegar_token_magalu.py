@@ -131,6 +131,26 @@ class TestMain(unittest.TestCase):
 
     @patch.object(ptm, "CLIENT_ID", "cid")
     @patch.object(ptm, "CLIENT_SECRET", "sec")
+    @patch.object(ptm, "trocar_code_por_token")
+    def test_sucesso_imprime_channel_id_do_jwt(self, mock_trocar):
+        import base64
+        import json
+
+        payload = base64.urlsafe_b64encode(
+            json.dumps({"tenant": "GENPUB.oauth"}).encode()
+        ).decode().rstrip("=")
+        tok = f"hdr.{payload}.sig"
+        mock_trocar.return_value = (
+            _resp(200, {"access_token": tok, "refresh_token": "ref", "expires_in": 3600}),
+            {"access_token": tok, "refresh_token": "ref", "expires_in": 3600},
+        )
+        saida = StringIO()
+        with patch("sys.stdout", saida):
+            self.assertEqual(ptm.main(["CODE"]), 0)
+        self.assertIn("MAGALU_CHANNEL_ID:    GENPUB.oauth", saida.getvalue())
+
+    @patch.object(ptm, "CLIENT_ID", "cid")
+    @patch.object(ptm, "CLIENT_SECRET", "sec")
     def test_sucesso_env_code(self, *_):
         with patch.dict(os.environ, {"MAGALU_OAUTH_CODE": "ENV_CODE"}, clear=False):
             with patch.object(

@@ -170,11 +170,16 @@ def montar_fichas_publicacao(pendentes: list[dict]) -> list[dict]:
 def main() -> int:
     vinculo = tentar_vincular_mlb()
     fichas = montar_fichas_publicacao(vinculo.get("pendentes_publicar") or [])
+    executar = "--executar" in sys.argv
+    from integracoes.ml.publicar_kit_guerra import publicar_frente
+
+    pub = publicar_frente(executar=executar)
     dec = montar_decisao()
     payload = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "vinculo": vinculo,
         "fichas_publicacao": fichas,
+        "publicacao_api": pub,
         "decisao_apos": {
             "fazer": (dec.get("fazer") or {}).get("codigo"),
             "titulo_fazer": (dec.get("fazer") or {}).get("titulo"),

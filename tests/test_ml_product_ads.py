@@ -97,6 +97,21 @@ class TestListarCampanhas(unittest.TestCase):
         self.assertTrue(any("HTTP 404" in m for m in cm.output))
         self.assertFalse(any("ERROR:" in m for m in cm.output))
 
+    @patch("core.datadog_metrics.incrementar")
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_nao_incrementa_ads_indisponivel(self, _en, mock_req, _adv, mock_inc):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(ads, "_COOLDOWN_404_PATH", Path(tmp) / "ads_404.json"):
+                ads.listar_campanhas(advertiser_id="421764")
+        nomes = [c.args[0] for c in mock_inc.call_args_list]
+        self.assertNotIn("ads.indisponivel", nomes)
+
     @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
     @patch.object(ads, "_request_ml")
     @patch.object(ads, "_enabled", return_value=True)
