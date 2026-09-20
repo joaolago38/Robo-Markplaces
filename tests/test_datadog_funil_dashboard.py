@@ -319,7 +319,10 @@ class DatadogFunilDashboardTests(unittest.TestCase):
     def test_monitor_magalu_query_pega_magazine_luiza_e_http_400(self):
         src = Path(dd.__file__).read_text(encoding="utf-8")
         self.assertIn("Magazine Luiza", src)
-        self.assertIn("401 OR 400 OR 403 OR 422 OR invalid_grant", src)
+        self.assertIn("401 OR 400 OR 403 OR 422 OR invalid_grant OR cooldown", src)
+        mag = next(m for m in dd._monitores_desejados() if m["name"].startswith("[Robo] Magalu auth"))
+        self.assertIn('.last("1h") > 0', mag["query"])
+        self.assertEqual(mag["options"]["thresholds"]["critical"], 0)
 
     def test_grupo_progresso_24m(self):
         grupo = dd._grupo_progresso_24m()
