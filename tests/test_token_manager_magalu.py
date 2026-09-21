@@ -29,8 +29,11 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         tm._token_cache_magalu["access_token"] = None
         tm._token_cache_magalu["expires_at"] = 0
         tm._magalu_refresh_efetivo["valor"] = "refresh_teste"
+        self._cd = patch.object(tm, "_refresh_magalu_em_cooldown", return_value=False)
+        self._cd.start()
 
     def tearDown(self):
+        self._cd.stop()
         tm._token_cache_magalu["access_token"] = None
         tm._token_cache_magalu["expires_at"] = 0
         tm._magalu_refresh_efetivo["valor"] = None

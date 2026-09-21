@@ -31,6 +31,11 @@ class TestTokenManagerProviders(unittest.TestCase):
         tm._ml_refresh_efetivo["valor"] = None
         tm._magalu_refresh_efetivo["valor"] = None
         tm._shopee_refresh_efetivo["valor"] = None
+        self._cd_magalu = patch.object(tm, "_refresh_magalu_em_cooldown", return_value=False)
+        self._cd_magalu.start()
+
+    def tearDown(self):
+        self._cd_magalu.stop()
 
     @patch.object(tm, "request")
     @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
@@ -57,7 +62,8 @@ class TestTokenManagerProviders(unittest.TestCase):
             {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
         )
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
-            out = tm._renovar_token_ml()
+            with patch.object(tm, "github_pode_gravar_secrets", return_value=True):
+                out = tm._renovar_token_ml()
         self.assertEqual(out, "new_at")
         tm.sync_secrets_github.assert_called_once_with("new_at", "new_rt", prefix="ML")
 
@@ -82,14 +88,37 @@ class TestTokenManagerProviders(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             log_cooldown.reset_para_teste(Path(tmp) / "cd.json")
             with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
-                with self.assertLogs("token_manager", level="WARNING") as logs:
-                    out = tm._renovar_token_ml()
-                    out2 = tm._renovar_token_ml()
+                with patch.object(tm, "github_pode_gravar_secrets", return_value=True):
+                    with self.assertLogs("token_manager", level="WARNING") as logs:
+                        out = tm._renovar_token_ml()
+                        out2 = tm._renovar_token_ml()
             log_cooldown.reset_para_teste()
         self.assertEqual(out, "new_at")
         self.assertEqual(out2, "new_at")
         avisos = [line for line in logs.output if "Falha ao sincronizar ML_*" in line]
         self.assertEqual(len(avisos), 1)
+
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt", ML_ACCESS_TOKEN="at_atual")
+    def test_ml_nao_rotaciona_se_pat_nao_grava(self, mock_request):
+        tm._ml_refresh_efetivo["valor"] = "rt"
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+            with patch.object(tm, "github_pode_gravar_secrets", return_value=False):
+                with self.assertLogs("token_manager", level="ERROR") as logs:
+                    out = tm._renovar_token_ml()
+        self.assertEqual(out, "at_atual")
+        mock_request.assert_not_called()
+        self.assertTrue(any("não grava Secret" in line for line in logs.output))
+
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, MAGALU_CLIENT_ID="id", MAGALU_CLIENT_SECRET="sec", MAGALU_REFRESH_TOKEN="rt")
+    def test_magalu_cooldown_nao_chama_http(self, mock_request):
+        tm._magalu_refresh_efetivo["valor"] = "rt"
+        with patch.object(tm, "_refresh_magalu_em_cooldown", return_value=True):
+            with self.assertLogs("token_manager", level="WARNING") as logs:
+                self.assertIsNone(tm._renovar_token_magalu())
+        mock_request.assert_not_called()
+        self.assertTrue(any("cooldown" in line.lower() for line in logs.output))
 
     @patch.object(tm, "_salvar_store_ml")
     @patch.object(tm, "request")
@@ -143,7 +172,9 @@ class TestTokenManagerProviders(unittest.TestCase):
             {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 3600},
         )
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
-            out = tm._renovar_token_magalu()
+            with patch.object(tm, "github_pode_gravar_secrets", return_value=True):
+                with patch.object(tm, "_refresh_magalu_em_cooldown", return_value=False):
+                    out = tm._renovar_token_magalu()
         self.assertEqual(out, "new_at")
         tm.sync_secrets_github.assert_called_once_with(
             "new_at", "new_rt", prefix="MAGALU", extras=None
@@ -169,7 +200,9 @@ class TestTokenManagerProviders(unittest.TestCase):
             {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 3600},
         )
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
-            out = tm._renovar_token_magalu()
+            with patch.object(tm, "github_pode_gravar_secrets", return_value=True):
+                with patch.object(tm, "_refresh_magalu_em_cooldown", return_value=False):
+                    out = tm._renovar_token_magalu()
         self.assertEqual(out, "new_at")
         tm.sync_secrets_github.assert_called_once_with(
             "new_at",

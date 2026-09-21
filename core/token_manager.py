@@ -10,7 +10,7 @@ from pathlib import Path
 
 import core.config as cfg
 from core.datadog_metrics import incrementar
-from core.github_secrets import sync_secrets_github
+from core.github_secrets import github_pode_gravar_secrets, sync_secrets_github
 from core.http_client import request
 from core.log_cooldown import log_com_cooldown
 from core.log_opcional import (
@@ -193,10 +193,23 @@ def _hidratar_cache_ml_do_store() -> None:
             _ml_refresh_efetivo["valor"] = store["refresh_token"]
 
 
+def _pular_rotacao_oauth_sem_secret() -> bool:
+    """No Actions, sem PAT que grave Secret, renovar queima refresh de uso único."""
+    return os.getenv("GITHUB_ACTIONS") == "true" and not github_pode_gravar_secrets()
+
+
 def _renovar_token_ml():
     url = "https://api.mercadolibre.com/oauth/token"
 
     refresh = _ml_refresh_disponivel()
+
+    if _pular_rotacao_oauth_sem_secret():
+        logger.error(
+            "Não renovou ML: GH_TOKEN não grava Secret — refresh no GitHub preservado. "
+            "Corrija secrets.GH_TOKEN (PAT secrets:write)."
+        )
+        incrementar("token.sync_github_falha", tags=["prefix:ML", "motivo:gh_token_invalido"])
+        return cfg.ML_ACCESS_TOKEN or _token_cache_ml.get("access_token") or None
 
     if not all([cfg.ML_CLIENT_ID, cfg.ML_CLIENT_SECRET, refresh]):
         logger.error("Credenciais ML ausentes para renovação de token.")
@@ -653,6 +666,21 @@ def _magalu_canal_operando() -> bool:
 
 
 def _renovar_token_magalu():
+    if _refresh_magalu_em_cooldown():
+        logger.warning(
+            "Magalu refresh em cooldown após invalid_grant — "
+            "rode pegar_token_magalu.py e atualize MAGALU_* / MAGALU_CHANNEL_ID."
+        )
+        return None
+
+    if _pular_rotacao_oauth_sem_secret():
+        logger.error(
+            "Não renovou Magalu: GH_TOKEN não grava Secret — refresh preservado. "
+            "Corrija secrets.GH_TOKEN (PAT secrets:write)."
+        )
+        incrementar("token.sync_github_falha", tags=["prefix:MAGALU", "motivo:gh_token_invalido"])
+        return cfg.MAGALU_ACCESS_TOKEN or _token_cache_magalu.get("access_token") or None
+
     rt = _magalu_refresh_disponivel()
     if not all([cfg.MAGALU_CLIENT_ID, cfg.MAGALU_CLIENT_SECRET, rt]):
         _erro_token_mp("Credenciais Magalu ausentes para renovação (client_id/secret ou refresh_token).")

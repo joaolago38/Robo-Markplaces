@@ -15,6 +15,7 @@ from core import github_secrets as gs
 class TestGithubSecrets(unittest.TestCase):
     def setUp(self):
         gs._aviso_gh_token = False
+        gs.reset_probe_gravacao_para_teste()
 
     def test_sem_gh_cli_retorna_false_e_loga_error(self):
         with patch.object(gs.shutil, "which", return_value=None):
@@ -46,17 +47,18 @@ class TestGithubSecrets(unittest.TestCase):
 
     def test_actions_com_pat_grava_access_e_refresh(self):
         env = {"GITHUB_ACTIONS": "true", "GH_TOKEN": "ghp_x", "GH_REPO": "org/repo"}
-        with patch.object(gs.shutil, "which", return_value="/usr/bin/gh"):
-            with patch.object(gs.subprocess, "run", return_value=MagicMock()) as run:
-                with patch.dict(os.environ, env, clear=False):
-                    self.assertTrue(
-                        gs.sync_secrets_github(
-                            "at",
-                            "rt",
-                            prefix="ML",
-                            extras={"MAGALU_CHANNEL_ID": "GENPUB.x"},
+        with patch.object(gs, "github_pode_gravar_secrets", return_value=True):
+            with patch.object(gs.shutil, "which", return_value="/usr/bin/gh"):
+                with patch.object(gs.subprocess, "run", return_value=MagicMock()) as run:
+                    with patch.dict(os.environ, env, clear=False):
+                        self.assertTrue(
+                            gs.sync_secrets_github(
+                                "at",
+                                "rt",
+                                prefix="ML",
+                                extras={"MAGALU_CHANNEL_ID": "GENPUB.x"},
+                            )
                         )
-                    )
         self.assertEqual(run.call_count, 3)
         nomes = [c.args[0][3] for c in run.call_args_list]
         self.assertEqual(nomes, ["ML_ACCESS_TOKEN", "ML_REFRESH_TOKEN", "MAGALU_CHANNEL_ID"])
@@ -64,12 +66,27 @@ class TestGithubSecrets(unittest.TestCase):
     def test_gh_secret_set_falha_loga_stderr(self):
         env = {"GITHUB_ACTIONS": "true", "GH_TOKEN": "ghp_x", "GH_REPO": "org/repo"}
         err = subprocess.CalledProcessError(1, ["gh"], stderr="HTTP 403: Resource not accessible by integration")
+        with patch.object(gs, "github_pode_gravar_secrets", return_value=True):
+            with patch.object(gs.shutil, "which", return_value="/usr/bin/gh"):
+                with patch.object(gs.subprocess, "run", side_effect=err):
+                    with patch.dict(os.environ, env, clear=False):
+                        with self.assertLogs("github_secrets", level="ERROR") as logs:
+                            self.assertFalse(gs.sync_secrets_github("at", None, prefix="ML"))
+        self.assertTrue(any("HTTP 403" in line for line in logs.output))
+
+    def test_probe_401_nao_chama_secret_set(self):
+        env = {"GITHUB_ACTIONS": "true", "GH_TOKEN": "ghp_morto", "GH_REPO": "org/repo"}
+        err = subprocess.CalledProcessError(1, ["gh"], stderr="HTTP 401: Bad credentials")
         with patch.object(gs.shutil, "which", return_value="/usr/bin/gh"):
-            with patch.object(gs.subprocess, "run", side_effect=err):
+            with patch.object(gs.subprocess, "run", side_effect=err) as run:
                 with patch.dict(os.environ, env, clear=False):
                     with self.assertLogs("github_secrets", level="ERROR") as logs:
-                        self.assertFalse(gs.sync_secrets_github("at", None, prefix="ML"))
-        self.assertTrue(any("HTTP 403" in line for line in logs.output))
+                        self.assertFalse(gs.github_pode_gravar_secrets())
+                        self.assertFalse(gs.sync_secrets_github("at", "rt", prefix="ML"))
+        self.assertTrue(any("não grava Secrets" in line for line in logs.output))
+        cmds = [list(c.args[0]) for c in run.call_args_list]
+        self.assertEqual(len(cmds), 1)
+        self.assertEqual(cmds[0][1], "api")
 
 
 if __name__ == "__main__":
