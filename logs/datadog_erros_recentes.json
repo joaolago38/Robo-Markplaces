@@ -1,6 +1,17 @@
 {
   "erros": [
     {
+      "fingerprint": "f5df20084dc3a1613198",
+      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
+      "ultima_vez": "2026-09-21T11:53:05.302606+00:00",
+      "logger": "token_manager",
+      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
+      "status": "error",
+      "error_kind": null,
+      "error_message": null,
+      "ocorrencias": 141
+    },
+    {
       "fingerprint": "a47e7722d566158208a7",
       "primeira_vez": "2026-07-05T20:46:51.048371+00:00",
       "ultima_vez": "2026-09-16T11:34:26.274733+00:00",
@@ -87,17 +98,6 @@
       "error_kind": null,
       "error_message": null,
       "ocorrencias": 13
-    },
-    {
-      "fingerprint": "f5df20084dc3a1613198",
-      "primeira_vez": "2026-07-05T20:44:28.283758+00:00",
-      "ultima_vez": "2026-09-13T11:16:23.739513+00:00",
-      "logger": "token_manager",
-      "mensagem": "Erro ao renovar token Magazine Luiza: HTTP 400 — {\"error\":\"invalid_grant\",\"error_description\":\"The provided authorization grant is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client.\"}",
-      "status": "error",
-      "error_kind": null,
-      "error_message": null,
-      "ocorrencias": 140
     },
     {
       "fingerprint": "4a23989fe4fe3fda96c3",
@@ -1651,5 +1651,5 @@
       "ocorrencias": 1
     }
   ],
-  "atualizado_em": "2026-09-16T11:34:26.274733+00:00"
+  "atualizado_em": "2026-09-21T11:53:05.302606+00:00"
 }

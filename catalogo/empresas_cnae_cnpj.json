@@ -43,7 +43,10 @@
         "site_id": "MLB"
       },
       "shopee": { "shop_id": "" },
-      "magalu": { "seller_id": "" },
+      "magalu": {
+        "seller_id": "9fe0d853-732b-4e4a-a0b0-cff988ed043d",
+        "merchant_id": "9fe0d853-732b-4e4a-a0b0-cff988ed043d"
+      },
       "amazon": { "seller_id": "" },
       "telegram_gestor_chat_id": "",
       "ramos": ["esmaltes", "manicures", "acetona", "removedores", "impala", "anita"],

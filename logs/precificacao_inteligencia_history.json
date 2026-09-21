@@ -1,17 +1,5 @@
 [
   {
-    "timestamp": "2026-08-19T16:38:15.687371+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
-    "timestamp": "2026-08-19T16:38:15.716438+00:00",
-    "total_analises": 1,
-    "reduzir": 1,
-    "monitorar": 0
-  },
-  {
     "timestamp": "2026-08-19T16:59:07.193067+00:00",
     "total_analises": 1,
     "reduzir": 1,
@@ -535,6 +523,18 @@
   },
   {
     "timestamp": "2026-09-20T11:42:07.059002+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-09-21T11:57:33.497623+00:00",
+    "total_analises": 1,
+    "reduzir": 1,
+    "monitorar": 0
+  },
+  {
+    "timestamp": "2026-09-21T11:57:33.519517+00:00",
     "total_analises": 1,
     "reduzir": 1,
     "monitorar": 0
