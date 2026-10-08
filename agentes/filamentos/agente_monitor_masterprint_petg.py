@@ -250,6 +250,10 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             if i < len(termos) - 1 and MASTERPRINT_PETG_PAUSA_SEG > 0:
                 time.sleep(MASTERPRINT_PETG_PAUSA_SEG)
 
+        from integracoes.ml.coleta_demanda_ml import enriquecer_porte_sellers
+
+        enriquecer_porte_sellers(resultados, limite=8)
+
         consolidado = consolidar_masterprint_petg(
             resultados,
             produtos_anteriores=produtos_ant if isinstance(produtos_ant, list) else None,
@@ -258,6 +262,8 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
 
         from integracoes.ml.coleta_demanda_ml import (
             calcular_tendencia_demanda,
+            classificar_busca,
+            classificar_claims,
             emitir_metricas_demanda,
             enriquecer_visitas_lista,
             montar_pontos_cegos,
@@ -294,11 +300,21 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             consolidado={
                 **consolidado,
                 "anuncios_com_vendas_api": int(consolidado.get("vendas_totais") or 0),
-                "anuncios_com_avaliacoes": 0,
+                "anuncios_com_avaliacoes": sum(
+                    1 for p in produtos if int(p.get("avaliacoes") or 0) > 0
+                ),
+                "anuncios_com_porte_seller": sum(
+                    1
+                    for p in produtos
+                    if int(p.get("seller_transactions") or 0) > 0
+                    and int(p.get("quantidade_vendida") or 0) <= 0
+                ),
             },
             funil=funil,
             visitas_enriquecidas=n_vis,
             contexto="masterprint_petg",
+            busca=classificar_busca(produtos),
+            claims=classificar_claims(consultar=True),
         )
         from integracoes.masterprint.ramo import chat_gestor_masterprint
         from integracoes.ml.acoes_funil_ml import processar_e_persistir_acoes

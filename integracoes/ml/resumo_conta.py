@@ -69,8 +69,8 @@ def _texto_reputacao(rep: dict[str, Any]) -> dict[str, Any]:
     transactions = rep.get("transactions") if isinstance(rep.get("transactions"), dict) else {}
     completed = int(transactions.get("completed") or 0)
     metrics = rep.get("metrics") if isinstance(rep.get("metrics"), dict) else {}
-    claims = metrics.get("claims") if isinstance(metrics.get("claims"), dict) else {}
-    claims_rate = float(claims.get("rate") or 0)
+    claims = metrics.get("claims") if isinstance(metrics.get("claims"), dict) else None
+    claims_rate = float((claims or {}).get("rate") or 0)
     sales = metrics.get("sales") if isinstance(metrics.get("sales"), dict) else {}
     delayed = (
         metrics.get("delayed_handling_time")
@@ -90,6 +90,7 @@ def _texto_reputacao(rep: dict[str, Any]) -> dict[str, Any]:
         "avaliacoes": avaliacoes,
         "nota": nota,
         "claims_rate": claims_rate,
+        "claims_rate_conhecido": claims is not None,
         "atraso_rate": float(delayed.get("rate") or 0),
         "cancelamentos_rate": float(cancel.get("rate") or 0),
         "power_seller": power,
@@ -138,6 +139,14 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
         sugestoes_preco_ids = ml_client.listar_itens_com_sugestao_preco()
         envios = ml_client.contar_envios_pendentes()
         claims = ml_client.contar_claims_abertos()
+        from integracoes.ml.coleta_demanda_ml import (
+            classificar_claims,
+            montar_pontos_cegos,
+            sondar_faturamento_mp,
+        )
+
+        sinais_claims = classificar_claims(claims=claims, reputacao=rep)
+        faturamento = sondar_faturamento_mp()
 
         a_melhorar: list[dict[str, Any]] = []
         vistos_up: set[str] = set()
@@ -239,14 +248,24 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             "publicidade_recomendacoes": ads_recomendacoes,
             "envios_pendentes": int(envios.get("total") or 0),
             "envios_ok": bool(envios.get("ok")),
-            "pos_venda_claims": int(claims.get("total") or 0),
+            "pos_venda_claims": int(claims.get("total") or 0) if claims.get("ok") else None,
             "pos_venda_ok": bool(claims.get("ok")),
+            "pos_venda_status": sinais_claims.get("status"),
+            "pos_venda_detalhe": sinais_claims.get("detalhe"),
             "pos_venda_motivo": str(claims.get("motivo") or ""),
             "reputacao": reputacao,
             "integridade": integridade,
-            "faturamento_nota": (
-                "Fatura/saldo Mercado Pago não disponíveis só com token ML — "
-                "confira no painel ou configure token MP."
+            "faturamento_nota": str(faturamento.get("detalhe") or ""),
+            "pontos_cegos": montar_pontos_cegos(
+                consolidado={
+                    "anuncios_com_vendas_api": sum(
+                        1 for a in anuncios if int(a.get("sold_quantity") or 0) > 0
+                    ),
+                },
+                claims=sinais_claims,
+                faturamento=faturamento,
+                anuncios_fora_de_foco=ignorados_fora_foco,
+                contexto="resumo_conta",
             ),
             "anuncios_amostra": [
                 {
@@ -318,6 +337,10 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
     gauge("ml.saude.perguntas_pendentes", float(resumo.get("perguntas_pendentes") or 0))
     gauge("ml.saude.envios_pendentes", float(resumo.get("envios_pendentes") or 0))
     gauge("ml.saude.claims_abertos", float(resumo.get("pos_venda_claims") or 0))
+    gauge(
+        "ml.saude.claims_abertos_confiavel",
+        1.0 if resumo.get("pos_venda_ok") else 0.0,
+    )
     gauge("ml.saude.precos_pendencias", float(resumo.get("precos_pendencias_total") or 0))
     ativos_conta = int(resumo.get("anuncios_ativos_conta") or 0)
     pausados_conta = int(resumo.get("anuncios_pausados_conta") or 0)
@@ -332,6 +355,18 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
     gauge(
         "ml.saude.todos_pausados_conta",
         1.0 if pausados_conta > 0 and ativos_conta == 0 else 0.0,
+    )
+
+
+def _linha_pos_venda(resumo: dict[str, Any]) -> str:
+    """Não imprime 0 quando o search de claims não respondeu."""
+    if resumo.get("pos_venda_ok"):
+        return f"  • Pós-venda (claims abertos): *{int(resumo.get('pos_venda_claims') or 0)}*"
+    detalhe = str(resumo.get("pos_venda_detalhe") or "").strip()
+    extra = f"; {detalhe}" if detalhe else ""
+    return (
+        "  • Pós-venda (claims abertos): *n/d* "
+        f"_(API claims indisponivel p/ este app{extra})_"
     )
 
 
@@ -368,18 +403,17 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
         "*Pendências em vendas*",
         f"  • Envios pendentes: *{int(resumo.get('envios_pendentes') or 0)}*"
         + ("" if resumo.get("envios_ok") else " _(API parcial)_"),
-        f"  • Pós-venda (claims abertos): *{int(resumo.get('pos_venda_claims') or 0)}*"
-        + (
-            ""
-            if resumo.get("pos_venda_ok")
-            else " _(API claims indisponivel p/ este app)_"
-        ),
+        _linha_pos_venda(resumo),
         "",
         "*Reputação*",
         f"  • Cor: *{rep.get('cor', '—')}*",
         f"  • Vendas completadas: *{int(rep.get('vendas_completadas') or 0)}*",
         f"  • Avaliações: *{int(rep.get('avaliacoes') or 0)}* · nota *{float(rep.get('nota') or 0):.1f}*",
-        f"  • Claims rate: *{float(rep.get('claims_rate') or 0) * 100:.2f}%*",
+        (
+            f"  • Claims rate: *{float(rep.get('claims_rate') or 0) * 100:.2f}%*"
+            if rep.get("claims_rate_conhecido") is not False
+            else "  • Claims rate: *n/d* _(reputação sem métrica de claims)_"
+        ),
         f"  • Mercado Líder: *{rep.get('power_seller', '—')}*",
     ]
     if rep.get("sem_cor"):
@@ -457,4 +491,9 @@ def montar_mensagem_telegram(resumo: dict[str, Any]) -> str:
             "corrija anúncios a melhorar e responda perguntas.",
         ]
     )
+    pontos = resumo.get("pontos_cegos")
+    if isinstance(pontos, dict):
+        from integracoes.ml.coleta_demanda_ml import formatar_secao_pontos_cegos
+
+        linhas.extend(formatar_secao_pontos_cegos(pontos))
     return "\n".join(linhas).strip()

@@ -386,7 +386,10 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
 
         from integracoes.ml.coleta_demanda_ml import (
             calcular_tendencia_demanda,
+            classificar_busca,
+            classificar_claims,
             emitir_metricas_demanda,
+            enriquecer_porte_sellers,
             enriquecer_visitas_amostra,
             montar_pontos_cegos,
             registrar_snapshot_demanda,
@@ -394,7 +397,12 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
         )
 
         n_vis = enriquecer_visitas_amostra(resultados, limite=12)
-        logger.info("Enriquecidos com visitas: %s anúncio(s)", n_vis)
+        n_porte = enriquecer_porte_sellers(resultados, limite=8)
+        logger.info(
+            "Enriquecidos com visitas: %s anúncio(s); sellers com porte: %s",
+            n_vis,
+            n_porte,
+        )
         for r in resultados:
             termo_r = str(r.get("termo_busca") or "").strip()
             if not termo_r:
@@ -412,6 +420,7 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
         )
         consolidado["avaliacoes_enriquecidas"] = n_aval
         consolidado["visitas_enriquecidas"] = n_vis
+        consolidado["porte_sellers_enriquecidos"] = n_porte
         funil = resolver_funil_proprio_cnpj2(
             dias=7,
             max_anuncios=20,
@@ -423,6 +432,8 @@ def executar(enviar_alerta: bool = True, *, forcar_telegram: bool = False) -> di
             funil=funil,
             visitas_enriquecidas=n_vis,
             contexto="filamentos_ml",
+            busca=classificar_busca(consolidado.get("produtos_unicos")),
+            claims=classificar_claims(consultar=True),
         )
         from integracoes.ml.acoes_funil_ml import processar_e_persistir_acoes
 

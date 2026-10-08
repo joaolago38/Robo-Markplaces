@@ -27,7 +27,7 @@ class ColetaDemandaMlTests(unittest.TestCase):
         )
         self.assertEqual(pc["ranking_fonte_sugerida"], "visitas")
         ids = {i["id"]: i["status"] for i in pc["itens"]}
-        self.assertEqual(ids["vendas_concorrente"], "cego")
+        self.assertEqual(ids["vendas_concorrente"], "parcial")
         self.assertEqual(ids["busca_oficial"], "cego")
         self.assertEqual(ids["visitas_rivais"], "ok")
         self.assertEqual(ids["funil_proprio"], "ok")
@@ -359,6 +359,64 @@ class ColetaDemandaMlTests(unittest.TestCase):
         self.assertEqual(snap["preco_medio"], 20.0)
         self.assertEqual(snap["soma_avaliacoes_visiveis"], 3)
         mock_w.assert_called_once()
+
+    def test_classificar_busca_e_claims(self):
+        oficial = cd.classificar_busca([{"fonte_busca": "api"}])
+        self.assertEqual(oficial["status"], "ok")
+        fallback = cd.classificar_busca([{"fonte_busca": "products_api"}])
+        self.assertEqual(fallback["status"], "parcial")
+        self.assertEqual(cd.classificar_busca([{}])["status"], "cego")
+
+        ok = cd.classificar_claims(claims={"ok": True, "total": 2})
+        self.assertEqual(ok["status"], "ok")
+        parcial = cd.classificar_claims(
+            claims={"ok": False, "motivo": "claims_indisponivel"},
+            reputacao={"metrics": {"claims": {"rate": 0.02}}},
+        )
+        self.assertEqual(parcial["status"], "parcial")
+        self.assertIn("2.00%", parcial["detalhe"])
+        cego = cd.classificar_claims(claims={"ok": False, "motivo": "claims_indisponivel"})
+        self.assertEqual(cego["status"], "cego")
+
+    def test_montar_pontos_cegos_faturamento_e_fora_de_foco(self):
+        pc = cd.montar_pontos_cegos(
+            consolidado={"anuncios_com_porte_seller": 4},
+            busca={"status": "parcial", "detalhe": "products_api"},
+            claims={"status": "parcial", "detalhe": "taxa 1%"},
+            faturamento={"status": "cego", "detalhe": "sem MP_ACCESS_TOKEN"},
+            anuncios_fora_de_foco=38,
+        )
+        ids = {i["id"]: i["status"] for i in pc["itens"]}
+        self.assertEqual(ids["vendas_concorrente"], "parcial")
+        self.assertEqual(ids["busca_oficial"], "parcial")
+        self.assertEqual(ids["claims"], "parcial")
+        self.assertEqual(ids["faturamento_mp"], "cego")
+        self.assertEqual(ids["anuncios_fora_de_foco"], "parcial")
+        self.assertEqual(pc["ranking_fonte_sugerida"], "seller")
+
+    @patch.object(cd.ml_client, "_enabled", return_value=True)
+    @patch("integracoes.ml.analise_loja_concorrente.buscar_perfil_loja")
+    def test_enriquecer_porte_sellers(self, mock_perfil, _en):
+        mock_perfil.return_value = {"ok": True, "transactions_total": 1200, "seller_id": "9"}
+        resultados = [
+            {
+                "ok": True,
+                "produtos": [
+                    {"item_id": "MLB1", "seller_id": "9", "quantidade_vendida": 0},
+                    {"item_id": "MLB2", "seller_id": "9", "quantidade_vendida": 4},
+                ],
+            }
+        ]
+        n = cd.enriquecer_porte_sellers(resultados, limite=3)
+        self.assertEqual(n, 1)
+        self.assertEqual(resultados[0]["produtos"][0]["seller_transactions"], 1200)
+        self.assertNotIn("seller_transactions", resultados[0]["produtos"][1])
+
+    def test_sondar_faturamento_sem_token(self):
+        with patch.dict("os.environ", {"MP_ACCESS_TOKEN": "", "MERCADOPAGO_ACCESS_TOKEN": ""}, clear=False):
+            out = cd.sondar_faturamento_mp()
+        self.assertEqual(out["status"], "cego")
+        self.assertIn("MP_ACCESS_TOKEN", out["detalhe"])
 
 
 if __name__ == "__main__":
