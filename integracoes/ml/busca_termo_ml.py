@@ -414,12 +414,18 @@ def _buscar_via_products_api(termo: str, limite: int) -> list[dict[str, Any]]:
                 vendidos = int(it.get("sold_quantity") or 0)
             except (TypeError, ValueError):
                 vendidos = 0
+            reviews = it.get("reviews") if isinstance(it.get("reviews"), dict) else {}
+            try:
+                avaliacoes = int(reviews.get("total") or it.get("reviews_total") or 0)
+            except (TypeError, ValueError):
+                avaliacoes = 0
             encontrados.append(
                 {
                     "item_id": item_id,
                     "titulo": titulo,
                     "preco": preco,
                     "quantidade_vendida": vendidos,
+                    "avaliacoes": max(0, avaliacoes),
                     "seller_id": seller_id,
                     "permalink": str(it.get("permalink") or f"https://produto.mercadolivre.com.br/{item_id}"),
                     "fonte_busca": "products_api",

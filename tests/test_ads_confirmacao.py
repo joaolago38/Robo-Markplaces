@@ -3,9 +3,18 @@ tests/test_ads_confirmacao.py
 Testa o fluxo de confirmação antes de acionar ads.
 """
 import unittest
+from datetime import datetime
 from unittest.mock import patch
 
 from agentes.ml.agente_ads_gatilho import avaliar_momento_ads
+
+
+class _RelogioJunho:
+    """Junho fica fora do pico Out-Dez, então a decisão não vira 'escalar'."""
+
+    @staticmethod
+    def now(*_args, **_kwargs):
+        return datetime(2026, 6, 15)
 
 
 def _patches_contrato():
@@ -21,6 +30,7 @@ def _patches_contrato():
     )
 
 
+@patch("agentes.ml.agente_ads_gatilho.datetime", _RelogioJunho)
 class TestAdsConfirmacao(unittest.TestCase):
 
     @patch("agentes.ml.agente_ads_gatilho.probe_escrita_product_ads", return_value={"ok": True, "codigo": "ok"})

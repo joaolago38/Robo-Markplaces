@@ -16,6 +16,7 @@ class TestResumoContaMl(unittest.TestCase):
         out = rc._texto_reputacao({"level_id": None, "transactions": {"completed": 3}})
         self.assertTrue(out["sem_cor"])
         self.assertIn("Sem cor", out["cor"])
+        self.assertFalse(out["claims_rate_conhecido"])
 
     def test_texto_reputacao_verde(self):
         out = rc._texto_reputacao(
@@ -29,6 +30,7 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertEqual(out["cor"], "Verde")
         self.assertFalse(out["sem_cor"])
         self.assertEqual(out["claims_rate"], 0.01)
+        self.assertTrue(out["claims_rate_conhecido"])
         self.assertEqual(out["nivel_num"], 5)
         self.assertEqual(out["power_num"], 2)
 

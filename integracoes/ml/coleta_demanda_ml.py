@@ -383,6 +383,157 @@ def _itens_identidade_cnpj2(ident: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def classificar_busca(produtos: list[dict[str, Any]] | None = None) -> dict[str, str]:
+    """Lê fonte_busca da rodada. /sites/search ok, fallback com preço = parcial."""
+    fontes: set[str] = set()
+    for prod in produtos or []:
+        if not isinstance(prod, dict):
+            continue
+        fonte = str(prod.get("fonte_busca") or "").strip()
+        if fonte:
+            fontes.add(fonte)
+    if "api" in fontes:
+        return {"status": "ok", "detalhe": "GET /sites/MLB/search respondeu nesta rodada"}
+    parciais = fontes & {"products_api", "cache", "brave", "ddg", "catalogo", "items_ids"}
+    if parciais:
+        return {
+            "status": "parcial",
+            "detalhe": (
+                "/sites/search bloqueado (403); preço/título via "
+                + ", ".join(sorted(parciais))
+            ),
+        }
+    return {
+        "status": "cego",
+        "detalhe": "403 no app atual — sem fallback com resultado nesta rodada",
+    }
+
+
+def classificar_claims(
+    *,
+    claims: dict[str, Any] | None = None,
+    reputacao: dict[str, Any] | None = None,
+    consultar: bool = False,
+) -> dict[str, str]:
+    """
+    Search de claims é o dado completo. Sem escopo, a taxa em seller_reputation
+    ainda cobre pós-venda (parcial). Sem os dois, fica cego — nunca 'zero claims'.
+    """
+    bloco = claims if isinstance(claims, dict) else None
+    if bloco is None and consultar:
+        bloco = ml_client.contar_claims_abertos()
+    if isinstance(bloco, dict) and bloco.get("ok"):
+        return {
+            "status": "ok",
+            "detalhe": f"{_i(bloco.get('total'))} claim(s) aberto(s)",
+        }
+    motivo = str((bloco or {}).get("motivo") or "sem escopo")
+    rate, conhecido = _claims_rate_reputacao(reputacao)
+    if not conhecido and consultar and ml_client._enabled():
+        rate, conhecido = _claims_rate_reputacao(ml_client.buscar_reputacao_vendedor())
+    if conhecido:
+        pct = f"{float(rate) * 100:.2f}%"
+        return {
+            "status": "parcial",
+            "detalhe": f"search indisponível ({motivo}); taxa na reputação {pct}",
+        }
+    return {
+        "status": "cego",
+        "detalhe": f"escopo claims indisponível ({motivo}) e reputação sem taxa",
+    }
+
+
+def _claims_rate_reputacao(reputacao: dict[str, Any] | None) -> tuple[float, bool]:
+    if not isinstance(reputacao, dict):
+        return 0.0, False
+    if reputacao.get("claims_rate_conhecido") is True:
+        try:
+            return float(reputacao.get("claims_rate") or 0), True
+        except (TypeError, ValueError):
+            return 0.0, True
+    metrics = reputacao.get("metrics") if isinstance(reputacao.get("metrics"), dict) else None
+    claims = metrics.get("claims") if isinstance(metrics, dict) and isinstance(metrics.get("claims"), dict) else None
+    if claims is None:
+        return 0.0, False
+    try:
+        return float(claims.get("rate") or 0), True
+    except (TypeError, ValueError):
+        return 0.0, True
+
+
+def sondar_faturamento_mp() -> dict[str, str]:
+    """Saldo Mercado Pago não sai do token ML. Com MP_ACCESS_TOKEN, consulta o saldo."""
+    import os
+
+    from core.http_client import request
+
+    token = (os.getenv("MP_ACCESS_TOKEN") or os.getenv("MERCADOPAGO_ACCESS_TOKEN") or "").strip()
+    if not token:
+        return {
+            "status": "cego",
+            "detalhe": "sem MP_ACCESS_TOKEN — fatura/saldo não saem do token ML",
+        }
+    try:
+        r = request(
+            "GET",
+            "https://api.mercadopago.com/v1/account/balance",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=15,
+        )
+        if getattr(r, "status_code", 0) != 200:
+            return {
+                "status": "parcial",
+                "detalhe": f"token MP presente; saldo HTTP {getattr(r, 'status_code', '?')}",
+            }
+        body = r.json() or {}
+        disponivel = body.get("available_balance")
+        if disponivel is None:
+            return {"status": "ok", "detalhe": "saldo Mercado Pago consultado"}
+        return {"status": "ok", "detalhe": f"saldo disponível {disponivel}"}
+    except Exception as exc:
+        logger.info("sondar_faturamento_mp: %s", exc)
+        return {"status": "parcial", "detalhe": "token MP presente; consulta de saldo falhou"}
+
+
+def enriquecer_porte_sellers(resultados: list[dict[str, Any]], *, limite: int = 8) -> int:
+    """
+    Quando sold_quantity do rival não vem, copia transactions.total do seller
+    (GET /users/{id}) para o ranking não cair em mera presença.
+    """
+    if limite <= 0 or not ml_client._enabled():
+        return 0
+    from integracoes.ml.analise_loja_concorrente import buscar_perfil_loja
+
+    por_seller: dict[str, list[dict[str, Any]]] = {}
+    for resultado in resultados or []:
+        if not isinstance(resultado, dict):
+            continue
+        for prod in resultado.get("produtos") or []:
+            if not isinstance(prod, dict):
+                continue
+            if _i(prod.get("quantidade_vendida") or prod.get("sold_quantity")) > 0:
+                continue
+            if _i(prod.get("seller_transactions")) > 0:
+                continue
+            sid = str(prod.get("seller_id") or "").strip()
+            if not sid:
+                continue
+            por_seller.setdefault(sid, []).append(prod)
+    enriquecidos = 0
+    for sid in list(por_seller)[: max(0, limite)]:
+        perfil = buscar_perfil_loja(sid)
+        if not perfil.get("ok"):
+            continue
+        total = _i(perfil.get("transactions_total"))
+        if total <= 0:
+            continue
+        for prod in por_seller[sid]:
+            prod["seller_transactions"] = total
+            prod["porte_fonte"] = "users_api"
+        enriquecidos += 1
+    return enriquecidos
+
+
 def montar_pontos_cegos(
     *,
     consolidado: dict[str, Any] | None = None,
@@ -390,6 +541,10 @@ def montar_pontos_cegos(
     visitas_enriquecidas: int = 0,
     contexto: str = "mercado",
     identidade_cnpj2: dict[str, Any] | None = None,
+    busca: dict[str, Any] | None = None,
+    claims: dict[str, Any] | None = None,
+    faturamento: dict[str, Any] | None = None,
+    anuncios_fora_de_foco: int | None = None,
 ) -> dict[str, Any]:
     """Flags estruturados do que a API entrega vs ponto cego."""
     cons = consolidado or {}
@@ -397,16 +552,22 @@ def montar_pontos_cegos(
     vendas_api = _i(cons.get("anuncios_com_vendas_api") or cons.get("vendas_totais"))
     com_aval = _i(cons.get("anuncios_com_avaliacoes"))
     com_vis = _i(cons.get("anuncios_com_visitas")) or _i(visitas_enriquecidas)
+    com_porte = _i(cons.get("anuncios_com_porte_seller"))
+    proxy_demanda = com_vis > 0 or com_porte > 0 or com_aval > 0
 
     itens = [
         {
             "id": "vendas_concorrente",
             "rotulo": "Vendas concorrente (sold_quantity)",
-            "status": "ok" if vendas_api > 0 else "cego",
+            "status": "ok" if vendas_api > 0 else ("parcial" if proxy_demanda else "cego"),
             "detalhe": (
-                f"{vendas_api} anúncio(s) com dado"
+                f"{vendas_api} anúncio(s) com sold_quantity"
                 if vendas_api > 0
-                else "API /items e search de rivais → 403 / n/d"
+                else (
+                    "sem sold_quantity; ranking usa visitas, reviews ou porte do seller"
+                    if proxy_demanda
+                    else "API /items e search de rivais → 403 / n/d"
+                )
             ),
         },
         {
@@ -432,8 +593,11 @@ def montar_pontos_cegos(
         {
             "id": "busca_oficial",
             "rotulo": "Busca oficial /sites/MLB/search",
-            "status": "cego",
-            "detalhe": "403 no app atual — usa fallback externo (preço/título sem vendas)",
+            "status": str((busca or {}).get("status") or "cego"),
+            "detalhe": str(
+                (busca or {}).get("detalhe")
+                or "403 no app atual — usa fallback externo (preço/título sem vendas)"
+            ),
         },
         {
             "id": "funil_proprio",
@@ -454,10 +618,35 @@ def montar_pontos_cegos(
         {
             "id": "claims",
             "rotulo": "Claims / pós-venda",
-            "status": "cego",
-            "detalhe": "escopo claims indisponível neste app",
+            "status": str((claims or {}).get("status") or "cego"),
+            "detalhe": str(
+                (claims or {}).get("detalhe") or "escopo claims indisponível neste app"
+            ),
         },
     ]
+    if isinstance(faturamento, dict):
+        itens.append(
+            {
+                "id": "faturamento_mp",
+                "rotulo": "Fatura / saldo Mercado Pago",
+                "status": str(faturamento.get("status") or "cego"),
+                "detalhe": str(faturamento.get("detalhe") or "indisponível"),
+            }
+        )
+    if anuncios_fora_de_foco is not None:
+        fora = _i(anuncios_fora_de_foco)
+        itens.append(
+            {
+                "id": "anuncios_fora_de_foco",
+                "rotulo": "Anúncios fora do foco Impala/Masterprint",
+                "status": "parcial" if fora > 0 else "ok",
+                "detalhe": (
+                    f"{fora} anúncio(s) fora do radar de listing"
+                    if fora > 0
+                    else "listagem do foco cobriu a conta"
+                ),
+            }
+        )
     if _contexto_cnpj2(contexto):
         ident = identidade_cnpj2
         if not isinstance(ident, dict):
@@ -475,7 +664,15 @@ def montar_pontos_cegos(
         "ranking_fonte_sugerida": (
             "vendas"
             if vendas_api > 0
-            else ("visitas" if com_vis > 0 else ("avaliacoes" if com_aval > 0 else "presenca"))
+            else (
+                "visitas"
+                if com_vis > 0
+                else (
+                    "avaliacoes"
+                    if com_aval > 0
+                    else ("seller" if com_porte > 0 else "presenca")
+                )
+            )
         ),
     }
 

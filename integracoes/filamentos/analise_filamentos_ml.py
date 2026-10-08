@@ -264,6 +264,7 @@ def classificar_anuncio(
         "avaliacoes": avaliacoes_anuncio(anuncio),
         "seller_transactions": seller_porte(anuncio),
         "seller_id": str(sid or "").strip(),
+        "fonte_busca": str(anuncio.get("fonte_busca") or ""),
         "marca": detectar_marca(titulo),
         "material": detectar_material(titulo, fallback=material_esperado),
         "cor": detectar_cor_principal(titulo),
@@ -427,6 +428,7 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
     cores = ranking_cores(unicos)
     com_aval = sum(1 for p in unicos if avaliacoes_anuncio(p) > 0)
     com_vis = sum(1 for p in unicos if visitas_anuncio(p) > 0)
+    com_porte = sum(1 for p in unicos if seller_porte(p) > 0 and vendas_api(p) <= 0)
     total_visitas_7d = sum(visitas_anuncio(p) for p in unicos)
 
     return {
@@ -436,6 +438,7 @@ def consolidar_varredura(resultados: list[dict[str, Any]]) -> dict[str, Any]:
         "anuncios_com_vendas_api": len(com_vendas),
         "anuncios_com_avaliacoes": com_aval,
         "anuncios_com_visitas": com_vis,
+        "anuncios_com_porte_seller": com_porte,
         "total_visitas_7d_amostra": total_visitas_7d,
         "termos_varridos": termos_ok,
         "preco_medio": round(sum(precos) / len(precos), 2) if precos else 0.0,
