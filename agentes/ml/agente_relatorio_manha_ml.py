@@ -58,7 +58,19 @@ def _montar_secao_anuncios(ml: dict[str, Any]) -> list[str]:
     itens = ml.get("concorrencia") or []
     linhas = ["", "🔎 *Seus anúncios vs mercado*", ""]
     if not itens:
-        linhas.append("_Nenhum anúncio analisado (verifique token ML)._")
+        cat = ml.get("catalogo") if isinstance(ml.get("catalogo"), dict) else {}
+        situacao = str(cat.get("situacao") or "")
+        detalhe = str(cat.get("detalhe") or "").strip()
+        if situacao == "falha_listagem":
+            linhas.append(
+                f"_Listagem falhou ({detalhe or 'erro'}). Não é catálogo vazio._"
+            )
+        elif situacao == "fora_foco":
+            linhas.append(f"_{detalhe or 'Nenhum anúncio no foco Impala/Cruzeiro.'}_")
+        elif situacao == "vazio":
+            linhas.append("_Conta sem anúncios active ou pausados._")
+        else:
+            linhas.append("_Nenhum anúncio analisado (verifique token ML)._")
         return linhas
     for item in itens[:8]:
         titulo = str(item.get("titulo") or item.get("item_id") or "?")[:42]

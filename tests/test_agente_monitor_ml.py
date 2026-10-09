@@ -155,6 +155,27 @@ class TestAnalisar(unittest.TestCase):
 
 
 class TestHelpers(unittest.TestCase):
+    def test_classificar_catalogo_separa_falha_foco_e_vazio(self):
+        falha = mon._classificar_catalogo(
+            [],
+            [],
+            {"ok": False, "motivo": "search_http_403", "ids_busca": 0},
+            {},
+        )
+        foco = mon._classificar_catalogo(
+            [{"item_id": "MLB1", "titulo": "Bolsa"}],
+            [],
+            {"ok": True, "ids_busca": 1, "ids_ok": 1},
+            {"ignorados": 1, "mantidos": 0},
+        )
+        vazio = mon._classificar_catalogo([], [], {"ok": True, "motivo": ""}, {})
+        self.assertEqual(falha["situacao"], "falha_listagem")
+        self.assertEqual(foco["situacao"], "fora_foco")
+        self.assertEqual(vazio["situacao"], "vazio")
+        resumo = mon._montar_resumo({}, {"pendencia": "ads"}, [], ["Listagem ML falhou (search_http_403)."], falha)
+        self.assertIn("não é catálogo vazio", resumo)
+        self.assertNotIn("Nenhum ajuste urgente", resumo)
+
     def test_pct_diff(self):
         self.assertEqual(mon._pct_diff(105.0, 100.0), 5.0)
         self.assertEqual(mon._pct_diff(10.0, 0.0), 0.0)
@@ -167,8 +188,9 @@ class TestHelpers(unittest.TestCase):
     @patch("integracoes.ml.integridade_dados_ml.executar")
     @patch.object(mon.ml_client, "listar_meus_anuncios", return_value=[])
     def test_concorrencia_lista_active_e_paused(self, mock_listar, _auditar):
-        conc, recs = mon._analisar_concorrencia(limite_itens=0)
+        conc, recs, catalogo = mon._analisar_concorrencia(limite_itens=0)
         self.assertEqual(conc, [])
+        self.assertEqual(catalogo.get("situacao"), "vazio")
         kwargs = mock_listar.call_args.kwargs
         self.assertEqual(kwargs.get("statuses"), ("active", "paused"))
         self.assertFalse(kwargs.get("aplicar_foco"))

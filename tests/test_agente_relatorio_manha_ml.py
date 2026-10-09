@@ -67,6 +67,27 @@ class RelatorioManhaMlTests(unittest.TestCase):
         self.assertIn("IMP-BAIL-005", msg)
         self.assertIn("45,90", msg)
 
+    def test_secao_anuncios_distingue_vazio_de_falha(self):
+        falha = rel._montar_secao_anuncios(
+            {"concorrencia": [], "catalogo": {"situacao": "falha_listagem", "detalhe": "search_http_403"}}
+        )
+        vazio = rel._montar_secao_anuncios(
+            {"concorrencia": [], "catalogo": {"situacao": "vazio", "detalhe": "conta sem anúncios active/paused"}}
+        )
+        foco = rel._montar_secao_anuncios(
+            {
+                "concorrencia": [],
+                "catalogo": {
+                    "situacao": "fora_foco",
+                    "detalhe": "4 anúncio(s) fora do foco (bolsas/legado) — nenhum Impala/Cruzeiro no radar",
+                },
+            }
+        )
+        self.assertIn("search_http_403", "\n".join(falha))
+        self.assertIn("active ou pausados", "\n".join(vazio))
+        self.assertIn("fora do foco", "\n".join(foco))
+        self.assertNotIn("verifique token", "\n".join(falha))
+
     @patch.object(rel, "alertar_gestor", return_value=True)
     @patch("agentes.esmaltes.agente_monitor_mercado_esmaltes.executar")
     @patch("agentes.esmaltes.agente_monitor_anita.executar")

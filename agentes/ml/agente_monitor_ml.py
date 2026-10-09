@@ -171,9 +171,53 @@ def _analisar_ads(dias: int = 14) -> tuple[dict[str, Any], list[str]]:
     return ads, recomendacoes
 
 
-def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[dict], list[str]]:
+def _classificar_catalogo(
+    anuncios_todos: list[dict],
+    anuncios_foco: list[dict],
+    listagem: dict[str, Any] | None,
+    filtro: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Separa catálogo vazio, falha de listagem e tudo fora do foco Impala."""
+    meta = listagem if isinstance(listagem, dict) else {}
+    stats = filtro if isinstance(filtro, dict) else {}
+    ignorados = int(stats.get("ignorados") or 0)
+    motivo = str(meta.get("motivo") or "").strip()
+    ids_busca = int(meta.get("ids_busca") or 0)
+    if anuncios_foco:
+        situacao = "ok"
+        detalhe = ""
+    elif anuncios_todos:
+        situacao = "fora_foco"
+        n = ignorados or len(anuncios_todos)
+        detalhe = (
+            f"{n} anúncio(s) fora do foco (bolsas/legado) — "
+            "nenhum Impala/Cruzeiro no radar"
+        )
+    elif not meta.get("ok") and (motivo or ids_busca > 0):
+        situacao = "falha_listagem"
+        detalhe = motivo or "listagem incompleta"
+    else:
+        situacao = "vazio"
+        detalhe = "conta sem anúncios active/paused"
+    return {
+        "situacao": situacao,
+        "detalhe": detalhe,
+        "motivo": motivo,
+        "ids_busca": ids_busca,
+        "ids_ok": int(meta.get("ids_ok") or 0),
+        "paging_total": int(meta.get("paging_total") or 0),
+        "ignorados": ignorados,
+        "mantidos": len(anuncios_foco),
+        "listados": len(anuncios_todos),
+    }
+
+
+def _analisar_concorrencia(
+    limite_itens: int = MAX_ITENS_ANALISE,
+) -> tuple[list[dict], list[str], dict[str, Any]]:
     recomendacoes: list[str] = []
     itens: list[dict] = []
+    catalogo: dict[str, Any] = {"situacao": "vazio", "detalhe": ""}
 
     try:
         from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco
@@ -182,17 +226,30 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             statuses=("active", "paused"),
             aplicar_foco=False,
         )
+        listagem = ml_client.ultima_listagem_anuncios()
         try:
             from agentes.ml.agente_observabilidade_ml import executar as obs_ml
 
             obs_ml(anuncios=anuncios_todos)
         except Exception as exc:
             logger.info("integridade ML: %s", exc)
-        anuncios, _ = filtrar_anuncios_foco(anuncios_todos)
+        anuncios, filtro = filtrar_anuncios_foco(anuncios_todos)
+        catalogo = _classificar_catalogo(anuncios_todos, anuncios, listagem, filtro)
         anuncios = anuncios[:limite_itens]
     except Exception as exc:
         logger.error("monitor_ml listar_meus_anuncios: %s", exc)
-        return [], [f"Não foi possível listar anúncios: {exc}"]
+        return [], [f"Não foi possível listar anúncios: {exc}"], {
+            "situacao": "falha_listagem",
+            "detalhe": str(exc),
+        }
+
+    if catalogo.get("situacao") == "falha_listagem":
+        recomendacoes.append(
+            f"Listagem ML falhou ({catalogo.get('detalhe')}). "
+            "Não tratar como catálogo vazio."
+        )
+    elif catalogo.get("situacao") == "fora_foco":
+        recomendacoes.append(str(catalogo.get("detalhe") or "Anúncios fora do foco."))
 
     for anuncio in anuncios:
         item_id = str(anuncio.get("item_id") or "").strip()
@@ -329,7 +386,20 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
         time.sleep(PAUSA_ENTRE_CHAMADAS_S)
 
     itens.sort(key=lambda x: x.get("prioridade", 0), reverse=True)
-    return itens, recomendacoes
+    return itens, recomendacoes, catalogo
+
+
+def _linha_catalogo_vazio(catalogo: dict | None) -> str:
+    cat = catalogo or {}
+    situacao = str(cat.get("situacao") or "")
+    detalhe = str(cat.get("detalhe") or "").strip()
+    if situacao == "falha_listagem":
+        return f"• Listagem falhou ({detalhe or 'erro'}) — isto não é catálogo vazio"
+    if situacao == "fora_foco":
+        return f"• {detalhe or 'Nenhum anúncio no foco Impala/Cruzeiro'}"
+    if situacao == "vazio":
+        return "• Conta sem anúncios active/paused"
+    return "• Nenhum anúncio analisado"
 
 
 def _montar_resumo(
@@ -337,6 +407,7 @@ def _montar_resumo(
     ads: dict,
     concorrencia: list[dict],
     recomendacoes: list[str],
+    catalogo: dict | None = None,
 ) -> str:
     linhas = [
         "📊 *Conta*",
@@ -373,7 +444,7 @@ def _montar_resumo(
                 f"conc. R$ {item.get('menor_concorrente', 0):.2f}"
             )
     else:
-        linhas.append("• Nenhum anúncio analisado")
+        linhas.append(_linha_catalogo_vazio(catalogo))
 
     linhas.append("")
     linhas.append("✅ *Ajustes recomendados*")
@@ -409,10 +480,10 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
 
     conta, rec_conta = _analisar_conta()
     ads, rec_ads = _analisar_ads(dias=dias_ads)
-    concorrencia, rec_conc = _analisar_concorrencia(limite_itens=limite_itens)
+    concorrencia, rec_conc, catalogo = _analisar_concorrencia(limite_itens=limite_itens)
 
     todas_recs = rec_conta + rec_ads + rec_conc
-    resumo = _montar_resumo(conta, ads, concorrencia, todas_recs)
+    resumo = _montar_resumo(conta, ads, concorrencia, todas_recs, catalogo)
 
     enviado = False
     enviado_p0 = False
@@ -445,6 +516,7 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
         "conta": conta,
         "ads": ads,
         "concorrencia": concorrencia,
+        "catalogo": catalogo,
         "recomendacoes": list(dict.fromkeys(todas_recs)),
         "resumo": resumo,
         "enviado": enviado,
