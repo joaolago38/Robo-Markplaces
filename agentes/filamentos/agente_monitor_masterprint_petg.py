@@ -250,8 +250,10 @@ def executar(*, enviar_alerta: bool = True) -> dict[str, Any]:
             if i < len(termos) - 1 and MASTERPRINT_PETG_PAUSA_SEG > 0:
                 time.sleep(MASTERPRINT_PETG_PAUSA_SEG)
 
+        from integracoes.filamentos.analise_filamentos_ml import enriquecer_avaliacoes_amostra
         from integracoes.ml.coleta_demanda_ml import enriquecer_porte_sellers
 
+        enriquecer_avaliacoes_amostra(resultados, limite=15)
         enriquecer_porte_sellers(resultados, limite=8)
 
         consolidado = consolidar_masterprint_petg(

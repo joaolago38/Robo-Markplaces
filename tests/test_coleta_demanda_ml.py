@@ -412,6 +412,47 @@ class ColetaDemandaMlTests(unittest.TestCase):
         self.assertEqual(resultados[0]["produtos"][0]["seller_transactions"], 1200)
         self.assertNotIn("seller_transactions", resultados[0]["produtos"][1])
 
+    def test_montar_pontos_cegos_conta_nao_mede_mercado(self):
+        pc = cd.montar_pontos_cegos(
+            funil={
+                "ok": True,
+                "pedidos_ok": True,
+                "visitas_ok": True,
+                "totais": {"visitas_7d": 0, "unidades_7d": 0, "conversao_pct": None},
+            },
+            claims={"status": "parcial", "detalhe": "taxa 0%"},
+            faturamento={"status": "cego", "detalhe": "sem token"},
+            anuncios_fora_de_foco=0,
+            medir_mercado=False,
+        )
+        ids = {i["id"] for i in pc["itens"]}
+        self.assertNotIn("vendas_concorrente", ids)
+        self.assertNotIn("reviews_concorrente", ids)
+        self.assertNotIn("visitas_rivais", ids)
+        self.assertNotIn("busca_oficial", ids)
+        self.assertEqual(pc["cegos"], 1)
+        self.assertEqual({i["id"]: i["status"] for i in pc["itens"]}["funil_proprio"], "ok")
+
+    @patch.object(cd.ml_client, "_enabled", return_value=True)
+    @patch.object(cd.ml_client, "listar_pedidos_detalhado", return_value=([], True))
+    def test_funil_vazio_confirmado_nao_e_cego(self, _ped, _en):
+        out = cd.coletar_funil_proprio(
+            anuncios_prontos=[],
+            listagem_ok=True,
+        )
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["visitas_ok"])
+        self.assertTrue(out["pedidos_ok"])
+        self.assertEqual(out["anuncios_avaliados"], 0)
+
+    @patch.object(cd.ml_client, "_enabled", return_value=True)
+    @patch.object(cd.ml_client, "listar_pedidos_detalhado")
+    def test_funil_listagem_falha_continua_cego(self, mock_ped, _en):
+        out = cd.coletar_funil_proprio(anuncios_prontos=[], listagem_ok=False)
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "falha_listagem")
+        mock_ped.assert_not_called()
+
     def test_sondar_faturamento_sem_token(self):
         with patch.dict("os.environ", {"MP_ACCESS_TOKEN": "", "MERCADOPAGO_ACCESS_TOKEN": ""}, clear=False):
             out = cd.sondar_faturamento_mp()

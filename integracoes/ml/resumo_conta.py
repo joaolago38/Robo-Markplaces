@@ -141,12 +141,19 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
         claims = ml_client.contar_claims_abertos()
         from integracoes.ml.coleta_demanda_ml import (
             classificar_claims,
+            coletar_funil_proprio,
             montar_pontos_cegos,
             sondar_faturamento_mp,
         )
 
         sinais_claims = classificar_claims(claims=claims, reputacao=rep)
         faturamento = sondar_faturamento_mp()
+        funil = coletar_funil_proprio(
+            dias=7,
+            max_anuncios=max(1, int(max_anuncios_performance)),
+            anuncios_prontos=anuncios,
+            listagem_ok=bool(ml_client.ultima_listagem_anuncios().get("ok")),
+        )
 
         a_melhorar: list[dict[str, Any]] = []
         vistos_up: set[str] = set()
@@ -260,16 +267,14 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             "saldo_mp": faturamento.get("saldo"),
             "saldo_mp_conhecido": faturamento.get("saldo") is not None,
             "pontos_cegos": montar_pontos_cegos(
-                consolidado={
-                    "anuncios_com_vendas_api": sum(
-                        1 for a in anuncios if int(a.get("sold_quantity") or 0) > 0
-                    ),
-                },
+                funil=funil,
                 claims=sinais_claims,
                 faturamento=faturamento,
                 anuncios_fora_de_foco=ignorados_fora_foco,
                 contexto="resumo_conta",
+                medir_mercado=False,
             ),
+            "funil_proprio": funil,
             "anuncios_amostra": [
                 {
                     "item_id": a.get("item_id"),

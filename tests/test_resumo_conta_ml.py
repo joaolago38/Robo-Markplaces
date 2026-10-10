@@ -220,6 +220,11 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertIn("API claims indisponivel", msg)
         self.assertIn("Integridade ML", msg)
         self.assertIn("99.99", msg)
+        ids = {i["id"] for i in resumo["pontos_cegos"]["itens"]}
+        self.assertNotIn("vendas_concorrente", ids)
+        self.assertNotIn("busca_oficial", ids)
+        self.assertIn("funil_proprio", ids)
+        self.assertIn("faturamento_mp", ids)
 
     @patch("integracoes.ml.integridade_dados_ml.executar", return_value={"pct": 100.0, "atinge_meta": True, "espelho_confiavel": True, "meta_pct": 99.99, "corrigidos": 0})
     @patch("integracoes.ml.ml_product_ads.listar_campanhas", return_value=[])

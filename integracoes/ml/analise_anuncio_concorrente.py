@@ -190,6 +190,14 @@ def buscar_reviews_item(item_id: str) -> dict[str, Any]:
     try:
         headers = ml_client._h() if ml_client._enabled() else {}
         r = request("GET", f"{BASE}/reviews/item/{iid}", headers=headers, params={"limit": 1}, timeout=20)
+        if r.status_code in (401, 403) and headers:
+            r = request(
+                "GET",
+                f"{BASE}/reviews/item/{iid}",
+                headers={},
+                params={"limit": 1},
+                timeout=20,
+            )
         if r.status_code != 200:
             return {"ok": False, "motivo": f"HTTP {r.status_code}", "item_id": iid}
         body = r.json() or {}
