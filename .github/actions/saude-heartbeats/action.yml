@@ -42,6 +42,49 @@ runs:
         restore-keys: |
           saude-heartbeats-
 
+    - name: Guardar heartbeats deste job
+      if: ${{ inputs.modo == 'save' }}
+      shell: bash
+      run: python3 .github/actions/saude-heartbeats/merge_heartbeats.py stage /tmp/saude-job
+
+    - name: Reler cache publicado durante o job
+      if: ${{ inputs.modo == 'save' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          logs/orquestrador_ultimo_ciclo.json
+          logs/operacao_24h_ultima.json
+          logs/conectividade_ultima.json
+          logs/renovacao_tokens_ultima.json
+          logs/relatorio_manha_ml_ultima.json
+          logs/relatorio_estrategia_ml_ultima.json
+          logs/esmaltes_mercado_history.json
+          logs/estoque_ultima.json
+          logs/ads_gatilho_ultima.json
+          logs/golpe_guerra_masterprint_ultima.json
+          logs/filamentos_batalha_ultima.json
+          logs/masterprint_petg_ultima.json
+          logs/masterprint_escritorio_ultima.json
+          logs/meta_metricas_ultima.json
+          logs/ads_product_ads_404.json
+          logs/chat_ultima.json
+          logs/nfe_ultima.json
+          logs/vendas_whatsapp_ultima.json
+          logs/decisao_oscilacao_ultima.json
+          logs/briefing_ruptura_impala_ultima.json
+          logs/kits_compativeis_manicures_ultima.json
+          logs/ponto_ruptura_segundo_cnpj_ultima.json
+          logs/ponto_ruptura_outra_marca_ultima.json
+          logs/integridade_ml_ultima.json
+        key: saude-heartbeats-reread-${{ github.run_id }}
+        restore-keys: |
+          saude-heartbeats-
+
+    - name: Ficar com o heartbeat mais novo
+      if: ${{ inputs.modo == 'save' }}
+      shell: bash
+      run: python3 .github/actions/saude-heartbeats/merge_heartbeats.py merge /tmp/saude-job
+
     - name: Publicar heartbeats de saude
       if: ${{ inputs.modo == 'save' }}
       uses: actions/cache/save@v4

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Any
 
 from core.atomic_io import escrever_json_atomico
@@ -209,6 +210,7 @@ def processar_guerra_petg(
     golpe = processar_golpe_batalha(batalha, produtos=prods, enviar_alerta=enviar_alerta)
     payload = {
         "ok": True,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "batalha": batalha,
         "golpe": {
             "disparar": golpe.get("disparar"),

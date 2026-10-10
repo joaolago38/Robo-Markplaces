@@ -41,7 +41,7 @@
     "nome": "Vigia Datadog",
     "path": "logs/datadog_vigia_history.json",
     "campo": "ultima_varredura",
-    "max_horas": 6,
+    "max_horas": 12,
     "critico": true
   },
   {

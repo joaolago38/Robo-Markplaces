@@ -189,6 +189,7 @@ class TestGolpeEBatalha(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["cnpj"], "23811261000197")
         self.assertFalse(out["golpe"]["disparar"])
+        self.assertTrue(out.get("timestamp"))
 
 
 class TestAgenteGolpeMp(unittest.TestCase):
