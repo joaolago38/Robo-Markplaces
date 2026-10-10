@@ -179,7 +179,7 @@ def emitir_metricas(resultado: dict[str, Any]) -> None:
     paging_total = _f(resultado.get("paging_total"))
     ids_busca = _f(resultado.get("ids_busca"))
     gauge(
-        "ml.saude.dados_api_ok",
+        "ml.integridade.listagem_ok",
         1.0 if (ids_ok > 0 or paging_total > 0 or ids_busca > 0) else 0.0,
     )
     if resultado.get("atinge_meta"):

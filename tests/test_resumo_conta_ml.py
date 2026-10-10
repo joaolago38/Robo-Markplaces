@@ -43,14 +43,35 @@ class TestResumoContaMl(unittest.TestCase):
             "perguntas_pendentes": 3,
             "envios_pendentes": 0,
             "pos_venda_claims": 0,
-            "precos_pendencias_total": 0,
+            "precos_pendencias_total": 1,
+            "precos_pendencias": [
+                {
+                    "item_id": "MLB9",
+                    "percent_difference": -12.5,
+                    "preco_sugerido": 8.0,
+                    "aplicavel": True,
+                }
+            ],
+            "publicidade_recomendacoes": 2,
+            "envios_ok": True,
+            "faturamento_status": "ok",
+            "saldo_mp": 15.5,
+            "saldo_mp_conhecido": True,
+            "pos_venda_ok": True,
+            "pontos_cegos": {
+                "cegos": 1,
+                "parciais": 0,
+                "oks": 1,
+                "itens": [{"id": "faturamento_mp", "status": "ok"}],
+            },
             "reputacao": {
                 "vendas_completadas": 12,
                 "vendas_60d": 4,
                 "avaliacoes": 8,
                 "nota": 4.9,
                 "claims_rate": 0.01,
-                "atraso_rate": 0,
+                "claims_rate_conhecido": True,
+                "atraso_rate": 0.02,
                 "cancelamentos_rate": 0,
                 "nivel_num": 5,
                 "power_num": 2,
@@ -80,6 +101,15 @@ class TestResumoContaMl(unittest.TestCase):
         self.assertEqual(pares["ml.saude.claims_rate_pct"], 1.0)
         self.assertEqual(pares["ml.saude.todos_pausados"], 0.0)
         self.assertEqual(pares["ml.saude.dados_api_ok"], 0.0)
+        self.assertEqual(pares["ml.saude.claims_rate_conhecido"], 1.0)
+        self.assertEqual(pares["ml.saude.atraso_rate_pct"], 2.0)
+        self.assertEqual(pares["ml.saude.publicidade_recomendacoes"], 2.0)
+        self.assertEqual(pares["ml.saude.saldo_mp"], 15.5)
+        self.assertEqual(pares["ml.saude.saldo_mp_conhecido"], 1.0)
+        self.assertEqual(pares["ml.saude.faturamento_status"], 1.0)
+        self.assertEqual(pares["ml.saude.envios_ok"], 1.0)
+        self.assertEqual(pares["ml.saude.preco_sugestao_pct_max"], 12.5)
+        self.assertEqual(pares["ml.saude.precos_aplicaveis"], 1.0)
 
     def test_emitir_metricas_legado_pausado_api_ok(self):
         resumo = {

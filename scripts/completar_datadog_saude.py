@@ -70,6 +70,7 @@ GROUP_PROGRESSO_24M_ID = 700019
 GROUP_OPEX_IMPALA_ID = 700021
 GROUP_VENDAS_PERIODO_IMPALA_ID = 700022
 GROUP_AGORA_IMPALA_ID = 700023
+GROUP_ML_LACUNAS_ID = 700024
 GROUP_VENDAS_PERIODO_MP_ID = 760007
 GROUP_VENDAS_PERIODO_MAGALU_ID = 770001
 GROUP_MAGALU_SAUDE_ID = 770002
@@ -4401,6 +4402,72 @@ def _grupo_funil_demanda_masterprint() -> dict[str, Any]:
                     },
                     "layout": {"height": 3, "width": 6, "x": 6, "y": 14},
                 },
+                {
+                    **_qv(
+                        "PETG pedidos ok",
+                        "avg:robo.masterprint_petg.funil.pedidos_ok{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 0, "y": 17},
+                    "id": 760450,
+                },
+                {
+                    **_qv(
+                        "PETG visitas ok",
+                        "avg:robo.masterprint_petg.funil.visitas_ok{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 2, "y": 17},
+                    "id": 760451,
+                },
+                {
+                    **_qv(
+                        "PETG conversao confiavel",
+                        "avg:robo.masterprint_petg.funil.conversao_confiavel{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 4, "y": 17},
+                    "id": 760452,
+                },
+                {
+                    **_qv(
+                        "Filamentos pedidos ok",
+                        "avg:robo.filamentos.ml.funil.pedidos_ok{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 6, "y": 17},
+                    "id": 760453,
+                },
+                {
+                    **_qv(
+                        "Filamentos visitas ok",
+                        "avg:robo.filamentos.ml.funil.visitas_ok{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 8, "y": 17},
+                    "id": 760454,
+                },
+                {
+                    **_qv(
+                        "Filamentos conversao confiavel",
+                        "avg:robo.filamentos.ml.funil.conversao_confiavel{*}",
+                        aggregator="avg",
+                        green_gt=0,
+                        precision=0,
+                    ),
+                    "layout": {"height": 2, "width": 2, "x": 10, "y": 17},
+                    "id": 760455,
+                },
             ],
         },
         "layout": {"x": 0, "y": 0, "width": 12, "height": 1},
@@ -5085,6 +5152,305 @@ def _grupo_ponto_ruptura_cnae() -> dict[str, Any]:
             ],
         },
         "layout": {"x": 0, "y": 8, "width": 12, "height": 1},
+    }
+
+
+def _grupo_ml_lacunas() -> dict[str, Any]:
+    """Dados do ML que o painel não mostrava: reputação extra, catálogo, saldo, ads e buybox."""
+    cards: list[tuple[str, str, dict[str, Any]]] = [
+        ("Vendas 60d", "avg:robo.ml.saude.vendas_60d{*}", {"green_gt": 0}),
+        (
+            "Atraso envio %",
+            "avg:robo.ml.saude.atraso_rate_pct{*}",
+            {"green_gt": None, "yellow_gt": 0, "red_gt": 2, "precision": 2},
+        ),
+        (
+            "Cancelamentos %",
+            "avg:robo.ml.saude.cancelamentos_rate_pct{*}",
+            {"green_gt": None, "yellow_gt": 0, "red_gt": 2, "precision": 2},
+        ),
+        (
+            "Claims rate conhecido (0/1)",
+            "avg:robo.ml.saude.claims_rate_conhecido{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        ("Anuncios Premium", "avg:robo.ml.saude.anuncios_premium{*}", {"green_gt": None}),
+        ("Anuncios Classico", "avg:robo.ml.saude.anuncios_classico{*}", {"green_gt": None}),
+        (
+            "Precos com sugestao",
+            "avg:robo.ml.saude.precos_pendencias{*}",
+            {"green_gt": None, "yellow_gt": 0},
+        ),
+        (
+            "Sugestao preco % max",
+            "avg:robo.ml.saude.preco_sugestao_pct_max{*}",
+            {"green_gt": None, "yellow_gt": 5, "precision": 1},
+        ),
+        (
+            "Claims abertos confiavel",
+            "avg:robo.ml.saude.claims_abertos_confiavel{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        (
+            "Conta toda pausada (0/1)",
+            "avg:robo.ml.saude.todos_pausados_conta{*}",
+            {"green_gt": None, "red_gt": 0},
+        ),
+        (
+            "Coleta saude ok (0/1)",
+            "avg:robo.ml.saude.ok{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        (
+            "Ads idle/pausadas",
+            "avg:robo.ml.saude.publicidade_recomendacoes{*}",
+            {"green_gt": None, "yellow_gt": 0},
+        ),
+        (
+            "Faturamento MP (0 cego / 1 ok)",
+            "avg:robo.ml.saude.faturamento_status{*}",
+            {
+                "aggregator": "last",
+                "green_gt": 0.9,
+                "yellow_lt": 1,
+                "red_lt": 0.5,
+                "precision": 1,
+            },
+        ),
+        (
+            "Saldo MP conhecido (0/1)",
+            "avg:robo.ml.saude.saldo_mp_conhecido{*}",
+            {"aggregator": "last", "green_gt": 0},
+        ),
+        (
+            "Saldo MP R$",
+            "avg:robo.ml.saude.saldo_mp{*}",
+            {"green_gt": None, "precision": 2},
+        ),
+        (
+            "Envios API ok (0/1)",
+            "avg:robo.ml.saude.envios_ok{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        (
+            "Listagem falhou (0/1)",
+            "avg:robo.ml.catalogo.falha_listagem{*}",
+            {"aggregator": "last", "green_gt": None, "red_gt": 0},
+        ),
+        (
+            "So fora de foco (0/1)",
+            "avg:robo.ml.catalogo.fora_foco{*}",
+            {"aggregator": "last", "green_gt": None, "yellow_gt": 0},
+        ),
+        (
+            "Catalogo vazio (0/1)",
+            "avg:robo.ml.catalogo.vazio{*}",
+            {"aggregator": "last", "green_gt": None, "yellow_gt": 0},
+        ),
+        (
+            "Catalogo ok (0/1)",
+            "avg:robo.ml.catalogo.ok{*}",
+            {"aggregator": "last", "green_gt": 0},
+        ),
+        ("Visitas 7d (foco)", "avg:robo.ml.conta.visitas_7d_total{*}", {"green_gt": 0}),
+        ("Visitas 30d (foco)", "avg:robo.ml.conta.visitas_30d_total{*}", {"green_gt": 0}),
+        (
+            "Queda de trafego",
+            "avg:robo.ml.conta.queda_trafego_n{*}",
+            {"green_gt": None, "yellow_gt": 0},
+        ),
+        ("Anuncios analisados", "avg:robo.ml.conta.anuncios_analisados{*}", {"green_gt": 0}),
+        (
+            "Pontos cegos da conta",
+            "avg:robo.ml.conta.blindspot.cegos{*}",
+            {"green_gt": None, "yellow_gt": 0, "red_gt": 2},
+        ),
+        (
+            "Fatura MP cega (0/1)",
+            "avg:robo.ml.conta.blindspot.faturamento_mp{*}",
+            {"aggregator": "last", "green_gt": None, "yellow_gt": 0.4},
+        ),
+        (
+            "Claims cegos (0/1)",
+            "avg:robo.ml.conta.blindspot.claims{*}",
+            {"aggregator": "last", "green_gt": None, "yellow_gt": 0.4},
+        ),
+        (
+            "Integridade atinge meta",
+            "avg:robo.ml.integridade.atinge_meta{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        (
+            "Espelho confiavel",
+            "avg:robo.ml.integridade.espelho_confiavel{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        (
+            "Listagem API ok",
+            "avg:robo.ml.integridade.listagem_ok{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        ("Checks integridade ok", "avg:robo.ml.integridade.checks_ok{*}", {"green_gt": 0}),
+        (
+            "Campos corrigidos",
+            "avg:robo.ml.integridade.corrigidos{*}",
+            {"green_gt": None, "yellow_gt": 0},
+        ),
+        ("IDs ok na listagem", "avg:robo.ml.integridade.ids_ok{*}", {"green_gt": 0}),
+        (
+            "Ads CTR medio",
+            "avg:robo.ads.ctr_medio{*}",
+            {"green_gt": 0, "precision": 2},
+        ),
+        (
+            "Ads CVR medio",
+            "avg:robo.ads.cvr_medio{*}",
+            {"green_gt": 0, "precision": 2},
+        ),
+        (
+            "Ads CPC medio",
+            "avg:robo.ads.cpc_medio{*}",
+            {"green_gt": None, "precision": 2},
+        ),
+        ("Ads prints 14d", "avg:robo.ads.prints_total{*}", {"green_gt": 0}),
+        ("Ads clicks 14d", "avg:robo.ads.clicks_total{*}", {"green_gt": 0}),
+        ("Ads campanhas", "avg:robo.ads.campanhas_n{*}", {"green_gt": 0}),
+        (
+            "Campanhas ACOS alto",
+            "avg:robo.ads.acos_alto_n{*}",
+            {"green_gt": None, "red_gt": 0},
+        ),
+        (
+            "Gasto ads periodo R$",
+            "avg:robo.ads.gasto_periodo{*}",
+            {"green_gt": None, "precision": 2},
+        ),
+        (
+            "Ads periodo fonte ok",
+            "avg:robo.ads.periodo.fonte_ok{*}",
+            {"aggregator": "last", "green_gt": 0, "red_lt": 1},
+        ),
+        (
+            "Buybox ganhando (media)",
+            "avg:robo.buybox.ganhando{*}",
+            {"aggregator": "avg", "green_gt": 0, "precision": 2},
+        ),
+        (
+            "Buybox estavel (media)",
+            "avg:robo.buybox.estavel{*}",
+            {"aggregator": "avg", "green_gt": 0, "precision": 2},
+        ),
+        ("Buybox ofertas", "avg:robo.buybox.n_ofertas{*}", {"green_gt": 0}),
+        (
+            "Demanda historico ok",
+            "avg:robo.demanda.historico_ok{*}",
+            {"aggregator": "avg", "green_gt": 0, "precision": 2},
+        ),
+        (
+            "Demanda confiavel",
+            "avg:robo.demanda.confiavel{*}",
+            {"aggregator": "avg", "green_gt": 0.4, "precision": 2},
+        ),
+        (
+            "Precos aplicaveis",
+            "avg:robo.ml.saude.precos_aplicaveis{*}",
+            {"green_gt": None, "yellow_gt": 0},
+        ),
+    ]
+    widgets: list[dict[str, Any]] = [
+        {
+            "id": 783000,
+            "definition": {
+                "type": "note",
+                "content": (
+                    "**Conta ML no Datadog.** Reputação (atraso, cancelamento, vendas 60d), "
+                    "situação do catálogo (falha de listagem ≠ vazio), saldo Mercado Pago, "
+                    "pontos cegos da conta, visitas 7d/30d do foco, CTR/ACOS e buybox.\n\n"
+                    "`claims_rate_conhecido=0` significa que a API não devolveu a taxa — "
+                    "o claims rate 0% ao lado não é “zero reclamações”. "
+                    "`faturamento_status`: 0 cego, 0,5 parcial, 1 ok. "
+                    "Saldo só vale com `saldo_mp_conhecido=1`. "
+                    "Séries novas aparecem depois da próxima rodada do resumo (09:00 BRT) "
+                    "e do monitor ML (a cada 2h)."
+                ),
+                "background_color": "green",
+                "font_size": "14",
+                "text_align": "left",
+                "show_tick": False,
+                "has_padding": True,
+            },
+            "layout": {"height": 2, "width": 12, "x": 0, "y": 0},
+        }
+    ]
+    for i, (titulo, query, extra) in enumerate(cards):
+        kwargs = {"aggregator": "avg", "precision": 0, "green_gt": 0}
+        kwargs.update(extra)
+        col = i % 6
+        row = 2 + (i // 6) * 2
+        widgets.append(
+            {
+                **_qv(titulo, query, **kwargs),
+                "layout": {"height": 2, "width": 2, "x": col * 2, "y": row},
+                "id": 783001 + i,
+            }
+        )
+    base_y = 2 + ((len(cards) + 5) // 6) * 2
+    toplists = [
+        (
+            "Visitas 7d por anuncio",
+            "avg:robo.ml.conta.visitas_7d{*} by {anun}",
+            "desc",
+        ),
+        (
+            "Queda de trafego por anuncio",
+            "avg:robo.ml.conta.queda_trafego{*} by {anun}",
+            "desc",
+        ),
+        (
+            "Sugestao de preco %",
+            "avg:robo.ml.saude.preco_sugestao_pct{*} by {anun}",
+            "desc",
+        ),
+        (
+            "Buybox preco vencedor",
+            "avg:robo.buybox.preco_vencedor{*} by {catalog}",
+            "asc",
+        ),
+        (
+            "Demanda tendencia (-1/0/1)",
+            "avg:robo.demanda.tendencia{*} by {produto}",
+            "desc",
+        ),
+        (
+            "Demanda variacao %",
+            "avg:robo.demanda.variacao_pct{*} by {produto}",
+            "desc",
+        ),
+    ]
+    for j, (titulo, query, ordem) in enumerate(toplists):
+        widgets.append(
+            {
+                **_toplist_metric(titulo, query, aggregator="avg", order=ordem, limit=10),
+                "layout": {
+                    "height": 4,
+                    "width": 4,
+                    "x": (j % 3) * 4,
+                    "y": base_y + (j // 3) * 4,
+                },
+                "id": 783100 + j,
+            }
+        )
+    return {
+        "id": GROUP_ML_LACUNAS_ID,
+        "definition": {
+            "title": "[ML no Datadog] reputacao / catalogo / saldo / ads / buybox",
+            "type": "group",
+            "background_color": "vivid_blue",
+            "layout_type": "ordered",
+            "show_title": True,
+            "widgets": widgets,
+        },
+        "layout": {"x": 0, "y": 9, "width": 12, "height": 1},
     }
 
 
@@ -6205,6 +6571,10 @@ def atualizar_dashboard_ecommerce() -> None:
             "máxima só para expor âncoras no Datadog e volta a uso moderado. "
             "Qualquer oscilação além da margem de erro deixa o widget **vermelho** "
             "e dispara Telegram: cuidado para tomar decisão (não escalar Ads/volume).\n\n"
+            "**ML no Datadog:** grupo [ML no Datadog] — atraso, cancelamento, vendas 60d, "
+            "claims rate conhecido, catálogo (falha ≠ vazio), saldo MP, visitas do foco, "
+            "CTR/ACOS, buybox e tendência de demanda. "
+            "Claims rate 0% com conhecido=0 não é zero reclamações.\n\n"
             "**Saude da conta ML:** grupo [Saude conta ML] — reputação/cor da *conta*, "
             "anúncios do foco Impala (kits), claims e receita dos *seus* pedidos. "
             "Bolsas Mariart/legado ficam fora do radar "
@@ -6238,6 +6608,8 @@ def atualizar_dashboard_ecommerce() -> None:
     com["layout"] = {"x": 0, "y": 6, "width": 12, "height": 1}
     saude = _grupo_saude_conta_ml()
     saude["layout"] = {"x": 0, "y": 8, "width": 12, "height": 1}
+    lacunas = _grupo_ml_lacunas()
+    lacunas["layout"] = {"x": 0, "y": 9, "width": 12, "height": 1}
     ruptura = _grupo_ponto_ruptura_cnae()
     ruptura["layout"] = {"x": 0, "y": 10, "width": 12, "height": 1}
     outra = _grupo_ruptura_outra_marca()
@@ -6255,6 +6627,7 @@ def atualizar_dashboard_ecommerce() -> None:
             "ABA FASE 1 IMPALA: progresso Impala (teto 2.5k→20k, Cruzeiro 12/d; sem PETG/Masterprint), "
             "opex R$ 800 (meses ate vendas pagarem), "
             "catalogo Impala, batalha, decisao guerra (margem+extra), ads, saude da conta ML, "
+            "lacunas ML (atraso, saldo, catalogo, visitas, buybox), "
             "vendas dia/7d/30d + ranking de kits, "
             "agora (estoque critico / sem venda / ads do dia), "
             "CNAE/2o CNPJ, ruptura outra marca, marca x kit x tendencia, "
@@ -6273,6 +6646,7 @@ def atualizar_dashboard_ecommerce() -> None:
             bat,
             guerra,
             saude,
+            lacunas,
             ruptura,
             outra,
             marca_kit,

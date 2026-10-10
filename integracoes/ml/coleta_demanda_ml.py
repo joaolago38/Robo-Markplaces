@@ -461,7 +461,32 @@ def _claims_rate_reputacao(reputacao: dict[str, Any] | None) -> tuple[float, boo
         return 0.0, True
 
 
-def sondar_faturamento_mp() -> dict[str, str]:
+def _saldo_mp(valor: Any) -> float | None:
+    """Número do saldo MP. Texto e dict aninhado só entram se der para ler um float."""
+    if isinstance(valor, bool):
+        return None
+    if isinstance(valor, (int, float)):
+        return float(valor)
+    if isinstance(valor, str):
+        txt = valor.strip().replace(" ", "")
+        if not txt:
+            return None
+        if "," in txt and "." in txt:
+            txt = txt.replace(".", "").replace(",", ".")
+        else:
+            txt = txt.replace(",", ".")
+        try:
+            return float(txt)
+        except ValueError:
+            return None
+    if isinstance(valor, dict):
+        for chave in ("amount", "available", "value"):
+            if chave in valor:
+                return _saldo_mp(valor.get(chave))
+    return None
+
+
+def sondar_faturamento_mp() -> dict[str, Any]:
     """Saldo Mercado Pago não sai do token ML. Com MP_ACCESS_TOKEN, consulta o saldo."""
     import os
 
@@ -472,6 +497,7 @@ def sondar_faturamento_mp() -> dict[str, str]:
         return {
             "status": "cego",
             "detalhe": "sem MP_ACCESS_TOKEN — fatura/saldo não saem do token ML",
+            "saldo": None,
         }
     try:
         r = request(
@@ -484,15 +510,28 @@ def sondar_faturamento_mp() -> dict[str, str]:
             return {
                 "status": "parcial",
                 "detalhe": f"token MP presente; saldo HTTP {getattr(r, 'status_code', '?')}",
+                "saldo": None,
             }
         body = r.json() or {}
-        disponivel = body.get("available_balance")
-        if disponivel is None:
-            return {"status": "ok", "detalhe": "saldo Mercado Pago consultado"}
-        return {"status": "ok", "detalhe": f"saldo disponível {disponivel}"}
+        saldo = _saldo_mp(body.get("available_balance"))
+        if saldo is None:
+            return {
+                "status": "ok",
+                "detalhe": "saldo Mercado Pago consultado",
+                "saldo": None,
+            }
+        return {
+            "status": "ok",
+            "detalhe": f"saldo disponível {saldo}",
+            "saldo": saldo,
+        }
     except Exception as exc:
         logger.info("sondar_faturamento_mp: %s", exc)
-        return {"status": "parcial", "detalhe": "token MP presente; consulta de saldo falhou"}
+        return {
+            "status": "parcial",
+            "detalhe": "token MP presente; consulta de saldo falhou",
+            "saldo": None,
+        }
 
 
 def enriquecer_porte_sellers(resultados: list[dict[str, Any]], *, limite: int = 8) -> int:
@@ -751,6 +790,37 @@ def formatar_secao_pontos_cegos(pontos: dict[str, Any] | None) -> list[str]:
     return linhas
 
 
+def emitir_metricas_pontos_cegos(prefixo: str, pontos_cegos: dict[str, Any] | None) -> None:
+    """Gauges robo.{prefixo}.blindspot.* sem zerar o funil do mesmo prefixo."""
+    pref = str(prefixo or "").strip().strip(".")
+    if not pref:
+        return
+    pc = pontos_cegos or {}
+    gauge(f"{pref}.blindspot.cegos", float(_i(pc.get("cegos"))))
+    gauge(f"{pref}.blindspot.parciais", float(_i(pc.get("parciais"))))
+    gauge(f"{pref}.blindspot.oks", float(_i(pc.get("oks"))))
+    for item in pc.get("itens") or []:
+        if not isinstance(item, dict):
+            continue
+        bid = str(item.get("id") or "").strip()
+        if not bid:
+            continue
+        st = str(item.get("status") or "")
+        if st == "cego":
+            val = 1.0
+        elif st == "parcial":
+            val = 0.5
+        else:
+            val = 0.0
+        gauge(f"{pref}.blindspot.{bid}", val)
+    vendas_cego = 1.0
+    for item in pc.get("itens") or []:
+        if isinstance(item, dict) and item.get("id") == "vendas_concorrente":
+            vendas_cego = 0.0 if item.get("status") == "ok" else 1.0
+            break
+    gauge(f"{pref}.blindspot.vendas_api", vendas_cego)
+
+
 def emitir_metricas_demanda(
     prefixo: str,
     *,
@@ -782,30 +852,7 @@ def emitir_metricas_demanda(
     gauge(f"{pref}.funil.pedidos_ok", 1.0 if fun.get("pedidos_ok") else 0.0)
     gauge(f"{pref}.funil.visitas_ok", 1.0 if fun.get("visitas_ok") else 0.0)
     gauge(f"{pref}.rivais.visitas_amostra", float(_i(visitas_enriquecidas)))
-    pc = pontos_cegos or {}
-    gauge(f"{pref}.blindspot.cegos", float(_i(pc.get("cegos"))))
-    gauge(f"{pref}.blindspot.parciais", float(_i(pc.get("parciais"))))
-    gauge(f"{pref}.blindspot.oks", float(_i(pc.get("oks"))))
-    for item in pc.get("itens") or []:
-        if not isinstance(item, dict):
-            continue
-        bid = str(item.get("id") or "").strip()
-        if not bid:
-            continue
-        st = str(item.get("status") or "")
-        if st == "cego":
-            val = 1.0
-        elif st == "parcial":
-            val = 0.5
-        else:
-            val = 0.0
-        gauge(f"{pref}.blindspot.{bid}", val)
-    vendas_cego = 1.0
-    for item in pc.get("itens") or []:
-        if item.get("id") == "vendas_concorrente":
-            vendas_cego = 0.0 if item.get("status") == "ok" else 1.0
-            break
-    gauge(f"{pref}.blindspot.vendas_api", vendas_cego)
+    emitir_metricas_pontos_cegos(pref, pontos_cegos)
     try:
         from integracoes.esmaltes.metricas_progresso_24m import (
             emitir_petg_funil,
