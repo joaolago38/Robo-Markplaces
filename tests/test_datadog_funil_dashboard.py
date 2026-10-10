@@ -24,9 +24,64 @@ class DatadogFunilDashboardTests(unittest.TestCase):
             "robo.filamentos.ml.blindspot.cegos",
             "robo.ml.busca.sites_search_403",
             "robo.filamentos.ml.funil.acao.baixar_preco_ou_listing",
+            "robo.masterprint_petg.funil.pedidos_ok",
+            "robo.masterprint_petg.funil.visitas_ok",
+            "robo.masterprint_petg.funil.conversao_confiavel",
+            "robo.filamentos.ml.funil.pedidos_ok",
+            "robo.filamentos.ml.funil.conversao_confiavel",
         ):
             self.assertIn(metric, blob, msg=metric)
         self.assertEqual(grupo["id"], dd.GROUP_MP_FUNIL_ID)
+
+    def test_grupo_ml_lacunas(self):
+        grupo = dd._grupo_ml_lacunas()
+        blob = str(grupo)
+        for metric in (
+            "robo.ml.saude.vendas_60d",
+            "robo.ml.saude.atraso_rate_pct",
+            "robo.ml.saude.cancelamentos_rate_pct",
+            "robo.ml.saude.claims_rate_conhecido",
+            "robo.ml.saude.anuncios_premium",
+            "robo.ml.saude.anuncios_classico",
+            "robo.ml.saude.precos_pendencias",
+            "robo.ml.saude.preco_sugestao_pct_max",
+            "robo.ml.saude.claims_abertos_confiavel",
+            "robo.ml.saude.todos_pausados_conta",
+            "robo.ml.saude.ok",
+            "robo.ml.saude.publicidade_recomendacoes",
+            "robo.ml.saude.faturamento_status",
+            "robo.ml.saude.saldo_mp",
+            "robo.ml.saude.saldo_mp_conhecido",
+            "robo.ml.catalogo.falha_listagem",
+            "robo.ml.catalogo.fora_foco",
+            "robo.ml.catalogo.vazio",
+            "robo.ml.conta.visitas_7d_total",
+            "robo.ml.conta.visitas_30d_total",
+            "robo.ml.conta.queda_trafego_n",
+            "robo.ml.conta.blindspot.cegos",
+            "robo.ml.conta.blindspot.faturamento_mp",
+            "robo.ml.integridade.atinge_meta",
+            "robo.ml.integridade.espelho_confiavel",
+            "robo.ml.integridade.listagem_ok",
+            "robo.ml.integridade.ids_ok",
+            "robo.ads.ctr_medio",
+            "robo.ads.cvr_medio",
+            "robo.ads.cpc_medio",
+            "robo.ads.prints_total",
+            "robo.ads.acos_alto_n",
+            "robo.ads.gasto_periodo",
+            "robo.buybox.ganhando",
+            "robo.buybox.preco_vencedor",
+            "robo.demanda.tendencia",
+            "robo.demanda.variacao_pct",
+            "robo.ml.conta.visitas_7d{*} by {anun}",
+        ):
+            self.assertIn(metric, blob, msg=metric)
+        self.assertEqual(grupo["id"], dd.GROUP_ML_LACUNAS_ID)
+        fonte = (
+            Path(__file__).resolve().parents[1] / "scripts" / "completar_datadog_saude.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("lacunas = _grupo_ml_lacunas()", fonte)
 
     def test_batalha_tem_agir_e_conversao(self):
         grupo = dd._grupo_batalha_impala()

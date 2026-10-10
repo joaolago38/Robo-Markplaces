@@ -417,6 +417,14 @@ class ColetaDemandaMlTests(unittest.TestCase):
             out = cd.sondar_faturamento_mp()
         self.assertEqual(out["status"], "cego")
         self.assertIn("MP_ACCESS_TOKEN", out["detalhe"])
+        self.assertIsNone(out["saldo"])
+
+    def test_saldo_mp_numero(self):
+        self.assertEqual(cd._saldo_mp(15.5), 15.5)
+        self.assertEqual(cd._saldo_mp("1.234,50"), 1234.5)
+        self.assertEqual(cd._saldo_mp({"amount": "10,25"}), 10.25)
+        self.assertIsNone(cd._saldo_mp("sem saldo"))
+        self.assertIsNone(cd._saldo_mp(None))
 
 
 if __name__ == "__main__":

@@ -256,6 +256,9 @@ def coletar_resumo_conta(*, max_anuncios_performance: int = 80) -> dict[str, Any
             "reputacao": reputacao,
             "integridade": integridade,
             "faturamento_nota": str(faturamento.get("detalhe") or ""),
+            "faturamento_status": str(faturamento.get("status") or "cego"),
+            "saldo_mp": faturamento.get("saldo"),
+            "saldo_mp_conhecido": faturamento.get("saldo") is not None,
             "pontos_cegos": montar_pontos_cegos(
                 consolidado={
                     "anuncios_com_vendas_api": sum(
@@ -356,6 +359,66 @@ def emitir_metricas_saude_conta(resumo: dict[str, Any]) -> None:
         "ml.saude.todos_pausados_conta",
         1.0 if pausados_conta > 0 and ativos_conta == 0 else 0.0,
     )
+    gauge(
+        "ml.saude.claims_rate_conhecido",
+        1.0 if rep.get("claims_rate_conhecido") else 0.0,
+    )
+    gauge(
+        "ml.saude.publicidade_recomendacoes",
+        float(resumo.get("publicidade_recomendacoes") or 0),
+    )
+    gauge("ml.saude.envios_ok", 1.0 if resumo.get("envios_ok") else 0.0)
+    status_fat = str(resumo.get("faturamento_status") or "cego")
+    gauge(
+        "ml.saude.faturamento_status",
+        {"ok": 1.0, "parcial": 0.5}.get(status_fat, 0.0),
+    )
+    try:
+        saldo = float(resumo.get("saldo_mp"))
+        saldo_conhecido = resumo.get("saldo_mp_conhecido")
+        if saldo_conhecido is None:
+            saldo_conhecido = True
+    except (TypeError, ValueError):
+        saldo = 0.0
+        saldo_conhecido = False
+    gauge("ml.saude.saldo_mp_conhecido", 1.0 if saldo_conhecido else 0.0)
+    gauge("ml.saude.saldo_mp", saldo if saldo_conhecido else 0.0)
+    precos = resumo.get("precos_pendencias")
+    if not isinstance(precos, list):
+        precos = []
+    aplicaveis = 0
+    pct_max = 0.0
+    for preco in precos:
+        if not isinstance(preco, dict):
+            continue
+        try:
+            pct = abs(float(preco.get("percent_difference") or 0))
+        except (TypeError, ValueError):
+            pct = 0.0
+        if pct > pct_max:
+            pct_max = pct
+        sugerido = 0.0
+        try:
+            sugerido = float(preco.get("preco_sugerido") or 0)
+        except (TypeError, ValueError):
+            sugerido = 0.0
+        if preco.get("aplicavel") and sugerido > 0:
+            aplicaveis += 1
+            compact = "".join(
+                ch for ch in str(preco.get("item_id") or "").lower() if ch.isalnum()
+            )
+            gauge(
+                "ml.saude.preco_sugestao_pct",
+                pct,
+                tags=[f"anun:{(compact or 'x')[:16]}"],
+            )
+    gauge("ml.saude.preco_sugestao_pct_max", pct_max)
+    gauge("ml.saude.precos_aplicaveis", float(aplicaveis))
+    pontos = resumo.get("pontos_cegos")
+    if isinstance(pontos, dict):
+        from integracoes.ml.coleta_demanda_ml import emitir_metricas_pontos_cegos
+
+        emitir_metricas_pontos_cegos("ml.conta", pontos)
 
 
 def _linha_pos_venda(resumo: dict[str, Any]) -> str:

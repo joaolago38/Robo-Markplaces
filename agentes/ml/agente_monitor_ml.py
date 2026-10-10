@@ -35,6 +35,58 @@ def _pct_diff(maior: float, menor: float) -> float:
     return round((maior - menor) / menor * 100, 1)
 
 
+_SITUACOES_CATALOGO = ("ok", "fora_foco", "vazio", "falha_listagem", "nao_configurado")
+
+
+def _tag_anuncio(item_id: str) -> str:
+    compact = "".join(ch for ch in str(item_id or "").lower() if ch.isalnum())
+    return f"anun:{(compact or 'x')[:16]}"
+
+
+def _emitir_metricas_monitor(
+    catalogo: dict[str, Any] | None,
+    concorrencia: list[dict] | None,
+    ads: dict[str, Any] | None,
+) -> None:
+    """Visitas, situação do catálogo e ACOS que o monitor já lê e não ia ao Datadog."""
+    from core.datadog_metrics import gauge
+
+    cat = catalogo if isinstance(catalogo, dict) else {}
+    situacao = str(cat.get("situacao") or "vazio")
+    for nome in _SITUACOES_CATALOGO:
+        gauge(f"ml.catalogo.{nome}", 1.0 if situacao == nome else 0.0)
+    itens = [i for i in (concorrencia or []) if isinstance(i, dict)]
+    vis7 = 0
+    vis30 = 0
+    quedas = 0
+    for item in itens:
+        v7 = int(item.get("visitas_7d") or 0)
+        v30 = int(item.get("visitas_30d") or 0)
+        vis7 += v7
+        vis30 += v30
+        media = v30 / 4.0 if v30 else 0.0
+        queda = 1.0 if media > 0 and v7 < media * 0.5 else 0.0
+        if queda:
+            quedas += 1
+        tags = [_tag_anuncio(str(item.get("item_id") or ""))]
+        gauge("ml.conta.visitas_7d", float(v7), tags=tags)
+        gauge("ml.conta.visitas_30d", float(v30), tags=tags)
+        gauge("ml.conta.queda_trafego", queda, tags=tags)
+    gauge("ml.conta.visitas_7d_total", float(vis7))
+    gauge("ml.conta.visitas_30d_total", float(vis30))
+    gauge("ml.conta.queda_trafego_n", float(quedas))
+    gauge("ml.conta.anuncios_analisados", float(len(itens)))
+    bloco = ads if isinstance(ads, dict) else {}
+    acima = bloco.get("campanhas_acos_alto") or []
+    gauge("ads.acos_alto_n", float(len(acima) if isinstance(acima, list) else 0))
+    try:
+        gasto = float(bloco.get("gasto_total") or 0)
+    except (TypeError, ValueError):
+        gasto = 0.0
+    gauge("ads.gasto_periodo", gasto)
+    gauge("ads.periodo.fonte_ok", 1.0 if bloco.get("configurado") else 0.0)
+
+
 def _analisar_conta() -> tuple[dict[str, Any], list[str]]:
     recomendacoes: list[str] = []
     conta: dict[str, Any] = {}
@@ -474,6 +526,11 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
                 enviado = bool(alertar_gestor(msg))
             except Exception as exc:
                 logger.error("monitor_ml alerta credenciais: %s", exc)
+        _emitir_metricas_monitor(
+            {"situacao": "nao_configurado"},
+            [],
+            {},
+        )
         return {"ok": False, "motivo": motivo, "enviado": enviado, "resumo": msg}
 
     dias_ads = 14
@@ -484,6 +541,7 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
 
     todas_recs = rec_conta + rec_ads + rec_conc
     resumo = _montar_resumo(conta, ads, concorrencia, todas_recs, catalogo)
+    _emitir_metricas_monitor(catalogo, concorrencia, ads)
 
     enviado = False
     enviado_p0 = False

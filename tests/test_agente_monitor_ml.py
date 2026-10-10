@@ -195,6 +195,39 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(kwargs.get("statuses"), ("active", "paused"))
         self.assertFalse(kwargs.get("aplicar_foco"))
 
+    def test_emitir_metricas_monitor_catalogo_e_visitas(self):
+        with patch("core.datadog_metrics.gauge") as mock_g:
+            mon._emitir_metricas_monitor(
+                {"situacao": "falha_listagem"},
+                [{"item_id": "MLB1", "visitas_7d": 2, "visitas_30d": 40}],
+                {
+                    "configurado": True,
+                    "gasto_total": 12.5,
+                    "campanhas_acos_alto": [{"id": "c"}],
+                },
+            )
+        pares = {
+            c.args[0]: c.args[1]
+            for c in mock_g.call_args_list
+            if not (c.kwargs.get("tags") or (len(c.args) > 2 and c.args[2]))
+        }
+        self.assertEqual(pares["ml.catalogo.falha_listagem"], 1.0)
+        self.assertEqual(pares["ml.catalogo.ok"], 0.0)
+        self.assertEqual(pares["ml.catalogo.vazio"], 0.0)
+        self.assertEqual(pares["ml.conta.visitas_7d_total"], 2.0)
+        self.assertEqual(pares["ml.conta.visitas_30d_total"], 40.0)
+        self.assertEqual(pares["ml.conta.queda_trafego_n"], 1.0)
+        self.assertEqual(pares["ml.conta.anuncios_analisados"], 1.0)
+        self.assertEqual(pares["ads.acos_alto_n"], 1.0)
+        self.assertEqual(pares["ads.gasto_periodo"], 12.5)
+        self.assertEqual(pares["ads.periodo.fonte_ok"], 1.0)
+        tags = [
+            c.kwargs.get("tags")
+            for c in mock_g.call_args_list
+            if c.args[0] == "ml.conta.visitas_7d"
+        ]
+        self.assertEqual(tags, [["anun:mlb1"]])
+
 
 if __name__ == "__main__":
     unittest.main()
