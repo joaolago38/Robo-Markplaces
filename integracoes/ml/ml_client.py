@@ -46,6 +46,16 @@ def _request_ml(method: str, url: str, *, timeout: int = 30, **kwargs: Any):
     return r
 
 
+def _request_ml_ou_publico(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
+    """Leitura autenticada. Em 401/403, repete sem o token do app (endpoint público)."""
+    r = _request_ml(method, url, timeout=timeout, **kwargs)
+    if getattr(r, "status_code", 0) not in (401, 403):
+        return r
+    publico = dict(kwargs)
+    publico.pop("headers", None)
+    return request(method, url, timeout=timeout, **publico)
+
+
 def _status_http_exc(exc: Exception) -> int | None:
     """Extrai status HTTP de HTTPError ou mensagens tipo '404 Client Error'."""
     resp = getattr(exc, "response", None)
@@ -722,7 +732,7 @@ def buscar_visitas_item(item_id: str) -> dict:
         }
     iid = item_id.strip()
     try:
-        r7 = _request_ml(
+        r7 = _request_ml_ou_publico(
             "GET",
             f"{BASE}/items/{iid}/visits/time_window",
             params={"last": 7, "unit": "day"},
@@ -731,7 +741,7 @@ def buscar_visitas_item(item_id: str) -> dict:
         r7.raise_for_status()
         v7 = int((r7.json() or {}).get("total_visits", 0) or 0)
 
-        r30 = _request_ml(
+        r30 = _request_ml_ou_publico(
             "GET",
             f"{BASE}/items/{iid}/visits/time_window",
             params={"last": 30, "unit": "day"},

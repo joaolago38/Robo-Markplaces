@@ -299,6 +299,24 @@ class TestMlAnuncioStatus(unittest.TestCase):
         self.assertEqual(out.get("visitas_7d"), 10)
         self.assertEqual(out.get("visitas_30d"), 40)
 
+    @patch("integracoes.ml.ml_client.request")
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML20d_visitas_403_tenta_sem_token(self, _en, mock_auth, mock_pub):
+        negado = MagicMock()
+        negado.status_code = 403
+        negado.raise_for_status.side_effect = Exception("403")
+        mock_auth.return_value = negado
+        mock_pub.side_effect = [
+            _mock_resp({"total_visits": 3}),
+            _mock_resp({"total_visits": 9}),
+        ]
+        out = ml_client.buscar_visitas_item("MLB9")
+        self.assertTrue(out.get("disponivel"))
+        self.assertEqual(out.get("visitas_7d"), 3)
+        self.assertEqual(out.get("visitas_30d"), 9)
+        self.assertEqual(mock_pub.call_count, 2)
+
     @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML21_atualizar_preco_bloqueado_kill_switch(self, _en, mock_req):

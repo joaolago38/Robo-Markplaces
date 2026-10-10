@@ -141,12 +141,26 @@ def top_por_visitas(produtos: list[dict[str, Any]], *, top_n: int = 8) -> list[d
     return com[: max(0, top_n)]
 
 
+def _funil_falhou(dias: int, motivo: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "motivo": motivo,
+        "dias": dias,
+        "pedidos_ok": False,
+        "visitas_ok": False,
+        "totais": {},
+        "itens": [],
+    }
+
+
 def coletar_funil_proprio(
     *,
     dias: int = 7,
     max_anuncios: int = 25,
     filtro_titulo: str | None = None,
     min_visitas_conv: int | None = None,
+    anuncios_prontos: list[dict[str, Any]] | None = None,
+    listagem_ok: bool | None = None,
 ) -> dict[str, Any]:
     """
     Visitas → unidades pedidas (pedidos pagos) → conversão nos seus anúncios.
@@ -163,21 +177,21 @@ def coletar_funil_proprio(
         min_vis = int(min_visitas_conv if min_visitas_conv is not None else 10)
 
     if not ml_client._enabled():
-        return {
-            "ok": False,
-            "motivo": "ML não configurado",
-            "dias": dias,
-            "pedidos_ok": False,
-            "visitas_ok": False,
-            "totais": {},
-            "itens": [],
-        }
+        return _funil_falhou(dias, "ML não configurado")
 
-    anuncios = ml_client.listar_meus_anuncios(statuses=("active", "paused"))
+    if anuncios_prontos is None:
+        anuncios = ml_client.listar_meus_anuncios(statuses=("active", "paused"))
+        listagem_ok_efetiva = bool(ml_client.ultima_listagem_anuncios().get("ok"))
+    else:
+        anuncios = [a for a in anuncios_prontos if isinstance(a, dict)]
+        listagem_ok_efetiva = True if listagem_ok is None else bool(listagem_ok)
     if filtro_titulo:
         anuncios = [
             a for a in anuncios if _titulo_bate(str(a.get("titulo") or ""), filtro_titulo)
         ]
+    if not anuncios and not listagem_ok_efetiva:
+        return _funil_falhou(dias, "falha_listagem")
+    catalogo_vazio = not anuncios
     anuncios = anuncios[: max(0, max_anuncios)]
 
     pedidos, pedidos_ok = ml_client.listar_pedidos_detalhado(dias=dias)
@@ -193,7 +207,7 @@ def coletar_funil_proprio(
             receita_por_item[iid] += qtd * float(it.get("preco_unitario") or 0)
 
     itens: list[dict[str, Any]] = []
-    visitas_ok = False
+    visitas_ok = catalogo_vazio
     total_visitas = 0
     total_unidades = 0
     for an in anuncios:
@@ -274,6 +288,13 @@ def avaliar_identidade_cnpj2() -> dict[str, Any]:
         seller = str(ml.get("seller_id") or "").strip()
     except Exception as exc:
         logger.debug("seller masterprint: %s", exc)
+    if not seller:
+        try:
+            from integracoes.masterprint.ramo import carregar_ramo
+
+            seller = str((carregar_ramo() or {}).get("ml_seller_id") or "").strip()
+        except Exception as exc:
+            logger.debug("seller masterprint ramo: %s", exc)
 
     ident: dict[str, Any] = {}
     try:
@@ -584,6 +605,7 @@ def montar_pontos_cegos(
     claims: dict[str, Any] | None = None,
     faturamento: dict[str, Any] | None = None,
     anuncios_fora_de_foco: int | None = None,
+    medir_mercado: bool = True,
 ) -> dict[str, Any]:
     """Flags estruturados do que a API entrega vs ponto cego."""
     cons = consolidado or {}
@@ -594,7 +616,7 @@ def montar_pontos_cegos(
     com_porte = _i(cons.get("anuncios_com_porte_seller"))
     proxy_demanda = com_vis > 0 or com_porte > 0 or com_aval > 0
 
-    itens = [
+    itens_mercado = [
         {
             "id": "vendas_concorrente",
             "rotulo": "Vendas concorrente (sold_quantity)",
@@ -638,6 +660,8 @@ def montar_pontos_cegos(
                 or "403 no app atual — usa fallback externo (preço/título sem vendas)"
             ),
         },
+    ]
+    itens = [
         {
             "id": "funil_proprio",
             "rotulo": "Funil próprio (visitas→pedidos)",
@@ -663,6 +687,8 @@ def montar_pontos_cegos(
             ),
         },
     ]
+    if medir_mercado:
+        itens = itens_mercado + itens
     if isinstance(faturamento, dict):
         itens.append(
             {

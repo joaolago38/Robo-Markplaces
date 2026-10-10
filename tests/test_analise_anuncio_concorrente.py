@@ -4,7 +4,7 @@ tests/test_analise_anuncio_concorrente.py
 import os
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -212,6 +212,21 @@ class VisitasPropriasTests(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["avaliacoes"], 12)
         self.assertEqual(out["nota"], 4.5)
+
+    @patch.object(aa, "request")
+    @patch.object(aa.ml_client, "_h", return_value={"Authorization": "Bearer tok"})
+    @patch.object(aa.ml_client, "_enabled", return_value=True)
+    def test_buscar_reviews_403_repete_sem_token(self, _en, _h, mock_req):
+        negado = MagicMock()
+        negado.status_code = 403
+        ok = MagicMock()
+        ok.status_code = 200
+        ok.json.return_value = {"paging": {"total": 4}, "rating_average": 5, "stars": 5}
+        mock_req.side_effect = [negado, ok]
+        out = aa.buscar_reviews_item("mlb2")
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["avaliacoes"], 4)
+        self.assertEqual(mock_req.call_args_list[1].kwargs["headers"], {})
 
     @patch.object(aa.ml_client, "_enabled", return_value=True)
     @patch.object(aa.ml_client, "_request_ml")
