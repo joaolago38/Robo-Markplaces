@@ -22,6 +22,7 @@ for nome in [".env", ".env.exemplo"]:
                     os.environ.setdefault(k.strip(), v)
         break
 
+
 key = os.getenv("ANTHROPIC_API_KEY", "")
 print(f"API Key: {key[:20]}..." if key else "API Key: NAO ENCONTRADA")
 
