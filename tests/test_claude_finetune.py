@@ -15,7 +15,6 @@ from core.claude_finetune import (
     talvez_capturar,
 )
 
-
 _ANALISE_BAIXA = {"deve_aumentar_ia": False, "score": 10, "nivel": "baixo", "resumo": "frio"}
 
 
