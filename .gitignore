@@ -223,6 +223,8 @@ logs/renovar_bling_local.log
 logs/claude_toggle.json
 logs/claude_uso_orcamento.json
 logs/datadog_log_cooldown.json
+logs/claude_finetune_candidatos.jsonl
+logs/claude_finetune_haiku.jsonl
 # Probes / scratch locais
 _tmp_*.py
 

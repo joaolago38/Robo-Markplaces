@@ -306,6 +306,18 @@ def perguntar(
             )
         except Exception:
             pass
+        if not texto.startswith("⚠️"):
+            try:
+                from core.claude_finetune import talvez_capturar
+
+                talvez_capturar(
+                    proposito=proposito,
+                    entrada=mensagem_texto,
+                    resposta=texto,
+                    origem=origem,
+                )
+            except Exception:
+                logger.debug("captura finetune ignorada", exc_info=True)
         return texto
     except ValueError as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:json_invalido"])
