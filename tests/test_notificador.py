@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import core.notificador as notificador
+from core import telegram_gate as tg
 
 
 def _mock_resp():
@@ -22,6 +23,7 @@ def _mock_resp():
 
 class TestNotificadorAlertar(unittest.TestCase):
     def setUp(self):
+        tg.reset()
         self._tmp = tempfile.TemporaryDirectory()
         self._orig_cooldown = notificador._COOLDOWN_PATH
         notificador._COOLDOWN_PATH = Path(self._tmp.name) / "alertas_cooldown.json"
@@ -48,6 +50,17 @@ class TestNotificadorAlertar(unittest.TestCase):
         url = mock_request.call_args[0][1]
         self.assertIn("sendMessage", url)
 
+    @patch.object(notificador, "formatar_data_hora_br", return_value="09/07 16:07")
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "token")
+    def test_cabecalho_usa_horario_brasil(self, mock_request, mock_hora, *_patches):
+        mock_request.return_value = _mock_resp()
+        notificador.alertar("teste")
+        texto = mock_request.call_args[1]["json"]["text"]
+        self.assertIn("09/07 16:07", texto)
+        mock_hora.assert_called_once()
+
     @patch.object(notificador, "request", side_effect=Exception("timeout"))
     @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
     @patch.object(notificador, "TELEGRAM_TOKEN", "token")
@@ -65,21 +78,41 @@ class TestNotificadorAlertar(unittest.TestCase):
         self.assertEqual(payload["chat_id"], "gestor-99")
 
     def test_NT05_alertar_critico_chama_ambos(self):
-        with patch.object(notificador, "alertar", MagicMock(return_value=True)) as m_alert, patch.object(
+        with patch.object(notificador, "TELEGRAM_CHAT_ID", "chat-geral"), patch.object(
+            notificador, "TELEGRAM_GESTOR_CHAT_ID", "gestor-99"
+        ), patch.object(notificador, "alertar", MagicMock(return_value=True)) as m_alert, patch.object(
             notificador, "alertar_gestor", MagicMock(return_value=True)
         ) as m_gestor:
             notificador.alertar_critico("URGENTE")
         m_gestor.assert_called_once()
         m_alert.assert_called_once()
 
-    @patch("core.whatsapp.notificar_venda", return_value=True)
-    def test_NT06_notificar_venda_whatsapp_delega_whatsapp(self, mock_nv):
+    def test_NT05b_alertar_critico_nao_duplica_mesmo_chat(self):
+        with patch.object(notificador, "TELEGRAM_CHAT_ID", "mesmo"), patch.object(
+            notificador, "TELEGRAM_GESTOR_CHAT_ID", "mesmo"
+        ), patch.object(notificador, "alertar", MagicMock(return_value=True)) as m_alert, patch.object(
+            notificador, "alertar_gestor", MagicMock(return_value=True)
+        ) as m_gestor:
+            notificador.alertar_critico("URGENTE-MESMO")
+        m_gestor.assert_called_once()
+        m_alert.assert_not_called()
+
+    @patch.object(notificador, "_enviar", return_value=True)
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "gestor1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_NT06_notificar_venda_vai_ao_telegram_gestor(self, *_):
         ok = notificador.notificar_venda_whatsapp("ml", "PED-1", "Kit", 59.90)
         self.assertTrue(ok)
-        mock_nv.assert_called_once()
+        notificador._enviar.assert_called_once()
+        destino, msg = notificador._enviar.call_args[0]
+        self.assertEqual(destino, "gestor1")
+        self.assertIn("PED-1", msg)
+        self.assertIn("Nova venda", msg)
 
-    @patch("core.whatsapp.notificar_venda", side_effect=Exception("boom"))
-    def test_NT07_notificar_venda_whatsapp_false_em_excecao(self, _mock_nv):
+    @patch.object(notificador, "_enviar", side_effect=Exception("boom"))
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "gestor1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_NT07_notificar_venda_false_em_excecao(self, *_):
         ok = notificador.notificar_venda_whatsapp("ml", "PED-1", "Kit", 59.90)
         self.assertFalse(ok)
 
@@ -93,18 +126,124 @@ class TestNotificadorAlertar(unittest.TestCase):
         self.assertIn("bot***", joined)
         self.assertNotIn("SECRET123", joined)
 
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "token")
+    def test_fallback_sem_markdown_em_400(self, mock_request, *_patches):
+        r_bad = MagicMock()
+        r_bad.status_code = 400
+        r_bad.text = '{"ok":false,"description":"Bad Request: can\'t parse entities"}'
+        r_bad.raise_for_status = MagicMock(side_effect=Exception("should not"))
+        r_ok = _mock_resp()
+        mock_request.side_effect = [r_bad, r_ok]
+        self.assertTrue(notificador.alertar("url com_underscore e *asterisco*"))
+        self.assertEqual(mock_request.call_count, 2)
+        primeiro = mock_request.call_args_list[0][1]["json"]
+        segundo = mock_request.call_args_list[1][1]["json"]
+        self.assertEqual(primeiro.get("parse_mode"), "Markdown")
+        self.assertNotIn("parse_mode", segundo)
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_CHAT_ID", "123")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "token")
+    def test_envia_markdown_sanitizado(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp()
+        notificador.alertar("*Oferta Rosa_Pink* SKU item_id")
+        payload = mock_request.call_args[1]["json"]
+        self.assertEqual(payload.get("parse_mode"), "Markdown")
+        self.assertIn(r"Rosa\_Pink", payload["text"])
+        self.assertIn(r"item\_id", payload["text"])
+        self.assertEqual(mock_request.call_count, 1)
+
+
+class TestNotificadorFoto(unittest.TestCase):
+    def setUp(self):
+        tg.reset()
+        self._tmp = tempfile.TemporaryDirectory()
+        self._orig_cooldown = notificador._COOLDOWN_PATH
+        notificador._COOLDOWN_PATH = Path(self._tmp.name) / "cooldown.json"
+        self.foto = Path(self._tmp.name) / "g.png"
+        self.foto.write_bytes(b"\x89PNG\r\n\x1a\n fake png bytes")
+
+    def tearDown(self):
+        notificador._COOLDOWN_PATH = self._orig_cooldown
+        self._tmp.cleanup()
+
+    @patch.object(notificador, "TELEGRAM_TOKEN", "")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "")
+    def test_foto_sem_config_retorna_false(self):
+        self.assertFalse(notificador._enviar_foto("", str(self.foto), "cap"))
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_enviar_foto_gestor_usa_sendphoto(self, mock_request):
+        mock_request.return_value = _mock_resp()
+        ok = notificador.enviar_foto_gestor(str(self.foto), "legenda", _ignorar_cooldown=True)
+        self.assertTrue(ok)
+        url = mock_request.call_args[0][1]
+        self.assertIn("sendPhoto", url)
+        self.assertIn("files", mock_request.call_args[1])
+        self.assertEqual(mock_request.call_args[1]["data"]["chat_id"], "g1")
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_foto_arquivo_inexistente_retorna_false(self, mock_request):
+        ok = notificador._enviar_foto("g1", str(self.foto) + ".naoexiste", "x")
+        self.assertFalse(ok)
+        mock_request.assert_not_called()
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_foto_respeita_cooldown(self, mock_request):
+        mock_request.return_value = _mock_resp()
+        primeira = notificador.enviar_foto_gestor(str(self.foto), "x", chave="k-foto", cooldown_segundos=999)
+        segunda = notificador.enviar_foto_gestor(str(self.foto), "x", chave="k-foto", cooldown_segundos=999)
+        self.assertTrue(primeira)
+        self.assertFalse(segunda)
+
+    @patch.object(
+        notificador,
+        "request",
+        side_effect=Exception(
+            "HTTPSConnectionPool(host='api.telegram.org', port=443): "
+            "Max retries exceeded with url: /botSECRET123/sendPhoto "
+            "(Caused by ProtocolError('Connection aborted.', "
+            "TimeoutError('The write operation timed out')))"
+        ),
+    )
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_foto_timeout_log_warning_mascara_token(self, mock_request):
+        with self.assertLogs("notificador", level="WARNING") as logs:
+            ok = notificador._enviar_foto("g1", str(self.foto), "cap")
+        self.assertFalse(ok)
+        joined = "\n".join(logs.output)
+        self.assertNotIn("SECRET123", joined)
+        self.assertIn("bot***", joined)
+        self.assertTrue(any("sendPhoto timeout" in line for line in logs.output))
+        self.assertFalse(any("ERROR" in line for line in logs.output))
+        mock_request.assert_called()
+
 
 class TestNotificadorPerguntarGestor(unittest.TestCase):
     @patch.object(notificador, "TELEGRAM_TOKEN", "")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "")
-    def test_perguntar_gestor_sem_config_retorna_true(self, *_patches):
-        self.assertTrue(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
+    def test_perguntar_gestor_sem_config_retorna_false(self, *_patches):
+        # Fail-closed: sem Telegram não efetiva Ads
+        self.assertFalse(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
-    def test_perguntar_gestor_sem_contexto_mensagem_inalterada(self, mock_request, mock_time):
+    def test_perguntar_gestor_sem_contexto_mensagem_inalterada(
+        self, mock_request, mock_time, *_patches
+    ):
         mock_time.monotonic.side_effect = [0, 100]
         mock_time.sleep = MagicMock()
         mock_request.return_value = _mock_resp()
@@ -114,13 +253,15 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         self.assertIn("_Responda abaixo:_", texto)
         self.assertNotIn("*Contexto:*", texto)
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "_gerar_justificativa_decisao", return_value="ACOS subiu nas últimas 2 semanas.")
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
     def test_perguntar_gestor_com_contexto_inclui_justificativa(
-        self, mock_request, mock_time, mock_just
+        self, mock_request, mock_time, mock_just, *_patches
     ):
         mock_time.monotonic.side_effect = [0, 100]
         mock_time.sleep = MagicMock()
@@ -131,6 +272,8 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         texto = mock_request.call_args[1]["json"]["text"]
         self.assertIn("ACOS subiu", texto)
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "_gerar_justificativa_decisao", return_value=None)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
@@ -145,16 +288,19 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         self.assertNotIn("*Contexto:*", texto)
         self.assertIn("_Responda abaixo:_", texto)
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
-    def test_perguntar_gestor_sim_via_callback(self, mock_request, mock_time):
+    def test_perguntar_gestor_sim_via_callback(self, mock_request, mock_time, *_):
         mock_time.monotonic.side_effect = [0, 1, 2, 100]
         mock_time.sleep = MagicMock()
         send_resp = _mock_resp()
         poll_resp = MagicMock()
         poll_resp.raise_for_status = MagicMock()
+        poll_resp.status_code = 200
         poll_resp.json.return_value = {
             "result": [
                 {
@@ -170,15 +316,63 @@ class TestNotificadorPerguntarGestor(unittest.TestCase):
         mock_request.side_effect = [send_resp, poll_resp]
         self.assertTrue(notificador.perguntar_gestor_e_aguardar("ligar ads?", timeout_segundos=30))
 
+    @patch.object(notificador, "verificar_token", return_value=True)
+    @patch.object(notificador, "pode_enviar", return_value=True)
     @patch.object(notificador, "time")
     @patch.object(notificador, "request")
     @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
     @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
-    def test_perguntar_gestor_timeout(self, mock_request, mock_time):
+    def test_perguntar_gestor_timeout(self, mock_request, mock_time, *_):
         mock_time.monotonic.side_effect = [0, 100]
         mock_time.sleep = MagicMock()
         mock_request.return_value = _mock_resp()
         self.assertFalse(notificador.perguntar_gestor_e_aguardar("?", timeout_segundos=5))
+
+    @patch.object(notificador, "verificar_token", return_value=False)
+    @patch.object(notificador, "pode_enviar", return_value=False)
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "123:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    def test_perguntar_gestor_token_invalido_negado(self, *_):
+        self.assertFalse(notificador.perguntar_gestor_e_aguardar("ok?", timeout_segundos=1))
+
+
+class TestGestorTelegramConfigurado(unittest.TestCase):
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    def test_configurado(self):
+        self.assertTrue(notificador.gestor_telegram_configurado())
+
+    @patch.object(notificador, "TELEGRAM_TOKEN", "")
+    @patch.object(notificador, "TELEGRAM_GESTOR_CHAT_ID", "g1")
+    def test_sem_token(self):
+        self.assertFalse(notificador.gestor_telegram_configurado())
+
+
+class TestManiucresTelegram(unittest.TestCase):
+    def setUp(self):
+        tg.reset()
+        self._tmp = tempfile.TemporaryDirectory()
+        self._orig_cooldown = notificador._COOLDOWN_PATH
+        notificador._COOLDOWN_PATH = Path(self._tmp.name) / "alertas_cooldown.json"
+
+    def tearDown(self):
+        notificador._COOLDOWN_PATH = self._orig_cooldown
+        self._tmp.cleanup()
+
+    @patch.object(notificador, "TELEGRAM_MANICURES_CHAT_ID", "")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_manicures_nao_configurado(self):
+        self.assertFalse(notificador.manicures_telegram_configurado())
+
+    @patch.object(notificador, "request")
+    @patch.object(notificador, "TELEGRAM_MANICURES_CHAT_ID", "manicures-1")
+    @patch.object(notificador, "TELEGRAM_TOKEN", "tok")
+    def test_enviar_telegram_manicures(self, mock_request):
+        mock_request.return_value = _mock_resp()
+        self.assertTrue(notificador.enviar_telegram_manicures("Kit promo"))
+        payload = mock_request.call_args[1]["json"]
+        self.assertEqual(payload["chat_id"], "manicures-1")
+        self.assertIn("Promo manicures", payload["text"])
 
 
 if __name__ == "__main__":

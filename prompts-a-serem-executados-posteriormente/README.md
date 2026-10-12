@@ -13,10 +13,10 @@ Cole o conteúdo de cada arquivo `.md` inteiro no Cursor, dentro do repositório
 
 | Arquivo | Quando usar | Branch sugerida | Status |
 |---------|-------------|-----------------|--------|
-| [alertas-recorrentes-magalu-amazon.md](./alertas-recorrentes-magalu-amazon.md) | Telegram repetindo score 0 + “não consegui buscar pedidos Magalu/Amazon” | `fix/alertas-recorrentes-magalu-amazon` | Pendente |
-| [confiabilidade-shopee-amazon-detalhado.md](./confiabilidade-shopee-amazon-detalhado.md) | Estender padrão `*_detalhado` / `dados.degradado` para Shopee e Amazon | `feature/confiabilidade-shopee-amazon` | Pendente |
-| [conectividade-shopee-amazon.md](./conectividade-shopee-amazon.md) | Incluir Shopee e Amazon no agente `conectividade_marketplaces` | `feature/conectividade-shopee-amazon` | Pendente |
-| [cooldown-alertas-telegram.md](./cooldown-alertas-telegram.md) | Mesmo alerta crítico/gestor disparando a cada cron (spam) | `fix/cooldown-alertas-telegram` | Pendente |
+| [alertas-recorrentes-magalu-amazon.md](./alertas-recorrentes-magalu-amazon.md) | Telegram repetindo score 0 + “não consegui buscar pedidos Magalu/Amazon” | `fix/alertas-recorrentes-magalu-amazon` | Pendente (parcial: spec.ativo agora gateia margem/vendas) |
+| [confiabilidade-shopee-amazon-detalhado.md](./confiabilidade-shopee-amazon-detalhado.md) | Extender padrão `*_detalhado` / `dados.degradado` para Shopee e Amazon | `feature/confiabilidade-shopee-amazon` | Parcial (já há `listar_pedidos_detalhado`) |
+| [conectividade-shopee-amazon.md](./conectividade-shopee-amazon.md) | Incluir Shopee e Amazon no agente `conectividade_marketplaces` | `feature/conectividade-shopee-amazon` | Feito |
+| [cooldown-alertas-telegram.md](./cooldown-alertas-telegram.md) | Mesmo alerta crítico/gestor disparando a cada cron (spam) | `fix/cooldown-alertas-telegram` | Parcial |
 | [unittest-discover-encoding-windows.md](./unittest-discover-encoding-windows.md) | `unittest discover` falha no Windows (5 errors em scripts com emoji) | `fix/unittest-discover-windows` | Pendente |
 
 ## Já executados (referência)

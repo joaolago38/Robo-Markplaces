@@ -4,19 +4,45 @@ Sincroniza tokens renovados nos Secrets do GitHub via gh CLI.
 """
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import subprocess
+
+from core.datadog_metrics import incrementar
+
+logger = logging.getLogger("github_secrets")
+_aviso_gh_token = False
+
+
+def _pat_grava_secret() -> str:
+    """PAT com secrets:write. O GITHUB_TOKEN padrão do Actions não grava Secret."""
+    return (os.getenv("GH_TOKEN") or "").strip()
 
 
 def sync_secrets_github(
     access_token: str,
     refresh_token: str | None,
     prefix: str = "BLING",
+    extras: dict | None = None,
 ) -> bool:
     """Atualiza {prefix}_ACCESS_TOKEN e opcionalmente {prefix}_REFRESH_TOKEN no GitHub."""
     if not shutil.which("gh"):
-        print(f"  gh CLI não encontrado — Secret {prefix}_* não atualizado")
+        logger.error("gh CLI não encontrado — Secret %s_* não atualizado", prefix)
+        incrementar("token.sync_github_falha", tags=[f"prefix:{prefix}", "motivo:gh_ausente"])
+        return False
+
+    if os.getenv("GITHUB_ACTIONS") == "true" and not _pat_grava_secret():
+        global _aviso_gh_token
+        if not _aviso_gh_token:
+            logger.warning(
+                "Não gravou Secret %s_*: GH_TOKEN vazio. "
+                "O GITHUB_TOKEN padrão do Actions não grava Secrets — "
+                "defina secrets.GH_TOKEN (PAT com secrets:write) no workflow.",
+                prefix,
+            )
+            _aviso_gh_token = True
+        incrementar("token.sync_github_falha", tags=[f"prefix:{prefix}", "motivo:gh_token_vazio"])
         return False
 
     repo = (os.getenv("GH_REPO") or "").strip()
@@ -26,6 +52,11 @@ def sync_secrets_github(
     pares = [(f"{prefix}_ACCESS_TOKEN", access_token)]
     if refresh_token:
         pares.append((f"{prefix}_REFRESH_TOKEN", refresh_token))
+    for nome, valor in (extras or {}).items():
+        chave = str(nome or "").strip()
+        dado = str(valor or "").strip()
+        if chave and dado:
+            pares.append((chave, dado))
 
     ok = True
     for nome, valor in pares:
@@ -37,8 +68,13 @@ def sync_secrets_github(
                 check=True,
                 capture_output=True,
             )
-            print(f"  Secret {nome} atualizado no GitHub")
+            logger.info("Secret %s atualizado no GitHub", nome)
         except subprocess.CalledProcessError as e:
-            print(f"  Falha ao atualizar {nome}: {e.stderr.strip()}")
+            err = (e.stderr or e.stdout or str(e)).strip() or f"exit {e.returncode}"
+            logger.error("Falha ao atualizar %s no GitHub: %s", nome, err)
+            incrementar(
+                "token.sync_github_falha",
+                tags=[f"prefix:{prefix}", "motivo:gh_secret_set"],
+            )
             ok = False
     return ok

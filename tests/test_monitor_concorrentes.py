@@ -25,13 +25,18 @@ class TestClassificarVariacao(unittest.TestCase):
         out = monitor._classificar_variacao_preco("kit1", "Kit", "termo", 28.0, historico)
         self.assertIn("tendência", out.lower())
         mock_sint.assert_called_once()
+        self.assertEqual(mock_sint.call_args.kwargs.get("proposito"), "monitor_concorrentes")
 
     def test_sem_historico_suficiente_retorna_none(self):
         historico = {"kit1": {"menor_preco": 30}}
         self.assertIsNone(monitor._classificar_variacao_preco("kit1", "Kit", "termo", 28.0, historico))
 
     @patch.object(monitor, "_classificar_variacao_preco", return_value="queda pontual")
-    @patch.object(monitor.ml_client, "buscar_concorrentes_por_termo", return_value=[{"preco": 30}])
+    @patch.object(
+        monitor.ml_client,
+        "buscar_concorrentes_por_termo",
+        return_value=[{"preco": 30, "titulo": "kit esmalte"}],
+    )
     def test_alerta_inclui_classificacao(self, *_mocks):
         historico = {
             "k1": {
@@ -46,11 +51,17 @@ class TestClassificarVariacao(unittest.TestCase):
             "meu_preco": 50,
             "limite_resultados": 5,
         }
-        out = monitor._monitorar_entrada(entrada, historico)
+        with patch.object(monitor, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False):
+            with patch.object(monitor, "_aplicar_lacunas_monitor", return_value={}):
+                out = monitor._monitorar_entrada(entrada, historico, enriquecer_metricas=False)
         self.assertTrue(any("[queda pontual]" in a for a in out["alertas"]))
 
     @patch.object(monitor, "_classificar_variacao_preco", return_value=None)
-    @patch.object(monitor.ml_client, "buscar_concorrentes_por_termo", return_value=[{"preco": 30}])
+    @patch.object(
+        monitor.ml_client,
+        "buscar_concorrentes_por_termo",
+        return_value=[{"preco": 30, "titulo": "kit esmalte"}],
+    )
     def test_alerta_sem_classificacao_sem_historico(self, *_mocks):
         historico = {"k1": {"menor_preco": 40}}
         entrada = {
@@ -60,7 +71,9 @@ class TestClassificarVariacao(unittest.TestCase):
             "meu_preco": 50,
             "limite_resultados": 5,
         }
-        out = monitor._monitorar_entrada(entrada, historico)
+        with patch.object(monitor, "MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO", False):
+            with patch.object(monitor, "_aplicar_lacunas_monitor", return_value={}):
+                out = monitor._monitorar_entrada(entrada, historico, enriquecer_metricas=False)
         for a in out["alertas"]:
             self.assertNotIn("[", a)
 

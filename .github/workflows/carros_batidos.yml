@@ -1,0 +1,96 @@
+﻿name: Monitor Carros Batidos
+
+# Acompanhamento secundário: coleta diária + alerta só de anúncio novo elegível.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 1x/dia BRT 10:15 (= 13:15 UTC)
+    - cron: "15 13 * * *"
+
+concurrency:
+  group: robo-markplaces-monitor-secundario
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  CARROS_BATIDOS_INCLUIR_FIPE: "1"
+  CARROS_BATIDOS_PRECO_MAX: "150000"
+  CARROS_BATIDOS_ALERTA_RESUMO: "0"
+  CARROS_BATIDOS_ALERTA_TOP_N: "10"
+  CARROS_BATIDOS_FIPE_HAIRCUT_PCT: "40"
+  CARROS_BATIDOS_BUSCA_WEB: "1"
+  DDG_BACKEND: ${{ secrets.DDG_BACKEND || 'auto' }}
+  DDG_MIN_INTERVAL_SEG: ${{ secrets.DDG_MIN_INTERVAL_SEG || '8' }}
+  DDG_CIRCUIT_BREAKER_SEG: ${{ secrets.DDG_CIRCUIT_BREAKER_SEG || '600' }}
+  DDG_FALHAS_403_PARA_BREAKER: ${{ secrets.DDG_FALHAS_403_PARA_BREAKER || '8' }}
+  BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
+
+jobs:
+  monitorar:
+    name: Lojas de carros batidos → Telegram
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
+      - name: Restaurar historico de achados
+        uses: actions/cache@v4
+        with:
+          path: logs/carros_batidos_history.json
+          key: carros-batidos-history-${{ github.run_id }}
+          restore-keys: |
+            carros-batidos-history-
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor carros batidos
+        run: python -m agentes.veiculos.agente_monitor_carros_batidos
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Salvar historico (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: carros-batidos-history
+          path: |
+            logs/carros_batidos_history.json
+            logs/carros_batidos_ultima.json
+          retention-days: 90
+          if-no-files-found: ignore
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}

@@ -9,9 +9,8 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests._stdout_utf8 import capturar_stdout_utf8
-
 import testar_magalu as tm
+from tests._stdout_utf8 import capturar_stdout_utf8
 
 
 def _post_resp(status: int, text: str = "") -> MagicMock:

@@ -1,0 +1,41 @@
+{
+  "pontos": [
+    {
+      "ts": "2026-07-13T22:09:49.050569+00:00",
+      "consumido_usd": 0.0,
+      "restante_usd": 8.99,
+      "percentual_usado": 0.0,
+      "chamadas": 13,
+      "assertividade_pct": 69.2,
+      "por_agente_usd": {
+        "desconhecido": 0.0
+      }
+    },
+    {
+      "ts": "2026-07-13T22:11:15.360389+00:00",
+      "consumido_usd": 0.0,
+      "restante_usd": 8.99,
+      "percentual_usado": 0.0,
+      "chamadas": 13,
+      "assertividade_pct": 69.2,
+      "por_agente_usd": {
+        "desconhecido": 0.0
+      }
+    },
+    {
+      "ts": "2026-08-10T11:26:07.157596+00:00",
+      "consumido_usd": 3.44,
+      "restante_usd": 2.41,
+      "percentual_usado": 58.8,
+      "chamadas": 196,
+      "assertividade_pct": 53.6,
+      "por_agente_usd": {
+        "desconhecido": 0.0,
+        "operacao_24h": 0.0,
+        "ml.agente_otimizador_listing": 0.0,
+        "panorama.agente_panorama": 0.0
+      }
+    }
+  ],
+  "atualizado_em": "2026-08-10T11:26:07.157596+00:00"
+}

@@ -1,0 +1,256 @@
+"""
+tests/test_agente_orquestrador.py
+"""
+import os
+import sys
+import unittest
+from unittest.mock import patch
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from agentes.orquestrador import agente_orquestrador as orq
+from agentes.orquestrador.registro_agentes import AgenteRegistrado, listar_agentes
+
+
+class TestRegistroAgentes(unittest.TestCase):
+    def test_lista_padrao_tem_agentes(self):
+        agentes = listar_agentes()
+        self.assertGreaterEqual(len(agentes), 8)
+        ids = {a.id for a in agentes}
+        self.assertIn("conectividade", ids)
+        self.assertIn("chat_ml", ids)
+        # Rotinas com workflow próprio ficam em ORQUESTRADOR_EXCLUIR (default)
+        self.assertNotIn("leilao", ids)
+        self.assertNotIn("alibaba", ids)
+        self.assertNotIn("alibaba_inteligencia", ids)
+        self.assertNotIn("alibaba_sourcing", ids)
+        self.assertNotIn("comparar_portos_alibaba", ids)
+        self.assertNotIn("logistica_china_ml", ids)
+        self.assertNotIn("hub_paraguai_marketplace", ids)
+        self.assertNotIn("tributacao_py_br", ids)
+        self.assertNotIn("esmaltes_operacao", ids)
+        self.assertNotIn("crescimento_esmaltes", ids)
+        self.assertNotIn("decisao_dia_esmaltes", ids)
+        self.assertNotIn("ecossistema_esmaltes", ids)
+        self.assertNotIn("monitor_anita", ids)
+        self.assertNotIn("monitor_kits_esmaltes", ids)
+        self.assertNotIn("monitor_tendencias_esmaltes", ids)
+        self.assertNotIn("monitor_removedores_unha", ids)
+        self.assertNotIn("monitor_acetona_cruzeiro", ids)
+        self.assertNotIn("ml_tendencias_importacao", ids)
+        self.assertNotIn("monitor_filamentos_ml", ids)
+        self.assertNotIn("monitor_masterprint_petg", ids)
+        self.assertNotIn("golpe_guerra_masterprint", ids)
+        self.assertNotIn("monitor_masterprint_escritorio", ids)
+        self.assertNotIn("necessidade_manicures", ids)
+        self.assertNotIn("descoberta_produtos", ids)
+        self.assertNotIn("comparativo_ml_shopee", ids)
+        self.assertNotIn("trafego_manicures", ids)
+        self.assertNotIn("resumo_diario_novamix", ids)
+        self.assertNotIn("sincronizar_estoque", ids)
+        self.assertNotIn("repricing", ids)
+        self.assertNotIn("repricing_impala", ids)
+        self.assertNotIn("operacao_24h", ids)
+        self.assertNotIn("sumare_leiloes", ids)
+        self.assertNotIn("lojas_veiculos", ids)
+        self.assertNotIn("carros_batidos", ids)
+        self.assertNotIn("chat_shopee", ids)
+        self.assertNotIn("chat_magalu", ids)
+        self.assertNotIn("chat_amazon", ids)
+        self.assertNotIn("auto_respostas", ids)
+        self.assertNotIn("comparativo_anita_impala", ids)
+        self.assertNotIn("monitor_busca_kit_esmaltes", ids)
+        self.assertNotIn("relatorio_manha_ml", ids)
+        self.assertNotIn("ponto_ruptura_segundo_cnpj", ids)
+        self.assertNotIn("ponto_ruptura_outra_marca", ids)
+        self.assertNotIn("monitor_cnpj_cnae", ids)
+        self.assertIn("chat_ml", ids)
+        self.assertIn("integridade_ml", ids)
+        self.assertNotIn("monitor_mercado_esmaltes", ids)
+        self.assertNotIn("monitor_concorrentes", ids)
+        self.assertNotIn("inteligencia_precos", ids)
+        self.assertNotIn("monitor_ml", ids)
+        self.assertNotIn("monitor_sem_venda_ml", ids)
+        self.assertNotIn("panorama", ids)
+        self.assertIn("visao_atuacao_impala", ids)
+        self.assertIn("kits_concorrentes_unificado", ids)
+
+    @patch("core.config.ORQUESTRADOR_EXCLUIR", set())
+    def test_registro_completo_inclui_rotinas_excluidas(self):
+        ids = {a.id for a in listar_agentes()}
+        self.assertIn("leilao", ids)
+        self.assertNotIn("alibaba", ids)
+        self.assertNotIn("alibaba_inteligencia", ids)
+        self.assertIn("alibaba_sourcing", ids)
+        self.assertNotIn("comparar_portos_alibaba", ids)
+        self.assertNotIn("logistica_china_ml", ids)
+        self.assertNotIn("hub_paraguai_marketplace", ids)
+        self.assertNotIn("tributacao_py_br", ids)
+        self.assertIn("esmaltes_operacao", ids)
+        self.assertIn("comparativo_anita_impala", ids)
+        self.assertIn("monitor_busca_kit_esmaltes", ids)
+        self.assertNotIn("crescimento_esmaltes", ids)
+        self.assertNotIn("decisao_dia_esmaltes", ids)
+        self.assertNotIn("ecossistema_esmaltes", ids)
+        self.assertNotIn("monitor_anita", ids)
+        self.assertNotIn("monitor_kits_esmaltes", ids)
+        self.assertNotIn("monitor_tendencias_esmaltes", ids)
+        self.assertNotIn("monitor_removedores_unha", ids)
+        self.assertNotIn("monitor_acetona_cruzeiro", ids)
+        self.assertIn("necessidade_manicures", ids)
+        self.assertNotIn("descoberta_produtos", ids)
+        self.assertNotIn("comparativo_ml_shopee", ids)
+        self.assertNotIn("trafego_manicures", ids)
+        self.assertNotIn("resumo_diario_novamix", ids)
+        self.assertNotIn("sincronizar_estoque", ids)
+        self.assertNotIn("repricing", ids)
+        self.assertNotIn("repricing_impala", ids)
+        self.assertIn("operacao_24h", ids)
+        self.assertIn("ponto_ruptura_segundo_cnpj", ids)
+        self.assertIn("ponto_ruptura_outra_marca", ids)
+        self.assertIn("monitor_cnpj_cnae", ids)
+        self.assertIn("golpe_guerra_masterprint", ids)
+        self.assertIn("sumare_leiloes", ids)
+        self.assertIn("chat_shopee", ids)
+        self.assertIn("monitor_mercado_esmaltes", ids)
+        self.assertIn("monitor_concorrentes", ids)
+        self.assertIn("inteligencia_precos", ids)
+        self.assertIn("monitor_ml", ids)
+        self.assertIn("integridade_ml", ids)
+        self.assertIn("monitor_sem_venda_ml", ids)
+        self.assertIn("panorama", ids)
+
+    @patch("core.config.ORQUESTRADOR_EXCLUIR", {"leilao"})
+    def test_excluir_por_env(self):
+        ids = {a.id for a in listar_agentes()}
+        self.assertNotIn("leilao", ids)
+
+
+class TestOrquestrador(unittest.TestCase):
+    def _agente_fake(self, aid: str, ok: bool = True, resumo: str = "ok"):
+        return AgenteRegistrado(aid, aid, "test", "x:y", {})
+
+    @patch.object(orq, "alertar_gestor", return_value=True)
+    @patch.object(orq, "executar_registro")
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    def test_ciclo_completo_envia_resumo(self, mock_exec, mock_alertar):
+        mock_exec.side_effect = [
+            {"ok": True, "com_novos": 1},
+            {"ok": False, "erro": "falhou"},
+        ]
+        agentes = [
+            self._agente_fake("a1"),
+            self._agente_fake("a2"),
+        ]
+        out = orq.executar(enviar_resumo_telegram=True, agentes=agentes)
+        self.assertEqual(out["total"], 2)
+        self.assertEqual(out["ok"], 1)
+        self.assertEqual(out["falhas"], 1)
+        self.assertTrue(out["resumo_telegram_enviado"])
+        mock_alertar.assert_called_once()
+        self.assertIn("Orquestrador 30min", mock_alertar.call_args.args[0])
+
+    @patch.object(orq, "alertar_gestor")
+    @patch.object(orq, "executar_registro", return_value={"ok": True})
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    def test_ciclo_ok_nao_envia_resumo_telegram(self, _exec, mock_alertar):
+        out = orq.executar(
+            enviar_resumo_telegram=True,
+            agentes=[self._agente_fake("a1")],
+        )
+        self.assertEqual(out["falhas"], 0)
+        self.assertFalse(out["resumo_telegram_enviado"])
+        mock_alertar.assert_not_called()
+
+    @patch.object(orq, "alertar_gestor")
+    @patch.object(orq, "executar_registro", side_effect=RuntimeError("boom"))
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    def test_isolamento_falha_agente(self, *_):
+        out = orq.executar(
+            enviar_resumo_telegram=False,
+            agentes=[self._agente_fake("x")],
+        )
+        self.assertEqual(out["falhas"], 1)
+        self.assertFalse(out["agentes"][0]["ok"])
+        self.assertIn("boom", out["agentes"][0]["erro"])
+
+    def test_interpretar_ok(self):
+        self.assertTrue(orq._interpretar_ok({"ok": True}))
+        self.assertFalse(orq._interpretar_ok({"ok": False}))
+        self.assertTrue(orq._interpretar_ok(True))
+        self.assertFalse(orq._interpretar_ok({"erro": "boom"}))
+        self.assertFalse(orq._interpretar_ok({"falhas": 2}))
+        self.assertTrue(orq._interpretar_ok({"total": 3}))
+
+    def test_extrair_resumo(self):
+        self.assertIn("2 novos", orq._extrair_resumo({"com_novos": 2}))
+        self.assertIn(
+            "Impala líder",
+            orq._extrair_resumo({"resumo_orquestrador": "7 produtos, Impala líder em 4/7 termos"}),
+        )
+        self.assertIn("sem escrita", orq._extrair_resumo({"executou_escrita": False}))
+        self.assertIn("0 ajustes", orq._extrair_resumo({"ajustes": 0}))
+        self.assertIn("pulado", orq._extrair_resumo({"skipped": True}))
+        self.assertIn("sem ok explícito", orq._extrair_resumo({"foo": 1}))
+
+    @patch.object(orq, "alertar_gestor", return_value=True)
+    @patch.object(orq, "executar_registro", return_value={"ok": True})
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    def test_executar_ciclo_metricas(self, *_):
+        out = orq.executar_ciclo(
+            agentes=[self._agente_fake("x")],
+            titulo_resumo="teste",
+            chave_cooldown="teste:1",
+            cooldown_segundos=60,
+            prefixo_metrica="teste_metrica",
+            enviar_resumo_telegram=True,
+            log_prefix="Teste",
+        )
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total"], 1)
+
+    @patch.object(orq, "gauge")
+    @patch.object(orq, "incrementar")
+    @patch.object(orq, "alertar_gestor")
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    @patch.object(orq, "ORQUESTRADOR_TIMEOUT_AGENTE_SEG", 1)
+    def test_timeout_agente_segue_fila(self, *_):
+        class _Fut:
+            def result(self, timeout=None):
+                raise orq.FuturesTimeout()
+
+        class _Pool:
+            def submit(self, *a, **k):
+                return _Fut()
+
+            def shutdown(self, wait=False, cancel_futures=True):
+                return None
+
+        with patch.object(orq, "ThreadPoolExecutor", return_value=_Pool()):
+            out = orq.executar(
+                enviar_resumo_telegram=False,
+                agentes=[self._agente_fake("lento")],
+            )
+        self.assertEqual(out["falhas"], 1)
+        self.assertFalse(out["agentes"][0]["ok"])
+        self.assertIn("timeout", out["agentes"][0]["erro"])
+        nomes = [c.args[0] for c in orq.incrementar.call_args_list]
+        self.assertTrue(any(n.endswith("agente.timeout") for n in nomes))
+
+    @patch.object(orq, "gauge")
+    @patch.object(orq, "incrementar")
+    @patch.object(orq, "alertar_gestor")
+    @patch.object(orq, "executar_registro", return_value={"ok": True})
+    @patch.object(orq, "ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG", 0)
+    @patch.object(orq, "ORQUESTRADOR_TIMEOUT_AGENTE_SEG", 0)
+    def test_ciclo_emite_pulse(self, *_):
+        orq.executar(
+            enviar_resumo_telegram=False,
+            agentes=[self._agente_fake("x")],
+        )
+        nomes = [c.args[0] for c in orq.gauge.call_args_list]
+        self.assertTrue(any(n.endswith("ciclo.pulse") for n in nomes))
+
+
+if __name__ == "__main__":
+    unittest.main()

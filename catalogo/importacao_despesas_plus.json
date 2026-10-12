@@ -1,0 +1,18 @@
+{
+  "fonte": "PLUS BRASIL (simula-2019) — ordem de grandeza para planejamento",
+  "aviso": "Não usa AFRMM 25% nem Siscomex 214,50 da amostra 2019. AFRMM/Siscomex vêm do motor vigente.",
+  "despesas_padrao_brl": {
+    "liberacao_conhecimento": 133.0,
+    "desconsolidacao": 133.0,
+    "armazenagem_zp": 2600.0,
+    "capatazias": 200.0,
+    "transporte_importador": 1200.0,
+    "sda_desembaraco": 500.0,
+    "desembaraco_logistica": 900.0,
+    "licenciamento": 150.0,
+    "rpa": 0.0,
+    "fumigacao": 0.0
+  },
+  "ids_fora_base_icms": ["transporte_importador"],
+  "ids_ignorados_no_motor": ["afrmm", "siscomex"]
+}

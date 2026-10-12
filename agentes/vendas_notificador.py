@@ -1,6 +1,6 @@
 """
 agentes/vendas_notificador.py
-Verifica novas vendas em todos os marketplaces e envia notificação WhatsApp.
+Verifica novas vendas em todos os marketplaces e avisa no Telegram do gestor.
 Mantém controle de pedidos já notificados para não duplicar mensagens.
 Nunca lança exceção.
 """
@@ -12,8 +12,10 @@ from pathlib import Path
 
 from core.atomic_io import escrever_json_atomico, lock_exclusivo
 from core.config import ROOT, SPEC
+from core.datadog_metrics import incrementar
+from core.log_opcional import erro_opcional, log_erros_pedidos_ativos
 from core.notificador import alertar_critico
-from core.whatsapp import notificar_venda
+from core.notificador import notificar_venda_gestor as notificar_venda
 
 logger = logging.getLogger("vendas_notificador")
 
@@ -23,6 +25,7 @@ _MARKETPLACES_ATIVOS: set[str] = {
 
 PEDIDOS_NOTIFICADOS_PATH: Path = ROOT / "dados" / "pedidos_notificados.json"
 _LOCK_PATH: Path = PEDIDOS_NOTIFICADOS_PATH.with_name(PEDIDOS_NOTIFICADOS_PATH.name + ".lock")
+HEARTBEAT_PATH: Path = ROOT / "logs" / "vendas_whatsapp_ultima.json"
 
 
 def _carregar_notificados() -> set[str]:
@@ -46,31 +49,84 @@ def _salvar_notificados(ids: set[str]) -> None:
         logger.error("Erro ao salvar pedidos notificados: %s", exc)
 
 
-def _checar_busca_falhou(marketplace: str, ok: bool) -> None:
+def _checar_busca_falhou(
+    marketplace: str,
+    ok: bool,
+    *,
+    auth_quebrada: bool = False,
+) -> None:
     """
     Quando a chamada à API falhou de verdade (token expirado, API fora do
     ar, etc.), `pedidos` volta vazio igual a "sem venda nova" — sem isto,
     as duas situações são indistinguíveis e o time nunca saberia que está
     cego para vendas reais enquanto o problema persistir.
+
+    Auth quebrada conhecida (ex.: Magalu invalid_grant) NÃO incrementa
+    `vendas.busca_falhou` (P1) — vai para `vendas.busca_auth_quebrada` e
+    alerta com cooldown longo, para não misturar com queda genérica da API.
+
+    Religar ERROR no Datadog: LOG_ERROS_PEDIDOS=1
     """
-    if not ok:
-        logger.error(
-            "%s: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
+    if ok:
+        return
+
+    mp_tag = marketplace.lower().replace(" ", "")
+    if auth_quebrada:
+        try:
+            incrementar(
+                "vendas.busca_auth_quebrada",
+                tags=[f"marketplace:{mp_tag}"],
+            )
+        except Exception:
+            pass
+        erro_opcional(
+            logger,
+            log_erros_pedidos_ativos(),
+            "%s: auth quebrada na busca de pedidos (fora do P1 vendas.busca_falhou).",
             marketplace,
+            flag_hint="LOG_ERROS_PEDIDOS",
         )
-        alertar_critico(
-            f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
-            "Isso pode significar que vendas reais não estão sendo notificadas. "
-            "Verifique o token/credenciais e o status da API.",
-            chave=f"falha_pedidos:{marketplace}",
+        try:
+            from core.notificador import alertar_gestor
+
+            alertar_gestor(
+                f"🔐 {marketplace}: OAuth/token inválido — aviso de venda no Telegram "
+                "deste canal pode estar cego.\nRenove o token nos secrets. "
+                "(Não conta no monitor P1 de busca genérica.)",
+                chave=f"falha_pedidos_auth:{marketplace}",
+                cooldown_segundos=86400,
+            )
+        except Exception:
+            pass
+        return
+
+    try:
+        incrementar(
+            "vendas.busca_falhou",
+            tags=[f"marketplace:{mp_tag}"],
         )
+    except Exception:
+        pass
+    erro_opcional(
+        logger,
+        log_erros_pedidos_ativos(),
+        "%s: busca de pedidos FALHOU (não é 'sem vendas novas' — a chamada não completou).",
+        marketplace,
+        flag_hint="LOG_ERROS_PEDIDOS",
+    )
+    alertar_critico(
+        f"⚠️ Não consegui buscar pedidos novos no {marketplace}.\n"
+        "Isso pode significar que vendas reais não estão sendo notificadas. "
+        "Verifique o token/credenciais e o status da API.",
+        chave=f"falha_pedidos:{marketplace}",
+    )
 
 
 def _notificar_novos_pedidos(
     marketplace: str, pedidos: list[dict], notificados: set[str]
 ) -> set[str]:
     """
-    Para cada pedido da lista, envia WhatsApp se ainda não foi notificado.
+    Para cada pedido da lista, avisa no Telegram do gestor se ainda não foi notificado.
     Retorna conjunto com as chaves recém-notificadas (marketplace:order_id).
     """
     novos: set[str] = set()
@@ -107,13 +163,21 @@ def _notificar_novos_pedidos(
         if ok:
             novos.add(chave)
             logger.info(
-                "WhatsApp notificado: %s pedido %s valor R$ %.2f",
+                "Telegram venda: %s pedido %s valor R$ %.2f",
                 marketplace,
                 pedido_id,
                 valor,
             )
+            try:
+                incrementar("vendas.notificadas", tags=[f"marketplace:{marketplace}"])
+            except Exception:
+                pass
         else:
-            logger.warning("WhatsApp FALHOU: %s pedido %s", marketplace, pedido_id)
+            logger.warning("Telegram venda FALHOU: %s pedido %s", marketplace, pedido_id)
+            try:
+                incrementar("vendas.falha_whatsapp", tags=[f"marketplace:{marketplace}"])
+            except Exception:
+                pass
 
     return novos
 
@@ -143,10 +207,14 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
             pedidos, ok = lp_detalhado(dias=1)
             _checar_busca_falhou("Shopee", ok)
         elif mp == "magalu":
-            from integracoes.magalu.magalu_client import listar_pedidos_detalhado as lp_detalhado
+            from integracoes.magalu import magalu_client as mag_cli
 
-            pedidos, ok = lp_detalhado(dias=1)
-            _checar_busca_falhou("Magalu", ok)
+            pedidos, ok = mag_cli.listar_pedidos_detalhado(dias=1)
+            _checar_busca_falhou(
+                "Magalu",
+                ok,
+                auth_quebrada=(not ok) and mag_cli.ultima_listagem_auth_quebrada(),
+            )
         elif mp == "amazon":
             from integracoes.amazon.amazon_client import listar_pedidos_detalhado as lp_detalhado
 
@@ -167,7 +235,7 @@ def notificar_pedidos_novos_marketplace(marketplace: str) -> dict:
 
 def executar() -> dict:
     """
-    Verifica novas vendas em todos os marketplaces e notifica via WhatsApp.
+    Verifica novas vendas em todos os marketplaces e notifica via Telegram.
     Retorna resumo com total de notificações enviadas por marketplace.
 
     Todo o ciclo (ler quem já foi notificado → buscar pedidos novos →
@@ -175,7 +243,7 @@ def executar() -> dict:
     entre processos: sem isso, duas execuções concorrentes (ex.: a API
     viva chamando isto ao mesmo tempo que um workflow agendado) podem
     ler o mesmo estado antigo e uma sobrescrever o "salvar" da outra —
-    o que faria o WhatsApp notificar a mesma venda duas vezes.
+                 o que faria o Telegram notificar a mesma venda duas vezes.
     """
     with lock_exclusivo(_LOCK_PATH):
         notificados = _carregar_notificados()
@@ -195,25 +263,31 @@ def executar() -> dict:
             logger.error("Erro ao buscar pedidos ML: %s", exc)
             resumo["mercadolivre"] = 0
 
-        try:
-            from integracoes.shopee.shopee_client import listar_pedidos_detalhado as shopee_pedidos_detalhado
+        if "shopee" in _MARKETPLACES_ATIVOS:
+            try:
+                from integracoes.shopee.shopee_client import listar_pedidos_detalhado as shopee_pedidos_detalhado
 
-            pedidos_shopee, ok_shopee = shopee_pedidos_detalhado(dias=1)
-            _checar_busca_falhou("Shopee", ok_shopee)
-            novos_shopee = _notificar_novos_pedidos("shopee", pedidos_shopee, notificados)
-            resumo["shopee"] = len(novos_shopee)
-            novos_total.update(novos_shopee)
-            notificados |= novos_shopee
-        except Exception as exc:
-            logger.error("Erro ao buscar pedidos Shopee: %s", exc)
-            resumo["shopee"] = 0
+                pedidos_shopee, ok_shopee = shopee_pedidos_detalhado(dias=1)
+                _checar_busca_falhou("Shopee", ok_shopee)
+                novos_shopee = _notificar_novos_pedidos("shopee", pedidos_shopee, notificados)
+                resumo["shopee"] = len(novos_shopee)
+                novos_total.update(novos_shopee)
+                notificados |= novos_shopee
+            except Exception as exc:
+                logger.error("Erro ao buscar pedidos Shopee: %s", exc)
+                resumo["shopee"] = 0
 
         if "magalu" in _MARKETPLACES_ATIVOS:
             try:
-                from integracoes.magalu.magalu_client import listar_pedidos_detalhado as magalu_pedidos_detalhado
+                from integracoes.magalu import magalu_client as mag_cli
 
-                pedidos_magalu, ok_magalu = magalu_pedidos_detalhado(dias=1)
-                _checar_busca_falhou("Magalu", ok_magalu)
+                pedidos_magalu, ok_magalu = mag_cli.listar_pedidos_detalhado(dias=1)
+                _checar_busca_falhou(
+                    "Magalu",
+                    ok_magalu,
+                    auth_quebrada=(not ok_magalu)
+                    and mag_cli.ultima_listagem_auth_quebrada(),
+                )
                 novos_magalu = _notificar_novos_pedidos("magalu", pedidos_magalu, notificados)
                 resumo["magalu"] = len(novos_magalu)
                 novos_total.update(novos_magalu)
@@ -222,24 +296,40 @@ def executar() -> dict:
                 logger.error("Erro ao buscar pedidos Magalu: %s", exc)
                 resumo["magalu"] = 0
 
-        try:
-            from integracoes.amazon.amazon_client import listar_pedidos_detalhado as amazon_pedidos_detalhado
+        if "amazon" in _MARKETPLACES_ATIVOS:
+            try:
+                from integracoes.amazon.amazon_client import listar_pedidos_detalhado as amazon_pedidos_detalhado
 
-            pedidos_amazon, ok_amazon = amazon_pedidos_detalhado(dias=1)
-            _checar_busca_falhou("Amazon", ok_amazon)
-            novos_amazon = _notificar_novos_pedidos("amazon", pedidos_amazon, notificados)
-            resumo["amazon"] = len(novos_amazon)
-            novos_total.update(novos_amazon)
-            notificados |= novos_amazon
-        except Exception as exc:
-            logger.error("Erro ao buscar pedidos Amazon: %s", exc)
-            resumo["amazon"] = 0
+                pedidos_amazon, ok_amazon = amazon_pedidos_detalhado(dias=1)
+                _checar_busca_falhou("Amazon", ok_amazon)
+                novos_amazon = _notificar_novos_pedidos("amazon", pedidos_amazon, notificados)
+                resumo["amazon"] = len(novos_amazon)
+                novos_total.update(novos_amazon)
+                notificados |= novos_amazon
+            except Exception as exc:
+                logger.error("Erro ao buscar pedidos Amazon: %s", exc)
+                resumo["amazon"] = 0
 
         if novos_total:
             _salvar_notificados(notificados)
 
     total = sum(resumo.values())
-    logger.info("Notificações WhatsApp enviadas: %d | Detalhe: %s", total, resumo)
+    logger.info("Notificações Telegram de venda: %d | Detalhe: %s", total, resumo)
+    try:
+        from datetime import datetime, timezone
+
+        incrementar("vendas.rodadas")
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": True,
+                "total_notificacoes": total,
+                "por_marketplace": resumo,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Vendas Telegram heartbeat: %s", exc)
     return {"total_notificacoes": total, "por_marketplace": resumo}
 
 

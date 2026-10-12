@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "timestamp": "2026-07-13T22:11:21.067743+00:00",
+  "orcamento_usd": 8.99,
+  "resumo": {
+    "orcamento_usd": 8.99,
+    "consumido_usd": 0.0,
+    "restante_usd": 8.99,
+    "percentual_usado": 0.0,
+    "chamadas": 13,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "bloqueado": false,
+    "resultados": {
+      "ok": 9,
+      "falha": 3,
+      "fallback": 0,
+      "vazio": 1,
+      "bloqueado": 0
+    },
+    "assertividade_pct": 69.2,
+    "por_origem": {
+      "desconhecido": {
+        "usd": 0.0,
+        "chamadas": 13,
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "ok": 9,
+        "falha": 3,
+        "fallback": 0,
+        "vazio": 1,
+        "bloqueado": 0,
+        "assertividade_pct": 69.2
+      }
+    },
+    "por_modelo": {
+      "claude-haiku-4-5": {
+        "usd": 0.0,
+        "chamadas": 13,
+        "ok": 9,
+        "falha": 3,
+        "assertividade_pct": 69.2,
+        "vazio": 1
+      }
+    },
+    "atualizado_em": "2026-07-13T22:02:14.405032+00:00"
+  },
+  "ranking_agentes": [
+    {
+      "agente": "desconhecido",
+      "agente_curto": "desconhecido",
+      "usd": 0.0,
+      "chamadas": 13,
+      "assertividade_pct": 69.2,
+      "ok": 9,
+      "falha": 3
+    }
+  ],
+  "graficos": {
+    "por_agente": "C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\logs\\grafico_claude_por_agente.png",
+    "evolucao": "C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\logs\\grafico_claude_evolucao.png",
+    "metrica_barras": "chamadas",
+    "historico_pontos": 2
+  },
+  "assertividade_pct": 69.2,
+  "mensagem": "🤖 *Claude — orçamento + assertividade*\n\n_O que este agente faz:_\n_Mostra orçamento Claude (US$ usado/restante) e a assertividade por agente (ok vs falha/fallback/vazio). Alerta limiares e hard stop. Estimativa local por tokens._\n\n_Quando roda:_\n_A cada 6h (Actions) + alerta a cada uso Claude_\n\n🟢 Orçamento: *US$ 8.99*\n• Consumido: *US$ 0.0000* (0.0%)\n• Resta: *US$ 8.9900*\n• Chamadas: 13 | tokens in/out: 0/0\n\n🟡 *Assertividade global: 69.2%*\n• ok 9 · falha 3 · fallback 0 · vazio 1 · bloqueado 0\n_Score = ok / (ok+falha+fallback+vazio) nos agentes que usam Claude._\n\n*Assertividade por agente*\n• `desconhecido` — *69%* (ok 9/13 · US$ 0.0000)\n\n*Consumo por agente (US$)*\n• `desconhecido` — *US$ 0.0000* (0% · 13×)\n\n*Por modelo*\n• `claude-haiku-4-5` — US$ 0.0000 | assert. 69%\n\n_Estimativa local (preço/MTok). Saldo real: console.anthropic.com → Billing._"
+}

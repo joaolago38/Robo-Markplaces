@@ -1,0 +1,10 @@
+{
+  "canais": {
+    "magalu": {
+      "operando": true,
+      "motivo": "oauth_ok_pedido_usuario"
+    }
+  },
+  "atualizado_em": "2026-09-12T18:00:06.379830+00:00",
+  "atualizado_por": "cursor"
+}

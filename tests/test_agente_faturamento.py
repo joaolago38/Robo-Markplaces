@@ -14,7 +14,7 @@ class TestEmitirNfeDuplicidade(unittest.TestCase):
     @patch("agentes.faturamento.agente_faturamento.buscar_produto")
     def test_pedido_ja_faturado_nao_chama_criar_nfe(self, mock_buscar, mock_buscar_nfe, mock_criar):
         mock_buscar.return_value = {
-            "sku": "IMP-MIMO-003",
+            "sku": "IMP-PERL-004",
             "nome": "Kit",
             "preco": 44.9,
         }
@@ -22,7 +22,7 @@ class TestEmitirNfeDuplicidade(unittest.TestCase):
         pedido = {
             "pedido_id": "PED-EXIST",
             "cliente": {"nome": "Cliente"},
-            "itens": [{"sku": "IMP-MIMO-003", "quantidade": 1}],
+            "itens": [{"sku": "IMP-PERL-004", "quantidade": 1}],
         }
 
         out = emitir_nfe_pedido(pedido, dry_run=False)
@@ -37,14 +37,14 @@ class TestEmitirNfeDuplicidade(unittest.TestCase):
     @patch("agentes.faturamento.agente_faturamento.buscar_produto")
     def test_pedido_novo_chama_criar_nfe(self, mock_buscar, mock_buscar_nfe, mock_criar):
         mock_buscar.return_value = {
-            "sku": "IMP-MIMO-003",
+            "sku": "IMP-PERL-004",
             "nome": "Kit",
             "preco": 44.9,
         }
         pedido = {
             "pedido_id": "PED-NOVO",
             "cliente": {"nome": "Cliente"},
-            "itens": [{"sku": "IMP-MIMO-003", "quantidade": 1}],
+            "itens": [{"sku": "IMP-PERL-004", "quantidade": 1}],
         }
 
         out = emitir_nfe_pedido(pedido, dry_run=False)
@@ -61,7 +61,7 @@ class TestEmitirNfeDuplicidade(unittest.TestCase):
         from integracoes.bling.bling_client import NfeVerificacaoIndisponivel
 
         mock_buscar.return_value = {
-            "sku": "IMP-MIMO-003",
+            "sku": "IMP-PERL-004",
             "nome": "Kit",
             "preco": 44.9,
         }
@@ -69,7 +69,7 @@ class TestEmitirNfeDuplicidade(unittest.TestCase):
         pedido = {
             "pedido_id": "PED-FALHA",
             "cliente": {"nome": "Cliente"},
-            "itens": [{"sku": "IMP-MIMO-003", "quantidade": 1}],
+            "itens": [{"sku": "IMP-PERL-004", "quantidade": 1}],
         }
 
         out = emitir_nfe_pedido(pedido, dry_run=False)

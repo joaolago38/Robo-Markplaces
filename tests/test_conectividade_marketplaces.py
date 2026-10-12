@@ -72,33 +72,84 @@ class TestAvaliarUm(unittest.TestCase):
         mock_alerta.assert_called_once()
         self.assertEqual(mock_alerta.call_args.kwargs.get("chave"), "conectividade:amazon")
 
+    @patch.object(agente, "alertar_critico")
+    @patch.object(agente, "registrar_acesso")
+    @patch.object(agente, "dias_sem_acesso", return_value=0)
+    @patch(
+        "integracoes.amazon.amazon_client.probe_conexao",
+        return_value={"ok": False, "status": 0, "msg": "Amazon não configurado"},
+    )
+    def test_amazon_nao_configurado_nao_e_falha(self, _probe, _dias, mock_registrar, mock_alerta):
+        out = agente._avaliar_um("amazon")
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["skipped"])
+        mock_registrar.assert_not_called()
+        mock_alerta.assert_not_called()
+
     def test_marketplace_desconhecido(self):
         out = agente._avaliar_um("lojahub")
         self.assertFalse(out["ok"])
 
 
 class TestExecutar(unittest.TestCase):
+    @patch.object(agente, "marketplace_spec_ativo", return_value=True)
     @patch.object(agente, "_avaliar_um")
-    def test_executar_agrega_tres_marketplaces_sem_magalu_inativo(self, mock_avaliar):
+    def test_executar_agrega_quatro_marketplaces(self, mock_avaliar, _spec):
         mock_avaliar.side_effect = [
             {"marketplace": "mercadolivre", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
+            {
+                "marketplace": "magalu",
+                "ok": True,
+                "skipped": True,
+                "status_http": 0,
+                "msg": "Magalu não configurado",
+                "dias_sem_acesso": 0,
+            },
             {"marketplace": "shopee", "ok": True, "status_http": 200, "msg": "", "dias_sem_acesso": 0},
-            {"marketplace": "amazon", "ok": False, "status_http": 0, "msg": "n/c", "dias_sem_acesso": 5},
+            {
+                "marketplace": "amazon",
+                "ok": True,
+                "skipped": True,
+                "status_http": 0,
+                "msg": "Amazon não configurado",
+                "dias_sem_acesso": 5,
+            },
         ]
         out = agente.executar()
-        self.assertEqual(out["total"], 3)
-        self.assertEqual(out["ok"], 2)
-        self.assertEqual(out["falha"], 1)
-        self.assertEqual(mock_avaliar.call_count, 3)
+        self.assertEqual(out["total"], 4)
+        self.assertEqual(out["ok"], 4)
+        self.assertEqual(out["falha"], 0)
+        self.assertEqual(out["pulado"], 2)
+        self.assertEqual(mock_avaliar.call_count, 4)
+        self.assertIn("resultados", out)
 
+    @patch.object(agente, "marketplace_spec_ativo", return_value=True)
     @patch.object(agente, "incrementar")
     @patch.object(agente, "_avaliar_um", side_effect=RuntimeError("boom"))
-    def test_excecao_inesperada_nao_propaga(self, _mock_avaliar, mock_incrementar):
+    def test_excecao_inesperada_nao_propaga(self, _mock_avaliar, mock_incrementar, _spec):
         out = agente.executar()
-        self.assertEqual(out["total"], 3)
-        self.assertEqual(out["falha"], 3)
+        self.assertEqual(out["total"], 4)
+        self.assertEqual(out["falha"], 4)
         self.assertEqual(out["ok"], 0)
-        self.assertEqual(mock_incrementar.call_count, 3)
+        # 4 falhas + 1 rodada heartbeat
+        self.assertEqual(mock_incrementar.call_count, 5)
+
+    @patch.object(agente, "marketplace_spec_ativo", side_effect=lambda mid: mid == "mercadolivre")
+    @patch("core.marketplace_toggle.canal_em_operacao", return_value=False)
+    @patch.object(agente, "_avaliar_um")
+    def test_executar_pula_canais_inativos_no_spec(self, mock_avaliar, _toggle, _spec):
+        mock_avaliar.return_value = {
+            "marketplace": "mercadolivre",
+            "ok": True,
+            "status_http": 200,
+            "msg": "",
+            "dias_sem_acesso": 0,
+        }
+        out = agente.executar()
+        self.assertEqual(out["total"], 4)
+        self.assertGreaterEqual(out["pulado"], 3)
+        self.assertEqual(mock_avaliar.call_count, 1)
+        mock_avaliar.assert_called_once_with("mercadolivre")
 
 
 if __name__ == "__main__":

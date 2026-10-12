@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-21T11:57:38.722013+00:00",
+  "ok": true,
+  "bloqueado": false,
+  "motivo": null,
+  "dry_run_repricing": true,
+  "dry_run_nfe": true,
+  "total_ajustes_preco": 0,
+  "total_aplicados_preco": 0,
+  "total_falhas_preco": 0,
+  "nfe_sucesso": 0,
+  "nfe_total": 0
+}

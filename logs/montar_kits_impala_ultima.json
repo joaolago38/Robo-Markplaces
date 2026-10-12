@@ -1,0 +1,257 @@
+{
+  "ok": true,
+  "timestamp": "2026-07-13T18:42:40.250712+00:00",
+  "planilha": "C:\\Users\\Usuário\\Documents\\projetos\\robo-markplaces\\Robo-Markplaces\\dados\\Cadastro_NCM_Bling_Impala_Cruzeiro.xlsx",
+  "produtos_planilha": 501,
+  "kits_planilha": 14,
+  "consolidado_ml": {
+    "total_kits_unicos": 28,
+    "total_vendas": 0,
+    "preco_medio": 69.46
+  },
+  "cruzamento": {
+    "ok": true,
+    "total_cores_planilha": 168,
+    "cores_com_demanda": 4,
+    "top_cores": [
+      {
+        "sku": "7896111913383",
+        "ean": "7896111913383",
+        "nome_cor": "Branco",
+        "descricao": "ESMALTE IMPALA A COR DA MODA CREMOSO BRANCO COMERCIAL",
+        "tipo": "Esmalte",
+        "score_demanda": 8.5,
+        "vendas_proxy": 0,
+        "kits_mencionam": 1,
+        "exemplos_kits": [
+          {
+            "titulo": "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
+            "vendas": 0,
+            "preco": 21.84
+          }
+        ]
+      },
+      {
+        "sku": "7896111930670",
+        "ean": "7896111930670",
+        "nome_cor": "Paraiso",
+        "descricao": "ESMALTE IMPALA A COR DA MODA PEROLADO PARAISO COMERCIAL",
+        "tipo": "Esmalte",
+        "score_demanda": 8.0,
+        "vendas_proxy": 0,
+        "kits_mencionam": 1,
+        "exemplos_kits": [
+          {
+            "titulo": "Kit Esmalte Colorama Chic E Impala Paraíso Manicure",
+            "vendas": 0,
+            "preco": 24.14
+          }
+        ]
+      },
+      {
+        "sku": "7896111985533",
+        "ean": "7896111985533",
+        "nome_cor": "Sorvete De Ceu Azul",
+        "descricao": "ESMALTE IMPALA A COR DA MODA CREMOSO SORVETE DE CEU AZUL COMERCIAL",
+        "tipo": "Esmalte",
+        "score_demanda": 2.5,
+        "vendas_proxy": 0,
+        "kits_mencionam": 1,
+        "exemplos_kits": [
+          {
+            "titulo": "Kit 15 Toalhas Manicure E Pedicure 29x45 Atacado Cor Azul Liso",
+            "vendas": 0,
+            "preco": 78.0
+          }
+        ]
+      },
+      {
+        "sku": "7896111945810",
+        "ean": "7896111945810",
+        "nome_cor": "Nude Classico",
+        "descricao": "ESMALTE IMPALA A COR DA MODA CREMOSO NUDE CLASSICO COMERCIAL",
+        "tipo": "Esmalte",
+        "score_demanda": 2.5,
+        "vendas_proxy": 0,
+        "kits_mencionam": 1,
+        "exemplos_kits": [
+          {
+            "titulo": "Kit Esmalte Impala Nude Manicure Unhas 6 Un",
+            "vendas": 0,
+            "preco": 37.99
+          }
+        ]
+      }
+    ],
+    "kits_sugeridos": [
+      {
+        "qtd": 3,
+        "nome_sugerido": "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
+        "cores": [
+          {
+            "sku": "7896111913383",
+            "nome_cor": "Branco",
+            "score_demanda": 8.5
+          },
+          {
+            "sku": "7896111930670",
+            "nome_cor": "Paraiso",
+            "score_demanda": 8.0
+          },
+          {
+            "sku": "7896111985533",
+            "nome_cor": "Sorvete De Ceu Azul",
+            "score_demanda": 2.5
+          }
+        ],
+        "score_medio": 6.33,
+        "preco_sugerido_faixa": "R$ 43–62"
+      }
+    ],
+    "kits_cadastrados_avaliados": [
+      {
+        "ordem": 3,
+        "nome": "Kit 10 Esmaltes Sortidas Atacado Manicure",
+        "qtd": 10,
+        "hits_ml": 26,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
+          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
+        ]
+      },
+      {
+        "ordem": 6,
+        "nome": "Kit 10 Esmaltes Nude e Claro Manicure Profissional",
+        "qtd": 10,
+        "hits_ml": 19,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS",
+          "Kit 3 Esmaltes Impala Tratamento Incolor Unhas Manicure"
+        ]
+      },
+      {
+        "ordem": 1,
+        "nome": "Kit 30 Esmaltes Atacado Cores Classicas",
+        "qtd": 30,
+        "hits_ml": 14,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 10,
+        "nome": "Kit Colecao Maratonando Completo 8 cores",
+        "qtd": 8,
+        "hits_ml": 9,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 11,
+        "nome": "Kit Colecao POV Completo 12 cores",
+        "qtd": 12,
+        "hits_ml": 9,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 12,
+        "nome": "Kit Colecao Ju Paes Virando o Jogo 8 cores",
+        "qtd": 8,
+        "hits_ml": 8,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 13,
+        "nome": "Kit Colecao Viva Ame e Brilhe Glitter 3D 9 cores",
+        "qtd": 9,
+        "hits_ml": 8,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 14,
+        "nome": "Kit Colecao Globoplay Acetinado 8 cores",
+        "qtd": 8,
+        "hits_ml": 8,
+        "vendas_proxy": 0,
+        "demanda": "alta",
+        "exemplos_ml": [
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S",
+          "Kit 10 Esmaltes Impala Cores Sortidas Atacado Manicure Cor S"
+        ]
+      },
+      {
+        "ordem": 2,
+        "nome": "Kit 15 Esmaltes Vermelho e Rosa",
+        "qtd": 15,
+        "hits_ml": 0,
+        "vendas_proxy": 0,
+        "demanda": "baixa",
+        "exemplos_ml": []
+      },
+      {
+        "ordem": 4,
+        "nome": "Kit 4 Esmaltes Perolado Tendencia",
+        "qtd": 4,
+        "hits_ml": 0,
+        "vendas_proxy": 0,
+        "demanda": "baixa",
+        "exemplos_ml": []
+      }
+    ],
+    "tamanhos_quentes_ml": [
+      {
+        "qtd": 3,
+        "vendas": 0,
+        "anuncios": 4
+      },
+      {
+        "qtd": 10,
+        "vendas": 0,
+        "anuncios": 7
+      },
+      {
+        "qtd": 6,
+        "vendas": 0,
+        "anuncios": 7
+      },
+      {
+        "qtd": 15,
+        "vendas": 0,
+        "anuncios": 3
+      },
+      {
+        "qtd": 30,
+        "vendas": 0,
+        "anuncios": 5
+      }
+    ],
+    "total_kits_ml": 28
+  },
+  "mensagem": "🧪 *Montar kits Impala — planilha × ML*\n\n_O que este agente faz:_\n_Lê a planilha Impala (cores/SKU), cruza com os kits mais vendidos no Mercado Livre e sugere quais cores montar em kits 3/5/6/10. Telegram: top cores + kits sugeridos._\n\n_Quando roda:_\n_A cada 12h (Actions); fora do ciclo 30 min_\n\n_Cores na planilha: *168* | com sinal no ML: *4* | kits ML analisados: *28*_\n_Preço médio kits ML: R$ 69,46_\n\n*Top cores Impala (demanda nos kits mais vendidos)*\n1. *Branco* — score 8.5 | 1 kit(s) | 0 vendas proxy\n    _Kit 3 Esmaltes Francesinha Manicure Impala Cor BRANCOS_\n2. *Paraiso* — score 8.0 | 1 kit(s) | 0 vendas proxy\n    _Kit Esmalte Colorama Chic E Impala Paraíso Manicure_\n3. *Sorvete De Ceu Azul* — score 2.5 | 1 kit(s) | 0 vendas proxy\n    _Kit 15 Toalhas Manicure E Pedicure 29x45 Atacado Cor Az_\n4. *Nude Classico* — score 2.5 | 1 kit(s) | 0 vendas proxy\n    _Kit Esmalte Impala Nude Manicure Unhas 6 Un_\n\n*Kits sugeridos (cores quentes que você tem)*\n• *Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul* — score médio 6.33 | faixa R$ 43–62\n  Cores: Branco, Paraiso, Sorvete De Ceu Azul\n\n*Seus kits da planilha × demanda ML*\n🟢 Kit 10 Esmaltes Sortidas Atacado Manicure — alta (26 hits | 0 vendas)\n🟢 Kit 10 Esmaltes Nude e Claro Manicure Profissional — alta (19 hits | 0 vendas)\n🟢 Kit 30 Esmaltes Atacado Cores Classicas — alta (14 hits | 0 vendas)\n🟢 Kit Colecao Maratonando Completo 8 cores — alta (9 hits | 0 vendas)\n🟢 Kit Colecao POV Completo 12 cores — alta (9 hits | 0 vendas)\n🟢 Kit Colecao Ju Paes Virando o Jogo 8 cores — alta (8 hits | 0 vendas)\n\n*Tamanhos quentes no ML:* kit 3 (0 vend.) · kit 10 (0 vend.) · kit 6 (0 vend.) · kit 15 (0 vend.) · kit 30 (0 vend.)\n\n*Próximo passo:* monte/reative no ML os kits sugeridos, cole o `item_id` em `catalogo/produtos.json` e rode o monitor Anita/kits."
+}

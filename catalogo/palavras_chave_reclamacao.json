@@ -1,0 +1,45 @@
+{
+  "descricao": "Palavras-chave de reclamação. Agrupamento lexical, não NLP.",
+  "padroes": [
+    {
+      "id": "atraso",
+      "rotulo": "atraso / demora",
+      "termos": ["atraso", "atrasou", "demorou", "demora", "demorando"]
+    },
+    {
+      "id": "quebrado",
+      "rotulo": "quebrado / avaria",
+      "termos": ["quebrado", "quebrada", "quebrou", "avariado", "rachado", "amassado"]
+    },
+    {
+      "id": "nao_veio",
+      "rotulo": "não veio / faltou",
+      "termos": ["nao veio", "não veio", "nao chegou", "não chegou", "faltou", "faltando", "incompleto"]
+    },
+    {
+      "id": "diferente_anuncio",
+      "rotulo": "diferente do anúncio",
+      "termos": ["diferente do anuncio", "diferente do anúncio", "nao era", "não era", "nao condiz", "nao corresponde"]
+    },
+    {
+      "id": "vazando",
+      "rotulo": "vazando",
+      "termos": ["vazando", "vazou", "vaza", "vazamento"]
+    },
+    {
+      "id": "tamanho_errado",
+      "rotulo": "tamanho errado",
+      "termos": ["tamanho errado", "numero errado", "número errado", "nao serve", "não serve"]
+    },
+    {
+      "id": "falso_copia",
+      "rotulo": "falso / cópia",
+      "termos": ["falso", "falsificado", "copia", "cópia", "pirata"]
+    },
+    {
+      "id": "embalagem",
+      "rotulo": "embalagem ruim",
+      "termos": ["embalagem", "rasgado", "mal embalado", "caixa amassada"]
+    }
+  ]
+}

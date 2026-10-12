@@ -11,6 +11,9 @@ from core import request_context
 
 
 class TestRequestContext(unittest.TestCase):
+    def setUp(self):
+        request_context.definir_request_id(None)
+
     def tearDown(self):
         request_context.definir_request_id(None)
 

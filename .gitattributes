@@ -1,0 +1,5 @@
+# Planilhas são binárias — evita corrupção de ZIP no checkout (Linux CI).
+*.xlsx binary
+*.XLSX binary
+*.xlsm binary
+*.xls binary

@@ -62,6 +62,36 @@ class TestTokenManagerProviders(unittest.TestCase):
         tm.sync_secrets_github.assert_called_once_with("new_at", "new_rt", prefix="ML")
 
     @patch.object(tm, "_salvar_store_ml")
+    @patch.object(tm, "sync_secrets_github", return_value=False)
+    @patch.object(tm, "_ml_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
+    def test_renovar_token_ml_sync_falha_loga_warning_com_cooldown(
+        self, mock_request, *_mocks
+    ):
+        import tempfile
+        from pathlib import Path
+
+        from core import log_cooldown
+
+        tm._ml_refresh_efetivo["valor"] = "old_rt"
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            log_cooldown.reset_para_teste(Path(tmp) / "cd.json")
+            with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+                with self.assertLogs("token_manager", level="WARNING") as logs:
+                    out = tm._renovar_token_ml()
+                    out2 = tm._renovar_token_ml()
+            log_cooldown.reset_para_teste()
+        self.assertEqual(out, "new_at")
+        self.assertEqual(out2, "new_at")
+        avisos = [line for line in logs.output if "Falha ao sincronizar ML_*" in line]
+        self.assertEqual(len(avisos), 1)
+
+    @patch.object(tm, "_salvar_store_ml")
     @patch.object(tm, "request")
     @patch.multiple(cfg, ML_CLIENT_ID="id", ML_CLIENT_SECRET="sec", ML_REFRESH_TOKEN="rt")
     def test_renovar_token_ml_persiste_store(self, mock_request, mock_salvar):
@@ -97,7 +127,14 @@ class TestTokenManagerProviders(unittest.TestCase):
     @patch.object(tm, "sync_secrets_github", return_value=True)
     @patch.object(tm, "_magalu_refresh_disponivel", return_value="old_rt")
     @patch.object(tm, "request")
-    @patch.multiple(cfg, MAGALU_CLIENT_ID="id", MAGALU_CLIENT_SECRET="sec", MAGALU_REFRESH_TOKEN="rt")
+    @patch.multiple(
+        cfg,
+        MAGALU_CLIENT_ID="id",
+        MAGALU_CLIENT_SECRET="sec",
+        MAGALU_REFRESH_TOKEN="rt",
+        MAGALU_ACCESS_TOKEN="",
+        MAGALU_CHANNEL_ID="",
+    )
     def test_renovar_token_magalu_sincroniza_secrets_no_actions(self, mock_request, *_mocks):
         tm._magalu_refresh_efetivo["valor"] = "old_rt"
         tm._token_cache_magalu.update({"access_token": None, "expires_at": 0})
@@ -108,7 +145,38 @@ class TestTokenManagerProviders(unittest.TestCase):
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
             out = tm._renovar_token_magalu()
         self.assertEqual(out, "new_at")
-        tm.sync_secrets_github.assert_called_once_with("new_at", "new_rt", prefix="MAGALU")
+        tm.sync_secrets_github.assert_called_once_with(
+            "new_at", "new_rt", prefix="MAGALU", extras=None
+        )
+
+    @patch.object(tm, "_salvar_store_magalu")
+    @patch.object(tm, "sync_secrets_github", return_value=True)
+    @patch.object(tm, "_magalu_refresh_disponivel", return_value="old_rt")
+    @patch.object(tm, "request")
+    @patch.multiple(
+        cfg,
+        MAGALU_CLIENT_ID="id",
+        MAGALU_CLIENT_SECRET="sec",
+        MAGALU_REFRESH_TOKEN="rt",
+        MAGALU_ACCESS_TOKEN="",
+        MAGALU_CHANNEL_ID="GENPUB.persistido",
+    )
+    def test_renovar_token_magalu_sync_preserva_channel_id(self, mock_request, *_mocks):
+        tm._magalu_refresh_efetivo["valor"] = "old_rt"
+        tm._token_cache_magalu.update({"access_token": None, "expires_at": 0})
+        mock_request.return_value = _resp(
+            200,
+            {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 3600},
+        )
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
+            out = tm._renovar_token_magalu()
+        self.assertEqual(out, "new_at")
+        tm.sync_secrets_github.assert_called_once_with(
+            "new_at",
+            "new_rt",
+            prefix="MAGALU",
+            extras={"MAGALU_CHANNEL_ID": "GENPUB.persistido"},
+        )
 
     @patch.object(tm, "_salvar_store_magalu")
     @patch.object(tm, "request")
@@ -156,6 +224,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         out = tm._renovar_token_magalu()
         self.assertEqual(out, "mag_at")
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -163,7 +232,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         MAGALU_CLIENT_SECRET="sec",
         MAGALU_REFRESH_TOKEN="rt",
     )
-    def test_magalu_refresh_400(self, mock_request):
+    def test_magalu_refresh_400(self, mock_request, _log_on):
         tm._magalu_refresh_efetivo["valor"] = "rt"
         mock_request.return_value = _resp(400, text="bad request")
         with self.assertLogs("token_manager", level="ERROR"):
@@ -202,6 +271,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         out = tm._renovar_token_shopee()
         self.assertEqual(out, "sp_at")
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -210,7 +280,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         SHOPEE_SHOP_ID="...",
         SHOPEE_REFRESH_TOKEN="rt",
     )
-    def test_shopee_ids_nao_numericos(self, mock_request):
+    def test_shopee_ids_nao_numericos(self, mock_request, _log_on):
         tm._shopee_refresh_efetivo["valor"] = "rt"
         with self.assertLogs("token_manager", level="ERROR") as logs:
             out = tm._renovar_token_shopee()
@@ -240,6 +310,7 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertTrue(all(out.values()))
         self.assertIn("amazon", out)
 
+    @patch.object(tm, "_canal_marketplace_operando", return_value=True)
     @patch.object(tm, "_renovar_token_ml", return_value="ml")
     @patch.object(tm, "_renovar_token_shopee", return_value="sp")
     @patch.object(tm, "_renovar_token_magalu", return_value="mg")
@@ -250,6 +321,22 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertTrue(out["shopee"]["ok"])
         self.assertTrue(out["magalu"]["ok"])
         self.assertTrue(out["amazon"]["ok"])
+
+    @patch.object(tm, "_canal_marketplace_operando", return_value=False)
+    @patch.object(tm, "_renovar_token_ml", return_value="ml")
+    @patch.object(tm, "_renovar_token_shopee", return_value="sp")
+    @patch.object(tm, "_renovar_token_magalu", return_value="mg")
+    @patch.object(tm, "_renovar_token_amazon", return_value="amz")
+    def test_renovar_todos_tokens_pula_canais_inativos(self, mock_amz, mock_mg, mock_sp, mock_ml, _canal):
+        out = tm.renovar_todos_tokens()
+        mock_ml.assert_called_once()
+        mock_sp.assert_not_called()
+        mock_mg.assert_called_once()
+        mock_amz.assert_not_called()
+        self.assertTrue(out["mercadolivre"]["ok"])
+        self.assertFalse(out["shopee"]["ok"])
+        self.assertTrue(out["magalu"]["ok"])
+        self.assertFalse(out["amazon"]["ok"])
 
     @patch.object(tm, "_renovar_token_bling", return_value=None)
     @patch.multiple(cfg, BLING_CLIENT_ID="c", BLING_CLIENT_SECRET="s", BLING_REFRESH_TOKEN="r")
@@ -289,15 +376,17 @@ class TestTokenManagerProviders(unittest.TestCase):
         self.assertEqual(tm.tokens_shopee_atuais()["access_token"], "sp_at")
         self.assertEqual(tm.tokens_magalu_atuais()["refresh_token"], "mg_rt")
 
+    @patch.object(tm, "_canal_marketplace_operando", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(cfg, SHOPEE_PARTNER_ID="1", SHOPEE_PARTNER_KEY="k", SHOPEE_SHOP_ID="2", SHOPEE_REFRESH_TOKEN="")
     def test_get_token_shopee_sem_refresh_retorna_env(self, *_):
         with patch.object(cfg, "SHOPEE_ACCESS_TOKEN", "static"):
             self.assertEqual(tm.get_token_shopee(), "static")
 
+    @patch.object(tm, "log_erros_bling_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(cfg, BLING_CLIENT_ID="cid", BLING_CLIENT_SECRET="sec", BLING_REFRESH_TOKEN="rt")
-    def test_bling_refresh_401_dica(self, mock_request):
+    def test_bling_refresh_401_dica(self, mock_request, _log_on):
         tm._bling_refresh_efetivo["valor"] = "rt"
         mock_request.return_value = _resp(
             401,
@@ -358,7 +447,7 @@ class TestTokenManagerProviders(unittest.TestCase):
             {"access_token": "new_at", "refresh_token": "new_rt", "expires_in": 21600},
         )
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
-            with self.assertLogs("token_manager", level="WARNING") as logs:
+            with self.assertLogs("token_manager", level="ERROR") as logs:
                 out = tm._renovar_token_bling()
         self.assertEqual(out, "new_at")
         self.assertTrue(any("Falha ao sincronizar BLING_*" in line for line in logs.output))

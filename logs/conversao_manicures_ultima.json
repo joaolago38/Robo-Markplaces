@@ -1,0 +1,149 @@
+{
+  "ok": true,
+  "timestamp": "2026-09-21T11:57:38.133223+00:00",
+  "modelo": "claude-haiku-4-5",
+  "diagnostico": {
+    "canais": {
+      "whatsapp": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "postagem_manual — robô não envia ao grupo",
+        "toggle": null,
+        "toggle_ligado": false
+      },
+      "telegram_manicures": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "ok",
+        "toggle": "CONVERSAO_MANICURES_ENVIAR_TG",
+        "toggle_ligado": true
+      },
+      "facebook": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "token ok — PUBLICAR_FB=0",
+        "toggle": "CONVERSAO_MANICURES_PUBLICAR_FB",
+        "toggle_ligado": false
+      },
+      "instagram": {
+        "pronto": false,
+        "status": "config_pendente",
+        "nota": "META_INSTAGRAM_ID + CONVERSAO_MANICURES_IMAGEM_IG_URL (+ instagram_basic / instagram_content_publish)",
+        "toggle": "CONVERSAO_MANICURES_PUBLICAR_IG",
+        "toggle_ligado": false
+      },
+      "claude_haiku": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "claude-haiku-4-5"
+      },
+      "chat_ml": {
+        "pronto": true,
+        "status": "ok",
+        "nota": "token ok — CHAT_ML=0 (dono: agentes.ml)",
+        "toggle": "CONVERSAO_MANICURES_CHAT_ML",
+        "toggle_ligado": false
+      },
+      "reply_meta": {
+        "pronto": false,
+        "status": "desligado",
+        "nota": "CONVERSAO_MANICURES_REPLY_META=1 quando permissões fecharem",
+        "toggle": "CONVERSAO_MANICURES_REPLY_META",
+        "toggle_ligado": false
+      },
+      "reply_wa": {
+        "pronto": false,
+        "status": "desligado",
+        "nota": "CONVERSAO_MANICURES_REPLY_WA=1 + WhatsApp Cloud (Meta)",
+        "toggle": "CONVERSAO_MANICURES_REPLY_WA",
+        "toggle_ligado": false
+      }
+    },
+    "pendentes": [
+      "instagram"
+    ],
+    "escrita_habilitada": true,
+    "checklist_meta": [
+      "Token long-lived Meta (META_ACCESS_TOKEN)",
+      "META_PAGE_ID + pages_manage_posts / pages_read_engagement",
+      "META_INSTAGRAM_ID + instagram_basic / instagram_content_publish",
+      "pages_manage_engagement / instagram_manage_comments (para REPLY_META)",
+      "CONVERSAO_MANICURES_IMAGEM_IG_URL (URL pública HTTPS da arte)"
+    ],
+    "como_ativar": [
+      "1) Preencha item_id MLB real na campanha/catálogo (sem MLB_PREENCHER)",
+      "2) CONVERSAO_MANICURES_ESCRITA=1 (master)",
+      "3) Ligue só o canal pronto: ENVIAR_TG / PUBLICAR_FB / PUBLICAR_IG / REPLY_* / CHAT_ML"
+    ]
+  },
+  "toggles": {
+    "escrita": true,
+    "enviar_wa": false,
+    "enviar_tg": true,
+    "publicar_fb": false,
+    "publicar_ig": false,
+    "reply_meta": false,
+    "reply_wa": false,
+    "chat_ml": false
+  },
+  "prontidao": {
+    "pronta_para_escrita": true,
+    "escrita_habilitada": true,
+    "link_ok": true,
+    "claude_ok": true,
+    "canais_armados": [
+      "telegram_manicures"
+    ],
+    "faltando": [],
+    "como_ativar": [
+      "1) Preencha item_id MLB real na campanha/catálogo (sem MLB_PREENCHER)",
+      "2) CONVERSAO_MANICURES_ESCRITA=1 (master)",
+      "3) Ligue só o canal pronto: ENVIAR_TG / PUBLICAR_FB / PUBLICAR_IG / REPLY_* / CHAT_ML"
+    ]
+  },
+  "ads": {
+    "campanhas": 0,
+    "sustentabilidade": {
+      "status": "sustentavel",
+      "roas_real": 3.0
+    }
+  },
+  "sustentabilidade": {
+    "status": "sustentavel",
+    "roas_real": 3.0
+  },
+  "oferta": {
+    "campanha_id": "kit-3",
+    "campanha_nome": "Kit 3",
+    "sku": "X",
+    "preco_brl": 40,
+    "link_ml": "https://produto.mercadolivre.com.br/MLB-123",
+    "link_valido": true,
+    "aviso_link": null,
+    "item_id": null,
+    "angulo": "atacado",
+    "motivo": "t",
+    "fonte": "fallback",
+    "cta_ml": "compre",
+    "copy_whatsapp": "wa",
+    "copy_facebook": "fb",
+    "copy_instagram": "ig",
+    "escalou_ia": null,
+    "modelo_ia": null
+  },
+  "boost_bloqueado": false,
+  "motivo_boost": "",
+  "envios": {
+    "whatsapp": true
+  },
+  "inbox": {
+    "novos": 0,
+    "respondidos": 0,
+    "enfileirados": 0
+  },
+  "chat_ml": {
+    "respondidas": 0
+  },
+  "modo": "envio",
+  "mensagem": "💅 *Conversão manicures — WA / IG / FB / ML*\n\n_O que este agente faz:_\n_Converte manicures (WA/IG/FB) para o ML: Haiku oferta + inbox Meta/WA. Chat ML de fechamento fica com agentes.ml (evita resposta duplicada). Bloqueia boost se link MLB\\_PREENCHER ou ROAS Ads×ML crítico._\n\n_Quando roda:_\n_3x/dia às 08:25, 14:25 e 21:25 BRT (Actions); fora do ciclo 30 min_\n\n_Oferta: *Kit 3* (fallback: atacado)_\n_Link: https://produto.mercadolivre.com.br/MLB-123_\n\n🟢 *Escrita armada* — canais: telegram_manicures\n\n*Sustentabilidade Ads × ML*\n🟢 *sustentavel* — gasto Ads R$ 0.00 | vendas ML R$ 0.00 (0 ped.) | ROAS real 3.00 (pixel 0.00)\n\n*Envios ativos*\n• WhatsApp: ✅\n• Telegram manicures: —\n• Facebook: — | Instagram: —\n\n*Inbox:* 0 novos · 0 respondidos · 0 na fila\n*Chat ML manicure:* 0 respostas\n\n*Toggles*\n• ESCRITA=1 · WA=0 · TG=1 · FB=0 · IG=0 · CHAT_ML=0\n\n*Config pendente:* instagram\n  · Token long-lived Meta (META_ACCESS_TOKEN)\n  · META_PAGE_ID + pages_manage_posts / pages_read_engagement\n  · META_INSTAGRAM_ID + instagram_basic / instagram_content_publish\n  · pages_manage_engagement / instagram_manage_comments (para REPLY_META)"
+}

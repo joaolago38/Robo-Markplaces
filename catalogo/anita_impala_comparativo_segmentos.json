@@ -1,0 +1,70 @@
+[
+  {
+    "id": "cmp-kit3",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 3 — Anita vs Impala",
+    "termo_busca": "kit 3 esmaltes manicure",
+    "qtd_esmaltes_referencia": 3,
+    "limite_resultados": 20
+  },
+  {
+    "id": "cmp-kit5",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 5 — Anita vs Impala",
+    "termo_busca": "kit 5 esmaltes manicure",
+    "qtd_esmaltes_referencia": 5,
+    "limite_resultados": 25
+  },
+  {
+    "id": "cmp-kit6",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kit 6 sortidos",
+    "termo_busca": "kit 6 esmaltes sortidos manicure",
+    "qtd_esmaltes_referencia": 6,
+    "limite_resultados": 20
+  },
+  {
+    "id": "cmp-kit10",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kit 10 atacado",
+    "termo_busca": "kit 10 esmaltes atacado manicure",
+    "qtd_esmaltes_referencia": 10,
+    "limite_resultados": 25
+  },
+  {
+    "id": "cmp-nude",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Kits nude/rosa",
+    "termo_busca": "kit esmalte nude rosa manicure",
+    "limite_resultados": 20
+  },
+  {
+    "id": "cmp-unitario",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Esmalte unitário",
+    "termo_busca": "esmalte manicure unitario",
+    "limite_resultados": 20
+  },
+  {
+    "id": "cmp-anita-marca",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Busca marca Anita",
+    "termo_busca": "esmalte anita kit manicure",
+    "limite_resultados": 25
+  },
+  {
+    "id": "cmp-impala-marca",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Busca marca Impala",
+    "termo_busca": "esmalte impala kit manicure",
+    "limite_resultados": 25
+  }
+]

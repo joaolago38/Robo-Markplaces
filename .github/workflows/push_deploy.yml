@@ -1,0 +1,132 @@
+﻿name: Push deploy local (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sem_push:
+        description: "Pular git push (só rodar agentes)"
+        type: boolean
+        default: false
+      sem_preflight:
+        description: "Pular ruff e pytest"
+        type: boolean
+        default: false
+      mensagem_commit:
+        description: "Mensagem do commit (se houver alterações)"
+        type: string
+        default: "chore: deploy via workflow manual"
+
+concurrency:
+  group: robo-markplaces-token-renewal
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
+
+jobs:
+  push_deploy:
+    name: Push + sync completo
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Push deploy (git + todos os agentes)
+        run: |
+          ARGS=""
+          if [ "${{ inputs.sem_push }}" = "true" ]; then ARGS="$ARGS --sem-push"; fi
+          if [ "${{ inputs.sem_preflight }}" = "true" ]; then ARGS="$ARGS --sem-preflight"; fi
+          python -m agentes.orquestrador.agente_push_deploy \
+            --mensagem "${{ inputs.mensagem_commit }}" \
+            $ARGS
+        env:
+          ORQUESTRADOR_EXCLUIR: leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,alibaba_sourcing,comparar_portos_alibaba,ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,golpe_guerra_masterprint,monitor_masterprint_escritorio,ads_gatilho,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,relatorio_estrategia_ml,relatorio_manha_ml,vigia_datadog,promocoes_manicures,resumo_conta_ml,montar_kits_impala,esmaltes_operacao,comparativo_anita_impala,monitor_busca_kit_esmaltes,sincronizar_estoque,repricing,repricing_impala,operacao_24h,chat_shopee,chat_magalu,chat_amazon,auto_respostas,inteligencia_precos,monitor_ml,monitor_concorrentes,monitor_sem_venda_ml,monitor_mercado_esmaltes,panorama
+          ORQUESTRADOR_PAUSA_ENTRE_AGENTES_SEG: "0.4"
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+          BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+          BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
+          BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
+          LOJAHUB_TOKEN: ${{ secrets.LOJAHUB_TOKEN }}
+          LOJAHUB_ANALYTICS_TOKEN: ${{ secrets.LOJAHUB_ANALYTICS_TOKEN }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
+          MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
+          MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
+          MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
+          MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID: ${{ secrets.MAGALU_SELLER_ID }}
+          SHOPEE_PARTNER_ID: ${{ secrets.SHOPEE_PARTNER_ID }}
+          SHOPEE_PARTNER_KEY: ${{ secrets.SHOPEE_PARTNER_KEY }}
+          SHOPEE_SHOP_ID: ${{ secrets.SHOPEE_SHOP_ID }}
+          SHOPEE_ACCESS_TOKEN: ${{ secrets.SHOPEE_ACCESS_TOKEN }}
+          SHOPEE_REFRESH_TOKEN: ${{ secrets.SHOPEE_REFRESH_TOKEN }}
+          AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
+          AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}
+          AMAZON_REFRESH_TOKEN: ${{ secrets.AMAZON_REFRESH_TOKEN }}
+          AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
+          AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          WHATSAPP_NUMERO_DESTINO: ${{ secrets.WHATSAPP_NUMERO_DESTINO }}
+          WHATSAPP_BUSINESS_TOKEN: ${{ secrets.WHATSAPP_BUSINESS_TOKEN }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          PUSH_DEPLOY_RODAR_TESTES: "0"
+          PUSH_DEPLOY_RODAR_RUFF: "0"
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}

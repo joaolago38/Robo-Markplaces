@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import logging
 
-from integracoes.ml import ml_client
 from integracoes.bling.bling_client import buscar_produto
+from integracoes.ml import ml_client
 
 logger = logging.getLogger("painel_item")
 

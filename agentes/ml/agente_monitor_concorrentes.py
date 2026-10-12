@@ -10,16 +10,31 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+from core.atomic_io import escrever_json_atomico
 from core.config import (
+    MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO,
     MONITOR_CONCORRENTES_ARQUIVO,
     MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT,
     ROOT,
 )
-from core.datadog_metrics import gauge, incrementar
+from core.datadog_metrics import gauge, incrementar, tag_produto
 from core.notificador import alertar_gestor
 from integracoes.ml import ml_client
+from integracoes.ml.agrupador_reclamacoes import (
+    agrupar_padroes_reclamacao,
+    emitir_metricas_reclamacao,
+)
+from integracoes.ml.analise_anuncio_concorrente import (
+    calcular_margem_real,
+    emitir_metricas_margem_real,
+)
+from integracoes.ml.coleta_avaliacoes import buscar_avaliacoes_item, buscar_perguntas_item
+from integracoes.ml.coleta_demanda_ml import calcular_tendencia_demanda, registrar_snapshot_demanda
+from integracoes.ml.contexto_playbook_operacao import LACUNAS_PATH
 
 logger = logging.getLogger("agente_monitor_concorrentes")
+
+_MAX_ITENS_TEXTO_AVALIACAO = 2
 
 HISTORY_PATH = ROOT / "logs" / "concorrentes_ml_history.json"
 
@@ -62,6 +77,146 @@ def _salvar_historico(historico: dict[str, Any]) -> None:
         logger.error("Erro ao salvar histórico: %s", exc)
 
 
+def _custo_unitario_entrada(entrada: dict) -> float | None:
+    if "custo_unitario" not in (entrada or {}):
+        return None
+    raw = entrada.get("custo_unitario")
+    if raw is None or raw == "":
+        return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _aplicar_lacunas_monitor(
+    entrada: dict,
+    anuncios: list[dict[str, Any]],
+    *,
+    termo: str,
+    meu_preco: float,
+) -> dict[str, Any]:
+    """
+    Texto de reviews/perguntas, padrões de reclamação, tendência de demanda
+    e margem real (CMV do JSON). Nunca lança.
+    """
+    vazio: dict[str, Any] = {
+        "avaliacoes_texto": [],
+        "perguntas": [],
+        "padroes_reclamacao": [],
+        "tendencia_demanda": {
+            "tendencia": "indeterminado",
+            "motivo": "historico insuficiente",
+        },
+        "margem_real": calcular_margem_real(meu_preco, None),
+    }
+    try:
+        custo = _custo_unitario_entrada(entrada)
+        vazio["margem_real"] = calcular_margem_real(meu_preco, custo)
+        avaliacoes: list[dict[str, Any]] = []
+        perguntas: list[dict[str, Any]] = []
+        vistos: set[str] = set()
+        for prod in anuncios or []:
+            if not isinstance(prod, dict):
+                continue
+            iid = str(prod.get("item_id") or prod.get("id") or "").strip().upper()
+            if not iid or iid in vistos:
+                continue
+            vistos.add(iid)
+            avaliacoes.extend(buscar_avaliacoes_item(iid, limite=20))
+            perguntas.extend(buscar_perguntas_item(iid, limite=20))
+            if len(vistos) >= _MAX_ITENS_TEXTO_AVALIACAO:
+                break
+        padroes = agrupar_padroes_reclamacao(avaliacoes, perguntas)
+        eid = str(entrada.get("id") or "").strip()
+        tags_prod = []
+        tp = tag_produto(eid or termo)
+        if tp:
+            tags_prod.append(tp)
+        emitir_metricas_reclamacao(padroes, tags=tags_prod)
+        emitir_metricas_margem_real(vazio["margem_real"], tags=tags_prod)
+        gauge("ml.reviews.n", float(len(avaliacoes)), tags=tags_prod)
+        gauge("ml.perguntas.n", float(len(perguntas)), tags=tags_prod)
+        if termo:
+            registrar_snapshot_demanda(termo, anuncios)
+            tendencia = calcular_tendencia_demanda(termo, dias=14, produto_id=eid)
+        else:
+            tendencia = vazio["tendencia_demanda"]
+        return {
+            "avaliacoes_texto": avaliacoes,
+            "perguntas": perguntas,
+            "padroes_reclamacao": padroes,
+            "tendencia_demanda": tendencia,
+            "margem_real": vazio["margem_real"],
+        }
+    except Exception as exc:
+        logger.warning("lacunas monitor: %s", exc)
+        return vazio
+
+
+def _anexar_lacunas_hist(bloco: dict[str, Any], lacunas: dict[str, Any]) -> None:
+    bloco["tendencia_demanda"] = lacunas.get("tendencia_demanda")
+    bloco["padroes_reclamacao"] = lacunas.get("padroes_reclamacao")
+    bloco["margem_real"] = lacunas.get("margem_real")
+
+
+def _persistir_lacunas_ciclo(resultados: list[dict[str, Any]]) -> None:
+    try:
+        itens = []
+        for r in resultados:
+            if not isinstance(r, dict) or not r.get("ok"):
+                continue
+            itens.append(
+                {
+                    "id": r.get("id"),
+                    "nome": r.get("nome"),
+                    "termo_busca": r.get("termo_busca"),
+                    "tendencia_demanda": r.get("tendencia_demanda"),
+                    "padroes_reclamacao": r.get("padroes_reclamacao") or [],
+                    "margem_real": r.get("margem_real"),
+                    "n_avaliacoes_texto": len(r.get("avaliacoes_texto") or []),
+                    "n_perguntas": len(r.get("perguntas") or []),
+                }
+            )
+        escrever_json_atomico(
+            LACUNAS_PATH,
+            {"timestamp": datetime.now(timezone.utc).isoformat(), "itens": itens},
+        )
+    except Exception as exc:
+        logger.warning("persistir lacunas: %s", exc)
+
+
+def _linhas_telegram_lacunas(resultados: list[dict[str, Any]]) -> list[str]:
+    linhas: list[str] = []
+    for r in resultados:
+        if not isinstance(r, dict) or not r.get("ok"):
+            continue
+        nome = str(r.get("nome") or r.get("id") or "?")
+        tend = r.get("tendencia_demanda") if isinstance(r.get("tendencia_demanda"), dict) else {}
+        tid = str(tend.get("tendencia") or "")
+        if tid in {"alta", "queda"}:
+            conf = tend.get("confiabilidade") or "n/d"
+            var = tend.get("variacao_pct")
+            linhas.append(
+                f"{nome}: demanda {tid} ({var}% em 14d, confiabilidade {conf})"
+            )
+        padroes = r.get("padroes_reclamacao") or []
+        if padroes:
+            top = ", ".join(
+                f"{p.get('padrao')}×{p.get('frequencia')}"
+                for p in padroes[:3]
+                if isinstance(p, dict)
+            )
+            if top:
+                linhas.append(f"{nome}: reclamações {top} (palavra-chave, revisar)")
+        margem = r.get("margem_real") if isinstance(r.get("margem_real"), dict) else {}
+        if margem.get("margem_disponivel"):
+            linhas.append(
+                f"{nome}: margem real R$ {margem.get('margem_rs')} ({margem.get('margem_pct')}%)"
+            )
+    return linhas[:12]
+
+
 def _pct_variacao(anterior: float, atual: float) -> float:
     if anterior <= 0 or atual <= 0:
         return 0.0
@@ -71,6 +226,136 @@ def _pct_variacao(anterior: float, atual: float) -> float:
 def _menor_preco(concorrentes: list[dict]) -> float:
     precos = [float(c.get("preco") or 0) for c in concorrentes if float(c.get("preco") or 0) > 0]
     return min(precos) if precos else 0.0
+
+
+def _item_id_ml_valido(valor: Any) -> bool:
+    texto = str(valor or "").strip()
+    if not texto or "PREENCHER" in texto.upper():
+        return False
+    up = texto.upper().replace("-", "")
+    if not up.startswith("MLB"):
+        return False
+    digits = up[3:]
+    return digits.isdigit() and len(digits) >= 6
+
+
+def _item_ids_da_entrada(entrada: dict) -> list[str]:
+    """MLBs rivais no JSON (item_ids / mlb_rivais / item_id_concorrente)."""
+    brutos: list[Any] = []
+    for chave in ("item_ids", "mlb_rivais"):
+        raw = entrada.get(chave)
+        if isinstance(raw, list):
+            brutos.extend(raw)
+        elif raw:
+            brutos.append(raw)
+    for chave in ("item_id_concorrente", "watch_item_id", "mlb_concorrente"):
+        if entrada.get(chave):
+            brutos.append(entrada.get(chave))
+    return _normalizar_item_ids(brutos)
+
+
+def _item_ids_do_historico(entrada_hist: dict[str, Any] | None) -> list[str]:
+    if not isinstance(entrada_hist, dict):
+        return []
+    brutos: list[Any] = []
+    raw = entrada_hist.get("item_ids")
+    if isinstance(raw, list):
+        brutos.extend(raw)
+    for chave in ("anuncios", "concorrentes_amostra"):
+        rows = entrada_hist.get(chave)
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if isinstance(row, dict):
+                brutos.append(row.get("item_id") or row.get("id"))
+    return _normalizar_item_ids(brutos)
+
+
+def _normalizar_item_ids(brutos: list[Any]) -> list[str]:
+    vistos: set[str] = set()
+    out: list[str] = []
+    for bruto in brutos:
+        texto = str(bruto or "").strip().upper().replace("-", "")
+        if not _item_id_ml_valido(texto) or texto in vistos:
+            continue
+        vistos.add(texto)
+        out.append(texto)
+    return out
+
+
+def _item_ids_de_anuncios(rows: list[Any]) -> list[str]:
+    return _normalizar_item_ids(
+        [
+            (row.get("item_id") or row.get("id"))
+            for row in rows
+            if isinstance(row, dict)
+        ]
+    )
+
+
+def _rotulo_preco_referencia(origem: str) -> str:
+    """Evita 'seu preço' quando não há anúncio vivo — usa 'preço alvo' do catálogo/JSON."""
+    if origem == "anuncio_vivo":
+        return "seu anúncio"
+    return "preço alvo"
+
+
+def _resolver_preco_referencia(entrada: dict) -> tuple[float, str]:
+    """
+    Resolve preço de comparação nesta ordem:
+    1) preço vivo do anúncio ML (item_id válido)
+    2) preço do canal ML em produtos.json (por SKU)
+    3) meu_preco do JSON de concorrentes (alvo cadastrado)
+    """
+    fallback = 0.0
+    try:
+        fallback = float(entrada.get("meu_preco") or 0)
+    except (TypeError, ValueError):
+        fallback = 0.0
+
+    item_id = str(entrada.get("item_id") or "").strip()
+    sku = str(entrada.get("sku") or "").strip()
+    catalogo_preco = 0.0
+
+    if sku:
+        try:
+            from core.catalogo_produtos import carregar_produtos_catalogo
+
+            for produto in carregar_produtos_catalogo():
+                if str(produto.get("sku") or "").strip() != sku:
+                    continue
+                ml = (produto.get("canais") or {}).get("mercadolivre") or {}
+                if not item_id:
+                    item_id = str(ml.get("item_id") or "").strip()
+                try:
+                    catalogo_preco = float(ml.get("preco") or produto.get("preco") or 0)
+                except (TypeError, ValueError):
+                    catalogo_preco = 0.0
+                break
+        except Exception as exc:
+            logger.debug("catálogo indisponível para preço alvo sku=%s: %s", sku, exc)
+
+    if _item_id_ml_valido(item_id):
+        try:
+            metricas = ml_client.buscar_metricas_item(item_id)
+            vivo = float((metricas or {}).get("preco") or 0)
+            if vivo > 0:
+                return vivo, "anuncio_vivo"
+        except Exception as exc:
+            logger.debug("preço vivo indisponível item_id=%s: %s", item_id, exc)
+
+    if catalogo_preco > 0:
+        return catalogo_preco, "catalogo"
+    if fallback > 0:
+        return fallback, "alvo_json"
+    return 0.0, "indefinido"
+
+
+def _pode_alertar_gap_preco(origem_preco: str) -> bool:
+    """Gap vs preço alvo só alerta com anúncio vivo (evita Telegram fictício)."""
+    if not MONITOR_CONCORRENTES_ALERTAR_GAP_SO_ANUNCIO_VIVO:
+        return True
+    return origem_preco == "anuncio_vivo"
 
 
 def _leituras_recentes(entrada_hist: dict, limite: int = 5) -> list[dict]:
@@ -113,7 +398,6 @@ def _classificar_variacao_preco(
         fallback = f"tendência de baixa ({quedas}ª queda seguida)"
     elif quedas >= 2:
         fallback = "tendência de baixa (2 quedas seguidas)"
-    from core.claude_client import MODELO_RAPIDO
     from core.resumo_ia import sintetizar_claude
 
     prompt = (
@@ -121,32 +405,385 @@ def _classificar_variacao_preco(
         "(ex.: 'queda pontual' vs 'tendência de baixa (3ª queda seguida)')."
     )
     texto = sintetizar_claude(
-        prompt, contexto, fallback, max_tokens=60, modelo=MODELO_RAPIDO
+        prompt,
+        contexto,
+        fallback,
+        max_tokens=60,
+        proposito="monitor_concorrentes",
+        origem="monitor_concorrentes.variacao_preco",
     )
     return (texto or "").strip() or None
 
 
-def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
+def _monitorar_loja(entrada: dict, historico: dict[str, Any]) -> dict[str, Any]:
+    """Monitora uma loja concorrente (seller_id) via análise por termos."""
+    from integracoes.ml.analise_loja_concorrente import analisar_loja
+
     eid = str(entrada.get("id") or "").strip()
     nome = str(entrada.get("nome") or eid)
-    termo = str(entrada.get("termo_busca") or "").strip()
-    meu_preco = float(entrada.get("meu_preco") or 0)
-    limite = int(entrada.get("limite_resultados") or 10)
-
-    if not termo:
-        return {"id": eid, "ok": False, "erro": "termo_busca vazio", "alertas": []}
-
-    concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
-    menor = _menor_preco(concorrentes)
+    seller_id = str(entrada.get("seller_id") or "").strip()
+    nickname = str(entrada.get("nickname") or "").strip() or None
+    termos = entrada.get("termos_busca")
+    if not isinstance(termos, list):
+        termos = None
+    item_ids = _item_ids_da_entrada(entrada)
     anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    item_ids = _normalizar_item_ids([*item_ids, *_item_ids_do_historico(anterior)])
+    meu_preco, origem_preco = _resolver_preco_referencia(entrada)
+    rotulo = _rotulo_preco_referencia(origem_preco)
+    limite = int(entrada.get("limite_resultados") or 20)
+
+    if not seller_id:
+        return {"id": eid, "ok": False, "erro": "seller_id vazio", "alertas": [], "tipo": "loja"}
+
+    analise = analisar_loja(
+        seller_id,
+        nickname=nickname,
+        termos=termos,
+        limite_por_termo=limite,
+        item_ids=item_ids or None,
+    )
+    anuncios = analise.get("anuncios") or []
+    # analisar_loja já enriquece métricas; garante amostra se veio sem
+    if anuncios and not any(a.get("metricas") for a in anuncios[:3]):
+        try:
+            from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
+
+            anuncios = enriquecer_lista(anuncios)
+            analise["anuncios"] = anuncios
+        except Exception as exc:
+            logger.warning("enriquecer métricas loja %s: %s", eid, exc)
+    menor = float(analise.get("preco_min") or 0)
     menor_ant = float(anterior.get("menor_preco") or 0)
+    ids_achados = _item_ids_de_anuncios(anuncios) or item_ids
+    amostra_cega = not anuncios
 
     alertas: list[str] = []
-    if menor > 0 and meu_preco > menor:
+    if _pode_alertar_gap_preco(origem_preco):
+        for ameaca in analise.get("ameacas_preco") or []:
+            alertas.append(
+                f"{nome}: {ameaca.get('sku')} {rotulo} R$ {ameaca.get('meu_preco'):.2f} está "
+                f"{ameaca.get('gap_pct')}% acima do anúncio da loja "
+                f"(R$ {ameaca.get('menor_preco_loja'):.2f})."
+            )
+
+    if menor_ant > 0 and menor > 0:
+        var = _pct_variacao(menor_ant, menor)
+        if var >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            direcao = "caiu" if menor < menor_ant else "subiu"
+            alertas.append(
+                f"{nome}: menor preço amostrado {direcao} de R$ {menor_ant:.2f} "
+                f"para R$ {menor:.2f} ({var:.1f}%)."
+            )
+
+    if (
+        _pode_alertar_gap_preco(origem_preco)
+        and meu_preco > 0
+        and menor > 0
+        and meu_preco > menor
+    ):
         diff = (meu_preco - menor) / menor * 100.0
         if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
             alertas.append(
-                f"{nome}: seu preço R$ {meu_preco:.2f} está {diff:.1f}% acima do menor "
+                f"{nome}: {rotulo} R$ {meu_preco:.2f} está {diff:.1f}% acima "
+                f"do menor anúncio amostrado da loja (R$ {menor:.2f})."
+            )
+
+    leituras_ant = _leituras_recentes(anterior, limite=4)
+    leituras_ant.append(
+        {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
+    )
+    termo_loja = ""
+    if isinstance(termos, list) and termos:
+        termo_loja = str(termos[0] or "")
+    lacunas = _aplicar_lacunas_monitor(entrada, anuncios, termo=termo_loja, meu_preco=meu_preco)
+    historico[eid] = {
+        "menor_preco": menor if menor > 0 else menor_ant,
+        "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
+        "total_concorrentes": len(anuncios),
+        "item_ids": ids_achados or _item_ids_do_historico(anterior),
+        "amostra_cega": amostra_cega,
+        "seller_id": seller_id,
+        "nickname": analise.get("nickname") or nickname,
+        "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        "leituras": leituras_ant[-5:],
+        "perfil": analise.get("perfil"),
+    }
+    _anexar_lacunas_hist(historico[eid], lacunas)
+
+    _tags = [
+        f"produto:{eid}",
+        f"seller:{seller_id}",
+        "tipo:loja",
+        f"origem_preco:{origem_preco}",
+        f"amostra_cega:{1 if amostra_cega else 0}",
+    ]
+    gauge("mercado.amostra_cega", 1.0 if amostra_cega else 0.0, tags=_tags)
+    if menor > 0:
+        gauge("mercado.menor_preco_concorrente", menor, tags=_tags)
+    gauge("mercado.total_concorrentes", float(len(anuncios)), tags=_tags)
+    if alertas:
+        incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
+
+    payload = {
+        "id": eid,
+        "ok": True,
+        "tipo": "loja",
+        "nome": nome,
+        "seller_id": seller_id,
+        "nickname": analise.get("nickname") or nickname,
+        "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
+        "menor_preco": menor,
+        "total_concorrentes": len(anuncios),
+        "concorrentes_amostra": anuncios[:5],
+        "ameacas_preco": analise.get("ameacas_preco") or [],
+        "perfil": analise.get("perfil"),
+        "alertas": alertas,
+        "amostra_cega": amostra_cega,
+        "item_ids": ids_achados,
+    }
+    payload.update(lacunas)
+    return payload
+
+
+def _monitorar_item_watchlist(
+    entrada: dict,
+    historico: dict[str, Any],
+    *,
+    enriquecer_metricas: bool = True,
+) -> dict[str, Any]:
+    """
+    Watchlist de alta confiança: MLB fixo do concorrente via GET /items/{id}.
+    Alertas: variação de preço, mudança de status (active/paused/closed).
+    """
+    eid = str(entrada.get("id") or "").strip()
+    nome = str(entrada.get("nome") or eid)
+    # item_id_concorrente = anúncio rival; item_id = nosso (opcional, para gap)
+    watch_id = str(
+        entrada.get("item_id_concorrente")
+        or entrada.get("watch_item_id")
+        or entrada.get("mlb_concorrente")
+        or ""
+    ).strip()
+    meu_preco, origem_preco = _resolver_preco_referencia(entrada)
+    rotulo = _rotulo_preco_referencia(origem_preco)
+
+    if not _item_id_ml_valido(watch_id):
+        return {
+            "id": eid,
+            "ok": False,
+            "tipo": "item",
+            "erro": "item_id_concorrente inválido ou MLB_PREENCHER",
+            "alertas": [],
+        }
+
+    pub = ml_client.buscar_item_publico(watch_id)
+    if not pub:
+        return {
+            "id": eid,
+            "ok": False,
+            "tipo": "item",
+            "nome": nome,
+            "item_id_concorrente": watch_id,
+            "erro": "falha ao ler item na API ML",
+            "alertas": [],
+        }
+
+    preco = float(pub.get("preco") or 0)
+    status = str(pub.get("status") or "").strip().lower()
+    titulo = str(pub.get("titulo") or nome)[:60]
+    sold = int(pub.get("sold_quantity") or 0)
+
+    avaliacoes = None
+    nota = None
+    if enriquecer_metricas:
+        try:
+            from integracoes.ml.analise_anuncio_concorrente import enriquecer_anuncio
+
+            row = enriquecer_anuncio(
+                {
+                    "item_id": watch_id,
+                    "preco": preco,
+                    "quantidade_vendida": sold,
+                    "titulo": titulo,
+                    "seller_id": pub.get("seller_id"),
+                },
+                buscar_reviews=True,
+                buscar_catalogo=False,
+                buscar_visitas=False,
+            )
+            avaliacoes = row.get("avaliacoes")
+            nota = row.get("nota")
+            if int(row.get("quantidade_vendida") or 0) > sold:
+                sold = int(row["quantidade_vendida"])
+        except Exception as exc:
+            logger.debug("enrich watchlist %s: %s", watch_id, exc)
+
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    preco_ant = float(anterior.get("preco") or 0)
+    status_ant = str(anterior.get("status") or "").strip().lower()
+
+    alertas: list[str] = []
+    if preco_ant > 0 and preco > 0:
+        var = _pct_variacao(preco_ant, preco)
+        if var >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            direcao = "caiu" if preco < preco_ant else "subiu"
+            alertas.append(
+                f"[watchlist] {nome}: preço {direcao} de R$ {preco_ant:.2f} "
+                f"para R$ {preco:.2f} ({var:.1f}%) — `{watch_id}`"
+            )
+
+    if status_ant and status and status_ant != status:
+        alertas.append(
+            f"[watchlist] {nome}: status `{status_ant}` → `{status}` — `{watch_id}`"
+        )
+
+    if (
+        _pode_alertar_gap_preco(origem_preco)
+        and meu_preco > 0
+        and preco > 0
+        and meu_preco > preco
+    ):
+        diff = (meu_preco - preco) / preco * 100.0
+        if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            alertas.append(
+                f"[watchlist] {nome}: {rotulo} R$ {meu_preco:.2f} está {diff:.1f}% acima "
+                f"do rival R$ {preco:.2f} (`{watch_id}`)"
+            )
+
+    leituras_ant = _leituras_recentes(anterior, limite=4)
+    leituras_ant.append({"preco": preco, "status": status, "ts": datetime.now(timezone.utc).isoformat()})
+    # Compatível com _leituras_recentes (menor_preco) para classificação futura
+    for L in leituras_ant:
+        if "menor_preco" not in L and L.get("preco") is not None:
+            L["menor_preco"] = L["preco"]
+
+    historico[eid] = {
+        "tipo": "item",
+        "item_id_concorrente": watch_id,
+        "preco": preco,
+        "menor_preco": preco,
+        "status": status,
+        "titulo": titulo,
+        "sold_quantity": sold,
+        "avaliacoes": avaliacoes,
+        "nota": nota,
+        "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
+        "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        "leituras": leituras_ant[-5:],
+    }
+    lacunas = _aplicar_lacunas_monitor(
+        entrada,
+        [{"item_id": watch_id, "preco": preco, "avaliacoes": avaliacoes}],
+        termo=str(entrada.get("termo_busca") or watch_id),
+        meu_preco=meu_preco,
+    )
+    _anexar_lacunas_hist(historico[eid], lacunas)
+
+    _tags = [
+        f"produto:{eid}",
+        f"watch:{watch_id}",
+        "tipo:item",
+        f"origem_preco:{origem_preco}",
+    ]
+    if preco > 0:
+        gauge("mercado.menor_preco_concorrente", preco, tags=_tags)
+    gauge("mercado.total_concorrentes", 1.0, tags=_tags)
+    if alertas:
+        incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
+
+    payload = {
+        "id": eid,
+        "ok": True,
+        "tipo": "item",
+        "nome": nome,
+        "item_id_concorrente": watch_id,
+        "titulo": titulo,
+        "preco": preco,
+        "menor_preco": preco,
+        "status": status,
+        "sold_quantity": sold,
+        "avaliacoes": avaliacoes,
+        "nota": nota,
+        "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
+        "alertas": alertas,
+        "permalink": pub.get("permalink"),
+    }
+    payload.update(lacunas)
+    return payload
+
+
+def _monitorar_entrada(
+    entrada: dict,
+    historico: dict[str, Any],
+    *,
+    enriquecer_metricas: bool = True,
+) -> dict[str, Any]:
+    tipo = str(entrada.get("tipo") or "").lower()
+    if tipo == "loja":
+        return _monitorar_loja(entrada, historico)
+    if tipo == "item":
+        return _monitorar_item_watchlist(
+            entrada, historico, enriquecer_metricas=enriquecer_metricas
+        )
+
+    eid = str(entrada.get("id") or "").strip()
+    nome = str(entrada.get("nome") or eid)
+    termo = str(entrada.get("termo_busca") or "").strip()
+    item_ids = _item_ids_da_entrada(entrada)
+    anterior = historico.get(eid) if isinstance(historico.get(eid), dict) else {}
+    item_ids = _normalizar_item_ids([*item_ids, *_item_ids_do_historico(anterior)])
+    meu_preco, origem_preco = _resolver_preco_referencia(entrada)
+    rotulo = _rotulo_preco_referencia(origem_preco)
+    limite = int(entrada.get("limite_resultados") or 10)
+
+    if not termo and not item_ids:
+        return {"id": eid, "ok": False, "erro": "termo_busca vazio", "alertas": []}
+
+    concorrentes: list[dict[str, Any]] = []
+    if item_ids:
+        concorrentes = ml_client.hidratar_itens(item_ids, limite=limite)
+    if not concorrentes and termo:
+        concorrentes = ml_client.buscar_concorrentes_por_termo(termo, limite=limite)
+    try:
+        from integracoes.ml.busca_termo_ml import filtrar_por_relevancia_titulo
+
+        concorrentes = filtrar_por_relevancia_titulo(termo, concorrentes)
+    except Exception as exc:
+        logger.debug("filtro relevância termo: %s", exc)
+    # Filtro opcional: só anúncios de um seller específico no termo
+    seller_filtro = str(entrada.get("seller_id") or "").strip()
+    if seller_filtro:
+        concorrentes = [
+            c for c in concorrentes if str(c.get("seller_id") or "") == seller_filtro
+        ]
+    if enriquecer_metricas:
+        try:
+            from integracoes.ml.analise_anuncio_concorrente import enriquecer_lista
+
+            concorrentes = enriquecer_lista(concorrentes, limite=min(5, max(1, limite)))
+        except Exception as exc:
+            logger.warning("enriquecer métricas termo %r: %s", termo[:40], exc)
+    menor = _menor_preco(concorrentes)
+    menor_ant = float(anterior.get("menor_preco") or 0)
+    ids_achados = _item_ids_de_anuncios(concorrentes) or item_ids
+    amostra_cega = not concorrentes
+
+    alertas: list[str] = []
+    if (
+        not amostra_cega
+        and _pode_alertar_gap_preco(origem_preco)
+        and menor > 0
+        and meu_preco > menor
+    ):
+        diff = (meu_preco - menor) / menor * 100.0
+        if diff >= MONITOR_CONCORRENTES_VARIACAO_ALERTA_PCT:
+            alertas.append(
+                f"{nome}: {rotulo} R$ {meu_preco:.2f} está {diff:.1f}% acima do menor "
                 f"concorrente (R$ {menor:.2f}) no termo '{termo}'."
             )
 
@@ -167,18 +804,28 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
     leituras_ant.append(
         {"menor_preco": menor, "ts": datetime.now(timezone.utc).isoformat()}
     )
+    lacunas = _aplicar_lacunas_monitor(entrada, concorrentes, termo=termo, meu_preco=meu_preco)
     historico[eid] = {
-        "menor_preco": menor,
+        "menor_preco": menor if menor > 0 else menor_ant,
         "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
         "total_concorrentes": len(concorrentes),
+        "item_ids": ids_achados or _item_ids_do_historico(anterior),
+        "amostra_cega": amostra_cega,
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
         "leituras": leituras_ant[-5:],
     }
+    _anexar_lacunas_hist(historico[eid], lacunas)
 
     # ── Datadog ──────────────────────────────────────────────────────────
     # tag `produto` usa o `id` do JSON (ex.: "kit3-mimo-carmed") para
     # aparecer como facet no Metrics Explorer e facilitar filtrar por SKU.
-    _tags = [f"produto:{eid}", f"termo:{termo[:40]}"]
+    _tags = [
+        f"produto:{eid}",
+        f"origem_preco:{origem_preco}",
+        f"amostra_cega:{1 if amostra_cega else 0}",
+    ]
+    gauge("mercado.amostra_cega", 1.0 if amostra_cega else 0.0, tags=_tags)
     if meu_preco > 0:
         gauge("mercado.meu_preco", meu_preco, tags=_tags)
     if menor > 0:
@@ -191,20 +838,32 @@ def _monitorar_entrada(entrada: dict, historico: dict[str, Any]) -> dict[str, An
         incrementar("mercado.alertas_preco", float(len(alertas)), tags=_tags)
     # ─────────────────────────────────────────────────────────────────────
 
-    return {
+    payload = {
         "id": eid,
         "ok": True,
+        "tipo": "termo",
         "nome": nome,
+        "sku": str(entrada.get("sku") or "").strip(),
         "termo_busca": termo,
         "meu_preco": meu_preco,
+        "origem_preco": origem_preco,
         "menor_preco": menor,
         "total_concorrentes": len(concorrentes),
         "concorrentes_amostra": concorrentes[:5],
+        "anuncios": concorrentes,
         "alertas": alertas,
+        "amostra_cega": amostra_cega,
+        "item_ids": ids_achados,
     }
+    payload.update(lacunas)
+    return payload
 
 
-def executar(enviar_alerta: bool = True) -> dict[str, Any]:
+def executar(
+    enviar_alerta: bool = True,
+    *,
+    enriquecer_metricas: bool = True,
+) -> dict[str, Any]:
     """Monitora todos os itens ativos da lista. Nunca lança exceção."""
     try:
         lista = _carregar_lista()
@@ -215,16 +874,64 @@ def executar(enviar_alerta: bool = True) -> dict[str, Any]:
         for entrada in lista:
             if not isinstance(entrada, dict) or not entrada.get("ativo"):
                 continue
-            resultado = _monitorar_entrada(entrada, historico)
+            resultado = _monitorar_entrada(
+                entrada, historico, enriquecer_metricas=enriquecer_metricas
+            )
             resultados.append(resultado)
             alertas_todos.extend(resultado.get("alertas") or [])
 
         _salvar_historico(historico)
+        _persistir_lacunas_ciclo(resultados)
+
+        amostra: list[dict[str, Any]] = []
+        for r in resultados:
+            amostra.extend(r.get("anuncios") or r.get("concorrentes_amostra") or [])
+
+        try:
+            from integracoes.esmaltes.metricas_batalha_impala import processar_e_persistir
+
+            # Amostra vazia (403/busca cega) ainda precisa do radar: senão
+            # os gauges de guerra ficam congelados no último valor.
+            processar_e_persistir(amostra, origem="monitor_concorrentes")
+        except Exception as exc:
+            logger.warning("batalha Impala apos concorrentes: %s", exc)
+
+        try:
+            from integracoes.esmaltes.novos_kits_impala import processar as processar_novos_kits
+
+            novos = processar_novos_kits(amostra, persistir=True, enviar_alerta=enviar_alerta)
+            # Card próprio no Telegram (nome do kit + saúde + ranking).
+            # Não mistura no alerta de gap/watchlist para não duplicar.
+            if novos.get("alerta_enviado"):
+                logger.info("novos kits Impala: Telegram enviado")
+        except Exception as exc:
+            logger.warning("novos kits Impala apos concorrentes: %s", exc)
 
         enviado = False
-        if enviar_alerta and alertas_todos:
-            msg = "🔎 Monitor concorrentes ML\n\n" + "\n".join(f"• {a}" for a in alertas_todos)
-            enviado = bool(alertar_gestor(msg))
+        linhas_lacunas = _linhas_telegram_lacunas(resultados)
+        if enviar_alerta and (alertas_todos or linhas_lacunas):
+            from core.telegram_explicacao import cabecalho_agente
+
+            watch = [a for a in alertas_todos if "[watchlist]" in a]
+            demais = [a for a in alertas_todos if "[watchlist]" not in a]
+            blocos = [
+                cabecalho_agente("monitor_concorrentes", "🔎 *Monitor concorrentes ML*"),
+                "",
+            ]
+            if watch:
+                blocos.append("*Watchlist MLB (alta confiança — preço/status)*")
+                blocos.extend(f"• {a}" for a in watch)
+                blocos.append("")
+            if demais:
+                blocos.append("*Radar por termo / loja*")
+                blocos.extend(f"• {a}" for a in demais)
+            if linhas_lacunas:
+                if demais or watch:
+                    blocos.append("")
+                blocos.append("*Demanda / reclamações / margem (dado do robô, não JoomPulse)*")
+                blocos.extend(f"• {a}" for a in linhas_lacunas)
+            msg = "\n".join(blocos).strip()
+            enviado = bool(alertar_gestor(msg, agente_id="monitor_concorrentes"))
 
         payload = {
             "ok": True,

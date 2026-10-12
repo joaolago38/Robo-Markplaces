@@ -6,11 +6,11 @@ import logging
 import os
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.datadog_logger import DatadogLogHandler, configurar_logging_datadog
+from core.datadog_logger import DatadogLogHandler, LocalErrorBufferHandler, configurar_logging_datadog
 
 
 def _make_record(name: str = "bling", msg: str = "evento teste") -> logging.LogRecord:
@@ -40,6 +40,7 @@ class TestDatadogLogHandler(unittest.TestCase):
     @patch("core.config.DD_SITE", "datadoghq.com")
     @patch("core.config.DD_ENV", "production")
     def test_emit_bling_tag_marketplace(self, mock_post, *_):
+        mock_post.return_value = MagicMock(status_code=202)
         handler = DatadogLogHandler()
         handler.setFormatter(logging.Formatter("%(message)s"))
         handler.emit(_make_record(name="bling", msg="NF-e ok"))
@@ -58,6 +59,24 @@ class TestDatadogLogHandler(unittest.TestCase):
         self.assertIn("componente:integracao", payload[0]["ddtags"])
         self.assertIn("logger:bling", payload[0]["ddtags"])
         self.assertIn("level:info", payload[0]["ddtags"])
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    @patch("core.config.DD_SITE", "datadoghq.com")
+    def test_emit_mascara_access_token(self, mock_post, *_):
+        mock_post.return_value = MagicMock(status_code=202)
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.emit(
+            _make_record(
+                name="shopee_client",
+                msg="erro GET https://x.com?access_token=segredo123&shop_id=1",
+            )
+        )
+        payload = json.loads(mock_post.call_args.kwargs["data"])
+        self.assertNotIn("segredo123", payload[0]["message"])
+        self.assertIn("access_token=***", payload[0]["message"])
 
     @patch("core.datadog_logger.requests.post")
     @patch("core.config.DD_API_KEY", "dd-key-test")
@@ -101,6 +120,82 @@ class TestDatadogLogHandler(unittest.TestCase):
         payload = json.loads(mock_post.call_args.kwargs["data"])
         self.assertIn("marketplace:geral", payload[0]["ddtags"])
         self.assertIn("componente:outros", payload[0]["ddtags"])
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    def test_urllib3_e_matplotlib_nao_vao_ao_datadog(self, mock_post, *_):
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.emit(_make_record(name="urllib3.connectionpool", msg="Retrying"))
+        handler.emit(_make_record(name="matplotlib.font_manager", msg="findfont"))
+        mock_post.assert_not_called()
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    @patch("core.datadog_logger.obter_request_id", return_value="req-abc123")
+    def test_emit_inclui_request_id(self, mock_rid, mock_post, *_):
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.emit(_make_record(msg="com correlation id"))
+
+        payload = json.loads(mock_post.call_args.kwargs["data"])
+        self.assertIn("request_id:req-abc123", payload[0]["ddtags"])
+        self.assertEqual(payload[0]["request_id"], "req-abc123")
+
+    @patch("core.datadog_logger.requests.post")
+    @patch("core.config.DD_API_KEY", "dd-key-test")
+    @patch("core.config.DD_LOGS_ENABLED", True)
+    def test_emit_erro_com_extra_e_exc_info(self, mock_post, *_):
+        handler = DatadogLogHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        try:
+            raise ValueError("falha simulada")
+        except ValueError:
+            record = logging.LogRecord(
+                name="bling",
+                level=logging.ERROR,
+                pathname=__file__,
+                lineno=1,
+                msg="erro grave",
+                args=(),
+                exc_info=sys.exc_info(),
+            )
+        record.error_kind = "ValueError"
+        record.error_message = "falha simulada"
+        handler.emit(record)
+
+        payload = json.loads(mock_post.call_args.kwargs["data"])
+        self.assertEqual(payload[0]["status"], "error")
+        self.assertEqual(payload[0]["error"]["kind"], "ValueError")
+        self.assertEqual(payload[0]["error"]["message"], "falha simulada")
+        self.assertIn("ValueError: falha simulada", payload[0]["error"]["stack"])
+
+
+class TestLocalErrorBufferHandler(unittest.TestCase):
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local")
+    def test_ignora_nivel_abaixo_de_error(self, mock_registrar):
+        handler = LocalErrorBufferHandler()
+        handler.emit(_make_record(msg="info apenas"))
+        mock_registrar.assert_not_called()
+
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local", side_effect=RuntimeError("buffer off"))
+    def test_espelhar_erro_local_nao_propaga_excecao(self, *_):
+        handler = LocalErrorBufferHandler()
+        record = _make_record(msg="falha")
+        record.levelno = logging.ERROR
+        record.levelname = "ERROR"
+        handler.emit(record)
+
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local", side_effect=RuntimeError("buffer off"))
+    def test_emit_excecao_no_handler_nao_propaga(self, *_):
+        handler = LocalErrorBufferHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        record = _make_record(msg="falha")
+        record.levelno = logging.ERROR
+        record.levelname = "ERROR"
+        handler.emit(record)
 
 
 class TestCoberturaDoMapeamento(unittest.TestCase):
@@ -165,15 +260,34 @@ class TestConfigurarLoggingDatadog(unittest.TestCase):
     def test_idempotente_nao_duplica_handler(self, *_):
         configurar_logging_datadog()
         configurar_logging_datadog()
+        buffers = [h for h in self._root.handlers if isinstance(h, LocalErrorBufferHandler)]
         handlers = [h for h in self._root.handlers if isinstance(h, DatadogLogHandler)]
+        self.assertEqual(len(buffers), 1)
         self.assertEqual(len(handlers), 1)
+
+    @patch("integracoes.datadog.buffer_erros.registrar_erro_local")
+    @patch("core.config.DD_API_KEY", "")
+    @patch("core.config.DD_LOGS_ENABLED", False)
+    def test_buffer_local_sem_datadog(self, mock_registrar, *_):
+        self._root.handlers = [
+            h for h in self._root.handlers if not isinstance(h, (LocalErrorBufferHandler, DatadogLogHandler))
+        ]
+        configurar_logging_datadog()
+        logger = logging.getLogger("teste_buffer_local_xyz")
+        logger.error("falha grave")
+        mock_registrar.assert_called_once()
 
     @patch("core.config.DD_API_KEY", "")
     @patch("core.config.DD_LOGS_ENABLED", True)
-    def test_sem_api_key_nao_anexa_handler(self, *_):
-        antes = len(self._root.handlers)
+    def test_sem_api_key_anexa_buffer_local(self, *_):
+        self._root.handlers = [
+            h for h in self._root.handlers if not isinstance(h, (LocalErrorBufferHandler, DatadogLogHandler))
+        ]
         configurar_logging_datadog()
-        self.assertEqual(len(self._root.handlers), antes)
+        buffers = [h for h in self._root.handlers if isinstance(h, LocalErrorBufferHandler)]
+        dd_handlers = [h for h in self._root.handlers if isinstance(h, DatadogLogHandler)]
+        self.assertEqual(len(buffers), 1)
+        self.assertEqual(len(dd_handlers), 0)
 
 
 if __name__ == "__main__":

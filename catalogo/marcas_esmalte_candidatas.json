@@ -1,0 +1,23 @@
+{
+  "versao": 1,
+  "cnpj_referencia": "52668583000127",
+  "cnpj_formatado": "52.668.583/0001-27",
+  "marca_propria": "impala",
+  "marketplace_referente": "mercadolivre",
+  "descricao": "Ponto de ruptura para entrar com OUTRA marca de esmalte no mesmo CNPJ Impala. Mercado Livre é o referente de demanda; Shopee/Magalu/Amazon usam o mesmo CNPJ quando o canal ligar.",
+  "marcas_candidatas": [
+    "anita",
+    "risque",
+    "colorama",
+    "dailus",
+    "nati",
+    "vult",
+    "blant",
+    "luigi borni",
+    "novo toque",
+    "la femme",
+    "top beauty",
+    "dote"
+  ],
+  "amostra_minima_anuncios": 5
+}

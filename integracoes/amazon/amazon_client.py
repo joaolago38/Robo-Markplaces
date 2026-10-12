@@ -11,22 +11,34 @@ from core.config import (
     AMAZON_LWA_CLIENT_SECRET,
     AMAZON_MARKETPLACE_ID,
     AMAZON_REFRESH_TOKEN,
+    AMAZON_SELLER_ID,
 )
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
+from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.token_manager import get_token_amazon
 
 logger = logging.getLogger("amazon_client")
 BASE = "https://sellingpartnerapi-na.amazon.com"
 
 
+def _canal_operando() -> bool:
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao("amazon")
+    except Exception:
+        return True
+
+
 def _enabled() -> bool:
     tem_refresh = bool(
         AMAZON_LWA_CLIENT_ID and AMAZON_LWA_CLIENT_SECRET and AMAZON_REFRESH_TOKEN
     )
-    return bool(AMAZON_ACCESS_TOKEN or tem_refresh)
+    if not (AMAZON_ACCESS_TOKEN or tem_refresh):
+        return False
+    return _canal_operando()
 
 
 def _h():
@@ -63,7 +75,7 @@ def probe_conexao() -> dict:
 
 def listar_mensagens_nao_respondidas_detalhado(limit: int = 20) -> tuple[list[dict], bool]:
     if not _enabled():
-        logger.warning("Amazon não configurado.")
+        logger.info("Amazon não configurado.")
         return [], False
     try:
         r = request(
@@ -90,7 +102,7 @@ def listar_mensagens_nao_respondidas(limit: int = 20) -> list[dict]:
 
 def responder_mensagem(thread_id: str, texto: str) -> bool:
     if not _enabled():
-        logger.warning("Amazon não configurado para responder mensagem.")
+        logger.info("Amazon não configurado para responder mensagem.")
         return False
     try:
         r = request(
@@ -109,7 +121,15 @@ def responder_mensagem(thread_id: str, texto: str) -> bool:
 
 def obter_saude_conta() -> dict:
     if not _enabled():
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": None,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": str(AMAZON_SELLER_ID or "").strip(),
+            "estoque_sync": False,
+        }
 
     mensagens, ok = listar_mensagens_nao_respondidas_detalhado(limit=50)
     if ok:
@@ -118,8 +138,12 @@ def obter_saude_conta() -> dict:
         "configurado": True,
         "api_ok": ok,
         "pendencias": len(mensagens),
-        "claims_rate": 0.0,
+        "claims_rate": None,
+        "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("amazon") or 0,
+        "conta_id": str(AMAZON_SELLER_ID or "").strip(),
+        "estoque_sync": False,
+        "modelo": "buybox_amazon",
     }
 
 
@@ -130,7 +154,7 @@ def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
         logger.warning("Amazon atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Amazon não configurado para atualização de preço.")
+        logger.info("Amazon não configurado para atualização de preço.")
         return False
     try:
         r = request(
@@ -154,7 +178,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     Nunca lança exceção.
     """
     if not _enabled():
-        logger.warning("Amazon não configurada para listar pedidos.")
+        logger.info("Amazon não configurada para listar pedidos.")
         return [], False
     out: list[dict] = []
     try:

@@ -12,8 +12,30 @@ import core.config as cfg
 from core.datadog_metrics import incrementar
 from core.github_secrets import sync_secrets_github
 from core.http_client import request
+from core.log_cooldown import log_com_cooldown
+from core.log_opcional import (
+    erro_opcional,
+    log_erros_bling_ativos,
+    log_erros_tokens_ativos,
+)
 
 logger = logging.getLogger("token_manager")
+
+
+def _erro_bling_token(msg: str, *args) -> None:
+    # Religar logs Bling (401/403/refresh): LOG_ERROS_BLING=1
+    erro_opcional(logger, log_erros_bling_ativos(), msg, *args, flag_hint="LOG_ERROS_BLING")
+
+
+def _erro_token_mp(msg: str, *args) -> None:
+    # Religar Magalu / Shopee / Amazon: LOG_ERROS_TOKENS=1
+    # Falhas críticas (invalid_grant / 401) sempre sobem como ERROR
+    texto = msg % args if args else msg
+    baixo = str(texto).lower()
+    if any(x in baixo for x in ("invalid_grant", "401", "403", "unauthorized", "expired")):
+        logger.error(texto)
+        return
+    erro_opcional(logger, log_erros_tokens_ativos(), msg, *args, flag_hint="LOG_ERROS_TOKENS")
 
 _token_cache_ml = {"access_token": None, "expires_at": 0}
 _ml_refresh_efetivo = {"valor": None}
@@ -23,6 +45,74 @@ _shopee_refresh_efetivo = {"valor": None}
 
 _token_cache_magalu = {"access_token": None, "expires_at": 0}
 _magalu_refresh_efetivo = {"valor": None}
+
+
+def _payload_jwt(tok: str) -> dict:
+    raw = (tok or "").strip()
+    if raw.count(".") < 2:
+        return {}
+    try:
+        payload = raw.split(".")[1]
+        pad = "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload + pad))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+_CHAVES_TENANT_MAGALU = (
+    "tenant",
+    "tenant_id",
+    "tenantId",
+    "channel_id",
+    "channelId",
+    "channel",
+    "tid",
+)
+
+
+def _tenant_em_dict(data: dict, profundidade: int = 0) -> str:
+    if profundidade > 4 or not isinstance(data, dict):
+        return ""
+    for chave in _CHAVES_TENANT_MAGALU:
+        valor = data.get(chave)
+        if isinstance(valor, dict):
+            nested = _tenant_em_dict(valor, profundidade + 1)
+            if nested:
+                return nested
+            continue
+        txt = str(valor or "").strip()
+        if txt and txt != "...":
+            return txt
+    for valor in data.values():
+        if isinstance(valor, dict):
+            nested = _tenant_em_dict(valor, profundidade + 1)
+            if nested:
+                return nested
+    return ""
+
+
+def tenant_jwt_magalu(tok: str) -> str:
+    """Claim Magalu usado em X-Tenant-Id (não é seller id)."""
+    return _tenant_em_dict(_payload_jwt(tok))
+
+
+def tenant_payload_magalu(data: dict) -> str:
+    """Mesmas chaves de tenant, a partir de JSON (userinfo / token response)."""
+    return _tenant_em_dict(data if isinstance(data, dict) else {})
+
+
+def escopos_jwt_magalu(tok: str) -> set[str]:
+    bruto = str(_payload_jwt(tok).get("scope") or "").strip()
+    return {p.strip() for p in bruto.split() if p.strip()}
+
+
+def _lembrar_tenant_magalu(tok: str = "") -> str:
+    """Mantém MAGALU_CHANNEL_ID quando o refresh devolve token opaco/sem claim."""
+    atual = tenant_jwt_magalu(tok) or str(getattr(cfg, "MAGALU_CHANNEL_ID", "") or "").strip()
+    if atual:
+        cfg.MAGALU_CHANNEL_ID = atual
+    return atual
 
 _token_cache_bling = {"access_token": None, "expires_at": 0}
 _bling_refresh_efetivo = {"valor": None}
@@ -155,9 +245,13 @@ def _renovar_token_ml():
             if sync_secrets_github(access_token, novo_refresh or refresh, prefix="ML"):
                 logger.info("Secrets ML_* sincronizados no GitHub (rotação automática).")
             else:
-                logger.warning(
+                log_com_cooldown(
+                    logger,
+                    "token_manager:github_sync_ml",
                     "Falha ao sincronizar ML_* no GitHub após rotação — "
-                    "a próxima renovação pode falhar até o sync funcionar."
+                    "a próxima renovação pode falhar até o sync funcionar "
+                    "(próximos avisos em cooldown 6h).",
+                    cooldown_segundos=6 * 3600,
                 )
 
         logger.info("Token ML renovado com sucesso")
@@ -376,13 +470,13 @@ def _renovar_token_shopee():
     path = "/api/v2/auth/access_token/get"
 
     if not all([cfg.SHOPEE_PARTNER_ID, cfg.SHOPEE_PARTNER_KEY, cfg.SHOPEE_SHOP_ID, refresh]):
-        logger.error("Credenciais Shopee ausentes para renovação de token.")
+        _erro_token_mp("Credenciais Shopee ausentes para renovação de token.")
         return None
 
     pid = (cfg.SHOPEE_PARTNER_ID or "").strip()
     sid = (cfg.SHOPEE_SHOP_ID or "").strip()
     if not pid.isdigit() or not sid.isdigit():
-        logger.error(
+        _erro_token_mp(
             "Shopee mal configurado: SHOPEE_PARTNER_ID/SHOPEE_SHOP_ID devem ser numéricos "
             "(valor atual não é um ID válido)"
         )
@@ -411,12 +505,12 @@ def _renovar_token_shopee():
 
         err = body.get("error")
         if err not in (None, "", 0):
-            logger.error("Shopee refresh falhou (error=%s message=%s)", err, body.get("message"))
+            _erro_token_mp("Shopee refresh falhou (error=%s message=%s)", err, body.get("message"))
             return None
 
         tok_payload = body.get("response") if isinstance(body.get("response"), dict) else body
         if not isinstance(tok_payload, dict):
-            logger.error("Shopee refresh resposta inesperada.")
+            _erro_token_mp("Shopee refresh resposta inesperada.")
             return None
 
         access_token = tok_payload.get("access_token")
@@ -429,7 +523,7 @@ def _renovar_token_shopee():
         novo_refresh = tok_payload.get("refresh_token") or body.get("refresh_token")
 
         if not access_token:
-            logger.error("Shopee refresh sem access_token na resposta.")
+            _erro_token_mp("Shopee refresh sem access_token na resposta.")
             return None
 
         _token_cache_shopee["access_token"] = access_token
@@ -448,11 +542,15 @@ def _renovar_token_shopee():
 
     except Exception as e:
         incrementar("token.falha", tags=["provider:shopee"])
-        logger.error("Erro ao renovar token Shopee: %s", e)
+        _erro_token_mp("Erro ao renovar token Shopee: %s", e)
         return None
 
 
 def get_token_shopee():
+    if not _canal_marketplace_operando("shopee"):
+        logger.info("Token Shopee não renovado — canal fora de operação (spec.inativo).")
+        return None
+
     if not _shopee_refresh_disponivel():
         return cfg.SHOPEE_ACCESS_TOKEN or None
 
@@ -497,18 +595,16 @@ def _salvar_store_magalu(access_token: str, refresh_token: str | None, expires_a
         return
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(
-            json.dumps(
-                {
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expires_at": expires_at,
-                    "atualizado_em": time.time(),
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+        tenant = _lembrar_tenant_magalu(access_token)
+        corpo = {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_at": expires_at,
+            "atualizado_em": time.time(),
+        }
+        if tenant:
+            corpo["tenant"] = tenant
+        p.write_text(json.dumps(corpo, indent=2), encoding="utf-8")
         try:
             os.chmod(p, 0o600)
         except OSError:
@@ -525,8 +621,12 @@ def _hidratar_cache_magalu_do_store() -> None:
         if store.get("access_token"):
             _token_cache_magalu["access_token"] = store["access_token"]
             _token_cache_magalu["expires_at"] = store.get("expires_at", 0)
+            _lembrar_tenant_magalu(store.get("access_token") or "")
         if store.get("refresh_token"):
             _magalu_refresh_efetivo["valor"] = store["refresh_token"]
+        tenant_store = str(store.get("tenant") or "").strip()
+        if tenant_store:
+            cfg.MAGALU_CHANNEL_ID = tenant_store
 
 
 def _magalu_refresh_disponivel() -> str | None:
@@ -538,10 +638,24 @@ def _magalu_refresh_disponivel() -> str | None:
     return _magalu_refresh_efetivo["valor"]
 
 
+def _canal_marketplace_operando(canal: str) -> bool:
+    """False quando spec/toggle deixa o canal fora — não renovar token morto."""
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao(canal)
+    except Exception:
+        return True
+
+
+def _magalu_canal_operando() -> bool:
+    return _canal_marketplace_operando("magalu")
+
+
 def _renovar_token_magalu():
     rt = _magalu_refresh_disponivel()
     if not all([cfg.MAGALU_CLIENT_ID, cfg.MAGALU_CLIENT_SECRET, rt]):
-        logger.error("Credenciais Magalu ausentes para renovação (client_id/secret ou refresh_token).")
+        _erro_token_mp("Credenciais Magalu ausentes para renovação (client_id/secret ou refresh_token).")
         return None
 
     body = urllib.parse.urlencode(
@@ -562,11 +676,12 @@ def _renovar_token_magalu():
             timeout=25,
         )
         if r.status_code >= 400:
-            logger.error(
+            _erro_token_mp(
                 "Erro ao renovar token Magazine Luiza: HTTP %s — %s",
                 r.status_code,
                 (r.text or "")[:500],
             )
+            _marcar_refresh_magalu_invalido(r.status_code, r.text or "")
             return None
         tokens = r.json()
 
@@ -575,8 +690,15 @@ def _renovar_token_magalu():
         novo_refresh = tokens.get("refresh_token")
 
         if not access_token:
-            logger.error("Magalu refresh sem access_token na resposta.")
+            _erro_token_mp("Magalu refresh sem access_token na resposta.")
             return None
+
+        tenant_antes = tenant_jwt_magalu(cfg.MAGALU_ACCESS_TOKEN) or str(
+            getattr(cfg, "MAGALU_CHANNEL_ID", "") or ""
+        ).strip()
+        tenant = tenant_jwt_magalu(access_token) or tenant_antes
+        if tenant:
+            cfg.MAGALU_CHANNEL_ID = tenant
 
         _token_cache_magalu["access_token"] = access_token
         _token_cache_magalu["expires_at"] = time.time() + max(60, expires_in) - 45
@@ -602,10 +724,12 @@ def _renovar_token_magalu():
         # sync o Secret antigo fica órfão e a próxima renovação agendada
         # falha com refresh_token inválido.
         if novo_refresh and os.getenv("GITHUB_ACTIONS") == "true":
-            if sync_secrets_github(access_token, novo_refresh, prefix="MAGALU"):
+            tenant_secret = tenant or str(getattr(cfg, "MAGALU_CHANNEL_ID", "") or "").strip()
+            extras = {"MAGALU_CHANNEL_ID": tenant_secret} if tenant_secret else None
+            if sync_secrets_github(access_token, novo_refresh, prefix="MAGALU", extras=extras):
                 logger.info("Secrets MAGALU_* sincronizados no GitHub (rotação automática).")
             else:
-                logger.warning(
+                logger.error(
                     "Falha ao sincronizar MAGALU_* no GitHub após rotação — "
                     "a próxima renovação pode falhar até o sync funcionar."
                 )
@@ -616,11 +740,45 @@ def _renovar_token_magalu():
 
     except Exception as e:
         incrementar("token.falha", tags=["provider:magalu"])
-        logger.error("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
+        _erro_token_mp("Erro ao renovar token Magazine Luiza (rede/parse): %s", e)
         return None
 
 
-def get_token_magalu():
+_MAGALU_INVALID_GRANT_COOLDOWN_SEG = 6 * 3600
+_MAGALU_INVALID_GRANT_PATH = cfg.ROOT / "logs" / "magalu_refresh_invalid_grant.json"
+
+
+def _marcar_refresh_magalu_invalido(status: int, corpo: str) -> None:
+    texto = (corpo or "").lower()
+    if "invalid_grant" not in texto:
+        return
+    try:
+        from core.atomic_io import escrever_json_atomico
+
+        escrever_json_atomico(
+            _MAGALU_INVALID_GRANT_PATH,
+            {"ts": time.time(), "status": status, "motivo": "invalid_grant"},
+        )
+    except Exception:
+        pass
+
+
+def _refresh_magalu_em_cooldown() -> bool:
+    try:
+        from core.atomic_io import ler_json
+
+        data = ler_json(_MAGALU_INVALID_GRANT_PATH, default={})
+        ts = float((data or {}).get("ts") or 0)
+        return ts > 0 and (time.time() - ts) < _MAGALU_INVALID_GRANT_COOLDOWN_SEG
+    except Exception:
+        return False
+
+
+def get_token_magalu(forcar: bool = False):
+    if not _magalu_canal_operando():
+        logger.info("Token Magalu não renovado — canal fora de operação (spec.inativo).")
+        return None
+
     _hidratar_cache_magalu_do_store()
 
     if not _magalu_refresh_disponivel():
@@ -628,8 +786,16 @@ def get_token_magalu():
 
     now = time.time()
 
-    if _token_cache_magalu["access_token"] and now < _token_cache_magalu["expires_at"]:
-        return _token_cache_magalu["access_token"]
+    if not forcar:
+        if _token_cache_magalu["access_token"] and now < _token_cache_magalu["expires_at"]:
+            return _token_cache_magalu["access_token"]
+
+    if _refresh_magalu_em_cooldown():
+        logger.warning(
+            "Magalu refresh em cooldown após invalid_grant — "
+            "rode pegar_token_magalu.py e atualize MAGALU_* / MAGALU_CHANNEL_ID."
+        )
+        return cfg.MAGALU_ACCESS_TOKEN or _token_cache_magalu.get("access_token") or None
 
     novo = _renovar_token_magalu()
     return novo or cfg.MAGALU_ACCESS_TOKEN or None
@@ -707,11 +873,20 @@ def _bling_refresh_disponivel() -> str | None:
 def _dica_erro_refresh_bling(status: int, detalhe: str) -> None:
     d = (detalhe or "").lower()
     if "invalid_grant" in d or "expired" in d or "revoked" in d:
-        logger.error("→ refresh_token invalido/expirado/ja usado. Re-bootstrap com pegar_token_bling.py e atualize BLING_ACCESS_TOKEN e BLING_REFRESH_TOKEN.")
+        _erro_bling_token(
+            "→ refresh_token invalido/expirado/ja usado. Re-bootstrap com pegar_token_bling.py "
+            "e atualize BLING_ACCESS_TOKEN e BLING_REFRESH_TOKEN."
+        )
     elif "invalid_client" in d or "client" in d or status in (401, 403):
-        logger.error("→ client_id/client_secret incorretos. Confira BLING_CLIENT_ID e BLING_CLIENT_SECRET (sem ponto, sem aspas, sem espaco).")
+        _erro_bling_token(
+            "→ client_id/client_secret incorretos. Confira BLING_CLIENT_ID e BLING_CLIENT_SECRET "
+            "(sem ponto, sem aspas, sem espaco)."
+        )
     elif status == 400:
-        logger.error("→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU BLING_CLIENT_SECRET ausente/errado.")
+        _erro_bling_token(
+            "→ HTTP 400 no /oauth/token: quase sempre refresh_token consumido/expirado OU "
+            "BLING_CLIENT_SECRET ausente/errado."
+        )
 
 
 def _renovar_token_bling():
@@ -725,7 +900,7 @@ def _renovar_token_bling():
     refresh = _bling_refresh_disponivel()
 
     if not all([cfg.BLING_CLIENT_ID, cfg.BLING_CLIENT_SECRET, refresh]):
-        logger.error(
+        _erro_bling_token(
             "Credenciais Bling ausentes para renovação "
             "(client_id/secret ou refresh_token)."
         )
@@ -760,7 +935,7 @@ def _renovar_token_bling():
                     detalhe = detalhe.get("description") or detalhe.get("message") or str(detalhe)
             except Exception:
                 detalhe = (getattr(r, "text", "") or "")[:300]
-            logger.error("Bling refresh falhou (HTTP %s): %s", r.status_code, detalhe)
+            _erro_bling_token("Bling refresh falhou (HTTP %s): %s", r.status_code, detalhe)
             _dica_erro_refresh_bling(r.status_code, str(detalhe))
             return None
 
@@ -771,7 +946,7 @@ def _renovar_token_bling():
         novo_refresh = tokens.get("refresh_token")
 
         if not access_token:
-            logger.error("Bling refresh sem access_token na resposta.")
+            _erro_bling_token("Bling refresh sem access_token na resposta.")
             return None
 
         _token_cache_bling["access_token"] = access_token
@@ -795,7 +970,7 @@ def _renovar_token_bling():
             if sync_secrets_github(access_token, novo_refresh or refresh, prefix="BLING"):
                 logger.info("Secrets BLING_* sincronizados no GitHub (rotação automática).")
             else:
-                logger.warning(
+                logger.error(
                     "Falha ao sincronizar BLING_* no GitHub após rotação — "
                     "o próximo refresh pode falhar até o sync funcionar."
                 )
@@ -805,11 +980,11 @@ def _renovar_token_bling():
         return access_token
 
     except ValueError as e:
-        logger.error("Erro de parse da resposta do token Bling: %s", e)
+        _erro_bling_token("Erro de parse da resposta do token Bling: %s", e)
         return None
     except Exception as e:
         incrementar("token.falha", tags=["provider:bling"])
-        logger.error("Erro ao renovar token Bling: %s", e)
+        _erro_bling_token("Erro ao renovar token Bling: %s", e)
         return None
 
 
@@ -926,7 +1101,7 @@ def _renovar_token_amazon():
     """
     refresh = _amazon_refresh_disponivel()
     if not all([cfg.AMAZON_LWA_CLIENT_ID, cfg.AMAZON_LWA_CLIENT_SECRET, refresh]):
-        logger.error(
+        _erro_token_mp(
             "Credenciais Amazon ausentes para renovação "
             "(AMAZON_LWA_CLIENT_ID/SECRET ou AMAZON_REFRESH_TOKEN)."
         )
@@ -950,7 +1125,7 @@ def _renovar_token_amazon():
             timeout=25,
         )
         if r.status_code >= 400:
-            logger.error(
+            _erro_token_mp(
                 "Amazon refresh falhou (HTTP %s): %s",
                 r.status_code,
                 (r.text or "")[:500],
@@ -964,7 +1139,7 @@ def _renovar_token_amazon():
         novo_refresh = tokens.get("refresh_token")
 
         if not access_token:
-            logger.error("Amazon refresh sem access_token na resposta.")
+            _erro_token_mp("Amazon refresh sem access_token na resposta.")
             return None
 
         _token_cache_amazon["access_token"] = access_token
@@ -986,7 +1161,7 @@ def _renovar_token_amazon():
             if sync_secrets_github(access_token, novo_refresh or refresh, prefix="AMAZON"):
                 logger.info("Secrets AMAZON_* sincronizados no GitHub.")
             else:
-                logger.warning("Falha ao sincronizar AMAZON_* no GitHub após renovação.")
+                logger.error("Falha ao sincronizar AMAZON_* no GitHub após renovação.")
 
         logger.info("Token Amazon renovado com sucesso")
         incrementar("token.renovado", tags=["provider:amazon"])
@@ -994,7 +1169,7 @@ def _renovar_token_amazon():
 
     except Exception as e:
         incrementar("token.falha", tags=["provider:amazon"])
-        logger.error("Erro ao renovar token Amazon: %s", e)
+        _erro_token_mp("Erro ao renovar token Amazon: %s", e)
         return None
 
 
@@ -1007,6 +1182,10 @@ def get_token_amazon(forcar: bool = False):
     - sem refresh configurado → devolve AMAZON_ACCESS_TOKEN estático.
     """
     _hidratar_cache_amazon_do_store()
+    if not _canal_marketplace_operando("amazon"):
+        logger.info("Token Amazon não renovado — canal fora de operação (spec.inativo).")
+        return None
+
     now = time.time()
 
     if not forcar:
@@ -1056,11 +1235,15 @@ def renovar_todos_tokens() -> dict[str, dict]:
     """
     Força uma tentativa de renovação para cada marketplace suportado.
     Usado pelo script CLI / Actions para validar credenciais.
+
+    Magalu renova mesmo com spec/toggle inativo: o refresh morre se ficar
+    parado, e o canal só liga depois da fase 3 do ML. Chat/API continuam
+    bloqueados em skip_se_spec_inativo / canal_em_operacao.
     """
     ml = _renovar_token_ml()
-    sp = _renovar_token_shopee()
+    sp = _renovar_token_shopee() if _canal_marketplace_operando("shopee") else None
     mg = _renovar_token_magalu()
-    amz = _renovar_token_amazon()
+    amz = _renovar_token_amazon() if _canal_marketplace_operando("amazon") else None
     # Bling NÃO entra aqui: é renovado separadamente (renovar_token_bling_detalhado),
     # pois o refresh_token rotaciona e seria consumido duas vezes.
 

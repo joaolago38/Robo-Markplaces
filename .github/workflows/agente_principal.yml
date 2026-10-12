@@ -1,10 +1,9 @@
 # GitHub Actions — Orquestrador do Robo-Markplaces
 #
 # SERIALIZAÇÃO DE RENOVAÇÃO DE TOKENS:
-# Jobs como chat_marketplaces renovam tokens via get_token_* durante a execução.
-# O cron deste workflow coincide com renovar_tokens.yml (*/30). Sem concurrency
-# compartilhado, dois runners podem consumir o mesmo refresh_token de uso único
-# em paralelo. Ver grupo `robo-markplaces-token-renewal` nos workflows de token.
+# Chat ML não roda neste workflow (dono: orquestrador_30min). Chat Shopee/Magalu/Amazon
+# só chama API se spec.ativo. Relatorio/algoritmo ficam em fila própria para não
+# bloquear o cadeado `robo-markplaces-token-renewal`.
 name: Robo-Markplaces
 
 # Agendamento: expressões cron em UTC (padrão GitHub). BRT = UTC−3 (sem horário de verão no BR).
@@ -36,11 +35,19 @@ on:
           - algoritmo
 
 concurrency:
-  group: robo-markplaces-token-renewal
-  cancel-in-progress: false
+  # Fila propria: relatorio/algoritmo nao devem filar o cadeado OAuth.
+  # Chat ML nao roda aqui (dono: orquestrador_30min). Canais inativos no spec
+  # nao chamam API neste job — reduz corrida de refresh enquanto o ML e consertado.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
   # NUNCA declarar DD_API_KEY/DD_SITE/DD_LOGS_ENABLED aqui (nível
   # workflow): isso faria o job `qualidade` (que roda `pytest`)
   # herdar essas variáveis também, e cada `logger.error("boom")`
@@ -61,8 +68,10 @@ jobs:
       github.event.inputs.rotina == 'relatorio'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+      DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+      DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -71,12 +80,25 @@ jobs:
           cache: pip
       - name: Instalar dependências
         run: pip install -r requirements.txt
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
       - name: Executar relatório
         run: python -c "from agentes.relatorio import executar; executar()"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_FASE0_NAG: ${{ vars.CLAUDE_FASE0_NAG || '0' }}
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
@@ -95,8 +117,10 @@ jobs:
       github.event.inputs.rotina == 'chat'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+      DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+      DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -105,9 +129,25 @@ jobs:
           cache: pip
       - name: Instalar dependências
         run: pip install -r requirements.txt
+      - name: Restaurar estado vendas/IA
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/claude_toggle.json
+            logs/marketplaces_operacao.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+            logs/alertas_cooldown.json
+          key: estado-vendas-ia-${{ github.run_id }}
+          restore-keys: |
+            estado-vendas-ia-
+            claude-orcamento-
+            conversao-snapshot-
+            telegram-cooldown-
       - name: Rodar agentes de chat
         run: |
-          python -c "from agentes.ml.agente_ml import executar; print(executar())"
+          # Chat ML 24h fica no orquestrador_30min — um dono só, sem refresh paralelo.
           python -c "from agentes.shopee.agente_shopee import executar; print(executar())"
           python -c "from agentes.magalu.agente_magalu import executar; print(executar())"
           python -c "from agentes.amazon.agente_amazon import executar; print(executar())"
@@ -115,12 +155,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_FASE0_NAG: ${{ vars.CLAUDE_FASE0_NAG || '0' }}
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
+          CLAUDE_ORCAMENTO_ATIVO: "1"
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN: ${{ secrets.BLING_ACCESS_TOKEN }}
           BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
@@ -132,12 +183,39 @@ jobs:
           MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_CHANNEL_ID: ${{ secrets.MAGALU_CHANNEL_ID }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID: ${{ secrets.MAGALU_SELLER_ID }}
           AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
+          AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
+          AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}
+          AMAZON_REFRESH_TOKEN: ${{ secrets.AMAZON_REFRESH_TOKEN }}
+          AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
+          AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Publicar estado vendas/IA
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/claude_uso_orcamento.json
+            logs/claude_toggle.json
+            logs/marketplaces_operacao.json
+            logs/conversao_manicures_ultima.json
+            logs/chat_perguntas_claimed.json
+            logs/alertas_cooldown.json
+          key: estado-vendas-ia-${{ github.run_id }}
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
 
   vendas_whatsapp:
     name: Notificações de vendas WhatsApp
@@ -149,8 +227,10 @@ jobs:
       github.event.inputs.rotina == 'vendas_whatsapp'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+      DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+      DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -159,20 +239,20 @@ jobs:
           cache: pip
       - name: Instalar dependências
         run: pip install -r requirements.txt
-      - name: Notificar vendas no WhatsApp
+      - name: Notificar vendas no Telegram
         run: python -c "from agentes.vendas_notificador import executar; print(executar())"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          WHATSAPP_API_TYPE: ${{ secrets.WHATSAPP_API_TYPE }}
-          WHATSAPP_API_URL: ${{ secrets.WHATSAPP_API_URL }}
-          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
-          WHATSAPP_INSTANCE: ${{ secrets.WHATSAPP_INSTANCE }}
           WHATSAPP_NUMERO_DESTINO: ${{ secrets.WHATSAPP_NUMERO_DESTINO }}
           WHATSAPP_BUSINESS_TOKEN: ${{ secrets.WHATSAPP_BUSINESS_TOKEN }}
           WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
@@ -184,8 +264,10 @@ jobs:
           MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_CHANNEL_ID: ${{ secrets.MAGALU_CHANNEL_ID }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID: ${{ secrets.MAGALU_SELLER_ID }}
           AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
           AMAZON_LWA_CLIENT_ID: ${{ secrets.AMAZON_LWA_CLIENT_ID }}
           AMAZON_LWA_CLIENT_SECRET: ${{ secrets.AMAZON_LWA_CLIENT_SECRET }}
@@ -193,6 +275,12 @@ jobs:
           AMAZON_SELLER_ID: ${{ secrets.AMAZON_SELLER_ID }}
           AMAZON_MARKETPLACE_ID: ${{ secrets.AMAZON_MARKETPLACE_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_FASE0_NAG: ${{ vars.CLAUDE_FASE0_NAG || '0' }}
+          CLAUDE_ECONOMICO: ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO: ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS: ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD: ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
@@ -207,8 +295,10 @@ jobs:
       github.event.inputs.rotina == 'algoritmo'
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ secrets.DD_SITE }}
-      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+      DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+      DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+      DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+      DD_ENV: ${{ vars.DD_ENV || 'production' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -230,8 +320,10 @@ jobs:
           MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_CHANNEL_ID: ${{ secrets.MAGALU_CHANNEL_ID }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID: ${{ secrets.MAGALU_SELLER_ID }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
@@ -242,6 +334,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
           ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
           ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
@@ -253,8 +349,10 @@ jobs:
           MAGALU_CLIENT_ID: ${{ secrets.MAGALU_CLIENT_ID }}
           MAGALU_CLIENT_SECRET: ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN: ${{ secrets.MAGALU_ACCESS_TOKEN }}
+          MAGALU_CHANNEL_ID: ${{ secrets.MAGALU_CHANNEL_ID }}
           MAGALU_MERCHANT_ID: ${{ secrets.MAGALU_MERCHANT_ID }}
           MAGALU_REFRESH_TOKEN: ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID: ${{ secrets.MAGALU_SELLER_ID }}
           AMAZON_ACCESS_TOKEN: ${{ secrets.AMAZON_ACCESS_TOKEN }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

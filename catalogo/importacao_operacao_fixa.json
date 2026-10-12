@@ -1,0 +1,43 @@
+{
+  "cnpj": "52668583000127",
+  "razao_social": "",
+  "endereco": "",
+  "regime_tributario": "lucro_presumido",
+  "responsavel": {
+    "nome": "Responsável Importação",
+    "cargo": "Despacho / acompanhamento aduaneiro",
+    "contato": "",
+    "documento": "",
+    "nota": "Sobrescreva com IMPORTACAO_RESPONSAVEL_NOME / _CARGO / _CONTATO"
+  },
+  "modal_transporte": "aereo",
+  "aeroporto_desembaraco": {
+    "codigo": "VCP",
+    "nome": "Viracopos",
+    "cidade": "Campinas",
+    "uf": "SP"
+  },
+  "destino_entrega": {
+    "cep": "13467-694",
+    "cidade": "Americana",
+    "uf": "SP",
+    "distancia_km_viracopos": 120,
+    "nota": "CEP de teste/padrão da operação. Sobrescreva com IMPORTACAO_DESTINO_CEP (e cidade/UF/km) sem editar este arquivo."
+  },
+  "icms_uf_padrao_pct": 18.0,
+  "pis_cofins_importacao_pct": 11.75,
+  "seguro_internacional_pct": 0.5,
+  "frete_aereo_usd_kg_estimativa": 5.5,
+  "custos_viracopos_brl": {
+    "armazenagem_aeroportuaria": 450.0,
+    "desembaraco_despachante": 1200.0,
+    "thc_manuseio_aereo": 380.0,
+    "siscomex": 154.23,
+    "siscomex_adicoes": 1,
+    "siscomex_nota": "Portaria ME 4.131/2021: DI R$115,67 + 1ª adição R$38,56 = R$154,23 (legado 214,50 não usar)",
+    "frete_rodoviario_viracopos_destino": 650.0,
+    "frete_rodoviario_por_km": 5.5
+  },
+  "despesas_plus_brasil_ref": "catalogo/importacao_despesas_plus.json",
+  "aviso_legal": "Valores estimados para planejamento. II/IPI dependem da classificação NCM confirmada por despachante aduaneiro. Checklist detalhado de despesas: planilha PLUS BRASIL (dados/importacao_simula_plus_brasil.xlsx)."
+}

@@ -1,0 +1,61 @@
+{
+  "ok": true,
+  "batalha": {
+    "ok": true,
+    "ramo": "masterprint",
+    "cnpj": "23811261000197",
+    "anuncios_unicos": 0,
+    "comparacoes": [
+      {
+        "sku": "231020001",
+        "kit_tag": "kit:preto",
+        "papel": "entrada",
+        "prio": "p0",
+        "nosso_preco": 79.9,
+        "rival_min": null,
+        "fonte_rival": "ausente",
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false,
+        "custo_total": 45.96
+      },
+      {
+        "sku": "231020002",
+        "kit_tag": "kit:branco",
+        "papel": "preco",
+        "prio": "p0",
+        "nosso_preco": 74.9,
+        "rival_min": null,
+        "fonte_rival": "ausente",
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false,
+        "custo_total": 45.96
+      },
+      {
+        "sku": "231020003",
+        "kit_tag": "kit:azul",
+        "papel": "giro",
+        "prio": "p0",
+        "nosso_preco": 79.9,
+        "rival_min": null,
+        "fonte_rival": "ausente",
+        "rivais_no_tam": 0,
+        "gap_pct": null,
+        "mlb_ok": false,
+        "custo_total": 45.96
+      }
+    ],
+    "nossos_acima_rival": 0
+  },
+  "golpe": {
+    "disparar": false,
+    "classificacao": "ignorar",
+    "sku": "231020001"
+  },
+  "condicoes": {
+    "fase": 0,
+    "liberar_golpe_preco": false
+  },
+  "cnpj": "23811261000197"
+}

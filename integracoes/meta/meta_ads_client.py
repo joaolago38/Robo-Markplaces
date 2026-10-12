@@ -81,7 +81,7 @@ def listar_metricas_campanhas(
     ou intervalo custom (data_inicio/data_fim em YYYY-MM-DD) e paginação.
     """
     if not _enabled():
-        logger.warning("Meta Ads não configurado (META_ACCESS_TOKEN/META_AD_ACCOUNT_ID).")
+        logger.info("Meta Ads não configurado (META_ACCESS_TOKEN/META_AD_ACCOUNT_ID).")
         return []
 
     try:
@@ -111,7 +111,7 @@ def listar_metricas_por_plataforma(
     Cada linha retornada contém a chave 'publisher_platform'.
     """
     if not _enabled():
-        logger.warning("Meta Ads não configurado (META_ACCESS_TOKEN/META_AD_ACCOUNT_ID).")
+        logger.info("Meta Ads não configurado (META_ACCESS_TOKEN/META_AD_ACCOUNT_ID).")
         return []
 
     try:

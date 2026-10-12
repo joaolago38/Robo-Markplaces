@@ -1,4 +1,4 @@
-# Diagnóstico manual do refresh do Bling.
+﻿# Diagnóstico manual do refresh do Bling.
 # Rode em: Actions -> "Debug Bling refresh" -> Run workflow.
 # Imprime o motivo do 400 (invalid_grant vs invalid_client) SEM vazar tokens.
 name: Debug Bling refresh
@@ -7,10 +7,14 @@ on:
   workflow_dispatch:
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
 
 jobs:
   debug:
@@ -27,6 +31,8 @@ jobs:
       - name: Rodar debug do Bling
         run: python scripts/debug_bling_refresh.py
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}

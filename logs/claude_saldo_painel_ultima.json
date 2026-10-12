@@ -1,0 +1,98 @@
+{
+  "timestamp": "2026-08-10T11:26:07.156048+00:00",
+  "creditos_usd": 2.41,
+  "gasto_mes_usd": 3.44,
+  "tokens_7d": 685600.0,
+  "tokens_7d_crescimento_pct": 174.0,
+  "prompt_cache_ativo": false,
+  "limite_mes_usd": 1000.0,
+  "resumo": {
+    "orcamento_usd": 5.85,
+    "consumido_usd": 3.44,
+    "restante_usd": 2.41,
+    "percentual_usado": 58.8,
+    "chamadas": 196,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "bloqueado": false,
+    "resultados": {
+      "ok": 97,
+      "falha": 74,
+      "fallback": 0,
+      "vazio": 10,
+      "bloqueado": 15
+    },
+    "assertividade_pct": 53.6,
+    "por_origem": {
+      "desconhecido": {
+        "usd": 0.0,
+        "chamadas": 170,
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "ok": 97,
+        "falha": 48,
+        "fallback": 0,
+        "vazio": 10,
+        "bloqueado": 15,
+        "assertividade_pct": 62.6
+      },
+      "ml.agente_otimizador_listing": {
+        "usd": 0.0,
+        "chamadas": 6,
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "ok": 0,
+        "falha": 6,
+        "fallback": 0,
+        "vazio": 0,
+        "bloqueado": 0,
+        "assertividade_pct": 0.0
+      },
+      "operacao_24h": {
+        "usd": 0.0,
+        "chamadas": 14,
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "ok": 0,
+        "falha": 14,
+        "fallback": 0,
+        "vazio": 0,
+        "bloqueado": 0,
+        "assertividade_pct": 0.0
+      },
+      "panorama.agente_panorama": {
+        "usd": 0.0,
+        "chamadas": 6,
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "ok": 0,
+        "falha": 6,
+        "fallback": 0,
+        "vazio": 0,
+        "bloqueado": 0,
+        "assertividade_pct": 0.0
+      }
+    },
+    "por_modelo": {
+      "claude-haiku-4-5": {
+        "usd": 0.0,
+        "chamadas": 189,
+        "ok": 91,
+        "falha": 74,
+        "assertividade_pct": 52.0,
+        "vazio": 10,
+        "bloqueado": 14
+      },
+      "claude-sonnet-4-5": {
+        "usd": 0.0,
+        "chamadas": 7,
+        "ok": 6,
+        "falha": 0,
+        "assertividade_pct": 100.0,
+        "bloqueado": 1
+      }
+    },
+    "atualizado_em": "2026-08-10T11:26:07.150713+00:00",
+    "fonte_saldo": "console_painel"
+  }
+}

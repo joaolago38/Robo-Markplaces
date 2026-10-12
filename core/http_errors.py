@@ -51,8 +51,45 @@ def log_http_erro_listagem(logger: logging.Logger, contexto: str, resposta) -> N
         logger.error("%s HTTP %s: %s", contexto, status, corpo)
 
 
+def eh_timeout_rede(exc: BaseException) -> bool:
+    """Timeout de conexão/leitura (inclui ProtocolError com TimeoutError interno)."""
+    if isinstance(exc, TimeoutError):
+        return True
+    nome = type(exc).__name__.lower()
+    txt = str(exc).lower()
+    if "timeout" in nome:
+        return True
+    return "timed out" in txt or "timeout" in txt
+
+
 def mascarar_url_telegram(texto: str) -> str:
-    """Remove o token do bot de URLs/logs do Telegram."""
+    """Remove o token do bot de URLs/logs do Telegram (com host ou só /bot<token>/)."""
     if not texto:
         return texto
-    return re.sub(r"(api\.telegram\.org/bot)[^/\s]+", r"\1***", str(texto))
+    t = re.sub(r"(api\.telegram\.org/bot)[^/\s]+", r"\1***", str(texto))
+    return re.sub(r"(/bot)[^/\s]+", r"\1***", t)
+
+
+def mascarar_segredos_http(texto: str) -> str:
+    """Redige tokens em query strings / URLs / headers de logs de erro HTTP."""
+    if not texto:
+        return texto
+    t = mascarar_url_telegram(str(texto))
+    t = re.sub(r"(access_token=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
+    t = re.sub(r"(refresh_token=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
+    t = re.sub(r"(partner_key=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
+    t = re.sub(r"(api[_-]?key=)[^&\s\"']+", r"\1***", t, flags=re.IGNORECASE)
+    t = re.sub(
+        r"(Authorization:\s*Bearer\s+)[^\s\"']+",
+        r"\1***",
+        t,
+        flags=re.IGNORECASE,
+    )
+    t = re.sub(
+        r"(x-api-key[\"']?\s*[:=]\s*[\"']?)[^\"'\s,]+",
+        r"\1***",
+        t,
+        flags=re.IGNORECASE,
+    )
+    t = re.sub(r"(sk-ant-[A-Za-z0-9_-]+)", "sk-ant-***", t)
+    return t

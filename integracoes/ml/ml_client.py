@@ -7,11 +7,11 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from core.config import ML_ACCESS_TOKEN, ML_SELLER_ID, ML_SITE_ID
+from core.config import ML_ACCESS_TOKEN, ML_IGNORAR_ANUNCIOS_FORA_FOCO, ML_SELLER_ID
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
+from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.token_manager import get_token_ml
 
 logger = logging.getLogger("ml_client")
@@ -44,6 +44,107 @@ def _request_ml(method: str, url: str, *, timeout: int = 30, **kwargs: Any):
         kwargs["headers"] = headers
         r = request(method, url, timeout=timeout, **kwargs)
     return r
+
+
+def _request_ml_ou_publico(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
+    """Leitura autenticada. Em 401/403, repete sem o token do app (endpoint público)."""
+    r = _request_ml(method, url, timeout=timeout, **kwargs)
+    if getattr(r, "status_code", 0) not in (401, 403):
+        return r
+    publico = dict(kwargs)
+    publico.pop("headers", None)
+    return request(method, url, timeout=timeout, **publico)
+
+
+def _status_http_exc(exc: Exception) -> int | None:
+    """Extrai status HTTP de HTTPError ou mensagens tipo '404 Client Error'."""
+    resp = getattr(exc, "response", None)
+    if resp is not None:
+        status = getattr(resp, "status_code", None)
+        if isinstance(status, int):
+            return status
+    texto = str(exc)
+    for code in (404, 403, 400, 401):
+        marcador = f"{code} Client Error"
+        if marcador in texto or f"HTTP {code}" in texto:
+            return code
+    return None
+
+
+def _performance_esperada_indisponivel(code: int, corpo: str) -> bool:
+    """
+    API /performance retorna 400 para anúncios que o ML não calcula
+    (suspenso, catalog product, etc.). Não é incidente — silenciar ERROR.
+    """
+    if code in (404,):
+        return True
+    if code != 400:
+        return False
+    t = (corpo or "").lower()
+    return any(
+        trecho in t
+        for trecho in (
+            "entity not calculated",
+            "suspended status is not supported",
+            "product items are not supported",
+            "not supported",
+        )
+    )
+
+
+def _log_erro_leitura_item(acao: str, item_id: str, exc: Exception) -> None:
+    """Leituras por item: 404/403 e performance 400 esperada → warning/debug."""
+    status = _status_http_exc(exc)
+    texto = str(exc)
+    if acao == "buscar_performance_item" and _performance_esperada_indisponivel(
+        status or 0, texto
+    ):
+        logger.debug(
+            "ML %s item_id=%s indisponível (esperado): %s",
+            acao,
+            item_id,
+            texto[:180],
+        )
+        return
+    if status in (404, 403):
+        # Operacional (anúncio apagado / sem escopo no item) — não é incidente.
+        # Antes era WARNING e dominava ~30% do volume de warns no Datadog.
+        logger.info(
+            "ML %s item_id=%s HTTP %s — item inexistente ou sem permissão: %s",
+            acao,
+            item_id,
+            status,
+            exc,
+        )
+    else:
+        logger.error("ML %s erro item_id=%s: %s", acao, item_id, exc)
+
+
+def _http_error_from_response(response: Any) -> Exception:
+    """Monta exceção compatível com _log_erro_leitura_* a partir do Response."""
+    from requests import HTTPError
+
+    try:
+        response.raise_for_status()
+    except HTTPError as exc:
+        return exc
+    return RuntimeError(f"HTTP {getattr(response, 'status_code', '?')}")
+
+
+def _log_erro_leitura_termo(acao: str, termo: str, exc: Exception) -> None:
+    """Busca por termo: 403/404 são operacionais (PolicyAgent / sem resultado)."""
+    status = _status_http_exc(exc)
+    if status in (404, 403):
+        # 403 em /sites/search é o padrão desde ~2025 — não é incidente.
+        logger.info(
+            "ML %s termo=%s HTTP %s — busca bloqueada ou sem resultados: %s",
+            acao,
+            termo,
+            status,
+            exc,
+        )
+    else:
+        logger.error("ML %s erro termo=%s: %s", acao, termo, exc)
 
 
 def _executar_acao_status(
@@ -149,7 +250,7 @@ def obter_status_anuncio(item_id: str) -> dict:
             "titulo": str(body.get("title", "") or ""),
         }
     except Exception as exc:
-        logger.error("ML obter_status_anuncio erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("obter_status_anuncio", item_id, exc)
         return {"ok": False, "item_id": item_id, "erro": str(exc)}
 
 def probe_conexao() -> dict:
@@ -179,7 +280,7 @@ def _listar_perguntas_nao_respondidas_detalhado() -> tuple[list[dict], bool]:
     """Retorna (perguntas, sucesso_chamada). Use isto quando precisar saber
     se a lista vazia é "sem pendência" ou "a chamada falhou"."""
     if not _enabled():
-        logger.warning("Mercado Livre não configurado.")
+        logger.info("Mercado Livre não configurado.")
         return [], False
     try:
         r = _request_ml(
@@ -205,7 +306,7 @@ def listar_perguntas_nao_respondidas() -> list[dict]:
 
 def responder_pergunta(question_id: str, texto: str) -> bool:
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para responder pergunta.")
+        logger.info("Mercado Livre não configurado para responder pergunta.")
         return False
     try:
         r = _request_ml(
@@ -221,25 +322,210 @@ def responder_pergunta(question_id: str, texto: str) -> bool:
         return False
 
 
-def buscar_reputacao_vendedor() -> dict:
+def buscar_perfil_vendedor() -> dict:
+    """
+    Perfil básico do vendedor (nickname, reputação, vendas).
+    Nunca lança exceção.
+    """
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para reputação.")
+        logger.info("Mercado Livre não configurado para perfil.")
         return {}
     try:
         r = _request_ml("GET", f"{BASE}/users/{ML_SELLER_ID}", timeout=20)
         if status_http(r) != 200:
-            log_http_erro_listagem(logger, "ML buscar_reputacao_vendedor", r)
+            log_http_erro_listagem(logger, "ML buscar_perfil_vendedor", r)
             return {}
-        return r.json().get("seller_reputation", {})
+        body = r.json() or {}
+        rep = body.get("seller_reputation") if isinstance(body.get("seller_reputation"), dict) else {}
+        return {
+            "id": str(body.get("id") or ML_SELLER_ID),
+            "nickname": str(body.get("nickname") or ""),
+            "permalink": str(body.get("permalink") or ""),
+            "seller_reputation": rep,
+            "points": int(body.get("points") or 0),
+        }
     except Exception as exc:
-        logger.error("ML buscar_reputacao_vendedor erro: %s", exc)
+        logger.error("ML buscar_perfil_vendedor erro: %s", exc)
         return {}
+
+
+def buscar_reputacao_vendedor() -> dict:
+    perfil = buscar_perfil_vendedor()
+    rep = perfil.get("seller_reputation")
+    return rep if isinstance(rep, dict) else {}
+
+
+def buscar_performance_item(item_id: str, *, user_product_id: str = "") -> dict:
+    """
+    Qualidade do anúncio (API /performance — item ou user-product).
+    Retorna {} se indisponível. Nunca lança.
+    400 "Entity not calculated" (suspenso/catálogo) → silencioso (debug).
+    """
+    item_id = (item_id or "").strip()
+    up_id = (user_product_id or "").strip()
+    if not _enabled() or (not item_id and not up_id):
+        return {}
+
+    urls: list[tuple[str, str]] = []
+    if up_id:
+        urls.append(("user_product", f"{BASE}/user-product/{up_id}/performance"))
+    if item_id:
+        urls.append(("item", f"{BASE}/item/{item_id}/performance"))
+
+    for origem, url in urls:
+        try:
+            r = _request_ml("GET", url, timeout=20)
+            code = status_http(r)
+            corpo = getattr(r, "text", "") or ""
+            if code in (400, 404) or _performance_esperada_indisponivel(code, corpo):
+                logger.debug(
+                    "ML performance %s %s HTTP %s (esperado/indisponível)",
+                    origem,
+                    item_id or up_id,
+                    code,
+                )
+                continue
+            if code != 200:
+                # Não poluir Vigia com Entity not calculated disfarçado
+                if _performance_esperada_indisponivel(code, corpo):
+                    logger.debug(
+                        "ML buscar_performance_item %s %s HTTP %s silenciado",
+                        origem,
+                        item_id or up_id,
+                        code,
+                    )
+                else:
+                    log_http_erro_listagem(
+                        logger, f"ML buscar_performance_item {origem}", r
+                    )
+                continue
+            body = r.json() or {}
+            if not isinstance(body, dict):
+                continue
+            regras_pendentes: list[dict] = []
+            for bucket in body.get("buckets") or []:
+                if not isinstance(bucket, dict):
+                    continue
+                for var in bucket.get("variables") or []:
+                    if not isinstance(var, dict):
+                        continue
+                    for rule in var.get("rules") or []:
+                        if not isinstance(rule, dict):
+                            continue
+                        if str(rule.get("status") or "").upper() != "PENDING":
+                            continue
+                        wordings = rule.get("wordings") if isinstance(rule.get("wordings"), dict) else {}
+                        regras_pendentes.append(
+                            {
+                                "key": str(rule.get("key") or ""),
+                                "mode": str(rule.get("mode") or ""),
+                                "titulo": str(
+                                    wordings.get("label") or wordings.get("title") or rule.get("key") or ""
+                                ),
+                            }
+                        )
+            return {
+                "item_id": item_id,
+                "user_product_id": up_id,
+                "origem": origem,
+                "score": float(body.get("score") or 0),
+                "level": str(body.get("level") or ""),
+                "level_wording": str(body.get("level_wording") or ""),
+                "status": str(body.get("status") or ""),
+                "regras_pendentes": regras_pendentes,
+                "a_melhorar": bool(regras_pendentes)
+                or str(body.get("status") or "").upper() == "PENDING",
+            }
+        except Exception as exc:
+            _log_erro_leitura_item("buscar_performance_item", item_id or up_id, exc)
+    return {}
+
+
+def contar_envios_pendentes() -> dict:
+    """
+    Conta pedidos pagos recentes com envio ainda não despachado (ready_to_ship / pending).
+    Nunca lança.
+    """
+    if not _enabled():
+        return {"ok": False, "total": 0, "motivo": "ml_nao_configurado"}
+    try:
+        tz = timezone(timedelta(hours=-3))
+        agora = datetime.now(tz)
+        inicio = (agora - timedelta(days=7)).strftime("%Y-%m-%dT00:00:00.000-03:00")
+        r = _request_ml(
+            "GET",
+            f"{BASE}/orders/search",
+            params={
+                "seller": ML_SELLER_ID,
+                "order.status": "paid",
+                "order.date_created.from": inicio,
+                "sort": "date_desc",
+                "limit": 50,
+            },
+            timeout=25,
+        )
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "ML contar_envios_pendentes", r)
+            return {"ok": False, "total": 0, "motivo": f"http_{status_http(r)}"}
+        results = (r.json() or {}).get("results") or []
+        pendentes = 0
+        for order in results:
+            if not isinstance(order, dict):
+                continue
+            shipping = order.get("shipping") if isinstance(order.get("shipping"), dict) else {}
+            status = str(shipping.get("status") or "").lower()
+            sub = str(shipping.get("substatus") or "").lower()
+            if status in ("ready_to_ship", "pending", "handling") or sub in (
+                "ready_to_print",
+                "ready_to_pack",
+                "invoice_pending",
+            ):
+                pendentes += 1
+        return {"ok": True, "total": pendentes, "pedidos_inspecionados": len(results)}
+    except Exception as exc:
+        logger.error("ML contar_envios_pendentes erro: %s", exc)
+        return {"ok": False, "total": 0, "motivo": str(exc)}
+
+
+def contar_claims_abertos() -> dict:
+    """Claims/pós-venda abertos do vendedor. Nunca lança."""
+    if not _enabled():
+        return {"ok": False, "total": 0, "motivo": "ml_nao_configurado"}
+    try:
+        r = _request_ml(
+            "GET",
+            f"{BASE}/v1/claims/search",
+            params={"status": "opened", "limit": 50},
+            timeout=20,
+        )
+        if status_http(r) == 404:
+            # Alguns apps não têm escopo de claims
+            return {"ok": False, "total": 0, "motivo": "claims_indisponivel"}
+        if status_http(r) != 200:
+            log_http_erro_listagem(logger, "ML contar_claims_abertos", r)
+            return {"ok": False, "total": 0, "motivo": f"http_{status_http(r)}"}
+        body = r.json() or {}
+        total = body.get("paging", {}).get("total")
+        if total is None:
+            results = body.get("data") or body.get("results") or []
+            total = len(results) if isinstance(results, list) else 0
+        return {"ok": True, "total": int(total or 0)}
+    except Exception as exc:
+        logger.error("ML contar_claims_abertos erro: %s", exc)
+        return {"ok": False, "total": 0, "motivo": str(exc)}
 
 
 def obter_saude_conta() -> dict:
     configurado = _enabled()
     if not configurado:
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": 0.0,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": "",
+        }
 
     perguntas, ok = _listar_perguntas_nao_respondidas_detalhado()
     reputacao = buscar_reputacao_vendedor()
@@ -252,7 +538,10 @@ def obter_saude_conta() -> dict:
         "api_ok": ok,
         "pendencias": len(perguntas),
         "claims_rate": float(claims_rate),
+        "claims_conhecido": True,
         "dias_sem_acesso": dias_sem_acesso("mercadolivre") or 0,
+        "conta_id": str(ML_SELLER_ID or "").strip(),
+        "modelo": "ranking_ml",
     }
 
 
@@ -263,7 +552,7 @@ def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
         logger.warning("ML atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para atualização de preço.")
+        logger.info("Mercado Livre não configurado para atualização de preço.")
         return False
     try:
         r = _request_ml(
@@ -280,6 +569,35 @@ def atualizar_preco_item(item_id: str, novo_preco: float) -> bool:
         return False
 
 
+def atualizar_titulo_item(item_id: str, novo_titulo: str) -> bool:
+    """Atualiza título do anúncio (máx. 60 chars no ML). Respeita kill switch."""
+    from core.guardrails import bloqueio_escrita_global
+
+    if bloqueio := bloqueio_escrita_global():
+        logger.warning("ML atualizar_titulo_item bloqueado: %s", bloqueio["erro"])
+        return False
+    if not _enabled():
+        logger.info("Mercado Livre não configurado para atualização de título.")
+        return False
+    titulo = (novo_titulo or "").strip()[:60]
+    if len(titulo) < 10:
+        logger.warning("ML atualizar_titulo_item título inválido item_id=%s", item_id)
+        return False
+    try:
+        r = _request_ml(
+            "PUT",
+            f"{BASE}/items/{item_id}",
+            json={"title": titulo},
+            timeout=30,
+        )
+        r.raise_for_status()
+        logger.info("ML título atualizado item_id=%s titulo=%s", item_id, titulo)
+        return True
+    except Exception as exc:
+        logger.error("ML atualizar_titulo_item erro item_id=%s: %s", item_id, exc)
+        return False
+
+
 def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
     from core.guardrails import bloqueio_escrita_global
 
@@ -287,7 +605,7 @@ def atualizar_estoque_item(item_id: str, novo_estoque: int) -> bool:
         logger.warning("ML atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para atualização de estoque.")
+        logger.info("Mercado Livre não configurado para atualização de estoque.")
         return False
     try:
         r = _request_ml(
@@ -313,7 +631,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     (ex.: token expirado, API fora do ar).
     """
     if not _enabled():
-        logger.warning("Mercado Livre não configurado para listar pedidos.")
+        logger.info("Mercado Livre não configurado para listar pedidos.")
         return [], False
 
     out: list[dict] = []
@@ -398,56 +716,236 @@ def listar_pedidos(dias: int = 7) -> list[dict]:
     return pedidos
 
 
-def buscar_metricas_item(item_id: str) -> dict:
+def buscar_visitas_item(item_id: str) -> dict:
     """
-    Busca visitas e métricas de exposição de um anúncio específico.
-    Retorna dict com visitas_7d, visitas_30d e status do anúncio.
+    GET /items/{id}/visits/time_window (7d e 30d).
+    No app atual responde para anúncios próprios e de terceiros.
     Nunca lança exceção.
     """
     if not _enabled() or not (item_id or "").strip():
-        return {}
+        return {
+            "ok": False,
+            "disponivel": False,
+            "motivo": "nao_configurado",
+            "visitas_7d": None,
+            "visitas_30d": None,
+        }
+    iid = item_id.strip()
     try:
-        item_id = item_id.strip()
-        r_item = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
-        r_item.raise_for_status()
-        item = r_item.json() or {}
-
-        r7 = _request_ml(
+        r7 = _request_ml_ou_publico(
             "GET",
-            f"{BASE}/items/{item_id}/visits/time_window",
+            f"{BASE}/items/{iid}/visits/time_window",
             params={"last": 7, "unit": "day"},
             timeout=20,
         )
         r7.raise_for_status()
         v7 = int((r7.json() or {}).get("total_visits", 0) or 0)
 
-        r30 = _request_ml(
+        r30 = _request_ml_ou_publico(
             "GET",
-            f"{BASE}/items/{item_id}/visits/time_window",
+            f"{BASE}/items/{iid}/visits/time_window",
             params={"last": 30, "unit": "day"},
             timeout=20,
         )
         r30.raise_for_status()
         v30 = int((r30.json() or {}).get("total_visits", 0) or 0)
 
-        estoque_raw = item.get("available_quantity", 0)
-        try:
-            estoque_int = int(estoque_raw)
-        except (TypeError, ValueError):
-            estoque_int = int(float(estoque_raw or 0))
-
         return {
-            "item_id": item_id,
-            "titulo": str(item.get("title", "") or ""),
-            "status": str(item.get("status", "") or ""),
-            "preco": float(item.get("price", 0) or 0),
-            "estoque": estoque_int,
+            "ok": True,
+            "disponivel": True,
+            "item_id": iid,
             "visitas_7d": v7,
             "visitas_30d": v30,
         }
     except Exception as exc:
-        logger.error("ML buscar_metricas_item erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_visitas_item", iid, exc)
+        return {
+            "ok": False,
+            "disponivel": False,
+            "motivo": str(exc),
+            "item_id": iid,
+            "visitas_7d": None,
+            "visitas_30d": None,
+        }
+
+
+def buscar_metricas_item(item_id: str) -> dict:
+    """
+    Busca visitas e, quando a API permitir, preço/status/estoque do anúncio.
+    Visitas não dependem de GET /items (que retorna 403 em rivais).
+    Nunca lança exceção.
+    """
+    if not _enabled() or not (item_id or "").strip():
         return {}
+    iid = item_id.strip()
+    basico = buscar_item_publico(iid)
+    visitas = buscar_visitas_item(iid)
+    if not basico and not visitas.get("disponivel"):
+        return {}
+    out = dict(basico) if basico else {"item_id": iid}
+    if visitas.get("disponivel"):
+        out["visitas_7d"] = int(visitas.get("visitas_7d") or 0)
+        out["visitas_30d"] = int(visitas.get("visitas_30d") or 0)
+    return out
+
+
+def _item_id_ml_norm(valor: Any) -> str:
+    texto = str(valor or "").strip().upper().replace("-", "")
+    if not texto or "PREENCHER" in texto:
+        return ""
+    if not texto.startswith("MLB"):
+        return ""
+    digits = texto[3:]
+    if not digits.isdigit():
+        return ""
+    return texto
+
+
+def _normalizar_item_publico(item: dict, *, item_id: str = "") -> dict:
+    iid = _item_id_ml_norm(item_id or item.get("id") or item.get("item_id"))
+    if not iid:
+        return {}
+    estoque_raw = item.get("available_quantity", 0)
+    try:
+        estoque_int = int(estoque_raw)
+    except (TypeError, ValueError):
+        estoque_int = int(float(estoque_raw or 0))
+    seller = item.get("seller") if isinstance(item.get("seller"), dict) else {}
+    seller_id = str(item.get("seller_id") or seller.get("id") or "").strip()
+    try:
+        preco = float(item.get("price") or 0)
+    except (TypeError, ValueError):
+        preco = 0.0
+    try:
+        sold = int(item.get("sold_quantity") or 0)
+    except (TypeError, ValueError):
+        sold = 0
+    return {
+        "item_id": iid,
+        "titulo": str(item.get("title") or item.get("titulo") or ""),
+        "status": str(item.get("status") or ""),
+        "preco": preco,
+        "estoque": estoque_int,
+        "sold_quantity": sold,
+        "quantidade_vendida": sold,
+        "sku": str(item.get("seller_sku") or ""),
+        "listing_type_id": str(item.get("listing_type_id") or ""),
+        "logistic_type": str((item.get("shipping") or {}).get("logistic_type") or ""),
+        "seller_id": seller_id,
+        "permalink": str(item.get("permalink") or ""),
+        "fonte_busca": "items_ids",
+    }
+
+
+def buscar_item_publico(item_id: str) -> dict:
+    """
+    GET /items/{id} — preço, status, sold_quantity, estoque.
+    Em rivais o app atual costuma receber 403; visitas ficam em buscar_visitas_item.
+    Nunca lança exceção.
+    """
+    iid = _item_id_ml_norm(item_id)
+    if not _enabled() or not iid:
+        return {}
+    try:
+        r_item = _request_ml("GET", f"{BASE}/items/{iid}", timeout=20)
+        r_item.raise_for_status()
+        return _normalizar_item_publico(r_item.json() or {}, item_id=iid)
+    except Exception as exc:
+        _log_erro_leitura_item("buscar_item_publico", iid, exc)
+        return {}
+
+
+def hidratar_itens(item_ids: list[str] | tuple[str, ...] | None, *, limite: int = 20) -> list[dict]:
+    """
+    GET /items?ids=MLB1,MLB2 (até 20). Não usa /sites/search (403 PolicyAgent).
+    IDs inválidos/PREENCHER são ignorados. Nunca lança.
+    """
+    if not _enabled():
+        return []
+    vistos: set[str] = set()
+    ids: list[str] = []
+    for bruto in item_ids or []:
+        iid = _item_id_ml_norm(bruto)
+        if not iid or iid in vistos:
+            continue
+        vistos.add(iid)
+        ids.append(iid)
+        if len(ids) >= max(1, min(20, limite)):
+            break
+    if not ids:
+        return []
+    try:
+        r = _request_ml(
+            "GET",
+            f"{BASE}/items",
+            params={"ids": ",".join(ids)},
+            timeout=25,
+        )
+        if r.status_code != 200:
+            logger.info("ML hidratar_itens HTTP %s ids=%s", r.status_code, len(ids))
+            return [row for iid in ids if (row := buscar_item_publico(iid))]
+        body = r.json()
+    except Exception as exc:
+        logger.info("ML hidratar_itens erro: %s", exc)
+        return [row for iid in ids if (row := buscar_item_publico(iid))]
+
+    out: list[dict] = []
+    if isinstance(body, list):
+        blocos: list[Any] = body
+    elif isinstance(body, dict):
+        blocos = list(body.values())
+    else:
+        blocos = []
+    for bloco in blocos:
+        if not isinstance(bloco, dict):
+            continue
+        codigo = bloco.get("code")
+        payload = bloco.get("body") if isinstance(bloco.get("body"), dict) else bloco
+        if codigo not in (None, 200):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        norm = _normalizar_item_publico(payload)
+        if norm.get("item_id") and float(norm.get("preco") or 0) > 0:
+            out.append(norm)
+    return out
+
+
+def listar_ids_anuncios_vendedor(seller_id: str | int, *, limite: int = 50) -> list[str]:
+    """
+    GET /users/{id}/items/search — itens ativos do vendedor.
+    Em loja alheia costuma 403 (token é da nossa conta). Nunca lança.
+    """
+    sid = str(seller_id or "").strip()
+    if not _enabled() or not sid:
+        return []
+    try:
+        r = _request_ml(
+            "GET",
+            f"{BASE}/users/{sid}/items/search",
+            params={"status": "active", "limit": max(1, min(100, limite))},
+            timeout=25,
+        )
+        if r.status_code in (401, 403):
+            logger.debug(
+                "ML listar_ids_anuncios_vendedor seller=%s HTTP %s — só a própria conta lista itens",
+                sid,
+                r.status_code,
+            )
+            return []
+        r.raise_for_status()
+        data = r.json() or {}
+        results = data.get("results") or []
+        ids: list[str] = []
+        for row in results:
+            bruto = row if isinstance(row, str) else (row.get("id") if isinstance(row, dict) else "")
+            iid = _item_id_ml_norm(bruto)
+            if iid:
+                ids.append(iid)
+        return ids
+    except Exception as exc:
+        logger.debug("ML listar_ids_anuncios_vendedor seller=%s: %s", sid, exc)
+        return []
 
 
 def buscar_descricao_item(item_id: str) -> str:
@@ -467,7 +965,7 @@ def buscar_descricao_item(item_id: str) -> str:
         data = r.json() or {}
         return str(data.get("plain_text", "") or "")
     except Exception as exc:
-        logger.error("ML buscar_descricao_item erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_descricao_item", item_id, exc)
         return ""
 
 
@@ -480,6 +978,7 @@ def _extrair_seller_id(row: dict) -> str:
 
 _CACHE_CONCORRENTES_TTL_S = 60
 _cache_concorrentes: dict[str, tuple[float, list[dict]]] = {}
+_cache_item_tipo: dict[str, dict[str, str]] = {}
 
 
 def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
@@ -495,6 +994,11 @@ def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
     ri = _request_ml("GET", f"{BASE}/items/{item_id}", timeout=20)
     ri.raise_for_status()
     body = ri.json() or {}
+    ship = body.get("shipping") if isinstance(body.get("shipping"), dict) else {}
+    _cache_item_tipo[item_id] = {
+        "listing_type_id": str(body.get("listing_type_id") or ""),
+        "logistic_type": str(ship.get("logistic_type") or ""),
+    }
     catalog_pid = body.get("catalog_product_id")
     if not catalog_pid:
         _cache_concorrentes[item_id] = (time.monotonic(), [])
@@ -540,6 +1044,8 @@ def _normalizar_concorrente(row: dict) -> dict:
         "frete_gratis": bool(shipping.get("free_shipping", False)),
         "condicao": str(row.get("condition", "") or ""),
         "quantidade_vendida": vendidos,
+        "listing_type_id": str(row.get("listing_type_id", "") or ""),
+        "logistic_type": str(shipping.get("logistic_type") or ""),
     }
 
 
@@ -559,30 +1065,43 @@ def buscar_detalhes_concorrentes(item_id: str, limite: int = 5) -> list[dict]:
                 detalhes.append(norm)
         return detalhes
     except Exception as exc:
-        logger.error("ML buscar_detalhes_concorrentes erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_detalhes_concorrentes", item_id, exc)
         return []
 
 
-def buscar_menor_preco_concorrente(item_id: str) -> float:
+def buscar_menor_preco_concorrente(
+    item_id: str,
+    *,
+    mesma_prateleira: bool = True,
+) -> float:
     """
-    Busca o menor preço praticado por outros vendedores no mesmo anúncio/produto.
-    Retorna 0.0 se não encontrar ou em caso de erro.
-    Nunca lança exceção.
+    Menor preço de outros vendedores no mesmo catálogo.
+    Por padrão só compara Premium com Premium e Clássico com Clássico.
+    Tipo desconhecido não filtra. Retorna 0.0 se vazio ou erro.
     """
     if not _enabled() or not (item_id or "").strip():
         return 0.0
     try:
+        from integracoes.ml.tipo_anuncio_ml import listing_type_id_de
+        from integracoes.ml.tipo_anuncio_ml import mesma_prateleira as _mesma
+
+        iid = item_id.strip()
+        linhas = _listar_linhas_concorrentes_catalogo(iid)
+        meu_tipo = str((_cache_item_tipo.get(iid) or {}).get("listing_type_id") or "")
         precos: list[float] = []
-        for row in _listar_linhas_concorrentes_catalogo(item_id):
+        for row in linhas:
             try:
                 p = float(row.get("price") or 0)
             except (TypeError, ValueError):
                 continue
-            if p > 0:
-                precos.append(p)
+            if p <= 0:
+                continue
+            if mesma_prateleira and not _mesma(meu_tipo, listing_type_id_de(row)):
+                continue
+            precos.append(p)
         return min(precos) if precos else 0.0
     except Exception as exc:
-        logger.error("ML buscar_menor_preco_concorrente erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_menor_preco_concorrente", item_id, exc)
         return 0.0
 
 
@@ -606,48 +1125,54 @@ def _normalizar_resultado_busca(row: dict) -> dict:
         "quantidade_vendida": vendidos,
         "seller_id": str(seller.get("id", "") or ""),
         "permalink": str(row.get("permalink", "") or ""),
+        "listing_type_id": str(row.get("listing_type_id", "") or ""),
+        "logistic_type": str(shipping.get("logistic_type") or ""),
     }
 
 
-def buscar_concorrentes_por_termo(termo: str, limite: int = 10) -> list[dict]:
+def buscar_concorrentes_por_termo(
+    termo: str,
+    limite: int = 10,
+    *,
+    item_id_referencia: str | None = None,
+    item_ids: list[str] | tuple[str, ...] | None = None,
+) -> list[dict]:
     """
-    Pesquisa o Mercado Livre por palavra-chave (busca pública do site, sem precisar
-    que o produto já esteja no seu catálogo/anúncio). Útil para monitorar concorrência
-    de produtos que você define livremente (por nome/termo), e não só dos seus próprios
-    anúncios.
+    Pesquisa o Mercado Livre por palavra-chave.
+
+    Desde ~2025 o endpoint /sites/{site}/search costuma retornar HTTP 403 mesmo
+    autenticado. Por padrão não chama esse endpoint: usa /products/search e,
+    se vazio, catálogo / Brave / DuckDuckGo. Opt-in: ML_BUSCA_TERMO_SITES_SEARCH=1.
+
+    Se `item_ids` vier preenchido, hidrata GET /items?ids= e nem tenta busca por termo.
 
     Exclui resultados do próprio vendedor (ML_SELLER_ID) quando configurado.
     Retorna lista vazia em caso de termo vazio ou erro. Nunca lança exceção.
     """
+    ids = [i for i in (item_ids or []) if _item_id_ml_norm(i)]
+    if ids:
+        hidratados = hidratar_itens(ids, limite=max(1, min(50, limite)))
+        if hidratados:
+            return hidratados
     termo = (termo or "").strip()
     if not termo:
         return []
-    try:
-        r = request(
-            "GET",
-            f"{BASE}/sites/{ML_SITE_ID}/search",
-            params={"q": termo, "limit": max(1, min(50, limite))},
-            timeout=20,
+    if not _enabled():
+        logger.warning(
+            "ML buscar_concorrentes_por_termo termo=%r sem credenciais — "
+            "API /sites/search retorna 403 sem token; tentando fallbacks DDG.",
+            termo,
         )
-        r.raise_for_status()
-        body = r.json() or {}
-        results = body.get("results") or []
+    try:
+        from integracoes.ml.busca_termo_ml import executar_busca_termo
 
-        seller_self = str(ML_SELLER_ID or "").strip()
-        encontrados: list[dict] = []
-        for row in results:
-            if not isinstance(row, dict):
-                continue
-            norm = _normalizar_resultado_busca(row)
-            if seller_self and norm["seller_id"] == seller_self:
-                continue
-            if norm["preco"] > 0:
-                encontrados.append(norm)
-            if len(encontrados) >= limite:
-                break
-        return encontrados
+        return executar_busca_termo(
+            termo,
+            max(1, min(50, limite)),
+            item_id_referencia=item_id_referencia,
+        )
     except Exception as exc:
-        logger.error("ML buscar_concorrentes_por_termo erro termo=%s: %s", termo, exc)
+        _log_erro_leitura_termo("buscar_concorrentes_por_termo", termo, exc)
         return []
 
 
@@ -708,7 +1233,7 @@ def buscar_sugestao_preco(item_id: str) -> dict:
             "aplicavel": bool(body.get("applicable_suggestion", False)),
         }
     except Exception as exc:
-        logger.error("ML buscar_sugestao_preco erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_sugestao_preco", item_id, exc)
         return {}
 
 
@@ -751,54 +1276,91 @@ def buscar_acos_ads(item_id: str, dias: int = 14) -> float:
             return 0.0
         return round(total_spend / total_revenue, 4)
     except Exception as exc:
-        logger.error("ML buscar_acos_ads erro item_id=%s: %s", item_id, exc)
+        _log_erro_leitura_item("buscar_acos_ads", item_id, exc)
         return 0.0
 
 
-def listar_meus_anuncios() -> list[dict]:
-    """
-    Lista todos os anúncios ativos do vendedor com item_id, título, preço e SKU.
-    Útil para mapear item_ids no catalogo/produtos.json.
-    Nunca lança exceção.
-    """
-    if not _enabled():
-        logger.warning("Mercado Livre não configurado para listar anúncios.")
-        return []
-    try:
-        item_ids: list[str] = []
-        offset = 0
-        while True:
-            r = request(
-                "GET",
-                f"{BASE}/users/{ML_SELLER_ID}/items/search",
-                headers=_h(),
-                params={"status": "active", "limit": 100, "offset": offset},
-                timeout=20,
-            )
-            r.raise_for_status()
-            chunk = r.json().get("results", []) or []
-            if not chunk:
-                break
-            for raw_id in chunk:
-                item_ids.append(str(raw_id))
-            if len(chunk) < 100:
-                break
-            offset += 100
+_ULTIMA_LISTAGEM_ANUNCIOS: dict[str, Any] = {
+    "ok": False,
+    "ids_busca": 0,
+    "ids_ok": 0,
+    "ids_faltando": [],
+    "paging_total": 0,
+    "motivo": "",
+}
 
-        normalized: list[dict] = []
+
+def ultima_listagem_anuncios() -> dict[str, Any]:
+    """Metadados da última listar_meus_anuncios — distingue falha de catálogo vazio."""
+    return dict(_ULTIMA_LISTAGEM_ANUNCIOS)
+
+
+def _set_listagem_anuncios(**kwargs: Any) -> None:
+    global _ULTIMA_LISTAGEM_ANUNCIOS
+    base = {
+        "ok": False,
+        "ids_busca": 0,
+        "ids_ok": 0,
+        "ids_faltando": [],
+        "paging_total": 0,
+        "motivo": "",
+    }
+    _ULTIMA_LISTAGEM_ANUNCIOS = {**base, **kwargs}
+
+
+def _normalizar_corpo_item_ml(b: dict) -> dict:
+    try:
+        estoque = int(b.get("available_quantity", 0) or 0)
+    except (TypeError, ValueError):
+        estoque = int(float(b.get("available_quantity") or 0))
+    ship = b.get("shipping") if isinstance(b.get("shipping"), dict) else {}
+    return {
+        "item_id": str(b.get("id", "")),
+        "titulo": str(b.get("title", "") or ""),
+        "preco": float(b.get("price", 0) or 0),
+        "sku": str(b.get("seller_sku", "") or ""),
+        "status": str(b.get("status", "") or ""),
+        "sold_quantity": int(b.get("sold_quantity", 0) or 0),
+        "estoque": estoque,
+        "date_created": str(b.get("date_created", "") or ""),
+        "user_product_id": str(b.get("user_product_id", "") or ""),
+        "family_name": str(b.get("family_name", "") or ""),
+        "category_id": str(b.get("category_id", "") or ""),
+        "listing_type_id": str(b.get("listing_type_id", "") or ""),
+        "logistic_type": str(ship.get("logistic_type") or ""),
+    }
+
+
+def _hidratar_anuncios_por_ids(item_ids: list[str]) -> tuple[list[dict], list[str]]:
+    """GET /items em lote; retenta IDs que não vieram 200. Devolve (itens, faltando)."""
+    attrs = (
+        "id,title,price,seller_sku,status,sold_quantity,available_quantity,"
+        "date_created,user_product_id,family_name,category_id,listing_type_id,shipping"
+    )
+    por_id: dict[str, dict] = {}
+
+    def _puxar(ids: list[str]) -> None:
         batch_size = 20
-        attrs = "id,title,price,seller_sku,status"
-        for i in range(0, len(item_ids), batch_size):
-            batch = item_ids[i : i + batch_size]
-            rm = request(
-                "GET",
-                f"{BASE}/items",
-                headers=_h(),
-                params={"ids": ",".join(batch), "attributes": attrs},
-                timeout=20,
-            )
-            rm.raise_for_status()
-            payload = rm.json()
+        for i in range(0, len(ids), batch_size):
+            batch = ids[i : i + batch_size]
+            try:
+                rm = _request_ml(
+                    "GET",
+                    f"{BASE}/items",
+                    params={"ids": ",".join(batch), "attributes": attrs},
+                    timeout=20,
+                )
+                if status_http(rm) != 200:
+                    logger.warning(
+                        "ML hidratar lote HTTP %s ids=%s",
+                        status_http(rm),
+                        ",".join(batch[:4]),
+                    )
+                    continue
+                payload = rm.json()
+            except Exception as exc:
+                logger.warning("ML hidratar lote: %s", exc)
+                continue
             if not isinstance(payload, list):
                 continue
             for entry in payload:
@@ -807,16 +1369,129 @@ def listar_meus_anuncios() -> list[dict]:
                 b = entry.get("body")
                 if not isinstance(b, dict):
                     continue
-                normalized.append(
-                    {
-                        "item_id": str(b.get("id", "")),
-                        "titulo": str(b.get("title", "") or ""),
-                        "preco": float(b.get("price", 0) or 0),
-                        "sku": str(b.get("seller_sku", "") or ""),
-                        "status": str(b.get("status", "") or ""),
-                    }
+                iid = str(b.get("id") or "")
+                if iid:
+                    por_id[iid] = _normalizar_corpo_item_ml(b)
+
+    _puxar(item_ids)
+    faltando = [i for i in item_ids if i not in por_id]
+    if faltando:
+        _puxar(faltando)
+        faltando = [i for i in item_ids if i not in por_id]
+    ordenados = [por_id[i] for i in item_ids if i in por_id]
+    return ordenados, faltando
+
+
+def listar_meus_anuncios(
+    *,
+    statuses: tuple[str, ...] | list[str] | None = None,
+    aplicar_foco: bool | None = None,
+) -> list[dict]:
+    """
+    Lista anúncios do vendedor com item_id, título, preço, SKU e estoque.
+    Por padrão só `active`. Passe statuses=('active','paused') para incluir pausados.
+    Com aplicar_foco (default ML_IGNORAR_ANUNCIOS_FORA_FOCO) ignora bolsas/legado;
+    a reputação da conta continua valendo. Nunca lança exceção.
+
+    Falha de API NÃO é catálogo vazio: veja ultima_listagem_anuncios()["ok"].
+    """
+    from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco, reset_ultimo_filtro
+
+    if not _enabled():
+        logger.info("Mercado Livre não configurado para listar anúncios.")
+        reset_ultimo_filtro()
+        _set_listagem_anuncios(ok=False, motivo="nao_configurado")
+        return []
+    status_list = tuple(statuses) if statuses else ("active",)
+    try:
+        item_ids: list[str] = []
+        seen: set[str] = set()
+        paging_total = 0
+        for status in status_list:
+            offset = 0
+            total_status = 0
+            while True:
+                r = None
+                for tentativa in range(2):
+                    try:
+                        r = _request_ml(
+                            "GET",
+                            f"{BASE}/users/{ML_SELLER_ID}/items/search",
+                            params={"status": status, "limit": 100, "offset": offset},
+                            timeout=20,
+                        )
+                        if status_http(r) == 200:
+                            break
+                        logger.warning(
+                            "ML listar_meus_anuncios search HTTP %s (tentativa %s)",
+                            status_http(r),
+                            tentativa + 1,
+                        )
+                    except Exception:
+                        if tentativa == 0:
+                            continue
+                        raise
+                if r is None or status_http(r) != 200:
+                    if r is not None:
+                        log_http_erro_listagem(logger, "ML listar_meus_anuncios", r)
+                    reset_ultimo_filtro()
+                    _set_listagem_anuncios(
+                        ok=False,
+                        ids_busca=len(item_ids),
+                        paging_total=paging_total,
+                        motivo=f"search_http_{status_http(r) if r is not None else 0}",
+                    )
+                    return []
+                body = r.json() or {}
+                chunk = body.get("results", []) or []
+                total_status = max(
+                    total_status,
+                    int((body.get("paging") or {}).get("total", 0) or 0),
                 )
+                if not chunk:
+                    break
+                for raw_id in chunk:
+                    sid = str(raw_id)
+                    if sid not in seen:
+                        seen.add(sid)
+                        item_ids.append(sid)
+                offset += len(chunk)
+                if total_status and offset >= total_status:
+                    break
+                if len(chunk) < 100:
+                    break
+            paging_total += total_status
+
+        normalized, faltando = _hidratar_anuncios_por_ids(item_ids)
+        ok = not faltando
+        if faltando:
+            incrementar(
+                "dados.degradado",
+                tags=["contexto:ML_listar_meus_anuncios", "motivo:itens_incompletos"],
+            )
+            logger.error(
+                "ML listar_meus_anuncios incompleto: busca=%s hidratados=%s faltando=%s",
+                len(item_ids),
+                len(normalized),
+                ",".join(faltando[:8]),
+            )
+        _set_listagem_anuncios(
+            ok=ok,
+            ids_busca=len(item_ids),
+            ids_ok=len(normalized),
+            ids_faltando=faltando,
+            paging_total=paging_total,
+            motivo="" if ok else "itens_incompletos",
+        )
+        usar_foco = ML_IGNORAR_ANUNCIOS_FORA_FOCO if aplicar_foco is None else bool(aplicar_foco)
+        if usar_foco:
+            normalized, _ = filtrar_anuncios_foco(normalized)
+        else:
+            reset_ultimo_filtro()
         return normalized
     except Exception as exc:
+        incrementar("dados.degradado", tags=["contexto:ML_listar_meus_anuncios", "motivo:excecao"])
         logger.error("ML listar_meus_anuncios erro: %s", exc)
+        reset_ultimo_filtro()
+        _set_listagem_anuncios(ok=False, motivo="excecao")
         return []

@@ -11,9 +11,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests.http_fixtures import make_http_response
-
 from integracoes.bling import bling_client
+from tests.http_fixtures import make_http_response
 
 
 def _mock_resp(body: dict, status: int = 200) -> MagicMock:
@@ -63,12 +62,39 @@ class TestRequestBling(unittest.TestCase):
 
     @patch.object(bling_client.token_manager, "get_token_bling", return_value="novo_tok")
     def test_renova_token_em_401(self, _mock_token):
+        import tempfile
+        from pathlib import Path
+
+        from core import log_cooldown
+
         r401 = make_http_response(status_code=401)
         r200 = make_http_response(status_code=200)
         self.mock_http.side_effect = [r401, r200]
-        out = bling_client._request_bling("GET", "http://x")
+        with tempfile.TemporaryDirectory() as tmp:
+            log_cooldown.reset_para_teste(Path(tmp) / "cd.json")
+            out = bling_client._request_bling("GET", "http://x")
+            log_cooldown.reset_para_teste()
         self.assertEqual(out.status_code, 200)
         self.assertEqual(self.mock_http.call_count, 2)
+
+    @patch.object(bling_client.token_manager, "get_token_bling", return_value="novo_tok")
+    def test_401_warning_so_uma_vez_no_cooldown(self, _mock_token):
+        import tempfile
+        from pathlib import Path
+
+        from core import log_cooldown
+
+        r401 = make_http_response(status_code=401)
+        r200 = make_http_response(status_code=200)
+        self.mock_http.side_effect = [r401, r200, r401, r200]
+        with tempfile.TemporaryDirectory() as tmp:
+            log_cooldown.reset_para_teste(Path(tmp) / "cd.json")
+            with self.assertLogs("bling", level="WARNING") as logs:
+                bling_client._request_bling("GET", "http://x")
+                bling_client._request_bling("GET", "http://x")
+            log_cooldown.reset_para_teste()
+        avisos = [line for line in logs.output if "Bling retornou 401" in line]
+        self.assertEqual(len(avisos), 1)
 
 
 class TestProbeProdutos(unittest.TestCase):
@@ -182,6 +208,14 @@ class TestBlingListar(unittest.TestCase):
     def test_BL04b_listar_produtos_403_retorna_vazio(self, mock_request, *_patches):
         mock_request.return_value = _mock_resp({}, 403)
         self.assertEqual(bling_client.listar_produtos(), [])
+
+    @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
+    @patch.object(bling_client, "request")
+    def test_listar_produtos_detalhado_403_ok_false(self, mock_request, *_patches):
+        mock_request.return_value = _mock_resp({}, 403)
+        produtos, ok = bling_client.listar_produtos_detalhado()
+        self.assertEqual(produtos, [])
+        self.assertFalse(ok)
 
     @patch.object(bling_client, "BLING_ACCESS_TOKEN", "t")
     @patch.object(bling_client, "request", side_effect=Exception("boom"))

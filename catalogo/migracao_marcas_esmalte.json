@@ -1,0 +1,134 @@
+{
+  "versao": 1,
+  "atualizado": "2026-08-19",
+  "principio": "A saúde de vendas Impala é a base da conta. Anita entra no mesmo CNPJ só depois da ruptura Impala. Demais marcas entram uma a uma, sem piorar reputação/taxas. O segundo CNPJ não recebe esmalte — é a trilha Masterprint, liberada pela mesma ruptura Impala + CNAE/KYC.",
+  "marketplace_referente": "mercadolivre",
+  "congelar_se_saude_conta_ruim": true,
+  "cnpjs": {
+    "esmaltes": {
+      "id": "esmaltes_impala",
+      "cnpj": "52668583000127",
+      "cnpj_formatado": "52.668.583/0001-27",
+      "seller_ml": "1651424153",
+      "cnae_cosmetico": "4772500",
+      "papel": "Todas as marcas de esmalte (Impala, Anita, demais). Identidade única em ML/Shopee/Magalu/Amazon.",
+      "nao_mistura": "filamentos_escritorio"
+    },
+    "masterprint": {
+      "id": "masterprint",
+      "cnpj": "23811261000197",
+      "cnpj_formatado": "23.811.261/0001-97",
+      "seller_ml": "",
+      "cnaes": ["4751201", "4689302", "4761003"],
+      "papel": "Filamentos / escritório. Só opera depois da ruptura Impala + seller KYC. Nunca anuncia esmalte.",
+      "nao_mistura": "esmaltes"
+    }
+  },
+  "saude_conta": {
+    "descricao": "Reputação da loja inteira. Vale para Impala, Anita e legado. Laranja/vermelho ou taxa ≥5% congela qualquer migração de marca.",
+    "fonte": "robo.ml.saude.* / ponto_ruptura.checks.saude_conta",
+    "bloqueia_se": {
+      "cor_ruim": ["laranja", "vermelho", "2_orange", "1_red"],
+      "atraso_rate_max": 0.05,
+      "cancelamentos_rate_max": 0.05,
+      "claims_rate_max": 0.05
+    },
+    "ignorar_no_radar": {
+      "anuncios_legado": "bolsas e itens fora do foco — 38 no snapshot; não contam como venda Impala nem como progresso de marca"
+    }
+  },
+  "saude_vendas_impala": {
+    "descricao": "Checklist de ruptura Impala. Sem isso não há Anita, demais marcas nem operação no 2º CNPJ.",
+    "kits_validacao": ["IMP-MIMO-003", "IMP-PERL-004"],
+    "gates": [
+      {"id": "anuncios_foco", "minimo": 1, "metrica": "robo.ml.saude.anuncios_ativos"},
+      {"id": "avaliacoes", "minimo": 20, "aproximando": 10, "metrica": "robo.ponto_ruptura.avaliacoes"},
+      {"id": "nota", "minimo": 4.8, "exige_review_foco": true},
+      {"id": "mlb", "minimo": "IMP-MIMO-003 e IMP-PERL-004 com MLB válido"},
+      {"id": "estoque", "minimo": 30, "escopo": "kits_validacao"},
+      {"id": "pedidos", "minimo": 1, "escopo": "pedido próprio Impala — não bolsa/legado"},
+      {"id": "ads_acos", "maximo": 0.2, "exige_snapshot": true},
+      {"id": "claims", "maximo_abertos": 1, "exige_api_visivel": true},
+      {"id": "saude_conta", "minimo": "ok"}
+    ],
+    "doutrina_guerra_fase_min_para_outra_marca": 5
+  },
+  "fases": [
+    {
+      "id": "F0",
+      "ordem": 0,
+      "nome": "Saúde de vendas Impala",
+      "cnpj": "esmaltes",
+      "marca": "impala",
+      "entrada": "agora",
+      "saida": "veredito Impala = liberado (todos os gates de saude_vendas_impala)",
+      "proibido": ["publicar Anita", "publicar outra marca", "ligar operação Masterprint no 2º CNPJ"]
+    },
+    {
+      "id": "F1",
+      "ordem": 1,
+      "nome": "Anita entra junto (mesmo CNPJ)",
+      "cnpj": "esmaltes",
+      "marca": "anita",
+      "depende": ["F0.liberado", "saude_conta.ok", "radar_ml_nao_cego", "guerra.fase>=5"],
+      "entrada": "1 kit Anita de validação (mesmo padrão MIMO: MLB + estoque + margem ≥ piso)",
+      "saida": "Anita no ar sem piorar saude_conta; Impala continua com anúncio foco",
+      "proibido": ["desligar Impala para caber Anita", "abrir 2ª/3ª marca no mesmo ciclo"]
+    },
+    {
+      "id": "F1b",
+      "ordem": 2,
+      "nome": "Anita estável na conta",
+      "cnpj": "esmaltes",
+      "marca": "anita",
+      "depende": ["F1.no_ar", "saude_conta.ok", "impala.anuncios_foco>=1", "claims<2"],
+      "entrada": "pedido próprio Anita + reputação ainda sem cor ruim",
+      "saida": "fila F2 liberada",
+      "proibido": ["escalar SKUs Anita se ACOS/claims subirem"]
+    },
+    {
+      "id": "F2",
+      "ordem": 3,
+      "nome": "Demais marcas, uma a uma",
+      "cnpj": "esmaltes",
+      "marca": "fila",
+      "depende": ["F1b.estavel", "saude_conta.ok", "impala.liberado"],
+      "entrada": "top1 da fila com amostra ML ≥5 anúncios e score>0",
+      "saida": "marca N estável antes de N+1",
+      "proibido": ["publicar duas marcas novas no mesmo ciclo", "usar 2º CNPJ para esmalte"]
+    }
+  ],
+  "trilha_cnpj2": {
+    "id": "R2",
+    "nome": "Segundo CNPJ Masterprint (paralela)",
+    "cnpj": "masterprint",
+    "nao_e_fase_de_esmalte": true,
+    "preparar_desde_agora": ["CNAE informática/resinas/papelaria", "KYC seller ML distinto"],
+    "operar_quando": ["F0.liberado", "cnae_preparacao.pronto", "seller_ml preenchido", "cnpjs_nao_ambiguos"],
+    "nunca": "anunciar Impala/Anita/outras marcas de esmalte neste CNPJ"
+  },
+  "fila_marcas": {
+    "marca_propria": "impala",
+    "proxima_obrigatoria": "anita",
+    "candidatas_depois": [
+      "risque",
+      "colorama",
+      "dailus",
+      "nati",
+      "vult",
+      "blant",
+      "luigi_borni",
+      "novo_toque",
+      "la_femme",
+      "top_beauty",
+      "dote"
+    ],
+    "amostra_minima_anuncios_radar": 5,
+    "regra_elegivel": "anuncios>=2 no referente ML (1 anúncio viral não basta)"
+  },
+  "skus_entrada": {
+    "impala": ["IMP-MIMO-003", "IMP-PERL-004"],
+    "anita": [],
+    "nota": "Anita ainda não tem SKU próprio no catálogo. F1 só começa depois de cadastrar 1 kit ANT- com custo, preço, margem ≥ piso e MLB."
+  }
+}

@@ -89,12 +89,93 @@ class TestAnalisar(unittest.TestCase):
         self.assertIn("concorrentes", conc)
         self.assertEqual(conc["concorrentes"][0]["titulo"], "Concorrente")
 
+    @patch.object(mon, "time")
+    @patch.object(mon, "alertar_gestor", return_value=True)
+    @patch.object(mon.ml_client, "_enabled", return_value=True)
+    @patch.object(mon.ml_client, "buscar_sugestao_preco", return_value={})
+    @patch.object(mon.ml_client, "buscar_acos_ads", return_value=0.0)
+    @patch.object(mon.ml_client, "buscar_detalhes_concorrentes", return_value=[])
+    @patch.object(mon.ml_client, "buscar_menor_preco_concorrente")
+    @patch.object(
+        mon.ml_client,
+        "buscar_metricas_item",
+        return_value={
+            "preco": 44.9,
+            "visitas_7d": 10,
+            "visitas_30d": 100,
+            "titulo": "Kit MIMO",
+            "listing_type_id": "gold_pro",
+        },
+    )
+    @patch.object(
+        mon.ml_client,
+        "listar_meus_anuncios",
+        return_value=[
+            {
+                "item_id": "MLB1",
+                "titulo": "Kit MIMO",
+                "preco": 44.9,
+                "listing_type_id": "gold_pro",
+            }
+        ],
+    )
+    @patch.object(mon.ml_product_ads, "campanhas_acos_acima_limite", return_value=[])
+    @patch.object(mon.ml_product_ads, "listar_campanhas", return_value=[])
+    @patch.object(mon.ml_product_ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "adv1"})
+    @patch.object(mon.ml_client, "buscar_reputacao_vendedor", return_value={})
+    @patch.object(mon.ml_client, "listar_perguntas_nao_respondidas", return_value=[])
+    @patch.object(mon.ml_client, "obter_saude_conta", return_value={"pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 0})
+    def test_nao_alerta_igualar_preco_de_outra_prateleira(
+        self,
+        _saude,
+        _perguntas,
+        _rep,
+        _adv,
+        _camp,
+        _acos_lim,
+        _listar,
+        _metricas,
+        mock_menor,
+        *_rest,
+    ):
+
+        def _menor(_item_id, mesma_prateleira=True):
+            return 50.0 if mesma_prateleira else 22.0
+
+        mock_menor.side_effect = _menor
+        out = mon.analisar(enviar_alerta=False, limite_itens=1)
+        self.assertTrue(out["ok"])
+        recs = " ".join(out["recomendacoes"])
+        self.assertIn("não igualar preço", recs)
+        self.assertNotIn("revisar preço", recs.lower())
+
     @patch.object(mon, "analisar", return_value={"ok": True, "resumo": "ok", "recomendacoes": [], "enviado": True})
     def test_main_imprime_resumo(self, *_):
         self.assertEqual(mon.main(), 0)
 
 
 class TestHelpers(unittest.TestCase):
+    def test_classificar_catalogo_separa_falha_foco_e_vazio(self):
+        falha = mon._classificar_catalogo(
+            [],
+            [],
+            {"ok": False, "motivo": "search_http_403", "ids_busca": 0},
+            {},
+        )
+        foco = mon._classificar_catalogo(
+            [{"item_id": "MLB1", "titulo": "Bolsa"}],
+            [],
+            {"ok": True, "ids_busca": 1, "ids_ok": 1},
+            {"ignorados": 1, "mantidos": 0},
+        )
+        vazio = mon._classificar_catalogo([], [], {"ok": True, "motivo": ""}, {})
+        self.assertEqual(falha["situacao"], "falha_listagem")
+        self.assertEqual(foco["situacao"], "fora_foco")
+        self.assertEqual(vazio["situacao"], "vazio")
+        resumo = mon._montar_resumo({}, {"pendencia": "ads"}, [], ["Listagem ML falhou (search_http_403)."], falha)
+        self.assertIn("não é catálogo vazio", resumo)
+        self.assertNotIn("Nenhum ajuste urgente", resumo)
+
     def test_pct_diff(self):
         self.assertEqual(mon._pct_diff(105.0, 100.0), 5.0)
         self.assertEqual(mon._pct_diff(10.0, 0.0), 0.0)
@@ -103,6 +184,49 @@ class TestHelpers(unittest.TestCase):
         import core.config as cfg
 
         self.assertEqual(mon.MAX_ITENS_ANALISE, cfg.ML_MAX_ITENS_ANALISE)
+
+    @patch("integracoes.ml.integridade_dados_ml.executar")
+    @patch.object(mon.ml_client, "listar_meus_anuncios", return_value=[])
+    def test_concorrencia_lista_active_e_paused(self, mock_listar, _auditar):
+        conc, recs, catalogo = mon._analisar_concorrencia(limite_itens=0)
+        self.assertEqual(conc, [])
+        self.assertEqual(catalogo.get("situacao"), "vazio")
+        kwargs = mock_listar.call_args.kwargs
+        self.assertEqual(kwargs.get("statuses"), ("active", "paused"))
+        self.assertFalse(kwargs.get("aplicar_foco"))
+
+    def test_emitir_metricas_monitor_catalogo_e_visitas(self):
+        with patch("core.datadog_metrics.gauge") as mock_g:
+            mon._emitir_metricas_monitor(
+                {"situacao": "falha_listagem"},
+                [{"item_id": "MLB1", "visitas_7d": 2, "visitas_30d": 40}],
+                {
+                    "configurado": True,
+                    "gasto_total": 12.5,
+                    "campanhas_acos_alto": [{"id": "c"}],
+                },
+            )
+        pares = {
+            c.args[0]: c.args[1]
+            for c in mock_g.call_args_list
+            if not (c.kwargs.get("tags") or (len(c.args) > 2 and c.args[2]))
+        }
+        self.assertEqual(pares["ml.catalogo.falha_listagem"], 1.0)
+        self.assertEqual(pares["ml.catalogo.ok"], 0.0)
+        self.assertEqual(pares["ml.catalogo.vazio"], 0.0)
+        self.assertEqual(pares["ml.conta.visitas_7d_total"], 2.0)
+        self.assertEqual(pares["ml.conta.visitas_30d_total"], 40.0)
+        self.assertEqual(pares["ml.conta.queda_trafego_n"], 1.0)
+        self.assertEqual(pares["ml.conta.anuncios_analisados"], 1.0)
+        self.assertEqual(pares["ads.acos_alto_n"], 1.0)
+        self.assertEqual(pares["ads.gasto_periodo"], 12.5)
+        self.assertEqual(pares["ads.periodo.fonte_ok"], 1.0)
+        tags = [
+            c.kwargs.get("tags")
+            for c in mock_g.call_args_list
+            if c.args[0] == "ml.conta.visitas_7d"
+        ]
+        self.assertEqual(tags, [["anun:mlb1"]])
 
 
 if __name__ == "__main__":

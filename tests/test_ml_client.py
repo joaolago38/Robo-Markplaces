@@ -151,6 +151,7 @@ class TestMlClient(unittest.TestCase):
 
     def setUp(self):
         ml_client._cache_concorrentes.clear()
+        ml_client._cache_item_tipo.clear()
 
     @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
@@ -273,6 +274,51 @@ class TestMlAnuncioStatus(unittest.TestCase):
 
     @patch.object(ml_client, "_request_ml")
     @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML20b_visitas_sem_item_publico(self, _en, mock_req):
+        """Rivais: /items 403, mas /visits pode responder."""
+        r403 = MagicMock()
+        r403.status_code = 403
+        r403.raise_for_status.side_effect = Exception("403")
+        r403.json.return_value = {"message": "forbidden"}
+        r_vis = _mock_resp({"total_visits": 158})
+        mock_req.side_effect = [r403, r_vis, r_vis]
+        out = ml_client.buscar_metricas_item("MLB7196424420")
+        self.assertEqual(out.get("visitas_7d"), 158)
+        self.assertEqual(out.get("visitas_30d"), 158)
+        self.assertEqual(out.get("item_id"), "MLB7196424420")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML20c_buscar_visitas_item(self, _en, mock_req):
+        mock_req.side_effect = [
+            _mock_resp({"total_visits": 10}),
+            _mock_resp({"total_visits": 40}),
+        ]
+        out = ml_client.buscar_visitas_item("MLB1")
+        self.assertTrue(out.get("disponivel"))
+        self.assertEqual(out.get("visitas_7d"), 10)
+        self.assertEqual(out.get("visitas_30d"), 40)
+
+    @patch("integracoes.ml.ml_client.request")
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML20d_visitas_403_tenta_sem_token(self, _en, mock_auth, mock_pub):
+        negado = MagicMock()
+        negado.status_code = 403
+        negado.raise_for_status.side_effect = Exception("403")
+        mock_auth.return_value = negado
+        mock_pub.side_effect = [
+            _mock_resp({"total_visits": 3}),
+            _mock_resp({"total_visits": 9}),
+        ]
+        out = ml_client.buscar_visitas_item("MLB9")
+        self.assertTrue(out.get("disponivel"))
+        self.assertEqual(out.get("visitas_7d"), 3)
+        self.assertEqual(out.get("visitas_30d"), 9)
+        self.assertEqual(mock_pub.call_count, 2)
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
     def test_ML21_atualizar_preco_bloqueado_kill_switch(self, _en, mock_req):
         with patch("core.guardrails.bloqueio_escrita_global", return_value={"ok": False, "erro": "ROBO_PAUSAR_ESCRITA"}):
             self.assertFalse(ml_client.atualizar_preco_item("MLB1", 10.0))
@@ -321,6 +367,200 @@ class TestMlAnuncioStatus(unittest.TestCase):
             "GET",
             f"{ml_client.BASE}/items/MLB99/description",
             timeout=20,
+        )
+
+    @patch.object(ml_client, "_request_ml", side_effect=Exception("404 Client Error: Not Found"))
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML29_leitura_item_404_nao_e_error(self, _en, _req):
+        with self.assertLogs("ml_client", level="INFO") as cm:
+            out = ml_client.buscar_menor_preco_concorrente("MLB404")
+        self.assertEqual(out, 0.0)
+        self.assertTrue(any("HTTP 404" in m for m in cm.output))
+        self.assertFalse(any("ERROR" in m for m in cm.output))
+        self.assertFalse(any("WARNING" in m for m in cm.output))
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML30_buscar_perfil_vendedor(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            {"id": 111, "nickname": "LOJA", "seller_reputation": {"level_id": "5_green"}, "points": 10}
+        )
+        out = ml_client.buscar_perfil_vendedor()
+        self.assertEqual(out["nickname"], "LOJA")
+        self.assertEqual(ml_client.buscar_reputacao_vendedor().get("level_id"), "5_green")
+
+    @patch.object(ml_client, "_enabled", return_value=False)
+    def test_ML31_buscar_perfil_nao_configurado(self, *_):
+        self.assertEqual(ml_client.buscar_perfil_vendedor(), {})
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML32_buscar_performance_item(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            {
+                "entity_id": "MLB1",
+                "score": 50,
+                "level": "Basic",
+                "level_wording": "Básica",
+                "status": "PENDING",
+                "buckets": [
+                    {
+                        "variables": [
+                            {
+                                "rules": [
+                                    {
+                                        "key": "PICTURES",
+                                        "status": "PENDING",
+                                        "mode": "OPPORTUNITY",
+                                        "wordings": {"label": "Adicionar fotos"},
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+            }
+        )
+        out = ml_client.buscar_performance_item("MLB1")
+        self.assertTrue(out.get("a_melhorar"))
+        self.assertEqual(out.get("score"), 50.0)
+        self.assertIn("Adicionar fotos", out["regras_pendentes"][0]["titulo"])
+
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML33_buscar_performance_sem_id(self, *_):
+        self.assertEqual(ml_client.buscar_performance_item(""), {})
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML33b_performance_400_suspenso_silencioso(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 400
+        r.text = (
+            '{"message":"Entity not calculated: Suspended status is not supported",'
+            '"error":"bad_request","status":400}'
+        )
+        r.json.return_value = {"message": "Entity not calculated: Suspended status is not supported"}
+        mock_req.return_value = r
+        with patch.object(ml_client.logger, "error") as mock_err:
+            out = ml_client.buscar_performance_item("MLB999")
+        self.assertEqual(out, {})
+        mock_err.assert_not_called()
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML33c_performance_400_product_items_silencioso(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 400
+        r.text = (
+            '{"message":"Entity not calculated: Product items are not supported",'
+            '"error":"bad_request","status":400}'
+        )
+        mock_req.return_value = r
+        with patch.object(ml_client.logger, "error") as mock_err:
+            out = ml_client.buscar_performance_item("MLB888")
+        self.assertEqual(out, {})
+        mock_err.assert_not_called()
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML34_contar_envios_pendentes(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            {
+                "results": [
+                    {"shipping": {"status": "ready_to_ship"}},
+                    {"shipping": {"status": "shipped"}},
+                ]
+            }
+        )
+        out = ml_client.contar_envios_pendentes()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total"], 1)
+
+    @patch.object(ml_client, "_enabled", return_value=False)
+    def test_ML35_contar_envios_nao_configurado(self, *_):
+        out = ml_client.contar_envios_pendentes()
+        self.assertFalse(out["ok"])
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML36_contar_claims_abertos(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"paging": {"total": 2}, "data": []})
+        out = ml_client.contar_claims_abertos()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["total"], 2)
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_ML37_contar_claims_404(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 404
+        mock_req.return_value = r
+        out = ml_client.contar_claims_abertos()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "claims_indisponivel")
+
+    def test_item_id_norm_ignora_preencher(self):
+        self.assertEqual(ml_client._item_id_ml_norm("MLB_PREENCHER"), "")
+        self.assertEqual(ml_client._item_id_ml_norm("MLB-1234567"), "MLB1234567")
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_hidratar_itens_multiget(self, _en, mock_req):
+        mock_req.return_value = _mock_resp(
+            [
+                {
+                    "code": 200,
+                    "body": {
+                        "id": "MLB1234567",
+                        "title": "Kit Impala",
+                        "price": 44.9,
+                        "sold_quantity": 3,
+                        "seller_id": "99",
+                        "permalink": "https://mlb/MLB1234567",
+                    },
+                },
+                {"code": 403, "body": {"message": "forbidden"}},
+            ]
+        )
+        out = ml_client.hidratar_itens(["MLB1234567", "MLB_PREENCHER", "MLB999888777"])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["item_id"], "MLB1234567")
+        self.assertEqual(out[0]["preco"], 44.9)
+        self.assertEqual(out[0]["fonte_busca"], "items_ids")
+        params = mock_req.call_args.kwargs.get("params") or {}
+        self.assertIn("MLB1234567", params.get("ids", ""))
+        self.assertNotIn("PREENCHER", params.get("ids", ""))
+
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_buscar_concorrentes_prioriza_item_ids(self, _en):
+        with patch.object(
+            ml_client,
+            "hidratar_itens",
+            return_value=[{"item_id": "MLB1234567", "preco": 40.0, "titulo": "X"}],
+        ) as mock_hid:
+            out = ml_client.buscar_concorrentes_por_termo(
+                "kit esmalte",
+                limite=5,
+                item_ids=["MLB1234567"],
+            )
+        self.assertEqual(len(out), 1)
+        mock_hid.assert_called_once()
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_listar_ids_vendedor_403(self, _en, mock_req):
+        r = MagicMock()
+        r.status_code = 403
+        mock_req.return_value = r
+        self.assertEqual(ml_client.listar_ids_anuncios_vendedor("1666381510"), [])
+
+    @patch.object(ml_client, "_request_ml")
+    @patch.object(ml_client, "_enabled", return_value=True)
+    def test_listar_ids_vendedor_ok(self, _en, mock_req):
+        mock_req.return_value = _mock_resp({"results": ["MLB1234567", {"id": "MLB7654321"}]})
+        self.assertEqual(
+            ml_client.listar_ids_anuncios_vendedor("111"),
+            ["MLB1234567", "MLB7654321"],
         )
 
 

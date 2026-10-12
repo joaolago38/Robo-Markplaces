@@ -35,33 +35,220 @@ _LOGGER_META = {
     # --- Integrações (clientes de API por marketplace) ---
     "bling": ("bling", "integracao"),
     "ml_client": ("mercadolivre", "integracao"),
+    "filtro_anuncios_conta": ("mercadolivre", "integracao"),
+    "busca_termo_ml": ("mercadolivre", "integracao"),
+    "busca_externa_brave": ("mercadolivre", "integracao"),
+    "brave_search": ("multi", "integracao"),
     "ml_product_ads": ("mercadolivre_ads", "integracao"),
     "magalu_client": ("magalu", "integracao"),
     "shopee_client": ("shopee", "integracao"),
     "amazon_client": ("amazon", "integracao"),
     "meta": ("meta", "integracao"),
     "meta_ads_client": ("meta_ads", "integracao"),
+    "ciclo_campanhas_meta": ("meta", "integracao"),
+    "claude_ciclo_meta": ("meta", "integracao"),
     "lojahub": ("lojahub", "integracao"),
 
     # --- Core (infraestrutura compartilhada, não é um marketplace) ---
     "token_manager": ("bling_e_ml", "core"),
     "notificador": ("infra", "core"),
     "claude": ("infra", "core"),
+    "claude_roteador": ("infra", "core"),
+    "empresa_contexto": ("multi", "core"),
+    "empresa_catalogo": ("multi", "core"),
+    "vinculo_cnae_cnpj": ("multi", "integracao"),
+    "monitor_ml_cnpj": ("mercadolivre", "integracao"),
+    "decision_limits": ("multi", "integracao"),
+    "contexto_ml_cnae_importacao": ("mercadolivre", "integracao"),
+    "operacao_destino": ("multi", "integracao"),
+    "portos_brasil": ("multi", "integracao"),
+    "comparar_portos_alibaba": ("multi", "integracao"),
+    "rotas_regionais_china": ("multi", "integracao"),
+    "logistica_china_ml": ("multi", "integracao"),
+    "agente_comparar_portos_alibaba": ("multi", "agente"),
+    "agente_logistica_china_ml": ("multi", "agente"),
+    "agente_monitor_cnpj_cnae": ("multi", "agente"),
+    "ponto_ruptura_segundo_cnpj": ("multi", "integracao"),
+    "agente_ponto_ruptura_segundo_cnpj": ("multi", "agente"),
+    "ponto_ruptura_outra_marca": ("mercadolivre", "integracao"),
+    "agente_ponto_ruptura_outra_marca": ("mercadolivre", "agente"),
+    "migracao_marcas": ("mercadolivre", "integracao"),
+    "contexto_importacao_cnpj": ("multi", "integracao"),
+    "corredor_paraguai_terrestre": ("multi", "integracao"),
+    "hub_paraguai_marketplace": ("multi", "integracao"),
+    "tributacao_py_br": ("multi", "integracao"),
+    "agente_hub_paraguai_marketplace": ("multi", "agente"),
+    "agente_tributacao_py_br": ("multi", "agente"),
+    "claude_contexto_ml": ("mercadolivre", "core"),
+    "claude_ml_estado": ("mercadolivre", "core"),
+    "claude_ml_enriquecedor": ("mercadolivre", "core"),
+    "claude_ml_anuncios": ("mercadolivre", "core"),
+    "claude_orcamento": ("infra", "core"),
+    "claude_billing": ("infra", "core"),
+    "claude_toggle": ("infra", "core"),
+    "marketplace_toggle": ("infra", "core"),
+    "chat_claim": ("mercadolivre", "core"),
+    "contexto_fechamento_ml": ("mercadolivre", "core"),
+    "produto_lookup": ("mercadolivre", "core"),
     "resumo_ia": ("infra", "core"),
     "alertas_esmaltes": ("infra", "core"),
     "whatsapp": ("infra", "core"),
     "http_client": ("infra", "core"),
+    "leilao_busca": ("multi", "integracao"),
+    "leilao_comparacao_fipe": ("multi", "integracao"),
+    "avaliacao_ia_leilao": ("multi", "integracao"),
+    "alibaba_busca": ("multi", "integracao"),
+    "avaliacao_ia_alibaba": ("multi", "integracao"),
     "config": ("infra", "core"),
+    "state_backend": ("infra", "core"),
+    "ssm_secrets": ("infra", "core"),
 
     # --- Agentes (regras de negócio por marketplace) ---
     "agente_faturamento": ("bling", "agente"),
     "agente_repricing_marketplaces": ("mercadolivre_e_outros", "agente"),
     "agente_repricing_impala": ("mercadolivre_e_outros", "agente"),
+    "agente_inteligencia_precos": ("mercadolivre_e_outros", "agente"),
+    "catalogo_produtos": ("multi", "core"),
+    "sinais_comprador": ("multi", "integracao"),
     "sincronizar_estoque_marketplaces": ("mercadolivre_e_outros", "agente"),
     "agente_monitor_ml": ("mercadolivre", "agente"),
+    "agente_observabilidade_ml": ("mercadolivre", "agente"),
+    "agente_relatorio_manha_ml": ("mercadolivre", "agente"),
+    "agente_relatorio_estrategia_ml": ("mercadolivre", "agente"),
     "agente_ads_gatilho": ("mercadolivre_ads", "agente"),
     "agente_otimizador_listing": ("mercadolivre", "agente"),
+    "agente_playbook_claude": ("mercadolivre", "agente"),
+    "contexto_playbook_operacao": ("mercadolivre", "integracao"),
     "agente_monitor_concorrentes": ("mercadolivre", "agente"),
+    "agente_monitor_buybox": ("mercadolivre", "agente"),
+    "monitor_buybox": ("mercadolivre", "integracao"),
+    "coleta_avaliacoes": ("mercadolivre", "integracao"),
+    "agrupador_reclamacoes": ("mercadolivre", "integracao"),
+    "agente_resumo_diario_novamix": ("mercadolivre", "agente"),
+    "agente_resumo_conta_ml": ("mercadolivre", "agente"),
+    "resumo_conta_ml": ("mercadolivre", "integracao"),
+    "alerta_pendencias_loja": ("mercadolivre", "integracao"),
+    "agente_monitor_sem_venda_ml": ("mercadolivre", "agente"),
+    "analise_sem_venda": ("mercadolivre", "integracao"),
+    "analise_loja_concorrente": ("mercadolivre", "integracao"),
+    "acoes_novamix": ("mercadolivre", "integracao"),
+    "acoes_funil_ml": ("mercadolivre", "integracao"),
+    "coleta_demanda_ml": ("mercadolivre", "integracao"),
+    "integridade_dados_ml": ("mercadolivre", "integracao"),
+    "referencia_copy_legado": ("mercadolivre", "integracao"),
+    "analise_anuncio_concorrente": ("mercadolivre", "integracao"),
+    "estrategia_vendas_ml": ("mercadolivre", "integracao"),
+    "agente_monitor_anita": ("mercadolivre", "agente"),
+    "agente_monitor_busca_kit_esmaltes": ("mercadolivre", "agente"),
+    "agente_monitor_kits_esmaltes": ("mercadolivre", "agente"),
+    "agente_montar_kits_impala": ("mercadolivre", "agente"),
+    "agente_ecossistema_esmaltes": ("mercadolivre", "agente"),
+    "ecossistema_esmaltes": ("mercadolivre", "integracao"),
+    "agente_crescimento_esmaltes": ("mercadolivre", "agente"),
+    "crescimento_esmaltes": ("mercadolivre", "integracao"),
+    "agente_decisao_dia_esmaltes": ("mercadolivre", "agente"),
+    "decisao_dia_esmaltes": ("mercadolivre", "integracao"),
+    "metricas_catalogo_impala": ("mercadolivre", "integracao"),
+    "metricas_progresso_24m": ("mercadolivre", "integracao"),
+    "metricas_batalha_impala": ("mercadolivre", "integracao"),
+    "decisao_batalha_agir": ("mercadolivre", "integracao"),
+    "doutrina_guerra_impala": ("mercadolivre", "integracao"),
+    "golpe_guerra_impala": ("mercadolivre", "integracao"),
+    "agente_golpe_guerra_impala": ("mercadolivre", "agente"),
+    "simulacao_guerra_impala": ("mercadolivre", "integracao"),
+    "agente_simulacao_guerra_impala": ("mercadolivre", "agente"),
+    "radar_diferencial_impala": ("mercadolivre", "integracao"),
+    "novos_kits_impala": ("mercadolivre", "integracao"),
+    "agente_visao_atuacao_impala": ("mercadolivre", "agente"),
+    "kits_concorrentes_unificado": ("mercadolivre", "integracao"),
+    "agente_kits_concorrentes_unificado": ("mercadolivre", "agente"),
+    "agente_esmaltes_operacao": ("mercadolivre", "agente"),
+    "agente_alibaba_sourcing": ("multi", "agente"),
+    "contrato_impulso_ml": ("mercadolivre", "integracao"),
+    "algoritmo_eventos": ("multi", "core"),
+    "agente_conversao_manicures": ("social", "agente"),
+    "conversao_manicures": ("social", "integracao"),
+    "agente_necessidade_manicures": ("social", "agente"),
+    "necessidade_manicures": ("social", "integracao"),
+    "sustentabilidade_ads_ml": ("social", "integracao"),
+    "meta_inbox": ("meta", "integracao"),
+    "planilha_impala": ("mercadolivre", "integracao"),
+    "planilha_consolidado_ecommerce": ("mercadolivre", "integracao"),
+    "agente_sync_planilhas_ecommerce": ("mercadolivre", "agente"),
+    "planilha_tabela_pedidos": ("mercadolivre", "integracao"),
+    "agente_sync_tabela_pedidos": ("mercadolivre", "agente"),
+    "agente_monitor_removedores_unha": ("mercadolivre", "agente"),
+    "agente_monitor_tendencias_esmaltes": ("multi", "agente"),
+    "agente_monitor_mercado_esmaltes": ("mercadolivre", "agente"),
+    "agente_comparativo_anita_impala": ("mercadolivre", "agente"),
+    "agente_comparativo_ml_shopee": ("multi", "agente"),
+    "agente_monitor_filamentos_ml": ("mercadolivre", "agente"),
+    "analise_filamentos_ml": ("mercadolivre", "integracao"),
+    "filamentos_cruzamento_alibaba": ("multi", "integracao"),
+    "sourcing_filamentos": ("multi", "integracao"),
+    "agente_monitor_masterprint_petg": ("mercadolivre", "agente"),
+    "analise_masterprint_petg": ("mercadolivre", "integracao"),
+    "custos_masterprint_petg": ("mercadolivre", "integracao"),
+    "doutrina_guerra_masterprint": ("mercadolivre", "integracao"),
+    "golpe_guerra_masterprint": ("mercadolivre", "integracao"),
+    "batalha_filamentos": ("mercadolivre", "integracao"),
+    "agente_golpe_guerra_masterprint": ("mercadolivre", "agente"),
+    "agente_monitor_masterprint_escritorio": ("mercadolivre", "agente"),
+    "analise_masterprint_escritorio": ("mercadolivre", "integracao"),
+    "custos_masterprint_escritorio": ("mercadolivre", "integracao"),
+    "avaliacao_ia_masterprint": ("multi", "integracao"),
+    "masterprint_ramo": ("mercadolivre", "integracao"),
+    "agente_monitor_acetona_cruzeiro": ("mercadolivre", "agente"),
+    "comparativo_anita_impala": ("mercadolivre", "integracao"),
+    "ml_shopee_categorias": ("multi", "integracao"),
+    "busca_kit_frequencia": ("mercadolivre", "integracao"),
+    "analise_kits_esmaltes": ("mercadolivre", "integracao"),
+    "analise_removedores": ("mercadolivre", "integracao"),
+    "busca_removedores": ("mercadolivre", "integracao"),
+    "busca_termo_externa": ("multi", "integracao"),
+    "busca_multi_marketplace": ("multi", "integracao"),
+    "tendencias_internet": ("multi", "integracao"),
+    "cruzamento_tendencias_mercado": ("multi", "integracao"),
+    "avaliacao_ia_removedores": ("mercadolivre", "integracao"),
+    "analise_acetona_cruzeiro": ("mercadolivre", "integracao"),
+    "analise_anita": ("mercadolivre", "integracao"),
+    "agente_descoberta_produtos": ("multi", "agente"),
+    "descoberta_coletores": ("multi", "integracao"),
+    "descoberta_alibaba": ("multi", "integracao"),
+    "agente_leilao_veiculo": ("multi", "agente"),
+    "agente_monitor_sumare_leiloes": ("multi", "agente"),
+    "sumare_leiloes": ("multi", "integracao"),
+    "copart_leiloes": ("multi", "integracao"),
+    "superbid_leiloes": ("multi", "integracao"),
+    "sodre_leiloes": ("multi", "integracao"),
+    "leilao_coletores_base": ("multi", "integracao"),
+    "agente_monitor_lojas_veiculos": ("multi", "agente"),
+    "agente_monitor_carros_batidos": ("multi", "agente"),
+    "agente_licitacoes": ("multi", "agente"),
+    "licitacao_busca": ("multi", "integracao"),
+    "licitacao_pncp": ("multi", "integracao"),
+    "agente_alibaba_importacao": ("multi", "agente"),
+    "agente_alibaba_importacao_inteligente": ("multi", "agente"),
+    "agente_ml_tendencias_importacao": ("multi", "agente"),
+    "tendencias_ml_importacao": ("multi", "integracao"),
+    "agente_calculo_importacao_aerea": ("multi", "agente"),
+    "cotacao_usd": ("infra", "integracao"),
+    "custo_landed": ("infra", "integracao"),
+    "planilha_plus_brasil": ("multi", "integracao"),
+    "calculo_importacao_aerea": ("multi", "integracao"),
+    "perfil_empresa_importacao": ("multi", "integracao"),
+    "analise_margem_importacao": ("multi", "integracao"),
+    "agente_orquestrador": ("multi", "orquestrador"),
+    "agente_sync_push_main": ("multi", "orquestrador"),
+    "agente_push_deploy": ("multi", "orquestrador"),
+    "agente_git_branches": ("multi", "orquestrador"),
+    "git_deploy": ("infra", "core"),
+    "fipe_client": ("infra", "integracao"),
+    "veiculos_scrapers": ("multi", "integracao"),
+    "veiculos_comparacao": ("multi", "integracao"),
+    "ddg_lite": ("multi", "integracao"),
+    "telegram_explicacao": ("infra", "core"),
+    "telegram_gate": ("infra", "core"),
     "agente_ml": ("mercadolivre", "agente"),
     "painel_item": ("mercadolivre", "agente"),
     "agente_shopee": ("shopee", "agente"),
@@ -69,6 +256,8 @@ _LOGGER_META = {
     "agente_amazon": ("amazon", "agente"),
     "agente_metricas_meta": ("meta", "agente"),
     "agente_trafego_manicures": ("meta", "agente"),
+    "agente_promocoes_manicures": ("social", "agente"),
+    "promocoes_manicures": ("social", "integracao"),
     "publicador": ("social", "agente"),
     "relatorio": ("bling", "agente"),
 
@@ -79,12 +268,31 @@ _LOGGER_META = {
     "algoritmo_marketplaces": ("multi", "agente"),
     "auto_respostas_visuais": ("multi", "agente"),
     "vendas_notificador": ("multi", "agente"),
+    "agente_monitor_margem_vendas": ("multi", "agente"),
+    "analise_margem_vendas": ("multi", "integracao"),
+    "metricas_periodo_cnpj": ("multi", "integracao"),
     "agente_panorama": ("multi", "agente"),
     "relatorio_financeiro": ("multi", "agente"),
     "operacao_24h": ("infra", "agente"),
+    "agente_vigia_datadog": ("infra", "agente"),
+    "oscilacao_decisao": ("infra", "integracao"),
+    "claude_ciclo_ruptura": ("mercadolivre", "integracao"),
+    "claude_lucro_ml": ("mercadolivre", "integracao"),
+    "briefing_ruptura_impala": ("mercadolivre", "integracao"),
+    "kits_compativeis_manicures": ("mercadolivre", "integracao"),
+    "agente_consumo_claude": ("infra", "agente"),
+    "buffer_erros_datadog": ("infra", "core"),
+    "consulta_erros_datadog": ("infra", "core"),
+    "vigia_saude_datadog": ("infra", "core"),
+    "mcp_robo": ("infra", "core"),
 
     # --- Diagnóstico interno deste módulo ---
     "datadog_logger": ("infra", "core"),
+    "datadog_metrics": ("infra", "core"),
+    "github_secrets": ("infra", "core"),
+    "series_historica": ("infra", "core"),
+    "graficos": ("infra", "core"),
+    "prontidao": ("infra", "core"),
 
     # --- Scripts / API ---
     "renovar_tokens": ("multi", "script"),
@@ -95,9 +303,46 @@ _LOGGER_META = {
 
 _DEFAULT_META = ("geral", "outros")
 
+# Bibliotecas de terceiros cujo WARNING polui marketplace:geral/outros e
+# não acrescenta sinal operacional (retries urllib3, fontes matplotlib…).
+# Continuam no console/Actions; só o intake Datadog as ignora.
+_PREFIXOS_IGNORAR_DD = (
+    "urllib3",
+    "matplotlib",
+    "PIL",
+    "fontTools",
+)
+
+
+def _ignorar_no_datadog(nome_logger: str) -> bool:
+    n = (nome_logger or "").strip()
+    if not n:
+        return False
+    return any(n == p or n.startswith(p + ".") for p in _PREFIXOS_IGNORAR_DD)
+
+
 # Evita inundar o Datadog com o mesmo aviso de "logger não mapeado" a cada
 # linha de log — avisa uma única vez por nome de logger, por processo.
 _avisados_sem_mapeamento: set[str] = set()
+_falhas_envio_logs = 0
+_ultimo_aviso_falha_log_ts = 0.0
+
+
+def _avisar_falha_envio_log(motivo: str) -> None:
+    global _falhas_envio_logs, _ultimo_aviso_falha_log_ts
+    import time
+
+    _falhas_envio_logs += 1
+    agora = time.monotonic()
+    if agora - _ultimo_aviso_falha_log_ts < 60:
+        return
+    _ultimo_aviso_falha_log_ts = agora
+    # Logger próprio — se o handler DD falhar, o console ainda vê o aviso.
+    logging.getLogger("datadog_logger").warning(
+        "Datadog logs envio falhou (%s): %s",
+        _falhas_envio_logs,
+        motivo,
+    )
 
 
 def _resolver_meta(nome_logger: str) -> tuple[str, str]:
@@ -115,6 +360,36 @@ def _resolver_meta(nome_logger: str) -> tuple[str, str]:
     return _DEFAULT_META
 
 
+def _espelhar_erro_local(record: logging.LogRecord, mensagem: str) -> None:
+    if record.levelno < logging.ERROR:
+        return
+    try:
+        from integracoes.datadog.buffer_erros import registrar_erro_local
+
+        registrar_erro_local(
+            nome_logger=record.name,
+            mensagem=mensagem,
+            status=record.levelname.lower(),
+            error_kind=getattr(record, "error_kind", None),
+            error_message=getattr(record, "error_message", None),
+        )
+    except Exception:
+        pass
+
+
+class LocalErrorBufferHandler(logging.Handler):
+    """Espelha ERROR+ no buffer local — funciona mesmo sem DD_API_KEY."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.ERROR)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            _espelhar_erro_local(record, self.format(record) if self.formatter else record.getMessage())
+        except Exception:
+            pass
+
+
 class DatadogLogHandler(logging.Handler):
     def __init__(self) -> None:
         super().__init__(level=logging.INFO)
@@ -125,7 +400,13 @@ class DatadogLogHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         if record.levelno < logging.INFO:
             return
+        # Evita recursão se o aviso de falha de envio voltar para este handler
+        if record.name in ("datadog_logger", "datadog_metrics"):
+            return
+        if _ignorar_no_datadog(record.name):
+            return
         from core.config import DD_API_KEY, DD_ENV, DD_LOGS_ENABLED
+        from core.http_errors import mascarar_segredos_http
 
         if not DD_LOGS_ENABLED or not DD_API_KEY:
             return
@@ -140,8 +421,11 @@ class DatadogLogHandler(logging.Handler):
             if request_id:
                 ddtags += f",request_id:{request_id}"
 
+            mensagem_bruta = self.format(record) if self.formatter else record.getMessage()
+            mensagem = mascarar_segredos_http(mensagem_bruta)
+
             payload_entry: dict = {
-                "message": self.format(record),
+                "message": mensagem,
                 "ddsource": "python",
                 "service": "robo-markplaces",
                 # `status` é um standard attribute do Datadog: além de
@@ -166,38 +450,50 @@ class DatadogLogHandler(logging.Handler):
                 if error_kind:
                     error_attrs["kind"] = error_kind
                 if error_message:
-                    error_attrs["message"] = error_message
+                    error_attrs["message"] = mascarar_segredos_http(str(error_message))
                 if record.exc_info:
-                    error_attrs["stack"] = logging.Formatter().formatException(record.exc_info)
+                    error_attrs["stack"] = mascarar_segredos_http(
+                        logging.Formatter().formatException(record.exc_info)
+                    )
                 if error_attrs:
                     payload_entry["error"] = error_attrs
 
             payload = [payload_entry]
-            requests.post(
+            resp = requests.post(
                 self._url,
                 headers={"DD-API-KEY": DD_API_KEY, "Content-Type": "application/json"},
                 data=json.dumps(payload),
                 timeout=3,
             )
-        except Exception:
-            pass
+            if getattr(resp, "status_code", None) is not None:
+                status = resp.status_code
+                if isinstance(status, int) and status >= 300:
+                    _avisar_falha_envio_log(f"HTTP {status}")
+        except Exception as exc:
+            _avisar_falha_envio_log(str(exc)[:160])
 
 
 def configurar_logging_datadog() -> None:
-    """Anexa DatadogLogHandler ao logger raiz (idempotente)."""
+    """Anexa handlers de log (buffer local + Datadog quando configurado)."""
     root = logging.getLogger()
     if root.level == logging.NOTSET or root.level > logging.INFO:
         root.setLevel(logging.INFO)
+
+    formatter = logging.Formatter("%(message)s")
+
+    if not any(isinstance(h, LocalErrorBufferHandler) for h in root.handlers):
+        buffer_handler = LocalErrorBufferHandler()
+        buffer_handler.setFormatter(formatter)
+        root.addHandler(buffer_handler)
 
     from core.config import DD_API_KEY, DD_LOGS_ENABLED
 
     if not DD_LOGS_ENABLED or not DD_API_KEY:
         return
 
-    for handler in root.handlers:
-        if isinstance(handler, DatadogLogHandler):
-            return
+    if any(isinstance(h, DatadogLogHandler) for h in root.handlers):
+        return
 
-    handler = DatadogLogHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    root.addHandler(handler)
+    dd_handler = DatadogLogHandler()
+    dd_handler.setFormatter(formatter)
+    root.addHandler(dd_handler)

@@ -1,21 +1,33 @@
-name: Monitor Concorrentes ML
+﻿name: Monitor Concorrentes ML
 
 on:
   workflow_dispatch:
   schedule:
-    # 06:00 BRT (UTC-3) = 09:00 UTC
-    - cron: "0 9 * * *"
+    # A cada 4h — busca ML + Brave; não cabe no ciclo 30min
+    - cron: "30 */4 * * *"
+
+concurrency:
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
 
 jobs:
   monitorar:
     name: Buscar concorrentes por termo (lista catalogo/concorrentes_monitorados.json)
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,13 +36,34 @@ jobs:
           cache: pip
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+      - name: Restaurar cota Brave e cache de busca
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/brave_uso_mensal.json
+            logs/concorrentes_ml_history.json
+            logs/ml_busca_termo_cache.json
+            logs/demanda_historico.json
+            logs/lacunas_ml_ultima.json
+          key: concorrentes-ml-${{ github.run_id }}
+          restore-keys: |
+            concorrentes-ml-
+            brave-uso-mensal-
       - name: Rodar monitor de concorrentes
         run: python -m agentes.ml.agente_monitor_concorrentes
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
           ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
           ML_SITE_ID:                ${{ secrets.ML_SITE_ID }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
           TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID:   ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
       - name: Salvar historico atualizado
@@ -39,3 +72,15 @@ jobs:
           name: concorrentes-ml-history
           path: logs/concorrentes_ml_history.json
           retention-days: 90
+      - name: Publicar cache de busca
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/brave_uso_mensal.json
+            logs/concorrentes_ml_history.json
+            logs/ml_busca_termo_cache.json
+            logs/demanda_historico.json
+            logs/lacunas_ml_ultima.json
+          key: concorrentes-ml-${{ github.run_id }}

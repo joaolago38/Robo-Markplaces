@@ -6,25 +6,67 @@ import hashlib
 import json
 import logging
 import time
-from datetime import datetime
 
 from core.config import (
     ALERTA_COOLDOWN_SEG,
     ROOT,
     TELEGRAM_CHAT_ID,
     TELEGRAM_GESTOR_CHAT_ID,
+    TELEGRAM_MANICURES_CHAT_ID,
     TELEGRAM_TOKEN,
 )
+from core.horario import agora_brasil, formatar_data_hora_br
 from core.http_client import request
-from core.http_errors import mascarar_url_telegram
+from core.http_errors import eh_timeout_rede, mascarar_url_telegram
+from core.telegram_gate import pode_enviar, registrar_falha_envio, verificar_token
 
 logger = logging.getLogger("notificador")
 
 _COOLDOWN_PATH = ROOT / "logs" / "alertas_cooldown.json"
 
 
+def _metric_telegram(ok: bool, *, canal: str = "texto", motivo: str | None = None) -> None:
+    """Conta entrega Telegram sem derrubar o fluxo se Datadog falhar."""
+    try:
+        from core.datadog_metrics import incrementar
+
+        tags = [f"canal:{canal}"]
+        if motivo:
+            tags.append(f"motivo:{motivo}")
+        incrementar("telegram.envio_ok" if ok else "telegram.envio_erro", tags=tags)
+    except Exception:
+        pass
+
+
+def gestor_telegram_configurado(chat_id: str | None = None) -> bool:
+    """True se token e chat do gestor estão definidos (chat opcional override)."""
+    cid = (chat_id or TELEGRAM_GESTOR_CHAT_ID or "").strip()
+    return bool((TELEGRAM_TOKEN or "").strip() and cid)
+
+
+def manicures_telegram_configurado() -> bool:
+    """True se há canal/grupo Telegram para divulgação às manicures."""
+    return bool((TELEGRAM_TOKEN or "").strip() and (TELEGRAM_MANICURES_CHAT_ID or "").strip())
+
+
 def _chave_msg(msg: str) -> str:
     return hashlib.sha256(msg.encode("utf-8")).hexdigest()[:24]
+
+
+def chave_itens_novos(prefix: str, itens: list[dict]) -> str:
+    """Chave de cooldown por conjunto de hashes — cada lote novo pode alertar de novo."""
+    hashes = sorted(str(i.get("hash") or "") for i in itens if i.get("hash"))
+    if not hashes:
+        return prefix
+    digest = hashlib.sha256("|".join(hashes).encode("utf-8")).hexdigest()[:16]
+    return f"{prefix}:{digest}"
+
+
+def chave_resumo_periodo(prefix: str, *, horas_por_bucket: int = 1) -> str:
+    """Chave de cooldown para resumo periódico (ex.: 1x por hora no leilão)."""
+    agora = agora_brasil()
+    bucket_h = (agora.hour // max(1, horas_por_bucket)) * max(1, horas_por_bucket)
+    return f"{prefix}:resumo:{agora:%Y-%m-%d}-H{bucket_h:02d}"
 
 
 def _carregar_cooldown() -> dict:
@@ -40,8 +82,10 @@ def _carregar_cooldown() -> dict:
 
 def _salvar_cooldown(estado: dict) -> None:
     try:
+        from core.atomic_io import escrever_json_atomico
+
         _COOLDOWN_PATH.parent.mkdir(parents=True, exist_ok=True)
-        _COOLDOWN_PATH.write_text(json.dumps(estado, ensure_ascii=False, indent=2), encoding="utf-8")
+        escrever_json_atomico(_COOLDOWN_PATH, estado)
     except Exception as exc:
         logger.warning("Cooldown: falha ao gravar %s: %s", _COOLDOWN_PATH, exc)
 
@@ -60,38 +104,177 @@ def _deve_suprimir(chave: str, cooldown_segundos: int) -> bool:
 
 def _marcar_enviado(chave: str) -> None:
     try:
-        estado = _carregar_cooldown()
-        estado[chave] = time.time()
-        _salvar_cooldown(estado)
+        from core.atomic_io import ler_e_atualizar_json
+
+        def _upd(estado: dict) -> dict:
+            if not isinstance(estado, dict):
+                estado = {}
+            estado[chave] = time.time()
+            return estado
+
+        ler_e_atualizar_json(_COOLDOWN_PATH, _upd, default={})
     except Exception as exc:
         logger.warning("Cooldown: falha ao marcar envio %s: %s", chave, exc)
 
 
+def _trecho_erro_telegram(resposta) -> str:
+    try:
+        from core.http_errors import trecho_corpo
+
+        body = getattr(resposta, "text", "") or ""
+        if "description" in body:
+            import json
+
+            data = json.loads(body)
+            desc = str(data.get("description") or "").strip()
+            if desc:
+                return desc[:200]
+        return trecho_corpo(resposta)
+    except Exception:
+        return ""
+
+
 def _enviar(chat_id: str, msg: str) -> bool:
-    if not TELEGRAM_TOKEN or not chat_id:
+    token = (TELEGRAM_TOKEN or "").strip()
+    cid = (chat_id or "").strip()
+    if not token or not cid:
         print(f"[TELEGRAM não configurado]\n{msg}")
         logger.warning(
             "Telegram não configurado — alerta NÃO entregue (apenas impresso no stdout)"
         )
+        _metric_telegram(False, motivo="nao_configurado")
         return False
+    if not pode_enviar(token):
+        if not verificar_token(token=token, forcar=True):
+            logger.info("Telegram: envio suprimido (token inválido ou circuit breaker ativo)")
+            _metric_telegram(False, motivo="circuit_breaker")
+            return False
     try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        from core.telegram_explicacao import sanitizar_markdown_legado
+
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        original = (msg or "")[:4096]
+        texto = sanitizar_markdown_legado(original)
         r = request(
             "POST",
             url,
-            json={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"},
+            json={"chat_id": cid, "text": texto, "parse_mode": "Markdown"},
             timeout=10,
         )
+        # 400 raro após sanitizar — fallback sem formatação (texto original).
+        if getattr(r, "status_code", 0) == 400:
+            detalhe = _trecho_erro_telegram(r) or "Bad Request"
+            logger.warning(
+                "Telegram Markdown rejeitado — reenviando sem formatação: %s",
+                detalhe,
+            )
+            r = request(
+                "POST",
+                url,
+                json={"chat_id": cid, "text": original},
+                timeout=10,
+            )
         r.raise_for_status()
+        _metric_telegram(True)
         return True
     except Exception as e:
-        logger.error("Telegram erro: %s", mascarar_url_telegram(str(e)))
+        err = mascarar_url_telegram(str(e))
+        registrar_falha_envio(err)
+        if "404" not in err:
+            logger.error("Telegram erro: %s", err)
+        _metric_telegram(False, motivo="http")
         return False
+
+
+def _enviar_foto(chat_id: str, foto_path: str, legenda: str = "") -> bool:
+    """Envia uma imagem (PNG/JPG) via sendPhoto. Nunca lança exceção."""
+    token = (TELEGRAM_TOKEN or "").strip()
+    cid = (chat_id or "").strip()
+    if not token or not cid:
+        logger.info("Telegram não configurado — foto NÃO entregue")
+        _metric_telegram(False, canal="foto", motivo="nao_configurado")
+        return False
+    if not pode_enviar(token):
+        if not verificar_token(token=token, forcar=True):
+            logger.info("Telegram: envio de foto suprimido (token inválido/circuit breaker)")
+            _metric_telegram(False, canal="foto", motivo="circuit_breaker")
+            return False
+    try:
+        import os
+
+        if not foto_path or not os.path.exists(str(foto_path)):
+            logger.warning("Telegram sendPhoto: arquivo inexistente %s", foto_path)
+            _metric_telegram(False, canal="foto", motivo="arquivo")
+            return False
+        from core.telegram_explicacao import sanitizar_markdown_legado
+
+        url = f"https://api.telegram.org/bot{token}/sendPhoto"
+        caption_orig = (legenda or "")[:1024]
+        caption = sanitizar_markdown_legado(caption_orig) if caption_orig else ""
+        data = {"chat_id": cid}
+        if caption:
+            data["caption"] = caption
+            data["parse_mode"] = "Markdown"
+        with open(str(foto_path), "rb") as fh:
+            r = request(
+                "POST",
+                url,
+                data=data,
+                files={"photo": ("grafico.png", fh, "image/png")},
+                timeout=30,
+            )
+        if getattr(r, "status_code", 0) == 400 and caption_orig:
+            detalhe = _trecho_erro_telegram(r) or "Bad Request"
+            logger.warning(
+                "Telegram sendPhoto Markdown rejeitado — reenviando sem formatação: %s",
+                detalhe,
+            )
+            data_plain = {"chat_id": cid, "caption": caption_orig}
+            with open(str(foto_path), "rb") as fh2:
+                r = request(
+                    "POST",
+                    url,
+                    data=data_plain,
+                    files={"photo": ("grafico.png", fh2, "image/png")},
+                    timeout=30,
+                )
+        r.raise_for_status()
+        _metric_telegram(True, canal="foto")
+        return True
+    except Exception as e:
+        err = mascarar_url_telegram(str(e))
+        registrar_falha_envio(err)
+        if eh_timeout_rede(e):
+            logger.warning("Telegram sendPhoto timeout: %s", err)
+        elif "404" not in err:
+            logger.error("Telegram sendPhoto erro: %s", err)
+        _metric_telegram(False, canal="foto", motivo="http")
+        return False
+
+
+def enviar_foto_gestor(
+    foto_path: str,
+    legenda: str = "",
+    *,
+    chave: str | None = None,
+    cooldown_segundos: int | None = None,
+    _ignorar_cooldown: bool = False,
+) -> bool:
+    """Envia gráfico/imagem ao gestor com o mesmo esquema de cooldown do texto."""
+    cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
+    chave_final = chave or f"foto:{_chave_msg(str(foto_path) + legenda)}"
+    if not _ignorar_cooldown and _deve_suprimir(chave_final, cooldown):
+        logger.info("Foto gestor suprimida (cooldown %ss): %s", cooldown, chave_final)
+        return False
+    ok = _enviar_foto(TELEGRAM_GESTOR_CHAT_ID, foto_path, legenda)
+    if ok and not _ignorar_cooldown:
+        _marcar_enviado(chave_final)
+    return ok
 
 
 def alertar(msg: str, *, _ignorar_cooldown: bool = False) -> bool:
     del _ignorar_cooldown
-    return _enviar(TELEGRAM_CHAT_ID, f"🔔 *Alerta* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}")
+    return _enviar(TELEGRAM_CHAT_ID, f"🔔 *Alerta* {formatar_data_hora_br()}\n\n{msg}")
 
 
 def alertar_gestor(
@@ -99,18 +282,48 @@ def alertar_gestor(
     *,
     chave: str | None = None,
     cooldown_segundos: int | None = None,
+    agente_id: str | None = None,
+    chat_id: str | None = None,
     _ignorar_cooldown: bool = False,
 ) -> bool:
+    from core.telegram_explicacao import inserir_explicacao
+
+    msg = inserir_explicacao(msg, agente_id=agente_id, chave=chave)
     cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
     chave_final = chave or _chave_msg(msg)
     if not _ignorar_cooldown and _deve_suprimir(chave_final, cooldown):
         logger.info("Alerta gestor suprimido (cooldown %ss): %s", cooldown, chave_final)
         return False
+    destino = (chat_id or TELEGRAM_GESTOR_CHAT_ID or "").strip()
     ok = _enviar(
-        TELEGRAM_GESTOR_CHAT_ID,
-        f"📊 *Gestor* {datetime.now().strftime('%d/%m %H:%M')}\n\n{msg}",
+        destino,
+        f"📊 *Gestor* {formatar_data_hora_br()}\n\n{msg}",
     )
     if ok and not _ignorar_cooldown:
+        _marcar_enviado(chave_final)
+    return ok
+
+
+def enviar_telegram_manicures(
+    msg: str,
+    *,
+    chave: str | None = None,
+    cooldown_segundos: int | None = None,
+) -> bool:
+    """Envia promoção ao canal/grupo Telegram das manicures (não é o gestor)."""
+    if not manicures_telegram_configurado():
+        logger.info("Telegram manicures não configurado — mensagem não enviada")
+        return False
+    cooldown = ALERTA_COOLDOWN_SEG if cooldown_segundos is None else cooldown_segundos
+    chave_final = chave or _chave_msg(msg)
+    if _deve_suprimir(chave_final, cooldown):
+        logger.info("Telegram manicures suprimido (cooldown %ss): %s", cooldown, chave_final)
+        return False
+    ok = _enviar(
+        TELEGRAM_MANICURES_CHAT_ID,
+        f"💅 *Promo manicures* {formatar_data_hora_br()}\n\n{msg}",
+    )
+    if ok:
         _marcar_enviado(chave_final)
     return ok
 
@@ -126,11 +339,54 @@ def alertar_critico(
     if _deve_suprimir(chave_final, cooldown):
         logger.info("Alerta crítico suprimido (cooldown %ss): %s", cooldown, chave_final)
         return False
-    alertar_gestor(f"🚨 CRÍTICO\n{msg}", _ignorar_cooldown=True)
-    ok = alertar(f"🚨 CRÍTICO\n{msg}", _ignorar_cooldown=True)
+    msg_c = f"🚨 CRÍTICO\n{msg}"
+    ok = alertar_gestor(msg_c, _ignorar_cooldown=True)
+    # Evita duplicar no mesmo chat quando gestor == chat geral
+    chat_geral = (TELEGRAM_CHAT_ID or "").strip()
+    chat_gestor = (TELEGRAM_GESTOR_CHAT_ID or "").strip()
+    if chat_geral and chat_geral != chat_gestor:
+        ok = alertar(msg_c, _ignorar_cooldown=True) or ok
     if ok:
         _marcar_enviado(chave_final)
     return ok
+
+
+def notificar_venda_gestor(
+    marketplace: str,
+    pedido_id: str,
+    produto: str,
+    valor: float,
+    quantidade: int = 1,
+) -> bool:
+    """Aviso de venda no Telegram do gestor."""
+    try:
+        destino = (TELEGRAM_GESTOR_CHAT_ID or TELEGRAM_CHAT_ID or "").strip()
+        if not (TELEGRAM_TOKEN or "").strip() or not destino:
+            logger.warning("Telegram gestor/chat vazio — venda não notificada")
+            return False
+        hora = formatar_data_hora_br()
+        emoji_marketplace = {
+            "mercadolivre": "🛒",
+            "shopee": "🛍️",
+            "magalu": "🏪",
+            "amazon": "📦",
+        }.get(str(marketplace or "").lower(), "🏬")
+        try:
+            valor_n = float(valor or 0)
+        except (TypeError, ValueError):
+            valor_n = 0.0
+        msg = (
+            f"{emoji_marketplace} *Nova venda — {str(marketplace).title()}*\n"
+            f"🕐 {hora}\n\n"
+            f"📦 Produto: {produto}\n"
+            f"🔢 Qtd: {quantidade}\n"
+            f"💰 Valor: R$ {valor_n:.2f}\n"
+            f"🔖 Pedido: {pedido_id}"
+        )
+        return _enviar(destino, msg)
+    except Exception as exc:
+        logger.error("notificar_venda_gestor: %s", exc)
+        return False
 
 
 def notificar_venda_whatsapp(
@@ -140,35 +396,48 @@ def notificar_venda_whatsapp(
     valor: float,
     quantidade: int = 1,
 ) -> bool:
-    """Notifica nova venda no WhatsApp (Evolution ou Meta). Nunca lança exceção."""
-    try:
-        from core.whatsapp import notificar_venda
-
-        return notificar_venda(
-            marketplace=marketplace,
-            pedido_id=pedido_id,
-            produto=produto,
-            valor=valor,
-            quantidade=quantidade,
-        )
-    except Exception as exc:
-        logger.error("notificar_venda_whatsapp: %s", exc)
-        return False
+    """Compat: aviso de venda vai ao Telegram do gestor (não ao WhatsApp)."""
+    return notificar_venda_gestor(
+        marketplace=marketplace,
+        pedido_id=pedido_id,
+        produto=produto,
+        valor=valor,
+        quantidade=quantidade,
+    )
 
 
 def _responder_callback(callback_query_id: str, texto: str) -> None:
     """Responde ao callback_query para remover indicador de carregamento do botão."""
     if not TELEGRAM_TOKEN or not callback_query_id:
         return
+    if not pode_enviar():
+        logger.debug("Telegram answerCallbackQuery suprimido (circuit breaker/token)")
+        return
     try:
-        request(
+        r = request(
             "POST",
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/answerCallbackQuery",
             json={"callback_query_id": callback_query_id, "text": texto},
             timeout=10,
         )
+        code = getattr(r, "status_code", 0)
+        if code == 404:
+            registrar_falha_envio("answerCallbackQuery HTTP 404")
+            logger.info("Telegram answerCallbackQuery 404 — token inválido (circuit breaker)")
+            return
+        if code >= 400:
+            logger.warning(
+                "Telegram answerCallbackQuery HTTP %s: %s",
+                code,
+                mascarar_url_telegram(_trecho_erro_telegram(r) or ""),
+            )
     except Exception as e:
-        logger.error("Telegram answerCallbackQuery erro: %s", mascarar_url_telegram(str(e)))
+        err = mascarar_url_telegram(str(e))
+        if "404" in err:
+            registrar_falha_envio(err)
+            logger.info("Telegram answerCallbackQuery falhou com 404 — token inválido")
+        else:
+            logger.warning("Telegram answerCallbackQuery erro: %s", err)
 
 
 def _gerar_justificativa_decisao(contexto_decisao: dict) -> str | None:
@@ -208,22 +477,37 @@ def perguntar_gestor_e_aguardar(
     Nunca lança exceção.
     """
     if not TELEGRAM_TOKEN or not TELEGRAM_GESTOR_CHAT_ID:
-        logger.warning("Telegram não configurado — confirmação de ads auto-aprovada")
-        return True
+        # Fail-closed: sem gestor não se efetiva Ads / ações destrutivas
+        logger.error(
+            "Telegram não configurado — confirmação NEGADA (não auto-aprova Ads)"
+        )
+        return False
+    # Token presente mas inválido/revogado → fail-closed sem spam de sendMessage 404
+    if not pode_enviar() or not verificar_token(forcar=False):
+        if not verificar_token(forcar=True):
+            logger.error(
+                "Telegram token inválido (getMe/circuit) — confirmação NEGADA. "
+                "Regenere no @BotFather e atualize TELEGRAM_TOKEN (secrets + .env). "
+                "Rode: python scripts/diagnostico_telegram.py"
+            )
+            return False
     url_base = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
     try:
+        from core.telegram_explicacao import sanitizar_markdown_legado
+
         texto_msg = f"❓ *Confirmação necessária*\n\n{pergunta}"
         if contexto_decisao is not None:
             justificativa = _gerar_justificativa_decisao(contexto_decisao)
             if justificativa:
                 texto_msg += f"\n\n💡 *Contexto:*\n{justificativa}"
         texto_msg += "\n\n_Responda abaixo:_"
+        texto_md = sanitizar_markdown_legado(texto_msg)
         sm = request(
             "POST",
             f"{url_base}/sendMessage",
             json={
                 "chat_id": TELEGRAM_GESTOR_CHAT_ID,
-                "text": texto_msg,
+                "text": texto_md,
                 "parse_mode": "Markdown",
                 "reply_markup": {
                     "inline_keyboard": [[
@@ -234,6 +518,27 @@ def perguntar_gestor_e_aguardar(
             },
             timeout=10,
         )
+        if getattr(sm, "status_code", 0) == 400:
+            detalhe = _trecho_erro_telegram(sm) or "Bad Request"
+            logger.warning(
+                "Telegram Markdown (confirmação) rejeitado — reenviando sem formatação: %s",
+                detalhe,
+            )
+            sm = request(
+                "POST",
+                f"{url_base}/sendMessage",
+                json={
+                    "chat_id": TELEGRAM_GESTOR_CHAT_ID,
+                    "text": texto_msg,
+                    "reply_markup": {
+                        "inline_keyboard": [[
+                            {"text": "✅ SIM", "callback_data": "ads_sim"},
+                            {"text": "❌ NÃO", "callback_data": "ads_nao"},
+                        ]]
+                    },
+                },
+                timeout=10,
+            )
         sm.raise_for_status()
         body = sm.json() or {}
         result = body.get("result") or {}

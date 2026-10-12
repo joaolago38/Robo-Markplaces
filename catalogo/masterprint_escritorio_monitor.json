@@ -1,0 +1,56 @@
+[
+  {
+    "id": "mp-pincel-perm-recarregavel",
+    "ativo": true,
+    "prioridade": 1,
+    "tipo": "pincel_permanente",
+    "nome": "Pincel permanente recarregável Masterprint",
+    "termo_busca": "pincel marcador permanente masterprint recarregavel",
+    "limite_resultados": 50
+  },
+  {
+    "id": "mp-pincel-quadro-recarregavel",
+    "ativo": true,
+    "prioridade": 1,
+    "tipo": "pincel_quadro_branco",
+    "nome": "Pincel quadro branco recarregável Masterprint",
+    "termo_busca": "pincel quadro branco masterprint recarregavel",
+    "limite_resultados": 50
+  },
+  {
+    "id": "mp-marcador-616",
+    "ativo": true,
+    "prioridade": 2,
+    "tipo": "pincel_permanente",
+    "nome": "MP-616 permanente Masterprint",
+    "termo_busca": "masterprint mp-616",
+    "limite_resultados": 30
+  },
+  {
+    "id": "mp-marcador-619",
+    "ativo": true,
+    "prioridade": 2,
+    "tipo": "pincel_quadro_branco",
+    "nome": "MP-619 quadro branco Masterprint",
+    "termo_busca": "masterprint mp-619",
+    "limite_resultados": 30
+  },
+  {
+    "id": "mp-apagador",
+    "ativo": true,
+    "prioridade": 1,
+    "tipo": "apagador",
+    "nome": "Apagador quadro Masterprint",
+    "termo_busca": "apagador quadro masterprint",
+    "limite_resultados": 50
+  },
+  {
+    "id": "mp-apagador-ima",
+    "ativo": true,
+    "prioridade": 2,
+    "tipo": "apagador",
+    "nome": "Apagador com ímã Masterprint",
+    "termo_busca": "apagador quadro ima masterprint",
+    "limite_resultados": 40
+  }
+]

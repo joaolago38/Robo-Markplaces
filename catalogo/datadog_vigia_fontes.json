@@ -1,0 +1,207 @@
+[
+  {
+    "id": "orquestrador",
+    "ativo": true,
+    "nome": "Orquestrador 30min",
+    "path": "logs/orquestrador_ultimo_ciclo.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true
+  },
+  {
+    "id": "operacao_24h",
+    "ativo": true,
+    "nome": "Operação 24h",
+    "path": "logs/operacao_24h_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true
+  },
+  {
+    "id": "conectividade",
+    "ativo": true,
+    "nome": "Conectividade marketplaces",
+    "path": "logs/conectividade_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true
+  },
+  {
+    "id": "renovacao_tokens",
+    "ativo": true,
+    "nome": "Renovação de tokens",
+    "path": "logs/renovacao_tokens_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true
+  },
+  {
+    "id": "vigia_datadog",
+    "ativo": true,
+    "nome": "Vigia Datadog",
+    "path": "logs/datadog_vigia_history.json",
+    "campo": "ultima_varredura",
+    "max_horas": 12,
+    "critico": true
+  },
+  {
+    "id": "relatorio_manha_ml",
+    "ativo": true,
+    "nome": "Relatório manhã ML",
+    "path": "logs/relatorio_manha_ml_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 26,
+    "critico": false,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "relatorio_estrategia_ml",
+    "ativo": true,
+    "nome": "Relatório estratégia vendas ML",
+    "path": "logs/relatorio_estrategia_ml_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 200,
+    "critico": false,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "esmaltes_mercado",
+    "ativo": true,
+    "nome": "Mercado esmaltes",
+    "path": "logs/esmaltes_mercado_history.json",
+    "campo": "ultima_varredura",
+    "max_horas": 26,
+    "critico": false,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "estoque",
+    "ativo": true,
+    "nome": "Sincronizar estoque marketplaces",
+    "path": "logs/estoque_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+    {
+      "id": "ads_gatilho",
+      "ativo": true,
+      "nome": "Gatilho Product Ads ML",
+      "path": "logs/ads_gatilho_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": true,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "golpe_guerra_masterprint",
+      "ativo": true,
+      "nome": "Golpe guerra PETG 2º CNPJ",
+      "path": "logs/golpe_guerra_masterprint_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "filamentos_batalha",
+      "ativo": true,
+      "nome": "Batalha filamentos Masterprint",
+      "path": "logs/filamentos_batalha_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "monitor_masterprint_petg",
+      "ativo": true,
+      "nome": "Monitor Masterprint PETG",
+      "path": "logs/masterprint_petg_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "monitor_masterprint_escritorio",
+      "ativo": true,
+      "nome": "Monitor Masterprint escritório",
+      "path": "logs/masterprint_escritorio_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 30,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "ponto_ruptura_segundo_cnpj",
+      "ativo": true,
+      "nome": "Ponto de ruptura 2º CNPJ + CNAE",
+      "path": "logs/ponto_ruptura_segundo_cnpj_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 26,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+    {
+      "id": "ponto_ruptura_outra_marca",
+      "ativo": true,
+      "nome": "Ponto de ruptura outra marca de esmalte",
+      "path": "logs/ponto_ruptura_outra_marca_ultima.json",
+      "campo": "timestamp",
+      "max_horas": 26,
+      "critico": false,
+      "ignorar_ausente": true
+    },
+  {
+    "id": "integridade_ml",
+    "ativo": true,
+    "nome": "Integridade dados ML",
+    "path": "logs/integridade_ml_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "chat",
+    "ativo": true,
+    "nome": "Chat marketplaces",
+    "path": "logs/chat_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "nfe",
+    "ativo": true,
+    "nome": "NF-e / faturamento",
+    "path": "logs/nfe_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 26,
+    "critico": true,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "vendas_whatsapp",
+    "ativo": true,
+    "nome": "Notificação vendas WhatsApp",
+    "path": "logs/vendas_whatsapp_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": false,
+    "ignorar_ausente": true
+  },
+  {
+    "id": "meta_metricas",
+    "ativo": true,
+    "nome": "Métricas Meta Ads (ciclo IG/FB)",
+    "path": "logs/meta_metricas_ultima.json",
+    "campo": "timestamp",
+    "max_horas": 6,
+    "critico": true,
+    "ignorar_ausente": true
+  }
+]

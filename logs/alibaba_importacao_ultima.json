@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-09-21T11:57:30.153919+00:00",
+  "cotacao": {
+    "ok": true,
+    "usd_brl": 5.5,
+    "fonte": "awesomeapi",
+    "confiavel": true
+  },
+  "resultados": [
+    {
+      "id": "p1",
+      "produto": "Filamento 3D",
+      "oportunidades_total": 1,
+      "novos": [
+        {
+          "hash": "abc",
+          "url": "https://www.alibaba.com/product-detail/1.html",
+          "titulo": "PLA filament 1kg",
+          "preco_usd": 3.2,
+          "moq": 50,
+          "distribuidor": "Shenzhen ABC Technology Co., Ltd.",
+          "visto_em": "2026-09-21T11:57:30.151388+00:00"
+        }
+      ],
+      "ok": true
+    }
+  ],
+  "avaliacao_ia_parametros": null
+}

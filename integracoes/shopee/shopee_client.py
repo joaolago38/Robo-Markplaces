@@ -15,11 +15,11 @@ from core.config import (
     SHOPEE_REFRESH_TOKEN,
     SHOPEE_SHOP_ID,
 )
-from core.http_client import request
-from core.http_errors import log_http_erro_listagem, status_http
 from core.datadog_metrics import incrementar
+from core.http_client import request
+from core.http_errors import log_http_erro_listagem, mascarar_segredos_http, status_http
+from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.token_manager import get_token_shopee
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
 
 logger = logging.getLogger("shopee_client")
 BASE = "https://partner.shopeemobile.com"
@@ -36,11 +36,22 @@ def _ids_validos() -> bool:
     return bool(pid.isdigit() and sid.isdigit())
 
 
+def _canal_operando() -> bool:
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao("shopee")
+    except Exception:
+        return True
+
+
 def _enabled() -> bool:
     tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
     if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token):
         return False
-    return _ids_validos()
+    if not _ids_validos():
+        return False
+    return _canal_operando()
 
 
 def _token_para_assinatura() -> str:
@@ -111,8 +122,9 @@ def probe_conexao() -> dict:
             return {"ok": False, "status": 403, "msg": "sem permissão — verifique escopos do app Shopee"}
         return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
     except Exception as exc:
-        logger.error("Shopee probe_conexao erro: %s", exc)
-        return {"ok": False, "status": 0, "msg": str(exc)}
+        err = mascarar_segredos_http(str(exc))
+        logger.error("Shopee probe_conexao erro: %s", err)
+        return {"ok": False, "status": 0, "msg": err}
 
 
 def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: int = 3) -> tuple[list[dict], bool]:
@@ -120,7 +132,7 @@ def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: 
     Endpoint pode variar entre contas; retorna (lista, sucesso_chamada).
     """
     if not _enabled():
-        logger.warning("Shopee não configurado.")
+        logger.info("Shopee não configurado.")
         return [], False
     path = "/api/v2/product/get_comment"
     comentarios: list[dict] = []
@@ -165,7 +177,7 @@ def _listar_perguntas_nao_respondidas_detalhado(page_size: int = 20, max_pages: 
         return comentarios, True
     except Exception as exc:
         incrementar("dados.degradado", tags=["contexto:Shopee_listar_perguntas_nao_respondidas", "motivo:excecao"])
-        logger.error("Shopee listar_perguntas_nao_respondidas erro: %s", exc)
+        logger.error("Shopee listar_perguntas_nao_respondidas erro: %s", mascarar_segredos_http(str(exc)))
         return comentarios, False
 
 
@@ -179,7 +191,7 @@ def responder_pergunta(item_id: int, comment_id: int, texto: str) -> bool:
     Endpoint de reply pode variar por categoria/permissão.
     """
     if not _enabled():
-        logger.warning("Shopee não configurado para responder pergunta.")
+        logger.info("Shopee não configurado para responder pergunta.")
         return False
     path = "/api/v2/product/reply_comment"
     try:
@@ -195,7 +207,7 @@ def responder_pergunta(item_id: int, comment_id: int, texto: str) -> bool:
         body = r.json()
         return not _tem_erro_api(body)
     except Exception as exc:
-        logger.error("Shopee responder_pergunta erro item=%s comment=%s: %s", item_id, comment_id, exc)
+        logger.error("Shopee responder_pergunta erro item=%s comment=%s: %s", item_id, comment_id, mascarar_segredos_http(str(exc)))
         return False
 
 
@@ -238,7 +250,7 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
                 "alerta": sem_acesso_atual >= limite_dias_sem_acesso,
             }
         except Exception as exc:
-            logger.error("Shopee manter_conta_ativa erro: %s", exc)
+            logger.error("Shopee manter_conta_ativa erro: %s", mascarar_segredos_http(str(exc)))
             sem_acesso_atual = dias_sem_acesso("shopee")
             return {
                 "ok": False,
@@ -259,7 +271,14 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
 
 def obter_saude_conta() -> dict:
     if not _enabled():
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": None,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": str(SHOPEE_SHOP_ID or "").strip(),
+        }
 
     pendencias, ok = _listar_perguntas_nao_respondidas_detalhado(page_size=50, max_pages=4)
     if ok:
@@ -269,8 +288,11 @@ def obter_saude_conta() -> dict:
         "configurado": True,
         "api_ok": ok,
         "pendencias": len(pendencias),
-        "claims_rate": 0.0,
+        "claims_rate": None,
+        "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("shopee") or 0,
+        "conta_id": str(SHOPEE_SHOP_ID or "").strip(),
+        "modelo": "chat_sla_shopee",
     }
 
 
@@ -281,7 +303,7 @@ def atualizar_preco_item(item_id: int, novo_preco: float, model_id: int | None =
         logger.warning("Shopee atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Shopee não configurado para atualização de preço.")
+        logger.info("Shopee não configurado para atualização de preço.")
         return False
     path = "/api/v2/product/update_price"
     try:
@@ -300,7 +322,7 @@ def atualizar_preco_item(item_id: int, novo_preco: float, model_id: int | None =
         body = r.json()
         return not _tem_erro_api(body)
     except Exception as exc:
-        logger.error("Shopee atualizar_preco_item erro item_id=%s: %s", item_id, exc)
+        logger.error("Shopee atualizar_preco_item erro item_id=%s: %s", item_id, mascarar_segredos_http(str(exc)))
         return False
 
 
@@ -311,7 +333,7 @@ def atualizar_estoque_item(item_id: int, novo_estoque: int, model_id: int | None
         logger.warning("Shopee atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Shopee não configurado para atualização de estoque.")
+        logger.info("Shopee não configurado para atualização de estoque.")
         return False
     path = "/api/v2/product/update_stock"
     try:
@@ -330,7 +352,7 @@ def atualizar_estoque_item(item_id: int, novo_estoque: int, model_id: int | None
         body = r.json()
         return not _tem_erro_api(body)
     except Exception as exc:
-        logger.error("Shopee atualizar_estoque_item erro item_id=%s: %s", item_id, exc)
+        logger.error("Shopee atualizar_estoque_item erro item_id=%s: %s", item_id, mascarar_segredos_http(str(exc)))
         return False
 
 
@@ -342,7 +364,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     Retorno alinhado ao padrão do ML. Nunca lança exceção.
     """
     if not _enabled():
-        logger.warning("Shopee não configurado para listar pedidos.")
+        logger.info("Shopee não configurado para listar pedidos.")
         return [], False
     try:
         path_list = "/api/v2/order/get_order_list"
@@ -476,7 +498,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
         return out, True
     except Exception as exc:
         incrementar("dados.degradado", tags=["contexto:Shopee_listar_pedidos", "motivo:excecao"])
-        logger.error("Shopee listar_pedidos erro: %s", exc)
+        logger.error("Shopee listar_pedidos erro: %s", mascarar_segredos_http(str(exc)))
         return [], False
 
 

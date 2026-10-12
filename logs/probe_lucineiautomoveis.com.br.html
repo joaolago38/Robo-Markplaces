@@ -1,0 +1,758 @@
+
+<!DOCTYPE html>
+
+<html  lang="pt-br">
+<head><title>
+	Lucinei Automóveis- Salvados & Sucatas
+</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/fontawesome.css" rel="stylesheet" /><link href="App_Themes/Style/css/estilosite.css" rel="stylesheet" />
+    <link href="App_Themes/Style/css/bootstrap.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/bootstrap.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/bootstrap-grid.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/bootstrap-grid.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/bootstrap-reboot.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/bootstrap-reboot.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/estilosite.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/owl.carousel.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/owl.theme.default.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/css/owl.theme.default.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/all.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/all.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/brands.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/brands.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/fontawesome.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/fontawesome.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/regular.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/regular.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/solid.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/solid.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/svg-with-js.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/svg-with-js.min.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/v4-shims.css" type="text/css" rel="stylesheet" /><link href="App_Themes/Style/fontawesome-free-5.15.1-web/css/v4-shims.min.css" type="text/css" rel="stylesheet" /></head>
+
+<body>
+    
+   
+    
+
+    <!-- Google Tag Manager -->
+<script>(function (w, d, s, l, i) {
+        w[l] = w[l] || []; w[l].push({
+            'gtm.start':
+                new Date().getTime(), event: 'gtm.js'
+        }); var f = d.getElementsByTagName(s)[0],
+            j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', 'GTM-PKP6XWG');</script>
+<!-- End Google Tag Manager -->
+    <!-- Google Tag Manager (noscript) -->
+
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PKP6XWG"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+    <form name="aspnetForm" method="post" action="./BuscadorVeiculo.aspx" id="aspnetForm">
+<div>
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+
+<script src="/scripts/AC_RunActiveContent.js" type="text/javascript"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js" type="text/javascript"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js" type="text/javascript"></script>
+<script src="/js/FormataCamposLib.js" type="text/javascript"></script>
+<script src="/js/geral.js" type="text/javascript"></script>
+<script src="/js/tiny_mce/tiny_mce.js" type="text/javascript"></script>
+<script src="/js/AC_RunActiveContent.js" type="text/javascript"></script>
+<script src="/js/jdMenu/jquery.jdMenu.js" type="text/javascript"></script>
+<script src="/js/jdMenu/jquery.dimensions.js" type="text/javascript"></script>
+<script src="/js/shadowBox/shadowbox.js" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+var options = {
+animate: true,
+animateFade: true,
+useSizzle: false,
+language: 'pt-BR',
+players: ['html', 'iframe', 'img'],
+modal: true
+}
+Shadowbox.init(options) ;
+//]]>
+</script>
+
+<script src="TinyMCE.ashx?module=GzipModule&amp;themes=advanced" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+$(function () { 
+   $.superbox.settings = { 
+   closeTxt: 'Fechar', 
+   loadTxt: 'Carregando...', 
+   nextTxt: 'Próximo', 
+   prevTxt: 'Anterior' 
+   };
+$.superbox();
+});
+//]]>
+</script>
+
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="11ED5ADB" />
+</div>
+        <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-light border-bottom border-1 mb-2">
+          <a class="navbar-brand" href="Default.aspx"><img src="imagem/logo1.png" /></a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse h5" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+              <li class="nav-item">
+                <a class="nav-link" href="Default.aspx">Início</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="BuscadorVeiculo.aspx">Veículos</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="BuscadorSucata.aspx">Sucatas</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="Contato.aspx">Contato</a>
+              </li>
+                <li class="nav-item">
+                <a class="nav-link" href="Sobre.aspx">A Empresa</a>
+              </li>
+            </ul>
+            <div class="navbar-form my-2 my-lg-0">
+                <a href="https://wa.me/5516981873555?=Eu%20tenho%20interesse%20no%20seu%20carro%20à%20venda" target="_blank" class="btn btn-outline-success my-2"><span class="fa fa-whatsapp"></span> (16) 98187-3555</a>
+                <a href="Contato.aspx" class="btn btn-outline-secondary my-2" data-toggle="tooltip" data-placement="top"><span class="fa fa-phone-alt"></span> (16) 3931-2222</a>                
+            </div>
+          </div>
+    </nav>
+        <div class="navbar navbar-inverse navbar-fixed-top" hidden="hidden" role="navigation">
+            <div class="container mb-3">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggler-icon" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle Navigation</span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="Default.aspx">Início</a></li>
+                        <li><a href="BuscadorVeiculo.aspx">Buscar Veículos</a></li>
+                        <li><a href="Contato.aspx">Contato</a></li>
+                        <li><a href="Sobre.aspx">A Empresa</a></li>
+                    </ul>
+                </div><!--/. nav-collpase -->
+            </div>
+        </div>
+        <div class="container-fluid">
+            
+    <div class="container-fluid">
+        <section class="jumbotron" style="background-image: url('imagem/Fotos Pátio/finder_1400x350.jpg'); max-height:300px;background-repeat:no-repeat;">
+            <div class="w-100" style="opacity:unset;">
+                <h1 class="text-light align-text-bottom">Consulta de Veículos</h1>
+                <p class="lead text-light">Consulta de Veículos disponíveis para venda.</p>
+                <p>
+                <a href="Default.aspx" class="btn btn-primary my-2">Veículos em Destaque</a>
+                </p>
+            </div>
+        </section>
+    
+<center>
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+		<ins class="adsbygoogle"
+		style="display:inline-block;width:728px;height:90px"
+				data-ad-client="ca-pub-7723678173901719"
+				data-ad-slot="7606204783"></ins>
+<script>
+		(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</center><br />
+
+        <div class="card mb-3" id="buscador">
+            <div class="card-header">
+                <h3>Veículos Salvados e Batidos</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 order-md-1 mb-3 bg-light">
+                        <div class="mb-3">
+                            <p class="text-muted font-italic mt-2">Preencha os campos abaixo para consultar as Veículos Salvados disponíveis para venda.</p>
+                        </div>
+                        <div class="form-group">
+                                <label for="txtVeiculo">Veículo</label> 
+                                <input name="ctl00$body$txtVeiculo" type="text" maxlength="80" id="ctl00_body_txtVeiculo" class="form-control mr-sm-2" />
+                        <label for="cboMarca">Marca</label> 
+                        <div>
+                            <select name="ctl00$body$cboMarca" id="ctl00_body_cboMarca" class="custom-select">
+	<option value="Audi">Audi</option>
+	<option value="BMW">BMW</option>
+	<option value="Chery">Chery</option>
+	<option value="Citroen">Citroen</option>
+	<option value="Dafra">Dafra</option>
+	<option value="Ducati">Ducati</option>
+	<option value="Fiat">Fiat</option>
+	<option value="Ford">Ford</option>
+	<option value="Gm ">Gm </option>
+	<option value="Honda">Honda</option>
+	<option value="Hyundai">Hyundai</option>
+	<option value="Iveco">Iveco</option>
+	<option value="Jac Motors">Jac Motors</option>
+	<option value="Jeep">Jeep</option>
+	<option value="Kawasaki">Kawasaki</option>
+	<option value="Kia">Kia</option>
+	<option value="Mercedes-Benz">Mercedes-Benz</option>
+	<option value="Mitsubishi">Mitsubishi</option>
+	<option value="Nissan">Nissan</option>
+	<option value="Peugeot">Peugeot</option>
+	<option value="Randon">Randon</option>
+	<option value="Renault">Renault</option>
+	<option value="Subaru">Subaru</option>
+	<option selected="selected" value="Todas">Todas</option>
+	<option value="Toyota">Toyota</option>
+	<option value="Vw ">Vw </option>
+	<option value="Yamaha">Yamaha</option>
+
+</select>
+                        </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cboFaixaPreco">Faixa de Preço</label>
+                            <div>
+                                <select name="ctl00$body$cboFaixaPreco" id="ctl00_body_cboFaixaPreco" class="custom-select">
+	<option selected="selected" value="TDS">Todos</option>
+	<option value="P1">At&#233; R$ 15.000,00</option>
+	<option value="P2">At&#233; R$ 30.000,00</option>
+	<option value="P3">At&#233; R$ 50.000,00</option>
+	<option value="P4">Acima de R$ 50.000,00</option>
+
+</select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                        <a id="ctl00_body_btnEnviar" class="btn btn-primary" AlternateText="Buscar" href="javascript:__doPostBack(&#39;ctl00$body$btnEnviar&#39;,&#39;&#39;)">Buscar</a>
+                        <a id="ctl00_body_btnCancelar" class="btn btn-secondary" AlternateText="Limpar" href="javascript:__doPostBack(&#39;ctl00$body$btnCancelar&#39;,&#39;&#39;)">Limpar</a>
+                        </div>
+                        <div class="invisible">
+                            <div class="form-group">
+                        <label for="cboModelo">Modelo</label> 
+                        <div>
+                            <select name="ctl00$body$cboModelo" id="ctl00_body_cboModelo" class="custom-select">
+
+</select>
+                        </div>
+                        </div>
+                        </div>
+                        
+                        <div class="form-group invisible">
+                        <label for="AnoIni">Ano</label> 
+                        <div class="row">
+                            <div class="col-sm-5">
+                                <select name="ctl00$body$cboAnoIni" id="ctl00_body_cboAnoIni" class="custom-select">
+	<option selected="selected" value="-">-</option>
+	<option value="2002">2002</option>
+	<option value="2004">2004</option>
+	<option value="2005">2005</option>
+	<option value="2006">2006</option>
+	<option value="2007">2007</option>
+	<option value="2008">2008</option>
+	<option value="2009">2009</option>
+	<option value="2010">2010</option>
+	<option value="2011">2011</option>
+	<option value="2012">2012</option>
+	<option value="2013">2013</option>
+	<option value="2014">2014</option>
+	<option value="2015">2015</option>
+	<option value="2016">2016</option>
+	<option value="2017">2017</option>
+	<option value="2018">2018</option>
+	<option value="2019">2019</option>
+	<option value="2020">2020</option>
+	<option value="2021">2021</option>
+	<option value="2022">2022</option>
+	<option value="2023">2023</option>
+	<option value="2024">2024</option>
+	<option value="2025">2025</option>
+
+</select>
+                            </div>
+                            <div class="col-sm-2"><label>a</label> </div>
+                            <div class="col-sm-5">
+                                <select name="ctl00$body$cboAnoFim" id="ctl00_body_cboAnoFim" class="custom-select">
+	<option selected="selected" value="-">-</option>
+	<option value="2002">2002</option>
+	<option value="2004">2004</option>
+	<option value="2005">2005</option>
+	<option value="2006">2006</option>
+	<option value="2007">2007</option>
+	<option value="2008">2008</option>
+	<option value="2009">2009</option>
+	<option value="2010">2010</option>
+	<option value="2011">2011</option>
+	<option value="2012">2012</option>
+	<option value="2013">2013</option>
+	<option value="2014">2014</option>
+	<option value="2015">2015</option>
+	<option value="2016">2016</option>
+	<option value="2017">2017</option>
+	<option value="2018">2018</option>
+	<option value="2019">2019</option>
+	<option value="2020">2020</option>
+	<option value="2021">2021</option>
+	<option value="2022">2022</option>
+	<option value="2023">2023</option>
+	<option value="2024">2024</option>
+	<option value="2025">2025</option>
+
+</select>
+                            </div>      
+                        </div>
+                        </div>
+                        <div class="form-group invisible">
+                        <label for="cboCor">Cor</label> 
+                        <div>
+                            <select name="ctl00$body$cboCor" id="ctl00_body_cboCor" class="custom-select">
+	<option value="Azul">Azul</option>
+	<option value="Bege">Bege</option>
+	<option value="Branca">Branca</option>
+	<option value="Branco ">Branco </option>
+	<option value="Cinza">Cinza</option>
+	<option value="Laranja">Laranja</option>
+	<option value="Marrom">Marrom</option>
+	<option value="Prata">Prata</option>
+	<option value="Preta">Preta</option>
+	<option selected="selected" value="Todas">Todas</option>
+	<option value="Verde">Verde</option>
+	<option value="Vermelha">Vermelha</option>
+
+</select>
+                        </div>
+                        </div>
+         
+                        <div class="form-group invisible">
+                        <label for="cboCategoria">Categoria</label> 
+                        <div>
+                            <select name="ctl00$body$cboCategoria" id="ctl00_body_cboCategoria" class="custom-select">
+	<option selected="selected" value="TDS">Todas</option>
+	<option value="PEQ">Pequena-Monta</option>
+	<option value="MED">M&#233;dia-Monta</option>
+	<option value="SUC">Sucata</option>
+
+</select>
+                        </div>
+                        </div> 
+                        
+                    </div>
+                    <div class="col-md-9 order-md-2 mb-3 bg-light">
+                        <div class="album py-5">
+                            <div class="container">
+                                <div class="row">
+                                    
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl0_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=61095"><img src="imagem/veiculo/61095-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">2008 Griffe 1.6 Flex 16V 5p Aut (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2016 / 2017 <br />
+                                                                Cód.: 61095 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 34.900,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl0_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=61095" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl1_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=30126"><img src="imagem/veiculo/30126-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">207 Compact XR 1.4 (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2011 / 2012 <br />
+                                                                Cód.: 30126 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 14.900,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl1_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=30126" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl2_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=56541"><img src="imagem/veiculo/56541-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">207 Sedan Passion XR 1.4 Flex 8V 4p (SP) #</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Pequena-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2011 / 2012 <br />
+                                                                Cód.: 56541 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 14.600,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl2_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=56541" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl3_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=57566"><img src="imagem/veiculo/57566-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">207 XR 1.4 Flex 8V 5p (SP) #</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Pequena-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2011 / 2011 <br />
+                                                                Cód.: 57566 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 14.500,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl3_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=57566" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl4_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=61473"><img src="imagem/imagem-n-disponivel-b.gif" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">207 XR 1.4 Flex 8V 5p (SP) #</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Pequena-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2012 / 2012 <br />
+                                                                Cód.: 61473 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 15.900,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl4_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=61473" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl5_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=57809"><img src="imagem/veiculo/57809-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">207 XR Sport 1.4 Flex 8V 5p (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2010 / 2011 <br />
+                                                                Cód.: 57809 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 13.500,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl5_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=57809" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl6_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=34750"><img src="imagem/veiculo/34750-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">207 XS 1.6 Flex 16V (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2009 / 2009 <br />
+                                                                Cód.: 34750 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 13.200,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl6_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=34750" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl7_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=55809"><img src="imagem/veiculo/55809-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">207 XS 1.6 Flex 16V 5p Aut (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2011 / 2012 <br />
+                                                                Cód.: 55809 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 15.500,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl7_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=55809" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl8_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=37144"><img src="imagem/veiculo/37144-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">208 Active (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2013 / 2014 <br />
+                                                                Cód.: 37144 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 23.000,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl8_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=37144" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl9_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=29445"><img src="imagem/veiculo/29445-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">208 Active 1.2 Flex 12V Mec. (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2017 / 2018 <br />
+                                                                Cód.: 29445 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 29.000,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl9_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=29445" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl10_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=38756"><img src="imagem/veiculo/38756-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">208 Active Pack 1.5 8V (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2015 / 2015 <br />
+                                                                Cód.: 38756 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 25.500,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl10_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=38756" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                            <div class="col-sm mb-2 ">
+                                                <div class="card shadow-sm bg-light" style="width:202px; min-height:410px">
+                                                    <a id="ctl00_body_dtlVeiculo_ctrl11_hypImgVeiculo" class="card-img-top" href="Veiculo.aspx?id=60887"><img src="imagem/veiculo/60887-1b.jpg" alt="" style="border-width:0px;" /></a></a>
+                                                    <div class="card-body p-2 mr-1">
+                                                        <h5 class="card-text alert-link">208 Active Pack 1.6 Flex 16V 5p Aut (S)</h5>
+                                                        <p class="card-text">
+                                                            <small>
+                                                                <p class="btn btn-primary btn-sm m-0 disabled" >Média-monta</p><br />
+                                                                Marca: Peugeot<br />
+                                                                Ano: 2014 / 2015 <br />
+                                                                Cód.: 60887 <br />
+                                                            </small>
+                                                        </p>
+                                                        <h5 class="card-text alert-link text-right">R$ 24.900,00</h5>    
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="btn-group">
+                                                                <a id="ctl00_body_dtlVeiculo_ctrl11_btnEnviar" title="Ver Mais Detalhes" class="btn btn-sm btn-outline-primary" href="Veiculo.aspx?id=60887" style="text-decoration:none;">VER MAIS</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                        
+                                    
+                                    <div class="align-content-center">
+                                        <input type="hidden" name="ctl00$body$ctl_pagina" id="ctl00_body_ctl_pagina" value="1" />        
+                                        <div class="paginador" style="overflow:hidden;">
+                                            <input type="hidden" id="ctl_hidden" name="ctl_hidden" />
+                                            <div id="ctl00_body_obj_paginador">
+	<div class="frw-paginador-dv-sel">1</div><a id="ctl00_body_pag2" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=2"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">2</div></a><a id="ctl00_body_pag3" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=3"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">3</div></a><a id="ctl00_body_pag4" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=4"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">4</div></a><a id="ctl00_body_pag5" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=5"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">5</div></a><a id="ctl00_body_pag6" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=6"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">6</div></a><a id="ctl00_body_pag7" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=7"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">7</div></a><a id="ctl00_body_pag8" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=8"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">8</div></a><a id="ctl00_body_pag9" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=9"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">9</div></a><a id="ctl00_body_pag10" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=10"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">10</div></a><a id="ctl00_body_pag11fim" href="https://lucineiautomoveis.com.br/BuscadorVeiculo.aspx?pag=11"><div class="frw-paginador-dv" onmouseout="this.className='frw-paginador-dv';" onmouseover="this.className='frw-paginador-dv-hover';">Próximas 10</div></a>
+</div>
+                                            &nbsp; &nbsp;
+                                        </div>   
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                   
+                        
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+      
+  </div>
+
+    
+
+        </div>
+    
+        
+        <footer style="">
+            <div class="container-fluid footer" >
+                <br />
+                <div class="row">
+                  <div class="col-md-4">
+                    <h4 class="mb-3">Sites Úteis</h4>
+                      <p><a class="text-warning  h6" href="https://www.fipe.org.br/" target="_blank">Tabela Fipe</a><br />
+                            Tabela de ve&iacute;culos.<br />Consulte os preços médios de mercado.<br /></p>
+                      <p><a class="text-warning  h6" href="http://www.ssp.sp.gov.br/" target="_blank">Secretaria de Segurança de São Paulo</a><br />
+                            Secretaria de Segurança do Estado de São Paulo.<br />
+                            Faça consultas de débitos do carro.</p>
+                      <p><a class="text-warning  h6" href="https://www.ipva.fazenda.sp.gov.br/IPVANET_Consulta/Consulta.aspx" target="_blank">Consulta de IPVA de SP</a><br />
+                            Secretaria da Fazenda. Consulte as guias de IPVA do Estado de São Paulo.<br /></p>
+                      <p><a class="text-warning  h6" href="https://www.detran.sp.gov.br/" target="_blank">Detran de São Paulo</a><br />
+                            Departamento Estadual de Trânsito de São Paulo.</p>
+                      <p><a class="text-warning  h6" href="http://www.detran.pr.gov.br/" target="_blank" >Detran do Paraná</a><br />
+                            Departamento de Trânsito do Paraná.</p>                
+                  </div>
+                  <div class="col-md-4">
+                    <h4 class="mb-3">Localização</h4>
+                      
+                     <div class="text-center">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3719.247939014878!2d-47.762074085064036!3d-21.222014585893962!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94b9c76343d13a21%3A0x1d241622f3e9ba8c!2sLucinei+Automoveis!5e0!3m2!1spt-BR!2sbr!4v1548439273203" width="300" height="250" frameborder="0" style="border:0"></iframe>  
+                        <p class="h6 text-center">Rod. Anhanguera, Km 306, São José. CEP: 14097-140 Ribeirão Preto / SP<br />(Sentido São Paulo próximo ao Shopping do Calçado)</p>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <h4 class="mb-3">Contato</h4>
+                      <a href="https://wa.me/5516981873555?=Eu%20tenho%20interesse%20no%20seu%20carro%20à%20venda" target="_blank" class="btn btn-success my-2"><span class="fa fa-whatsapp"></span> (16) 98187-3555</a>
+                      <a href="#" class="btn btn-secondary my-2" data-toggle="tooltip" data-placement="top"><span class="fa fa-phone-alt"></span> (16) 3931-2222</a>
+                      
+                    <h4 class="mb-3">Siga-nos nas Redes</h4>
+                      <a href="https://www.instagram.com/lucineiautomoveis_/" target="_blank" class="btn btn-danger my-2"><span class="fa fa-instagram"></span> @lucineiautomoveis_</a>
+                      <a href="https://www.facebook.com/lucineiautomoveis" target="_blank" class="btn btn-dark my-2"><span class="fa fa-facebook-f"></span> /lucineiautomoveis</a>
+                      
+                  </div>
+                </div>
+                <br />
+                <div><p class="small text-center">&copy; <span id="year"></span> - Lucinei Automóveis & Salvados - Todos os direitos reservados. </div>
+                <br />
+            </div>
+        </footer>
+        
+    
+        </div>          
+
+    
+
+<script type="text/javascript">
+//<![CDATA[
+setTimeout('aplicacarFormatacaoCampos(document.forms[0]);', 3000);//]]>
+</script>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<script>
+    document.getElementById("year").innerHTML = new Date().getFullYear();
+</script>   
+<script type="text/javascript">
+    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+    try {
+        var pageTracker = _gat._getTracker("UA-8562956-1");
+        pageTracker._trackPageview();
+    }
+    catch (err) { }
+</script>
+<script type="text/javascript">
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+
+    })
+</script>
+
+    <!-- Meta Pixel Code -->
+<script>
+    !function (f, b, e, v, n, t, s) {
+        if (f.fbq) return; n = f.fbq = function () {
+            n.callMethod ?
+            n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+        };
+        if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+        n.queue = []; t = b.createElement(e); t.async = !0;
+        t.src = v; s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s)
+    }(window, document, 'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1180778825739820');
+    fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1180778825739820&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+    
+</body>  
+
+</html>

@@ -408,6 +408,10 @@ def _sintetizar_claude(contexto: str, fallback: str) -> str:
         return fallback
 
     try:
+        from core.claude_client import contexto_suficiente
+
+        if not contexto_suficiente(contexto):
+            return fallback
         prompt = (
             "Com base no contexto JSON acima, responda de forma OBJETIVA em tópicos:\n"
             "1. Situação\n2. Riscos\n3. Ações recomendadas (priorizadas)\n"
@@ -415,9 +419,21 @@ def _sintetizar_claude(contexto: str, fallback: str) -> str:
             "Ao comentar concorrência, use APENAS os campos presentes no JSON "
             "(ex.: titulo, preco, frete_gratis, condicao, quantidade_vendida em "
             "mercado_livre.monitor.concorrencia[].concorrentes). "
-            "Não invente dados que não estejam no contexto."
+            "Não invente dados que não estejam no contexto. "
+            "Sugira FAZER/NÃO FAZER/OBSERVAR — o gestor autoriza; não publique nem ligue Ads."
         )
-        resposta = perguntar(prompt, max_tokens=800, contexto=contexto)
+        from core.claude_roteador import resolver_modelo_vendas
+
+        rota = resolver_modelo_vendas(proposito="panorama")
+        resposta = perguntar(
+            prompt,
+            max_tokens=800,
+            contexto=contexto,
+            origem="panorama.agente_panorama",
+            exigir_contexto=True,
+            modelo=rota.get("modelo"),
+            forcar_modelo=bool(rota.get("forcar_modelo")),
+        )
         if not resposta or resposta.startswith("⚠️") or "API" in resposta:
             return fallback
         return resposta.strip()

@@ -23,13 +23,14 @@ class MarketplaceAlgorithmTests(unittest.TestCase):
         self._patch.stop()
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def test_marketplace_nao_configurado_vira_critico(self):
+    def test_marketplace_nao_configurado_vira_inativo_sem_alerta(self):
         out = avaliar_marketplace(
             "market_x_test",
             {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 0},
         )
         self.assertEqual(out["score"], 0)
-        self.assertEqual(out["status"], "critico")
+        self.assertEqual(out["status"], "inativo")
+        self.assertFalse(self._history.exists())  # não polui histórico
 
     def test_marketplace_api_falha_nao_vira_critico_score_zero(self):
         out = avaliar_marketplace(
@@ -73,6 +74,20 @@ class MarketplaceAlgorithmTests(unittest.TestCase):
         )
         variacoes = out.get("variacoes_relevantes", [])
         self.assertTrue(any(v["metrica"] == "pendencias" and abs(v["variacao_pct"]) >= 5 for v in variacoes))
+
+    def test_segunda_avaliacao_com_claims_none_nao_quebra(self):
+        metrics = {
+            "configurado": True,
+            "api_ok": True,
+            "pendencias": 4,
+            "claims_rate": None,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 0,
+        }
+        avaliar_marketplace("shopee", metrics)
+        out = avaliar_marketplace("shopee", {**metrics, "pendencias": 5})
+        self.assertIn(out["status"], {"saudavel", "atencao", "critico"})
+        self.assertFalse(any(v.get("metrica") == "claims_rate" for v in out.get("variacoes_relevantes", [])))
 
 
 if __name__ == "__main__":

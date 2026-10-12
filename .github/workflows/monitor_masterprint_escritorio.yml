@@ -1,0 +1,131 @@
+name: Monitor Masterprint escritório ML
+
+# Acompanhamento secundário: 1 digest/dia. Continua no grupo OAuth (renova ML).
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 1x/dia BRT 08:45 (= 11:45 UTC)
+    - cron: "45 11 * * *"
+
+concurrency:
+  # Fila propria: nao disputa o cadeado token-renewal com orquestrador/tokens.
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+  MASTERPRINT_ESCRITORIO_ALERTA_RESUMO: "1"
+  MASTERPRINT_ESCRITORIO_ALERTA_COOLDOWN_SEG: "72000"
+  MASTERPRINT_ESCRITORIO_PAUSA_SEG: "1.5"
+  MASTERPRINT_ESCRITORIO_TOP_N: "10"
+  MASTERPRINT_CLAUDE_DIARIO: "1"
+  BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+  BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+  BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
+
+jobs:
+  monitorar:
+    name: Masterprint pincéis/apagadores — margem real
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar heartbeats de saude
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
+      - name: Restaurar cota Brave
+        uses: actions/cache@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+          restore-keys: |
+            brave-uso-mensal-
+      - name: Restaurar cooldown + snapshot
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/alertas_cooldown.json
+            logs/masterprint_escritorio_ultima.json
+            logs/masterprint_escritorio_history.json
+            logs/masterprint_claude_diario.json
+            logs/masterprint_claude_cache.json
+          key: masterprint-escritorio-${{ github.run_id }}
+          restore-keys: |
+            masterprint-escritorio-
+            telegram-cooldown-
+      - name: Preflight Telegram (gestor)
+        run: python scripts/preflight_monitor_telegram.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Rodar monitor Masterprint escritório
+        run: python -m agentes.escritorio.agente_monitor_masterprint_escritorio
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
+          ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_ACCESS_TOKEN: ${{ secrets.ML_ACCESS_TOKEN }}
+          ML_REFRESH_TOKEN: ${{ secrets.ML_REFRESH_TOKEN }}
+          ML_SELLER_ID: ${{ secrets.ML_SELLER_ID }}
+          ML_SITE_ID: ${{ secrets.ML_SITE_ID }}
+          MASTERPRINT_ML_SELLER_ID: ${{ secrets.MASTERPRINT_ML_SELLER_ID }}
+          MASTERPRINT_CNPJ: ${{ secrets.MASTERPRINT_CNPJ }}
+          MASTERPRINT_ML_NICKNAME: ${{ secrets.MASTERPRINT_ML_NICKNAME }}
+          MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.MASTERPRINT_TELEGRAM_GESTOR_CHAT_ID }}
+          MASTERPRINT_CLAUDE_DIARIO: "1"
+          CLAUDE_ATIVO: ${{ vars.CLAUDE_ATIVO || '0' }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          BRAVE_QUOTA_MES: ${{ vars.BRAVE_QUOTA_MES || '1800' }}
+          BRAVE_QUOTA_ALERTA_PCT: ${{ vars.BRAVE_QUOTA_ALERTA_PCT || '80' }}
+          BRAVE_QUOTA_HARD_STOP: ${{ vars.BRAVE_QUOTA_HARD_STOP || '1' }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+      - name: Publicar heartbeats de saude
+        if: always()
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save
+      - name: Publicar snapshot
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            logs/masterprint_escritorio_ultima.json
+            logs/masterprint_escritorio_history.json
+            logs/masterprint_claude_diario.json
+            logs/masterprint_claude_cache.json
+            logs/alertas_cooldown.json
+          key: masterprint-escritorio-${{ github.run_id }}
+      - name: Publicar cota Brave
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: logs/brave_uso_mensal.json
+          key: brave-uso-mensal-${{ github.run_id }}
+      - name: Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: masterprint-escritorio-snapshot
+          path: |
+            logs/masterprint_escritorio_ultima.json
+            logs/masterprint_escritorio_history.json
+          retention-days: 30
+          if-no-files-found: ignore

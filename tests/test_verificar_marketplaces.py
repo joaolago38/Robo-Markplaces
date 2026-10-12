@@ -8,9 +8,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests._stdout_utf8 import capturar_stdout_utf8
-
 import scripts.verificar_marketplaces as vm
+from tests._stdout_utf8 import capturar_stdout_utf8
 
 
 class TestTestarUm(unittest.TestCase):
@@ -32,6 +31,12 @@ class TestTestarUm(unittest.TestCase):
         self.assertTrue(out["conectado"])
         self.assertEqual(out["status_http"], 200)
         self.assertEqual(out["mensagem"], "autenticado")
+
+    def test_ok_config_magalu_nao_exige_merchant(self):
+        with patch.object(vm, "MAGALU_ACCESS_TOKEN", "tok"), patch.object(vm, "MAGALU_REFRESH_TOKEN", ""):
+            self.assertTrue(vm._ok_config_magalu())
+        with patch.object(vm, "MAGALU_ACCESS_TOKEN", ""), patch.object(vm, "MAGALU_REFRESH_TOKEN", ""):
+            self.assertFalse(vm._ok_config_magalu())
 
     def test_configurado_mas_falha_real_de_conexao(self):
         """

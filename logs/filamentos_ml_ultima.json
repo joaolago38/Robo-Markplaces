@@ -1,0 +1,4060 @@
+{
+  "timestamp": "2026-08-10T12:40:05.756296+00:00",
+  "consolidado": {
+    "total_filamentos_unicos": 93,
+    "total_vendas": 0,
+    "vendas_proxy_confiavel": false,
+    "anuncios_com_vendas_api": 0,
+    "anuncios_com_avaliacoes": 0,
+    "termos_varridos": 5,
+    "preco_medio": 131.13,
+    "preco_min": 86.0,
+    "preco_max": 169.99,
+    "ranking_marcas": [
+      {
+        "marca": "Genérico/Outros",
+        "vendidos": 0,
+        "volume_proxy": 87,
+        "anuncios": 87,
+        "fonte_volume": "presenca",
+        "preco_medio": 132.45,
+        "rank": 1
+      },
+      {
+        "marca": "Masterprint",
+        "vendidos": 0,
+        "volume_proxy": 5,
+        "anuncios": 5,
+        "fonte_volume": "presenca",
+        "preco_medio": 103.29,
+        "rank": 2
+      },
+      {
+        "marca": "Creality",
+        "vendidos": 0,
+        "volume_proxy": 1,
+        "anuncios": 1,
+        "fonte_volume": "presenca",
+        "preco_medio": 156.0,
+        "rank": 3
+      }
+    ],
+    "ranking_materiais": [
+      {
+        "material": "PLA",
+        "vendidos": 0,
+        "volume_proxy": 65,
+        "anuncios": 65,
+        "fonte_volume": "presenca",
+        "preco_medio": 130.53,
+        "rank": 1
+      },
+      {
+        "material": "PETG",
+        "vendidos": 0,
+        "volume_proxy": 17,
+        "anuncios": 17,
+        "fonte_volume": "presenca",
+        "preco_medio": 123.52,
+        "rank": 2
+      },
+      {
+        "material": "TPU",
+        "vendidos": 0,
+        "volume_proxy": 9,
+        "anuncios": 9,
+        "fonte_volume": "presenca",
+        "preco_medio": 154.56,
+        "rank": 3
+      },
+      {
+        "material": "ABS",
+        "vendidos": 0,
+        "volume_proxy": 2,
+        "anuncios": 2,
+        "fonte_volume": "presenca",
+        "preco_medio": 109.9,
+        "rank": 4
+      }
+    ],
+    "ranking_cores": [
+      {
+        "cor": "Preto",
+        "vendidos": 0,
+        "anuncios": 39,
+        "peso_vendas": 39,
+        "volume_proxy": 39,
+        "fonte_volume": "presenca",
+        "preco_medio": 123.12,
+        "rank": 1
+      },
+      {
+        "cor": "Azul",
+        "vendidos": 0,
+        "anuncios": 36,
+        "peso_vendas": 36,
+        "volume_proxy": 36,
+        "fonte_volume": "presenca",
+        "preco_medio": 135.35,
+        "rank": 2
+      },
+      {
+        "cor": "Branco",
+        "vendidos": 0,
+        "anuncios": 5,
+        "peso_vendas": 5,
+        "volume_proxy": 5,
+        "fonte_volume": "presenca",
+        "preco_medio": 130.2,
+        "rank": 3
+      },
+      {
+        "cor": "Amarelo",
+        "vendidos": 0,
+        "anuncios": 4,
+        "peso_vendas": 4,
+        "volume_proxy": 4,
+        "fonte_volume": "presenca",
+        "preco_medio": 129.45,
+        "rank": 4
+      },
+      {
+        "cor": "Vermelho",
+        "vendidos": 0,
+        "anuncios": 4,
+        "peso_vendas": 4,
+        "volume_proxy": 4,
+        "fonte_volume": "presenca",
+        "preco_medio": 135.05,
+        "rank": 5
+      },
+      {
+        "cor": "Indefinida",
+        "vendidos": 0,
+        "anuncios": 3,
+        "peso_vendas": 3,
+        "volume_proxy": 3,
+        "fonte_volume": "presenca",
+        "preco_medio": 158.0,
+        "rank": 6
+      },
+      {
+        "cor": "Rosa",
+        "vendidos": 0,
+        "anuncios": 1,
+        "peso_vendas": 1,
+        "volume_proxy": 1,
+        "fonte_volume": "presenca",
+        "preco_medio": 169.0,
+        "rank": 7
+      },
+      {
+        "cor": "Laranja",
+        "vendidos": 0,
+        "anuncios": 1,
+        "peso_vendas": 1,
+        "volume_proxy": 1,
+        "fonte_volume": "presenca",
+        "preco_medio": 169.0,
+        "rank": 8
+      }
+    ],
+    "top_vendas": [
+      {
+        "item_id": "MLB6399552124",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Nude",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3054411747",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Indefinida",
+        "cores": [],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6399552124",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4494066903",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Café",
+        "preco": 169.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Indefinida",
+        "cores": [],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4494066903",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7217502668",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+        "preco": 139.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7217502668",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6291041318",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6291041318",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6399760114",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3054411747",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6399760114",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4482410741",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Amarelo",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2502245936",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4482410741",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4482448215",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Amarelo",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2502245936",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4482448215",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7217502670",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Pink",
+        "preco": 169.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Rosa",
+        "cores": [
+          "Rosa"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7217502670",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7217502660",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Laranja",
+        "preco": 169.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Laranja",
+        "cores": [
+          "Laranja"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7217502660",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5005617771",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.89,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1204985417",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5005617771",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4243538445",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4243538445",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4772309639",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2049046938",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4772309639",
+        "marketplace": "mercadolivre"
+      }
+    ],
+    "top_baratos": [
+      {
+        "item_id": "MLB4757231393",
+        "titulo": "Filamento Petg 1kg Branco Fluion 3d",
+        "preco": 86.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "799346915",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4757231393",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7304555122",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 92.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3439333482",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7304555122",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7196424420",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 99.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "243119384",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7196424420",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7296860416",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 105.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "768280796",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7296860416",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7324006826",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 109.56,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "454984459",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7324006826",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB3858351783",
+        "titulo": "Filamento ABS Amarelo 1,75mm 1kg Impressora 3D F3DB",
+        "preco": 109.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "466017156",
+        "marca": "Genérico/Outros",
+        "material": "ABS",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB3858351783",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5058690484",
+        "titulo": "Filamento ABS Amarelo 1,75mm 1kg Impressora 3D F3DB",
+        "preco": 109.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "466017156",
+        "marca": "Genérico/Outros",
+        "material": "ABS",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5058690484",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4840028423",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 110.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3242094464",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4840028423",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5005617771",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.89,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1204985417",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5005617771",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4243538445",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4243538445",
+        "marketplace": "mercadolivre"
+      }
+    ],
+    "produtos_unicos": [
+      {
+        "item_id": "MLB6399552124",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Nude",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3054411747",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Indefinida",
+        "cores": [],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6399552124",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4494066903",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Café",
+        "preco": 169.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Indefinida",
+        "cores": [],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4494066903",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7217502668",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+        "preco": 139.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7217502668",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6291041318",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6291041318",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6399760114",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3054411747",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6399760114",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4482410741",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Amarelo",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2502245936",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4482410741",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4482448215",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Amarelo",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2502245936",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4482448215",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7217502670",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Pink",
+        "preco": 169.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Rosa",
+        "cores": [
+          "Rosa"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7217502670",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7217502660",
+        "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Laranja",
+        "preco": 169.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2180790539",
+        "marca": "Genérico/Outros",
+        "material": "TPU",
+        "cor": "Laranja",
+        "cores": [
+          "Laranja"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7217502660",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5005617771",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.89,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1204985417",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5005617771",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4243538445",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4243538445",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4772309639",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2049046938",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4772309639",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7285923854",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 113.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "5475069",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7285923854",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4772198423",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 114.97,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2457539550",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4772198423",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7046051528",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 114.97,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1592921",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7046051528",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4888486269",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 115.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3539188725",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4888486269",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5026413551",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 118.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2608520874",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5026413551",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7285923856",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 118.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "5475069",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7285923856",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4781925327",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 119.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3297304957",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4781925327",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6416675616",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 119.8,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "97307092",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6416675616",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4979925689",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 119.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3261849928",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4979925689",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5780820188",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 119.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5780820188",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7264362928",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 119.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3294274368",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7264362928",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7328863510",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 119.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3304676198",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7328863510",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4852893817",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 122.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2453535536",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4852893817",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6482659908",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 124.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3106965341",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6482659908",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7143206804",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 125.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1837123710",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7143206804",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4470093539",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 125.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "152359821",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4470093539",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4866641215",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 126.5,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "272381845",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4866641215",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6917539858",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 128.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "29867897",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6917539858",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7048390744",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 129.49,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "42197283",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7048390744",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4786700413",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 129.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "236495217",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4786700413",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7023268212",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 129.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1411541812",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7023268212",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7060838998",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 129.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2716248969",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7060838998",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4776831627",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 132.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3055406212",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4776831627",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6482730838",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 134.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3106965341",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6482730838",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7058482586",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 139.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2515518898",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7058482586",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4776795131",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 142.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3055406212",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4776795131",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6989144382",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 149.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1074101726",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6989144382",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7126297100",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 159.77,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1860742865",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7126297100",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7153965446",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 114.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "268350771",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7153965446",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6224771800",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 131.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2255099398",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6224771800",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7184390386",
+        "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+        "preco": 149.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2020113661",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7184390386",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5831827964",
+        "titulo": "Filamento Pla Para Impressora 3d Creality Hyper Pla 1kg",
+        "preco": 156.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "106186702",
+        "marca": "Creality",
+        "material": "PLA",
+        "cor": "Indefinida",
+        "cores": [],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5831827964",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7196424420",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 99.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "243119384",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7196424420",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7296860416",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 105.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "768280796",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7296860416",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7324006826",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 109.56,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "454984459",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7324006826",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4840028423",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 110.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3242094464",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4840028423",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7304555122",
+        "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+        "preco": 92.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3439333482",
+        "marca": "Masterprint",
+        "material": "PETG",
+        "cor": "Preto",
+        "cores": [
+          "Preto"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7304555122",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4757231393",
+        "titulo": "Filamento Petg 1kg Branco Fluion 3d",
+        "preco": 86.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "799346915",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4757231393",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4757245789",
+        "titulo": "Filamento Petg 1kg Branco Fluion 3d",
+        "preco": 128.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "799346915",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Branco",
+        "cores": [
+          "Branco"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4757245789",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5780124222",
+        "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 119.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5780124222",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB6831351192",
+        "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 124.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "29867897",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB6831351192",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5780376376",
+        "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 130.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5780376376",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7175699876",
+        "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 165.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "391655373",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7175699876",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5006030725",
+        "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 120.19,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "346825403",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5006030725",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4444594647",
+        "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 169.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "769032202",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4444594647",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4243267235",
+        "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 120.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Vermelho",
+        "cores": [
+          "Vermelho"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4243267235",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5780108680",
+        "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 130.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Vermelho",
+        "cores": [
+          "Vermelho"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5780108680",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5006030723",
+        "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 120.19,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "346825403",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Vermelho",
+        "cores": [
+          "Vermelho"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5006030723",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4445477505",
+        "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+        "preco": 169.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "769032202",
+        "marca": "Genérico/Outros",
+        "material": "PETG",
+        "cor": "Vermelho",
+        "cores": [
+          "Vermelho"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4445477505",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB3858351783",
+        "titulo": "Filamento ABS Amarelo 1,75mm 1kg Impressora 3D F3DB",
+        "preco": 109.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "466017156",
+        "marca": "Genérico/Outros",
+        "material": "ABS",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB3858351783",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5058690484",
+        "titulo": "Filamento ABS Amarelo 1,75mm 1kg Impressora 3D F3DB",
+        "preco": 109.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "466017156",
+        "marca": "Genérico/Outros",
+        "material": "ABS",
+        "cor": "Amarelo",
+        "cores": [
+          "Amarelo"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5058690484",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7296015618",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 119.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3297304957",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7296015618",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4936103087",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 123.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "152359821",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4936103087",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB5782569732",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 124.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB5782569732",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4853111239",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 128.29,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3261849928",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4853111239",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4735623311",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 128.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "29867897",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4735623311",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4980931661",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 128.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3539188725",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4980931661",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4974900987",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 129.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3332627695",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4974900987",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940445739",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "753236846",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940445739",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940452345",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1180532889",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940452345",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940456859",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "133826907",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940456859",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940605611",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "389733656",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940605611",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940612859",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "389805153",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940612859",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7243241468",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "210949758",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7243241468",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7243243436",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "270283427",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7243243436",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7243251036",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "753218522",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7243251036",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7246095680",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "390021766",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7246095680",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7246534382",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 132.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "112538681",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7246534382",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4244699727",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 139.89,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "50934253",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4244699727",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940456987",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "133826907",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940456987",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940603133",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "1180532889",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940603133",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4940605773",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "389733656",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4940605773",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7240451296",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "210949758",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7240451296",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7240453364",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "270283427",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7240453364",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7243247058",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "753236846",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7243247058",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7243251098",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "753218522",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7243251098",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7246093872",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "389805153",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7246093872",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7246097394",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "112538681",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7246097394",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB7246532664",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 142.99,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "390021766",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB7246532664",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4944740601",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 129.9,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "2674740037",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4944740601",
+        "marketplace": "mercadolivre"
+      },
+      {
+        "item_id": "MLB4915031203",
+        "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+        "preco": 130.0,
+        "quantidade_vendida": 0,
+        "avaliacoes": 0,
+        "seller_transactions": 0,
+        "seller_id": "3413393208",
+        "marca": "Genérico/Outros",
+        "material": "PLA",
+        "cor": "Azul",
+        "cores": [
+          "Azul"
+        ],
+        "peso_kg": 1.0,
+        "permalink": "https://produto.mercadolivre.com.br/MLB4915031203",
+        "marketplace": "mercadolivre"
+      }
+    ],
+    "por_termo": [
+      {
+        "id": "fil-tpu",
+        "nome": "Filamento TPU",
+        "material": "TPU",
+        "total": 9,
+        "preco_min": 139.0,
+        "preco_medio": 154.56,
+        "preco_max": 169.0
+      },
+      {
+        "id": "fil-pla-1kg",
+        "nome": "Filamento PLA",
+        "material": "PLA",
+        "total": 35,
+        "preco_min": 113.89,
+        "preco_medio": 126.89,
+        "preco_max": 159.77
+      },
+      {
+        "id": "fil-petg-1kg",
+        "nome": "Filamento PETG",
+        "material": "PETG",
+        "total": 17,
+        "preco_min": 86.0,
+        "preco_medio": 123.52,
+        "preco_max": 169.99
+      },
+      {
+        "id": "fil-abs-1kg",
+        "nome": "Filamento ABS",
+        "material": "ABS",
+        "total": 2,
+        "preco_min": 109.9,
+        "preco_medio": 109.9,
+        "preco_max": 109.9
+      },
+      {
+        "id": "fil-pla-175",
+        "nome": "Filamento PLA 1.75mm",
+        "material": "PLA",
+        "total": 30,
+        "preco_min": 119.9,
+        "preco_medio": 134.78,
+        "preco_max": 142.99
+      }
+    ],
+    "decisao": {
+      "fonte_cores": "presenca_anuncios",
+      "confianca_cores_pct": 25,
+      "top_cores": [
+        "Preto",
+        "Azul",
+        "Branco",
+        "Amarelo",
+        "Vermelho"
+      ],
+      "cores_saturadas": [
+        "Preto",
+        "Azul"
+      ],
+      "cores_nicho": [
+        "Rosa",
+        "Laranja"
+      ],
+      "preco_medio": 131.13,
+      "preco_min": 86.0,
+      "custo_1kg_brl": 45.96,
+      "taxa_ml_pct": 16.0,
+      "margem_no_preco_medio": {
+        "ok": true,
+        "preco_venda_brl": 131.13,
+        "custo_unitario_brl": 45.96,
+        "liquido_apos_taxa_brl": 110.15,
+        "taxa_marketplace_pct": 16.0,
+        "margem_brl": 64.19,
+        "margem_pct": 49.0,
+        "lucro_razoavel": true
+      },
+      "preco_piso_sugerido": 77.9,
+      "margem_alvo_pct": 25.0,
+      "marca_mais_presente": "Genérico/Outros"
+    },
+    "avaliacoes_enriquecidas": 0
+  },
+  "resultados": [
+    {
+      "ok": true,
+      "id": "fil-tpu",
+      "nome": "Filamento TPU",
+      "material": "TPU",
+      "termo_busca": "filamento tpu flexivel 1kg impressora 3d",
+      "prioridade": 1,
+      "total_bruto": 9,
+      "total_filamentos": 9,
+      "preco_min": 139.0,
+      "preco_max": 169.0,
+      "preco_medio": 154.56,
+      "produtos": [
+        {
+          "item_id": "MLB6399552124",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Nude",
+          "preco": 149.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3054411747",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Indefinida",
+          "cores": [],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6399552124",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4494066903",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Café",
+          "preco": 169.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2180790539",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Indefinida",
+          "cores": [],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4494066903",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7217502668",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+          "preco": 139.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2180790539",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Branco",
+          "cores": [
+            "Branco"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7217502668",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6291041318",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+          "preco": 149.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2180790539",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Branco",
+          "cores": [
+            "Branco"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6291041318",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6399760114",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Branco",
+          "preco": 149.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3054411747",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Branco",
+          "cores": [
+            "Branco"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6399760114",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4482410741",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Amarelo",
+          "preco": 149.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2502245936",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Amarelo",
+          "cores": [
+            "Amarelo"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4482410741",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4482448215",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Amarelo",
+          "preco": 149.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2502245936",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Amarelo",
+          "cores": [
+            "Amarelo"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4482448215",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7217502670",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Pink",
+          "preco": 169.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2180790539",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Rosa",
+          "cores": [
+            "Rosa"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7217502670",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7217502660",
+          "titulo": "Filamento Tpu Flexível 1.75mm 1kg Para Impressora 3d Cor Laranja",
+          "preco": 169.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2180790539",
+          "marca": "Genérico/Outros",
+          "material": "TPU",
+          "cor": "Laranja",
+          "cores": [
+            "Laranja"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7217502660",
+          "marketplace": "mercadolivre"
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "id": "fil-pla-1kg",
+      "nome": "Filamento PLA",
+      "material": "PLA",
+      "termo_busca": "filamento pla 1kg impressora 3d",
+      "prioridade": 1,
+      "total_bruto": 35,
+      "total_filamentos": 35,
+      "preco_min": 113.89,
+      "preco_max": 159.77,
+      "preco_medio": 126.89,
+      "produtos": [
+        {
+          "item_id": "MLB5005617771",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 113.89,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1204985417",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5005617771",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4243538445",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 113.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4243538445",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4772309639",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 113.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2049046938",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4772309639",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7285923854",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 113.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "5475069",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7285923854",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4772198423",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 114.97,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2457539550",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4772198423",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7046051528",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 114.97,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1592921",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7046051528",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4888486269",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 115.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3539188725",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4888486269",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5026413551",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 118.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2608520874",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5026413551",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7285923856",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 118.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "5475069",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7285923856",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4781925327",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 119.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3297304957",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4781925327",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6416675616",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 119.8,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "97307092",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6416675616",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4979925689",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 119.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3261849928",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4979925689",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5780820188",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 119.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5780820188",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7264362928",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 119.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3294274368",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7264362928",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7328863510",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 119.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3304676198",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7328863510",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4852893817",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 122.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2453535536",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4852893817",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6482659908",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 124.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3106965341",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6482659908",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7143206804",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 125.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1837123710",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7143206804",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4470093539",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 125.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "152359821",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4470093539",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4866641215",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 126.5,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "272381845",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4866641215",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6917539858",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 128.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "29867897",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6917539858",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7048390744",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 129.49,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "42197283",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7048390744",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4786700413",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 129.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "236495217",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4786700413",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7023268212",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 129.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1411541812",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7023268212",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7060838998",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 129.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2716248969",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7060838998",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4776831627",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 132.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3055406212",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4776831627",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6482730838",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 134.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3106965341",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6482730838",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7058482586",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 139.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2515518898",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7058482586",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4776795131",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 142.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3055406212",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4776795131",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6989144382",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 149.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1074101726",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6989144382",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7126297100",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 159.77,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1860742865",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7126297100",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7153965446",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 114.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "268350771",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7153965446",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6224771800",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 131.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2255099398",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6224771800",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7184390386",
+          "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+          "preco": 149.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2020113661",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7184390386",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5831827964",
+          "titulo": "Filamento Pla Para Impressora 3d Creality Hyper Pla 1kg",
+          "preco": 156.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "106186702",
+          "marca": "Creality",
+          "material": "PLA",
+          "cor": "Indefinida",
+          "cores": [],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5831827964",
+          "marketplace": "mercadolivre"
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "id": "fil-petg-1kg",
+      "nome": "Filamento PETG",
+      "material": "PETG",
+      "termo_busca": "filamento petg 1kg impressora 3d",
+      "prioridade": 1,
+      "total_bruto": 17,
+      "total_filamentos": 17,
+      "preco_min": 86.0,
+      "preco_max": 169.99,
+      "preco_medio": 123.52,
+      "produtos": [
+        {
+          "item_id": "MLB7196424420",
+          "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+          "preco": 99.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "243119384",
+          "marca": "Masterprint",
+          "material": "PETG",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7196424420",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7296860416",
+          "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+          "preco": 105.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "768280796",
+          "marca": "Masterprint",
+          "material": "PETG",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7296860416",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7324006826",
+          "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+          "preco": 109.56,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "454984459",
+          "marca": "Masterprint",
+          "material": "PETG",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7324006826",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4840028423",
+          "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+          "preco": 110.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3242094464",
+          "marca": "Masterprint",
+          "material": "PETG",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4840028423",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7304555122",
+          "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto 1kg",
+          "preco": 92.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3439333482",
+          "marca": "Masterprint",
+          "material": "PETG",
+          "cor": "Preto",
+          "cores": [
+            "Preto"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7304555122",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4757231393",
+          "titulo": "Filamento Petg 1kg Branco Fluion 3d",
+          "preco": 86.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "799346915",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Branco",
+          "cores": [
+            "Branco"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4757231393",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4757245789",
+          "titulo": "Filamento Petg 1kg Branco Fluion 3d",
+          "preco": 128.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "799346915",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Branco",
+          "cores": [
+            "Branco"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4757245789",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5780124222",
+          "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 119.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5780124222",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB6831351192",
+          "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 124.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "29867897",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB6831351192",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5780376376",
+          "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 130.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5780376376",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7175699876",
+          "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 165.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "391655373",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7175699876",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5006030725",
+          "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 120.19,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "346825403",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5006030725",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4444594647",
+          "titulo": "Filamento Petg Azul 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 169.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "769032202",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4444594647",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4243267235",
+          "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 120.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Vermelho",
+          "cores": [
+            "Vermelho"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4243267235",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5780108680",
+          "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 130.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Vermelho",
+          "cores": [
+            "Vermelho"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5780108680",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5006030723",
+          "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 120.19,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "346825403",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Vermelho",
+          "cores": [
+            "Vermelho"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5006030723",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4445477505",
+          "titulo": "Filamento Petg Vermelho 1kg Multfila Impressora 3d 1.75mm",
+          "preco": 169.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "769032202",
+          "marca": "Genérico/Outros",
+          "material": "PETG",
+          "cor": "Vermelho",
+          "cores": [
+            "Vermelho"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4445477505",
+          "marketplace": "mercadolivre"
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "id": "fil-abs-1kg",
+      "nome": "Filamento ABS",
+      "material": "ABS",
+      "termo_busca": "filamento abs 1kg impressora 3d",
+      "prioridade": 1,
+      "total_bruto": 2,
+      "total_filamentos": 2,
+      "preco_min": 109.9,
+      "preco_max": 109.9,
+      "preco_medio": 109.9,
+      "produtos": [
+        {
+          "item_id": "MLB3858351783",
+          "titulo": "Filamento ABS Amarelo 1,75mm 1kg Impressora 3D F3DB",
+          "preco": 109.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "466017156",
+          "marca": "Genérico/Outros",
+          "material": "ABS",
+          "cor": "Amarelo",
+          "cores": [
+            "Amarelo"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB3858351783",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5058690484",
+          "titulo": "Filamento ABS Amarelo 1,75mm 1kg Impressora 3D F3DB",
+          "preco": 109.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "466017156",
+          "marca": "Genérico/Outros",
+          "material": "ABS",
+          "cor": "Amarelo",
+          "cores": [
+            "Amarelo"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5058690484",
+          "marketplace": "mercadolivre"
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "id": "fil-pla-175",
+      "nome": "Filamento PLA 1.75mm",
+      "material": "PLA",
+      "termo_busca": "filamento pla 1.75mm 1kg impressora 3d",
+      "prioridade": 1,
+      "total_bruto": 30,
+      "total_filamentos": 30,
+      "preco_min": 119.9,
+      "preco_max": 142.99,
+      "preco_medio": 134.78,
+      "produtos": [
+        {
+          "item_id": "MLB7296015618",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 119.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3297304957",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7296015618",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4936103087",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 123.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "152359821",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4936103087",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB5782569732",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 124.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB5782569732",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4853111239",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 128.29,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3261849928",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4853111239",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4735623311",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 128.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "29867897",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4735623311",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4980931661",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 128.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3539188725",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4980931661",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4974900987",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 129.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3332627695",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4974900987",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940445739",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "753236846",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940445739",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940452345",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1180532889",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940452345",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940456859",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "133826907",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940456859",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940605611",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "389733656",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940605611",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940612859",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "389805153",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940612859",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7243241468",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "210949758",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7243241468",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7243243436",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "270283427",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7243243436",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7243251036",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "753218522",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7243251036",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7246095680",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "390021766",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7246095680",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7246534382",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 132.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "112538681",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7246534382",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4244699727",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 139.89,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "50934253",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4244699727",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940456987",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "133826907",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940456987",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940603133",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "1180532889",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940603133",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4940605773",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "389733656",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4940605773",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7240451296",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "210949758",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7240451296",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7240453364",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "270283427",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7240453364",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7243247058",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "753236846",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7243247058",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7243251098",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "753218522",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7243251098",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7246093872",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "389805153",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7246093872",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7246097394",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "112538681",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7246097394",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB7246532664",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 142.99,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "390021766",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB7246532664",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4944740601",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 129.9,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "2674740037",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4944740601",
+          "marketplace": "mercadolivre"
+        },
+        {
+          "item_id": "MLB4915031203",
+          "titulo": "Filamento PLA Multfila Azul 1.75mm 1kg Impressora 3D",
+          "preco": 130.0,
+          "quantidade_vendida": 0,
+          "avaliacoes": 0,
+          "seller_transactions": 0,
+          "seller_id": "3413393208",
+          "marca": "Genérico/Outros",
+          "material": "PLA",
+          "cor": "Azul",
+          "cores": [
+            "Azul"
+          ],
+          "peso_kg": 1.0,
+          "permalink": "https://produto.mercadolivre.com.br/MLB4915031203",
+          "marketplace": "mercadolivre"
+        }
+      ]
+    }
+  ],
+  "cruzamento_alibaba": null,
+  "sourcing": null
+}

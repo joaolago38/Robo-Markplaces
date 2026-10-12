@@ -1,0 +1,91 @@
+﻿name: Vigia Datadog
+
+# Monitora erros no Datadog, inatividade e ausência de resposta (2h).
+# Alerta crítico quando problema não é verificado.
+#
+# Heartbeats (orquestrador/conectividade/…) vêm do cache compartilhado
+# `saude-heartbeats-*`, gravado pelos workflows produtores.
+# O vigia NÃO regrava esses arquivos — senão congela timestamps velhos.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A cada 30 min — detecta janela de 2h sem resposta
+    - cron: "*/30 * * * *"
+
+concurrency:
+  # Fila própria: o vigia não renova tokens e não pode ficar atrás do orquestrador
+  # (grupo robo-markplaces-token-renewal), senão o heartbeat deixa de atualizar.
+  group: robo-markplaces-vigia-datadog
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.11"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  DD_APPLICATION_KEY: ${{ secrets.DD_APPLICATION_KEY }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
+
+jobs:
+  vigia:
+    name: Vigia erros Datadog e inatividade
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Restaurar cooldown Telegram
+        uses: actions/cache@v4
+        with:
+          path: logs/alertas_cooldown.json
+          key: telegram-cooldown-${{ github.run_id }}
+          restore-keys: |
+            telegram-cooldown-
+      - name: Restaurar heartbeats de saude (produtores)
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
+      - name: Restaurar buffer erros e historico vigia
+        uses: actions/cache@v4
+        with:
+          path: |
+            logs/datadog_erros_recentes.json
+            logs/datadog_vigia_history.json
+            logs/decisao_oscilacao_ultima.json
+          key: vigia-datadog-${{ github.run_id }}
+          restore-keys: |
+            vigia-datadog-
+      - name: Rodar vigia Datadog
+        run: python -m agentes.infra.agente_vigia_datadog
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Alerta via Telegram; não falha o job só por detectar problemas (DD_APPLICATION_KEY opcional).
+          DATADOG_VIGIA_FALHAR_PROCESSO: "0"
+      - name: Salvar cache vigia (somente erros/histórico próprio)
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            logs/datadog_erros_recentes.json
+            logs/datadog_vigia_history.json
+            logs/alertas_cooldown.json
+            logs/decisao_oscilacao_ultima.json
+          key: vigia-datadog-${{ github.run_id }}
+      - name: Salvar snapshot vigia
+        uses: actions/upload-artifact@v4
+        with:
+          name: vigia-datadog-snapshot
+          path: |
+            logs/datadog_vigia_ultima.json
+            logs/datadog_erros_recentes.json
+          retention-days: 30
+          if-no-files-found: ignore

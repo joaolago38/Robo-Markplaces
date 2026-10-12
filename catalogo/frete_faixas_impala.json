@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-08-08T21:04:20.771445+00:00",
+  "fonte": "Custo_Embalagem_Kits_Impala.xlsx",
+  "faixas": [
+    {
+      "teto_g": 350.0,
+      "frete_reais": 9.0,
+      "rotulo": "Frete estimado kit ≤350g"
+    },
+    {
+      "teto_g": 530.0,
+      "frete_reais": 11.0,
+      "rotulo": "Frete estimado kit ≤530g"
+    },
+    {
+      "teto_g": 700.0,
+      "frete_reais": 13.0,
+      "rotulo": "Frete estimado kit ≤700g"
+    },
+    {
+      "teto_g": 1000.0,
+      "frete_reais": 14.5,
+      "rotulo": "Frete estimado kit ≤1,0kg"
+    },
+    {
+      "teto_g": 1500.0,
+      "frete_reais": 16.0,
+      "rotulo": "Frete estimado kit ≤1,5kg"
+    },
+    {
+      "teto_g": 3000.0,
+      "frete_reais": 19.0,
+      "rotulo": "Frete estimado kit ≤3,0kg"
+    }
+  ]
+}

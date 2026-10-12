@@ -1,0 +1,135 @@
+# =============================================================================
+# AWS SAM — Robo-Markplaces (experimentação Free Tier / Always Free)
+# =============================================================================
+# Stack de TESTE: destrua com `sam delete --stack-name robo-markplaces-aws-teste`
+# quando não precisar mais. Não afeta produção local nem GitHub Actions.
+#
+# Recursos incluídos (somente Always Free permanente):
+#   - DynamoDB (PAY_PER_REQUEST — sem custo fixo)
+#   - Lambda + Function URL (cota grátis mensal)
+#   - SSM Parameter Store Standard (placeholders)
+#   - CloudWatch Logs (cota grátis)
+#
+# NÃO incluído (evitar cobrança): EC2, RDS, NAT Gateway, Elastic IP, VPC.
+# =============================================================================
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Robo-Markplaces — API Flask via Lambda Function URL + estado em DynamoDB.
+  Migração incremental opcional; padrão local continua com STORAGE_BACKEND=file.
+
+Parameters:
+  Ambiente:
+    Type: String
+    Default: teste
+    Description: Rótulo do ambiente (ex. teste, staging)
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 256
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        STORAGE_BACKEND: dynamodb
+        DYNAMODB_TABLE_NAME: !Ref EstadoTabela
+        SSM_PARAMETER_PREFIX: !Sub /robo-markplaces/${Ambiente}
+
+Resources:
+
+  EstadoTabela:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub robo-markplaces-estado-${Ambiente}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: chave
+          AttributeType: S
+      KeySchema:
+        - AttributeName: chave
+          KeyType: HASH
+      Tags:
+        - Key: projeto
+          Value: robo-markplaces
+        - Key: ambiente
+          Value: !Ref Ambiente
+
+  ParametroBlingAccessToken:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /robo-markplaces/${Ambiente}/BLING_ACCESS_TOKEN
+      Type: SecureString
+      Value: PREENCHER_APOS_DEPLOY
+      Description: Placeholder — substitua pelo token real via console ou sync_secrets_ssm
+
+  ParametroBlingRefreshToken:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /robo-markplaces/${Ambiente}/BLING_REFRESH_TOKEN
+      Type: SecureString
+      Value: PREENCHER_APOS_DEPLOY
+      Description: Placeholder — substitua pelo refresh token real
+
+  ParametroMlAccessToken:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /robo-markplaces/${Ambiente}/ML_ACCESS_TOKEN
+      Type: SecureString
+      Value: PREENCHER_APOS_DEPLOY
+      Description: Placeholder — Mercado Livre access token
+
+  ParametroRoboApiKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /robo-markplaces/${Ambiente}/ROBO_API_KEY
+      Type: SecureString
+      Value: PREENCHER_APOS_DEPLOY
+      Description: Chave exigida no header X-API-Key da API Flask
+
+  ApiFlaskFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.11
+    Properties:
+      FunctionName: !Sub robo-markplaces-api-${Ambiente}
+      Handler: api.lambda_handler.handler
+      CodeUri: ../
+      Description: API Robo-Markplaces (n8n → endpoints Flask) — experimentação Free Tier
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EstadoTabela
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:PutParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/robo-markplaces/${Ambiente}/*
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - GET
+            - POST
+          AllowHeaders:
+            - Content-Type
+            - X-API-Key
+            - X-Request-Id
+
+Outputs:
+  EstadoTabelaNome:
+    Description: Nome da tabela DynamoDB de estado
+    Value: !Ref EstadoTabela
+
+  ApiFunctionUrl:
+    Description: URL pública da API (configure no n8n; proteja com ROBO_API_KEY)
+    Value: !GetAtt ApiFlaskFunctionUrl.FunctionUrl
+
+  SsmPrefixo:
+    Description: Prefixo dos parâmetros SSM deste ambiente
+    Value: !Sub /robo-markplaces/${Ambiente}

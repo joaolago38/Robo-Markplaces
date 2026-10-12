@@ -3,17 +3,110 @@ core/claude_client.py
 Cliente centralizado para o Claude (Anthropic).
 Nunca lança exceção — erro retorna string de fallback.
 """
+import json
 import logging
 import time
 
-from core.config import ANTHROPIC_API_KEY
+from core.config import (
+    ANTHROPIC_API_KEY,
+    CLAUDE_ECONOMICO,
+    CLAUDE_MODELO,
+    CLAUDE_MODELO_RAPIDO,
+)
 from core.datadog_metrics import gauge, incrementar
 from core.http_client import request
 
 logger = logging.getLogger("claude")
 API_URL = "https://api.anthropic.com/v1/messages"
-MODELO = "claude-sonnet-4-5"
-MODELO_RAPIDO = "claude-haiku-4-5"
+# Preferir CLAUDE_MODELO / CLAUDE_MODELO_RAPIDO no .env; CLAUDE_ECONOMICO=1 força o barato.
+MODELO = CLAUDE_MODELO
+MODELO_RAPIDO = CLAUDE_MODELO_RAPIDO
+
+
+def _modelo_efetivo(modelo: str | None = None, *, forcar_modelo: bool = False) -> str:
+    """
+    Resolve o modelo da chamada.
+    CLAUDE_ECONOMICO=1 força Haiku — exceto quando forcar_modelo=True
+    (escalonamento de vendas ML via claude_roteador).
+    """
+    escolhido = (modelo or "").strip()
+    if forcar_modelo and escolhido:
+        return escolhido
+    if CLAUDE_ECONOMICO:
+        return MODELO_RAPIDO
+    return escolhido or MODELO
+
+
+def _status_http_erro(exc: Exception) -> int | None:
+    resp = getattr(exc, "response", None)
+    if resp is not None and getattr(resp, "status_code", None):
+        return int(resp.status_code)
+    texto = str(exc).lower()
+    if "401" in texto and "unauthorized" in texto:
+        return 401
+    if "403" in texto and "forbidden" in texto:
+        return 403
+    return None
+
+
+def _erro_credito_insuficiente(exc: Exception) -> bool:
+    resp = getattr(exc, "response", None)
+    blob = ""
+    if resp is not None:
+        blob = str(getattr(resp, "text", None) or "")[:2000]
+    blob = f"{blob} {exc}".lower()
+    return any(
+        trecho in blob
+        for trecho in (
+            "credit balance is too low",
+            "insufficient credits",
+            "insufficient_quota",
+            "billing hard limit",
+        )
+    )
+
+
+def _emitir_orcamento_datadog() -> None:
+    try:
+        from core.claude_orcamento import emitir_metricas_claude_datadog
+
+        emitir_metricas_claude_datadog()
+    except Exception:
+        logger.debug("nao foi possivel emitir orcamento Claude no Datadog", exc_info=True)
+
+
+def _talvez_zerar_saldo_console(exc: Exception) -> None:
+    if not _erro_credito_insuficiente(exc):
+        return
+    try:
+        from core.claude_orcamento import marcar_saldo_zerado_console
+
+        marcar_saldo_zerado_console(motivo="api_credit_too_low")
+    except Exception:
+        logger.debug("nao foi possivel zerar saldo Claude no Datadog", exc_info=True)
+
+
+def _log_erro_claude(exc: Exception, *, contexto: str) -> None:
+    from core.log_opcional import erro_opcional, log_erros_claude_ativos
+
+    status = _status_http_erro(exc)
+    if status in (401, 403):
+        logger.warning(
+            "Claude indisponível — %s (HTTP %s — configure ANTHROPIC_API_KEY)",
+            contexto,
+            status,
+        )
+        return
+    erro_opcional(
+        logger,
+        log_erros_claude_ativos(),
+        "Claude erro — %s: %s",
+        contexto,
+        exc,
+        flag_hint="LOG_ERROS_CLAUDE",
+        extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
+    )
+
 
 SYSTEM = """
 Você é o agente de vendas de uma distribuidora de esmaltes para manicures.
@@ -22,6 +115,73 @@ Use sempre dados reais do contexto fornecido.
 Nunca invente informações. Nunca prometa o que não pode cumprir.
 """
 
+# Contexto JSON/texto curto demais → não gasta Claude (cai assertividade com falha/vazio).
+CONTEXTO_MINIMO_CHARS = 80
+
+
+def contexto_suficiente(contexto: str | None, *, minimo: int = CONTEXTO_MINIMO_CHARS) -> bool:
+    return len((contexto or "").strip()) >= int(minimo)
+
+
+def _int_usage(d: dict, *keys: str) -> int:
+    total = 0
+    for key in keys:
+        try:
+            total += int(d.get(key) or 0)
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def estimar_tokens_texto(texto: str | None) -> int:
+    """Heurística ~4 caracteres/token quando a API não manda usage."""
+    n = len((texto or "").strip())
+    if n <= 0:
+        return 0
+    return max(1, (n + 3) // 4)
+
+
+def _extrair_tokens_usage(uso: dict | None) -> tuple[int, int]:
+    """Soma input (incl. cache aninhado) + output do usage Anthropic."""
+    if not isinstance(uso, dict):
+        return 0, 0
+    tin = _int_usage(
+        uso,
+        "input_tokens",
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+    )
+    cache = uso.get("cache_creation")
+    if isinstance(cache, dict) and _int_usage(uso, "cache_creation_input_tokens") == 0:
+        tin += _int_usage(
+            cache,
+            "ephemeral_5m_input_tokens",
+            "ephemeral_1h_input_tokens",
+        )
+    tout = _int_usage(uso, "output_tokens")
+    return tin, tout
+
+
+def tokens_para_registro(
+    uso: dict | None,
+    *,
+    texto_in: str = "",
+    texto_out: str = "",
+) -> tuple[int, int]:
+    """Usage da API; se in e out vierem zerados, estima pelo texto (com teto)."""
+    tin, tout = _extrair_tokens_usage(uso)
+    if tin <= 0 and tout <= 0:
+        tin = min(estimar_tokens_texto(texto_in), 50_000)
+        tout = min(estimar_tokens_texto(texto_out), 8_000)
+    return tin, tout
+
+
+def mlb_invalido(item_id: str | None) -> bool:
+    """True se item_id vazio, placeholder MLB_PREENCHER ou não começa com MLB."""
+    u = str(item_id or "").strip().upper().replace("-", "")
+    return (not u) or u in {"MLB_PREENCHER", "MLBPREENCHER"} or not u.startswith("MLB")
+
+
 def perguntar(
     prompt: str,
     max_tokens: int = 500,
@@ -29,9 +189,50 @@ def perguntar(
     system: str | None = None,
     imagens: list[str] | None = None,
     modelo: str | None = None,
+    *,
+    forcar_modelo: bool = False,
+    origem: str | None = None,
+    exigir_contexto: bool = False,
+    forcar_chamada: bool = False,
+    temperature: float | None = None,
+    proposito: str | None = None,
 ) -> str:
     if not ANTHROPIC_API_KEY:
         return "⚠️ ANTHROPIC_API_KEY não configurada."
+    if exigir_contexto and not contexto_suficiente(contexto):
+        logger.info("Claude pulado: contexto insuficiente (origem=%s)", origem or "?")
+        return "⚠️ Claude pulado: contexto insuficiente."
+    if proposito:
+        try:
+            from core.claude_roteador import resolver_modelo_chamada
+
+            modelo, forcar_modelo = resolver_modelo_chamada(
+                proposito=proposito, modelo=modelo, forcar_modelo=forcar_modelo
+            )
+        except Exception as exc:
+            logger.debug("roteamento perguntar: %s", exc)
+    modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
+    try:
+        from core.claude_orcamento import pode_chamar, registrar_uso
+
+        ok_orc, motivo_orc = pode_chamar(origem=origem, forcar=forcar_chamada)
+        if not ok_orc:
+            logger.warning("Claude bloqueado por orçamento: %s", motivo_orc)
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo="perguntar",
+                resultado="bloqueado",
+                origem=origem,
+            )
+            _emitir_orcamento_datadog()
+            return f"⚠️ Claude pausado: {motivo_orc}"
+    except Exception as exc:
+        # Fail-closed: sem gate confiável não chama a API (evita gastar USD).
+        logger.warning("Gate Claude falhou — bloqueando: %s", exc)
+        return f"⚠️ Claude pausado: gate_indisponivel ({exc})"
+
     mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
 
     content: list[dict] = []
@@ -47,55 +248,116 @@ def perguntar(
         )
     content.append({"type": "text", "text": mensagem_texto})
 
-    modelo_efetivo = modelo or MODELO
     _tags = [f"modelo:{modelo_efetivo}", f"com_imagem:{bool(imagens)}"]
     inicio = time.monotonic()
+    payload: dict = {
+        "model": modelo_efetivo,
+        "max_tokens": max_tokens,
+        "system": [
+            {
+                "type": "text",
+                "text": system or SYSTEM,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        "messages": [{"role": "user", "content": content}],
+    }
+    if temperature is not None:
+        payload["temperature"] = max(0.0, min(1.0, float(temperature)))
     try:
         r = request("POST", API_URL, headers={
             "x-api-key": ANTHROPIC_API_KEY,
             "anthropic-version": "2023-06-01",
             "anthropic-beta": "prompt-caching-2024-07-31",
             "content-type": "application/json",
-        }, json={
-            "model": modelo_efetivo,
-            "max_tokens": max_tokens,
-            "system": [
-                {
-                    "type": "text",
-                    "text": system or SYSTEM,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
-            "messages": [{"role": "user", "content": content}],
-        }, timeout=30)
+        }, json=payload, timeout=30)
         r.raise_for_status()
         data = r.json()
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
-        if uso:
-            incrementar("ia.tokens_entrada", uso.get("input_tokens", 0) or 0, tags=_tags)
-            incrementar("ia.tokens_saida", uso.get("output_tokens", 0) or 0, tags=_tags)
         conteudo_resposta = data.get("content", [])
         if not conteudo_resposta:
             incrementar("ia.resposta_vazia", tags=_tags)
             logger.error("Claude sem conteúdo na resposta: %s", data)
-            return "⚠️ Erro na IA: resposta vazia."
-        return conteudo_resposta[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
+            texto = "⚠️ Erro na IA: resposta vazia."
+        else:
+            texto = conteudo_resposta[0].get("text", "").strip() or "⚠️ Erro na IA: resposta sem texto."
+        tin, tout = tokens_para_registro(
+            uso,
+            texto_in=mensagem_texto,
+            texto_out="" if texto.startswith("⚠️") else texto,
+        )
+        if tin or tout:
+            incrementar("ia.tokens_entrada", tin, tags=_tags)
+            incrementar("ia.tokens_saida", tout, tags=_tags)
+        try:
+            from core.claude_orcamento import classificar_resultado_texto as _cls
+            from core.claude_orcamento import registrar_uso as _reg
+
+            resultado = _cls(texto)
+            _reg(
+                modelo=modelo_efetivo,
+                input_tokens=tin,
+                output_tokens=tout,
+                tipo="perguntar",
+                resultado=resultado,
+                origem=origem,
+            )
+        except Exception:
+            pass
+        if not texto.startswith("⚠️"):
+            try:
+                from core.claude_finetune import talvez_capturar
+
+                talvez_capturar(
+                    proposito=proposito,
+                    entrada=mensagem_texto,
+                    resposta=texto,
+                    origem=origem,
+                )
+            except Exception:
+                logger.debug("captura finetune ignorada", exc_info=True)
+        return texto
     except ValueError as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:json_invalido"])
         logger.error(
             "Claude retornou JSON inválido: %s", e,
             extra={"error_kind": type(e).__name__, "error_message": str(e)},
         )
+        try:
+            from core.claude_orcamento import registrar_uso as _reg
+
+            _reg(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo="perguntar",
+                resultado="falha",
+                origem=origem,
+            )
+        except Exception:
+            pass
         return "⚠️ Erro na IA: resposta inválida."
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:comunicacao"])
-        logger.error(
-            "Claude erro: %s", e,
-            extra={"error_kind": type(e).__name__, "error_message": str(e)},
-        )
+        _talvez_zerar_saldo_console(e)
+        _log_erro_claude(e, contexto="texto livre")
+        try:
+            from core.claude_orcamento import registrar_uso as _reg
+
+            _reg(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo="perguntar",
+                resultado="falha",
+                origem=origem,
+            )
+        except Exception:
+            pass
         return "⚠️ Erro na IA: falha de comunicação com o provedor."
+
 
 def perguntar_estruturado(
     prompt: str,
@@ -106,6 +368,11 @@ def perguntar_estruturado(
     contexto: str | None = None,
     system: str | None = None,
     modelo: str | None = None,
+    forcar_modelo: bool = False,
+    origem: str | None = None,
+    exigir_contexto: bool = False,
+    proposito: str | None = None,
+    forcar_chamada: bool = False,
 ) -> dict | None:
     """
     Como `perguntar`, mas força a resposta a seguir `schema` (JSON Schema
@@ -117,8 +384,39 @@ def perguntar_estruturado(
     if not ANTHROPIC_API_KEY:
         logger.warning("perguntar_estruturado sem ANTHROPIC_API_KEY.")
         return None
+    if exigir_contexto and not contexto_suficiente(contexto):
+        logger.info("Claude estruturado pulado: contexto insuficiente (origem=%s)", origem or "?")
+        return None
+    if proposito:
+        try:
+            from core.claude_roteador import resolver_modelo_chamada
+
+            modelo, forcar_modelo = resolver_modelo_chamada(
+                proposito=proposito, modelo=modelo, forcar_modelo=forcar_modelo
+            )
+        except Exception as exc:
+            logger.debug("roteamento estruturado: %s", exc)
+    modelo_efetivo = _modelo_efetivo(modelo, forcar_modelo=forcar_modelo)
+    try:
+        from core.claude_orcamento import pode_chamar, registrar_uso
+
+        ok_orc, motivo_orc = pode_chamar(origem=origem, forcar=forcar_chamada)
+        if not ok_orc:
+            logger.warning("Claude estruturado bloqueado: %s", motivo_orc)
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo=f"estruturado:{tool_name}",
+                resultado="bloqueado",
+                origem=origem,
+            )
+            _emitir_orcamento_datadog()
+            return None
+    except Exception as exc:
+        logger.warning("Gate Claude estruturado falhou — bloqueando: %s", exc)
+        return None
     mensagem_texto = f"{contexto}\n\n{prompt}" if contexto else prompt
-    modelo_efetivo = modelo or MODELO
     _tags = [f"modelo:{modelo_efetivo}", f"tool:{tool_name}"]
     inicio = time.monotonic()
     try:
@@ -152,24 +450,80 @@ def perguntar_estruturado(
         duracao_ms = (time.monotonic() - inicio) * 1000
         gauge("ia.latencia_ms", duracao_ms, tags=_tags)
         uso = data.get("usage") or {}
-        if uso:
-            incrementar("ia.tokens_entrada", uso.get("input_tokens", 0) or 0, tags=_tags)
-            incrementar("ia.tokens_saida", uso.get("output_tokens", 0) or 0, tags=_tags)
+        resultado_final = "falha"
+        payload_out = None
         for bloco in data.get("content", []):
             if bloco.get("type") == "tool_use" and bloco.get("name") == tool_name:
-                return bloco.get("input") or {}
-        incrementar("ia.resposta_vazia", tags=_tags)
-        logger.error("Claude não retornou tool_use esperado (%s): %s", tool_name, data)
-        return None
+                payload_out = bloco.get("input") or {}
+                resultado_final = "ok" if payload_out else "vazio"
+                break
+        if payload_out is None:
+            incrementar("ia.resposta_vazia", tags=_tags)
+            logger.error("Claude não retornou tool_use esperado (%s): %s", tool_name, data)
+            resultado_final = "falha"
+        texto_out = ""
+        if payload_out:
+            try:
+                texto_out = json.dumps(payload_out, ensure_ascii=False)
+            except Exception:
+                texto_out = str(payload_out)
+        tin, tout = tokens_para_registro(
+            uso,
+            texto_in=mensagem_texto,
+            texto_out=texto_out,
+        )
+        if tin or tout:
+            incrementar("ia.tokens_entrada", tin, tags=_tags)
+            incrementar("ia.tokens_saida", tout, tags=_tags)
+        try:
+            from core.claude_orcamento import registrar_uso
+
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=tin,
+                output_tokens=tout,
+                tipo=f"estruturado:{tool_name}",
+                resultado=resultado_final,
+                origem=origem,
+            )
+        except Exception:
+            pass
+        return payload_out
     except Exception as e:
         incrementar("ia.erro", tags=[*_tags, "tipo:estruturado"])
-        logger.error(
-            "Claude erro (estruturado, tool=%s): %s", tool_name, e,
-            extra={"error_kind": type(e).__name__, "error_message": str(e)},
-        )
+        _talvez_zerar_saldo_console(e)
+        _log_erro_claude(e, contexto=f"estruturado tool={tool_name}")
+        try:
+            from core.claude_orcamento import registrar_uso
+
+            registrar_uso(
+                modelo=modelo_efetivo,
+                input_tokens=0,
+                output_tokens=0,
+                tipo=f"estruturado:{tool_name}",
+                resultado="falha",
+                origem=origem,
+            )
+        except Exception:
+            pass
         return None
 
-def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
+def responder_chat(
+    pergunta: str,
+    produto: dict,
+    canal: str,
+    *,
+    sinal_ads: dict | None = None,
+    oferta_ctx: dict | None = None,
+) -> str:
+    from core.chat_seguro_ml import (
+        MSG_CONSULTAR_ANUNCIO,
+        MSG_INDISPONIVEL,
+        MSG_SEM_DESCONTO,
+        prompt_sistema_chat,
+        sanitizar_resposta_chat_ml,
+    )
+
     pergunta_txt = (pergunta or "").strip()
     if len(pergunta_txt) < 3:
         return ""
@@ -179,7 +533,49 @@ def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
 
     estoque = int(produto.get("estoque", produto.get("estoque_total", 0)) or 0)
     if estoque <= 0:
-        return "Produto indisponível no momento"
+        return MSG_INDISPONIVEL
+
+    try:
+        preco = float(produto.get("preco") or 0)
+    except (TypeError, ValueError):
+        preco = 0.0
+
+    from core.claude_analise_vendas import analisar_oportunidade_ml
+    from core.claude_roteador import resolver_modelo_vendas
+    from core.config import CLAUDE_ANALISE_FURA_TEMPLATE
+
+    if sinal_ads is None:
+        try:
+            from core.contexto_fechamento_ml import carregar_contexto_fechamento_ml
+
+            ctx_f = carregar_contexto_fechamento_ml()
+            sinal_ads = ctx_f.get("sinal_ads")
+            if oferta_ctx is None:
+                oferta_ctx = ctx_f.get("oferta")
+        except Exception:
+            pass
+
+    analise = analisar_oportunidade_ml(
+        texto=pergunta_txt,
+        canal=canal,
+        preco_produto=preco,
+        estoque=estoque,
+        proposito="chat_ml",
+        sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+    )
+    rota = resolver_modelo_vendas(
+        proposito="chat_ml",
+        canal=canal,
+        texto=pergunta_txt,
+        preco_produto=preco,
+        estoque=estoque,
+        sinal_ads=sinal_ads if isinstance(sinal_ads, dict) else None,
+        analise=analise,
+    )
+    # Se calor alto → pula templates e sobe IA (Sonnet)
+    usar_ia_direto = bool(
+        CLAUDE_ANALISE_FURA_TEMPLATE and analise.get("deve_aumentar_ia")
+    )
 
     pergunta_lower = pergunta_txt.lower()
     nome = str(produto.get("nome", "")).lower()
@@ -192,44 +588,79 @@ def responder_chat(pergunta: str, produto: dict, canal: str) -> str:
         "Serena, Café Café, Coffee, Sutileza, Lua, Sonho, Polar, Dengo, Caricia, Buquê"
     )
 
-    if "cor" in pergunta_lower and any(term in pergunta_lower for term in ["qual", "quais", "tem", "kit"]):
-        cores = produto.get("cores")
-        if isinstance(cores, list) and cores:
+    if not usar_ia_direto:
+        if "cor" in pergunta_lower and any(term in pergunta_lower for term in ["qual", "quais", "tem", "kit"]):
+            cores = produto.get("cores")
+            if isinstance(cores, list) and cores:
+                return (
+                    f"As cores deste kit são: {', '.join(str(c) for c in cores)}. "
+                    "Todas as cores estão identificadas no anúncio. Posso confirmar mais detalhes se precisar!"
+                )
+        if "escolher" in pergunta_lower or "escolho" in pergunta_lower or "montar" in pergunta_lower:
             return (
-                f"As cores deste kit são: {', '.join(str(c) for c in cores)}. "
-                "Todas com alta pigmentação e secagem rápida. Posso confirmar mais detalhes se precisar!"
+                "Pode sim! Deixe no campo de mensagem quais cores prefere da nossa lista. "
+                f"Vou separar exatamente o que você escolher. Lista completa: {lista_cores}."
             )
-    if "escolher" in pergunta_lower or "escolho" in pergunta_lower or "montar" in pergunta_lower:
-        return (
-            "Pode sim! Deixe no campo de mensagem quais cores prefere da nossa lista. "
-            f"Vou separar exatamente o que você escolher. Lista completa: {lista_cores}."
+        if "foto" in pergunta_lower or "real" in pergunta_lower:
+            return "Sim, as fotos mostram as cores reais. Cada frasco está identificado pelo nome Impala. O que você vê é o que recebe."
+        # Frete/prazo/CEP: nunca inventar — orientar anúncio
+        if any(k in pergunta_lower for k in ("entrega", "cep", "full", "frete", "prazo")):
+            return MSG_CONSULTAR_ANUNCIO
+        # Atacado/desconto: sem preço especial inventado
+        if any(k in pergunta_lower for k in ("atacado", "revendedor", "desconto", "promo")):
+            return MSG_SEM_DESCONTO
+        if "profissional" in pergunta_lower:
+            return (
+                "Sim, usado por manicures profissionais. "
+                "As cores do kit estão na foto e na descrição do anúncio."
+            )
+        if "alicate" in pergunta_lower or "mundial 777" in contexto:
+            return "Alicate Mundial 777 em aço inox cirúrgico. Pode ser autoclavado para uso em clínicas e salões. Corte preciso sem necessidade de afiar."
+        if "validade" in pergunta_lower:
+            # Só afirma se estiver na descrição do produto
+            if "validade" in descricao or "meses" in descricao:
+                return str(produto.get("descricao") or "")[:280]
+            return "A validade e o lote vêm impressos em cada frasco. Confira também na descrição do anúncio."
+
+    oferta_txt = ""
+    canal_norm = str(canal or "mercadolivre").strip().lower()
+    if (
+        canal_norm in {"", "mercadolivre", "ml"}
+        and isinstance(oferta_ctx, dict)
+        and oferta_ctx.get("link_ml")
+    ):
+        oferta_txt = (
+            f"Oferta ativa (captação Meta→ML): {oferta_ctx.get('campanha_nome') or 'kit'} "
+            f"| link {oferta_ctx.get('link_ml')} "
+            f"| sku {oferta_ctx.get('sku') or 'n/d'}"
         )
-    if "foto" in pergunta_lower or "real" in pergunta_lower:
-        return "Sim, as fotos mostram as cores reais. Cada frasco está identificado pelo nome Impala. O que você vê é o que recebe."
-    if "entrega" in pergunta_lower or "cep" in pergunta_lower or "full" in pergunta_lower:
-        return "Com Full ativo chegará grátis amanhã para a maioria das regiões. Confirme seu CEP para verificar disponibilidade."
-    if "atacado" in pergunta_lower or "revendedor" in pergunta_lower:
-        return "Temos preço especial para kits a partir de 3 unidades. Qual quantidade você precisa? Posso calcular o melhor preço."
-    if "profissional" in pergunta_lower:
-        return "Sim, usado por manicures profissionais. Secagem rápida, alta pigmentação, sem tolueno, sem formaldeído."
-    if "alicate" in pergunta_lower or "mundial 777" in contexto:
-        return "Alicate Mundial 777 em aço inox cirúrgico. Pode ser autoclavado para uso em clínicas e salões. Corte preciso sem necessidade de afiar."
-    if "validade" in pergunta_lower:
-        return "Validade de 24 a 30 meses a partir da fabricação. Lote e validade impressos em cada frasco."
 
     ctx = f"""
 Canal: {canal.upper()}
 Produto: {produto.get('nome','N/D')}
-Preço: R$ {produto.get('preco',0):.2f}
-Estoque: {estoque} unidades
+Preço (único permitido citar): R$ {preco:.2f}
+Estoque informado: {estoque} unidades
 Descrição: {produto.get('descricao','')}
+Análise oportunidade: {analise.get('resumo')} (fatores: {', '.join(analise.get('fatores') or [])})
+{oferta_txt}
+Captação Meta (resumo): {analise.get('captacao_meta') or {}}
 
 Pergunta do cliente: {pergunta_txt}
+
+Responda de forma factual e neutra. Se couber, cite o link da oferta sem inventar preço/frete/prazo/desconto.
 """
-    resposta = perguntar(ctx, max_tokens=300)
+    resposta = perguntar(
+        ctx,
+        max_tokens=320,
+        modelo=rota["modelo"],
+        forcar_modelo=bool(rota.get("forcar_modelo")),
+        system=prompt_sistema_chat(canal_norm if canal_norm not in {"", "ml"} else "mercadolivre"),
+        origem=f"{canal_norm or 'mercadolivre'}.chat.responder_chat",
+    )
     if resposta.startswith("⚠️"):
         return "Já vou te responder melhor"
-    return resposta
+    return sanitizar_resposta_chat_ml(resposta, produto)
+
 
 def gerar_post(produto: dict, canal: str) -> str:
     return perguntar(f"""

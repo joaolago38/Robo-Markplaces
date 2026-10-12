@@ -5,6 +5,8 @@ Product Ads do Mercado Livre — leitura e controle de campanhas (status/orçame
 from __future__ import annotations
 
 import logging
+import re
+import time
 from datetime import datetime, timedelta, timezone
 
 from core.config import (
@@ -12,6 +14,8 @@ from core.config import (
     ML_ADS_ACOS_DIAS_LIMITE,
     ML_ADS_KILL_SWITCH,
     ML_ADS_ORCAMENTO_MAXIMO,
+    ML_ADS_PRODUCT_ADS_FORA,
+    ROOT,
 )
 from core.notificador import alertar_gestor
 from integracoes.ml.ml_client import BASE, _enabled, _request_ml
@@ -19,6 +23,81 @@ from integracoes.ml.ml_client import BASE, _enabled, _request_ml
 logger = logging.getLogger("ml_product_ads")
 
 _METRICS = "clicks,prints,ctr,cost,cpc,acos,roas,cvr,units_quantity,total_amount"
+# Estado da última listagem — probe/escrita usam para distinguir 404 de "sem campanha".
+_ULTIMA_LISTAGEM: dict = {"ok": True, "codigo": "", "advertiser_id": ""}
+_ULTIMO_AVISO_404_TS: float = 0.0
+_COOLDOWN_AVISO_404_SEG = 6 * 3600  # log: evita spam warn a cada ciclo 30min
+_COOLDOWN_METRICA_404_SEG = 7 * 86400  # métrica: 1 lembrete/semana, não a cada job
+_COOLDOWN_404_PATH = ROOT / "logs" / "ads_product_ads_404.json"
+
+
+def ultima_listagem_codigo() -> str:
+    return str(_ULTIMA_LISTAGEM.get("codigo") or "")
+
+
+def ultima_listagem_ok() -> bool:
+    return bool(_ULTIMA_LISTAGEM.get("ok"))
+
+
+def _estado_404() -> dict:
+    try:
+        from core.atomic_io import ler_json
+
+        data = ler_json(_COOLDOWN_404_PATH, default={})
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _salvar_estado_404(estado: dict) -> None:
+    try:
+        from core.atomic_io import escrever_json_atomico
+
+        escrever_json_atomico(_COOLDOWN_404_PATH, estado)
+    except Exception:
+        pass
+
+
+def _marcar_ads_indisponivel_agora(valor: float, *, advertiser_id: str = "") -> None:
+    try:
+        from core.datadog_metrics import gauge
+
+        tags = [f"advertiser:{advertiser_id or 'desconhecido'}"]
+        gauge("ads.indisponivel_agora", float(valor), tags=tags)
+    except Exception:
+        pass
+
+
+def _avisar_ads_indisponivel_404(advertiser_id: str) -> None:
+    """Warn + métrica com cooldown em disco (Actions é processo novo a cada job)."""
+    global _ULTIMO_AVISO_404_TS
+    agora = time.time()
+    estado = _estado_404()
+    ultimo_warn = float(estado.get("warn_ts") or _ULTIMO_AVISO_404_TS or 0)
+    ultimo_metric = float(estado.get("metric_ts") or 0)
+    if (agora - ultimo_warn) < _COOLDOWN_AVISO_404_SEG:
+        # 404 conhecido: não manter gauge=1 (senão o monitor 2h fica Alert permanente).
+        _marcar_ads_indisponivel_agora(0.0, advertiser_id=advertiser_id)
+        logger.debug(
+            "ML listar_campanhas: Product Ads ainda 404 advertiser=%s (aviso em cooldown)",
+            advertiser_id,
+        )
+        _ULTIMO_AVISO_404_TS = ultimo_warn
+        return
+    _ULTIMO_AVISO_404_TS = agora
+    estado["warn_ts"] = agora
+    estado["advertiser_id"] = advertiser_id or ""
+    # Não incrementa ads.indisponivel: o monitor last_7d fica Alert a semana
+    # inteira e o Actions não persiste logs/ entre jobs.
+    estado["metric_ts"] = ultimo_metric or agora
+    _marcar_ads_indisponivel_agora(1.0, advertiser_id=advertiser_id)
+    _salvar_estado_404(estado)
+    logger.warning(
+        "ML listar_campanhas: Product Ads indisponível (HTTP 404) "
+        "advertiser=%s — no DevCenter conceda advertising / product_ads "
+        "e regenere o token. Sem incrementar ads.indisponivel (lembrete semanal).",
+        advertiser_id,
+    )
 
 
 def _notificar_dry_run(acao: str, detalhe: str) -> None:
@@ -51,6 +130,12 @@ def obter_advertiser() -> dict:
     """
     if not _enabled():
         return {"ok": False, "erro": "Mercado Livre não configurado"}
+    if ML_ADS_PRODUCT_ADS_FORA:
+        return {
+            "ok": False,
+            "erro": "Product Ads desligado (ML_ADS_PRODUCT_ADS_FORA) — escopo advertising no DevCenter",
+            "codigo": "escopo_ausente",
+        }
 
     try:
         r = _request_ml(
@@ -102,6 +187,19 @@ def _periodo_ads(dias: int) -> tuple[str, str]:
     return (hoje - timedelta(days=dias)).isoformat(), hoje.isoformat()
 
 
+def _met(metrics: dict | None, row: dict, chave: str, *, inteiro: bool = False):
+    src = metrics if isinstance(metrics, dict) else {}
+    bruto = src.get(chave)
+    if bruto is None:
+        bruto = row.get(chave)
+    try:
+        if inteiro:
+            return int(float(bruto or 0))
+        return float(bruto or 0)
+    except (TypeError, ValueError):
+        return 0 if inteiro else 0.0
+
+
 def _normalizar_campanha(row: dict) -> dict:
     metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else row
     return {
@@ -109,11 +207,100 @@ def _normalizar_campanha(row: dict) -> dict:
         "nome": str(row.get("name") or row.get("campaign_name") or ""),
         "status": str(row.get("status") or ""),
         "budget": float(row.get("budget") or 0),
-        "acos": float((metrics or {}).get("acos") or row.get("acos") or 0),
-        "roas": float((metrics or {}).get("roas") or row.get("roas") or 0),
-        "cost": float((metrics or {}).get("cost") or row.get("cost") or 0),
-        "clicks": int((metrics or {}).get("clicks") or row.get("clicks") or 0),
+        "acos": _met(metrics, row, "acos"),
+        "roas": _met(metrics, row, "roas"),
+        "cost": _met(metrics, row, "cost"),
+        "clicks": _met(metrics, row, "clicks", inteiro=True),
+        "prints": _met(metrics, row, "prints", inteiro=True),
+        "ctr": _met(metrics, row, "ctr"),
+        "cvr": _met(metrics, row, "cvr"),
+        "cpc": _met(metrics, row, "cpc"),
+        "units_quantity": _met(metrics, row, "units_quantity", inteiro=True),
+        "total_amount": _met(metrics, row, "total_amount"),
     }
+
+
+def emitir_metricas_visibilidade_ads(campanhas: list[dict] | None) -> None:
+    """Gauges de CTR/CVR/prints para Datadog. Não decide pausa (pausa continua ACOS)."""
+    try:
+        from core.datadog_metrics import gauge
+
+        rows = [c for c in (campanhas or []) if isinstance(c, dict)]
+        prints = sum(int(c.get("prints") or 0) for c in rows)
+        clicks = sum(int(c.get("clicks") or 0) for c in rows)
+        ctrs = [float(c.get("ctr") or 0) for c in rows if float(c.get("ctr") or 0) > 0]
+        cvrs = [float(c.get("cvr") or 0) for c in rows if float(c.get("cvr") or 0) > 0]
+        cpcs = [float(c.get("cpc") or 0) for c in rows if float(c.get("cpc") or 0) > 0]
+        gauge("ads.campanhas_n", float(len(rows)))
+        gauge("ads.prints_total", float(prints))
+        gauge("ads.clicks_total", float(clicks))
+        gauge("ads.ctr_medio", (sum(ctrs) / len(ctrs)) if ctrs else 0.0)
+        gauge("ads.cvr_medio", (sum(cvrs) / len(cvrs)) if cvrs else 0.0)
+        gauge("ads.cpc_medio", (sum(cpcs) / len(cpcs)) if cpcs else 0.0)
+        gauge("ads.ctr_cvr_visivel", 1.0 if prints or ctrs or cvrs else 0.0)
+    except Exception:
+        pass
+
+
+_RE_CAMP = re.compile(r"[^a-z0-9]+")
+_STATUS_ATIVA = frozenset({"active", "enabled", "started", "running"})
+
+
+def _camp_tag(campaign_id: str) -> str:
+    compact = _RE_CAMP.sub("", str(campaign_id or "").strip().lower())
+    return f"camp:{(compact or 'x')[:16]}"
+
+
+def emitir_metricas_ads_hoje(
+    campanhas: list[dict] | None,
+    *,
+    fonte_ok: bool = True,
+) -> None:
+    """Product Ads do dia calendário (BRT). Conta Impala; não misturar Masterprint."""
+    try:
+        from core.datadog_metrics import gauge
+
+        base = ["cnpj:impala", "janela:dia"]
+        gauge("ads.hoje.fonte_ok", 1.0 if fonte_ok else 0.0, tags=base)
+        rows = [c for c in (campanhas or []) if isinstance(c, dict)]
+        if not fonte_ok:
+            for nome in (
+                "ads.hoje.campanhas_n",
+                "ads.hoje.ativas_n",
+                "ads.hoje.gasto",
+                "ads.hoje.prints",
+                "ads.hoje.clicks",
+                "ads.hoje.unidades",
+                "ads.hoje.receita",
+            ):
+                gauge(nome, 0.0, tags=base)
+            return
+        ativas = [
+            c
+            for c in rows
+            if str(c.get("status") or "").strip().lower() in _STATUS_ATIVA
+        ]
+        gasto = sum(float(c.get("cost") or 0) for c in rows)
+        prints = sum(int(c.get("prints") or 0) for c in rows)
+        clicks = sum(int(c.get("clicks") or 0) for c in rows)
+        unidades = sum(int(c.get("units_quantity") or 0) for c in rows)
+        receita = sum(float(c.get("total_amount") or 0) for c in rows)
+        gauge("ads.hoje.campanhas_n", float(len(rows)), tags=base)
+        gauge("ads.hoje.ativas_n", float(len(ativas)), tags=base)
+        gauge("ads.hoje.gasto", gasto, tags=base)
+        gauge("ads.hoje.prints", float(prints), tags=base)
+        gauge("ads.hoje.clicks", float(clicks), tags=base)
+        gauge("ads.hoje.unidades", float(unidades), tags=base)
+        gauge("ads.hoje.receita", receita, tags=base)
+        for c in rows:
+            cid = str(c.get("id") or "").strip()
+            if not cid:
+                continue
+            tags = [*base, _camp_tag(cid)]
+            gauge("ads.hoje.ranking_gasto", float(c.get("cost") or 0), tags=tags)
+            gauge("ads.hoje.ranking_unidades", float(c.get("units_quantity") or 0), tags=tags)
+    except Exception:
+        pass
 
 
 def listar_campanhas(
@@ -122,17 +309,33 @@ def listar_campanhas(
     dias: int = 14,
     limit: int = 50,
     offset: int = 0,
+    emitir_visibilidade: bool = True,
 ) -> list[dict]:
     """Lista campanhas Product Ads com métricas do período. Nunca lança exceção."""
+    global _ULTIMA_LISTAGEM
+    _ULTIMA_LISTAGEM = {"ok": True, "codigo": "", "advertiser_id": advertiser_id or ""}
+
     if not _enabled():
+        _ULTIMA_LISTAGEM = {"ok": False, "codigo": "ml_desabilitado", "advertiser_id": ""}
+        return []
+    if ML_ADS_PRODUCT_ADS_FORA:
+        _ULTIMA_LISTAGEM = {"ok": False, "codigo": "escopo_ausente", "advertiser_id": ""}
+        _marcar_ads_indisponivel_agora(0.0)
         return []
 
     if not advertiser_id:
         adv = obter_advertiser()
         if not adv.get("ok"):
+            codigo = str(adv.get("codigo") or "sem_advertiser")
+            _ULTIMA_LISTAGEM = {
+                "ok": False,
+                "codigo": codigo,
+                "advertiser_id": "",
+            }
             logger.warning("listar_campanhas: %s", adv.get("erro"))
             return []
         advertiser_id = adv["advertiser_id"]
+        _ULTIMA_LISTAGEM["advertiser_id"] = advertiser_id
 
     try:
         date_from, date_to = _periodo_ads(dias)
@@ -154,9 +357,47 @@ def listar_campanhas(
         rows = body.get("results") or body.get("campaigns") or body.get("data") or []
         if isinstance(rows, dict):
             rows = list(rows.values())
-        return [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
+        _ULTIMA_LISTAGEM = {
+            "ok": True,
+            "codigo": "ok",
+            "advertiser_id": advertiser_id,
+        }
+        campanhas = [_normalizar_campanha(row) for row in rows if isinstance(row, dict)]
+        _marcar_ads_indisponivel_agora(0.0, advertiser_id=advertiser_id)
+        if emitir_visibilidade:
+            emitir_metricas_visibilidade_ads(campanhas)
+        return campanhas
     except Exception as exc:
-        logger.error("ML listar_campanhas erro: %s", exc)
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        # 404 = advertiser/campanhas inexistente ou Product Ads sem escopo —
+        # config, não queda do robô. Evita ERROR recorrente no Datadog.
+        if status == 404:
+            _ULTIMA_LISTAGEM = {
+                "ok": False,
+                "codigo": "http_404",
+                "advertiser_id": advertiser_id,
+            }
+            _avisar_ads_indisponivel_404(advertiser_id)
+            if emitir_visibilidade:
+                emitir_metricas_visibilidade_ads([])
+            # Não incrementa ads.probe_falha: 404 de config conhecida poluía
+            # o monitor P1 até o escopo Ads ser corrigido no DevCenter.
+        else:
+            _ULTIMA_LISTAGEM = {
+                "ok": False,
+                "codigo": f"http_{status}" if status else "http_erro",
+                "advertiser_id": advertiser_id,
+            }
+            logger.error("ML listar_campanhas erro: %s", exc)
+            try:
+                from core.datadog_metrics import incrementar
+
+                incrementar(
+                    "ads.probe_falha",
+                    tags=["motivo:http_erro", "origem:listar_campanhas"],
+                )
+            except Exception:
+                pass
         return []
 
 
@@ -256,6 +497,62 @@ def _atualizar_campanha(
         return {"ok": False, "dry_run": False, "acao": acao, "campaign_id": campaign_id, "erro": str(exc)}
 
 
+def probe_escrita_product_ads() -> dict:
+    """
+    Testa se a API de escrita Product Ads está autorizada (scopes).
+    Faz PUT idempotente (mesmo status atual) na 1ª campanha.
+    Retorna {ok, codigo, erro?} — não lança.
+    """
+    adv = obter_advertiser()
+    if not adv.get("ok"):
+        return {
+            "ok": False,
+            "codigo": str(adv.get("codigo") or "sem_advertiser"),
+            "erro": adv.get("erro") or "advertiser indisponível",
+        }
+    campanhas = listar_campanhas(advertiser_id=adv.get("advertiser_id"))
+    if not campanhas:
+        codigo_lista = ultima_listagem_codigo()
+        if codigo_lista == "http_404":
+            return {
+                "ok": False,
+                "codigo": "http_404",
+                "erro": (
+                    "Product Ads indisponível (HTTP 404) — escopos advertising "
+                    "ou advertiser_id no DevCenter"
+                ),
+            }
+        if codigo_lista and codigo_lista not in {"ok", "sem_campanhas"}:
+            return {
+                "ok": False,
+                "codigo": codigo_lista,
+                "erro": f"Listagem Product Ads falhou ({codigo_lista})",
+            }
+        return {
+            "ok": False,
+            "codigo": "sem_campanhas",
+            "erro": "Nenhuma campanha Product Ads para testar escrita",
+        }
+    camp = campanhas[0]
+    cid = str(camp.get("id") or "").strip()
+    status_atual = str(camp.get("status") or "paused").lower()
+    if status_atual not in {"active", "paused"}:
+        status_atual = "paused"
+    out = _atualizar_campanha(
+        cid,
+        adv["site_id"],
+        {"status": status_atual, "channel": "marketplace"},
+        "probe_escrita",
+        dry_run=False,
+        confirmar=True,
+    )
+    if out.get("ok"):
+        return {"ok": True, "codigo": "ok", "campaign_id": cid}
+    erro = str(out.get("erro") or "escrita falhou")
+    codigo = "http_401" if "401" in erro else "escrita_falhou"
+    return {"ok": False, "codigo": codigo, "erro": erro, "campaign_id": cid}
+
+
 def pausar_campanha(
     campaign_id: str,
     advertiser_site_id: str,
@@ -336,7 +633,8 @@ def aplicar_decisao_campanhas(
     campaign_ids: list[str] | None = None,
 ) -> list[dict]:
     """
-    Aplica pausar/ativar/orçamento em todas as campanhas (ou nas IDs informadas).
+    Aplica pausar/ativar(+orçamento)/escalar em todas as campanhas (ou nas IDs informadas).
+    Em ligar/ativar com budget > 0, ativa e define o orçamento diário.
     Usado pelo agente após confirmação do gestor.
     """
     adv = obter_advertiser()
@@ -357,7 +655,12 @@ def aplicar_decisao_campanhas(
         if decisao == "pausar":
             resultados.append(pausar_campanha(cid, site_id, dry_run=dry_run, confirmar=confirmar))
         elif decisao in ("ligar", "ativar"):
+            # Ligar = ativar status + orçamento inicial (BUDGET_FASE_INICIO via agente).
             resultados.append(ativar_campanha(cid, site_id, dry_run=dry_run, confirmar=confirmar))
+            if budget > 0:
+                resultados.append(
+                    definir_orcamento(cid, budget, site_id, dry_run=dry_run, confirmar=confirmar)
+                )
         elif decisao == "escalar" and budget > 0:
             resultados.append(
                 definir_orcamento(cid, budget, site_id, dry_run=dry_run, confirmar=confirmar)

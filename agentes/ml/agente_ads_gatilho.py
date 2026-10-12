@@ -6,23 +6,77 @@ Baseado em avaliações reais, nota média e ACOS atual.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
-from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
+from core.atomic_io import escrever_json_atomico
 from core.config import (
-    AVALIACOES_PARA_ADS,
-    NOTA_MINIMA_PARA_ADS,
-    AVALIACOES_PARA_ESCALAR,
     ACOS_MAXIMO,
-    ML_ADS_ACOS_DIAS_LIMITE,
-    BUDGET_FASE_INICIO,
+    AVALIACOES_PARA_ADS,
+    AVALIACOES_PARA_ESCALAR,
     BUDGET_FASE_CRESCIMENTO,
     BUDGET_FASE_ESCALA,
+    BUDGET_FASE_INICIO,
+    ML_ADS_ACOS_DIAS_LIMITE,
+    NOTA_MINIMA_PARA_ADS,
+    ROOT,
 )
-from integracoes.ml.ml_client import buscar_reputacao_vendedor, buscar_acos_ads
-from integracoes.ml.ml_product_ads import aplicar_decisao_campanhas, campanhas_acos_acima_limite, listar_campanhas
+from core.datadog_metrics import gauge, incrementar
+from core.notificador import alertar_gestor, perguntar_gestor_e_aguardar
+from integracoes.ml.ml_client import buscar_acos_ads, buscar_reputacao_vendedor
+from integracoes.ml.ml_product_ads import (
+    aplicar_decisao_campanhas,
+    campanhas_acos_acima_limite,
+    emitir_metricas_ads_hoje,
+    listar_campanhas,
+    probe_escrita_product_ads,
+    ultima_listagem_ok,
+)
 
 logger = logging.getLogger("agente_ads_gatilho")
+HEARTBEAT_PATH = ROOT / "logs" / "ads_gatilho_ultima.json"
+
+
+def _metricas_e_heartbeat(resultado: dict) -> None:
+    """Emite métricas ads.* e heartbeat para o Vigia (best-effort)."""
+    try:
+        decisao = str(resultado.get("decisao") or "desconhecida")
+        tags = [f"decisao:{decisao}"]
+        incrementar("ads.rodadas", tags=tags)
+        gauge("ads.budget_sugerido", float(resultado.get("budget_sugerido_dia") or 0))
+        gauge("ads.acos_atual", float(resultado.get("acos_atual") or 0))
+        gauge("ads.avaliacoes", float(resultado.get("avaliacoes") or 0))
+        if resultado.get("confirmado_gestor") is True:
+            incrementar("ads.aprovado_gestor", tags=tags)
+        elif resultado.get("confirmado_gestor") is False:
+            incrementar("ads.recusado_gestor", tags=tags)
+        probe = resultado.get("probe_escrita") or {}
+        if probe and not probe.get("ok"):
+            incrementar("ads.probe_falha", tags=tags)
+        aplicacoes = resultado.get("aplicacoes_api") or []
+        for a in aplicacoes:
+            if a.get("ok"):
+                incrementar("ads.aplicado", tags=tags)
+            else:
+                incrementar("ads.falha", tags=tags)
+        gasto_ev = float(resultado.get("gasto_diario_estimado_evitado") or 0)
+        if gasto_ev > 0:
+            gauge("ads.gasto_diario_evitado", gasto_ev)
+        falhas_aplicacao = sum(1 for a in aplicacoes if isinstance(a, dict) and not a.get("ok"))
+        probe_ok = True if not probe else bool(probe.get("ok"))
+        ok_hb = probe_ok and falhas_aplicacao == 0 and resultado.get("ok") is not False
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": bool(ok_hb),
+                "decisao": decisao,
+                "confirmado_gestor": resultado.get("confirmado_gestor"),
+                "probe_escrita_ok": probe_ok,
+                "falhas_aplicacao": falhas_aplicacao,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Ads: falha ao emitir metricas/heartbeat: %s", exc)
 
 
 def _contexto_decisao_ads(
@@ -104,6 +158,21 @@ def avaliar_momento_ads(
         motivos.append("Avaliações suficientes para iniciar Product Ads")
         motivos.append(f"Budget: R$ {BUDGET_FASE_INICIO}/dia — campanha automática por 2 semanas")
 
+    # Contrato impulso: sem SKU guerra+MLB liberado, não liga/escala
+    if decisao in ("ligar", "escalar"):
+        try:
+            from integracoes.ml.contrato_impulso_ml import ads_pode_ligar, montar_contrato
+
+            montar_contrato()
+            pode_ads, motivo_contrato = ads_pode_ligar()
+            if not pode_ads:
+                motivos.append(f"Contrato impulso ML: {motivo_contrato}")
+                motivos.append("Publique/preencha MLB dos SKUs de guerra antes de ads")
+                decisao = "aguardar"
+                budget_sugerido = 0.0
+        except Exception as exc:
+            logger.warning("Contrato impulso ads: %s", exc)
+
     resultado = {
         "decisao": decisao,
         "budget_sugerido_dia": budget_sugerido,
@@ -118,6 +187,37 @@ def avaliar_momento_ads(
 
     if decisao == "pausar":
         resultado["gasto_diario_estimado_evitado"] = gasto_diario_estimado_evitado
+
+    # Antes de pedir aprovação para ações de escrita, valida scopes Product Ads
+    if decisao in ("ligar", "pausar", "escalar"):
+        probe = probe_escrita_product_ads()
+        resultado["probe_escrita"] = probe
+        if not probe.get("ok"):
+            codigo_probe = str(probe.get("codigo") or "")
+            msg_probe = (
+                "⚠️ *ADS ML — escrita Product Ads indisponível*\n\n"
+                f"Decisão sugerida: *{decisao}*, mas a API recusou escrita.\n"
+                f"Código: `{codigo_probe}`\n"
+                f"Erro: `{probe.get('erro')}`\n\n"
+            )
+            if codigo_probe == "http_404":
+                msg_probe += (
+                    "Product Ads retornou HTTP 404 (escopo/advertiser). "
+                    "Não peço aprovação no Telegram até corrigir no DevCenter."
+                )
+            else:
+                msg_probe += (
+                    "Libere Product Ads no DevCenter / regenerar token com scopes de advertising "
+                    "antes de aprovar ligar/pausar/escalar."
+                )
+            alertar_gestor(msg_probe, chave="ads_ml:probe_escrita_falhou", cooldown_segundos=86400)
+            resultado["confirmado_gestor"] = False
+            resultado["decisao"] = "aguardar" if decisao == "ligar" else "manter"
+            resultado["motivos"] = list(motivos) + [
+                f"Probe escrita falhou: {probe.get('codigo')} — {probe.get('erro')}"
+            ]
+            logger.warning("Ads gatilho: probe escrita falhou — %s", probe)
+            return resultado
 
     if decisao == "ligar":
         pergunta = (
@@ -143,30 +243,16 @@ def avaliar_momento_ads(
             resultado["decisao"] = "aguardar"
 
     elif decisao == "pausar":
-        pergunta = (
-            f"🔴 *ADS ML — PAUSAR Product Ads*\n\n"
-            f"📈 ACOS atual: {acos_atual*100:.0f}% (limite: {ACOS_MAXIMO*100:.0f}%)\n"
-            f"📋 Motivo: {motivos[0] if motivos else 'ACOS acima do limite'}\n\n"
-            f"Deseja PAUSAR o Product Ads agora?"
+        # ACOS acima do teto: pausa sozinha. Ligar/escalar continua com aprovação.
+        resultado["confirmado_gestor"] = True
+        resultado["auto_pausar_acos"] = True
+        alertar_gestor(
+            f"🛑 ADS ML: PAUSA AUTOMÁTICA — ACOS {acos_atual*100:.0f}% "
+            f"(teto {ACOS_MAXIMO*100:.0f}%)\n"
+            + "\n".join(motivos)
+            + "\nNão esperei confirmação no Telegram para estancar o gasto."
         )
-        confirmado = perguntar_gestor_e_aguardar(
-            pergunta, timeout_segundos=600,
-            contexto_decisao=_contexto_decisao_ads(
-                decisao, avaliacoes, nota_media, acos_atual, full_ativo, budget_sugerido, motivos
-            ),
-        )
-        resultado["confirmado_gestor"] = confirmado
-        if confirmado:
-            alertar_gestor(
-                f"✅ ADS ML: PAUSANDO — aprovado pelo gestor\n"
-                f"ACOS: {acos_atual*100:.0f}%\n"
-                + "\n".join(motivos)
-            )
-            logger.info("Gestor APROVOU pausar ads — ACOS %.0f%%", acos_atual * 100)
-        else:
-            alertar_gestor("⏸ ADS ML: ação de PAUSAR cancelada ou sem resposta do gestor.")
-            logger.info("Gestor RECUSOU ou não respondeu — ads não pausado")
-            resultado["decisao"] = "manter"
+        logger.info("Ads: pausa automática ACOS %.0f%% (sem Telegram)", acos_atual * 100)
 
     elif decisao == "escalar":
         pergunta = (
@@ -242,17 +328,41 @@ def _executar_api_se_aprovado(resultado: dict) -> dict:
 
 
 def executar(item_id: str = "", acos_atual: float = 0.0, full_ativo: bool = False) -> dict:
-    rep = buscar_reputacao_vendedor()
-    if item_id and acos_atual == 0.0:
-        acos_atual = buscar_acos_ads(item_id)
-    elif acos_atual == 0.0:
-        acos_atual = _calcular_acos_agregado()
-    metrics = rep.get("metrics", {})
-    avaliacoes = int(metrics.get("total_ratings", 0))
-    nota = float(metrics.get("average_rating", 0.0))
-    if not full_ativo:
-        full_ativo = bool(metrics.get("power_seller_status") in ("gold", "platinum"))
-    return avaliar_momento_ads(avaliacoes, nota, acos_atual, full_ativo)
+    try:
+        rep = buscar_reputacao_vendedor()
+        if item_id and acos_atual == 0.0:
+            acos_atual = buscar_acos_ads(item_id)
+        elif acos_atual == 0.0:
+            acos_atual = _calcular_acos_agregado()
+        metrics = rep.get("metrics", {})
+        avaliacoes = int(metrics.get("total_ratings", 0))
+        nota = float(metrics.get("average_rating", 0.0))
+        if not full_ativo:
+            try:
+                from integracoes.ml.ml_client import listar_meus_anuncios
+                from integracoes.ml.tipo_anuncio_ml import algum_anuncio_full
+
+                full_ativo = algum_anuncio_full(listar_meus_anuncios())
+            except Exception:
+                full_ativo = False
+        resultado = avaliar_momento_ads(avaliacoes, nota, acos_atual, full_ativo)
+    except Exception:
+        try:
+            incrementar("ads.falha", tags=["tipo:execucao"])
+        except Exception:
+            pass
+        raise
+    _metricas_e_heartbeat(resultado)
+    try:
+        campanhas_dia = listar_campanhas(dias=1, emitir_visibilidade=False)
+        emitir_metricas_ads_hoje(campanhas_dia, fonte_ok=ultima_listagem_ok())
+    except Exception as exc:
+        logger.debug("ads hoje: %s", exc)
+        try:
+            emitir_metricas_ads_hoje([], fonte_ok=False)
+        except Exception:
+            pass
+    return resultado
 
 
 if __name__ == "__main__":

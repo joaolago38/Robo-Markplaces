@@ -1,0 +1,320 @@
+{
+  "ml_enabled": true,
+  "termos": [
+    {
+      "id": "esmalte_kit5",
+      "termo": "kit 5 esmaltes manicure",
+      "total": 5,
+      "por_mp": {
+        "mercadolivre": {
+          "anuncios": 5,
+          "com_preco": 5,
+          "preco_mediana": 44.0,
+          "preco_min": 41.4,
+          "preco_medio": 46.34,
+          "vendidos_api": 0,
+          "fonte": "products_api",
+          "amostra": [
+            {
+              "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+              "preco": 41.4,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+              "preco": 43.25,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Kit 5 Esmaltes Cacau Show Coleção Completa Manicure Impala",
+              "preco": 44.0,
+              "vendidos": 0
+            }
+          ]
+        },
+        "shopee": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "magalu": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "amazon": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        }
+      }
+    },
+    {
+      "id": "esmalte_impala",
+      "termo": "esmalte impala kit",
+      "total": 5,
+      "por_mp": {
+        "mercadolivre": {
+          "anuncios": 5,
+          "com_preco": 5,
+          "preco_mediana": 13.03,
+          "preco_min": 8.0,
+          "preco_medio": 13.66,
+          "vendidos_api": 0,
+          "fonte": "products_api",
+          "amostra": [
+            {
+              "titulo": "Impala Tiresmalt Removedor De Esmalte 100ml",
+              "preco": 16.4,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Esmalte Impala 7,5ml Branco",
+              "preco": 8.0,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Esmalte Impala Cor Preto",
+              "preco": 12.99,
+              "vendidos": 0
+            }
+          ]
+        },
+        "shopee": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "magalu": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "amazon": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        }
+      }
+    },
+    {
+      "id": "filamento_pla",
+      "termo": "filamento pla 1kg impressora 3d",
+      "total": 5,
+      "por_mp": {
+        "mercadolivre": {
+          "anuncios": 5,
+          "com_preco": 5,
+          "preco_mediana": 113.89,
+          "preco_min": 109.9,
+          "preco_medio": 112.92,
+          "vendidos_api": 0,
+          "fonte": "products_api",
+          "amostra": [
+            {
+              "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+              "preco": 109.9,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+              "preco": 113.0,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Filamento Pla Preto 1kg Multifila Impressora 3D",
+              "preco": 113.89,
+              "vendidos": 0
+            }
+          ]
+        },
+        "shopee": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "magalu": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "amazon": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        }
+      }
+    },
+    {
+      "id": "filamento_petg",
+      "termo": "filamento petg 1kg",
+      "total": 5,
+      "por_mp": {
+        "mercadolivre": {
+          "anuncios": 5,
+          "com_preco": 5,
+          "preco_mediana": 99.98,
+          "preco_min": 79.9,
+          "preco_medio": 98.77,
+          "vendidos_api": 0,
+          "fonte": "products_api",
+          "amostra": [
+            {
+              "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto",
+              "preco": 79.9,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto",
+              "preco": 99.9,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Filamento Petg Preto 1,75mm 1kg Masterprint Impressora 3d 1 Filamento Petg Preto",
+              "preco": 99.98,
+              "vendidos": 0
+            }
+          ]
+        },
+        "shopee": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "magalu": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "amazon": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        }
+      }
+    },
+    {
+      "id": "acetona_kit",
+      "termo": "kit acetona manicure",
+      "total": 4,
+      "por_mp": {
+        "mercadolivre": {
+          "anuncios": 4,
+          "com_preco": 4,
+          "preco_mediana": 60.99,
+          "preco_min": 26.6,
+          "preco_medio": 56.86,
+          "vendidos_api": 0,
+          "fonte": "products_api",
+          "amostra": [
+            {
+              "titulo": "Kit Acetona Removedor De Esmalte 480ml Butterfly 2 Unidades",
+              "preco": 58.99,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Kit Acetona Removedor De Esmalte 480ml Butterfly 2 Unidades",
+              "preco": 62.99,
+              "vendidos": 0
+            },
+            {
+              "titulo": "Kit Acetona Removedor De Esmaltes De Unha Monaly 500ml",
+              "preco": 78.84,
+              "vendidos": 0
+            }
+          ]
+        },
+        "shopee": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "magalu": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        },
+        "amazon": {
+          "anuncios": 0,
+          "com_preco": 0,
+          "preco_mediana": null,
+          "preco_min": null,
+          "preco_medio": null,
+          "vendidos_api": 0,
+          "fonte": null,
+          "amostra": []
+        }
+      }
+    }
+  ]
+}

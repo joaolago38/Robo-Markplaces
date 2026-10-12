@@ -29,11 +29,13 @@ class TestAgenteAmazon(unittest.TestCase):
     def test_AAM02_processar_lista_vazia(self, *_patches):
         self.assertEqual(agente_amazon.processar_mensagens(), 0)
 
+    @patch.object(agente_amazon, "skip_se_spec_inativo", return_value=None)
     @patch("agentes.vendas_notificador.notificar_pedidos_novos_marketplace", return_value={})
     @patch.object(agente_amazon, "processar_mensagens", return_value=0)
     def test_AAM03_executar_dict(self, *_patches):
         out = agente_amazon.executar()
         self.assertIsInstance(out, dict)
+        self.assertIn("respostas", out)
 
 
 if __name__ == "__main__":

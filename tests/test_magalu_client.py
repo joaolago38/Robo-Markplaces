@@ -47,6 +47,9 @@ if "requests.adapters" not in sys.modules:
 
 import integracoes.magalu.magalu_client as mag
 
+# Spec deixa Magalu inativo; estes testes cobrem o cliente com canal ligado.
+mag._canal_operando = lambda: True
+
 
 def _resp(status: int, body: dict | None = None, text: str = "") -> MagicMock:
     r = MagicMock()
@@ -83,16 +86,32 @@ class TestProbeConexao(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["status"], 200)
         url = mock_request.call_args[0][1]
-        self.assertIn("https://services.magalu.com/v0/questions", url)
+        self.assertIn("https://api.magalu.com/seller/v1/orders", url)
+        self.assertNotIn("/v0/questions", url)
 
+    @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
-    def test_401(self, mock_request):
+    def test_401(self, mock_request, _tok):
         mock_request.return_value = _resp(401, text="unauthorized")
         out = mag.probe_conexao()
         self.assertFalse(out["ok"])
         self.assertEqual(out["status"], 401)
         self.assertIn("token", out["msg"].lower())
+        self.assertEqual(mock_request.call_count, 1)
+
+    @patch.object(mag, "incrementar")
+    @patch.object(mag, "get_token_magalu")
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_401_renova_uma_vez_e_repete(self, mock_request, mock_token, mock_inc):
+        mock_token.side_effect = ["tok", "tok_novo"]
+        mock_request.side_effect = [_resp(401, text="unauthorized"), _resp(200, {"data": []})]
+        out = mag.probe_conexao()
+        self.assertTrue(out["ok"])
+        self.assertEqual(mock_request.call_count, 2)
+        mock_token.assert_any_call(forcar=True)
+        mock_inc.assert_any_call("token.recuperacao_automatica", tags=["provider:magalu"])
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
@@ -102,6 +121,15 @@ class TestProbeConexao(unittest.TestCase):
         self.assertFalse(out["ok"])
         self.assertEqual(out["status"], 403)
         self.assertIn("permissão", out["msg"].lower())
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_422_tenant(self, mock_request):
+        mock_request.return_value = _resp(422, text="X-Tenant-Id Field required")
+        out = mag.probe_conexao()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["status"], 422)
+        self.assertIn("tenant", out["msg"].lower())
 
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
@@ -120,6 +148,10 @@ class TestProbeConexao(unittest.TestCase):
 
 
 class TestListarPerguntas(unittest.TestCase):
+    def setUp(self):
+        mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+        mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
@@ -150,8 +182,26 @@ class TestListarPerguntas(unittest.TestCase):
     def test_excecao(self, *_):
         self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
 
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    def test_pula_quando_jwt_sem_escopo_perguntas(self, mock_request):
+        import base64
+        import json
+
+        payload = base64.urlsafe_b64encode(
+            json.dumps({"scope": "open:order-order-seller:read"}).encode()
+        ).decode().rstrip("=")
+        tok = f"hdr.{payload}.sig"
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            self.assertEqual(mag.listar_perguntas_nao_respondidas(), [])
+        mock_request.assert_not_called()
+
 
 class TestResponderPergunta(unittest.TestCase):
+    def setUp(self):
+        mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+        mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "")
     def test_nao_configurado(self):
@@ -199,6 +249,8 @@ class TestManterContaAtiva(unittest.TestCase):
         self.assertTrue(out["ok"])
         self.assertEqual(out["acao"], "keepalive executado")
         mock_registrar.assert_called_once_with("magalu")
+        url = mock_request.call_args[0][1]
+        self.assertIn("https://api.magalu.com/seller/v1/orders", url)
 
     @patch.object(mag, "dias_sem_acesso", side_effect=[2, 2])
     @patch.object(mag, "request", side_effect=RuntimeError("keepalive"))
@@ -349,9 +401,10 @@ class TestListarPedidos(unittest.TestCase):
         )
         self.assertEqual(mag.listar_pedidos(dias=7), [])
 
+    @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
-    def test_status_nao_200(self, mock_request):
+    def test_status_nao_200(self, mock_request, _tok):
         mock_request.return_value = _resp(401, text="unauthorized")
         self.assertEqual(mag.listar_pedidos(), [])
 
@@ -368,13 +421,102 @@ class TestListarPedidos(unittest.TestCase):
 
 
 class TestHelpers(unittest.TestCase):
+    def _jwt(self, tenant: str) -> str:
+        import base64
+        import json
+
+        payload = base64.urlsafe_b64encode(json.dumps({"tenant": tenant}).encode()).decode().rstrip("=")
+        return f"hdr.{payload}.sig"
+
     @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
     @patch.object(mag, "get_token_magalu", return_value="refreshed")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
     def test_headers_usa_token_renovado(self, *_):
         headers = mag._h()
         self.assertEqual(headers["Authorization"], "Bearer refreshed")
         self.assertNotIn("X-Seller-Id", headers)
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_headers_inclui_tenant_do_jwt(self):
+        tok = self._jwt("GENPUB.abc-tenant")
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.abc-tenant")
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok-sem-jwt")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "canal-fallback")
+    def test_headers_tenant_fallback_channel_id(self, *_):
+        headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "canal-fallback")
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok-opaco")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_headers_tenant_live_cfg(self, *_):
+        mag._AVISO_TENANT["feito"] = False
+        with patch.object(mag.cfg, "MAGALU_CHANNEL_ID", "GENPUB.from-cfg"):
+            headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.from-cfg")
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok-opaco")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_headers_tenant_env_merchant_id(self, *_):
+        mag._AVISO_TENANT["feito"] = False
+        with patch.object(mag.cfg, "MAGALU_CHANNEL_ID", ""):
+            with patch.object(mag.cfg, "MAGALU_MERCHANT_ID", ""):
+                with patch.dict(os.environ, {"MAGALU_CHANNEL_ID": "", "MAGALU_MERCHANT_ID": "GENPUB.env"}, clear=False):
+                    headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.env")
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_listar_pedidos_envia_x_tenant_id(self, mock_request):
+        tok = self._jwt("GENPUB.pedidos")
+        mock_request.return_value = _resp(200, {"data": []})
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            mag.listar_pedidos(dias=1)
+        headers = mock_request.call_args.kwargs.get("headers") or {}
+        self.assertEqual(headers.get("X-Tenant-Id"), "GENPUB.pedidos")
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_probe_conexao_envia_x_tenant_id(self, mock_request):
+        tok = self._jwt("GENPUB.probe")
+        mock_request.return_value = _resp(200, {"data": []})
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            out = mag.probe_conexao()
+        self.assertTrue(out["ok"])
+        url = mock_request.call_args[0][1]
+        self.assertIn("https://api.magalu.com/seller/v1/orders", url)
+        headers = mock_request.call_args.kwargs.get("headers") or {}
+        self.assertEqual(headers.get("X-Tenant-Id"), "GENPUB.probe")
+
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "rt")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_enabled_respeita_canal_operando(self, *_):
+        with patch.object(mag, "_canal_operando", return_value=True):
+            self.assertTrue(mag._enabled())
+        with patch.object(mag, "_canal_operando", return_value=False):
+            self.assertFalse(mag._enabled())
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_REFRESH_TOKEN", "")
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "")
+    def test_tenant_via_userinfo(self, mock_request):
+        mag._TENANT_USERINFO["valor"] = ""
+        mag._TENANT_USERINFO["tentou"] = False
+        tok = "a" * 48
+        mock_request.return_value = _resp(200, {"tenant": "GENPUB.userinfo"})
+        with patch.object(mag, "MAGALU_ACCESS_TOKEN", tok):
+            headers = mag._h()
+        self.assertEqual(headers["X-Tenant-Id"], "GENPUB.userinfo")
+        self.assertIn("userinfo", mock_request.call_args[0][1])
 
 
 if __name__ == "__main__":

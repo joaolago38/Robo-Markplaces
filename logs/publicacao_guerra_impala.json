@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-08-01T19:17:19.714630+00:00",
+  "vinculo": {
+    "anuncios_conta": 38,
+    "vinculados": [],
+    "pendentes_publicar": [
+      {
+        "sku": "IMP-MIMO-003",
+        "motivo": "sem_anuncio_na_conta_ml",
+        "titulo_sugerido": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure Profissional",
+        "preco": 44.9,
+        "categoria_ml": "MLB1430",
+        "seller_sku": "IMP-MIMO-003"
+      },
+      {
+        "sku": "IMP-BAIL-005",
+        "motivo": "sem_anuncio_na_conta_ml",
+        "titulo_sugerido": "Kit 5 Esmaltes Impala Bailarina Manicure Cores Sortidas",
+        "preco": 52.9,
+        "categoria_ml": "MLB1430",
+        "seller_sku": "IMP-BAIL-005"
+      },
+      {
+        "sku": "IMP-ATAC-010",
+        "motivo": "sem_anuncio_na_conta_ml",
+        "titulo_sugerido": "Kit 10 Esmaltes Impala Atacado Manicure Profissional",
+        "preco": 79.9,
+        "categoria_ml": "MLB1430",
+        "seller_sku": "IMP-ATAC-010"
+      }
+    ],
+    "catalogo_atualizado": false
+  },
+  "fichas_publicacao": [
+    {
+      "acao": "criar_anuncio_ml_manual",
+      "seller_sku": "IMP-MIMO-003",
+      "title": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure Profissional",
+      "price": 44.9,
+      "category_id": "MLB1430",
+      "depois": "Colar o MLB gerado em catalogo/produtos.json -> canais.mercadolivre.item_id do SKU IMP-MIMO-003"
+    },
+    {
+      "acao": "criar_anuncio_ml_manual",
+      "seller_sku": "IMP-BAIL-005",
+      "title": "Kit 5 Esmaltes Impala Bailarina Manicure Cores Sortidas",
+      "price": 52.9,
+      "category_id": "MLB1430",
+      "depois": "Colar o MLB gerado em catalogo/produtos.json -> canais.mercadolivre.item_id do SKU IMP-BAIL-005"
+    },
+    {
+      "acao": "criar_anuncio_ml_manual",
+      "seller_sku": "IMP-ATAC-010",
+      "title": "Kit 10 Esmaltes Impala Atacado Manicure Profissional",
+      "price": 79.9,
+      "category_id": "MLB1430",
+      "depois": "Colar o MLB gerado em catalogo/produtos.json -> canais.mercadolivre.item_id do SKU IMP-ATAC-010"
+    }
+  ],
+  "decisao_apos": {
+    "fazer": "preencher_mlb_guerra",
+    "titulo_fazer": "Publicar/preencher MLB de `IMP-MIMO-003` (entrada)",
+    "liberados": 0,
+    "bloqueados": 3
+  },
+  "instrucao": "Conta ML sem kits Impala: publique os 3 SKUs com seller_sku = SKU do catálogo, depois rode de novo este script para vincular o MLB automaticamente."
+}

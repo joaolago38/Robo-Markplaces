@@ -1,0 +1,425 @@
+{
+  "ok": true,
+  "timestamp": "2026-08-01T17:13:34.325520+00:00",
+  "tese": "O esmalte atrai; o kit, o B2B e a reposição (anexos) pagam o negócio. Não viva só do hit de cor.",
+  "score_ecossistema": 68.9,
+  "cobertura_fontes_pct": 40.0,
+  "fontes_disponiveis": [
+    "anita",
+    "montar_kits",
+    "conversao",
+    "mercado"
+  ],
+  "fontes_ausentes": [
+    "tendencias",
+    "busca_kit",
+    "kits",
+    "removedores",
+    "acetona",
+    "necessidade"
+  ],
+  "acoes": [
+    {
+      "camada": "core",
+      "titulo": "Cores âncora (planilha × demanda kits ML)",
+      "detalhe": "Priorize estoque/ads em: Branco, Paraiso, Sorvete De Ceu Azul, Nude Classico",
+      "prioridade": 1,
+      "horizonte": "7d",
+      "score": 88.5,
+      "evidencias": [
+        "Branco score=8.5",
+        "Paraiso score=8.0",
+        "Sorvete De Ceu Azul score=2.5"
+      ]
+    },
+    {
+      "camada": "kits",
+      "titulo": "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
+      "detalhe": "Cores: Branco, Paraiso, Sorvete De Ceu Azul | faixa R$ 43–62",
+      "prioridade": 1,
+      "horizonte": "7d",
+      "score": 85.6,
+      "evidencias": [
+        "score_medio=6.33"
+      ]
+    },
+    {
+      "camada": "core",
+      "titulo": "Posição Impala vs Anita (kits monitorados)",
+      "detalhe": "Share Impala 62.5% | margem média 32.9% — use cores líderes como isca; não dependa só do unitário.",
+      "prioridade": 2,
+      "horizonte": "7d",
+      "score": 75.0,
+      "evidencias": [
+        "vendas_impala=200",
+        "vendas_anita=120"
+      ]
+    },
+    {
+      "camada": "marca",
+      "titulo": "Defesa de marca Impala no ecossistema",
+      "detalhe": "Mantenha kits exclusivos + anexos Cruzeiro/Impala",
+      "prioridade": 2,
+      "horizonte": "90d",
+      "score": 70.0,
+      "evidencias": [
+        "share_impala=62.5"
+      ]
+    },
+    {
+      "camada": "kits",
+      "titulo": "Tamanhos quentes no ML",
+      "detalhe": "kit 3 (0 vend.) · kit 10 (0 vend.) · kit 6 (0 vend.) · kit 15 (0 vend.)",
+      "prioridade": 2,
+      "horizonte": "30d",
+      "score": 68.0,
+      "evidencias": [
+        "tamanhos_quentes_ml"
+      ]
+    },
+    {
+      "camada": "b2b",
+      "titulo": "Destravar canais de conversão manicures",
+      "detalhe": "Pendentes: whatsapp, instagram",
+      "prioridade": 2,
+      "horizonte": "7d",
+      "score": 65.0,
+      "evidencias": [
+        "whatsapp=config_pendente",
+        "telegram_manicures=ok",
+        "facebook=ok",
+        "instagram=config_pendente"
+      ]
+    },
+    {
+      "camada": "b2b",
+      "titulo": "Canal manicure — reposição semanal",
+      "detalhe": "Defina pacote atacado (20–50 un.) + frete. Use necessidade_manicures / promocoes para validar demanda.",
+      "prioridade": 2,
+      "horizonte": "30d",
+      "score": 60.0,
+      "evidencias": [
+        "sem_escolhida_necessidade"
+      ]
+    },
+    {
+      "camada": "conteudo",
+      "titulo": "Definir cor do mês + combo obrigatório",
+      "detalhe": "Esmalte âncora + base/top em toda campanha Meta/WA. Rode tendências se vazio.",
+      "prioridade": 2,
+      "horizonte": "30d",
+      "score": 50.0,
+      "evidencias": [
+        "sem_tendencia_quente"
+      ]
+    },
+    {
+      "camada": "anexos",
+      "titulo": "Rodar monitor de removedores",
+      "detalhe": "Sem snapshot de removedores — rode o agente para destravar a camada anexos.",
+      "prioridade": 2,
+      "horizonte": "7d",
+      "score": 40.0,
+      "evidencias": [
+        "fonte_ausente"
+      ]
+    }
+  ],
+  "por_camada": {
+    "core": [
+      {
+        "camada": "core",
+        "titulo": "Cores âncora (planilha × demanda kits ML)",
+        "detalhe": "Priorize estoque/ads em: Branco, Paraiso, Sorvete De Ceu Azul, Nude Classico",
+        "prioridade": 1,
+        "horizonte": "7d",
+        "score": 88.5,
+        "evidencias": [
+          "Branco score=8.5",
+          "Paraiso score=8.0",
+          "Sorvete De Ceu Azul score=2.5"
+        ]
+      },
+      {
+        "camada": "core",
+        "titulo": "Posição Impala vs Anita (kits monitorados)",
+        "detalhe": "Share Impala 62.5% | margem média 32.9% — use cores líderes como isca; não dependa só do unitário.",
+        "prioridade": 2,
+        "horizonte": "7d",
+        "score": 75.0,
+        "evidencias": [
+          "vendas_impala=200",
+          "vendas_anita=120"
+        ]
+      }
+    ],
+    "anexos": [
+      {
+        "camada": "anexos",
+        "titulo": "Rodar monitor de removedores",
+        "detalhe": "Sem snapshot de removedores — rode o agente para destravar a camada anexos.",
+        "prioridade": 2,
+        "horizonte": "7d",
+        "score": 40.0,
+        "evidencias": [
+          "fonte_ausente"
+        ]
+      }
+    ],
+    "kits": [
+      {
+        "camada": "kits",
+        "titulo": "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
+        "detalhe": "Cores: Branco, Paraiso, Sorvete De Ceu Azul | faixa R$ 43–62",
+        "prioridade": 1,
+        "horizonte": "7d",
+        "score": 85.6,
+        "evidencias": [
+          "score_medio=6.33"
+        ]
+      },
+      {
+        "camada": "kits",
+        "titulo": "Tamanhos quentes no ML",
+        "detalhe": "kit 3 (0 vend.) · kit 10 (0 vend.) · kit 6 (0 vend.) · kit 15 (0 vend.)",
+        "prioridade": 2,
+        "horizonte": "30d",
+        "score": 68.0,
+        "evidencias": [
+          "tamanhos_quentes_ml"
+        ]
+      }
+    ],
+    "b2b": [
+      {
+        "camada": "b2b",
+        "titulo": "Destravar canais de conversão manicures",
+        "detalhe": "Pendentes: whatsapp, instagram",
+        "prioridade": 2,
+        "horizonte": "7d",
+        "score": 65.0,
+        "evidencias": [
+          "whatsapp=config_pendente",
+          "telegram_manicures=ok",
+          "facebook=ok",
+          "instagram=config_pendente"
+        ]
+      },
+      {
+        "camada": "b2b",
+        "titulo": "Canal manicure — reposição semanal",
+        "detalhe": "Defina pacote atacado (20–50 un.) + frete. Use necessidade_manicures / promocoes para validar demanda.",
+        "prioridade": 2,
+        "horizonte": "30d",
+        "score": 60.0,
+        "evidencias": [
+          "sem_escolhida_necessidade"
+        ]
+      }
+    ],
+    "conteudo": [
+      {
+        "camada": "conteudo",
+        "titulo": "Definir cor do mês + combo obrigatório",
+        "detalhe": "Esmalte âncora + base/top em toda campanha Meta/WA. Rode tendências se vazio.",
+        "prioridade": 2,
+        "horizonte": "30d",
+        "score": 50.0,
+        "evidencias": [
+          "sem_tendencia_quente"
+        ]
+      }
+    ],
+    "marca": [
+      {
+        "camada": "marca",
+        "titulo": "Defesa de marca Impala no ecossistema",
+        "detalhe": "Mantenha kits exclusivos + anexos Cruzeiro/Impala",
+        "prioridade": 2,
+        "horizonte": "90d",
+        "score": 70.0,
+        "evidencias": [
+          "share_impala=62.5"
+        ]
+      }
+    ]
+  },
+  "por_horizonte": {
+    "7d": [
+      {
+        "camada": "core",
+        "titulo": "Cores âncora (planilha × demanda kits ML)",
+        "detalhe": "Priorize estoque/ads em: Branco, Paraiso, Sorvete De Ceu Azul, Nude Classico",
+        "prioridade": 1,
+        "horizonte": "7d",
+        "score": 88.5,
+        "evidencias": [
+          "Branco score=8.5",
+          "Paraiso score=8.0",
+          "Sorvete De Ceu Azul score=2.5"
+        ]
+      },
+      {
+        "camada": "kits",
+        "titulo": "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
+        "detalhe": "Cores: Branco, Paraiso, Sorvete De Ceu Azul | faixa R$ 43–62",
+        "prioridade": 1,
+        "horizonte": "7d",
+        "score": 85.6,
+        "evidencias": [
+          "score_medio=6.33"
+        ]
+      },
+      {
+        "camada": "core",
+        "titulo": "Posição Impala vs Anita (kits monitorados)",
+        "detalhe": "Share Impala 62.5% | margem média 32.9% — use cores líderes como isca; não dependa só do unitário.",
+        "prioridade": 2,
+        "horizonte": "7d",
+        "score": 75.0,
+        "evidencias": [
+          "vendas_impala=200",
+          "vendas_anita=120"
+        ]
+      },
+      {
+        "camada": "b2b",
+        "titulo": "Destravar canais de conversão manicures",
+        "detalhe": "Pendentes: whatsapp, instagram",
+        "prioridade": 2,
+        "horizonte": "7d",
+        "score": 65.0,
+        "evidencias": [
+          "whatsapp=config_pendente",
+          "telegram_manicures=ok",
+          "facebook=ok",
+          "instagram=config_pendente"
+        ]
+      },
+      {
+        "camada": "anexos",
+        "titulo": "Rodar monitor de removedores",
+        "detalhe": "Sem snapshot de removedores — rode o agente para destravar a camada anexos.",
+        "prioridade": 2,
+        "horizonte": "7d",
+        "score": 40.0,
+        "evidencias": [
+          "fonte_ausente"
+        ]
+      }
+    ],
+    "30d": [
+      {
+        "camada": "kits",
+        "titulo": "Tamanhos quentes no ML",
+        "detalhe": "kit 3 (0 vend.) · kit 10 (0 vend.) · kit 6 (0 vend.) · kit 15 (0 vend.)",
+        "prioridade": 2,
+        "horizonte": "30d",
+        "score": 68.0,
+        "evidencias": [
+          "tamanhos_quentes_ml"
+        ]
+      },
+      {
+        "camada": "b2b",
+        "titulo": "Canal manicure — reposição semanal",
+        "detalhe": "Defina pacote atacado (20–50 un.) + frete. Use necessidade_manicures / promocoes para validar demanda.",
+        "prioridade": 2,
+        "horizonte": "30d",
+        "score": 60.0,
+        "evidencias": [
+          "sem_escolhida_necessidade"
+        ]
+      },
+      {
+        "camada": "conteudo",
+        "titulo": "Definir cor do mês + combo obrigatório",
+        "detalhe": "Esmalte âncora + base/top em toda campanha Meta/WA. Rode tendências se vazio.",
+        "prioridade": 2,
+        "horizonte": "30d",
+        "score": 50.0,
+        "evidencias": [
+          "sem_tendencia_quente"
+        ]
+      }
+    ],
+    "90d": [
+      {
+        "camada": "marca",
+        "titulo": "Defesa de marca Impala no ecossistema",
+        "detalhe": "Mantenha kits exclusivos + anexos Cruzeiro/Impala",
+        "prioridade": 2,
+        "horizonte": "90d",
+        "score": 70.0,
+        "evidencias": [
+          "share_impala=62.5"
+        ]
+      }
+    ]
+  },
+  "top_7d": [
+    {
+      "camada": "core",
+      "titulo": "Cores âncora (planilha × demanda kits ML)",
+      "detalhe": "Priorize estoque/ads em: Branco, Paraiso, Sorvete De Ceu Azul, Nude Classico",
+      "prioridade": 1,
+      "horizonte": "7d",
+      "score": 88.5,
+      "evidencias": [
+        "Branco score=8.5",
+        "Paraiso score=8.0",
+        "Sorvete De Ceu Azul score=2.5"
+      ]
+    },
+    {
+      "camada": "kits",
+      "titulo": "Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul",
+      "detalhe": "Cores: Branco, Paraiso, Sorvete De Ceu Azul | faixa R$ 43–62",
+      "prioridade": 1,
+      "horizonte": "7d",
+      "score": 85.6,
+      "evidencias": [
+        "score_medio=6.33"
+      ]
+    },
+    {
+      "camada": "core",
+      "titulo": "Posição Impala vs Anita (kits monitorados)",
+      "detalhe": "Share Impala 62.5% | margem média 32.9% — use cores líderes como isca; não dependa só do unitário.",
+      "prioridade": 2,
+      "horizonte": "7d",
+      "score": 75.0,
+      "evidencias": [
+        "vendas_impala=200",
+        "vendas_anita=120"
+      ]
+    },
+    {
+      "camada": "b2b",
+      "titulo": "Destravar canais de conversão manicures",
+      "detalhe": "Pendentes: whatsapp, instagram",
+      "prioridade": 2,
+      "horizonte": "7d",
+      "score": 65.0,
+      "evidencias": [
+        "whatsapp=config_pendente",
+        "telegram_manicures=ok",
+        "facebook=ok",
+        "instagram=config_pendente"
+      ]
+    },
+    {
+      "camada": "anexos",
+      "titulo": "Rodar monitor de removedores",
+      "detalhe": "Sem snapshot de removedores — rode o agente para destravar a camada anexos.",
+      "prioridade": 2,
+      "horizonte": "7d",
+      "score": 40.0,
+      "evidencias": [
+        "fonte_ausente"
+      ]
+    }
+  ],
+  "regra": "core=tráfego · anexos=margem · kits=AOV · b2b=recorrência · conteudo=demanda · marca=defesa",
+  "mensagem": "💅 *Ecossistema esmaltes — plano de reprodução*\n\n_O que este agente faz:_\n_Consolida monitores de esmaltes/manicures num plano de ecossistema: cor atrai; kit, anexos e B2B pagam. Telegram: ações 7/30/90 dias por camada._\n\n_Quando roda:_\n_Todo dia às 09:00 BRT (Actions); fora do ciclo 30 min_\n\n_O esmalte atrai; o kit, o B2B e a reposição (anexos) pagam o negócio. Não viva só do hit de cor._\n\nScore ecossistema: *68.9* | cobertura fontes: *40.0%*\n_Fontes faltando: tendencias, busca_kit, kits, removedores, acetona, necessidade_\n\n*Próximos 7 dias (prioridade)*\n1. [core] *Cores âncora (planilha × demanda kits ML)* (score 88.5)\n   _Priorize estoque/ads em: Branco, Paraiso, Sorvete De Ceu Azul, Nude Classico_\n2. [kits] *Kit 3 Impala — Branco, Paraiso, Sorvete De Ceu Azul* (score 85.6)\n   _Cores: Branco, Paraiso, Sorvete De Ceu Azul | faixa R$ 43–62_\n3. [core] *Posição Impala vs Anita (kits monitorados)* (score 75.0)\n   _Share Impala 62.5% | margem média 32.9% — use cores líderes como isca; não dependa só do unitário._\n4. [b2b] *Destravar canais de conversão manicures* (score 65.0)\n   _Pendentes: whatsapp, instagram_\n5. [anexos] *Rodar monitor de removedores* (score 40.0)\n   _Sem snapshot de removedores — rode o agente para destravar a camada anexos._\n\n*30 dias*\n• [kits] Tamanhos quentes no ML\n• [b2b] Canal manicure — reposição semanal\n• [conteudo] Definir cor do mês + combo obrigatório\n\n*90 dias*\n• [marca] Defesa de marca Impala no ecossistema\n\n_Regra:_ core=tráfego · anexos=margem · kits=AOV · b2b=recorrência · conteudo=demanda · marca=defesa\n\n*Próximo passo:* execute as ações 7d (kits + combo anexo + oferta manicure); depois reposição B2B e cor do mês."
+}

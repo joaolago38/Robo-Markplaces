@@ -1,19 +1,15 @@
 """
 core/whatsapp.py
-Envia mensagens via WhatsApp usando Evolution API ou WhatsApp Business Cloud.
+WhatsApp Business Cloud (Meta) para 1:1 opcional.
+Criativos no grupo das manicures são postagem manual — sem Evolution.
 Nunca lança exceção.
 """
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 
 from core.config import (
     WHATSAPP_API_TYPE,
-    WHATSAPP_API_URL,
-    WHATSAPP_API_KEY,
-    WHATSAPP_INSTANCE,
-    WHATSAPP_NUMERO_DESTINO,
     WHATSAPP_BUSINESS_TOKEN,
     WHATSAPP_PHONE_ID,
 )
@@ -23,71 +19,58 @@ logger = logging.getLogger("whatsapp")
 
 
 def _api_type() -> str:
-    return (WHATSAPP_API_TYPE or "evolution").strip().lower()
+    t = (WHATSAPP_API_TYPE or "meta").strip().lower()
+    if t == "evolution":
+        return "off"
+    return t
 
 
 def _enabled() -> bool:
-    """Verifica se WhatsApp está configurado."""
-    t = _api_type()
-    if t == "evolution":
-        return bool(WHATSAPP_API_URL and WHATSAPP_API_KEY and WHATSAPP_INSTANCE)
-    if t == "meta":
-        return bool(WHATSAPP_BUSINESS_TOKEN and WHATSAPP_PHONE_ID)
-    return False
+    if _api_type() != "meta":
+        return False
+    return bool(WHATSAPP_BUSINESS_TOKEN and WHATSAPP_PHONE_ID)
 
 
 def enviar_mensagem(numero: str, mensagem: str) -> bool:
     """
-    Envia mensagem de texto para o número informado.
-    numero: formato internacional sem + e sem espaços. Ex: 5519999889059
-    Retorna True se enviado com sucesso, False caso contrário.
-    Nunca lança exceção.
+    Envia texto 1:1 via Cloud API (Meta).
+    numero: internacional sem + e sem espaços. Ex: 5519999889059
     """
     try:
         if not _enabled():
-            logger.warning("WhatsApp não configurado — mensagem não enviada: %s", mensagem[:80])
+            logger.warning("WhatsApp Meta não configurado — mensagem não enviada: %s", mensagem[:80])
             return False
-
-        t = _api_type()
-        if t == "evolution":
-            return _enviar_evolution(numero, mensagem)
-        if t == "meta":
-            return _enviar_meta(numero, mensagem)
-
-        logger.warning("WHATSAPP_API_TYPE inválido: %s", WHATSAPP_API_TYPE)
-        return False
+        return _enviar_meta(numero, mensagem)
     except Exception as exc:
         logger.error("WhatsApp enviar_mensagem erro: %s", exc)
         return False
 
 
-def _enviar_evolution(numero: str, mensagem: str) -> bool:
-    """Envia via Evolution API (auto-hospedada)."""
-    try:
-        url = f"{WHATSAPP_API_URL.rstrip('/')}/message/sendText/{WHATSAPP_INSTANCE}"
-        r = request(
-            "POST",
-            url,
-            headers={
-                "apikey": WHATSAPP_API_KEY,
-                "Content-Type": "application/json",
-            },
-            json={
-                "number": numero,
-                "textMessage": {"text": mensagem},
-                "options": {
-                    "delay": 1000,
-                    "presence": "composing",
-                },
-            },
-            timeout=15,
-        )
-        r.raise_for_status()
-        logger.info("WhatsApp Evolution enviado para %s", numero)
-        return True
-    except Exception as exc:
-        logger.error("WhatsApp Evolution erro para %s: %s", numero, exc)
-        return False
+def enviar_mensagem_grupo(grupo_id: str, mensagem: str) -> bool:
+    """Grupo WhatsApp não é enviado pelo robô (postagem manual)."""
+    logger.info("Envio a grupo WhatsApp desligado (sem Evolution) grupo=%s", (grupo_id or "")[:24])
+    return False
+
+
+def enviar_grupo_manicures(mensagem: str) -> bool:
+    """Compat: criativo não vai ao grupo — postagem manual."""
+    if mensagem:
+        logger.info("Criativo WhatsApp não enviado pelo robô (postagem manual)")
+    return False
+
+
+def whatsapp_grupo_manicures_configurado() -> bool:
+    """Sempre False: não há Evolution / envio automático ao grupo."""
+    return False
+
+
+def buscar_mensagens_grupo_recentes(
+    grupo_id: str | None = None,
+    *,
+    limite: int = 30,
+) -> list[dict]:
+    """Inbox de grupo dependia da Evolution — não lê mais."""
+    return []
 
 
 def _enviar_meta(numero: str, mensagem: str) -> bool:
@@ -124,31 +107,13 @@ def notificar_venda(
     valor: float,
     quantidade: int = 1,
 ) -> bool:
-    """
-    Envia notificação de nova venda para o número fixo configurado em
-    WHATSAPP_NUMERO_DESTINO (padrão: 5519999889059).
-    """
-    hora = datetime.now().strftime("%d/%m %H:%M")
+    """Compat: aviso de venda vai ao Telegram do gestor."""
+    from core.notificador import notificar_venda_gestor
 
-    emoji_marketplace = {
-        "mercadolivre": "🛒",
-        "shopee": "🛍️",
-        "magalu": "🏪",
-        "amazon": "📦",
-    }.get(marketplace.lower(), "🏬")
-
-    msg = (
-        f"{emoji_marketplace} *Nova Venda — {marketplace.title()}*\n"
-        f"🕐 {hora}\n\n"
-        f"📦 Produto: {produto}\n"
-        f"🔢 Qtd: {quantidade}\n"
-        f"💰 Valor: R$ {valor:.2f}\n"
-        f"🔖 Pedido: {pedido_id}"
+    return notificar_venda_gestor(
+        marketplace=marketplace,
+        pedido_id=pedido_id,
+        produto=produto,
+        valor=valor,
+        quantidade=quantidade,
     )
-
-    destino = (WHATSAPP_NUMERO_DESTINO or "").strip().replace("+", "").replace(" ", "")
-    if not destino:
-        logger.warning("WHATSAPP_NUMERO_DESTINO vazio — venda não notificada")
-        return False
-
-    return enviar_mensagem(destino, msg)

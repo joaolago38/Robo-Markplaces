@@ -1,16 +1,20 @@
-name: Gatilho Product Ads ML
+﻿name: Gatilho Product Ads ML
 
 on:
   workflow_dispatch:
   schedule:
-    # 10:00 BRT (UTC-3) = 13:00 UTC — após o monitor das 09:00
+    # 08:00 BRT (UTC-3) = 11:00 UTC — após relatório manhã (07:30)
     - cron: "0 11 * * *"
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
 
 jobs:
   gatilho:
@@ -27,6 +31,11 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
+      - name: Restaurar heartbeats de saude
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
+
       - name: Rodar agente gatilho ads ML
         run: python -m agentes.ml.agente_ads_gatilho
         env:
@@ -39,3 +48,10 @@ jobs:
           ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
           TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID:   ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+
+      - name: Publicar heartbeats de saude
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save

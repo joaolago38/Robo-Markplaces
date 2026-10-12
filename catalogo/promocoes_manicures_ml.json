@@ -1,0 +1,62 @@
+[
+  {
+    "id": "kit-3-mimo-manicure",
+    "ativo": true,
+    "prioridade": 1,
+    "fase_minima": 0,
+    "nome": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+    "sku": "IMP-MIMO-003",
+    "preco_de": 52.9,
+    "template": "Oferta manicure — Mercado Livre\n\n*{produto}*\nDe ~R$ {preco_de}~ por *R$ {preco}*\n{link}\n\nKit 3 cremosos Impala (Admire, Sutileza, Amor Profundo) + Carmed. Extra que o kit francesinha não tem.\n\n_{rodape}_"
+  },
+  {
+    "id": "kit-4-perl-manicure",
+    "ativo": true,
+    "prioridade": 2,
+    "fase_minima": 1,
+    "nome": "Kit 4 Perolado Tendência",
+    "sku": "IMP-PERL-004",
+    "preco_de": 46.9,
+    "template": "Oferta manicure — economia vs avulso\n\n*{produto}*\n*R$ {preco}* no Mercado Livre\n{link}\n\n4 perolados (Sonho, Polar, Lua, Dengo). Reposição do salão sem furar o piso 15%.\n\n_{rodape}_"
+  },
+  {
+    "id": "kit-5-bailarina-manicure",
+    "ativo": true,
+    "prioridade": 3,
+    "fase_minima": 2,
+    "nome": "Kit 5 Bailarina",
+    "sku": "IMP-BAIL-005",
+    "preco_de": 58.9,
+    "template": "Promoção kits esmaltes — manicures\n\n*{produto}*\n*R$ {preco}* no Mercado Livre\n{link}\n\n5 cores Bailarina — giro para clientes de salão (depois do 1º pedido Impala).\n\n_{rodape}_"
+  },
+  {
+    "id": "kit-6-sortido-manicure",
+    "ativo": true,
+    "prioridade": 4,
+    "fase_minima": 2,
+    "nome": "Kit 6 Sortido Cores da Moda",
+    "sku": "IMP-SORT-006",
+    "preco_de": 59.9,
+    "template": "Tendência para manicures\n\n*{produto}*\n*R$ {preco}* no Mercado Livre\n{link}\n\nMix de cores da moda para combinações no salão (não é kit de validação da ruptura).\n\n_{rodape}_"
+  },
+  {
+    "id": "kit-10-atacado-manicure",
+    "ativo": true,
+    "prioridade": 5,
+    "fase_minima": 3,
+    "nome": "Kit 10 Atacado Manicure",
+    "sku": "IMP-ATAC-010",
+    "preco_de": 84.9,
+    "template": "Atacado manicure — Mercado Livre\n\n*{produto}*\n*R$ {preco}* (economia vs compra avulsa)\n{link}\n\nEstoque do salão só depois da frente MIMO/PERL viva.\n\n_{rodape}_"
+  },
+  {
+    "id": "destaque-semanal-generico",
+    "ativo": true,
+    "prioridade": 6,
+    "fase_minima": 2,
+    "nome": "Destaque semanal esmaltes",
+    "sku": "IMP-BAIL-005",
+    "preco_de": null,
+    "template": "Olá, manicure!\n\nSeparamos uma oferta no *Mercado Livre*:\n\n*{produto}* — *R$ {preco}*\n{link}\n\nMais kits Impala na loja: {loja_url}\n\n_{rodape}_"
+  }
+]

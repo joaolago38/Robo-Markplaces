@@ -7,6 +7,7 @@ projeto:
     Opera em 3 fases: validação (0-20 avaliações), crescimento
     (20-100 avaliações) e reputação/Full (100+ avaliações).
 
+
 marketplaces:
   - id: mercadolivre
     ativo: true
@@ -15,7 +16,7 @@ marketplaces:
     ativo: false
     prioridade: 2
   - id: magalu
-    ativo: false
+    ativo: true
     prioridade: 3
   - id: amazon
     ativo: false

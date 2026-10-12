@@ -18,7 +18,10 @@ Checklist objetivo para colocar Mercado Livre, Shopee, Magalu e Amazon em produ�
 - Shopee:
   - `SHOPEE_PARTNER_ID`, `SHOPEE_PARTNER_KEY`, `SHOPEE_SHOP_ID`, `SHOPEE_ACCESS_TOKEN`
 - Magalu:
-  - `MAGALU_ACCESS_TOKEN`, `MAGALU_MERCHANT_ID`
+  - `MAGALU_CLIENT_ID`, `MAGALU_CLIENT_SECRET`, `MAGALU_ACCESS_TOKEN`, `MAGALU_REFRESH_TOKEN`
+  - `MAGALU_SELLER_ID` (conta/CNPJ; distinto do channel id)
+  - `MAGALU_CHANNEL_ID` (OpenAPI; alias legado `MAGALU_MERCHANT_ID` — não é gate de conectividade)
+  - Se o refresh estiver morto (`invalid_grant`): `python pegar_token_magalu.py SEU_CODE` e atualize os Secrets
 - Amazon:
   - `AMAZON_ACCESS_TOKEN`
 

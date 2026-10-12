@@ -15,8 +15,8 @@ import logging
 
 from core.config import SPEC
 from core.notificador import alertar_gestor
-from integracoes.shopee.shopee_client import manter_conta_ativa as keepalive_shopee
 from integracoes.magalu.magalu_client import manter_conta_ativa as keepalive_magalu
+from integracoes.shopee.shopee_client import manter_conta_ativa as keepalive_shopee
 
 logger = logging.getLogger("manutencao_marketplaces")
 

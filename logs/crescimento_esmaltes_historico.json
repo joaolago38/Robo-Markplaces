@@ -1,0 +1,12 @@
+{
+  "rodadas": [
+    {
+      "timestamp": "2026-08-01T19:09:40.290505+00:00",
+      "critico": true,
+      "kits_sem_mlb": 10,
+      "kits_pct": null,
+      "margem": 0.0
+    }
+  ],
+  "ultima": "2026-08-01T19:09:40.290505+00:00"
+}

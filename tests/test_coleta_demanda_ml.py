@@ -1,0 +1,472 @@
+"""tests/test_coleta_demanda_ml.py"""
+from __future__ import annotations
+
+import unittest
+from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
+
+from integracoes.ml import coleta_demanda_ml as cd
+
+
+class ColetaDemandaMlTests(unittest.TestCase):
+    def test_montar_pontos_cegos_marca_vendas_e_busca(self):
+        pc = cd.montar_pontos_cegos(
+            consolidado={
+                "anuncios_com_vendas_api": 0,
+                "anuncios_com_avaliacoes": 0,
+                "anuncios_com_visitas": 3,
+            },
+            funil={
+                "ok": True,
+                "pedidos_ok": True,
+                "visitas_ok": True,
+                "totais": {"visitas_7d": 100, "unidades_7d": 2, "conversao_pct": 2.0},
+            },
+            visitas_enriquecidas=3,
+            contexto="teste",
+        )
+        self.assertEqual(pc["ranking_fonte_sugerida"], "visitas")
+        ids = {i["id"]: i["status"] for i in pc["itens"]}
+        self.assertEqual(ids["vendas_concorrente"], "parcial")
+        self.assertEqual(ids["busca_oficial"], "cego")
+        self.assertEqual(ids["visitas_rivais"], "ok")
+        self.assertEqual(ids["funil_proprio"], "ok")
+
+    def test_top_por_visitas(self):
+        top = cd.top_por_visitas(
+            [
+                {"titulo": "A", "visitas_7d": 10, "preco": 1},
+                {"titulo": "B", "visitas_7d": 50, "preco": 2},
+                {"titulo": "C", "visitas_7d": 0, "preco": 3},
+            ],
+            top_n=2,
+        )
+        self.assertEqual([t["titulo"] for t in top], ["B", "A"])
+
+    @patch.object(cd.ml_client, "buscar_visitas_item")
+    def test_enriquecer_visitas_lista(self, mock_vis):
+        mock_vis.return_value = {
+            "ok": True,
+            "disponivel": True,
+            "visitas_7d": 42,
+            "visitas_30d": 100,
+        }
+        produtos = [{"item_id": "MLB1", "titulo": "X"}, {"item_id": "MLB1", "titulo": "X"}]
+        n = cd.enriquecer_visitas_lista(produtos, limite=5)
+        self.assertEqual(n, 1)
+        self.assertEqual(produtos[0]["visitas_7d"], 42)
+        self.assertEqual(produtos[1]["visitas_7d"], 42)
+
+    @patch.object(cd.ml_client, "_enabled", return_value=True)
+    @patch.object(cd.ml_client, "buscar_visitas_item")
+    @patch.object(cd.ml_client, "listar_pedidos_detalhado")
+    @patch.object(cd.ml_client, "listar_meus_anuncios")
+    def test_funil_proprio_conversao(self, mock_an, mock_ped, mock_vis, _en):
+        mock_an.return_value = [
+            {"item_id": "MLB1", "titulo": "Filamento PETG Preto", "sku": "P1", "status": "active", "sold_quantity": 1}
+        ]
+        mock_ped.return_value = (
+            [
+                {
+                    "order_id": "1",
+                    "itens": [{"item_id": "MLB1", "quantidade": 2, "preco_unitario": 90.0}],
+                }
+            ],
+            True,
+        )
+        mock_vis.return_value = {"ok": True, "disponivel": True, "visitas_7d": 50, "visitas_30d": 120}
+        out = cd.coletar_funil_proprio(dias=7, filtro_titulo=r"petg|filamento")
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["pedidos_ok"])
+        self.assertEqual(out["totais"]["visitas_7d"], 50)
+        self.assertEqual(out["totais"]["unidades_7d"], 2)
+        self.assertEqual(out["totais"]["conversao_pct"], 4.0)
+        self.assertEqual(out["totais"]["visitas_convertidas_proxy"], 2)
+        self.assertTrue(out["itens"][0]["conversao_confiavel"])
+
+    def test_formatar_secoes(self):
+        funil = {
+            "ok": True,
+            "dias": 7,
+            "pedidos_ok": True,
+            "visitas_ok": True,
+            "totais": {
+                "visitas_7d": 10,
+                "unidades_7d": 1,
+                "conversao_pct": 10.0,
+                "conversao_confiavel": True,
+            },
+            "itens": [
+                {
+                    "titulo": "Meu PETG",
+                    "visitas_7d": 10,
+                    "unidades_pedidos": 1,
+                    "conversao_pct": 10.0,
+                    "conversao_confiavel": True,
+                }
+            ],
+        }
+        pc = cd.montar_pontos_cegos(
+            consolidado={"anuncios_com_visitas": 1}, funil=funil, visitas_enriquecidas=1
+        )
+        txt = "\n".join(cd.formatar_secao_funil(funil) + cd.formatar_secao_pontos_cegos(pc))
+        self.assertIn("Funil próprio", txt)
+        self.assertIn("Pontos cegos", txt)
+        self.assertIn("10.0%", txt)
+
+    def test_montar_pontos_cegos_identidade_seller_vazio(self):
+        ident = {
+            "seller_masterprint": "",
+            "seller_ok": False,
+            "conta_conectada_ok": False,
+            "motivo": "seller_kyc_vazio",
+            "detalhe": "seller Masterprint vazio (KYC)",
+        }
+        pc = cd.montar_pontos_cegos(
+            consolidado={},
+            funil=cd.funil_proprio_indisponivel_cnpj2(ident),
+            contexto="masterprint_petg",
+            identidade_cnpj2=ident,
+        )
+        ids = {i["id"]: i for i in pc["itens"]}
+        self.assertEqual(ids["funil_proprio"]["status"], "cego")
+        self.assertIn("seller_kyc_vazio", ids["funil_proprio"]["detalhe"])
+        self.assertEqual(ids["seller_masterprint"]["status"], "cego")
+        self.assertEqual(ids["conta_conectada"]["status"], "cego")
+
+    def test_montar_pontos_cegos_conta_impala_com_seller(self):
+        ident = {
+            "seller_masterprint": "999888",
+            "seller_ok": True,
+            "conta_conectada_ok": False,
+            "motivo": "conta_impala",
+            "detalhe": "token/seller live é Impala",
+        }
+        pc = cd.montar_pontos_cegos(
+            contexto="masterprint_petg",
+            identidade_cnpj2=ident,
+            funil={
+                "ok": False,
+                "motivo": "conta_impala",
+                "motivo_detalhe": ident["detalhe"],
+            },
+        )
+        ids = {i["id"]: i["status"] for i in pc["itens"]}
+        self.assertEqual(ids["seller_masterprint"], "ok")
+        self.assertEqual(ids["conta_conectada"], "cego")
+        self.assertEqual(ids["funil_proprio"], "cego")
+
+    @patch.object(cd, "coletar_funil_proprio")
+    @patch.object(cd, "avaliar_identidade_cnpj2")
+    def test_resolver_funil_nao_coleta_sem_kyc(self, mock_id, mock_fun):
+        mock_id.return_value = {
+            "seller_ok": False,
+            "conta_conectada_ok": False,
+            "motivo": "seller_kyc_vazio",
+            "detalhe": "vazio",
+            "coletar_funil_proprio": False,
+        }
+        out = cd.resolver_funil_proprio_cnpj2()
+        mock_fun.assert_not_called()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "seller_kyc_vazio")
+
+    @patch.object(
+        cd,
+        "coletar_funil_proprio",
+        return_value={
+            "ok": True,
+            "pedidos_ok": True,
+            "visitas_ok": True,
+            "totais": {},
+        },
+    )
+    @patch.object(cd, "avaliar_identidade_cnpj2")
+    def test_resolver_funil_coleta_quando_masterprint(self, mock_id, mock_fun):
+        mock_id.return_value = {
+            "seller_ok": True,
+            "conta_conectada_ok": True,
+            "motivo": "ok",
+            "coletar_funil_proprio": True,
+        }
+        out = cd.resolver_funil_proprio_cnpj2(filtro_titulo="petg")
+        mock_fun.assert_called_once()
+        self.assertTrue(out["ok"])
+
+    @patch("core.marketplace_cnpj.identificar_cnpj_conectado")
+    @patch("core.empresa.overrides.aplicar_overrides_env", side_effect=lambda e: e)
+    @patch("core.empresa.catalogo.empresa_por_id")
+    def test_avaliar_identidade_seller_vazio(self, mock_emp, _ov, mock_id):
+        mock_emp.return_value = {"ml": {"seller_id": ""}}
+        mock_id.return_value = {
+            "identificado": True,
+            "empresa_id": "esmaltes_impala",
+            "cnpj": "52668583000127",
+            "ambiguo": False,
+        }
+        out = cd.avaliar_identidade_cnpj2()
+        self.assertEqual(out["motivo"], "seller_kyc_vazio")
+        self.assertFalse(out["coletar_funil_proprio"])
+
+    @patch("core.marketplace_cnpj.identificar_cnpj_conectado")
+    @patch("core.empresa.overrides.aplicar_overrides_env", side_effect=lambda e: e)
+    @patch("core.empresa.catalogo.empresa_por_id")
+    def test_avaliar_identidade_conta_impala(self, mock_emp, _ov, mock_id):
+        mock_emp.return_value = {"ml": {"seller_id": "999"}}
+        mock_id.return_value = {
+            "identificado": True,
+            "empresa_id": "esmaltes_impala",
+            "cnpj": "52668583000127",
+            "ambiguo": False,
+        }
+        out = cd.avaliar_identidade_cnpj2()
+        self.assertEqual(out["motivo"], "conta_impala")
+        self.assertTrue(out["seller_ok"])
+        self.assertFalse(out["conta_conectada_ok"])
+        self.assertFalse(out["coletar_funil_proprio"])
+
+    @patch.object(cd.ml_client, "buscar_visitas_item")
+    def test_enriquecer_visitas_amostra(self, mock_vis):
+        mock_vis.return_value = {
+            "ok": True,
+            "disponivel": True,
+            "visitas_7d": 12,
+            "visitas_30d": 40,
+        }
+        resultados = [
+            {
+                "ok": True,
+                "produtos": [
+                    {"item_id": "MLB1", "titulo": "A", "quantidade_vendida": 0},
+                    {"item_id": "MLB2", "titulo": "B", "quantidade_vendida": 0},
+                ],
+            }
+        ]
+        n = cd.enriquecer_visitas_amostra(resultados, limite=2)
+        self.assertEqual(n, 2)
+        self.assertEqual(resultados[0]["produtos"][0]["visitas_7d"], 12)
+
+    def test_titulo_bate_e_enriquecer_vazio(self):
+        self.assertTrue(cd._titulo_bate("qualquer", None))
+        self.assertFalse(cd._titulo_bate("PETG Preto", "[petg"))
+        self.assertEqual(cd.enriquecer_visitas_lista([], limite=5), 0)
+        self.assertEqual(cd.enriquecer_visitas_lista([{"item_id": "MLB1"}], limite=0), 0)
+
+    def test_emitir_metricas_demanda(self):
+        with patch("integracoes.ml.coleta_demanda_ml.gauge") as mock_g:
+            cd.emitir_metricas_demanda(
+                "pref",
+                funil={
+                    "totais": {"visitas_7d": 10, "unidades_7d": 0, "conversao_pct": None},
+                    "pedidos_ok": True,
+                    "visitas_ok": True,
+                },
+                pontos_cegos={
+                    "cegos": 3,
+                    "parciais": 1,
+                    "oks": 2,
+                    "itens": [
+                        {"id": "vendas_concorrente", "status": "cego"},
+                        {"id": "busca_oficial", "status": "cego"},
+                        {"id": "funil_proprio", "status": "ok"},
+                    ],
+                },
+                visitas_enriquecidas=2,
+            )
+            nomes = [c.args[0] for c in mock_g.call_args_list]
+            self.assertIn("pref.funil.visitas_7d", nomes)
+            self.assertIn("pref.funil.conversao_pct", nomes)
+            self.assertIn("pref.funil.conversao_confiavel", nomes)
+            self.assertIn("pref.blindspot.vendas_api", nomes)
+            self.assertIn("pref.blindspot.cegos", nomes)
+            self.assertIn("pref.blindspot.parciais", nomes)
+            self.assertIn("pref.blindspot.busca_oficial", nomes)
+            self.assertIn("pref.blindspot.funil_proprio", nomes)
+
+    def test_emitir_metricas_demanda_petg_e_erro_progresso(self):
+        with patch("integracoes.ml.coleta_demanda_ml.gauge"):
+            with patch(
+                "integracoes.esmaltes.metricas_progresso_24m.emitir_petg_funil"
+            ) as mock_petg:
+                cd.emitir_metricas_demanda(
+                    "filamentos.petg",
+                    funil={"totais": {"unidades_7d": 14}},
+                )
+                mock_petg.assert_called_once_with(14.0)
+        with patch("integracoes.ml.coleta_demanda_ml.gauge"):
+            with patch(
+                "integracoes.esmaltes.metricas_progresso_24m.prefixo_emite_petg",
+                side_effect=RuntimeError("boom"),
+            ):
+                cd.emitir_metricas_demanda("filamentos.petg", funil={})
+
+    def test_formatar_visitas_rivais(self):
+        linhas = cd.formatar_secao_visitas_rivais(
+            [{"titulo": "RIVAL", "visitas_7d": 50, "preco": 99.9}]
+        )
+        self.assertTrue(any("Rivais" in linha for linha in linhas))
+        self.assertTrue(any("50" in linha for linha in linhas))
+
+    def test_tendencia_historico_insuficiente(self):
+        with patch.object(cd, "ler_json", return_value={}):
+            out = cd.calcular_tendencia_demanda("kit impala", dias=14)
+        self.assertEqual(out["tendencia"], "indeterminado")
+        self.assertEqual(out["motivo"], "historico insuficiente")
+
+    def test_tendencia_alta_baixa_confiabilidade(self):
+        agora = datetime.now(timezone.utc)
+        snaps = [
+            {
+                "timestamp": (agora - timedelta(days=13)).isoformat(),
+                "soma_avaliacoes_visiveis": 10,
+            },
+            {
+                "timestamp": (agora - timedelta(days=6)).isoformat(),
+                "soma_avaliacoes_visiveis": 15,
+            },
+        ]
+        with patch.object(cd, "ler_json", return_value={"kit": {"snapshots": snaps}}):
+            with patch.object(cd, "emitir_metricas_tendencia_demanda") as mock_e:
+                out = cd.calcular_tendencia_demanda("kit", dias=14, produto_id="IMP-MIMO-003")
+        self.assertEqual(out["tendencia"], "alta")
+        self.assertEqual(out["variacao_pct"], 50.0)
+        self.assertEqual(out["confiabilidade"], "baixa")
+        mock_e.assert_called_once()
+        self.assertEqual(mock_e.call_args.kwargs.get("produto_id"), "IMP-MIMO-003")
+
+    def test_emitir_metricas_tendencia_demanda(self):
+        with patch("integracoes.ml.coleta_demanda_ml.gauge") as mock_g:
+            cd.emitir_metricas_tendencia_demanda(
+                "kit impala",
+                {"tendencia": "queda", "variacao_pct": -12.5, "confiabilidade": "media"},
+                produto_id="IMP-MIMO-003",
+            )
+        nomes = [c.args[0] for c in mock_g.call_args_list]
+        self.assertIn("demanda.tendencia", nomes)
+        self.assertIn("demanda.variacao_pct", nomes)
+        tags = mock_g.call_args_list[0].kwargs["tags"]
+        self.assertIn("produto:imp-mimo-003", tags)
+
+    def test_registrar_snapshot_demanda(self):
+        produtos = [
+            {"preco": 10, "avaliacoes": 2},
+            {"preco": 30, "metricas": {"avaliacoes": 1}},
+        ]
+        with patch.object(cd, "ler_json", return_value={}):
+            with patch.object(cd, "escrever_json_atomico") as mock_w:
+                snap = cd.registrar_snapshot_demanda("kit x", produtos)
+        self.assertEqual(snap["total_resultados"], 2)
+        self.assertEqual(snap["preco_medio"], 20.0)
+        self.assertEqual(snap["soma_avaliacoes_visiveis"], 3)
+        mock_w.assert_called_once()
+
+    def test_classificar_busca_e_claims(self):
+        oficial = cd.classificar_busca([{"fonte_busca": "api"}])
+        self.assertEqual(oficial["status"], "ok")
+        fallback = cd.classificar_busca([{"fonte_busca": "products_api"}])
+        self.assertEqual(fallback["status"], "parcial")
+        self.assertEqual(cd.classificar_busca([{}])["status"], "cego")
+
+        ok = cd.classificar_claims(claims={"ok": True, "total": 2})
+        self.assertEqual(ok["status"], "ok")
+        parcial = cd.classificar_claims(
+            claims={"ok": False, "motivo": "claims_indisponivel"},
+            reputacao={"metrics": {"claims": {"rate": 0.02}}},
+        )
+        self.assertEqual(parcial["status"], "parcial")
+        self.assertIn("2.00%", parcial["detalhe"])
+        cego = cd.classificar_claims(claims={"ok": False, "motivo": "claims_indisponivel"})
+        self.assertEqual(cego["status"], "cego")
+
+    def test_montar_pontos_cegos_faturamento_e_fora_de_foco(self):
+        pc = cd.montar_pontos_cegos(
+            consolidado={"anuncios_com_porte_seller": 4},
+            busca={"status": "parcial", "detalhe": "products_api"},
+            claims={"status": "parcial", "detalhe": "taxa 1%"},
+            faturamento={"status": "cego", "detalhe": "sem MP_ACCESS_TOKEN"},
+            anuncios_fora_de_foco=38,
+        )
+        ids = {i["id"]: i["status"] for i in pc["itens"]}
+        self.assertEqual(ids["vendas_concorrente"], "parcial")
+        self.assertEqual(ids["busca_oficial"], "parcial")
+        self.assertEqual(ids["claims"], "parcial")
+        self.assertEqual(ids["faturamento_mp"], "cego")
+        self.assertEqual(ids["anuncios_fora_de_foco"], "parcial")
+        self.assertEqual(pc["ranking_fonte_sugerida"], "seller")
+
+    @patch.object(cd.ml_client, "_enabled", return_value=True)
+    @patch("integracoes.ml.analise_loja_concorrente.buscar_perfil_loja")
+    def test_enriquecer_porte_sellers(self, mock_perfil, _en):
+        mock_perfil.return_value = {"ok": True, "transactions_total": 1200, "seller_id": "9"}
+        resultados = [
+            {
+                "ok": True,
+                "produtos": [
+                    {"item_id": "MLB1", "seller_id": "9", "quantidade_vendida": 0},
+                    {"item_id": "MLB2", "seller_id": "9", "quantidade_vendida": 4},
+                ],
+            }
+        ]
+        n = cd.enriquecer_porte_sellers(resultados, limite=3)
+        self.assertEqual(n, 1)
+        self.assertEqual(resultados[0]["produtos"][0]["seller_transactions"], 1200)
+        self.assertNotIn("seller_transactions", resultados[0]["produtos"][1])
+
+    def test_montar_pontos_cegos_conta_nao_mede_mercado(self):
+        pc = cd.montar_pontos_cegos(
+            funil={
+                "ok": True,
+                "pedidos_ok": True,
+                "visitas_ok": True,
+                "totais": {"visitas_7d": 0, "unidades_7d": 0, "conversao_pct": None},
+            },
+            claims={"status": "parcial", "detalhe": "taxa 0%"},
+            faturamento={"status": "cego", "detalhe": "sem token"},
+            anuncios_fora_de_foco=0,
+            medir_mercado=False,
+        )
+        ids = {i["id"] for i in pc["itens"]}
+        self.assertNotIn("vendas_concorrente", ids)
+        self.assertNotIn("reviews_concorrente", ids)
+        self.assertNotIn("visitas_rivais", ids)
+        self.assertNotIn("busca_oficial", ids)
+        self.assertEqual(pc["cegos"], 1)
+        self.assertEqual({i["id"]: i["status"] for i in pc["itens"]}["funil_proprio"], "ok")
+
+    @patch.object(cd.ml_client, "_enabled", return_value=True)
+    @patch.object(cd.ml_client, "listar_pedidos_detalhado", return_value=([], True))
+    def test_funil_vazio_confirmado_nao_e_cego(self, _ped, _en):
+        out = cd.coletar_funil_proprio(
+            anuncios_prontos=[],
+            listagem_ok=True,
+        )
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["visitas_ok"])
+        self.assertTrue(out["pedidos_ok"])
+        self.assertEqual(out["anuncios_avaliados"], 0)
+
+    @patch.object(cd.ml_client, "_enabled", return_value=True)
+    @patch.object(cd.ml_client, "listar_pedidos_detalhado")
+    def test_funil_listagem_falha_continua_cego(self, mock_ped, _en):
+        out = cd.coletar_funil_proprio(anuncios_prontos=[], listagem_ok=False)
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["motivo"], "falha_listagem")
+        mock_ped.assert_not_called()
+
+    def test_sondar_faturamento_sem_token(self):
+        with patch.dict("os.environ", {"MP_ACCESS_TOKEN": "", "MERCADOPAGO_ACCESS_TOKEN": ""}, clear=False):
+            out = cd.sondar_faturamento_mp()
+        self.assertEqual(out["status"], "cego")
+        self.assertIn("MP_ACCESS_TOKEN", out["detalhe"])
+        self.assertIsNone(out["saldo"])
+
+    def test_saldo_mp_numero(self):
+        self.assertEqual(cd._saldo_mp(15.5), 15.5)
+        self.assertEqual(cd._saldo_mp("1.234,50"), 1234.5)
+        self.assertEqual(cd._saldo_mp({"amount": "10,25"}), 10.25)
+        self.assertIsNone(cd._saldo_mp("sem saldo"))
+        self.assertIsNone(cd._saldo_mp(None))
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -4,7 +4,9 @@ Testes mockados do controle real de Product Ads no Mercado Livre.
 """
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -57,7 +59,16 @@ class TestListarCampanhas(unittest.TestCase):
                     "name": "Camp Impala",
                     "status": "active",
                     "budget": 50,
-                    "metrics": {"acos": 0.15, "cost": 100, "roas": 4.0, "clicks": 10},
+                    "metrics": {
+                        "acos": 0.15,
+                        "cost": 100,
+                        "roas": 4.0,
+                        "clicks": 10,
+                        "prints": 500,
+                        "ctr": 2.0,
+                        "cvr": 0.04,
+                        "cpc": 1.2,
+                    },
                 }
             ]
         })
@@ -65,6 +76,112 @@ class TestListarCampanhas(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["id"], "C1")
         self.assertEqual(out[0]["acos"], 0.15)
+        self.assertEqual(out[0]["prints"], 500)
+        self.assertEqual(out[0]["ctr"], 2.0)
+        self.assertEqual(out[0]["cvr"], 0.04)
+
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_vira_warning_nao_error(self, _en, mock_req, *_):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(ads, "_COOLDOWN_404_PATH", Path(tmp) / "ads_404.json"):
+                with self.assertLogs("ml_product_ads", level="WARNING") as cm:
+                    out = ads.listar_campanhas(advertiser_id="421764")
+        self.assertEqual(out, [])
+        self.assertEqual(ads.ultima_listagem_codigo(), "http_404")
+        self.assertTrue(any("HTTP 404" in m for m in cm.output))
+        self.assertFalse(any("ERROR:" in m for m in cm.output))
+
+    @patch("core.datadog_metrics.incrementar")
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_nao_incrementa_ads_indisponivel(self, _en, mock_req, _adv, mock_inc):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(ads, "_COOLDOWN_404_PATH", Path(tmp) / "ads_404.json"):
+                ads.listar_campanhas(advertiser_id="421764")
+        nomes = [c.args[0] for c in mock_inc.call_args_list]
+        self.assertNotIn("ads.indisponivel", nomes)
+
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_suprimido_em_cooldown(self, _en, mock_req, *_):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ads_404.json"
+            with patch.object(ads, "_COOLDOWN_404_PATH", path):
+                with self.assertLogs("ml_product_ads", level="WARNING") as cm1:
+                    ads.listar_campanhas(advertiser_id="421764")
+                self.assertEqual(len(cm1.output), 1)
+                ads._ULTIMO_AVISO_404_TS = 0.0
+                with self.assertRaises(AssertionError):
+                    with self.assertLogs("ml_product_ads", level="WARNING"):
+                        ads.listar_campanhas(advertiser_id="421764")
+
+    @patch("core.datadog_metrics.gauge")
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "421764"})
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_404_emite_gauge_zero_em_cooldown(self, _en, mock_req, _adv, mock_gauge):
+        err = Exception("404 Client Error: Not Found")
+        err.response = MagicMock(status_code=404)
+        mock_req.side_effect = err
+        ads._ULTIMO_AVISO_404_TS = 0.0
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ads_404.json"
+            with patch.object(ads, "_COOLDOWN_404_PATH", path):
+                ads.listar_campanhas(advertiser_id="421764")
+                ads._ULTIMO_AVISO_404_TS = 0.0
+                mock_gauge.reset_mock()
+                ads.listar_campanhas(advertiser_id="421764")
+        valores = [
+            c.args[1] for c in mock_gauge.call_args_list if c.args[0] == "ads.indisponivel_agora"
+        ]
+        self.assertTrue(valores)
+        self.assertTrue(all(v == 0.0 for v in valores))
+
+    @patch("core.datadog_metrics.gauge")
+    @patch.object(ads, "emitir_metricas_visibilidade_ads")
+    @patch.object(ads, "_request_ml")
+    @patch.object(ads, "_enabled", return_value=True)
+    def test_lista_ok_zera_gauge_indisponivel_agora(self, _en, mock_req, _vis, mock_gauge):
+        mock_req.return_value = _resp({"results": []})
+        ads.listar_campanhas(advertiser_id="421764")
+        valores = [
+            c.args[1] for c in mock_gauge.call_args_list if c.args[0] == "ads.indisponivel_agora"
+        ]
+        self.assertEqual(valores, [0.0])
+
+
+class TestProbeEscrita404(unittest.TestCase):
+    @patch.object(ads, "listar_campanhas", return_value=[])
+    @patch.object(
+        ads,
+        "obter_advertiser",
+        return_value={"ok": True, "advertiser_id": "421764", "site_id": "MLB"},
+    )
+    def test_probe_propaga_http_404(self, *_):
+        ads._ULTIMA_LISTAGEM = {
+            "ok": False,
+            "codigo": "http_404",
+            "advertiser_id": "421764",
+        }
+        out = ads.probe_escrita_product_ads()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["codigo"], "http_404")
 
 
 class TestEscritaCampanha(unittest.TestCase):
@@ -133,6 +250,109 @@ class TestAplicarDecisao(unittest.TestCase):
         self.assertEqual(len(out), 1)
         mock_pausar.assert_called_once_with("C2", "MLB", dry_run=True, confirmar=False)
 
+    @patch.object(ads, "listar_campanhas", return_value=[{"id": "C1"}])
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "A1", "site_id": "MLB"})
+    @patch.object(ads, "definir_orcamento", return_value={"ok": True, "dry_run": True})
+    @patch.object(ads, "ativar_campanha", return_value={"ok": True, "dry_run": True})
+    def test_aplicar_ligar_ativa_e_define_orcamento(self, mock_ativar, mock_orcamento, *_):
+        out = ads.aplicar_decisao_campanhas("ligar", budget=10.0, dry_run=True)
+        self.assertEqual(len(out), 2)
+        mock_ativar.assert_called_once_with("C1", "MLB", dry_run=True, confirmar=False)
+        mock_orcamento.assert_called_once_with("C1", 10.0, "MLB", dry_run=True, confirmar=False)
+
+    @patch.object(ads, "listar_campanhas", return_value=[{"id": "C1"}])
+    @patch.object(ads, "obter_advertiser", return_value={"ok": True, "advertiser_id": "A1", "site_id": "MLB"})
+    @patch.object(ads, "definir_orcamento", return_value={"ok": True, "dry_run": True})
+    @patch.object(ads, "ativar_campanha", return_value={"ok": True, "dry_run": True})
+    def test_aplicar_ligar_sem_budget_so_ativa(self, mock_ativar, mock_orcamento, *_):
+        out = ads.aplicar_decisao_campanhas("ativar", budget=0.0, dry_run=True)
+        self.assertEqual(len(out), 1)
+        mock_ativar.assert_called_once()
+        mock_orcamento.assert_not_called()
+
+
+class TestVisibilidadeCtrCvr(unittest.TestCase):
+    def test_normalizar_guarda_ctr_cvr_prints(self):
+        row = ads._normalizar_campanha(
+            {
+                "id": "C1",
+                "metrics": {
+                    "acos": 0.1,
+                    "clicks": 8,
+                    "prints": 400,
+                    "ctr": 2.0,
+                    "cvr": 0.05,
+                    "cpc": 0.9,
+                },
+            }
+        )
+        self.assertEqual(row["prints"], 400)
+        self.assertEqual(row["ctr"], 2.0)
+        self.assertEqual(row["cvr"], 0.05)
+        self.assertEqual(row["cpc"], 0.9)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_visibilidade_sem_sku_tag(self, mock_gauge):
+        ads.emitir_metricas_visibilidade_ads(
+            [{"prints": 100, "clicks": 4, "ctr": 4.0, "cvr": 0.1, "cpc": 1.0}]
+        )
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ads.ctr_medio", nomes)
+        self.assertIn("ads.cvr_medio", nomes)
+        self.assertIn("ads.ctr_cvr_visivel", nomes)
+        for c in mock_gauge.call_args_list:
+            self.assertNotIn("tags", c.kwargs)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_ads_hoje_por_campanha(self, mock_gauge):
+        ads.emitir_metricas_ads_hoje(
+            [
+                {
+                    "id": "C-99",
+                    "status": "active",
+                    "cost": 12.5,
+                    "prints": 100,
+                    "clicks": 4,
+                    "units_quantity": 1,
+                    "total_amount": 40,
+                }
+            ],
+            fonte_ok=True,
+        )
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ads.hoje.gasto", nomes)
+        self.assertIn("ads.hoje.ranking_gasto", nomes)
+        self.assertIn("ads.hoje.ativas_n", nomes)
+        for c in mock_gauge.call_args_list:
+            tags = c.kwargs.get("tags") or []
+            self.assertFalse(any(str(t).startswith("sku:") for t in tags))
+            if c.args[0] == "ads.hoje.ranking_gasto":
+                self.assertIn("camp:c99", tags)
+
+    @patch("core.datadog_metrics.gauge")
+    def test_emitir_ads_hoje_sem_fonte(self, mock_gauge):
+        ads.emitir_metricas_ads_hoje(
+            [{"id": "C1", "cost": 9}],
+            fonte_ok=False,
+        )
+        nomes = [c.args[0] for c in mock_gauge.call_args_list]
+        self.assertIn("ads.hoje.fonte_ok", nomes)
+        self.assertNotIn("ads.hoje.ranking_gasto", nomes)
+
+
+class TestProductAdsFora(unittest.TestCase):
+    @patch.object(ads, "ML_ADS_PRODUCT_ADS_FORA", True)
+    @patch.object(ads, "_enabled", return_value=True)
+    @patch.object(ads, "_request_ml")
+    def test_nao_chama_api(self, mock_req, *_):
+        out = ads.obter_advertiser()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out.get("codigo"), "escopo_ausente")
+        mock_req.assert_not_called()
+        self.assertEqual(ads.listar_campanhas(), [])
+        mock_req.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
+

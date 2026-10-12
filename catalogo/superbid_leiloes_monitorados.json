@@ -1,0 +1,6 @@
+{
+  "ativo": true,
+  "lance_minimo_brl": 500,
+  "exigir_documento": false,
+  "notas": "Coleta direta Superbid (HTML + fallback DDG) — padrão Sumaré"
+}

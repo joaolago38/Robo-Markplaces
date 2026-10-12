@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core import atomic_io
+from core.state_backend import _TEM_FLOCK
 
 
 class TestEscreverJsonAtomico(unittest.TestCase):
@@ -81,7 +82,7 @@ class TestLerEAtualizarJson(unittest.TestCase):
         (leitura-modificação-escrita sem proteção); com o lock, o
         contador final deve bater exatamente com o número de chamadas.
         """
-        if not atomic_io._TEM_FLOCK:
+        if not _TEM_FLOCK:
             self.skipTest("fcntl indisponível — teste de concorrência só em POSIX")
         with tempfile.TemporaryDirectory() as tmp:
             caminho = Path(tmp) / "contador.json"

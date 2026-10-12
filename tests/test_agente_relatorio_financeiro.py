@@ -26,11 +26,14 @@ class TestRelatorioFinanceiro(unittest.TestCase):
                 "campanhas_acos_alto": [{"cost": 30.0}, {"cost": 15.0}],
             },
         }
-        self.assertTrue(rel.executar())
+        out = rel.executar()
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["alerta_enviado"])
         mock_alerta.assert_called_once()
         msg = mock_alerta.call_args[0][0]
         self.assertIn("R$12.50", msg)
         self.assertIn("3 ajustes", msg)
+        self.assertTrue(mock_alerta.call_args.kwargs.get("chave", "").startswith("relatorio_financeiro:"))
 
     @patch.object(rel, "alertar_gestor", return_value=True)
     @patch("agentes.ml.agente_monitor_ml.analisar")
@@ -41,13 +44,29 @@ class TestRelatorioFinanceiro(unittest.TestCase):
             "total_ajustes": 0,
         }
         mock_monitor.return_value = {"ok": True, "ads": {"campanhas_acos_alto": []}}
-        self.assertTrue(rel.executar())
+        out = rel.executar()
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["alerta_enviado"])
         mock_alerta.assert_called_once()
+
+    @patch.object(rel, "alertar_gestor", return_value=False)
+    @patch("agentes.ml.agente_monitor_ml.analisar")
+    @patch("agentes.repricing.agente_repricing_marketplaces.executar")
+    def test_telegram_ou_cooldown_nao_marca_falha(self, mock_repricing, mock_monitor, _mock_alerta):
+        mock_repricing.return_value = {
+            "economia_estimada_piso_margem": 0.0,
+            "total_ajustes": 0,
+        }
+        mock_monitor.return_value = {"ok": True, "ads": {"campanhas_acos_alto": []}}
+        out = rel.executar()
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["alerta_enviado"])
 
     @patch.object(rel, "alertar_gestor")
     @patch("agentes.repricing.agente_repricing_marketplaces.executar", side_effect=RuntimeError("falha"))
     def test_excecao_retorna_false(self, *_mocks):
-        self.assertFalse(rel.executar())
+        out = rel.executar()
+        self.assertFalse(out["ok"])
 
 
 if __name__ == "__main__":

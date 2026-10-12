@@ -8,10 +8,10 @@ import json
 import logging
 from datetime import datetime
 
-from integracoes.bling.bling_client import estoques_criticos, listar_produtos
 from core.marketplace_algorithm import HISTORY_FILE, _classificar
 from core.notificador import alertar, alertar_critico
 from core.resumo_ia import sintetizar_claude
+from integracoes.bling.bling_client import estoques_criticos, listar_produtos
 
 logger = logging.getLogger("relatorio")
 

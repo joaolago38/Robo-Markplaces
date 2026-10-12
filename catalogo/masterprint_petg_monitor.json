@@ -1,0 +1,26 @@
+[
+  {
+    "id": "mp-petg-geral",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Masterprint PETG",
+    "termo_busca": "filamento petg masterprint 1kg",
+    "limite_resultados": 50
+  },
+  {
+    "id": "mp-petg-175",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Masterprint PETG 1.75mm",
+    "termo_busca": "masterprint petg 1.75mm",
+    "limite_resultados": 50
+  },
+  {
+    "id": "mp-petg-marca",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Masterprint filamento PETG",
+    "termo_busca": "filamento masterprint petg",
+    "limite_resultados": 50
+  }
+]

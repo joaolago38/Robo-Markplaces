@@ -7,14 +7,20 @@ from __future__ import annotations
 import logging
 import time
 
+from core.chat_claim import tentar_claim
 from core.claude_client import perguntar
-from core.config import SPEC
+from core.config import AUTO_RESPOSTAS_ML, SPEC
 from core.notificador import alertar_gestor
-from integracoes.amazon.amazon_client import listar_mensagens_nao_respondidas as listar_amazon, responder_mensagem as responder_amazon
+from core.produto_lookup import buscar_produto_por_ref
+from integracoes.amazon.amazon_client import listar_mensagens_nao_respondidas as listar_amazon
+from integracoes.amazon.amazon_client import responder_mensagem as responder_amazon
 from integracoes.bling.bling_client import buscar_produto
-from integracoes.magalu.magalu_client import listar_perguntas_nao_respondidas as listar_magalu, responder_pergunta as responder_magalu
-from integracoes.ml.ml_client import listar_perguntas_nao_respondidas, responder_pergunta as responder_ml
-from integracoes.shopee.shopee_client import listar_perguntas_nao_respondidas as listar_shopee, responder_pergunta as responder_shopee
+from integracoes.magalu.magalu_client import listar_perguntas_nao_respondidas as listar_magalu
+from integracoes.magalu.magalu_client import responder_pergunta as responder_magalu
+from integracoes.ml.ml_client import listar_perguntas_nao_respondidas
+from integracoes.ml.ml_client import responder_pergunta as responder_ml
+from integracoes.shopee.shopee_client import listar_perguntas_nao_respondidas as listar_shopee
+from integracoes.shopee.shopee_client import responder_pergunta as responder_shopee
 
 # Marketplaces ativos conforme spec.yaml — evita chamadas desnecessárias
 _CANAIS_ATIVOS: set[str] = {
@@ -49,14 +55,20 @@ Resposta objetiva em até 3 frases.
 
 
 def _processar_ml() -> dict:
+    """ML: só se AUTO_RESPOSTAS_ML=1 (padrão 0 — dono é agentes.ml)."""
+    if not AUTO_RESPOSTAS_ML:
+        return {"canal": "mercadolivre", "lidas": 0, "respondidas": 0, "motivo": "desligado_chat_ml_dono"}
     perguntas = listar_perguntas_nao_respondidas()
     ok = 0
     for p in perguntas:
         texto = (p.get("text") or "").strip()
         if not texto:
             continue
+        pid = str(p.get("id") or "")
+        if not tentar_claim("mercadolivre", pid, agente="auto_respostas"):
+            continue
         item_id = p.get("item_id") or ""
-        produto = buscar_produto(str(item_id)) or {}
+        produto = buscar_produto_por_ref(str(item_id), canal="mercadolivre") or {}
         resposta = _gerar_resposta_visual(texto, produto, "mercadolivre")
         if responder_ml(p.get("id"), resposta):
             ok += 1

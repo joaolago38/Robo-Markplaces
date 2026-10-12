@@ -1,0 +1,14 @@
+{
+  "ramo_id": "masterprint",
+  "nome_fantasia": "Masterprint (filamentos e escritório)",
+  "razao_social": "",
+  "cnpj": "23811261000197",
+  "ml_seller_id": "",
+  "ml_nickname": "",
+  "telegram_gestor_chat_id": "",
+  "diferente_do_ramo_esmaltes": true,
+  "empresa_catalogo_id": "masterprint",
+  "cnpj_esmaltes_referencia": "52668583000127",
+  "candidato_dono_produtos": true,
+  "notas": "Conta Masterprint = 23.811.261/0001-97. Dados de produtos ainda no 52.668.583/0001-27; este CNPJ é o alvo da migração (CNPJ_DONO_PRODUTOS_USAR_ALVO=1)."
+}

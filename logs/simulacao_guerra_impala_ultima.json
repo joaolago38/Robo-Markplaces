@@ -1,0 +1,252 @@
+{
+  "ok": true,
+  "simulacao": true,
+  "visao_operacional": true,
+  "timestamp": "2026-08-15T14:49:54.876447+00:00",
+  "aviso": "Visão operacional: frente no ar em memória. Catálogo em disco continua sem MLB real.",
+  "quando_mlb_real": [
+    "Publicar MIMO, depois PERL, JUPAES só após o 1º pedido vencedor.",
+    "Gravar item_id real em produtos.json → canais.mercadolivre (sem MLB_PREENCHER).",
+    "Estoque 60 no anúncio e no catálogo (piso de ruptura 30).",
+    "Radar já busca MIMO/PERL/JUPAES; se aparecer MLB rival, colar em concorrentes_monitorados e ativar o watch.",
+    "Não ligar Ads antes de 20 avaliações + nota 4,8 + contrato.",
+    "Não copiar estes MLB9000… para o catálogo de produção."
+  ],
+  "nossos_mlb_simulados": {
+    "IMP-MIMO-003": "MLB9000110003",
+    "IMP-PERL-004": "MLB9000110004",
+    "IMP-JUPAES-006": "MLB9000110006"
+  },
+  "estoque_ideal": 60,
+  "catalogo_real": [
+    {
+      "sku": "IMP-MIMO-003",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "estoque_catalogo": 0,
+      "estoque_ml": 0,
+      "estoque_ok": false,
+      "preco": 44.9
+    },
+    {
+      "sku": "IMP-PERL-004",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "estoque_catalogo": 0,
+      "estoque_ml": 0,
+      "estoque_ok": false,
+      "preco": 39.9
+    },
+    {
+      "sku": "IMP-JUPAES-006",
+      "item_id": "MLB_PREENCHER",
+      "mlb_ok": false,
+      "estoque_catalogo": 0,
+      "estoque_ml": 0,
+      "estoque_ok": false,
+      "preco": 64.9
+    }
+  ],
+  "sala": {
+    "modo": "operacional",
+    "frente_no_ar": true,
+    "chat_30min": "on",
+    "radar_rivais": 5,
+    "estoque_un": 60,
+    "ruptura_piso_un": 30,
+    "repricing": "perl_apenas",
+    "ads": "aguardando_20_avaliacoes_nota_4_8",
+    "cnpj_2": "aguardando_20_avaliacoes",
+    "golpe": "diferenciar",
+    "sku": "IMP-MIMO-003",
+    "arma": "listing",
+    "fazer": "Diferenciar `IMP-MIMO-003` (título/foto/chat) — preço firme",
+    "nao_fazer": "Baixar este SKU; igualar kit 10/15 no prejuízo"
+  },
+  "cenarios": [
+    {
+      "id": "igual_para_igual",
+      "nome": "Anúncios no ar — guerra de igual para igual",
+      "hidratar_nossos": true,
+      "rivais": 5,
+      "pisos_fase1": {
+        "IMP-MIMO-003": 39.07,
+        "IMP-PERL-004": 36.43,
+        "IMP-JUPAES-006": 57.53
+      },
+      "batalha": {
+        "anuncios_unicos": 5,
+        "sellers_unicos": 2,
+        "nossos_acima_rival": 3,
+        "comparacoes_ao_vivo": 5
+      },
+      "golpe": {
+        "disparar": true,
+        "classificacao": "diferenciar",
+        "sku": "IMP-MIMO-003",
+        "arma": "listing",
+        "fazer": "Diferenciar `IMP-MIMO-003` (título/foto/chat) — preço firme",
+        "nao_fazer": "Baixar este SKU; igualar kit 10/15 no prejuízo"
+      },
+      "frente": [
+        {
+          "sku": "IMP-MIMO-003",
+          "classificacao": "diferenciar",
+          "arma": "listing",
+          "disparar": true,
+          "fazer": "Diferenciar `IMP-MIMO-003` (título/foto/chat) — preço firme",
+          "nao_fazer": "Baixar este SKU; igualar kit 10/15 no prejuízo",
+          "gap_pct": 4.66,
+          "rival_min": 42.9,
+          "piso_preco": 39.07,
+          "nosso_preco": 44.9,
+          "mlb_ok": true
+        },
+        {
+          "sku": "IMP-PERL-004",
+          "classificacao": "ignorar",
+          "arma": "observar",
+          "disparar": false,
+          "fazer": "Nada. Próxima leitura do radar",
+          "nao_fazer": "Repricing no mesmo dia por variação pontual",
+          "gap_pct": 2.31,
+          "rival_min": 39.0,
+          "piso_preco": 36.43,
+          "nosso_preco": 39.9,
+          "mlb_ok": true
+        },
+        {
+          "sku": "IMP-JUPAES-006",
+          "classificacao": "ignorar",
+          "arma": "observar",
+          "disparar": false,
+          "fazer": "Nada. Chat segue no ciclo 30 min",
+          "nao_fazer": "Abrir 4º SKU; perseguir centavos",
+          "gap_pct": 0.0,
+          "rival_min": 64.9,
+          "piso_preco": 57.53,
+          "nosso_preco": 64.9,
+          "mlb_ok": true
+        }
+      ],
+      "agir_top": [
+        {
+          "sku": "CRZ-KIT-003",
+          "kit_tag": "kit:crzkit003",
+          "acao": "publicar_mlb",
+          "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
+          "score": 67.97,
+          "gap_pct": 27.97,
+          "rivais_no_tam": 2,
+          "nosso_preco": 54.9,
+          "rival_min": 42.9,
+          "papel": "catalogo",
+          "prio": "p1",
+          "mlb_ok": false,
+          "fonte_rival": "ao_vivo",
+          "critica": true
+        },
+        {
+          "sku": "IMP-VR-015",
+          "kit_tag": "kit:vr015",
+          "acao": "publicar_mlb",
+          "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
+          "score": 40.0,
+          "gap_pct": 0.0,
+          "rivais_no_tam": 0,
+          "nosso_preco": 69.9,
+          "rival_min": null,
+          "papel": "catalogo",
+          "prio": "p0",
+          "mlb_ok": false,
+          "fonte_rival": "ausente",
+          "critica": true
+        },
+        {
+          "sku": "IMP-SORT-010",
+          "kit_tag": "kit:sort010",
+          "acao": "publicar_mlb",
+          "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
+          "score": 40.0,
+          "gap_pct": 0.0,
+          "rivais_no_tam": 0,
+          "nosso_preco": 48.0,
+          "rival_min": null,
+          "papel": "catalogo",
+          "prio": "p0",
+          "mlb_ok": false,
+          "fonte_rival": "ausente",
+          "critica": true
+        },
+        {
+          "sku": "BUNDLE-777-5ESM",
+          "kit_tag": "kit:b7775esm",
+          "acao": "publicar_mlb",
+          "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
+          "score": 40.0,
+          "gap_pct": 0.0,
+          "rivais_no_tam": 0,
+          "nosso_preco": 79.9,
+          "rival_min": null,
+          "papel": "catalogo",
+          "prio": "p0",
+          "mlb_ok": false,
+          "fonte_rival": "ausente",
+          "critica": true
+        },
+        {
+          "sku": "IMP-NUDE-010",
+          "kit_tag": "kit:nude010",
+          "acao": "publicar_mlb",
+          "motivo": "SKU sem MLB válido — publicar na frente de guerra antes de reagir a preço",
+          "score": 40.0,
+          "gap_pct": 0.0,
+          "rivais_no_tam": 0,
+          "nosso_preco": 49.9,
+          "rival_min": null,
+          "papel": "catalogo",
+          "prio": "p1",
+          "mlb_ok": false,
+          "fonte_rival": "ausente",
+          "critica": true
+        }
+      ],
+      "guerra_status": [
+        {
+          "sku": "IMP-MIMO-003",
+          "mlb_ok": true,
+          "pode_impulsionar": true,
+          "bloqueios": []
+        },
+        {
+          "sku": "IMP-PERL-004",
+          "mlb_ok": true,
+          "pode_impulsionar": true,
+          "bloqueios": []
+        },
+        {
+          "sku": "IMP-JUPAES-006",
+          "mlb_ok": true,
+          "pode_impulsionar": true,
+          "bloqueios": []
+        }
+      ],
+      "sala": {
+        "modo": "operacional",
+        "frente_no_ar": true,
+        "chat_30min": "on",
+        "radar_rivais": 5,
+        "estoque_un": 60,
+        "ruptura_piso_un": 30,
+        "repricing": "perl_apenas",
+        "ads": "aguardando_20_avaliacoes_nota_4_8",
+        "cnpj_2": "aguardando_20_avaliacoes",
+        "golpe": "diferenciar",
+        "sku": "IMP-MIMO-003",
+        "arma": "listing",
+        "fazer": "Diferenciar `IMP-MIMO-003` (título/foto/chat) — preço firme",
+        "nao_fazer": "Baixar este SKU; igualar kit 10/15 no prejuízo"
+      }
+    }
+  ]
+}

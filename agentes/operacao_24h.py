@@ -6,13 +6,17 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime, timezone
 
 from agentes.algoritmo_marketplaces import executar as executar_algoritmo_marketplaces
-from agentes.ml.agente_ads_gatilho import executar as verificar_gatilho_ads
-from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
-from agentes.repricing.agente_repricing_impala import executar as repricing_impala
 from agentes.faturamento.agente_faturamento import emitir_nfe_pedido
+from agentes.ml.agente_ads_gatilho import executar as verificar_gatilho_ads
+from agentes.repricing.agente_repricing_impala import executar as repricing_impala
+from agentes.repricing.agente_repricing_marketplaces import executar as executar_repricing_marketplaces
 from core.alertas_esmaltes import verificar_todos as verificar_alertas_esmaltes
+from core.atomic_io import escrever_json_atomico
+from core.config import ROOT
+from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor
 from core.resumo_ia import sintetizar_claude
 from integracoes.bling.bling_client import listar_produtos
@@ -111,7 +115,28 @@ def _faturar_pedidos_lojahub(dry_run_nfe: bool = True, limite: int = 20) -> dict
         if out.get("ok"):
             sucesso += 1
         resultados.append({"pedido_id": pedido["pedido_id"], "ok": out.get("ok"), "resultado": out})
-    return {"total": len(resultados), "sucesso": sucesso, "falhas": len(resultados) - sucesso, "itens": resultados}
+    payload = {
+        "total": len(resultados),
+        "sucesso": sucesso,
+        "falhas": len(resultados) - sucesso,
+        "itens": resultados,
+    }
+    try:
+        incrementar("nfe.rodadas", tags=[f"dry_run:{str(bool(dry_run_nfe)).lower()}"])
+        escrever_json_atomico(
+            ROOT / "logs" / "nfe_ultima.json",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": payload["falhas"] == 0,
+                "dry_run": dry_run_nfe,
+                "total": payload["total"],
+                "sucesso": sucesso,
+                "falhas": payload["falhas"],
+            },
+        )
+    except Exception as exc:
+        logger.warning("NF-e heartbeat: %s", exc)
+    return payload
 
 
 def _payload_para_contexto_claude(payload: dict) -> dict:
@@ -119,8 +144,14 @@ def _payload_para_contexto_claude(payload: dict) -> dict:
     mp = payload.get("marketplaces") or {}
     gatilho = payload.get("gatilho_ads") or {}
     repricing = payload.get("repricing") or {}
+    ciclo = payload.get("ciclo_meta") if isinstance(payload.get("ciclo_meta"), dict) else {}
     return {
         "kpis_24h": payload.get("kpis_24h"),
+        "ciclo_meta": {
+            "pronto": ciclo.get("pronto"),
+            "motivo": ciclo.get("motivo"),
+            "fase": ciclo.get("fase"),
+        },
         "marketplaces_resumo": mp.get("resumo") or {},
         "marketplaces_status": {
             nome: {"status": av.get("status"), "score": av.get("score")}
@@ -155,13 +186,25 @@ def _fallback_resumo_operacao(payload: dict) -> str:
 def _sintetizar_claude_operacao(payload: dict) -> str:
     contexto = _payload_para_contexto_claude(payload)
     fallback = _fallback_resumo_operacao(payload)
+    # Dry-run total: regras locais bastam; evita Claude sem sinal operacional real.
+    modo = payload.get("modo") or {}
+    if modo.get("repricing_dry_run") and modo.get("nfe_dry_run"):
+        kpis = payload.get("kpis_24h") or {}
+        if float(kpis.get("receita_24h") or 0) <= 0 and not (payload.get("alertas_esmaltes") or []):
+            return fallback
     prompt = (
         "Com base no contexto JSON acima, escreva um resumo executivo de NO MÁXIMO 5 linhas, "
         "objetivo, priorizando o que muda receita ou risco nas próximas horas. "
         "Não repita números brutos que já aparecem no relatório detalhado; foque em interpretação "
         "(ex.: vendas 24h abaixo da média, ACOS subindo, estoque crítico bloqueando repricing)."
     )
-    return sintetizar_claude(prompt, contexto, fallback, max_tokens=400)
+    return sintetizar_claude(
+        prompt,
+        contexto,
+        fallback,
+        max_tokens=400,
+        origem="operacao_24h",
+    )
 
 
 def _formatar_notas_repricing(repricing: dict) -> str:
@@ -175,35 +218,78 @@ def _formatar_notas_repricing(repricing: dict) -> str:
     return "Notas concorrência:\n" + "\n".join(f"• {n}" for n in notas[:5])
 
 
+def _gravar_heartbeat_operacao(payload: dict) -> None:
+    """Heartbeat com semântica de escrita (ok ≠ só 'rodou')."""
+    try:
+        bloqueado = bool(payload.get("bloqueado"))
+        repricing = payload.get("repricing") if isinstance(payload.get("repricing"), dict) else {}
+        faturamento = payload.get("faturamento") if isinstance(payload.get("faturamento"), dict) else {}
+        falhas_rep = int(repricing.get("total_falhas_aplicacao") or 0)
+        falhas_nfe = int(faturamento.get("falhas") or faturamento.get("erro") or 0)
+        if isinstance(faturamento.get("falhas"), list):
+            falhas_nfe = len(faturamento["falhas"])
+        ok = (not bloqueado) and falhas_rep == 0 and falhas_nfe == 0 and payload.get("ok") is not False
+        modo = payload.get("modo") if isinstance(payload.get("modo"), dict) else {}
+        escrever_json_atomico(
+            ROOT / "logs" / "operacao_24h_ultima.json",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": bool(ok),
+                "bloqueado": bloqueado,
+                "motivo": payload.get("erro") or payload.get("motivo"),
+                "dry_run_repricing": bool(modo.get("repricing_dry_run")),
+                "dry_run_nfe": bool(modo.get("nfe_dry_run")),
+                "total_ajustes_preco": int(repricing.get("total_ajustes") or 0),
+                "total_aplicados_preco": int(repricing.get("total_aplicados_sucesso") or 0),
+                "total_falhas_preco": falhas_rep,
+                "nfe_sucesso": int(faturamento.get("sucesso") or 0),
+                "nfe_total": int(faturamento.get("total") or 0),
+            },
+        )
+        incrementar("operacao_24h.rodadas", tags=[f"ok:{str(bool(ok)).lower()}"])
+    except Exception as exc:
+        logger.warning("Operacao24h: falha ao gravar heartbeat: %s", exc)
+
+
 def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     if not dry_run_repricing or not dry_run_nfe:
         from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
 
         if bloqueio := bloqueio_escrita_global():
             alertar_bloqueio_escrita_global()
-            return {
+            payload_bloqueio = {
                 **bloqueio,
+                "ok": False,
                 "bloqueado": True,
                 "modo": {"repricing_dry_run": dry_run_repricing, "nfe_dry_run": dry_run_nfe},
             }
+            _gravar_heartbeat_operacao(payload_bloqueio)
+            return payload_bloqueio
 
     produtos = listar_produtos()
     analytics = listar_resumo_vendas_24h()
     pedidos_faturar = listar_pedidos_prontos_faturar(limit=100)
     kpis = _calcular_kpis_24h(produtos, pedidos_faturar, analytics)
 
-    # Busca reputação real da conta ML para alertas e gatilho de ads
+    # Reputação da conta e Full logístico (não confundir Full com Mercado Líder).
+    _total_avaliacoes = 0
+    _nota_media = 0.0
+    _full_ativo = False
     try:
         from integracoes.ml.ml_client import buscar_reputacao_vendedor
         _rep = buscar_reputacao_vendedor()
         _metrics = _rep.get("metrics", {})
         _total_avaliacoes = int(_metrics.get("total_ratings", 0) or 0)
         _nota_media = float(_metrics.get("average_rating", 0.0) or 0.0)
-        _full_ativo = bool(_metrics.get("power_seller_status") in ("gold", "platinum"))
     except Exception as _e:
         logger.warning("Não foi possível buscar reputação ML: %s", _e)
-        _total_avaliacoes = 0
-        _nota_media = 0.0
+    try:
+        from integracoes.ml.ml_client import listar_meus_anuncios
+        from integracoes.ml.tipo_anuncio_ml import algum_anuncio_full
+
+        _full_ativo = algum_anuncio_full(listar_meus_anuncios())
+    except Exception as _e:
+        logger.warning("Não foi possível detectar Full nos anúncios ML: %s", _e)
         _full_ativo = False
 
     try:
@@ -230,7 +316,17 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
     # Repricing consciente de fase
     repricing_fases = repricing_impala(dry_run=dry_run_repricing)
 
-    monitor_marketplaces = executar_algoritmo_marketplaces(alertar_quando_atencao=False)
+    monitor_marketplaces = {}
+    try:
+        monitor_marketplaces = executar_algoritmo_marketplaces(alertar_quando_atencao=False)
+    except Exception as exc:
+        logger.exception("Operacao24h: algoritmo falhou — segue NF-e/repricing")
+        monitor_marketplaces = {
+            "ok": False,
+            "erro": str(exc)[:240],
+            "resumo": {},
+            "marketplaces": {},
+        }
     repricing = executar_repricing_marketplaces(produtos=produtos, dry_run=dry_run_repricing)
     faturamento = _faturar_pedidos_lojahub(dry_run_nfe=dry_run_nfe, limite=30)
 
@@ -245,18 +341,39 @@ def executar(dry_run_repricing: bool = True, dry_run_nfe: bool = True) -> dict:
         "modo": {"repricing_dry_run": dry_run_repricing, "nfe_dry_run": dry_run_nfe},
     }
 
+    try:
+        from integracoes.meta.ciclo_campanhas import avaliar_momento_ciclo_meta
+        from integracoes.meta.claude_ciclo_meta import auxiliar_digest_bloqueio
+
+        ciclo_meta = avaliar_momento_ciclo_meta()
+        payload["ciclo_meta"] = {
+            "pronto": bool(ciclo_meta.get("pronto")),
+            "motivo": ciclo_meta.get("motivo"),
+            "fase": ciclo_meta.get("fase"),
+        }
+        payload["claude_ciclo_meta"] = auxiliar_digest_bloqueio(ciclo_meta)
+    except Exception as exc:
+        logger.warning("Operacao24h ciclo Meta Claude: %s", exc)
     resumo_ia = _sintetizar_claude_operacao(payload)
     bloco_notas = _formatar_notas_repricing(repricing)
+    aplicados = int(repricing.get("total_aplicados_sucesso") or 0)
+    candidatos = int(repricing.get("total_ajustes") or 0)
+    falhas_preco = int(repricing.get("total_falhas_aplicacao") or 0)
+    modo_rep = "dry-run" if dry_run_repricing else "live"
+    modo_nfe = "dry-run" if dry_run_nfe else "live"
     msg_bruta = (
         f"Operação 24h:\n"
         f"Receita: R$ {kpis['receita_24h']:.2f} | Lucro estimado: R$ {kpis['lucro_estimado_24h']:.2f}\n"
         f"Preço médio: R$ {kpis['preco_medio_cadastrado']:.2f} | Ticket médio: R$ {kpis['ticket_medio_24h']:.2f}\n"
-        f"NF geradas: {faturamento['sucesso']}/{faturamento['total']} | Ajustes preço: {repricing['total_ajustes']}"
+        f"NF ({modo_nfe}): {faturamento['sucesso']}/{faturamento['total']} | "
+        f"Preço ({modo_rep}): {aplicados}/{candidatos} aplicados"
+        + (f" | {falhas_preco} falha(s)" if falhas_preco else "")
     )
     if bloco_notas:
         msg_bruta = f"{msg_bruta}\n{bloco_notas}"
     alertar_gestor(f"📝 *Resumo IA*\n{resumo_ia}\n\n{msg_bruta}")
     logger.info("Operacao24h: %s", payload)
+    _gravar_heartbeat_operacao(payload)
     return payload
 
 

@@ -1,14 +1,24 @@
 """
 integracoes/bling/bling_client.py
 Cliente da API Bling v3. Nunca lança exceção.
+
+Erros de auth/API silenciados no Datadog por padrão (empresa inativa / token).
+Religar: LOG_ERROS_BLING=1
 """
 import logging
+
+from core import token_manager
 from core.config import BLING_ACCESS_TOKEN
 from core.http_client import request
-from core import token_manager
+from core.log_cooldown import log_com_cooldown
+from core.log_opcional import erro_opcional, log_erros_bling_ativos
 
 logger = logging.getLogger("bling")
 BASE = "https://www.bling.com.br/Api/v3"
+
+
+def _erro_bling(msg: str, *args) -> None:
+    erro_opcional(logger, log_erros_bling_ativos(), msg, *args, flag_hint="LOG_ERROS_BLING")
 
 
 class NfeVerificacaoIndisponivel(Exception):
@@ -30,8 +40,13 @@ def _request_bling(method: str, url: str, **kwargs):
 
     status = getattr(r, "status_code", None)
     if status in (401, 403):
-        logger.warning(
-            "Bling retornou %s — renovando token e tentando novamente.", status
+        log_com_cooldown(
+            logger,
+            f"bling:http_{status}",
+            "Bling retornou %s — renovando token e tentando novamente "
+            "(próximos avisos em cooldown 6h).",
+            status,
+            cooldown_segundos=6 * 3600,
         )
         novo = token_manager.get_token_bling(forcar=True)
         if novo:
@@ -146,30 +161,46 @@ def buscar_produto(sku: str) -> dict | None:
             return None
         return _normalizar_produto(itens[0])
     except ValueError as e:
-        logger.error("Bling buscar_produto JSON inválido sku=%s erro=%s", sku, e)
+        _erro_bling("Bling buscar_produto JSON inválido sku=%s erro=%s", sku, e)
         return None
     except Exception as e:
-        logger.error("Bling buscar_produto erro sku=%s: %s", sku, e)
+        _erro_bling("Bling buscar_produto erro sku=%s: %s", sku, e)
         return None
 
 def listar_produtos() -> list[dict]:
+    produtos, _ok = listar_produtos_detalhado()
+    return produtos
+
+
+def listar_produtos_detalhado() -> tuple[list[dict], bool]:
+    """
+    Lista produtos ativos. Retorna (lista, sucesso_api).
+    Em falha HTTP/auth devolve ([], False) — não confundir com catálogo vazio.
+    """
     try:
         r = _request_bling("GET", f"{BASE}/produtos", params={"situacao": "A"}, timeout=15)
         status = getattr(r, "status_code", 0)
         if status != 200:
-            logger.error(
+            _erro_bling(
                 "Bling listar_produtos HTTP %s: %s",
                 status,
                 (getattr(r, "text", "") or "")[:300],
             )
-            return []
-        return [_normalizar_produto(p) for p in r.json().get("data", [])]
+            try:
+                from core.datadog_metrics import incrementar
+
+                incrementar("bling.auth.falha", tags=[f"status_http:{status}"])
+            except Exception:
+                pass
+            return [], False
+        return [_normalizar_produto(p) for p in r.json().get("data", [])], True
     except ValueError as e:
-        logger.error("Bling listar_produtos JSON inválido: %s", e)
-        return []
+        _erro_bling("Bling listar_produtos JSON inválido: %s", e)
+        return [], False
     except Exception as e:
-        logger.error("Bling listar_produtos erro: %s", e)
-        return []
+        _erro_bling("Bling listar_produtos erro: %s", e)
+        return [], False
+
 
 def listar_produtos_por_sku() -> dict[str, dict]:
     """
@@ -178,6 +209,12 @@ def listar_produtos_por_sku() -> dict[str, dict]:
     buscar_produto(sku) por item.
     """
     return {p["codigo"]: p for p in listar_produtos() if p.get("codigo")}
+
+
+def listar_produtos_por_sku_detalhado() -> tuple[dict[str, dict], bool]:
+    """Indexado por SKU + flag de sucesso da API Bling."""
+    produtos, ok = listar_produtos_detalhado()
+    return {p["codigo"]: p for p in produtos if p.get("codigo")}, ok
 
 def estoques_criticos(limite: int = 20) -> list[dict]:
     # Só considera crítico quando o estoque é conhecido E está abaixo do limite.

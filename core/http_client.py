@@ -20,6 +20,14 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from core.datadog_metrics import gauge, incrementar
+from core.http_errors import eh_timeout_rede, mascarar_segredos_http
+from core.log_opcional import (
+    erro_opcional,
+    host_pncp,
+    host_scraper_veiculos,
+    log_erros_pncp_ativos,
+    log_erros_veiculos_ativos,
+)
 
 logger = logging.getLogger("http_client")
 
@@ -46,6 +54,73 @@ def _host_simplificado(url: str) -> str:
         return "desconhecido"
 
 
+def _silenciar_host_ruidoso(host: str) -> tuple[bool, str]:
+    """(silenciar?, flag_hint) — scrapers veículos / PNCP não sobem ERROR no Datadog."""
+    if host_scraper_veiculos(host) and not log_erros_veiculos_ativos():
+        return True, "LOG_ERROS_VEICULOS_SCRAPERS"
+    if host_pncp(host) and not log_erros_pncp_ativos():
+        return True, "LOG_ERROS_PNCP"
+    return False, ""
+
+
+def _path_url(url: str) -> str:
+    try:
+        return (urlparse(url).path or "").lower()
+    except Exception:
+        return ""
+
+
+def _http_erro_ads_404_conhecido(url: str, status: int) -> bool:
+    """404 de Product Ads/advertiser é config (escopo), não falha transitória."""
+    return _motivo_http_ml_conhecido(url, status) == "ads_404"
+
+
+def _motivo_http_ml_conhecido(url: str, status: int) -> str | None:
+    """
+    4xx operacional do Mercado Livre — não infla robo.http.erro.
+    ads_404: Product Ads sem escopo no DevCenter.
+    search_403: /sites/*/search PolicyAgent.
+    performance: GET /performance em anúncio pausado/legado.
+    """
+    host = _host_simplificado(url).lower()
+    if "mercadolibre.com" not in host and "mercadolivre.com" not in host:
+        return None
+    path = _path_url(url)
+    if status == 404 and ("advertising" in path or "product_ads" in path):
+        return "ads_404"
+    if status == 403 and "/sites/" in path and "search" in path:
+        return "search_403"
+    if status in (400, 404) and "/performance" in path:
+        return "performance"
+    return None
+
+
+def _origem_http(host: str) -> str:
+    """Classifica origem para facet de latência (api vs scraper vs ia)."""
+    h = (host or "").lower()
+    if host_scraper_veiculos(host) or host_pncp(host):
+        return "scraper"
+    if "anthropic.com" in h:
+        return "ia"
+    if "telegram.org" in h or "api.telegram" in h:
+        return "telegram"
+    if "datadoghq" in h:
+        return "datadog"
+    return "api"
+
+
+def _emitir_metricas_http(host: str, metodo: str, *, duracao_ms: float, status_tag: str) -> None:
+    """
+    Scrapers com log silenciado não entram na média de latência (evita
+    inflar robo.http.latencia_ms com timeouts de HTML).
+    """
+    origem = _origem_http(host)
+    if origem == "scraper" and not log_erros_veiculos_ativos():
+        return
+    tags_base = [f"host:{host}", f"method:{metodo}", f"origem:{origem}"]
+    gauge("http.latencia_ms", duracao_ms, tags=[*tags_base, f"status:{status_tag}"])
+
+
 def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests.Response:
     """
     Executa request com sessão compartilhada + política de retry.
@@ -54,29 +129,64 @@ def request(method: str, url: str, timeout: int = 15, **kwargs: Any) -> requests
     """
     metodo = method.upper()
     host = _host_simplificado(url)
-    tags_base = [f"host:{host}", f"method:{metodo}"]
+    origem = _origem_http(host)
+    tags_base = [f"host:{host}", f"method:{metodo}", f"origem:{origem}"]
     inicio = time.monotonic()
     try:
         response = _SESSION.request(method=method, url=url, timeout=timeout, **kwargs)
     except Exception as exc:
         duracao_ms = (time.monotonic() - inicio) * 1000
-        gauge("http.latencia_ms", duracao_ms, tags=[*tags_base, "status:exception"])
-        incrementar("http.exception", tags=tags_base)
-        logger.error(
-            "HTTP %s %s falhou: %s",
-            metodo,
-            host,
-            exc,
-            extra={"error_kind": type(exc).__name__, "error_message": str(exc)},
-        )
+        _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag="exception")
+        silenciar, flag = _silenciar_host_ruidoso(host)
+        if not silenciar:
+            incrementar("http.exception", tags=tags_base)
+        msg = mascarar_segredos_http(str(exc))
+        extra = {"error_kind": type(exc).__name__, "error_message": msg}
+        # Scrapers / PNCP falham com frequência — não poluir Datadog com flag off.
+        if silenciar:
+            erro_opcional(
+                logger,
+                False,
+                "HTTP %s %s falhou: %s",
+                metodo,
+                host,
+                msg,
+                flag_hint=flag,
+                extra=extra,
+            )
+        elif origem == "telegram" and eh_timeout_rede(exc):
+            logger.warning(
+                "HTTP %s %s falhou (timeout): %s",
+                metodo,
+                host,
+                msg,
+                extra=extra,
+            )
+        else:
+            logger.error(
+                "HTTP %s %s falhou: %s",
+                metodo,
+                host,
+                msg,
+                extra=extra,
+            )
         raise
 
     duracao_ms = (time.monotonic() - inicio) * 1000
     faixa_status = f"{response.status_code // 100}xx"
-    gauge("http.latencia_ms", duracao_ms, tags=[*tags_base, f"status:{faixa_status}"])
+    _emitir_metricas_http(host, metodo, duracao_ms=duracao_ms, status_tag=faixa_status)
     if response.status_code >= 400:
-        incrementar(
-            "http.erro",
-            tags=[*tags_base, f"status_code:{response.status_code}"],
-        )
+        silenciar, _flag = _silenciar_host_ruidoso(host)
+        if silenciar:
+            pass
+        else:
+            motivo = _motivo_http_ml_conhecido(url, response.status_code)
+            tags_erro = [*tags_base, f"status_code:{response.status_code}"]
+            if motivo:
+                incrementar(
+                    "http.erro_conhecido",
+                    tags=[*tags_erro, f"motivo:{motivo}"],
+                )
+            else:
+                incrementar("http.erro", tags=tags_erro)
     return response

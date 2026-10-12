@@ -13,14 +13,14 @@ class FaturamentoTests(unittest.TestCase):
     def test_dry_run_monta_payload_com_ncm_catalogo(self, mock_buscar_produto):
         # SKU existente em catalogo/produtos.json; Bling mock sem NCM → NCM vem do catálogo
         mock_buscar_produto.return_value = {
-            "sku": "IMP-MIMO-003",
-            "nome": "Kit 3 Mimo + Carmed Impala",
-            "preco": 44.9,
+            "sku": "IMP-PERL-004",
+            "nome": "Kit 4 Esmaltes Impala Perolado Tendência",
+            "preco": 39.9,
         }
         pedido = {
             "pedido_id": "PED-1",
             "cliente": {"nome": "Cliente Teste", "documento": "12345678901"},
-            "itens": [{"sku": "IMP-MIMO-003", "quantidade": 2}],
+            "itens": [{"sku": "IMP-PERL-004", "quantidade": 2}],
         }
 
         out = emitir_nfe_pedido(pedido, dry_run=True)
@@ -50,14 +50,14 @@ class FaturamentoTests(unittest.TestCase):
     @patch("agentes.faturamento.agente_faturamento.buscar_produto")
     def test_default_nao_emite_nfe_real(self, mock_buscar, mock_criar):
         mock_buscar.return_value = {
-            "sku": "IMP-MIMO-003",
+            "sku": "IMP-PERL-004",
             "nome": "Kit",
-            "preco": 44.9,
+            "preco": 39.9,
         }
         pedido = {
             "pedido_id": "PED-DEF",
             "cliente": {"nome": "Cliente"},
-            "itens": [{"sku": "IMP-MIMO-003", "quantidade": 1}],
+            "itens": [{"sku": "IMP-PERL-004", "quantidade": 1}],
         }
         out = emitir_nfe_pedido(pedido)
         self.assertTrue(out["ok"])

@@ -3443,6 +3443,16 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 0
       }
+    },
+    {
+      "ts": "2026-07-13T15:04:07.025340+00:00",
+      "score": 0,
+      "metrics": {
+        "configurado": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 999
+      }
     }
   ],
   "magalu": [
@@ -3465,6 +3475,17 @@
         "claims_rate": 0.0,
         "dias_sem_acesso": 999
       }
+    },
+    {
+      "ts": "2026-07-13T15:04:11.454633+00:00",
+      "score": 65,
+      "metrics": {
+        "configurado": true,
+        "api_ok": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 11
+      }
     }
   ],
   "amazon": [
@@ -3486,6 +3507,17 @@
         "pendencias": 0,
         "claims_rate": 0.0,
         "dias_sem_acesso": 0
+      }
+    },
+    {
+      "ts": "2026-07-13T15:04:16.351620+00:00",
+      "score": 65,
+      "metrics": {
+        "configurado": true,
+        "api_ok": false,
+        "pendencias": 0,
+        "claims_rate": 0.0,
+        "dias_sem_acesso": 19
       }
     }
   ],

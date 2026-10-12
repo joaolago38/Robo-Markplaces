@@ -1,21 +1,30 @@
-name: Monitor Mercado Livre
+﻿name: Monitor Mercado Livre
 
 on:
   workflow_dispatch:
   schedule:
-    # 09:00 BRT (UTC-3) = 12:00 UTC
-    - cron: "0 10 * * *"
+    # A cada 2h, 15 min depois da hora
+    - cron: "15 */2 * * *"
+
+concurrency:
+  group: robo-markplaces-${{ github.workflow }}
+  cancel-in-progress: true
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
 
 jobs:
   monitor:
     name: Diagnostico ML (conta + ads + concorrencia)
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -26,6 +35,11 @@ jobs:
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+
+      - name: Restaurar heartbeats de saude
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
 
       - name: Rodar agente monitor ML
         run: python -m agentes.ml.agente_monitor_ml
@@ -39,3 +53,10 @@ jobs:
           ML_SELLER_ID:              ${{ secrets.ML_SELLER_ID }}
           TELEGRAM_TOKEN:            ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID:   ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+
+      - name: Publicar heartbeats de saude
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save

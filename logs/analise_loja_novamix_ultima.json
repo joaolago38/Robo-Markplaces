@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-09-21T11:57:37.518328+00:00",
+  "ok": true,
+  "nickname": "NOVAMIX_COMERCIAL",
+  "seller_id": "1666381510",
+  "total_anuncios_coletados": 1,
+  "preco_min": 30.99,
+  "preco_med": 30.99,
+  "preco_max": 30.99,
+  "marcas": {
+    "impala": 1
+  },
+  "ameacas_preco": [
+    {
+      "sku": "IMP-BAIL-005",
+      "meu_preco": 48.9,
+      "menor_preco_loja": 30.99,
+      "gap_pct": 57.8
+    }
+  ],
+  "perfil": {
+    "power_seller_status": "platinum",
+    "transactions_total": 1000
+  },
+  "estrategia": {
+    "porte": "grande",
+    "ameaca_geral": "alta",
+    "implicacoes_para_voce": []
+  },
+  "anuncios": [
+    {
+      "titulo": "Kit Impala",
+      "preco": 30.99,
+      "quantidade_vendida": 12,
+      "avaliacoes": 40,
+      "permalink": "http://x"
+    }
+  ]
+}

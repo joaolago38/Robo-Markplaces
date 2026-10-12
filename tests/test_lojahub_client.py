@@ -10,9 +10,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests.http_fixtures import make_http_response
-
 from integracoes.lojahub import lojahub_client
+from tests.http_fixtures import make_http_response
 
 
 @pytest.mark.usefixtures("env_tokens")

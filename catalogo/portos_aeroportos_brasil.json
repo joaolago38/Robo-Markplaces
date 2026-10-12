@@ -1,0 +1,749 @@
+{
+  "versao": 1,
+  "descricao": "Portos e aeroportos do Brasil para importação referenciada em Alibaba (FOB China). Custos são estimativas de planejamento — confirme com despachante/agente de carga.",
+  "referencia": "alibaba",
+  "aviso_legal": "Valores estimados (THC, armazenagem, desembaraço, frete interno). Não substituem cotação formal. ICMS varia por UF de destino.",
+  "destino_padrao_cep": "13467-694",
+  "modais": ["aereo", "maritimo", "terrestre"],
+  "cobertura_costa_referencia": {
+    "descricao": "Hubs comerciais de referência na costa (e litoral útil) do Brasil para medir % de cobertura do catálogo",
+    "codigos": [
+      "BRSTM", "BRVDC", "BRIOA", "BRPEC", "BRFOR", "BRNAT", "BRCDO",
+      "BRSUA", "BRSSB", "BRARB", "BRIOS", "BRVIX", "BRRIO", "BRSSZ",
+      "BRSSO", "BRPNG", "BRITJ", "BRNVT", "BRIGI", "BRITP", "BRRIG"
+    ]
+  },
+  "paraguai": {
+    "ativo": true,
+    "nota": "Endereço comercial PY + corredor terrestre até destino BR (Mercosul). Sobrescreva via IMPORTACAO_PY_*.",
+    "endereco_comercial_padrao": {
+      "pais": "PY",
+      "cidade": "Ciudad del Este",
+      "departamento": "Alto Paraná",
+      "endereco": "Av. San Blas c/ Calle 7 — Área Comercial",
+      "codigo_postal": "7000",
+      "lat": -25.5097,
+      "lng": -54.6112,
+      "uso": "referencia_comercial_importacao"
+    },
+    "enderecos_alternativos": [
+      {
+        "id": "asuncion_centro",
+        "cidade": "Asunción",
+        "endereco": "Av. España — zona comercial",
+        "codigo_postal": "1000"
+      },
+      {
+        "id": "encarnacion",
+        "cidade": "Encarnación",
+        "endereco": "Zona comercial fronteira Posadas",
+        "codigo_postal": "6000"
+      }
+    ],
+    "corredores_terrestres": [
+      {
+        "id": "cde_foz_americana",
+        "origem": "Ciudad del Este",
+        "fronteira_br": "Foz do Iguaçu",
+        "uf_entrada": "PR",
+        "destino_cep_padrao": "13467-694",
+        "km_origem_fronteira": 10,
+        "km_fronteira_destino": 980,
+        "km_total_aprox": 990,
+        "custo_terrestre_brl_por_km": 4.2,
+        "custo_fixo_fronteira_brl": 350,
+        "pedagios_estim_brl": 420,
+        "seguro_carga_pct": 0.3,
+        "dias_transito_estim": 3,
+        "ativo": true
+      },
+      {
+        "id": "cde_foz_campinas",
+        "origem": "Ciudad del Este",
+        "fronteira_br": "Foz do Iguaçu",
+        "uf_entrada": "PR",
+        "destino_cep_padrao": "13010-050",
+        "km_origem_fronteira": 10,
+        "km_fronteira_destino": 1050,
+        "km_total_aprox": 1060,
+        "custo_terrestre_brl_por_km": 4.2,
+        "custo_fixo_fronteira_brl": 350,
+        "pedagios_estim_brl": 450,
+        "seguro_carga_pct": 0.3,
+        "dias_transito_estim": 3,
+        "ativo": true
+      }
+    ]
+  },
+  "aeroportos": [
+    {
+      "codigo": "VCP",
+      "nome": "Viracopos",
+      "cidade": "Campinas",
+      "uf": "SP",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 95,
+      "frete_internacional_usd_kg": 5.5,
+      "custos_locais_brl": {
+        "armazenagem": 450,
+        "desembaraco": 1200,
+        "thc_manuseio": 380,
+        "siscomex": 154.23,
+        "outros": 100
+      },
+      "frete_interno_brl_por_km": 5.5,
+      "notas": "Referência atual do robô; alto volume carga China."
+    },
+    {
+      "codigo": "GRU",
+      "nome": "Guarulhos",
+      "cidade": "Guarulhos",
+      "uf": "SP",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 88,
+      "frete_internacional_usd_kg": 5.8,
+      "custos_locais_brl": {
+        "armazenagem": 520,
+        "desembaraco": 1300,
+        "thc_manuseio": 420,
+        "siscomex": 154.23,
+        "outros": 120
+      },
+      "frete_interno_brl_por_km": 6.0,
+      "notas": "Maior hub passageiros; carga mais cara que VCP."
+    },
+    {
+      "codigo": "GIG",
+      "nome": "Galeão",
+      "cidade": "Rio de Janeiro",
+      "uf": "RJ",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 72,
+      "frete_internacional_usd_kg": 6.0,
+      "custos_locais_brl": {
+        "armazenagem": 480,
+        "desembaraco": 1250,
+        "thc_manuseio": 400,
+        "siscomex": 154.23,
+        "outros": 110
+      },
+      "frete_interno_brl_por_km": 5.8,
+      "icms_uf_pct": 20.0
+    },
+    {
+      "codigo": "CNF",
+      "nome": "Confins",
+      "cidade": "Confins",
+      "uf": "MG",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 70,
+      "frete_internacional_usd_kg": 6.2,
+      "custos_locais_brl": {
+        "armazenagem": 420,
+        "desembaraco": 1100,
+        "thc_manuseio": 360,
+        "siscomex": 154.23,
+        "outros": 90
+      },
+      "frete_interno_brl_por_km": 5.2
+    },
+    {
+      "codigo": "CWB",
+      "nome": "Afonso Pena",
+      "cidade": "São José dos Pinhais",
+      "uf": "PR",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 68,
+      "frete_internacional_usd_kg": 6.0,
+      "custos_locais_brl": {
+        "armazenagem": 400,
+        "desembaraco": 1050,
+        "thc_manuseio": 350,
+        "siscomex": 154.23,
+        "outros": 90
+      },
+      "frete_interno_brl_por_km": 5.0
+    },
+    {
+      "codigo": "POA",
+      "nome": "Salgado Filho",
+      "cidade": "Porto Alegre",
+      "uf": "RS",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 65,
+      "frete_internacional_usd_kg": 6.3,
+      "custos_locais_brl": {
+        "armazenagem": 410,
+        "desembaraco": 1080,
+        "thc_manuseio": 355,
+        "siscomex": 154.23,
+        "outros": 95
+      },
+      "frete_interno_brl_por_km": 5.3
+    },
+    {
+      "codigo": "BSB",
+      "nome": "Brasília",
+      "cidade": "Brasília",
+      "uf": "DF",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 60,
+      "frete_internacional_usd_kg": 6.5,
+      "custos_locais_brl": {
+        "armazenagem": 430,
+        "desembaraco": 1150,
+        "thc_manuseio": 370,
+        "siscomex": 154.23,
+        "outros": 100
+      },
+      "frete_interno_brl_por_km": 5.5
+    },
+    {
+      "codigo": "REC",
+      "nome": "Guararapes",
+      "cidade": "Recife",
+      "uf": "PE",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 62,
+      "frete_internacional_usd_kg": 6.4,
+      "custos_locais_brl": {
+        "armazenagem": 400,
+        "desembaraco": 1000,
+        "thc_manuseio": 340,
+        "siscomex": 154.23,
+        "outros": 85
+      },
+      "frete_interno_brl_por_km": 5.0
+    },
+    {
+      "codigo": "FOR",
+      "nome": "Pinto Martins",
+      "cidade": "Fortaleza",
+      "uf": "CE",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 58,
+      "frete_internacional_usd_kg": 6.6,
+      "custos_locais_brl": {
+        "armazenagem": 390,
+        "desembaraco": 980,
+        "thc_manuseio": 330,
+        "siscomex": 154.23,
+        "outros": 80
+      },
+      "frete_interno_brl_por_km": 4.8
+    },
+    {
+      "codigo": "SSA",
+      "nome": "Dep. Luís Eduardo Magalhães",
+      "cidade": "Salvador",
+      "uf": "BA",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 58,
+      "frete_internacional_usd_kg": 6.5,
+      "custos_locais_brl": {
+        "armazenagem": 395,
+        "desembaraco": 990,
+        "thc_manuseio": 335,
+        "siscomex": 154.23,
+        "outros": 85
+      },
+      "frete_interno_brl_por_km": 4.9
+    },
+    {
+      "codigo": "MAO",
+      "nome": "Eduardo Gomes",
+      "cidade": "Manaus",
+      "uf": "AM",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 55,
+      "frete_internacional_usd_kg": 7.0,
+      "custos_locais_brl": {
+        "armazenagem": 380,
+        "desembaraco": 950,
+        "thc_manuseio": 320,
+        "siscomex": 154.23,
+        "outros": 80
+      },
+      "frete_interno_brl_por_km": 6.5,
+      "notas": "Zona Franca — regime tributário especial; confirme com despachante."
+    },
+    {
+      "codigo": "BEL",
+      "nome": "Val de Cans",
+      "cidade": "Belém",
+      "uf": "PA",
+      "tipo": "aereo",
+      "ativo": true,
+      "atratividade": 52,
+      "frete_internacional_usd_kg": 6.8,
+      "custos_locais_brl": {
+        "armazenagem": 385,
+        "desembaraco": 960,
+        "thc_manuseio": 325,
+        "siscomex": 154.23,
+        "outros": 80
+      },
+      "frete_interno_brl_por_km": 5.5
+    }
+  ],
+  "portos": [
+    {
+      "codigo": "BRSSZ",
+      "nome": "Santos",
+      "cidade": "Santos",
+      "uf": "SP",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 98,
+      "frete_internacional_usd_kg": 0.85,
+      "custos_locais_brl": {
+        "armazenagem": 600,
+        "desembaraco": 1500,
+        "thc_manuseio": 900,
+        "siscomex": 154.23,
+        "outros": 200
+      },
+      "frete_interno_brl_por_km": 4.5,
+      "notas": "Principal porto de contêineres do Brasil; melhor para volume Alibaba."
+    },
+    {
+      "codigo": "BRPNG",
+      "nome": "Paranaguá",
+      "cidade": "Paranaguá",
+      "uf": "PR",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 90,
+      "frete_internacional_usd_kg": 0.88,
+      "custos_locais_brl": {
+        "armazenagem": 550,
+        "desembaraco": 1400,
+        "thc_manuseio": 850,
+        "siscomex": 154.23,
+        "outros": 180
+      },
+      "frete_interno_brl_por_km": 4.3
+    },
+    {
+      "codigo": "BRITJ",
+      "nome": "Itajaí",
+      "cidade": "Itajaí",
+      "uf": "SC",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 86,
+      "frete_internacional_usd_kg": 0.9,
+      "custos_locais_brl": {
+        "armazenagem": 520,
+        "desembaraco": 1350,
+        "thc_manuseio": 820,
+        "siscomex": 154.23,
+        "outros": 170
+      },
+      "frete_interno_brl_por_km": 4.2
+    },
+    {
+      "codigo": "BRNVT",
+      "nome": "Navegantes",
+      "cidade": "Navegantes",
+      "uf": "SC",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 84,
+      "frete_internacional_usd_kg": 0.9,
+      "custos_locais_brl": {
+        "armazenagem": 510,
+        "desembaraco": 1320,
+        "thc_manuseio": 800,
+        "siscomex": 154.23,
+        "outros": 165
+      },
+      "frete_interno_brl_por_km": 4.2
+    },
+    {
+      "codigo": "BRRIO",
+      "nome": "Rio de Janeiro",
+      "cidade": "Rio de Janeiro",
+      "uf": "RJ",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 80,
+      "frete_internacional_usd_kg": 0.92,
+      "custos_locais_brl": {
+        "armazenagem": 580,
+        "desembaraco": 1450,
+        "thc_manuseio": 880,
+        "siscomex": 154.23,
+        "outros": 190
+      },
+      "frete_interno_brl_por_km": 4.6,
+      "icms_uf_pct": 20.0
+    },
+    {
+      "codigo": "BRSUA",
+      "nome": "Suape",
+      "cidade": "Ipojuca",
+      "uf": "PE",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 78,
+      "frete_internacional_usd_kg": 0.95,
+      "custos_locais_brl": {
+        "armazenagem": 500,
+        "desembaraco": 1300,
+        "thc_manuseio": 780,
+        "siscomex": 154.23,
+        "outros": 160
+      },
+      "frete_interno_brl_por_km": 4.4
+    },
+    {
+      "codigo": "BRPEC",
+      "nome": "Pecém",
+      "cidade": "São Gonçalo do Amarante",
+      "uf": "CE",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 76,
+      "frete_internacional_usd_kg": 0.96,
+      "custos_locais_brl": {
+        "armazenagem": 490,
+        "desembaraco": 1280,
+        "thc_manuseio": 760,
+        "siscomex": 154.23,
+        "outros": 155
+      },
+      "frete_interno_brl_por_km": 4.3
+    },
+    {
+      "codigo": "BRSSB",
+      "nome": "Salvador",
+      "cidade": "Salvador",
+      "uf": "BA",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 74,
+      "frete_internacional_usd_kg": 0.97,
+      "custos_locais_brl": {
+        "armazenagem": 505,
+        "desembaraco": 1310,
+        "thc_manuseio": 770,
+        "siscomex": 154.23,
+        "outros": 160
+      },
+      "frete_interno_brl_por_km": 4.4
+    },
+    {
+      "codigo": "BRVIX",
+      "nome": "Vitória / Tubarão",
+      "cidade": "Vitória",
+      "uf": "ES",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 72,
+      "frete_internacional_usd_kg": 0.94,
+      "custos_locais_brl": {
+        "armazenagem": 530,
+        "desembaraco": 1360,
+        "thc_manuseio": 800,
+        "siscomex": 154.23,
+        "outros": 170
+      },
+      "frete_interno_brl_por_km": 4.5
+    },
+    {
+      "codigo": "BRIGI",
+      "nome": "Imbituba",
+      "cidade": "Imbituba",
+      "uf": "SC",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 70,
+      "frete_internacional_usd_kg": 0.93,
+      "custos_locais_brl": {
+        "armazenagem": 500,
+        "desembaraco": 1290,
+        "thc_manuseio": 790,
+        "siscomex": 154.23,
+        "outros": 160
+      },
+      "frete_interno_brl_por_km": 4.3
+    },
+    {
+      "codigo": "BRIOA",
+      "nome": "Itaqui",
+      "cidade": "São Luís",
+      "uf": "MA",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 68,
+      "frete_internacional_usd_kg": 1.0,
+      "custos_locais_brl": {
+        "armazenagem": 480,
+        "desembaraco": 1250,
+        "thc_manuseio": 750,
+        "siscomex": 154.23,
+        "outros": 150
+      },
+      "frete_interno_brl_por_km": 4.8
+    },
+    {
+      "codigo": "BRMAO",
+      "nome": "Manaus (porto fluvial)",
+      "cidade": "Manaus",
+      "uf": "AM",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 66,
+      "frete_internacional_usd_kg": 1.15,
+      "custos_locais_brl": {
+        "armazenagem": 450,
+        "desembaraco": 1100,
+        "thc_manuseio": 700,
+        "siscomex": 154.23,
+        "outros": 140
+      },
+      "frete_interno_brl_por_km": 6.0,
+      "notas": "Acesso fluvial + Zona Franca — regime especial."
+    },
+    {
+      "codigo": "BRRIG",
+      "nome": "Rio Grande",
+      "cidade": "Rio Grande",
+      "uf": "RS",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 75,
+      "frete_internacional_usd_kg": 0.91,
+      "custos_locais_brl": {
+        "armazenagem": 540,
+        "desembaraco": 1380,
+        "thc_manuseio": 830,
+        "siscomex": 154.23,
+        "outros": 175
+      },
+      "frete_interno_brl_por_km": 4.4
+    },
+    {
+      "codigo": "BRARB",
+      "nome": "Aratu",
+      "cidade": "Candeias",
+      "uf": "BA",
+      "tipo": "maritimo",
+      "ativo": true,
+      "atratividade": 71,
+      "costa": true,
+      "frete_internacional_usd_kg": 0.98,
+      "custos_locais_brl": {
+        "armazenagem": 510,
+        "desembaraco": 1320,
+        "thc_manuseio": 780,
+        "siscomex": 154.23,
+        "outros": 160
+      },
+      "frete_interno_brl_por_km": 4.5
+    },
+    {
+      "codigo": "BRSTM",
+      "nome": "Santana",
+      "cidade": "Santana",
+      "uf": "AP",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 54,
+      "frete_internacional_usd_kg": 1.2,
+      "custos_locais_brl": {
+        "armazenagem": 420,
+        "desembaraco": 1050,
+        "thc_manuseio": 680,
+        "siscomex": 154.23,
+        "outros": 130
+      },
+      "frete_interno_brl_por_km": 5.5
+    },
+    {
+      "codigo": "BRVDC",
+      "nome": "Vila do Conde / Belém",
+      "cidade": "Barcarena",
+      "uf": "PA",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 64,
+      "frete_internacional_usd_kg": 1.1,
+      "custos_locais_brl": {
+        "armazenagem": 460,
+        "desembaraco": 1150,
+        "thc_manuseio": 720,
+        "siscomex": 154.23,
+        "outros": 140
+      },
+      "frete_interno_brl_por_km": 5.2
+    },
+    {
+      "codigo": "BRFOR",
+      "nome": "Mucuripe / Fortaleza",
+      "cidade": "Fortaleza",
+      "uf": "CE",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 73,
+      "frete_internacional_usd_kg": 0.97,
+      "custos_locais_brl": {
+        "armazenagem": 495,
+        "desembaraco": 1270,
+        "thc_manuseio": 755,
+        "siscomex": 154.23,
+        "outros": 155
+      },
+      "frete_interno_brl_por_km": 4.4
+    },
+    {
+      "codigo": "BRNAT",
+      "nome": "Natal",
+      "cidade": "Natal",
+      "uf": "RN",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 60,
+      "frete_internacional_usd_kg": 1.05,
+      "custos_locais_brl": {
+        "armazenagem": 470,
+        "desembaraco": 1180,
+        "thc_manuseio": 730,
+        "siscomex": 154.23,
+        "outros": 145
+      },
+      "frete_interno_brl_por_km": 4.6
+    },
+    {
+      "codigo": "BRCDO",
+      "nome": "Cabedelo",
+      "cidade": "Cabedelo",
+      "uf": "PB",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 58,
+      "frete_internacional_usd_kg": 1.05,
+      "custos_locais_brl": {
+        "armazenagem": 465,
+        "desembaraco": 1160,
+        "thc_manuseio": 725,
+        "siscomex": 154.23,
+        "outros": 140
+      },
+      "frete_interno_brl_por_km": 4.6
+    },
+    {
+      "codigo": "BRIOS",
+      "nome": "Ilhéus",
+      "cidade": "Ilhéus",
+      "uf": "BA",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 56,
+      "frete_internacional_usd_kg": 1.08,
+      "custos_locais_brl": {
+        "armazenagem": 455,
+        "desembaraco": 1140,
+        "thc_manuseio": 710,
+        "siscomex": 154.23,
+        "outros": 140
+      },
+      "frete_interno_brl_por_km": 4.7
+    },
+    {
+      "codigo": "BRSSO",
+      "nome": "São Sebastião",
+      "cidade": "São Sebastião",
+      "uf": "SP",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 77,
+      "frete_internacional_usd_kg": 0.9,
+      "custos_locais_brl": {
+        "armazenagem": 560,
+        "desembaraco": 1420,
+        "thc_manuseio": 860,
+        "siscomex": 154.23,
+        "outros": 180
+      },
+      "frete_interno_brl_por_km": 4.6
+    },
+    {
+      "codigo": "BRITP",
+      "nome": "Itapoá",
+      "cidade": "Itapoá",
+      "uf": "SC",
+      "tipo": "maritimo",
+      "ativo": true,
+      "costa": true,
+      "atratividade": 82,
+      "frete_internacional_usd_kg": 0.89,
+      "custos_locais_brl": {
+        "armazenagem": 515,
+        "desembaraco": 1330,
+        "thc_manuseio": 805,
+        "siscomex": 154.23,
+        "outros": 165
+      },
+      "frete_interno_brl_por_km": 4.2
+    }
+  ],
+  "distancias_km_aproximadas": {
+    "13467-694": {
+      "VCP": 120,
+      "GRU": 140,
+      "GIG": 520,
+      "CNF": 580,
+      "CWB": 450,
+      "POA": 1100,
+      "BSB": 900,
+      "REC": 2400,
+      "FOR": 2800,
+      "SSA": 1700,
+      "MAO": 3200,
+      "BEL": 2900,
+      "BRSSZ": 180,
+      "BRPNG": 480,
+      "BRITJ": 700,
+      "BRNVT": 690,
+      "BRRIO": 500,
+      "BRSUA": 2450,
+      "BRPEC": 2850,
+      "BRSSB": 1750,
+      "BRVIX": 900,
+      "BRIGI": 750,
+      "BRIOA": 3000,
+      "BRMAO": 3200,
+      "BRRIG": 1200,
+      "BRARB": 1720,
+      "BRSTM": 3400,
+      "BRVDC": 2950,
+      "BRFOR": 2800,
+      "BRNAT": 2700,
+      "BRCDO": 2600,
+      "BRIOS": 1900,
+      "BRSSO": 280,
+      "BRITP": 720,
+      "PY_CDE_FOZ": 990
+    }
+  }
+}

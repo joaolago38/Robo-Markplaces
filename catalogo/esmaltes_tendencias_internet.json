@@ -1,0 +1,106 @@
+[
+  {
+    "id": "nude-chrome",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Nude chrome / perolado",
+    "termos_web": [
+      "tendência esmalte nude chrome manicure 2026",
+      "esmalte chrome perolado viral unhas"
+    ],
+    "termos_marketplace": ["esmalte nude chrome", "esmalte perolado manicure"],
+    "cores_alvo": ["nude", "perolado", "chrome"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "jelly-glazed",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Jelly / glazed donut",
+    "termos_web": [
+      "tendência esmalte jelly glazed donut unhas",
+      "esmalte jelly transparente moda manicure"
+    ],
+    "termos_marketplace": ["esmalte jelly", "esmalte glazed manicure"],
+    "cores_alvo": ["rosa", "nude", "perolado"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "vinho-marsala",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Vinho e marsala",
+    "termos_web": [
+      "tendência esmalte vinho marsala inverno",
+      "cor esmalte marsala moda unhas"
+    ],
+    "termos_marketplace": ["esmalte vinho", "esmalte marsala manicure"],
+    "cores_alvo": ["vinho", "marsala", "vermelho"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "azul-pastel",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Azul pastel / candy",
+    "termos_web": [
+      "tendência esmalte azul pastel candy color",
+      "esmalte azul claro moda verão unhas"
+    ],
+    "termos_marketplace": ["esmalte azul pastel", "esmalte candy color"],
+    "cores_alvo": ["azul", "pastel", "candy"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "glitter-festa",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Glitter e festa",
+    "termos_web": [
+      "tendência esmalte glitter festa ano novo",
+      "esmalte glitter holográfico viral"
+    ],
+    "termos_marketplace": ["esmalte glitter", "esmalte holografico manicure"],
+    "cores_alvo": ["glitter", "dourado", "prata"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "francesinha-moderna",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Francesinha moderna",
+    "termos_web": [
+      "tendência francesinha moderna esmalte 2026",
+      "french manicure cores novas moda"
+    ],
+    "termos_marketplace": ["kit francesinha esmalte", "esmalte french manicure"],
+    "cores_alvo": ["branco", "nude", "rosa"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "neon-verao",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Neon verão",
+    "termos_web": [
+      "tendência esmalte neon verão cores vibrantes",
+      "esmalte neon moda praia unhas"
+    ],
+    "termos_marketplace": ["esmalte neon", "kit esmalte neon manicure"],
+    "cores_alvo": ["neon", "laranja", "verde"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "kit-atacado-tendencia",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Kits atacado em alta",
+    "termos_web": [
+      "tendência kit esmaltes atacado manicure",
+      "kit esmaltes profissional moda salão"
+    ],
+    "termos_marketplace": ["kit 10 esmaltes atacado", "kit esmaltes manicure profissional"],
+    "cores_alvo": ["sortido", "classico"],
+    "limite_resultados": 25
+  }
+]

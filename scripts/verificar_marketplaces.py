@@ -29,7 +29,6 @@ if str(ROOT) not in sys.path:
 from core.config import (  # noqa: E402
     AMAZON_ACCESS_TOKEN,
     MAGALU_ACCESS_TOKEN,
-    MAGALU_MERCHANT_ID,
     MAGALU_REFRESH_TOKEN,
     ML_ACCESS_TOKEN,
     ML_SELLER_ID,
@@ -55,8 +54,8 @@ def _ok_config_shopee() -> bool:
 
 
 def _ok_config_magalu() -> bool:
-    tem_token = bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
-    return bool(tem_token and MAGALU_MERCHANT_ID)
+    # API Magalu autentica só com Bearer — CHANNEL/MERCHANT_ID não é gate.
+    return bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
 
 
 def _ok_config_amazon() -> bool:

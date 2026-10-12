@@ -1,4 +1,4 @@
-name: Panorama ML Magalu Bling
+﻿name: Panorama ML Magalu Bling
 
 on:
   workflow_dispatch:
@@ -7,10 +7,14 @@ on:
     - cron: "30 9 * * *"
 
 env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   PYTHON_VERSION: "3.11"
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
 
 jobs:
   panorama:
@@ -33,6 +37,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_REPO: ${{ github.repository }}
           ANTHROPIC_API_KEY:       ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_ATIVO:            ${{ vars.CLAUDE_ATIVO || '1' }}
+          CLAUDE_ECONOMICO:        ${{ vars.CLAUDE_ECONOMICO || '0' }}
+          CLAUDE_MODELO:           ${{ vars.CLAUDE_MODELO || 'claude-haiku-4-5' }}
+          CLAUDE_MODELO_VENDAS:    ${{ vars.CLAUDE_MODELO_VENDAS || 'claude-sonnet-4-5' }}
+          CLAUDE_ORCAMENTO_USD:    ${{ vars.CLAUDE_ORCAMENTO_USD || '22' }}
           ML_CLIENT_ID:            ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET:        ${{ secrets.ML_CLIENT_SECRET }}
           ML_ACCESS_TOKEN:         ${{ secrets.ML_ACCESS_TOKEN }}
@@ -42,6 +51,7 @@ jobs:
           MAGALU_CLIENT_SECRET:    ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN:     ${{ secrets.MAGALU_ACCESS_TOKEN }}
           MAGALU_REFRESH_TOKEN:    ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID:        ${{ secrets.MAGALU_SELLER_ID }}
           BLING_CLIENT_ID:         ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET:     ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN:      ${{ secrets.BLING_ACCESS_TOKEN }}

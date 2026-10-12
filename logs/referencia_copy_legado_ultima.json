@@ -1,0 +1,29 @@
+{
+  "ok": false,
+  "fonte": "vazio",
+  "coletado_em": "2026-08-15T12:19:25.967005+00:00",
+  "n": 0,
+  "chars_medio": 0.0,
+  "chars_max": 0,
+  "pct_titulo_cheio": 0.0,
+  "top": [],
+  "nao_transferir": [
+    "bolsa",
+    "carteira",
+    "mariart",
+    "shopper",
+    "transversal",
+    "couro legitimo",
+    "couro legítimo",
+    "couro bovino",
+    "scarpin",
+    "sapato",
+    "sandalia",
+    "sandália",
+    "calcado",
+    "calçado",
+    "controle remoto ppa",
+    "ppa tok"
+  ],
+  "regras_claude": null
+}

@@ -1,4 +1,4 @@
-name: Sincronizar estoque marketplaces
+﻿name: Sincronizar estoque marketplaces
 
 # SERIALIZAÇÃO DE RENOVAÇÃO DE TOKENS:
 # Sincronização de estoque chama APIs de marketplace que renovam access_token
@@ -16,9 +16,13 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.11"
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  GH_REPO: ${{ github.repository }}
   DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  DD_SITE: ${{ secrets.DD_SITE }}
-  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED }}
+  DD_SITE: ${{ secrets.DD_SITE || 'us5.datadoghq.com' }}
+  DD_LOGS_ENABLED: ${{ secrets.DD_LOGS_ENABLED || 'true' }}
+  DD_METRICS_ENABLED: ${{ vars.DD_METRICS_ENABLED || 'true' }}
+  DD_ENV: ${{ vars.DD_ENV || 'production' }}
 
 jobs:
   sincronizar:
@@ -35,9 +39,16 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
+      - name: Restaurar heartbeats de saude
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: restore
+
       - name: Sincronizar estoque (dry_run=False)
         run: python -m agentes.sincronizar_estoque_marketplaces
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           BLING_CLIENT_ID:         ${{ secrets.BLING_CLIENT_ID }}
           BLING_CLIENT_SECRET:     ${{ secrets.BLING_CLIENT_SECRET }}
           BLING_ACCESS_TOKEN:      ${{ secrets.BLING_ACCESS_TOKEN }}
@@ -51,6 +62,8 @@ jobs:
           MAGALU_CLIENT_SECRET:    ${{ secrets.MAGALU_CLIENT_SECRET }}
           MAGALU_ACCESS_TOKEN:     ${{ secrets.MAGALU_ACCESS_TOKEN }}
           MAGALU_REFRESH_TOKEN:    ${{ secrets.MAGALU_REFRESH_TOKEN }}
+          MAGALU_SELLER_ID:        ${{ secrets.MAGALU_SELLER_ID }}
+          MAGALU_CHANNEL_ID:       ${{ secrets.MAGALU_CHANNEL_ID }}
           MAGALU_MERCHANT_ID:      ${{ secrets.MAGALU_MERCHANT_ID }}
           SHOPEE_PARTNER_ID:       ${{ secrets.SHOPEE_PARTNER_ID }}
           SHOPEE_PARTNER_KEY:      ${{ secrets.SHOPEE_PARTNER_KEY }}
@@ -59,3 +72,10 @@ jobs:
           SHOPEE_REFRESH_TOKEN:    ${{ secrets.SHOPEE_REFRESH_TOKEN }}
           TELEGRAM_TOKEN:          ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_GESTOR_CHAT_ID: ${{ secrets.TELEGRAM_GESTOR_CHAT_ID }}
+
+      - name: Publicar heartbeats de saude
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/saude-heartbeats
+        with:
+          modo: save

@@ -9,23 +9,25 @@ import logging
 
 from core.config import (
     LUCRO_MINIMO_REPRICING_PCT,
-    REPRICING_ABAIXO_CONCORRENTE_PCT,
     MARGEM_FASE_1_PCT,
     MARGEM_FASE_2_PCT,
     MARGEM_FASE_3_PCT,
-    TAXA_CANAL_PADRAO_PCT,
-    REPRICING_DIFERENCA_MINIMA,
     MONITOR_CONCORRENTES_ARQUIVO,
+    PRECIFICACAO_COMPORTAMENTO_ATIVO,
+    REPRICING_ABAIXO_CONCORRENTE_PCT,
+    REPRICING_DIFERENCA_MINIMA,
     ROOT,
+    TAXA_CANAL_PADRAO_PCT,
 )
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
-from integracoes.bling.bling_client import listar_produtos, listar_produtos_por_sku
+from core.precificacao_comportamento import calcular_preco_ideal
+from integracoes.amazon.amazon_client import atualizar_preco_item as atualizar_preco_amazon
+from integracoes.bling.bling_client import listar_produtos_por_sku
+from integracoes.magalu.magalu_client import atualizar_preco_item as atualizar_preco_magalu
 from integracoes.ml.ml_client import atualizar_preco_item as atualizar_preco_ml
 from integracoes.ml.ml_client import buscar_menor_preco_concorrente
 from integracoes.shopee.shopee_client import atualizar_preco_item as atualizar_preco_shopee
-from integracoes.magalu.magalu_client import atualizar_preco_item as atualizar_preco_magalu
-from integracoes.amazon.amazon_client import atualizar_preco_item as atualizar_preco_amazon
 
 logger = logging.getLogger("agente_repricing_marketplaces")
 
@@ -72,7 +74,28 @@ def _calcular_novo_preco(
     preco_concorrente: float | None,
     margem_minima_pct: float,
     taxa_canal_pct: float,
-) -> tuple[float, float, float]:
+    *,
+    sinais: dict | None = None,
+    preco_fase: float | None = None,
+) -> tuple[float, float, float, dict | None]:
+    if PRECIFICACAO_COMPORTAMENTO_ATIVO or sinais:
+        ideal = calcular_preco_ideal(
+            preco_atual=preco_atual,
+            custo=custo,
+            preco_concorrente=preco_concorrente,
+            margem_minima_pct=margem_minima_pct,
+            taxa_canal_pct=taxa_canal_pct,
+            abaixo_concorrente_pct=REPRICING_ABAIXO_CONCORRENTE_PCT,
+            sinais=sinais,
+            preco_fase=preco_fase,
+        )
+        return (
+            ideal["preco_sugerido"],
+            ideal["margem_pct"],
+            ideal["preco_piso"],
+            ideal,
+        )
+
     preco_piso = _calcular_preco_piso(custo, taxa_canal_pct, margem_minima_pct)
     alvo_concorrencia = 0.0
     if preco_concorrente and preco_concorrente > 0:
@@ -81,7 +104,7 @@ def _calcular_novo_preco(
     base = max(preco_piso, alvo_concorrencia if alvo_concorrencia > 0 else preco_atual, custo)
     novo_preco = round(max(0.01, base), 2)
     margem = ((novo_preco - custo) / novo_preco * 100) if novo_preco > 0 else 0.0
-    return novo_preco, margem, round(preco_piso, 2)
+    return novo_preco, margem, round(preco_piso, 2), None
 
 
 def _updater(canal: str):
@@ -95,7 +118,12 @@ def _updater(canal: str):
 
 def _item_ref(canal: str, canal_data: dict, sku: str):
     if canal == "mercadolivre":
-        return canal_data.get("item_id") or sku
+        from core.produto_lookup import item_id_ml_valido
+
+        raw = canal_data.get("item_id")
+        if not item_id_ml_valido(str(raw or "")):
+            return None
+        return raw
     if canal == "shopee":
         return canal_data.get("item_id")
     return canal_data.get("sku") or sku
@@ -203,8 +231,25 @@ def _gerar_nota_concorrencia(
         "(ex.: concorrente sem frete grátis e baixo volume — considere manter preço). "
         "Não altere nem recomende bloquear o ajuste — apenas informe."
     )
-    nota = sintetizar_claude(prompt, contexto, fallback, max_tokens=80)
+    nota = sintetizar_claude(
+        prompt,
+        contexto,
+        fallback,
+        max_tokens=80,
+        proposito="repricing",
+        origem="repricing.nota_concorrencia",
+    )
     return (nota or "")[:200] or None
+
+
+def _preco_fase_produto(produto: dict, fase_atual: int | str | None) -> float | None:
+    fase = str(fase_atual or "1").strip()
+    por_fase = produto.get("precos_por_fase") or {}
+    try:
+        v = float(por_fase.get(f"fase{fase}") or 0)
+        return v if v > 0 else None
+    except (TypeError, ValueError):
+        return None
 
 
 def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_minimo_pct: float | None = None) -> dict:
@@ -223,13 +268,38 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                 "ajustes": [],
             }
 
+        from core.algoritmo_eventos import deve_congelar_repricing
+
+        cong, motivo_cong = deve_congelar_repricing("mercadolivre")
+        if cong:
+            alertar_gestor(
+                f"⏸ Repricing marketplaces *congelado* (algoritmo ML)\n_{motivo_cong}_",
+                chave="repricing:congelado_algoritmo",
+                cooldown_segundos=3600,
+                agente_id="repricing",
+            )
+            return {
+                "ok": True,
+                "dry_run": False,
+                "congelado": True,
+                "executou_escrita": False,
+                "motivo_congelamento": motivo_cong,
+                "lucro_minimo_pct": float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT),
+                "total_itens": 0,
+                "total_ajustes": 0,
+                "economia_estimada_piso_margem": 0.0,
+                "ajustes": [],
+            }
+
     lucro_minimo = float(lucro_minimo_pct if lucro_minimo_pct is not None else LUCRO_MINIMO_REPRICING_PCT)
     if produtos is not None:
         produtos_base = produtos
         produtos_bling = listar_produtos_por_sku()
     else:
-        produtos_base = listar_produtos()
-        produtos_bling = {p["codigo"]: p for p in produtos_base if p.get("codigo")}
+        from core.catalogo_produtos import carregar_produtos_para_operacao
+
+        produtos_base = carregar_produtos_para_operacao()
+        produtos_bling = listar_produtos_por_sku()
     ajustes = []
     monitor_por_sku = _carregar_monitor_por_sku()
 
@@ -265,12 +335,43 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
 
             taxa_canal = _to_float(dados.get("taxa_canal_pct", TAXA_CANAL_PADRAO_PCT), TAXA_CANAL_PADRAO_PCT)
 
-            novo_preco, margem, preco_piso = _calcular_novo_preco(
+            sinais = None
+            diagnostico_comportamento = None
+            if PRECIFICACAO_COMPORTAMENTO_ATIVO:
+                termo = ""
+                if sku in monitor_por_sku:
+                    termo = str(monitor_por_sku[sku].get("termo_busca") or "").strip()
+                try:
+                    from integracoes.marketplaces.sinais_comprador import coletar_sinais
+
+                    sinais_raw = coletar_sinais(canal, dados, sku=sku, termo_busca=termo)
+                    if preco_concorrente <= 0:
+                        vivo_sinais = _to_float(
+                            sinais_raw.get("preco_concorrente_vivo") or sinais_raw.get("menor_preco"),
+                            0,
+                        )
+                        if vivo_sinais > 0:
+                            preco_concorrente = vivo_sinais
+                            fonte_concorrente = "sinais_comprador"
+                    sinais = {
+                        "visitas_7d": sinais_raw.get("visitas_7d"),
+                        "visitas_30d": sinais_raw.get("visitas_30d"),
+                        "unidades_vendidas_7d": sinais_raw.get("unidades_vendidas_7d"),
+                        "vendas_por_dia": sinais_raw.get("vendas_por_dia"),
+                        "preco_sugerido_ml": sinais_raw.get("preco_sugerido_ml"),
+                        "quantidade_vendida_lider": sinais_raw.get("quantidade_vendida_lider"),
+                    }
+                except Exception as exc:
+                    logger.warning("repricing sinais %s/%s: %s", sku, canal, exc)
+
+            novo_preco, margem, preco_piso, diagnostico_comportamento = _calcular_novo_preco(
                 preco_atual=preco_atual,
                 custo=custo,
                 preco_concorrente=preco_concorrente,
                 margem_minima_pct=margem_minima,
                 taxa_canal_pct=taxa_canal,
+                sinais=sinais,
+                preco_fase=_preco_fase_produto(p, fase_atual),
             )
             bloqueio = _faixa_bloqueada(nome, novo_preco)
             ajustar = abs(novo_preco - preco_atual) >= REPRICING_DIFERENCA_MINIMA and not bloqueio
@@ -288,9 +389,11 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                 fn = _updater(canal)
                 if fn and ref:
                     resultado_aplicacao = fn(ref, novo_preco)
-                    if not resultado_aplicacao:
+                    if resultado_aplicacao:
+                        incrementar("repricing.aplicado", tags=[f"canal:{canal}"])
+                    else:
                         falhou_aplicacao = True
-                        incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}"])
+                        incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}"])
                         logger.error(
                             "Repricing: falha ao aplicar novo preço sku=%s canal=%s ref=%s novo_preco=%.2f",
                             sku, canal, ref, novo_preco,
@@ -300,7 +403,10 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     # "sem ajuste necessário", é uma falha de configuração que precisa ser
                     # visível, não silenciosamente contada como sucesso.
                     falhou_aplicacao = True
-                    incrementar("repricing.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}", "motivo:sem_ref_ou_updater"])
+                    incrementar(
+                        "repricing.falha_aplicacao",
+                        tags=[f"canal:{canal}", "motivo:sem_ref_ou_updater"],
+                    )
                     logger.error(
                         "Repricing: sem updater/ref válido para aplicar preço sku=%s canal=%s ref=%s",
                         sku, canal, ref,
@@ -323,7 +429,18 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
                     "ajustar": ajustar,
                     "aplicado": resultado_aplicacao,
                     "falhou_aplicacao": falhou_aplicacao,
-                    "motivo": bloqueio or f"piso por fase {margem_minima:.1f}% + taxa canal {taxa_canal:.1f}%",
+                    "motivo": bloqueio
+                    or (
+                        "; ".join(diagnostico_comportamento.get("motivos", []))
+                        if diagnostico_comportamento
+                        else f"piso por fase {margem_minima:.1f}% + taxa canal {taxa_canal:.1f}%"
+                    ),
+                    "comportamento": (
+                        diagnostico_comportamento.get("comportamento") if diagnostico_comportamento else None
+                    ),
+                    "acao_precificacao": (
+                        diagnostico_comportamento.get("acao") if diagnostico_comportamento else None
+                    ),
                 }
             )
 
@@ -365,4 +482,14 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True, lucro_min
         "ajustes": ajustes,
     }
     logger.info("Repricing marketplaces: %s", payload)
+    try:
+        if total_ajustes:
+            incrementar(
+                "repricing.ajustes_candidatos",
+                float(total_ajustes),
+                tags=[f"dry_run:{str(bool(dry_run)).lower()}"],
+            )
+        incrementar("repricing.rodadas", tags=[f"dry_run:{str(bool(dry_run)).lower()}"])
+    except Exception:
+        pass
     return payload

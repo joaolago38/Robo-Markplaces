@@ -3,46 +3,268 @@ integracoes/magalu/magalu_client.py
 Cliente Magalu OpenAPI (developers.magalu.com) — Produtos, Pedidos e
 Perguntas & Respostas.
 
-IMPORTANTE: a autenticação é só `Authorization: Bearer <access_token>`.
-Não existe header de "seller id" — o token OAuth por si só já
-identifica o seller (fluxo Authorization Code, um consentimento por
-seller). Ver:
-https://developers.magalu.com/docs/first-steps/create-an-application/authentication-authorization
+IMPORTANTE: Bearer no `Authorization` identifica o seller. Pedidos
+(`/seller/v1/orders`) também exigem `X-Tenant-Id` — senão a API
+responde 422 (`Field required`). O tenant vem do claim JWT `tenant`
+(fallback: MAGALU_CHANNEL_ID). Não confundir com seller id / CNPJ.
 """
 import logging
+import os
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
-from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN
+from core import config as cfg
+from core.config import MAGALU_ACCESS_TOKEN, MAGALU_CHANNEL_ID, MAGALU_REFRESH_TOKEN, MAGALU_SELLER_ID
+from core.config import ROOT as _CFG_ROOT
 from core.datadog_metrics import incrementar
 from core.http_client import request
 from core.http_errors import log_http_erro_listagem, status_http
-from core.token_manager import get_token_magalu
-from core.marketplace_keepalive import registrar_acesso, dias_sem_acesso
+from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
+from core.token_manager import (
+    escopos_jwt_magalu,
+    get_token_magalu,
+    tenant_jwt_magalu,
+    tenant_payload_magalu,
+)
 
 logger = logging.getLogger("magalu_client")
 BASE = "https://api.magalu.com"
+# Última listagem de pedidos — distingue auth quebrada de falha genérica
+# (vendas_notificador não deve poluir o P1 vendas.busca_falhou com invalid_grant).
+_ULTIMA_LISTAGEM_PEDIDOS: dict = {"auth_quebrada": False, "status": 0}
+_AVISO_TENANT = {"feito": False}
+_TENANT_USERINFO = {"valor": "", "tentou": False}
+_PERGUNTAS_SEM_ESCOPO = {"valor": False, "avisou": False}
+_PERGUNTAS_ESCOPO_PATH = _CFG_ROOT / "logs" / "magalu_perguntas_sem_escopo.json"
+_COOLDOWN_PERGUNTAS_ESCOPO_SEG = 12 * 3600
+ESCOPO_PERGUNTAS_READ = "services:questions-seller:read"
 # Endpoints com escopo "services:*" (Perguntas & Respostas, Tickets,
 # Conversations) vivem em um host separado dos endpoints "open:*"
 # (Produtos, Pedidos). Confirmado manualmente em 01/07/2026: GET
 # https://services.magalu.com/v0/questions retornou 200, enquanto
 # https://api.magalu.com/v0/questions retorna 404 resource_not_found.
 BASE_SERVICES = "https://services.magalu.com"
-# Reservado para channel.id em endpoints de portfólio (quando confirmados na doc).
-_MAGALU_CHANNEL_ID = MAGALU_CHANNEL_ID
+
+
+def _canal_operando() -> bool:
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao("magalu")
+    except Exception:
+        return True
 
 
 def _enabled() -> bool:
-    return bool(MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN)
+    if not (MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN):
+        return False
+    return _canal_operando()
 
 
-def _h():
-    tok = MAGALU_ACCESS_TOKEN
-    if MAGALU_REFRESH_TOKEN:
-        tok = get_token_magalu() or MAGALU_ACCESS_TOKEN
-    return {
+def _valor_tenant(valor: Any) -> str:
+    txt = str(valor or "").strip()
+    if not txt or txt == "...":
+        return ""
+    return txt
+
+
+def _tenant_id(tok: str = "") -> str:
+    """X-Tenant-Id: JWT do token da request, senão MAGALU_CHANNEL_ID, senão cfg.
+
+    JWT em `core.config` só entra por último — senão o .env de máquina
+    vence o patch dos testes e um CHANNEL_ID explícito.
+    """
+    for candidato in (tok, MAGALU_ACCESS_TOKEN, getattr(cfg, "MAGALU_ACCESS_TOKEN", "")):
+        tenant = tenant_jwt_magalu(str(candidato or ""))
+        if tenant:
+            cfg.MAGALU_CHANNEL_ID = tenant
+            return tenant
+    for fonte in (
+        MAGALU_CHANNEL_ID,
+        getattr(cfg, "MAGALU_CHANNEL_ID", ""),
+        getattr(cfg, "MAGALU_MERCHANT_ID", ""),
+        os.getenv("MAGALU_CHANNEL_ID"),
+        os.getenv("MAGALU_MERCHANT_ID"),
+    ):
+        local = _valor_tenant(fonte)
+        if local:
+            return local
+    via_info = _tenant_via_userinfo(tok)
+    if via_info:
+        return via_info
+    return ""
+
+
+def _tenant_via_userinfo(tok: str) -> str:
+    """GET /oauth/userinfo — tokens opacos não trazem claim tenant no JWT."""
+    if _TENANT_USERINFO["valor"]:
+        cfg.MAGALU_CHANNEL_ID = _TENANT_USERINFO["valor"]
+        return _TENANT_USERINFO["valor"]
+    bearer = str(tok or getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "").strip()
+    if len(bearer) < 40 or _TENANT_USERINFO["tentou"]:
+        return ""
+    _TENANT_USERINFO["tentou"] = True
+    try:
+        r = request(
+            "GET",
+            "https://id.magalu.com/oauth/userinfo",
+            headers={"Authorization": f"Bearer {bearer}", "Accept": "application/json"},
+            timeout=15,
+        )
+        if getattr(r, "status_code", 0) != 200:
+            return ""
+        corpo = r.json() if callable(getattr(r, "json", None)) else {}
+        tenant = tenant_payload_magalu(corpo if isinstance(corpo, dict) else {})
+        if tenant:
+            _TENANT_USERINFO["valor"] = tenant
+            cfg.MAGALU_CHANNEL_ID = tenant
+            logger.info("Magalu X-Tenant-Id obtido via userinfo")
+            return tenant
+    except Exception as exc:
+        logger.debug("Magalu userinfo tenant: %s", exc)
+    return ""
+
+
+def _lembrar_perguntas_sem_escopo() -> None:
+    _PERGUNTAS_SEM_ESCOPO["valor"] = True
+    try:
+        import time as _time
+
+        from core.atomic_io import escrever_json_atomico, ler_json
+
+        prev = ler_json(_PERGUNTAS_ESCOPO_PATH, default={}) or {}
+        agora = _time.time()
+        ultimo = float(prev.get("ts") or 0)
+        if ultimo and (agora - ultimo) < _COOLDOWN_PERGUNTAS_ESCOPO_SEG:
+            _PERGUNTAS_SEM_ESCOPO["avisou"] = True
+            return
+        escrever_json_atomico(
+            _PERGUNTAS_ESCOPO_PATH,
+            {"ts": agora, "escopo": ESCOPO_PERGUNTAS_READ},
+        )
+    except Exception:
+        pass
+
+
+def _perguntas_sem_escopo_em_cooldown() -> bool:
+    try:
+        import time as _time
+
+        from core.atomic_io import ler_json
+
+        data = ler_json(_PERGUNTAS_ESCOPO_PATH, default={}) or {}
+        ts = float(data.get("ts") or 0)
+        return ts > 0 and (_time.time() - ts) < _COOLDOWN_PERGUNTAS_ESCOPO_SEG
+    except Exception:
+        return False
+
+
+def _headers_com_token(tok: str) -> dict:
+    headers = {
         "Authorization": f"Bearer {tok}",
         "Content-Type": "application/json",
     }
+    tenant = _tenant_id(str(tok or ""))
+    if tenant:
+        headers["X-Tenant-Id"] = tenant
+    elif not _AVISO_TENANT["feito"]:
+        _AVISO_TENANT["feito"] = True
+        logger.warning(
+            "Magalu sem X-Tenant-Id — preencha MAGALU_CHANNEL_ID (claim JWT tenant) "
+            "ou o GET /seller/v1/orders responde 422"
+        )
+    return headers
+
+
+def _h():
+    tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
+    refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
+    if refresh:
+        tok = get_token_magalu() or tok
+    return _headers_com_token(str(tok or ""))
+
+
+def _request_magalu(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
+    """Request autenticado com retry único em 401 (renova e repete uma vez)."""
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.update(_h())
+    kwargs["headers"] = headers
+
+    r = request(method, url, timeout=timeout, **kwargs)
+    if getattr(r, "status_code", 0) != 401:
+        return r
+
+    logger.warning("Magalu HTTP 401 — renovando token e repetindo request")
+    novo = get_token_magalu(forcar=True)
+    if not novo:
+        return r
+    incrementar("token.recuperacao_automatica", tags=["provider:magalu"])
+    kwargs["headers"] = _headers_com_token(str(novo))
+    return request(method, url, timeout=timeout, **kwargs)
+
+
+def _token_atual() -> str:
+    tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
+    refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
+    if refresh:
+        tok = get_token_magalu() or tok
+    return str(tok or "")
+
+
+def _pode_listar_perguntas() -> bool:
+    if _PERGUNTAS_SEM_ESCOPO["valor"] or _perguntas_sem_escopo_em_cooldown():
+        _PERGUNTAS_SEM_ESCOPO["valor"] = True
+        return False
+    tok = _token_atual()
+    escopos = escopos_jwt_magalu(tok)
+    if not escopos:
+        return True
+    if ESCOPO_PERGUNTAS_READ in escopos:
+        return True
+    _PERGUNTAS_SEM_ESCOPO["valor"] = True
+    if not _PERGUNTAS_SEM_ESCOPO["avisou"]:
+        _PERGUNTAS_SEM_ESCOPO["avisou"] = True
+        logger.warning(
+            "Magalu chat pulado: token sem escopo %s — reconceda OAuth "
+            "(services:questions-seller:read/write) e regenere o refresh",
+            ESCOPO_PERGUNTAS_READ,
+        )
+        incrementar("chat.falha", tags=["canal:magalu", "motivo:escopo_ausente"])
+        _lembrar_perguntas_sem_escopo()
+    return False
+
+
+def ultima_listagem_auth_quebrada() -> bool:
+    """True se a última listar_pedidos_detalhado falhou por 401/403/invalid_grant."""
+    return bool(_ULTIMA_LISTAGEM_PEDIDOS.get("auth_quebrada"))
+
+
+def _resposta_indica_auth_quebrada(resposta) -> bool:
+    status = status_http(resposta)
+    if status in (401, 403):
+        return True
+    texto = (getattr(resposta, "text", "") or "").lower()
+    if "invalid_grant" in texto or "unauthorized" in texto:
+        return True
+    if status == 422 and (
+        "x-tenant-id" in texto or "tenant" in texto or "field required" in texto
+    ):
+        return True
+    return False
+
+
+def _ping_pedidos(*, timeout: int = 15):
+    """GET /seller/v1/orders — prova auth de vendas (open:order + X-Tenant-Id).
+
+    Não usa /v0/questions: aquele host exige escopo services:* e falha 403
+    mesmo com pedidos íntegros. Chat continua em listar_perguntas.
+    """
+    return _request_magalu(
+        "GET",
+        f"{BASE}/seller/v1/orders",
+        params={"limit": 1},
+        timeout=timeout,
+    )
 
 
 def probe_conexao() -> dict:
@@ -50,13 +272,7 @@ def probe_conexao() -> dict:
     if not _enabled():
         return {"ok": False, "status": 0, "msg": "Magalu não configurado"}
     try:
-        r = request(
-            "GET",
-            f"{BASE_SERVICES}/v0/questions",
-            headers=_h(),
-            params={"limit": 1},
-            timeout=15,
-        )
+        r = _ping_pedidos(timeout=15)
         status = getattr(r, "status_code", 0)
         if status == 200:
             return {"ok": True, "status": 200, "msg": "autenticado"}
@@ -68,6 +284,12 @@ def probe_conexao() -> dict:
                 "status": 403,
                 "msg": "sem permissão — verifique escopos OAuth do app Magalu",
             }
+        if status == 422:
+            return {
+                "ok": False,
+                "status": 422,
+                "msg": "X-Tenant-Id ausente ou inválido — confira MAGALU_CHANNEL_ID",
+            }
         return {"ok": False, "status": status, "msg": (getattr(r, "text", "") or "")[:200]}
     except Exception as exc:
         logger.error("Magalu probe_conexao erro: %s", exc)
@@ -77,20 +299,28 @@ def probe_conexao() -> dict:
 def _listar_perguntas_nao_respondidas_detalhado(limit: int = 20, max_paginas: int = 5) -> tuple[list[dict], bool]:
     """Retorna (perguntas, sucesso_chamada), percorrendo páginas via offset."""
     if not _enabled():
-        logger.warning("Magalu não configurado.")
+        logger.info("Magalu não configurado.")
+        return [], False
+    if not _pode_listar_perguntas():
         return [], False
     out: list[dict] = []
     offset = 0
     try:
         for _pagina in range(max(1, max_paginas)):
-            r = request(
+            r = _request_magalu(
                 "GET",
                 f"{BASE_SERVICES}/v0/questions",
-                headers=_h(),
                 params={"status": "pending", "limit": limit, "offset": offset},
                 timeout=20,
             )
             if status_http(r) != 200:
+                if status_http(r) == 403:
+                    _lembrar_perguntas_sem_escopo()
+                    logger.warning(
+                        "Magalu listar_perguntas_nao_respondidas HTTP 403 — "
+                        "falta escopo services:questions-seller:read (próximos ciclos em cooldown)."
+                    )
+                    return out, False
                 log_http_erro_listagem(logger, "Magalu listar_perguntas_nao_respondidas", r)
                 return out, False
             body = r.json()
@@ -115,13 +345,14 @@ def listar_perguntas_nao_respondidas(limit: int = 20) -> list[dict]:
 
 def responder_pergunta(question_id: str, texto: str) -> bool:
     if not _enabled():
-        logger.warning("Magalu não configurado para responder pergunta.")
+        logger.info("Magalu não configurado para responder pergunta.")
+        return False
+    if not _pode_listar_perguntas():
         return False
     try:
-        r = request(
+        r = _request_magalu(
             "POST",
             f"{BASE_SERVICES}/v0/questions/{question_id}/answer",
-            headers=_h(),
             json={"text": texto},
             timeout=20,
         )
@@ -147,13 +378,7 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
         }
 
     try:
-        r = request(
-            "GET",
-            f"{BASE_SERVICES}/v0/questions",
-            headers=_h(),
-            params={"limit": 1},
-            timeout=20,
-        )
+        r = _ping_pedidos(timeout=20)
         r.raise_for_status()
         registrar_acesso("magalu")
         sem_acesso_atual = dias_sem_acesso("magalu") or 0
@@ -178,7 +403,14 @@ def manter_conta_ativa(limite_dias_sem_acesso: int = 5) -> dict:
 
 def obter_saude_conta() -> dict:
     if not _enabled():
-        return {"configurado": False, "pendencias": 0, "claims_rate": 0.0, "dias_sem_acesso": 999}
+        return {
+            "configurado": False,
+            "pendencias": 0,
+            "claims_rate": None,
+            "claims_conhecido": False,
+            "dias_sem_acesso": 999,
+            "conta_id": str(MAGALU_SELLER_ID or "").strip(),
+        }
 
     perguntas, ok = _listar_perguntas_nao_respondidas_detalhado(limit=50)
     if ok:
@@ -188,8 +420,11 @@ def obter_saude_conta() -> dict:
         "configurado": True,
         "api_ok": ok,
         "pendencias": len(perguntas),
-        "claims_rate": 0.0,
+        "claims_rate": None,
+        "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("magalu") or 0,
+        "conta_id": str(MAGALU_SELLER_ID or "").strip(),
+        "modelo": "sla_magalu",
     }
 
 
@@ -200,13 +435,12 @@ def atualizar_preco_item(sku: str, novo_preco: float) -> bool:
         logger.warning("Magalu atualizar_preco_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Magalu não configurado para atualização de preço.")
+        logger.info("Magalu não configurado para atualização de preço.")
         return False
     try:
-        r = request(
+        r = _request_magalu(
             "PUT",
             f"{BASE}/seller/products/{sku}/price",
-            headers=_h(),
             json={"price": float(novo_preco)},
             timeout=20,
         )
@@ -224,13 +458,12 @@ def atualizar_estoque_item(sku: str, novo_estoque: int) -> bool:
         logger.warning("Magalu atualizar_estoque_item bloqueado: %s", bloqueio["erro"])
         return False
     if not _enabled():
-        logger.warning("Magalu não configurado para atualização de estoque.")
+        logger.info("Magalu não configurado para atualização de estoque.")
         return False
     try:
-        r = request(
+        r = _request_magalu(
             "PUT",
             f"{BASE}/seller/products/{sku}/stock",
-            headers=_h(),
             json={"quantity": int(max(0, novo_estoque))},
             timeout=20,
         )
@@ -249,8 +482,11 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     a lista vazia é "sem venda nova" ou "a chamada falhou de verdade".
     Retorno alinhado ao padrão do ML.
     """
+    global _ULTIMA_LISTAGEM_PEDIDOS
+    _ULTIMA_LISTAGEM_PEDIDOS = {"auth_quebrada": False, "status": 0}
+
     if not _enabled():
-        logger.warning("Magalu não configurado para listar pedidos.")
+        logger.info("Magalu não configurado para listar pedidos.")
         return [], False
 
     out: list[dict] = []
@@ -259,14 +495,27 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
     offset = 0
     try:
         for _pagina in range(max(1, max_paginas)):
-            r = request(
+            r = _request_magalu(
                 "GET",
                 f"{BASE}/seller/v1/orders",
-                headers=_h(),
                 params={"limit": limit, "offset": offset},
                 timeout=25,
             )
             if status_http(r) != 200:
+                status = status_http(r)
+                auth_quebrada = _resposta_indica_auth_quebrada(r)
+                _ULTIMA_LISTAGEM_PEDIDOS = {
+                    "auth_quebrada": auth_quebrada,
+                    "status": status,
+                }
+                if auth_quebrada:
+                    try:
+                        incrementar(
+                            "magalu.auth_falha",
+                            tags=[f"status_code:{status}", "origem:listar_pedidos"],
+                        )
+                    except Exception:
+                        pass
                 log_http_erro_listagem(logger, "Magalu listar_pedidos", r)
                 return out, False
             body = r.json() or {}

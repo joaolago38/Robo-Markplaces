@@ -1,0 +1,19 @@
+## 📄 Sobre o aplicativo
+
+Aplicativo de automação para emissão de notas fiscais integrado ao Bling.
+
+Nossa solução automatiza o processo de faturamento, reduzindo erros manuais e aumentando a produtividade da empresa. Ideal para negócios com alto volume de pedidos.
+
+## ⚙️ Funcionalidades
+
+- Emissão automática de notas fiscais  
+- Integração com pedidos e vendas  
+- Redução de erros operacionais  
+- Agilidade no faturamento  
+
+## 📞 Suporte
+
+Para suporte, entre em contato:
+
+- Email: comerciallagooliveira@gmail.com  
+- Telefone: (19) 99988-9059  

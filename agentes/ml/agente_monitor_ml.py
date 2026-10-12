@@ -12,6 +12,8 @@ from typing import Any
 from core.config import (
     ACOS_MAXIMO,
     ML_ADS_ORCAMENTO_MAXIMO,
+)
+from core.config import (
     ML_MAX_ITENS_ANALISE as MAX_ITENS_ANALISE,
 )
 from core.notificador import alertar_gestor
@@ -31,6 +33,58 @@ def _pct_diff(maior: float, menor: float) -> float:
     if menor <= 0:
         return 0.0
     return round((maior - menor) / menor * 100, 1)
+
+
+_SITUACOES_CATALOGO = ("ok", "fora_foco", "vazio", "falha_listagem", "nao_configurado")
+
+
+def _tag_anuncio(item_id: str) -> str:
+    compact = "".join(ch for ch in str(item_id or "").lower() if ch.isalnum())
+    return f"anun:{(compact or 'x')[:16]}"
+
+
+def _emitir_metricas_monitor(
+    catalogo: dict[str, Any] | None,
+    concorrencia: list[dict] | None,
+    ads: dict[str, Any] | None,
+) -> None:
+    """Visitas, situação do catálogo e ACOS que o monitor já lê e não ia ao Datadog."""
+    from core.datadog_metrics import gauge
+
+    cat = catalogo if isinstance(catalogo, dict) else {}
+    situacao = str(cat.get("situacao") or "vazio")
+    for nome in _SITUACOES_CATALOGO:
+        gauge(f"ml.catalogo.{nome}", 1.0 if situacao == nome else 0.0)
+    itens = [i for i in (concorrencia or []) if isinstance(i, dict)]
+    vis7 = 0
+    vis30 = 0
+    quedas = 0
+    for item in itens:
+        v7 = int(item.get("visitas_7d") or 0)
+        v30 = int(item.get("visitas_30d") or 0)
+        vis7 += v7
+        vis30 += v30
+        media = v30 / 4.0 if v30 else 0.0
+        queda = 1.0 if media > 0 and v7 < media * 0.5 else 0.0
+        if queda:
+            quedas += 1
+        tags = [_tag_anuncio(str(item.get("item_id") or ""))]
+        gauge("ml.conta.visitas_7d", float(v7), tags=tags)
+        gauge("ml.conta.visitas_30d", float(v30), tags=tags)
+        gauge("ml.conta.queda_trafego", queda, tags=tags)
+    gauge("ml.conta.visitas_7d_total", float(vis7))
+    gauge("ml.conta.visitas_30d_total", float(vis30))
+    gauge("ml.conta.queda_trafego_n", float(quedas))
+    gauge("ml.conta.anuncios_analisados", float(len(itens)))
+    bloco = ads if isinstance(ads, dict) else {}
+    acima = bloco.get("campanhas_acos_alto") or []
+    gauge("ads.acos_alto_n", float(len(acima) if isinstance(acima, list) else 0))
+    try:
+        gasto = float(bloco.get("gasto_total") or 0)
+    except (TypeError, ValueError):
+        gasto = 0.0
+    gauge("ads.gasto_periodo", gasto)
+    gauge("ads.periodo.fonte_ok", 1.0 if bloco.get("configurado") else 0.0)
 
 
 def _analisar_conta() -> tuple[dict[str, Any], list[str]]:
@@ -169,15 +223,85 @@ def _analisar_ads(dias: int = 14) -> tuple[dict[str, Any], list[str]]:
     return ads, recomendacoes
 
 
-def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[dict], list[str]]:
+def _classificar_catalogo(
+    anuncios_todos: list[dict],
+    anuncios_foco: list[dict],
+    listagem: dict[str, Any] | None,
+    filtro: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Separa catálogo vazio, falha de listagem e tudo fora do foco Impala."""
+    meta = listagem if isinstance(listagem, dict) else {}
+    stats = filtro if isinstance(filtro, dict) else {}
+    ignorados = int(stats.get("ignorados") or 0)
+    motivo = str(meta.get("motivo") or "").strip()
+    ids_busca = int(meta.get("ids_busca") or 0)
+    if anuncios_foco:
+        situacao = "ok"
+        detalhe = ""
+    elif anuncios_todos:
+        situacao = "fora_foco"
+        n = ignorados or len(anuncios_todos)
+        detalhe = (
+            f"{n} anúncio(s) fora do foco (bolsas/legado) — "
+            "nenhum Impala/Cruzeiro no radar"
+        )
+    elif not meta.get("ok") and (motivo or ids_busca > 0):
+        situacao = "falha_listagem"
+        detalhe = motivo or "listagem incompleta"
+    else:
+        situacao = "vazio"
+        detalhe = "conta sem anúncios active/paused"
+    return {
+        "situacao": situacao,
+        "detalhe": detalhe,
+        "motivo": motivo,
+        "ids_busca": ids_busca,
+        "ids_ok": int(meta.get("ids_ok") or 0),
+        "paging_total": int(meta.get("paging_total") or 0),
+        "ignorados": ignorados,
+        "mantidos": len(anuncios_foco),
+        "listados": len(anuncios_todos),
+    }
+
+
+def _analisar_concorrencia(
+    limite_itens: int = MAX_ITENS_ANALISE,
+) -> tuple[list[dict], list[str], dict[str, Any]]:
     recomendacoes: list[str] = []
     itens: list[dict] = []
+    catalogo: dict[str, Any] = {"situacao": "vazio", "detalhe": ""}
 
     try:
-        anuncios = ml_client.listar_meus_anuncios()[:limite_itens]
+        from integracoes.ml.filtro_anuncios_conta import filtrar_anuncios_foco
+
+        anuncios_todos = ml_client.listar_meus_anuncios(
+            statuses=("active", "paused"),
+            aplicar_foco=False,
+        )
+        listagem = ml_client.ultima_listagem_anuncios()
+        try:
+            from agentes.ml.agente_observabilidade_ml import executar as obs_ml
+
+            obs_ml(anuncios=anuncios_todos)
+        except Exception as exc:
+            logger.info("integridade ML: %s", exc)
+        anuncios, filtro = filtrar_anuncios_foco(anuncios_todos)
+        catalogo = _classificar_catalogo(anuncios_todos, anuncios, listagem, filtro)
+        anuncios = anuncios[:limite_itens]
     except Exception as exc:
         logger.error("monitor_ml listar_meus_anuncios: %s", exc)
-        return [], [f"Não foi possível listar anúncios: {exc}"]
+        return [], [f"Não foi possível listar anúncios: {exc}"], {
+            "situacao": "falha_listagem",
+            "detalhe": str(exc),
+        }
+
+    if catalogo.get("situacao") == "falha_listagem":
+        recomendacoes.append(
+            f"Listagem ML falhou ({catalogo.get('detalhe')}). "
+            "Não tratar como catálogo vazio."
+        )
+    elif catalogo.get("situacao") == "fora_foco":
+        recomendacoes.append(str(catalogo.get("detalhe") or "Anúncios fora do foco."))
 
     for anuncio in anuncios:
         item_id = str(anuncio.get("item_id") or "").strip()
@@ -195,6 +319,13 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
         except Exception as exc:
             logger.error("monitor_ml menor_preco %s: %s", item_id, exc)
             menor_concorrente = 0.0
+        try:
+            menor_qualquer = ml_client.buscar_menor_preco_concorrente(
+                item_id, mesma_prateleira=False
+            )
+        except Exception as exc:
+            logger.error("monitor_ml menor_preco_qualquer %s: %s", item_id, exc)
+            menor_qualquer = menor_concorrente
 
         try:
             concorrentes = ml_client.buscar_detalhes_concorrentes(item_id, limite=5)
@@ -219,11 +350,15 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
         visitas_30 = int(metricas.get("visitas_30d") or 0)
         estoque = metricas.get("estoque")
         prioridade = 0.0
+        meu_tipo = str(
+            metricas.get("listing_type_id") or anuncio.get("listing_type_id") or ""
+        )
 
         analise: dict[str, Any] = {
             "item_id": item_id,
             "titulo": metricas.get("titulo") or anuncio.get("titulo", ""),
             "sku": anuncio.get("sku", ""),
+            "listing_type_id": meu_tipo,
             "meu_preco": meu_preco,
             "menor_concorrente": menor_concorrente,
             "concorrentes": concorrentes,
@@ -254,11 +389,24 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
             if diff > LIMIAR_PRECO_CONCORRENTE * 100:
                 msg = (
                     f"Item {item_id}: preço R$ {meu_preco:.2f} está {diff:.1f}% acima do "
-                    f"concorrente (R$ {menor_concorrente:.2f}) — revisar preço."
+                    f"concorrente na mesma exposição (R$ {menor_concorrente:.2f}) — revisar preço."
                 )
                 analise["alertas"].append(msg)
                 recomendacoes.append(msg)
                 prioridade = max(prioridade, diff)
+
+        if (
+            menor_qualquer > 0
+            and (menor_concorrente <= 0 or menor_qualquer + 0.005 < menor_concorrente)
+        ):
+            from integracoes.ml.tipo_anuncio_ml import rotulo_prateleira
+
+            msg = (
+                f"Item {item_id}: menor do catálogo R$ {menor_qualquer:.2f} é outra "
+                f"exposição (seu anúncio: {rotulo_prateleira(meu_tipo)}) — não igualar preço."
+            )
+            analise["alertas"].append(msg)
+            recomendacoes.append(msg)
 
         if (
             menor_concorrente > 0
@@ -290,7 +438,20 @@ def _analisar_concorrencia(limite_itens: int = MAX_ITENS_ANALISE) -> tuple[list[
         time.sleep(PAUSA_ENTRE_CHAMADAS_S)
 
     itens.sort(key=lambda x: x.get("prioridade", 0), reverse=True)
-    return itens, recomendacoes
+    return itens, recomendacoes, catalogo
+
+
+def _linha_catalogo_vazio(catalogo: dict | None) -> str:
+    cat = catalogo or {}
+    situacao = str(cat.get("situacao") or "")
+    detalhe = str(cat.get("detalhe") or "").strip()
+    if situacao == "falha_listagem":
+        return f"• Listagem falhou ({detalhe or 'erro'}) — isto não é catálogo vazio"
+    if situacao == "fora_foco":
+        return f"• {detalhe or 'Nenhum anúncio no foco Impala/Cruzeiro'}"
+    if situacao == "vazio":
+        return "• Conta sem anúncios active/paused"
+    return "• Nenhum anúncio analisado"
 
 
 def _montar_resumo(
@@ -298,6 +459,7 @@ def _montar_resumo(
     ads: dict,
     concorrencia: list[dict],
     recomendacoes: list[str],
+    catalogo: dict | None = None,
 ) -> str:
     linhas = [
         "📊 *Conta*",
@@ -334,7 +496,7 @@ def _montar_resumo(
                 f"conc. R$ {item.get('menor_concorrente', 0):.2f}"
             )
     else:
-        linhas.append("• Nenhum anúncio analisado")
+        linhas.append(_linha_catalogo_vazio(catalogo))
 
     linhas.append("")
     linhas.append("✅ *Ajustes recomendados*")
@@ -364,21 +526,46 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
                 enviado = bool(alertar_gestor(msg))
             except Exception as exc:
                 logger.error("monitor_ml alerta credenciais: %s", exc)
+        _emitir_metricas_monitor(
+            {"situacao": "nao_configurado"},
+            [],
+            {},
+        )
         return {"ok": False, "motivo": motivo, "enviado": enviado, "resumo": msg}
 
     dias_ads = 14
 
     conta, rec_conta = _analisar_conta()
     ads, rec_ads = _analisar_ads(dias=dias_ads)
-    concorrencia, rec_conc = _analisar_concorrencia(limite_itens=limite_itens)
+    concorrencia, rec_conc, catalogo = _analisar_concorrencia(limite_itens=limite_itens)
 
     todas_recs = rec_conta + rec_ads + rec_conc
-    resumo = _montar_resumo(conta, ads, concorrencia, todas_recs)
+    resumo = _montar_resumo(conta, ads, concorrencia, todas_recs, catalogo)
+    _emitir_metricas_monitor(catalogo, concorrencia, ads)
 
     enviado = False
+    enviado_p0 = False
     if enviar_alerta:
         try:
-            enviado = bool(alertar_gestor(resumo))
+            from integracoes.ml.alerta_pendencias_loja import emitir_alerta_p0_do_ciclo
+
+            enviado_p0 = bool(
+                emitir_alerta_p0_do_ciclo(
+                    perguntas_pendentes=int(conta.get("perguntas_pendentes") or 0),
+                    reputacao=conta.get("reputacao") if isinstance(conta.get("reputacao"), dict) else {},
+                ).get("enviado")
+            )
+        except Exception as exc:
+            logger.warning("monitor_ml P0: %s", exc)
+        try:
+            enviado = bool(
+                alertar_gestor(
+                    resumo,
+                    chave="ml:monitor_ml:resumo",
+                    cooldown_segundos=7200,
+                    agente_id="monitor_ml",
+                )
+            )
         except Exception as exc:
             logger.error("monitor_ml alertar_gestor: %s", exc)
 
@@ -387,9 +574,11 @@ def analisar(*, limite_itens: int = MAX_ITENS_ANALISE, enviar_alerta: bool = Tru
         "conta": conta,
         "ads": ads,
         "concorrencia": concorrencia,
+        "catalogo": catalogo,
         "recomendacoes": list(dict.fromkeys(todas_recs)),
         "resumo": resumo,
         "enviado": enviado,
+        "enviado_p0": enviado_p0,
     }
 
 

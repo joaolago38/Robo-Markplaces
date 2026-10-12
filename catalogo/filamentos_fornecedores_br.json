@@ -1,0 +1,56 @@
+[
+  {
+    "id": "br-petg-distribuidor",
+    "ativo": true,
+    "prioridade": 1,
+    "material": "PETG",
+    "fornecedor": "Distribuidor BR (tabela atacado)",
+    "sku_prefixo": "23102",
+    "descricao": "MP-FILAMENTO 3D - PETG 1KG (1.75MM)",
+    "peso_kg": 1.0,
+    "preco_base_brl": 43.15,
+    "ipi_pct": 6.5,
+    "custo_unitario_brl": 45.96,
+    "moq": 1,
+    "notas": "Tabela 23102 FILAMENTOS 3D-PETG — custo com IPI 6,5%."
+  },
+  {
+    "id": "br-pla-placeholder",
+    "ativo": false,
+    "prioridade": 2,
+    "material": "PLA",
+    "fornecedor": "Distribuidor BR (preencher)",
+    "peso_kg": 1.0,
+    "preco_base_brl": 0,
+    "ipi_pct": 6.5,
+    "custo_unitario_brl": 0,
+    "moq": 1,
+    "notas": "Ative e preencha custo_unitario_brl quando tiver tabela PLA nacional."
+  },
+  {
+    "id": "br-abs-placeholder",
+    "ativo": false,
+    "prioridade": 2,
+    "material": "ABS",
+    "fornecedor": "Distribuidor BR (preencher)",
+    "peso_kg": 1.0,
+    "preco_base_brl": 0,
+    "ipi_pct": 6.5,
+    "custo_unitario_brl": 0,
+    "moq": 1,
+    "notas": "Ative e preencha custo_unitario_brl quando tiver tabela ABS nacional."
+  },
+  {
+    "id": "br-tpu-placeholder",
+    "ativo": false,
+    "prioridade": 3,
+    "material": "TPU",
+    "fornecedor": "Distribuidor BR (preencher)",
+    "peso_kg": 1.0,
+    "preco_base_brl": 0,
+    "ipi_pct": 6.5,
+    "custo_unitario_brl": 0,
+    "moq": 1,
+    "notas": "Ative e preencha custo_unitario_brl quando tiver tabela TPU nacional."
+  }
+]

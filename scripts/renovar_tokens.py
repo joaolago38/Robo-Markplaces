@@ -276,25 +276,6 @@ def main() -> int:
                 print(f"  {nome}: sem credenciais — ignorado")
             elif ok:
                 print(f"  {nome}: ok")
-            elif nome == "magalu":
-                # ──────────────────────────────────────────────────
-                # ALERTA PAUSADO em 01/07/2026: a causa raiz já está
-                # identificada e corrigida no código (host/endpoint
-                # de integracoes/magalu/magalu_client.py) — falta só
-                # um passo manual: reautorizar via
-                # pegar_token_magalu.py e colar o MAGALU_ACCESS_TOKEN
-                # / MAGALU_REFRESH_TOKEN novos nos Secrets do GitHub.
-                # O MAGALU_REFRESH_TOKEN atual está morto
-                # (invalid_grant) e não se auto-cura sozinho.
-                #
-                # Pra reativar o alerta: remova este 'elif' e deixe
-                # o magalu cair no 'else' genérico abaixo, assim que
-                # os Secrets forem atualizados com sucesso.
-                # ──────────────────────────────────────────────────
-                print("  magalu: PAUSADO (alerta desativado manualmente)")
-                print("  Motivo: MAGALU_REFRESH_TOKEN morto (invalid_grant) nos Secrets do GitHub.")
-                print("  Ação: reautorize com pegar_token_magalu.py e atualize MAGALU_ACCESS_TOKEN")
-                print("  e MAGALU_REFRESH_TOKEN nos Secrets — depois reative este alerta.")
             else:
                 motivo = str(payload.get("motivo", "") or "").strip()
                 if motivo:
@@ -344,6 +325,21 @@ def main() -> int:
 
     print("\n" + "=" * 60)
     print(f"Concluido — exit code: {exit_code}")
+    try:
+        from datetime import datetime, timezone
+
+        from core.atomic_io import escrever_json_atomico
+        from core.config import ROOT
+
+        escrever_json_atomico(
+            ROOT / "logs" / "renovacao_tokens_ultima.json",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": exit_code == 0,
+            },
+        )
+    except Exception:
+        pass
     return exit_code
 
 

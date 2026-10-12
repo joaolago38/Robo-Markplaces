@@ -29,6 +29,11 @@ SECRETS = {
                 "onde":      "console.anthropic.com -> API Keys (deposite $5 = R$30)",
                 "formato":   "sk-ant-api03-...",
             },
+            "ANTHROPIC_ADMIN_API_KEY": {
+                "descricao": "Admin key — gasto real do mês no Datadog (opcional, contas com org)",
+                "onde":      "console.anthropic.com -> Settings -> Admin API keys (sk-ant-admin...)",
+                "formato":   "sk-ant-admin01-...",
+            },
             "TELEGRAM_TOKEN": {
                 "descricao": "Token do bot do Telegram para alertas",
                 "onde":      "No Telegram: converse com @BotFather -> /newbot",
@@ -106,9 +111,11 @@ SECRETS = {
         "items": {
             "MAGALU_CLIENT_ID":     {"descricao": "Client ID",     "onde": "developers.magalu.com", "formato": "abc123"},
             "MAGALU_CLIENT_SECRET": {"descricao": "Client Secret", "onde": "developers.magalu.com", "formato": "abc123"},
-            "MAGALU_MERCHANT_ID":   {"descricao": "Merchant ID",   "onde": "developers.magalu.com", "formato": "abc123"},
             "MAGALU_ACCESS_TOKEN":  {"descricao": "Access Token",  "onde": "Gerado via OAuth2",     "formato": "abc123"},
             "MAGALU_REFRESH_TOKEN": {"descricao": "Refresh Token", "onde": "Gerado via OAuth2",     "formato": "abc123"},
+            "MAGALU_SELLER_ID":     {"descricao": "Seller ID da conta (CNPJ)", "onde": "painel Magalu / OpenAPI", "formato": "abc123"},
+            "MAGALU_CHANNEL_ID":    {"descricao": "Channel ID OpenAPI (Magazine Luiza)", "onde": "developers.magalu.com", "formato": "abc123"},
+            "MAGALU_MERCHANT_ID":   {"descricao": "Alias legado de MAGALU_CHANNEL_ID", "onde": "developers.magalu.com", "formato": "abc123"},
         }
     },
     "BLING_JA_CONFIGURADO": {

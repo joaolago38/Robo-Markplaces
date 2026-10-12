@@ -1,0 +1,95 @@
+[
+  {
+    "id": "removedor-geral",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Removedor esmalte geral",
+    "termo_busca": "acetona manicure",
+    "termos_alternativos": ["removedor esmalte", "removedor unha"],
+    "limite_resultados": 30
+  },
+  {
+    "id": "acetona-geral",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Acetona profissional",
+    "termo_busca": "acetona profissional",
+    "termos_alternativos": ["acetona manicure", "removedor esmalte"],
+    "limite_resultados": 30
+  },
+  {
+    "id": "cruzeiro",
+    "ativo": true,
+    "prioridade": 1,
+    "nome": "Cruzeiro",
+    "marca": "cruzeiro",
+    "termo_busca": "acetona cruzeiro",
+    "termos_alternativos": ["removedor cruzeiro", "acetona cruzeiro 100ml"],
+    "limite_resultados": 30
+  },
+  {
+    "id": "impala",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Impala",
+    "marca": "impala",
+    "termo_busca": "acetona impala",
+    "termos_alternativos": ["removedor impala"],
+    "limite_resultados": 25
+  },
+  {
+    "id": "risque",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Risqué",
+    "marca": "risque",
+    "termo_busca": "acetona risque",
+    "termos_alternativos": ["removedor risque"],
+    "limite_resultados": 20
+  },
+  {
+    "id": "colorama",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Colorama",
+    "marca": "colorama",
+    "termo_busca": "acetona colorama",
+    "limite_resultados": 20
+  },
+  {
+    "id": "nati",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Nati",
+    "marca": "nati",
+    "termo_busca": "acetona nati",
+    "limite_resultados": 20
+  },
+  {
+    "id": "acetona-100",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Acetona 100ml",
+    "termo_busca": "acetona 100ml",
+    "termos_alternativos": ["acetona manicure 100ml"],
+    "limite_resultados": 25
+  },
+  {
+    "id": "acetona-500",
+    "ativo": true,
+    "prioridade": 2,
+    "nome": "Acetona 500ml atacado",
+    "termo_busca": "acetona 500ml",
+    "termos_alternativos": ["acetona profissional 500ml"],
+    "limite_resultados": 25
+  },
+  {
+    "id": "sem-acetona",
+    "ativo": true,
+    "prioridade": 3,
+    "nome": "Sem acetona",
+    "termo_busca": "removedor sem acetona",
+    "termos_alternativos": ["diluidor esmalte"],
+    "limite_resultados": 20
+  }
+]

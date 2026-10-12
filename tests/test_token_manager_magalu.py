@@ -4,7 +4,9 @@ Cobre diagnóstico de erro HTTP na renovação do token Magalu.
 """
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -33,6 +35,7 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         tm._token_cache_magalu["expires_at"] = 0
         tm._magalu_refresh_efetivo["valor"] = None
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request")
     @patch.multiple(
         cfg,
@@ -40,10 +43,12 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         MAGALU_CLIENT_SECRET="sec",
         MAGALU_REFRESH_TOKEN="refresh_teste",
     )
-    def test_http_400_loga_corpo_e_retorna_none(self, mock_request):
+    def test_http_400_loga_corpo_e_retorna_none(self, mock_request, _log_on):
         mock_request.return_value = _resp(400, '{"error":"invalid_grant"}')
-        with self.assertLogs("token_manager", level="ERROR") as logs:
-            out = tm._renovar_token_magalu()
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(tm, "_MAGALU_INVALID_GRANT_PATH", Path(tmp) / "ig.json"):
+                with self.assertLogs("token_manager", level="ERROR") as logs:
+                    out = tm._renovar_token_magalu()
         self.assertIsNone(out)
         self.assertIn("HTTP 400", logs.output[0])
         self.assertIn("invalid_grant", logs.output[0])
@@ -69,6 +74,7 @@ class TestRenovarTokenMagalu(unittest.TestCase):
         self.assertEqual(out, "acc_magalu")
         self.assertEqual(tm._magalu_refresh_efetivo["valor"], "ref_novo")
 
+    @patch.object(tm, "log_erros_tokens_ativos", return_value=True)
     @patch.object(tm, "request", side_effect=ConnectionError("rede"))
     @patch.multiple(
         cfg,
@@ -92,6 +98,43 @@ class TestRenovarTokenMagalu(unittest.TestCase):
     def test_sem_credenciais_retorna_none(self):
         tm._magalu_refresh_efetivo["valor"] = None
         self.assertIsNone(tm._renovar_token_magalu())
+
+    @patch.object(tm, "_magalu_canal_operando", return_value=False)
+    @patch.object(tm, "_renovar_token_magalu")
+    def test_get_token_magalu_nao_renova_canal_inativo(self, mock_renovar, _):
+        self.assertIsNone(tm.get_token_magalu())
+        mock_renovar.assert_not_called()
+
+    @patch.object(tm, "_magalu_canal_operando", return_value=True)
+    @patch.object(tm, "_hidratar_cache_magalu_do_store")
+    @patch.object(tm, "_magalu_refresh_disponivel", return_value="rt")
+    @patch.object(tm, "_renovar_token_magalu", return_value="novo")
+    def test_get_token_magalu_forcar_ignora_cache(self, mock_renovar, *_):
+        tm._token_cache_magalu["access_token"] = "cache"
+        tm._token_cache_magalu["expires_at"] = 1e18
+        self.assertEqual(tm.get_token_magalu(), "cache")
+        mock_renovar.assert_not_called()
+        self.assertEqual(tm.get_token_magalu(forcar=True), "novo")
+        mock_renovar.assert_called_once()
+
+
+class TestTenantJwtMagalu(unittest.TestCase):
+    def _jwt(self, payload: dict) -> str:
+        import base64
+        import json
+
+        raw = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        return f"h.{raw}.s"
+
+    def test_tenant_aninhado(self):
+        tok = self._jwt({"extra": {"tenant": "GENPUB.nested"}})
+        self.assertEqual(tm.tenant_jwt_magalu(tok), "GENPUB.nested")
+
+    def test_tenant_payload_userinfo(self):
+        self.assertEqual(
+            tm.tenant_payload_magalu({"tenant": "GENPUB.from-info"}),
+            "GENPUB.from-info",
+        )
 
 
 if __name__ == "__main__":

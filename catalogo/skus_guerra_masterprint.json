@@ -1,0 +1,29 @@
+[
+  {
+    "sku": "231020001",
+    "papel": "entrada",
+    "arma": "diferenciar",
+    "nome": "Filamento PETG 1kg Preto 1.75mm",
+    "cor": "preto",
+    "material": "PETG",
+    "diferencial_obrigatorio": "cor âncora (preto) — não igualar dump de marca genérica; título com PETG 1kg 1.75mm"
+  },
+  {
+    "sku": "231020002",
+    "papel": "preco",
+    "arma": "igualar_faixa",
+    "nome": "Filamento PETG 1kg Branco 1.75mm",
+    "cor": "branco",
+    "material": "PETG",
+    "diferencial_obrigatorio": "único SKU que iguala preço: rival PETG 1kg branco ao vivo, gap ≥ 3% e ≥ piso 15%"
+  },
+  {
+    "sku": "231020003",
+    "papel": "giro",
+    "arma": "listing",
+    "nome": "Filamento PETG 1kg Azul 1.75mm",
+    "cor": "azul",
+    "material": "PETG",
+    "diferencial_obrigatorio": "segundo SKU no ar depois do 1º pedido Preto/Branco — arma é listing, não preço"
+  }
+]

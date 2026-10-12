@@ -1,0 +1,16 @@
+{
+  "claims": {
+    "mercadolivre:1": {
+      "agente": "chat_ml",
+      "until": 1786568681.6362429
+    },
+    "mercadolivre:2": {
+      "agente": "chat_ml",
+      "until": 1786568682.415536
+    },
+    "mercadolivre:3": {
+      "agente": "chat_ml",
+      "until": 1786568683.204192
+    }
+  }
+}

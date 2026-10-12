@@ -10,10 +10,11 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
+from core.atomic_io import escrever_json_atomico
 from core.config import SPEC
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_critico, alertar_gestor
-from integracoes.bling.bling_client import listar_produtos_por_sku
+from integracoes.bling.bling_client import listar_produtos_por_sku_detalhado, probe_produtos
 from integracoes.magalu.magalu_client import atualizar_estoque_item as atualizar_estoque_magalu
 from integracoes.ml.ml_client import atualizar_estoque_item as atualizar_estoque_ml
 from integracoes.ml.ml_client import pausar_anuncio
@@ -27,6 +28,7 @@ _MARKETPLACES_ATIVOS: set[str] = {
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOGO_PATH = ROOT / "catalogo" / "produtos.json"
+HEARTBEAT_PATH = ROOT / "logs" / "estoque_ultima.json"
 
 _CANAIS_ESTOQUE: dict[str, Callable[..., bool]] = {
     "mercadolivre": atualizar_estoque_ml,
@@ -117,10 +119,70 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
                 "produtos_sem_estoque_bling": [],
             }
 
+    probe = probe_produtos()
+    if not probe.get("ok"):
+        msg = (
+            f"⚠️ Sync estoque abortado — Bling indisponível "
+            f"(HTTP {probe.get('status')}: {probe.get('msg')}). "
+            "Não confundir com 'nada a sincronizar'."
+        )
+        try:
+            alertar_critico(msg, chave="estoque:bling_indisponivel")
+        except Exception as exc:
+            logger.error("alertar_critico: %s", exc)
+        try:
+            from datetime import datetime, timezone
+
+            escrever_json_atomico(
+                HEARTBEAT_PATH,
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "ok": False,
+                    "dry_run": dry_run,
+                    "erro": "bling_indisponivel",
+                    "probe": probe,
+                    "total_ajustes": 0,
+                    "total_aplicados_sucesso": 0,
+                    "total_falhas_aplicacao": 0,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Estoque: falha ao gravar heartbeat: %s", exc)
+        return {
+            "ok": False,
+            "erro": "bling_indisponivel",
+            "probe": probe,
+            "dry_run": dry_run,
+            "total_produtos": 0,
+            "total_ajustes": 0,
+            "ajustes": [],
+            "produtos_sem_estoque_bling": [],
+        }
+
     catalogo = produtos if produtos is not None else _carregar_catalogo()
-    produtos_bling = listar_produtos_por_sku()
+    produtos_bling, bling_ok = listar_produtos_por_sku_detalhado()
+    if not bling_ok:
+        try:
+            alertar_critico(
+                "⚠️ Sync estoque abortado — falha ao listar produtos no Bling "
+                "(auth/API). Catálogo vazio não é tratado como sucesso.",
+                chave="estoque:bling_lista_falhou",
+            )
+        except Exception as exc:
+            logger.error("alertar_critico: %s", exc)
+        return {
+            "ok": False,
+            "erro": "bling_lista_falhou",
+            "dry_run": dry_run,
+            "total_produtos": len(catalogo),
+            "total_ajustes": 0,
+            "ajustes": [],
+            "produtos_sem_estoque_bling": [],
+        }
     ajustes: list[dict] = []
     sem_estoque_bling: list[str] = []
+    skipped_placeholder: list[str] = []
+    falhas_pausa: list[str] = []
     catalogo_alterado = False
     zeros_ativos: list[str] = []
 
@@ -150,6 +212,10 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
             if not isinstance(dados, dict) or not dados.get("ativo"):
                 continue
 
+            if canal == "mercadolivre" and not _item_id_valido(dados.get("item_id")):
+                skipped_placeholder.append(f"{sku}/{canal}")
+                continue
+
             ref = _ref_estoque_canal(canal, sku, dados)
             if ref is None:
                 continue
@@ -169,13 +235,16 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
                 if aplicado:
                     dados["estoque"] = estoque_bling
                     catalogo_alterado = True
+                    incrementar("estoque.aplicado", tags=[f"canal:{canal}"])
                     if estoque_bling == 0:
                         zeros_ativos.append(f"{sku}/{canal}")
                         if canal == "mercadolivre" and _item_id_valido(ref):
-                            pausar_anuncio(str(ref), dry_run=False, confirmar=True)
+                            pausou = pausar_anuncio(str(ref), dry_run=False, confirmar=True)
+                            if not (isinstance(pausou, dict) and pausou.get("ok")):
+                                falhas_pausa.append(f"{sku}/{canal}")
                 else:
                     falhou_aplicacao = True
-                    incrementar("estoque.falha_aplicacao", tags=[f"canal:{canal}", f"sku:{sku}"])
+                    incrementar("estoque.falha_aplicacao", tags=[f"canal:{canal}"])
                     logger.error(
                         "Sincronizar estoque: falha ao aplicar sku=%s canal=%s ref=%s estoque_bling=%s",
                         sku, canal, ref, estoque_bling,
@@ -231,16 +300,77 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
         except Exception as exc:
             logger.error("alertar_critico: %s", exc)
 
+    if falhas_pausa:
+        try:
+            alertar_critico(
+                "⚠️ Estoque zerado mas falha ao pausar anúncio ML:\n"
+                + "\n".join(f"• {z}" for z in falhas_pausa[:10]),
+                chave="estoque:falha_pausa_anuncio",
+            )
+        except Exception as exc:
+            logger.error("alertar_critico: %s", exc)
+
+    if skipped_placeholder:
+        try:
+            incrementar("estoque.skipped_placeholder_mlb")
+            alertar_gestor(
+                f"Estoque: {len(skipped_placeholder)} canal(is) ML com MLB_PREENCHER "
+                f"pulados (sem sync real):\n"
+                + "\n".join(f"• {s}" for s in skipped_placeholder[:8]),
+                chave="estoque:skipped_placeholder",
+                cooldown_segundos=86400,
+            )
+        except Exception as exc:
+            logger.error("alerta placeholder: %s", exc)
+
+    # Muitos SKUs sem saldo Bling = fonte de verdade cega (listagem sem estoque)
+    pct_sem = (
+        (100.0 * len(sem_estoque_bling) / len(catalogo)) if catalogo else 0.0
+    )
+    if catalogo and pct_sem >= 50.0:
+        try:
+            alertar_critico(
+                f"⚠️ Sync estoque: {len(sem_estoque_bling)}/{len(catalogo)} SKUs "
+                f"sem saldo Bling ({pct_sem:.0f}%). Listagem GET /produtos pode "
+                "não trazer estoque — sync não moveu marketplace.",
+                chave="estoque:bling_saldo_ausente",
+            )
+        except Exception as exc:
+            logger.error("alertar_critico: %s", exc)
+
+    ok_hb = total_falhas_aplicacao == 0 and not falhas_pausa and pct_sem < 80.0
     payload = {
+        "ok": ok_hb,
         "dry_run": dry_run,
         "total_produtos": len(catalogo),
         "total_ajustes": total_ajustes,
         "total_aplicados_sucesso": total_aplicados_sucesso,
         "total_falhas_aplicacao": total_falhas_aplicacao,
+        "skipped_placeholder_mlb": len(skipped_placeholder),
+        "falhas_pausa_anuncio": len(falhas_pausa),
         "ajustes": ajustes,
         "produtos_sem_estoque_bling": sem_estoque_bling,
     }
     logger.info("Sincronizar estoque: %s", payload)
+    try:
+        from datetime import datetime, timezone
+
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": ok_hb,
+                "dry_run": dry_run,
+                "total_ajustes": total_ajustes,
+                "total_aplicados_sucesso": total_aplicados_sucesso,
+                "total_falhas_aplicacao": total_falhas_aplicacao,
+                "skipped_placeholder_mlb": len(skipped_placeholder),
+                "produtos_sem_estoque_bling": len(sem_estoque_bling),
+            },
+        )
+        incrementar("estoque.rodadas", tags=[f"dry_run:{str(bool(dry_run)).lower()}"])
+    except Exception as exc:
+        logger.warning("Estoque: falha ao gravar heartbeat: %s", exc)
     return payload
 
 

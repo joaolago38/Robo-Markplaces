@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from integracoes.ml import ml_client
 from integracoes.magalu import magalu_client as mag
+from integracoes.ml import ml_client
 
 
 def _resp(status: int, body: dict | None = None) -> MagicMock:
@@ -120,9 +120,10 @@ class TestMagaluListarPedidosDetalhado(unittest.TestCase):
         self.assertEqual(len(pedidos), 1)
         self.assertEqual(pedidos[0]["status"], "desconhecido")
 
+    @patch.object(mag, "get_token_magalu", return_value=None)
     @patch.object(mag, "request")
     @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
-    def test_status_nao_200_retorna_ok_false(self, mock_request):
+    def test_status_nao_200_retorna_ok_false(self, mock_request, _tok):
         mock_request.return_value = _resp(401, {})
         pedidos, ok = mag.listar_pedidos_detalhado(dias=7)
         self.assertFalse(ok)
@@ -143,6 +144,52 @@ class TestVendasNotificadorAlertaFalha(unittest.TestCase):
 
         _checar_busca_falhou("Mercado Livre", True)
         mock_alerta.assert_not_called()
+
+    @patch("agentes.vendas_notificador.incrementar")
+    @patch("core.notificador.alertar_gestor")
+    @patch("agentes.vendas_notificador.alertar_critico")
+    def test_auth_quebrada_nao_incrementa_busca_falhou(
+        self, mock_critico, mock_gestor, mock_inc
+    ):
+        from agentes.vendas_notificador import _checar_busca_falhou
+
+        _checar_busca_falhou("Magalu", False, auth_quebrada=True)
+        mock_critico.assert_not_called()
+        mock_gestor.assert_called_once()
+        nomes = [c.args[0] for c in mock_inc.call_args_list]
+        self.assertIn("vendas.busca_auth_quebrada", nomes)
+        self.assertNotIn("vendas.busca_falhou", nomes)
+
+
+class TestMagaluAuthNaListagem(unittest.TestCase):
+    @patch.object(mag, "get_token_magalu", return_value=None)
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_401_marca_auth_quebrada(self, mock_request, _tok):
+        mock_request.return_value = _resp(401, {"error": "invalid_grant"})
+        pedidos, ok = mag.listar_pedidos_detalhado(dias=7)
+        self.assertFalse(ok)
+        self.assertEqual(pedidos, [])
+        self.assertTrue(mag.ultima_listagem_auth_quebrada())
+
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_500_nao_e_auth_quebrada(self, mock_request):
+        mock_request.return_value = _resp(500, {"error": "boom"})
+        pedidos, ok = mag.listar_pedidos_detalhado(dias=7)
+        self.assertFalse(ok)
+        self.assertFalse(mag.ultima_listagem_auth_quebrada())
+
+    @patch.object(mag, "MAGALU_CHANNEL_ID", "GENPUB.test")
+    @patch.object(mag, "request")
+    @patch.object(mag, "MAGALU_ACCESS_TOKEN", "tok")
+    def test_422_tenant_marca_auth_quebrada(self, mock_request):
+        mock_request.return_value = _resp(
+            422, {"details": [{"field": "X-Tenant-Id", "message": "Field required"}]}
+        )
+        pedidos, ok = mag.listar_pedidos_detalhado(dias=7)
+        self.assertFalse(ok)
+        self.assertTrue(mag.ultima_listagem_auth_quebrada())
 
 
 if __name__ == "__main__":

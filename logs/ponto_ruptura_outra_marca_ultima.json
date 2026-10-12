@@ -1,0 +1,237 @@
+{
+  "veredito": "aproximando",
+  "liberado": false,
+  "aproximando": true,
+  "progresso_pct": 50.0,
+  "checks_ok": 3,
+  "checks_total": 6,
+  "checks": [
+    {
+      "id": "impala_fase1",
+      "ok": false,
+      "rotulo": "Impala passou na checklist (reviews/MLB/estoque/pedido)",
+      "atual": "ainda_nao",
+      "minimo": "liberado"
+    },
+    {
+      "id": "anuncios_foco",
+      "ok": false,
+      "rotulo": "Há anúncio Impala ativo no ML",
+      "atual": 0,
+      "minimo": ">=1"
+    },
+    {
+      "id": "cnpj_ml",
+      "ok": true,
+      "rotulo": "CNPJ 52.668.583/0001-27 identificado no ML",
+      "atual": "1651424153",
+      "minimo": "seller_id"
+    },
+    {
+      "id": "cnae_cosmetico",
+      "ok": true,
+      "rotulo": "CNAE 4772500 (cosméticos) neste CNPJ",
+      "atual": "ok",
+      "minimo": "4772500"
+    },
+    {
+      "id": "radar_ml",
+      "ok": false,
+      "rotulo": "Amostra ML suficiente para ranquear marcas",
+      "atual": "anuncios_outras=1",
+      "minimo": ">=5"
+    },
+    {
+      "id": "candidata",
+      "ok": true,
+      "rotulo": "Há marca candidata (não Impala) no referente ML",
+      "atual": "Anita",
+      "minimo": "top1"
+    }
+  ],
+  "cnpj": "52668583000127",
+  "cnpj_formatado": "52.668.583/0001-27",
+  "marca_propria": "impala",
+  "marketplace_referente": "mercadolivre",
+  "radar_cego": true,
+  "anuncios_foco": 0,
+  "canais": {
+    "cnpj": "52668583000127",
+    "cnpj_formatado": "52.668.583/0001-27",
+    "ids": {
+      "mercadolivre": "1651424153",
+      "shopee": "...",
+      "magalu": "",
+      "amazon": "..."
+    },
+    "itens": [
+      {
+        "id": "cnpj_mercadolivre",
+        "ok": true,
+        "rotulo": "CNPJ 52.668.583/0001-27 no mercadolivre",
+        "atual": "1651424153",
+        "minimo": "id preenchido"
+      },
+      {
+        "id": "cnpj_shopee",
+        "ok": false,
+        "rotulo": "CNPJ 52.668.583/0001-27 no shopee",
+        "atual": "vazio",
+        "minimo": "id preenchido"
+      },
+      {
+        "id": "cnpj_magalu",
+        "ok": false,
+        "rotulo": "CNPJ 52.668.583/0001-27 no magalu",
+        "atual": "vazio",
+        "minimo": "id preenchido"
+      },
+      {
+        "id": "cnpj_amazon",
+        "ok": false,
+        "rotulo": "CNPJ 52.668.583/0001-27 no amazon",
+        "atual": "vazio",
+        "minimo": "id preenchido"
+      }
+    ],
+    "ml_ok": true,
+    "canais_ok": 1,
+    "canais_total": 4
+  },
+  "impala": {
+    "veredito": "ainda_nao",
+    "progresso_pct": 42.9,
+    "checks_ok": 3,
+    "checks_total": 7
+  },
+  "top_marca": "Anita",
+  "top_slug": "anita",
+  "top_score": 1202,
+  "candidatas": [
+    {
+      "marca": "Anita",
+      "slug": "anita",
+      "vendidos": 120,
+      "anuncios": 1,
+      "volume_proxy": 0,
+      "preco_medio": 45.0,
+      "score": 1202,
+      "elegivel": true
+    },
+    {
+      "marca": "Risque",
+      "slug": "risque",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Colorama",
+      "slug": "colorama",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Dailus",
+      "slug": "dailus",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Nati",
+      "slug": "nati",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Vult",
+      "slug": "vult",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Blant",
+      "slug": "blant",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Luigi Borni",
+      "slug": "luigi_borni",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Novo Toque",
+      "slug": "novo_toque",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "La Femme",
+      "slug": "la_femme",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Top Beauty",
+      "slug": "top_beauty",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    },
+    {
+      "marca": "Dote",
+      "slug": "dote",
+      "vendidos": 0,
+      "anuncios": 0,
+      "volume_proxy": 0,
+      "preco_medio": 0.0,
+      "score": 0,
+      "elegivel": false
+    }
+  ],
+  "timestamp": "2026-08-14T23:14:05.377699+00:00",
+  "gerado_em": "2026-08-14T20:14:05.377709-03:00",
+  "mensagem": "*Outra marca de esmalte — radar ML cego*\n\n_O que este agente faz:_\n_Diz se o CNPJ Impala (52.668.583/0001-27) já pode entrar com outra marca de esmalte. Mercado Livre é o referente de demanda; o mesmo CNPJ é a identidade em Shopee/Magalu/Amazon. Não publica anúncio e não troca de CNPJ._\n\n_Quando roda:_\n_Todo dia às 08:05 BRT (mesmo workflow do 2º CNPJ); fora do orquestrador 30 min. Telegram só no veredito (aproximando / radar cego / liberado)._\n\nCNPJ *52.668.583/0001-27* · referente *ML*\nVeredito: *aproximando* · progresso *50.0%* (3/6 checks)\nTop candidata: *Anita* (score `1202`)\n\n*Checklist (mesmo CNPJ Impala)*\n• falta — Impala passou na checklist (reviews/MLB/estoque/pedido): `ainda_nao` (mín `liberado`)\n• falta — Há anúncio Impala ativo no ML: `0` (mín `>=1`)\n• ok — CNPJ 52.668.583/0001-27 identificado no ML: `1651424153` (mín `seller_id`)\n• ok — CNAE 4772500 (cosméticos) neste CNPJ: `ok` (mín `4772500`)\n• falta — Amostra ML suficiente para ranquear marcas: `anuncios_outras=1` (mín `>=5`)\n• ok — Há marca candidata (não Impala) no referente ML: `Anita` (mín `top1`)\n\n*CNPJ nos marketplaces*\n• ok — CNPJ 52.668.583/0001-27 no mercadolivre: `1651424153`\n• falta — CNPJ 52.668.583/0001-27 no shopee: `vazio`\n• falta — CNPJ 52.668.583/0001-27 no magalu: `vazio`\n• falta — CNPJ 52.668.583/0001-27 no amazon: `vazio`\n\n*Ranking ML (outras marcas)*\n• Anita: score `1202` · anúncios `1` · vendidos `120`\n_Radar ML cego (busca 403 / amostra insuficiente) — ranking não é decisão._",
+  "modo_alerta": "radar",
+  "alerta_enviado": false
+}

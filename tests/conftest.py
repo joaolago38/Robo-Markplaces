@@ -19,6 +19,7 @@ _HTTP_REQUEST_PATHS = (
     "integracoes.shopee.shopee_client.request",
     "integracoes.lojahub.lojahub_client.request",
     "integracoes.meta.meta_client.request",
+    "integracoes.ml.coleta_avaliacoes.request",
 )
 
 _ENV_TOKEN_DEFAULTS = {
@@ -46,6 +47,71 @@ _ENV_TOKEN_DEFAULTS = {
 
 
 from tests.http_fixtures import make_http_response
+
+
+@pytest.fixture(autouse=True)
+def _reset_telegram_gate():
+    """Evita vazamento de circuit breaker entre testes paralelos (xdist)."""
+    from core import telegram_gate as tg
+
+    tg.reset()
+    yield
+    tg.reset()
+
+
+@pytest.fixture(autouse=True)
+def _magalu_isolamento_credenciais(tmp_path_factory, monkeypatch):
+    """Impede JWT/refresh/tenant do .env e cooldown em disco de vazar entre testes (xdist)."""
+    import core.config as cfg
+    import core.token_manager as tm
+    import integracoes.magalu.magalu_client as mag
+
+    mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+    mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+    mag._AVISO_TENANT["feito"] = False
+    mag._TENANT_USERINFO["valor"] = ""
+    mag._TENANT_USERINFO["tentou"] = False
+    base = tmp_path_factory.mktemp("magalu_cd")
+    for chave in (
+        "MAGALU_ACCESS_TOKEN",
+        "MAGALU_REFRESH_TOKEN",
+        "MAGALU_CHANNEL_ID",
+        "MAGALU_MERCHANT_ID",
+    ):
+        monkeypatch.setenv(chave, "")
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(tm, "_MAGALU_INVALID_GRANT_PATH", base / "invalid_grant.json"))
+        stack.enter_context(patch.object(tm, "_refresh_magalu_em_cooldown", return_value=False))
+        stack.enter_context(patch.object(mag, "_PERGUNTAS_ESCOPO_PATH", base / "perguntas_escopo.json"))
+        stack.enter_context(
+            patch.multiple(
+                cfg,
+                MAGALU_ACCESS_TOKEN="",
+                MAGALU_REFRESH_TOKEN="",
+                MAGALU_CHANNEL_ID="",
+                MAGALU_MERCHANT_ID="",
+            )
+        )
+        yield
+    mag._PERGUNTAS_SEM_ESCOPO["valor"] = False
+    mag._PERGUNTAS_SEM_ESCOPO["avisou"] = False
+
+
+@pytest.fixture(autouse=True)
+def _claude_ligado_nos_testes(tmp_path_factory):
+    """
+    Pausa operacional (CLAUDE_ATIVO=0 / logs/claude_toggle.json) não deve quebrar CI.
+    Isola também USO_PATH para mocks Claude não poluírem logs/claude_uso_orcamento.json.
+    Testes do próprio toggle/orçamento usam patch próprio e sobrescrevem estes caminhos.
+    """
+    base = tmp_path_factory.mktemp("claude_estado")
+    toggle = base / "claude_toggle.json"
+    uso = base / "claude_uso_orcamento.json"
+    with ExitStack() as stack:
+        stack.enter_context(patch("core.config.CLAUDE_ATIVO", True))
+        stack.enter_context(patch("core.claude_toggle.TOGGLE_PATH", toggle))
+        stack.enter_context(patch("core.claude_orcamento.USO_PATH", uso))
+        yield
 
 
 @pytest.fixture

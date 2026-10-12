@@ -14,21 +14,17 @@ impedir a checagem dos demais.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 
-from core.config import SPEC
+from core.atomic_io import escrever_json_atomico
+from core.config import ROOT, marketplace_spec_ativo
 from core.datadog_metrics import gauge, incrementar
 from core.marketplace_keepalive import dias_sem_acesso, registrar_acesso
 from core.notificador import alertar_critico
 
 logger = logging.getLogger("conectividade_marketplaces")
 
-_MARKETPLACES_ATIVOS_SPEC: set[str] = {
-    m["id"] for m in SPEC.get("marketplaces", []) if m.get("ativo", False)
-}
-
 _MARKETPLACES = ("mercadolivre", "magalu", "shopee", "amazon")
-if "magalu" not in _MARKETPLACES_ATIVOS_SPEC:
-    _MARKETPLACES = tuple(m for m in _MARKETPLACES if m != "magalu")
 
 
 def _probe(nome_marketplace: str) -> dict:
@@ -45,24 +41,47 @@ def _probe(nome_marketplace: str) -> dict:
     return probe_conexao()
 
 
+def _eh_nao_configurado(msg: str, status_http: object) -> bool:
+    """Canal sem secrets — não é falha de conectividade."""
+    try:
+        st = int(status_http or 0)
+    except (TypeError, ValueError):
+        st = 0
+    m = (msg or "").casefold()
+    return st == 0 and ("não configurado" in m or "nao configurado" in m)
+
+
 def _avaliar_um(nome_marketplace: str) -> dict:
     resultado = _probe(nome_marketplace) or {}
     ok = bool(resultado.get("ok"))
     status_http = resultado.get("status", 0)
     msg = str(resultado.get("msg", "") or "")
+    skipped = (not ok) and _eh_nao_configurado(msg, status_http)
+    tags_mp = [f"marketplace:{nome_marketplace}"]
 
-    # Gauge contínuo (1=ok, 0=falha) — no Datadog, a média desse valor
-    # ao longo do tempo já é, na prática, o % de uptime de conectividade.
-    gauge("conectividade.status", 1.0 if ok else 0.0, tags=[f"marketplace:{nome_marketplace}"])
+    # Gauge contínuo (1=ok, 0=falha). Canal inativo → não polui uptime.
+    if skipped:
+        gauge("conectividade.status", 1.0, tags=[*tags_mp, "estado:pulado"])
+        incrementar("conectividade.pulado", tags=tags_mp)
+        logger.info(
+            "Conectividade %s pulada (não configurado) — canal inativo, não é falha",
+            nome_marketplace,
+        )
+    else:
+        gauge(
+            "conectividade.status",
+            1.0 if ok else 0.0,
+            tags=[*tags_mp, f"estado:{'ok' if ok else 'falha'}"],
+        )
 
     if ok:
         # Uma chamada real que funcionou conta como acesso de verdade —
         # mesmo critério já usado em obter_saude_conta()/manter_conta_ativa().
         registrar_acesso(nome_marketplace)
-    else:
+    elif not skipped:
         incrementar(
             "conectividade.falha",
-            tags=[f"marketplace:{nome_marketplace}", f"status_http:{status_http}"],
+            tags=[*tags_mp, f"status_http:{status_http}"],
         )
         logger.error(
             "Conectividade %s FALHOU (status=%s): %s",
@@ -83,11 +102,24 @@ def _avaliar_um(nome_marketplace: str) -> dict:
 
     return {
         "marketplace": nome_marketplace,
-        "ok": ok,
+        # Canal sem secrets conta como ok (skipped) — não derruba o heartbeat.
+        "ok": ok or skipped,
+        "skipped": skipped,
         "status_http": status_http,
         "msg": msg,
         "dias_sem_acesso": dias_sem_acesso(nome_marketplace) or 0,
     }
+
+
+def _canal_a_sondar(nome: str) -> bool:
+    if marketplace_spec_ativo(nome):
+        return True
+    try:
+        from core.marketplace_toggle import canal_em_operacao
+
+        return canal_em_operacao(nome)
+    except Exception:
+        return False
 
 
 def executar() -> dict:
@@ -97,6 +129,25 @@ def executar() -> dict:
     """
     resultados: list[dict] = []
     for nome in _MARKETPLACES:
+        if not _canal_a_sondar(nome):
+            logger.info("Conectividade %s pulada — spec.inativo", nome)
+            incrementar("conectividade.pulado", tags=[f"marketplace:{nome}", "motivo:spec_inativo"])
+            gauge(
+                "conectividade.status",
+                1.0,
+                tags=[f"marketplace:{nome}", "estado:pulado"],
+            )
+            resultados.append(
+                {
+                    "marketplace": nome,
+                    "ok": True,
+                    "skipped": True,
+                    "status_http": 0,
+                    "msg": "spec.inativo",
+                    "dias_sem_acesso": 0,
+                }
+            )
+            continue
         try:
             resultados.append(_avaliar_um(nome))
         except Exception as exc:
@@ -115,12 +166,29 @@ def executar() -> dict:
                 }
             )
 
+    incrementar("conectividade.rodadas")
     payload = {
         "total": len(resultados),
         "ok": sum(1 for r in resultados if r["ok"]),
-        "falha": sum(1 for r in resultados if not r["ok"]),
+        "falha": sum(1 for r in resultados if not r["ok"] and not r.get("skipped")),
+        "pulado": sum(1 for r in resultados if r.get("skipped")),
         "resultados": resultados,
     }
+    try:
+        escrever_json_atomico(
+            ROOT / "logs" / "conectividade_ultima.json",
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": payload["falha"] == 0,
+                "total": payload["total"],
+                "ok_count": payload["ok"],
+                "falha": payload["falha"],
+                "pulado": payload["pulado"],
+                "resultados": resultados,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Conectividade: falha ao gravar heartbeat: %s", exc)
     logger.info("Conectividade marketplaces: %s", payload)
     return payload
 
