@@ -175,6 +175,13 @@ CLAUDE_ML_PLAYBOOKS_ATIVO = os.getenv("CLAUDE_ML_PLAYBOOKS_ATIVO", "1").strip().
     "false",
     "no",
 )
+# 1 = grava candidato de fine-tuning (Haiku) em logs/. 0 = não grava texto de chamada.
+CLAUDE_FINETUNE_CAPTURAR = os.getenv("CLAUDE_FINETUNE_CAPTURAR", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 # 1 = no chat ML, se análise alta, NÃO usa template fixo (frete/atacado) — vai pro Sonnet
 CLAUDE_ANALISE_FURA_TEMPLATE = os.getenv("CLAUDE_ANALISE_FURA_TEMPLATE", "1").strip().lower() in (
     "1",
