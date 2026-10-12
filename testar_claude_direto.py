@@ -8,6 +8,7 @@ import sys
 import requests
 from pathlib import Path
 
+
 # Carrega .env ou .env.exemplo
 for nome in [".env", ".env.exemplo"]:
     env_path = Path(nome)
