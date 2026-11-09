@@ -122,6 +122,26 @@ class TestEstoqueHeartbeat(unittest.TestCase):
             self.assertEqual(out["total_ajustes"], 0)
             self.assertTrue(hb.exists())
 
+    def test_lista_bling_falha_grava_heartbeat(self):
+        import json
+
+        from agentes import sincronizar_estoque_marketplaces as est
+
+        with tempfile.TemporaryDirectory() as tmp:
+            hb = Path(tmp) / "estoque_ultima.json"
+            with patch.object(est, "HEARTBEAT_PATH", hb), patch.object(
+                est, "probe_produtos", return_value={"ok": True, "status": 200, "msg": "ok"}
+            ), patch.object(
+                est, "listar_produtos_por_sku_detalhado", return_value=({}, False)
+            ), patch.object(est, "alertar_critico", return_value=True):
+                out = est.executar(produtos=[{"sku": "X"}], dry_run=True)
+            self.assertFalse(out["ok"])
+            self.assertEqual(out["erro"], "bling_lista_falhou")
+            gravado = json.loads(hb.read_text(encoding="utf-8"))
+            self.assertFalse(gravado["ok"])
+            self.assertEqual(gravado["erro"], "bling_lista_falhou")
+            self.assertTrue(gravado["timestamp"])
+
 
 class TestAdsMetricas(unittest.TestCase):
     @patch("agentes.ml.agente_ads_gatilho.escrever_json_atomico")

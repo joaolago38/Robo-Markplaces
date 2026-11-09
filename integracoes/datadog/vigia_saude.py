@@ -15,6 +15,10 @@ from integracoes.datadog.consulta_erros import buscar_erros_datadog
 
 logger = logging.getLogger("vigia_saude_datadog")
 
+# Crons do Actions chegam com várias horas de atraso. A janela de "erro ainda
+# ativo" precisa cobrir esse vão; senão Magalu/ML somem antes do próximo vigia.
+_JANELA_BUSCA_ERROS_HORAS = 12.0
+
 
 def _parse_iso(valor: Any) -> datetime | None:
     if not valor:
@@ -43,6 +47,11 @@ def _fmt_horas(horas: float) -> str:
     return f"{h}h{m:02d}m" if m else f"{h}h"
 
 
+def _mensagem_ignorada(msg: str, filtros: dict[str, Any]) -> bool:
+    msg_lower = str(msg or "").lower()
+    return any(str(ign).lower() in msg_lower for ign in (filtros.get("mensagens_ignorar") or []))
+
+
 def _chave_mensagem(msg: str) -> str:
     return str(msg or "").strip().lower()[:80]
 
@@ -59,8 +68,9 @@ def carregar_filtros_erro(catalogo_relativo: str) -> dict[str, Any]:
 
 def _erro_relevante_para_vigia(erro: dict[str, Any], filtros: dict[str, Any]) -> bool:
     """
-    Mantém alertas focados no Mercado Livre: ignora ruído de outros marketplaces
-    e infraestrutura (Telegram, Claude, Panorama, etc.).
+    Ignora ruído de infraestrutura (Telegram gate, Claude, Panorama).
+    Magalu, Shopee, Amazon e Bling entram: auth/API deles é falha de canal,
+    não ruído.
     """
     if not filtros:
         return True
@@ -156,6 +166,23 @@ def verificar_inatividade(
             continue
 
         horas = _horas_desde(dt)
+        if horas <= max_horas and isinstance(data, dict):
+            falha = _falha_heartbeat_fresca(data)
+            if falha:
+                alertas.append(
+                    {
+                        "tipo": "ciclo_falhou",
+                        "gravidade": "critica" if critico else "alta",
+                        "fonte_id": fid,
+                        "nome": nome,
+                        "motivo": "ciclo_falhou",
+                        "horas_sem_resposta": round(horas, 2),
+                        "limite_horas": max_horas,
+                        "ultimo_timestamp": dt.isoformat(),
+                        "texto": f"*{nome}*: último ciclo falhou — {falha}.",
+                    }
+                )
+                continue
         if horas > max_horas:
             alertas.append(
                 {
@@ -176,6 +203,23 @@ def verificar_inatividade(
     return alertas
 
 
+def _falha_heartbeat_fresca(data: dict[str, Any]) -> str | None:
+    """
+    Heartbeat novo com falha explícita. Timestamp fresco sozinho escondia
+    Magalu 401, renovação exit 1 e integridade abaixo da meta.
+    """
+    if data.get("ok") is False:
+        erro = str(data.get("erro") or data.get("motivo_listagem") or "").strip()
+        return erro or "ok=false"
+    if data.get("atinge_meta") is False:
+        pct = data.get("pct")
+        falhas = data.get("falhas") if isinstance(data.get("falhas"), list) else []
+        extra = ",".join(str(x) for x in falhas[:3])
+        base = f"integridade {pct}% abaixo da meta" if pct is not None else "abaixo da meta"
+        return f"{base} ({extra})" if extra else base
+    return None
+
+
 def verificar_erros_nao_tratados(
     *,
     limite_horas: float = 2.0,
@@ -187,6 +231,7 @@ def verificar_erros_nao_tratados(
     """
     agora = datetime.now(timezone.utc)
     limiar = timedelta(hours=max(0.1, limite_horas))
+    janela_horas = max(_JANELA_BUSCA_ERROS_HORAS, float(limite_horas))
     alertas: list[dict[str, Any]] = []
 
     for erro in listar_erros_recentes():
@@ -197,8 +242,8 @@ def verificar_erros_nao_tratados(
         if not primeira or not ultima:
             continue
 
-        # Erro ainda "ativo" se visto dentro da janela de monitoramento
-        janela_ativa = timedelta(hours=max(1.0, limite_horas))
+        # Erro ainda "ativo" se o último cron que o viu cabe na janela real do Actions.
+        janela_ativa = timedelta(hours=janela_horas)
         if agora - ultima > janela_ativa:
             continue
 
@@ -227,7 +272,7 @@ def verificar_erros_nao_tratados(
 
     if incluir_api_datadog:
         query = (filtros or {}).get("query_datadog")
-        consulta = buscar_erros_datadog(horas=limite_horas, limite=30, query=query)
+        consulta = buscar_erros_datadog(horas=janela_horas, limite=30, query=query)
         if consulta.get("ok"):
             chaves_vistas = {
                 _chave_mensagem(str(e.get("mensagem") or e.get("error_message") or ""))
@@ -237,7 +282,7 @@ def verificar_erros_nao_tratados(
                 chaves_vistas.add(_chave_mensagem(str(alerta.get("texto") or "")))
             for item in consulta.get("erros") or []:
                 msg = str(item.get("mensagem") or "")[:180]
-                if not msg:
+                if not msg or _mensagem_ignorada(msg, filtros or {}):
                     continue
                 chave = _chave_mensagem(msg)
                 if chave in chaves_vistas:

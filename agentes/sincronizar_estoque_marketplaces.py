@@ -104,12 +104,35 @@ def _aplicar_estoque(canal: str, ref: Any, estoque: int, dados: dict) -> bool:
         return False
 
 
+def _gravar_heartbeat_falha(*, dry_run: bool, erro: str, **extra: Any) -> None:
+    """Falha com job verde não pode republicar o heartbeat antigo como sucesso."""
+    try:
+        from datetime import datetime, timezone
+
+        escrever_json_atomico(
+            HEARTBEAT_PATH,
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ok": False,
+                "dry_run": dry_run,
+                "erro": erro,
+                "total_ajustes": 0,
+                "total_aplicados_sucesso": 0,
+                "total_falhas_aplicacao": 0,
+                **extra,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Estoque: falha ao gravar heartbeat: %s", exc)
+
+
 def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
     if not dry_run:
         from core.guardrails import alertar_bloqueio_escrita_global, bloqueio_escrita_global
 
         if bloqueio := bloqueio_escrita_global():
             alertar_bloqueio_escrita_global()
+            _gravar_heartbeat_falha(dry_run=False, erro="escrita_bloqueada")
             return {
                 **bloqueio,
                 "dry_run": False,
@@ -130,24 +153,11 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
             alertar_critico(msg, chave="estoque:bling_indisponivel")
         except Exception as exc:
             logger.error("alertar_critico: %s", exc)
-        try:
-            from datetime import datetime, timezone
-
-            escrever_json_atomico(
-                HEARTBEAT_PATH,
-                {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "ok": False,
-                    "dry_run": dry_run,
-                    "erro": "bling_indisponivel",
-                    "probe": probe,
-                    "total_ajustes": 0,
-                    "total_aplicados_sucesso": 0,
-                    "total_falhas_aplicacao": 0,
-                },
-            )
-        except Exception as exc:
-            logger.warning("Estoque: falha ao gravar heartbeat: %s", exc)
+        _gravar_heartbeat_falha(
+            dry_run=dry_run,
+            erro="bling_indisponivel",
+            probe=probe,
+        )
         return {
             "ok": False,
             "erro": "bling_indisponivel",
@@ -170,6 +180,7 @@ def executar(produtos: list[dict] | None = None, dry_run: bool = True) -> dict:
             )
         except Exception as exc:
             logger.error("alertar_critico: %s", exc)
+        _gravar_heartbeat_falha(dry_run=dry_run, erro="bling_lista_falhou")
         return {
             "ok": False,
             "erro": "bling_lista_falhou",
