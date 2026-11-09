@@ -20,7 +20,7 @@ try:
 except Exception as exc:
     logger.warning("notificador indisponível — alertas críticos só no stdout: %s", exc)
 
-    def alertar_critico(msg: str) -> bool:  # type: ignore[misc]
+    def alertar_critico(msg: str, **_kwargs: object) -> bool:  # type: ignore[misc]
         print(f"[ALERTA CRÍTICO — Telegram não configurado]\n{msg}")
         return False
 
@@ -156,7 +156,11 @@ def _alertar_token_travado(provedor: str, motivo: str) -> None:
             f"Detalhe: {motivo_limpo or 'sem detalhe'}"
         )
 
-    alertar_critico(msg)
+    alertar_critico(
+        msg,
+        chave=f"token_travado:{chave}",
+        cooldown_segundos=21_600,
+    )
 
 
 def main() -> int:

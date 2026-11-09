@@ -369,6 +369,8 @@ class TestAlertaTokenTravado(unittest.TestCase):
         self.assertEqual(code, 1)
         mock_alerta.assert_called_once()
         self.assertIn("MAGALU TRAVADO", mock_alerta.call_args[0][0])
+        self.assertEqual(mock_alerta.call_args.kwargs["chave"], "token_travado:magalu")
+        self.assertEqual(mock_alerta.call_args.kwargs["cooldown_segundos"], 21_600)
 
     def test_sanitizar_motivo_mascara_token(self):
         out = mod._sanitizar_motivo("erro refresh_token=abc123secret")
