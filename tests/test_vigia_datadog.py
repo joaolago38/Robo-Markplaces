@@ -1,10 +1,13 @@
 """
 tests/test_vigia_datadog.py
 """
+import json
 import os
 import sys
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -115,7 +118,7 @@ class VigiaDatadogTests(unittest.TestCase):
         self.assertEqual(len(alertas), 1)
         self.assertEqual(alertas[0]["gravidade"], "critica")
 
-    def test_filtro_ignora_outros_marketplaces_mantem_ml(self):
+    def test_filtro_mantem_ml_e_magalu(self):
         antigo = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
         recente = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
         erros = [
@@ -162,8 +165,80 @@ class VigiaDatadogTests(unittest.TestCase):
         loggers = {a["logger"] for a in alertas}
         self.assertIn("ml_client", loggers)
         self.assertIn("token_manager", loggers)
-        self.assertNotIn("magalu_client", loggers)
-        self.assertEqual(len(alertas), 2)
+        self.assertIn("magalu_client", loggers)
+        self.assertEqual(len(alertas), 4)
+        textos = " ".join(a["texto"] for a in alertas)
+        self.assertIn("Magazine Luiza", textos)
+
+    def test_heartbeat_fresco_com_falha_nao_passa_por_saudavel(self):
+        agora = datetime.now(timezone.utc).isoformat()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pasta = root / "logs"
+            pasta.mkdir()
+            (pasta / "renovacao_tokens_ultima.json").write_text(
+                json.dumps({"timestamp": agora, "ok": False, "erro": "magalu invalid_grant"}),
+                encoding="utf-8",
+            )
+            (pasta / "integridade_ml_ultima.json").write_text(
+                json.dumps(
+                    {
+                        "timestamp": agora,
+                        "ok": True,
+                        "atinge_meta": False,
+                        "pct": 50.0,
+                        "falhas": ["listagem:search_http_403"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (pasta / "conectividade_ultima.json").write_text(
+                json.dumps({"timestamp": agora, "ok": True}),
+                encoding="utf-8",
+            )
+            fontes = [
+                {
+                    "id": "renovacao_tokens",
+                    "nome": "Renovação de tokens",
+                    "path": "logs/renovacao_tokens_ultima.json",
+                    "campo": "timestamp",
+                    "max_horas": 12,
+                    "critico": True,
+                },
+                {
+                    "id": "integridade_ml",
+                    "nome": "Integridade dados ML",
+                    "path": "logs/integridade_ml_ultima.json",
+                    "campo": "timestamp",
+                    "max_horas": 12,
+                    "critico": True,
+                },
+                {
+                    "id": "conectividade",
+                    "nome": "Conectividade",
+                    "path": "logs/conectividade_ultima.json",
+                    "campo": "timestamp",
+                    "max_horas": 12,
+                    "critico": True,
+                },
+            ]
+            with patch("integracoes.datadog.vigia_saude.ROOT", root):
+                alertas = vs.verificar_inatividade(fontes)
+        motivos = {a["fonte_id"]: a["motivo"] for a in alertas}
+        self.assertEqual(motivos["renovacao_tokens"], "ciclo_falhou")
+        self.assertEqual(motivos["integridade_ml"], "ciclo_falhou")
+        self.assertNotIn("conectividade", motivos)
+        texto_ml = next(a["texto"] for a in alertas if a["fonte_id"] == "integridade_ml")
+        self.assertIn("search_http_403", texto_ml)
+
+    def test_busca_erros_cobre_vao_do_cron(self):
+        with patch("integracoes.datadog.vigia_saude.listar_erros_recentes", return_value=[]):
+            with patch(
+                "integracoes.datadog.vigia_saude.buscar_erros_datadog",
+                return_value={"ok": True, "erros": []},
+            ) as busca:
+                vs.verificar_erros_nao_tratados(limite_horas=2, filtros={})
+        self.assertGreaterEqual(busca.call_args.kwargs["horas"], 12)
 
     def test_montar_mensagem_critica(self):
         msg = vs.montar_mensagem_critica(
