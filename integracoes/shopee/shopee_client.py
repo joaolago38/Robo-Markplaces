@@ -30,9 +30,34 @@ _MSG_IDS_INVALIDOS = (
 )
 
 
+def _conta_cnpj() -> dict | None:
+    try:
+        from core.marketplace_cnpj import conta_em_uso
+
+        return conta_em_uso("shopee")
+    except Exception:
+        return None
+
+
+def shop_id_ativo() -> str:
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("conta_id") or "").strip():
+        return str(ativa["conta_id"]).strip()
+    return str(SHOPEE_SHOP_ID or "").strip()
+
+
+def _token_ativo() -> str:
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("access_token") or "").strip():
+        return str(ativa["access_token"]).strip()
+    if SHOPEE_REFRESH_TOKEN:
+        return get_token_shopee() or SHOPEE_ACCESS_TOKEN or ""
+    return SHOPEE_ACCESS_TOKEN or ""
+
+
 def _ids_validos() -> bool:
     pid = str(SHOPEE_PARTNER_ID or "").strip()
-    sid = str(SHOPEE_SHOP_ID or "").strip()
+    sid = shop_id_ativo()
     return bool(pid.isdigit() and sid.isdigit())
 
 
@@ -46,8 +71,14 @@ def _canal_operando() -> bool:
 
 
 def _enabled() -> bool:
-    tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
-    if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token):
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("conta_id") or "").strip():
+        tem_token = bool(str(ativa.get("access_token") or "").strip())
+        shop = str(ativa.get("conta_id") or "").strip()
+    else:
+        tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
+        shop = str(SHOPEE_SHOP_ID or "").strip()
+    if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and shop and tem_token):
         return False
     if not _ids_validos():
         return False
@@ -55,14 +86,12 @@ def _enabled() -> bool:
 
 
 def _token_para_assinatura() -> str:
-    if SHOPEE_REFRESH_TOKEN:
-        return get_token_shopee() or SHOPEE_ACCESS_TOKEN or ""
-    return SHOPEE_ACCESS_TOKEN or ""
+    return _token_ativo()
 
 
 def _assinar(path: str, timestamp: int) -> str:
     tok = _token_para_assinatura()
-    base = f"{SHOPEE_PARTNER_ID}{path}{timestamp}{tok}{SHOPEE_SHOP_ID}"
+    base = f"{SHOPEE_PARTNER_ID}{path}{timestamp}{tok}{shop_id_ativo()}"
     return hmac.new(SHOPEE_PARTNER_KEY.encode("utf-8"), base.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
@@ -73,7 +102,7 @@ def _params(path: str) -> dict:
         "partner_id": int(SHOPEE_PARTNER_ID),
         "timestamp": ts,
         "access_token": tok,
-        "shop_id": int(SHOPEE_SHOP_ID),
+        "shop_id": int(shop_id_ativo()),
         "sign": _assinar(path, ts),
     }
 
@@ -100,8 +129,12 @@ def _tem_erro_api(body: dict) -> bool:
 
 
 def probe_conexao() -> dict:
-    tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
-    if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and SHOPEE_SHOP_ID and tem_token):
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("conta_id") or "").strip():
+        tem_token = bool(str(ativa.get("access_token") or "").strip())
+    else:
+        tem_token = bool(SHOPEE_ACCESS_TOKEN or SHOPEE_REFRESH_TOKEN)
+    if not (SHOPEE_PARTNER_ID and SHOPEE_PARTNER_KEY and shop_id_ativo() and tem_token):
         return {"ok": False, "status": 0, "msg": "Shopee não configurado"}
     if not _ids_validos():
         return {"ok": False, "status": 0, "msg": _MSG_IDS_INVALIDOS}
@@ -277,7 +310,7 @@ def obter_saude_conta() -> dict:
             "claims_rate": None,
             "claims_conhecido": False,
             "dias_sem_acesso": 999,
-            "conta_id": str(SHOPEE_SHOP_ID or "").strip(),
+            "conta_id": shop_id_ativo(),
         }
 
     pendencias, ok = _listar_perguntas_nao_respondidas_detalhado(page_size=50, max_pages=4)
@@ -291,7 +324,7 @@ def obter_saude_conta() -> dict:
         "claims_rate": None,
         "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("shopee") or 0,
-        "conta_id": str(SHOPEE_SHOP_ID or "").strip(),
+        "conta_id": shop_id_ativo(),
         "modelo": "chat_sla_shopee",
     }
 

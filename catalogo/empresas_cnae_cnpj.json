@@ -105,7 +105,7 @@
         "monitor_masterprint_escritorio",
         "monitor_filamentos_ml"
       ],
-      "notas": "CNPJ demais produtos / alvo da migração do dono dos catálogos. Env MASTERPRINT_CNPJ / CNPJ_DONO_PRODUTOS_ALVO."
+      "notas": "CNPJ demais produtos / alvo da migração. Contas só entram por MASTERPRINT_ML_SELLER_ID (ou ML_SELLER_ID_MASTERPRINT), MASTERPRINT_SHOPEE_SHOP_ID, MASTERPRINT_MAGALU_SELLER_ID e MASTERPRINT_AMAZON_SELLER_ID, cada um com token próprio (ML_ACCESS_TOKEN_MASTERPRINT e equivalentes). Não copiar o seller 1651424153 nem o merchant Magalu da Impala. IDs ficam vazios até existirem de verdade."
     }
   ]
 }

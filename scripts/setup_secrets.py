@@ -90,10 +90,24 @@ SECRETS = {
                 "formato":   "TG-...",
             },
             "ML_SELLER_ID": {
-                "descricao": "Seu ID de vendedor no ML",
+                "descricao": "Seu ID de vendedor no ML (CNPJ Impala)",
                 "onde":      "URL do seu perfil no ML: mercadolivre.com.br/perfil/SEUUSUARIO",
                 "formato":   "123456789",
             },
+        }
+    },
+    "MASTERPRINT": {
+        "descricao": "Conta do 2o CNPJ (23.811.261/0001-97). Nao reutilize seller nem token da Impala.",
+        "items": {
+            "MASTERPRINT_ML_SELLER_ID": {"descricao": "Seller ML Masterprint", "onde": "perfil ML da conta Masterprint", "formato": "123456789"},
+            "ML_SELLER_ID_MASTERPRINT": {"descricao": "Alias de MASTERPRINT_ML_SELLER_ID", "onde": "mesmo seller", "formato": "123456789"},
+            "ML_ACCESS_TOKEN_MASTERPRINT": {"descricao": "Token ML so da Masterprint", "onde": "OAuth da conta Masterprint", "formato": "APP_USR-..."},
+            "MASTERPRINT_SHOPEE_SHOP_ID": {"descricao": "Shop Shopee Masterprint", "onde": "autorizacao Shopee", "formato": "1234567"},
+            "SHOPEE_ACCESS_TOKEN_MASTERPRINT": {"descricao": "Token Shopee Masterprint", "onde": "OAuth Shopee", "formato": "abc123"},
+            "MASTERPRINT_MAGALU_SELLER_ID": {"descricao": "Seller Magalu Masterprint", "onde": "painel Magalu", "formato": "abc123"},
+            "MAGALU_ACCESS_TOKEN_MASTERPRINT": {"descricao": "Token Magalu Masterprint", "onde": "OAuth Magalu", "formato": "abc123"},
+            "MASTERPRINT_AMAZON_SELLER_ID": {"descricao": "Seller Amazon Masterprint", "onde": "Seller Central", "formato": "A1BC"},
+            "AMAZON_ACCESS_TOKEN_MASTERPRINT": {"descricao": "Token Amazon Masterprint", "onde": "LWA da conta Masterprint", "formato": "Atza"},
         }
     },
     "SHOPEE": {

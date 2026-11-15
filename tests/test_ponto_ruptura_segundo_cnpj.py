@@ -535,6 +535,48 @@ class TestMensagemEAgente(unittest.TestCase):
         self.assertEqual(out["veredito"], "aproximando")
         self.assertGreaterEqual(out["checks_ok"], 5)
 
+    def test_publicacao_petg_segue_veredito_da_ruptura(self):
+        from core.empresa.publicacao_cnpj import autorizar_publicacao
+
+        bloqueado = pr.avaliar_ponto_ruptura(sinais=_sinais(), cnae=_cnae())
+        self.assertEqual(bloqueado["veredito"], "ainda_nao")
+        petg_cedo = autorizar_publicacao("231020001", veredito=bloqueado["veredito"])
+        self.assertEqual(petg_cedo["motivo"], "ruptura_impala")
+
+        liberado = pr.avaliar_ponto_ruptura(
+            sinais=_sinais(
+                avaliacoes=22,
+                nota=4.9,
+                vendas_completadas=3,
+                claims=0,
+                kits=_kits(mlb_ok=True, estoque=60),
+                itens_margem=1,
+                acos=0.12,
+                decisao_ads="aguardar",
+                ads_fonte_ok=True,
+                claims_fonte_ok=True,
+                anuncios_ativos_foco=1,
+            ),
+            cnae=_cnae(pronto=True),
+            avaliacoes_min=20,
+            nota_min=4.8,
+            estoque_min=30,
+            acos_max=0.20,
+        )
+        self.assertEqual(liberado["veredito"], "liberado")
+        esmalte_na_mp = autorizar_publicacao(
+            "IMP-MIMO-003",
+            empresa_id="masterprint",
+            veredito=liberado["veredito"],
+        )
+        self.assertEqual(esmalte_na_mp["motivo"], "cnpj_errado")
+        petg_na_impala = autorizar_publicacao(
+            "231020001",
+            empresa_id="esmaltes_impala",
+            veredito=liberado["veredito"],
+        )
+        self.assertEqual(petg_na_impala["motivo"], "cnpj_errado")
+
 
 if __name__ == "__main__":
     unittest.main()

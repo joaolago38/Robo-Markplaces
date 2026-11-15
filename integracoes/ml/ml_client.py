@@ -18,14 +18,42 @@ logger = logging.getLogger("ml_client")
 BASE = "https://api.mercadolibre.com"
 
 
+def _conta_cnpj() -> dict | None:
+    try:
+        from core.marketplace_cnpj import conta_em_uso
+
+        return conta_em_uso("mercadolivre")
+    except Exception:
+        return None
+
+
+def seller_id_ativo() -> str:
+    """Seller da conta empilhada (CNPJ dono). Sem escopo, vale ML_SELLER_ID."""
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("conta_id") or "").strip():
+        return str(ativa["conta_id"]).strip()
+    return str(ML_SELLER_ID or "").strip()
+
+
+def token_ativo() -> str:
+    """Token próprio da Masterprint quando o escopo trouxe um. Impala segue o refresh."""
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("access_token") or "").strip():
+        return str(ativa["access_token"]).strip()
+    return get_token_ml() or ML_ACCESS_TOKEN
+
+
 def _enabled() -> bool:
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("conta_id") or "").strip():
+        return bool(str(ativa.get("access_token") or "").strip())
     return bool(ML_ACCESS_TOKEN and ML_SELLER_ID)
 
 
 def _h():
     # Prefere token renovado automaticamente; fallback para token estático do .env.
-    token = get_token_ml() or ML_ACCESS_TOKEN
-    return {"Authorization": f"Bearer {token}"}
+    # No escopo Masterprint o token é o daquela conta e não passa pelo refresh da Impala.
+    return {"Authorization": f"Bearer {token_ativo()}"}
 
 
 def _request_ml(method: str, url: str, *, timeout: int = 30, **kwargs: Any):
@@ -39,6 +67,10 @@ def _request_ml(method: str, url: str, *, timeout: int = 30, **kwargs: Any):
 
     r = request(method, url, timeout=timeout, **kwargs)
     if r.status_code == 401:
+        ativa = _conta_cnpj()
+        if isinstance(ativa, dict) and str(ativa.get("access_token") or "").strip():
+            logger.warning("ML HTTP 401 na conta do CNPJ — token próprio, sem refresh da Impala")
+            return r
         logger.warning("ML HTTP 401 — renovando token e repetindo request")
         headers["Authorization"] = f"Bearer {get_token_ml(forcar=True) or ML_ACCESS_TOKEN}"
         kwargs["headers"] = headers
@@ -286,7 +318,7 @@ def _listar_perguntas_nao_respondidas_detalhado() -> tuple[list[dict], bool]:
         r = _request_ml(
             "GET",
             f"{BASE}/my/received_questions/search",
-            params={"status": "UNANSWERED", "seller_id": ML_SELLER_ID},
+            params={"status": "UNANSWERED", "seller_id": seller_id_ativo()},
             timeout=20,
         )
         if status_http(r) != 200:
@@ -331,14 +363,14 @@ def buscar_perfil_vendedor() -> dict:
         logger.info("Mercado Livre não configurado para perfil.")
         return {}
     try:
-        r = _request_ml("GET", f"{BASE}/users/{ML_SELLER_ID}", timeout=20)
+        r = _request_ml("GET", f"{BASE}/users/{seller_id_ativo()}", timeout=20)
         if status_http(r) != 200:
             log_http_erro_listagem(logger, "ML buscar_perfil_vendedor", r)
             return {}
         body = r.json() or {}
         rep = body.get("seller_reputation") if isinstance(body.get("seller_reputation"), dict) else {}
         return {
-            "id": str(body.get("id") or ML_SELLER_ID),
+            "id": str(body.get("id") or seller_id_ativo()),
             "nickname": str(body.get("nickname") or ""),
             "permalink": str(body.get("permalink") or ""),
             "seller_reputation": rep,
@@ -456,7 +488,7 @@ def contar_envios_pendentes() -> dict:
             "GET",
             f"{BASE}/orders/search",
             params={
-                "seller": ML_SELLER_ID,
+                "seller": seller_id_ativo(),
                 "order.status": "paid",
                 "order.date_created.from": inicio,
                 "sort": "date_desc",
@@ -540,7 +572,7 @@ def obter_saude_conta() -> dict:
         "claims_rate": float(claims_rate),
         "claims_conhecido": True,
         "dias_sem_acesso": dias_sem_acesso("mercadolivre") or 0,
-        "conta_id": str(ML_SELLER_ID or "").strip(),
+        "conta_id": seller_id_ativo(),
         "modelo": "ranking_ml",
     }
 
@@ -646,7 +678,7 @@ def listar_pedidos_detalhado(dias: int = 7, *, max_paginas: int = 10) -> tuple[l
                 "GET",
                 f"{BASE}/orders/search",
                 params={
-                    "seller": ML_SELLER_ID,
+                    "seller": seller_id_ativo(),
                     "order.status": "paid",
                     "sort": "date_desc",
                     "date_created.from": data_from,
@@ -1014,7 +1046,7 @@ def _listar_linhas_concorrentes_catalogo(item_id: str) -> list[dict]:
     pdata = rp.json() or {}
     results = pdata.get("results") or pdata.get("items") or []
 
-    seller_self = str(ML_SELLER_ID or "").strip()
+    seller_self = seller_id_ativo()
     concorrentes: list[dict] = []
     for row in results:
         if not isinstance(row, dict):
@@ -1187,7 +1219,7 @@ def listar_itens_com_sugestao_preco() -> list[str]:
     if not _enabled():
         return []
     try:
-        r = _request_ml("GET", f"{BASE}/suggestions/user/{ML_SELLER_ID}/items", timeout=20)
+        r = _request_ml("GET", f"{BASE}/suggestions/user/{seller_id_ativo()}/items", timeout=20)
         r.raise_for_status()
         body = r.json() or {}
         itens = body.get("items") or []
@@ -1416,7 +1448,7 @@ def listar_meus_anuncios(
                     try:
                         r = _request_ml(
                             "GET",
-                            f"{BASE}/users/{ML_SELLER_ID}/items/search",
+                            f"{BASE}/users/{seller_id_ativo()}/items/search",
                             params={"status": status, "limit": 100, "offset": offset},
                             timeout=20,
                         )
