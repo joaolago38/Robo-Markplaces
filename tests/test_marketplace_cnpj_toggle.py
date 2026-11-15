@@ -196,9 +196,9 @@ class TestPublicacaoDoisCnpjs(unittest.TestCase):
         self.assertEqual(aprox["motivo"], "ruptura_impala")
 
     def test_nao_grava_seller_da_impala(self):
+        from core.empresa.catalogo import empresa_por_id
         from core.empresa.contas_masterprint import gravar_contas_distintas
         from core.empresa.overrides import aplicar_overrides_env
-        from core.empresa.catalogo import empresa_por_id
 
         with patch.dict(os.environ, {"MASTERPRINT_ML_SELLER_ID": "1651424153"}, clear=False):
             mp = aplicar_overrides_env(empresa_por_id("masterprint") or {})
