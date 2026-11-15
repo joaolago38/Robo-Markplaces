@@ -1,0 +1,147 @@
+{
+  "versao": 1,
+  "nome": "entrada_ml_anuncios_prontos",
+  "atualizado": "2026-11-12",
+  "fontes": [
+    "catalogo/doutrina_guerra_impala.json",
+    "catalogo/caixas_kits_impala.json"
+  ],
+  "taxa_ml_pct": 18,
+  "piso_margem_pct": 15,
+  "ads": {
+    "ligado_na_entrada": false,
+    "reviews_min": 20,
+    "nota_min": 4.8,
+    "acos_max": 0.2,
+    "budget_dia_brl": 10,
+    "nota": "Product Ads só com 20 avaliações, nota 4,8, MLB da frente e ACOS até 20%."
+  },
+  "caixas_compra_onda0": {
+    "modelo": "S20-16x11x10",
+    "fornecedor": "CaixasNet",
+    "comprimento_cm": 16,
+    "largura_cm": 11,
+    "altura_cm": 10,
+    "qtd": 24,
+    "custo_un_brl": 0.98,
+    "uso": "12 MIMO + 12 PERL (10 no ar + folga). Mesma caixa nos dois kits.",
+    "protecao": "saco bolha no frasco + kraft + fita gomada"
+  },
+  "regras_anuncio": {
+    "declarar_dimensoes": "da caixa S20, nao do frasco",
+    "dimensoes_cm": "16 x 11 x 10",
+    "estoque_validacao": 10,
+    "estoque_depois": 30,
+    "item_id": "substituir MLB_PREENCHER em catalogo/produtos.json depois de publicar"
+  },
+  "ondas": [
+    {
+      "id": 0,
+      "nome": "abrir_frente",
+      "quando": "No mesmo dia em que fotos e titulos estiverem prontos. Os dois kits sobem juntos.",
+      "kits": [
+        {
+          "sku": "IMP-MIMO-003",
+          "papel": "entrada",
+          "nome": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+          "titulo_anuncio": "Kit 3 Esmaltes Impala Mimo + Carmed Manicure",
+          "preco_fase1": 44.9,
+          "preco_congelado": true,
+          "piso_brl": 41.99,
+          "caixa": "S20-16x11x10",
+          "dimensoes_cm": "16 x 11 x 10",
+          "peso_kg": 0.28,
+          "peso_g": 280,
+          "conteudo": "3 esmaltes (Admire, Sutileza, Amor Profundo) + Carmed",
+          "estoque_anuncio": 10,
+          "nota": "Nao igualar lider de cerca de R$ 22: a liquida nesse preco fica abaixo do custo."
+        },
+        {
+          "sku": "IMP-PERL-004",
+          "papel": "preco",
+          "nome": "Kit 4 Esmaltes Impala Perolado Tendência",
+          "titulo_anuncio": "Kit 4 Esmaltes Impala Perolado Tendência Tons da Moda Manicure",
+          "preco_fase1": 39.9,
+          "preco_congelado_na_entrada": true,
+          "piso_igualar_faixa_brl": 39.15,
+          "caixa": "S20-16x11x10",
+          "dimensoes_cm": "16 x 11 x 10",
+          "peso_kg": 0.38,
+          "peso_g": 380,
+          "conteudo": "Sonho, Polar, Lua, Dengo",
+          "estoque_anuncio": 10,
+          "nota": "Unico SKU que pode baixar preco depois, e so com rival de kit 4 perolado ao vivo, gap >= 3% e preco ainda acima do piso."
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "nome": "primeiro_pedido",
+      "quando": "So depois do 1o pedido que fechar margem. Nao abrir junto com a onda 0.",
+      "kits": [
+        {
+          "sku": "IMP-JUPAES-006",
+          "papel": "giro",
+          "nome": "Kit 6 Ju Paes — Virando o Jogo",
+          "titulo_anuncio": "Kit 6 Ju Paes — Virando o Jogo",
+          "preco_fase1": 64.9,
+          "preco_congelado": true,
+          "caixa": "S20-16x11x10",
+          "dimensoes_cm": "16 x 11 x 10",
+          "peso_kg": 0.45,
+          "peso_g": 450,
+          "exige_pedido_vencedor": true,
+          "estoque_anuncio": 10
+        }
+      ]
+    }
+  ],
+  "fora_da_entrada": [
+    {
+      "sku": "IMP-BAIL-005",
+      "preco_catalogo": 48.9,
+      "piso_brl": 51.91,
+      "motivo": "Abaixo do piso de 15%. Troca futura: IMP-BAIL-003 a R$ 39,90, se entrar na onda 2."
+    },
+    {
+      "sku": "IMP-SORT-006",
+      "preco_catalogo": 49.9,
+      "motivo": "Lucro de fase 1 cerca de 8%."
+    },
+    {
+      "sku": "IMP-SORT-006B",
+      "preco_catalogo": 49.9,
+      "motivo": "Lucro de fase 1 cerca de 8%."
+    },
+    {
+      "sku": "IMP-POV-008",
+      "preco_catalogo": 74.9,
+      "piso_brl": 76.21,
+      "motivo": "Abaixo do piso de 15%."
+    },
+    {
+      "skus": [
+        "IMP-ATAC-010",
+        "IMP-COLC-015",
+        "IMP-VR-015",
+        "IMP-SORT-010",
+        "IMP-NUDE-010",
+        "IMP-CLAS-012",
+        "IMP-ATAC-030",
+        "BUNDLE-777-5ESM"
+      ],
+      "precos_catalogo": {
+        "IMP-ATAC-010": 69.9,
+        "IMP-COLC-015": 79.9
+      },
+      "caixa_quando_entrar": "S03-31x20x11.5",
+      "dimensoes_cm": "31 x 20 x 11,5",
+      "motivo": "Margem operacional fina ou negativa. Caixa S03 so quando houver preco acima do piso."
+    },
+    {
+      "skus": ["CRZ-KIT-001", "CRZ-KIT-002", "CRZ-KIT-003"],
+      "onda": 2,
+      "motivo": "Depois do 1o pedido Impala. Nao competem com o MIMO."
+    }
+  ]
+}
