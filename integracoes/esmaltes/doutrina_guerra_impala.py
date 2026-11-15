@@ -27,8 +27,24 @@ _PRIORIDADE = {
     CLASSIF_IGNORAR: 0,
 }
 
-_TAXA_ML_PADRAO = 0.18
-_MARGEM_FASE_PADRAO = {1: 0.10, 2: 0.18, 3: 0.25}
+def _taxa_ml_padrao() -> float:
+    """Fallback quando o JSON da doutrina não traz taxa_ml. O JSON continua mandando."""
+    from core.config import TAXA_CANAL_PADRAO_PCT
+
+    return float(TAXA_CANAL_PADRAO_PCT) / 100.0
+
+
+def _margem_fase_padrao() -> dict[int, float]:
+    """Fallback de margem por fase. margem_por_fase do JSON tem prioridade."""
+    from core.config import MARGEM_FASE_1_PCT, MARGEM_FASE_2_PCT, MARGEM_FASE_3_PCT
+
+    return {
+        1: float(MARGEM_FASE_1_PCT) / 100.0,
+        2: float(MARGEM_FASE_2_PCT) / 100.0,
+        3: float(MARGEM_FASE_3_PCT) / 100.0,
+    }
+
+
 CANAIS = ("mercadolivre", "shopee", "magalu", "amazon")
 CANAL_REFERENTE = "mercadolivre"
 
@@ -147,8 +163,8 @@ def piso_preco(produto: dict[str, Any] | None, doutrina: dict[str, Any] | None =
     except (TypeError, ValueError):
         fase = 1
     margens = d.get("margem_por_fase") or {}
-    margem = _f(margens.get(str(fase)) or margens.get(fase), _MARGEM_FASE_PADRAO.get(fase, 0.10))
-    taxa = _f(d.get("taxa_ml"), _TAXA_ML_PADRAO)
+    margem = _f(margens.get(str(fase)) or margens.get(fase), _margem_fase_padrao().get(fase, 0.10))
+    taxa = _f(d.get("taxa_ml"), _taxa_ml_padrao())
     denom = 1.0 - taxa - margem
     if denom <= 0:
         return None

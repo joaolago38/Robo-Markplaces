@@ -180,7 +180,7 @@ def coletar_sinais_cambio(*, ao_vivo: bool = False) -> dict[str, Any]:
     else:
         var_pct = var_pct_calc
     volatil = abs(var_pct) >= alerta_pct
-    return {
+    sinais = {
         "ok": bool(cotacao.get("ok")),
         "usd_brl": _num(cotacao.get("usd_brl")),
         "fonte": cotacao.get("fonte"),
@@ -190,6 +190,13 @@ def coletar_sinais_cambio(*, ao_vivo: bool = False) -> dict[str, Any]:
         "idade_seg": cotacao.get("idade_seg"),
         "bloquear_import_por_fx": (not confiavel) or volatil,
     }
+    if getattr(cfg, "CENARIO_MACRO_ATIVO", False):
+        from core.cenario_macro import regime_cambial
+
+        regime = regime_cambial(sinais["usd_brl"], getattr(cfg, "CENARIO_CAMBIO_REFERENCIA", 0))
+        sinais["regime_cambial"] = regime["regime"]
+        sinais["variacao_vs_referencia_pct"] = regime["variacao_pct"]
+    return sinais
 
 
 def coletar_sinais_vendas() -> dict[str, Any]:

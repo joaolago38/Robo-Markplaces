@@ -320,6 +320,34 @@ python -m agentes.ml.agente_otimizador_listing
 }
 ```
 
+## Cenário macro (pós-eleição 2026)
+
+O agente `cenario_macro` é somente leitura: calcula margem, reposição de custo e regime do dólar e grava `logs/cenario_macro_ultima.json`. Não publica anúncio e não altera preço. Preço continua no repricing, com `dry_run`, `ROBO_PAUSAR_ESCRITA`, `deve_congelar_repricing` e `preco_congelado`.
+
+O padrão é desligado (`CENARIO_MACRO_ATIVO=0`). Com a flag em 0 o robô se comporta como antes. Nenhum dólar, Selic ou percentual de cenário fica no código: tudo vem de ambiente, com default neutro.
+
+| Variável | Default | O que faz |
+| --- | --- | --- |
+| `CENARIO_MACRO_ATIVO` | `0` | Liga o cenário |
+| `CENARIO_CAMBIO_REFERENCIA` | `0` | Dólar de referência, preenchido à mão. 0 = sem referência |
+| `CENARIO_REPOSICAO_ALTA_PCT` | `0` | Alta de custo já informada pelo fornecedor. Não é calculada pelo dólar |
+| `CENARIO_MARGEM_ADICIONAL_PP` | `0` | Pontos somados à margem da fase. Nunca reduz o piso |
+| `CENARIO_CUSTO_CAPITAL_MES_PCT` | `1.2` | Custo mensal do estoque parado |
+| `CENARIO_COBERTURA_ALVO_DIAS` | `45` | Cobertura alvo para antecipar ou segurar compra |
+| `CENARIO_CAMBIO_ESTRESSE_PCT` | `4` | Variação vs. referência que marca estresse |
+| `CENARIO_CAMBIO_CHOQUE_PCT` | `8` | Variação vs. referência que marca choque |
+| `CENARIO_FRETE_ALTA_PCT` | `0` | Alta de frete aplicada só em memória |
+| `TAXA_SHOPEE_PADRAO_PCT` | `14.0` | Comissão Shopee a conferir na tabela vigente |
+
+Para ligar localmente, exporte as variáveis (não grave valor real no `.env.exemplo`) e rode:
+
+```bash
+CENARIO_MACRO_ATIVO=1 CENARIO_MARGEM_ADICIONAL_PP=2 CENARIO_REPOSICAO_ALTA_PCT=0 CENARIO_CAMBIO_REFERENCIA=4.95 \
+  python -m agentes.precificacao.agente_cenario_macro
+```
+
+A cotação usada é a de `integracoes/cambio/cotacao_usd.py`. Se a cotação não for confiável, o agente marca `cambio_nao_confiavel` e não recomenda importação.
+
 ## Testes
 
 - `python -m unittest discover -s tests -p "test_*.py"`

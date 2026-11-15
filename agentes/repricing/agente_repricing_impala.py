@@ -9,9 +9,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import core.config as cfg
 from core.algoritmo_eventos import deve_congelar_repricing
 from core.atomic_io import escrever_json_atomico
 from core.catalogo_produtos import CATALOGO_PATH, carregar_produtos_catalogo
+from core.cenario_macro import custo_reposicao, margem_exigida_pct
 from core.datadog_metrics import incrementar
 from core.notificador import alertar_gestor
 from integracoes.esmaltes.crescimento_esmaltes import _item_id_ml, _mlb_valido
@@ -19,44 +21,85 @@ from integracoes.ml.ml_client import atualizar_preco_item as atualizar_preco_ml
 
 logger = logging.getLogger("agente_repricing_impala")
 
-TAXA_ML = 0.18  # alinhado a TAXA_CANAL_PADRAO típica ML
-
+# Mesmo padrão de core.config (18 / 10 / 18 / 25). Lido na importação;
+# calcular_preco_ideal relê o cenário em tempo de chamada.
+TAXA_ML = cfg.TAXA_CANAL_PADRAO_PCT / 100.0
 MARGEM_POR_FASE = {
-    1: 0.10,
-    2: 0.18,
-    3: 0.25,
+    1: cfg.MARGEM_FASE_1_PCT / 100.0,
+    2: cfg.MARGEM_FASE_2_PCT / 100.0,
+    3: cfg.MARGEM_FASE_3_PCT / 100.0,
 }
 
 
+def _precos_congelados() -> set[str]:
+    try:
+        from integracoes.esmaltes.doutrina_guerra_impala import carregar_doutrina
+
+        doutrina = carregar_doutrina()
+        return {str(s).strip().upper() for s in (doutrina.get("preco_congelado") or [])}
+    except Exception:
+        return set()
+
+
 def calcular_preco_ideal(kit: dict, fase: int | None = None) -> dict:
-    fase = fase or kit.get("fase_atual", 1)
+    fase = int(fase or kit.get("fase_atual", 1) or 1)
     custo = float(kit.get("custo_total") or kit.get("custo") or 0.0)
-    margem_min = MARGEM_POR_FASE.get(int(fase), 0.10)
+    ativo = bool(cfg.CENARIO_MACRO_ATIVO)
+    base_pct = {k: v * 100.0 for k, v in MARGEM_POR_FASE.items()}
+    if ativo:
+        margem_exigida = margem_exigida_pct(fase, base_pct, cfg.CENARIO_MARGEM_ADICIONAL_PP, True)
+        margem_min = margem_exigida / 100.0
+    else:
+        margem_min = MARGEM_POR_FASE.get(fase, 0.10)
+        margem_exigida = round(margem_min * 100.0, 4)
 
     if custo <= 0:
-        return {"sku": kit.get("sku"), "erro": "custo_total ausente ou zero"}
+        return {
+            "sku": kit.get("sku"),
+            "erro": "custo_total ausente ou zero",
+            "cenario_macro": ativo,
+            "margem_exigida_pct": margem_exigida,
+        }
+
+    custo_piso = custo
+    if ativo:
+        custo_piso = max(custo, custo_reposicao(custo, cfg.CENARIO_REPOSICAO_ALTA_PCT))
 
     denom = 1 - TAXA_ML - margem_min
     if denom <= 0:
-        return {"sku": kit.get("sku"), "erro": "parametros_margem_invalidos"}
+        return {
+            "sku": kit.get("sku"),
+            "erro": "parametros_margem_invalidos",
+            "cenario_macro": ativo,
+            "margem_exigida_pct": margem_exigida,
+        }
 
-    preco_min_lucro = custo / denom
+    preco_min_lucro = custo_piso / denom
     preco_fase = float(kit.get("precos_por_fase", {}).get(f"fase{fase}", preco_min_lucro))
     preco_sugerido = round(max(preco_fase, preco_min_lucro), 2)
 
-    lucro = preco_sugerido * (1 - TAXA_ML) - custo
-    margem_real = lucro / preco_sugerido if preco_sugerido > 0 else 0.0
-
     ml = (kit.get("canais") or {}).get("mercadolivre") or {}
     preco_atual = float(ml.get("preco") or kit.get("preco") or 0.0)
+    aviso = None
+    sku = str(kit.get("sku") or "").strip().upper()
+    if ativo and sku in _precos_congelados():
+        teto = preco_atual if preco_atual > 0 else preco_fase
+        if preco_min_lucro > teto + 0.009:
+            aviso = "piso_acima_do_congelado"
+            preco_sugerido = round(teto, 2)
+
+    lucro = preco_sugerido * (1 - TAXA_ML) - custo_piso
+    margem_real = lucro / preco_sugerido if preco_sugerido > 0 else 0.0
     item_id = _item_id_ml(kit)
     ajuste_necessario = abs(preco_sugerido - preco_atual) >= 0.50
+    if aviso:
+        ajuste_necessario = False
 
     return {
         "sku": kit.get("sku"),
         "nome": kit.get("nome"),
         "fase": fase,
-        "custo_total": round(custo, 2),
+        "custo_total": round(custo_piso, 2),
         "preco_atual": round(preco_atual, 2),
         "preco_sugerido": preco_sugerido,
         "lucro_estimado": round(lucro, 2),
@@ -65,6 +108,9 @@ def calcular_preco_ideal(kit: dict, fase: int | None = None) -> dict:
         "item_id": item_id if _mlb_valido(item_id) else None,
         "mlb_ok": _mlb_valido(item_id),
         "motivo": f"margem mínima fase {fase}: {margem_min*100:.0f}%",
+        "cenario_macro": ativo,
+        "margem_exigida_pct": margem_exigida,
+        **({"aviso": aviso} if aviso else {}),
     }
 
 
