@@ -1115,6 +1115,7 @@ CAMBIO_API_URL = os.getenv(
     "CAMBIO_API_URL", "https://economia.awesomeapi.com.br/json/last/USD-BRL"
 ).strip()
 CAMBIO_HISTORICO_MAX = int(os.getenv("CAMBIO_HISTORICO_MAX", "500"))
+# Única fonte do 5.5. DESCOBERTA_CAMBIO_USD_BRL (mais abaixo) cai neste valor.
 CAMBIO_FALLBACK_USD_BRL = float(os.getenv("CAMBIO_FALLBACK_USD_BRL", os.getenv("DESCOBERTA_CAMBIO_USD_BRL", "5.5")))
 CAMBIO_ALERTA_VARIACAO_PCT = float(os.getenv("CAMBIO_ALERTA_VARIACAO_PCT", "1.5"))
 # Se 1, margem/alertas de importação não usam câmbio fallback (só awesomeapi)
@@ -1258,7 +1259,7 @@ DESCOBERTA_ALIBABA_MAX_POR_OPORTUNIDADE = int(os.getenv("DESCOBERTA_ALIBABA_MAX_
 DESCOBERTA_ALIBABA_PAUSA_SEG = float(os.getenv("DESCOBERTA_ALIBABA_PAUSA_SEG", "0.5"))
 DESCOBERTA_ALIBABA_PRECO_MAX_USD = float(os.getenv("DESCOBERTA_ALIBABA_PRECO_MAX_USD", "15"))
 DESCOBERTA_ALIBABA_MOQ_MAX = int(os.getenv("DESCOBERTA_ALIBABA_MOQ_MAX", "1000"))
-DESCOBERTA_CAMBIO_USD_BRL = float(os.getenv("DESCOBERTA_CAMBIO_USD_BRL", "5.5"))
+DESCOBERTA_CAMBIO_USD_BRL = float(os.getenv("DESCOBERTA_CAMBIO_USD_BRL", str(CAMBIO_FALLBACK_USD_BRL)))
 DESCOBERTA_ALERTA_PAINEL_COOLDOWN_SEG = int(os.getenv("DESCOBERTA_ALERTA_PAINEL_COOLDOWN_SEG", "86400"))
 
 LICITACOES_CATALOGO = os.getenv("LICITACOES_CATALOGO", "catalogo/licitacoes_monitoradas.json")
@@ -1336,7 +1337,7 @@ ORQUESTRADOR_EXCLUIR = {
         "leilao,sumare_leiloes,lojas_veiculos,carros_batidos,licitacoes,"
         "alibaba_sourcing,comparar_portos_alibaba,logistica_china_ml,"
         "ml_tendencias_importacao,monitor_filamentos_ml,monitor_masterprint_petg,monitor_masterprint_escritorio,golpe_guerra_masterprint,monitor_cnpj_cnae,ponto_ruptura_segundo_cnpj,ponto_ruptura_outra_marca,"
-        "inteligencia_precos,monitor_ml,monitor_concorrentes,monitor_sem_venda_ml,monitor_mercado_esmaltes,panorama,"
+        "inteligencia_precos,cenario_macro,monitor_ml,monitor_concorrentes,monitor_sem_venda_ml,monitor_mercado_esmaltes,panorama,"
         "sincronizar_estoque,repricing,repricing_impala,operacao_24h,"
         "chat_shopee,chat_magalu,chat_amazon,auto_respostas",
     ).split(",")
@@ -1585,6 +1586,27 @@ TAXA_CANAL_PADRAO_PCT = float(os.getenv("TAXA_CANAL_PADRAO_PCT", "18.0"))
 MARGEM_FASE_1_PCT = float(os.getenv("MARGEM_FASE_1_PCT", "10.0"))
 MARGEM_FASE_2_PCT = float(os.getenv("MARGEM_FASE_2_PCT", "18.0"))
 MARGEM_FASE_3_PCT = float(os.getenv("MARGEM_FASE_3_PCT", "25.0"))
+# --- Cenário macro (pós-eleição 2026) -------------------------------------
+# 0 = desligado: robô se comporta exatamente como antes.
+CENARIO_MACRO_ATIVO = os.getenv("CENARIO_MACRO_ATIVO", "0").strip().lower() in {"1", "true", "yes"}
+# Câmbio de referência "antes do choque" (preencher à mão). 0 = sem referência.
+CENARIO_CAMBIO_REFERENCIA = float(os.getenv("CENARIO_CAMBIO_REFERENCIA", "0"))
+# Alta de custo de reposição dos kits já informada pelo fornecedor (% sobre custo
+# atual). Atualize quando chegar a nova tabela Impala. 0 = fornecedor não reajustou.
+CENARIO_REPOSICAO_ALTA_PCT = float(os.getenv("CENARIO_REPOSICAO_ALTA_PCT", "0"))
+# Pontos percentuais somados à margem mínima de cada fase enquanto o cenário está ativo.
+CENARIO_MARGEM_ADICIONAL_PP = float(os.getenv("CENARIO_MARGEM_ADICIONAL_PP", "0"))
+# Custo mensal do dinheiro parado em estoque (% a.m.), aprox. Selic/12 + prêmio.
+CENARIO_CUSTO_CAPITAL_MES_PCT = float(os.getenv("CENARIO_CUSTO_CAPITAL_MES_PCT", "1.2"))
+# Cobertura de estoque alvo (dias) usada para sinalizar compra antecipada ou excesso.
+CENARIO_COBERTURA_ALVO_DIAS = int(os.getenv("CENARIO_COBERTURA_ALVO_DIAS", "45"))
+# Faixas de choque cambial vs. referência (%): acima de ESTRESSE = atenção; acima de CHOQUE = alerta.
+CENARIO_CAMBIO_ESTRESSE_PCT = float(os.getenv("CENARIO_CAMBIO_ESTRESSE_PCT", "4"))
+CENARIO_CAMBIO_CHOQUE_PCT = float(os.getenv("CENARIO_CAMBIO_CHOQUE_PCT", "8"))
+# Alta de frete aplicada nas faixas de catalogo/frete_faixas_impala.json (% ; 0 = não aplica).
+CENARIO_FRETE_ALTA_PCT = float(os.getenv("CENARIO_FRETE_ALTA_PCT", "0"))
+# Taxa padrão Shopee (%) — VERIFICAR na tabela de comissões vigente antes de usar.
+TAXA_SHOPEE_PADRAO_PCT = float(os.getenv("TAXA_SHOPEE_PADRAO_PCT", "14.0"))
 REPRICING_DIFERENCA_MINIMA = float(os.getenv("REPRICING_DIFERENCA_MINIMA", "0.50"))
 PRECIFICACAO_COMPORTAMENTO_ATIVO = os.getenv("PRECIFICACAO_COMPORTAMENTO_ATIVO", "1").strip().lower() not in (
     "0",

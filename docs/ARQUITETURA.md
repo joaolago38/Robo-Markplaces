@@ -95,7 +95,7 @@ flowchart TB
 
   INFRA --- I1[conectividade · vigia_datadog · consumo_claude · keepalive · algoritmo]
   CHAT --- C1[chat ML/Shopee/Magalu/Amazon · auto_respostas]
-  OP --- O1[estoque · repricing · inteligência preços · operação 24h]
+  OP --- O1[estoque · repricing · inteligência preços · cenário macro · operação 24h]
   MON --- M1[ML · esmaltes · filamentos · Alibaba · leilões · veículos · licitações · descoberta]
   SOC --- S1[promoções manicures Telegram · conversão · Meta Ads opcional]
   VEN --- V1[Telegram gestor · margem vendas]

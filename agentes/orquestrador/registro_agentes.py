@@ -99,6 +99,13 @@ _AGENTES_PADRAO: tuple[AgenteRegistrado, ...] = (
         notas="Comportamento de compra + sugestão de preço por marketplace",
     ),
     AgenteRegistrado(
+        "cenario_macro",
+        "Cenário macro (margem/câmbio)",
+        "operacao",
+        "agentes.precificacao.agente_cenario_macro:executar",
+        notas="Somente leitura; inativo se CENARIO_MACRO_ATIVO=0",
+    ),
+    AgenteRegistrado(
         "operacao_24h",
         "Operação 24h (snapshot)",
         "operacao",

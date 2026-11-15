@@ -41,6 +41,7 @@ _WORKFLOWS_FILA_PROPRIA = (
     "relatorio_estrategia_ml.yml",
     "monitor_margem_vendas.yml",
     "inteligencia_precos.yml",
+    "cenario_macro.yml",
     "monitor_sem_venda_ml.yml",
     "monitor_ml.yml",
     "monitor_concorrentes_ml.yml",

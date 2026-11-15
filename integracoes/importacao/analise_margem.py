@@ -25,8 +25,13 @@ from core.config import (
     IMPORTACAO_SISCOMEX_BRL,
     REGRAS,
 )
+from core.precificacao_comportamento import calcular_preco_piso
 from integracoes.importacao.calculo_importacao_aerea import calcular_para_produto_alibaba
-from integracoes.importacao.custo_landed import calcular_cenarios_frete, calcular_margem_revenda
+from integracoes.importacao.custo_landed import (
+    calcular_cenarios_frete,
+    calcular_custo_landed,
+    calcular_margem_revenda,
+)
 from integracoes.importacao.normalizar_unidades import (
     custo_para_comparacao_marketplace,
     normalizar_preco_usd,
@@ -250,3 +255,64 @@ def analisar_produto_catalogo(
         "melhor_analise": melhor,
         "ok": True,
     }
+
+
+def calcular_sensibilidade_cambio(
+    produto: dict[str, Any],
+    cambio_base: float,
+    variacoes_pct: tuple[float, ...] = (0, 5, 10),
+) -> list[dict[str, Any]]:
+    """Margem e preço de equilíbrio para cada variação do dólar sobre `cambio_base`."""
+    try:
+        preco_usd = float(produto.get("preco_usd") or produto.get("preco_usd_unit") or 0)
+        base = float(cambio_base)
+        peso = float(produto.get("peso_kg") or 1.0)
+        quantidade = int(produto.get("quantidade") or produto.get("moq") or 1)
+    except (TypeError, ValueError):
+        return []
+    if preco_usd <= 0 or base <= 0:
+        return []
+
+    preco_venda = 0.0
+    try:
+        preco_venda = float(produto.get("preco_venda_brl") or produto.get("preco_mediana_brl") or 0)
+    except (TypeError, ValueError):
+        preco_venda = 0.0
+    taxa = float(produto.get("taxa_marketplace_pct") or REGRAS.get("taxa_marketplace_pct", 14))
+    margem_min = float(produto.get("margem_minima_pct") or ALIBABA_MARGEM_MIN_PCT)
+    extras: dict[str, Any] = {}
+    for chave in ("ii_pct", "ipi_pct", "icms_pct"):
+        if produto.get(chave) is not None:
+            extras[chave] = float(produto[chave])
+
+    cenarios: list[dict[str, Any]] = []
+    for variacao in variacoes_pct:
+        cambio = round(base * (1.0 + float(variacao) / 100.0), 4)
+        landed = calcular_custo_landed(
+            preco_usd,
+            cambio_usd_brl=cambio,
+            peso_kg_unit=peso,
+            quantidade=max(1, quantidade),
+            **extras,
+        )
+        custo = float(landed.get("custo_unitario_brl") or 0)
+        margem = (
+            calcular_margem_revenda(
+                preco_venda,
+                custo,
+                taxa_marketplace_pct=taxa,
+                margem_minima_pct=margem_min,
+            )
+            if preco_venda > 0
+            else {"ok": False}
+        )
+        cenarios.append(
+            {
+                "variacao_pct": float(variacao),
+                "cambio_usd_brl": cambio,
+                "custo_unitario_brl": custo,
+                "margem_pct": margem.get("margem_pct") if margem.get("ok") else None,
+                "preco_equilibrio": calcular_preco_piso(custo, taxa, margem_min),
+            }
+        )
+    return cenarios

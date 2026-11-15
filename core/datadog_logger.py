@@ -109,6 +109,7 @@ _LOGGER_META = {
     "agente_repricing_marketplaces": ("mercadolivre_e_outros", "agente"),
     "agente_repricing_impala": ("mercadolivre_e_outros", "agente"),
     "agente_inteligencia_precos": ("mercadolivre_e_outros", "agente"),
+    "agente_cenario_macro": ("mercadolivre_e_outros", "agente"),
     "catalogo_produtos": ("multi", "core"),
     "sinais_comprador": ("multi", "integracao"),
     "sincronizar_estoque_marketplaces": ("mercadolivre_e_outros", "agente"),
