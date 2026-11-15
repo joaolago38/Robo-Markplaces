@@ -103,6 +103,13 @@ def publicar_sku(sku: str, *, executar: bool = False) -> dict[str, Any]:
     if _mlb_valido(iid):
         return {"ok": True, "sku": sku_u, "item_id": iid, "acao": "ja_publicado"}
 
+    from core.empresa.publicacao_cnpj import autorizar_publicacao
+    from core.marketplace_cnpj import usar_conta
+
+    auth = autorizar_publicacao(sku_u, marketplace="mercadolivre")
+    if not auth.get("ok"):
+        return {"ok": False, "sku": sku_u, "erro": auth.get("motivo") or "publicacao_recusada"}
+
     pode, motivo = sku_pode_publicar_agora(sku_u)
     if not pode:
         return {"ok": False, "sku": sku_u, "erro": motivo}
@@ -125,7 +132,8 @@ def publicar_sku(sku: str, *, executar: bool = False) -> dict[str, Any]:
 
     from integracoes.ml import ml_client
 
-    r = ml_client._request_ml("POST", f"{ml_client.BASE}/items", json=payload, timeout=40)
+    with usar_conta(auth):
+        r = ml_client._request_ml("POST", f"{ml_client.BASE}/items", json=payload, timeout=40)
     status = getattr(r, "status_code", 0)
     corpo = {}
     try:

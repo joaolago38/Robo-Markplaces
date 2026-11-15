@@ -55,7 +55,32 @@ def _canal_operando() -> bool:
         return True
 
 
+def _conta_cnpj() -> dict | None:
+    try:
+        from core.marketplace_cnpj import conta_em_uso
+
+        return conta_em_uso("magalu")
+    except Exception:
+        return None
+
+
+def seller_id_ativo() -> str:
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("conta_id") or "").strip():
+        return str(ativa["conta_id"]).strip()
+    return str(MAGALU_SELLER_ID or "").strip()
+
+
+def _token_da_conta() -> str:
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("access_token") or "").strip():
+        return str(ativa["access_token"]).strip()
+    return ""
+
+
 def _enabled() -> bool:
+    if _token_da_conta():
+        return _canal_operando()
     if not (MAGALU_ACCESS_TOKEN or MAGALU_REFRESH_TOKEN):
         return False
     return _canal_operando()
@@ -177,6 +202,9 @@ def _headers_com_token(tok: str) -> dict:
 
 
 def _h():
+    proprio = _token_da_conta()
+    if proprio:
+        return _headers_com_token(proprio)
     tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
     refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
     if refresh:
@@ -193,6 +221,9 @@ def _request_magalu(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
     r = request(method, url, timeout=timeout, **kwargs)
     if getattr(r, "status_code", 0) != 401:
         return r
+    if _token_da_conta():
+        logger.warning("Magalu HTTP 401 na conta do CNPJ — token próprio, sem refresh da outra empresa")
+        return r
 
     logger.warning("Magalu HTTP 401 — renovando token e repetindo request")
     novo = get_token_magalu(forcar=True)
@@ -204,6 +235,9 @@ def _request_magalu(method: str, url: str, *, timeout: int = 20, **kwargs: Any):
 
 
 def _token_atual() -> str:
+    proprio = _token_da_conta()
+    if proprio:
+        return proprio
     tok = str(getattr(cfg, "MAGALU_ACCESS_TOKEN", "") or MAGALU_ACCESS_TOKEN or "")
     refresh = str(getattr(cfg, "MAGALU_REFRESH_TOKEN", "") or MAGALU_REFRESH_TOKEN or "")
     if refresh:
@@ -409,7 +443,7 @@ def obter_saude_conta() -> dict:
             "claims_rate": None,
             "claims_conhecido": False,
             "dias_sem_acesso": 999,
-            "conta_id": str(MAGALU_SELLER_ID or "").strip(),
+            "conta_id": seller_id_ativo(),
         }
 
     perguntas, ok = _listar_perguntas_nao_respondidas_detalhado(limit=50)
@@ -423,7 +457,7 @@ def obter_saude_conta() -> dict:
         "claims_rate": None,
         "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("magalu") or 0,
-        "conta_id": str(MAGALU_SELLER_ID or "").strip(),
+        "conta_id": seller_id_ativo(),
         "modelo": "sla_magalu",
     }
 

@@ -1,11 +1,40 @@
 """core/empresa/overrides.py — aplica env atual sem substituir configs (SRP)."""
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import core.config as _cfg
 from core.empresa.cnpj_utils import digitos, formatar_cnpj
 from core.empresa.flags import flag
+
+
+def _segredo(*nomes: str) -> str:
+    """Env vivo primeiro; config importada se o processo já nasceu com o valor."""
+    for nome in nomes:
+        vivo = os.getenv(nome, "").strip()
+        if vivo:
+            return vivo
+    for nome in nomes:
+        fixo = str(getattr(_cfg, nome, "") or "").strip()
+        if fixo:
+            return fixo
+    return ""
+
+
+def _ids_impala(bloco: str, chave: str, *envs: str) -> set[str]:
+    """IDs da Impala que a Masterprint não pode reutilizar."""
+    ids = {v for v in (_segredo(nome) for nome in envs) if v}
+    try:
+        from core.empresa.catalogo import empresa_por_id
+
+        emp = empresa_por_id("esmaltes_impala") or {}
+        cat = str((emp.get(bloco) or {}).get(chave) or "").strip()
+        if cat:
+            ids.add(cat)
+    except Exception:
+        pass
+    return ids
 
 
 def aplicar_overrides_env(empresa: dict[str, Any]) -> dict[str, Any]:
@@ -35,9 +64,10 @@ def aplicar_overrides_env(empresa: dict[str, Any]) -> dict[str, Any]:
         if prefer:
             out["cnpj"] = prefer
             out["cnpj_formatado"] = formatar_cnpj(prefer)
-        mp_seller = str(getattr(_cfg, "MASTERPRINT_ML_SELLER_ID", "") or flag("MASTERPRINT_ML_SELLER_ID", "")).strip()
-        mp_nick = str(getattr(_cfg, "MASTERPRINT_ML_NICKNAME", "") or flag("MASTERPRINT_ML_NICKNAME", "")).strip()
-        if mp_seller and not ml.get("seller_id"):
+        mp_seller = _segredo("MASTERPRINT_ML_SELLER_ID", "ML_SELLER_ID_MASTERPRINT")
+        mp_nick = _segredo("MASTERPRINT_ML_NICKNAME")
+        proibidos = _ids_impala("ml", "seller_id", "ML_SELLER_ID")
+        if mp_seller and not ml.get("seller_id") and mp_seller not in proibidos:
             ml["seller_id"] = mp_seller
         if mp_nick and not ml.get("nickname"):
             ml["nickname"] = mp_nick
@@ -56,14 +86,18 @@ def aplicar_overrides_env(empresa: dict[str, Any]) -> dict[str, Any]:
         if amz and not amazon.get("seller_id"):
             amazon["seller_id"] = amz
     elif eid == "masterprint":
-        shop = str(getattr(_cfg, "MASTERPRINT_SHOPEE_SHOP_ID", "") or flag("MASTERPRINT_SHOPEE_SHOP_ID", "")).strip()
-        if shop and not shopee.get("shop_id"):
+        shop = _segredo("MASTERPRINT_SHOPEE_SHOP_ID")
+        if shop and not shopee.get("shop_id") and shop not in _ids_impala("shopee", "shop_id", "SHOPEE_SHOP_ID"):
             shopee["shop_id"] = shop
-        mag_seller = str(getattr(_cfg, "MASTERPRINT_MAGALU_SELLER_ID", "") or "").strip()
-        if mag_seller and not magalu.get("seller_id"):
+        mag_seller = _segredo("MASTERPRINT_MAGALU_SELLER_ID")
+        if (
+            mag_seller
+            and not magalu.get("seller_id")
+            and mag_seller not in _ids_impala("magalu", "seller_id", "MAGALU_SELLER_ID")
+        ):
             magalu["seller_id"] = mag_seller
-        amz = str(getattr(_cfg, "MASTERPRINT_AMAZON_SELLER_ID", "") or "").strip()
-        if amz and not amazon.get("seller_id"):
+        amz = _segredo("MASTERPRINT_AMAZON_SELLER_ID")
+        if amz and not amazon.get("seller_id") and amz not in _ids_impala("amazon", "seller_id", "AMAZON_SELLER_ID"):
             amazon["seller_id"] = amz
     out["shopee"] = shopee
     out["magalu"] = magalu

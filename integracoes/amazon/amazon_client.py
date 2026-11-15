@@ -32,7 +32,26 @@ def _canal_operando() -> bool:
         return True
 
 
+def _conta_cnpj() -> dict | None:
+    try:
+        from core.marketplace_cnpj import conta_em_uso
+
+        return conta_em_uso("amazon")
+    except Exception:
+        return None
+
+
+def seller_id_ativo() -> str:
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("conta_id") or "").strip():
+        return str(ativa["conta_id"]).strip()
+    return str(AMAZON_SELLER_ID or "").strip()
+
+
 def _enabled() -> bool:
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("access_token") or "").strip():
+        return _canal_operando()
     tem_refresh = bool(
         AMAZON_LWA_CLIENT_ID and AMAZON_LWA_CLIENT_SECRET and AMAZON_REFRESH_TOKEN
     )
@@ -42,7 +61,11 @@ def _enabled() -> bool:
 
 
 def _h():
-    tok = get_token_amazon() or AMAZON_ACCESS_TOKEN or ""
+    ativa = _conta_cnpj()
+    if isinstance(ativa, dict) and str(ativa.get("access_token") or "").strip():
+        tok = str(ativa["access_token"]).strip()
+    else:
+        tok = get_token_amazon() or AMAZON_ACCESS_TOKEN or ""
     return {
         "x-amz-access-token": tok,
         "Content-Type": "application/json",
@@ -127,7 +150,7 @@ def obter_saude_conta() -> dict:
             "claims_rate": None,
             "claims_conhecido": False,
             "dias_sem_acesso": 999,
-            "conta_id": str(AMAZON_SELLER_ID or "").strip(),
+            "conta_id": seller_id_ativo(),
             "estoque_sync": False,
         }
 
@@ -141,7 +164,7 @@ def obter_saude_conta() -> dict:
         "claims_rate": None,
         "claims_conhecido": False,
         "dias_sem_acesso": dias_sem_acesso("amazon") or 0,
-        "conta_id": str(AMAZON_SELLER_ID or "").strip(),
+        "conta_id": seller_id_ativo(),
         "estoque_sync": False,
         "modelo": "buybox_amazon",
     }
