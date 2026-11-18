@@ -138,7 +138,6 @@ def gerar(caminho: Path | None = None) -> Path:
         return [Paragraph(str(c), styles[st]) for c in cells]
 
     agora = [r for r in linhas if r["decisao"] == "entrar agora"]
-    depois = [r for r in linhas if r["sku"] == DEPOIS_PEDIDO]
     compra = (caixas.get("envio_ml") or {}).get("comprar_caixas_pedido_validacao") or {}
     qtd_caixa = int(_f(compra.get("qtd"), 24))
     custo_caixa_un = _f(compra.get("custo_un_planilha"), 0.98)

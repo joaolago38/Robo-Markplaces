@@ -12,11 +12,24 @@ import logging
 import sys
 from typing import Any
 
+from core.config import ROOT
 from integracoes.mcp import ferramentas
 
 logger = logging.getLogger("mcp_robo")
 
 PROTOCOL = "2024-11-05"
+
+_RESOURCES: dict[str, dict[str, str]] = {
+    "robo://catalogo/cnaes-varejo-atacado": {
+        "name": "cnaes-varejo-atacado",
+        "description": (
+            "CNAEs de varejo e atacado (filamento 3D, papelaria, ferragens, "
+            "acetona, cosméticos, higiene e limpeza) para consulta posterior."
+        ),
+        "mimeType": "application/json",
+        "arquivo": "catalogo/cnaes_varejo_atacado_produtos.json",
+    },
+}
 
 _FERRAMENTAS: dict[str, dict[str, Any]] = {
     "vigia_saude": {
@@ -76,7 +89,10 @@ def tratar_requisicao(req: dict[str, Any]) -> dict[str, Any] | None:
             id_,
             {
                 "protocolVersion": versao or PROTOCOL,
-                "capabilities": {"tools": {"listChanged": False}},
+                "capabilities": {
+                    "tools": {"listChanged": False},
+                    "resources": {"listChanged": False},
+                },
                 "serverInfo": {"name": "robo-markplaces", "version": "1.0.0"},
             },
         )
@@ -111,9 +127,38 @@ def tratar_requisicao(req: dict[str, Any]) -> dict[str, Any] | None:
                 },
             )
 
-    if method in ("resources/list", "prompts/list"):
-        chave = "resources" if method.startswith("resources") else "prompts"
-        return _ok(id_, {chave: []})
+    if method == "resources/list":
+        recursos = [
+            {
+                "uri": uri,
+                "name": meta["name"],
+                "description": meta["description"],
+                "mimeType": meta["mimeType"],
+            }
+            for uri, meta in _RESOURCES.items()
+        ]
+        return _ok(id_, {"resources": recursos})
+
+    if method == "resources/read":
+        uri = str(params.get("uri") or "")
+        meta = _RESOURCES.get(uri)
+        if meta is None:
+            return _erro(id_, -32002, f"resource desconhecido: {uri}")
+        caminho = ROOT / meta["arquivo"]
+        if not caminho.is_file():
+            return _erro(id_, -32002, f"arquivo ausente: {meta['arquivo']}")
+        texto = caminho.read_text(encoding="utf-8")
+        return _ok(
+            id_,
+            {
+                "contents": [
+                    {"uri": uri, "mimeType": meta["mimeType"], "text": texto},
+                ]
+            },
+        )
+
+    if method == "prompts/list":
+        return _ok(id_, {"prompts": []})
 
     return _erro(id_, -32601, f"método desconhecido: {method}")
 
