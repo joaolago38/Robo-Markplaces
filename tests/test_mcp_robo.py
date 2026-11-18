@@ -77,6 +77,24 @@ class TestServidorMcp(unittest.TestCase):
         nomes = {t["name"] for t in listed["result"]["tools"]}
         self.assertEqual(nomes, {"vigia_saude", "ultimo_ciclo", "datadog_erros"})
 
+        recursos = servidor.tratar_requisicao({"jsonrpc": "2.0", "id": 6, "method": "resources/list"})
+        uris = {r["uri"] for r in recursos["result"]["resources"]}
+        self.assertIn("robo://catalogo/cnaes-varejo-atacado", uris)
+
+    def test_resource_cnaes(self):
+        resp = servidor.tratar_requisicao(
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "resources/read",
+                "params": {"uri": "robo://catalogo/cnaes-varejo-atacado"},
+            }
+        )
+        texto = resp["result"]["contents"][0]["text"]
+        payload = json.loads(texto)
+        self.assertGreaterEqual(len(payload["produtos"]), 17)
+        self.assertTrue(payload["codigos"])
+
     def test_notificacao_nao_responde(self):
         self.assertIsNone(
             servidor.tratar_requisicao({"jsonrpc": "2.0", "method": "notifications/initialized"})

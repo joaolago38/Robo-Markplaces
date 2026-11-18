@@ -1,0 +1,693 @@
+{
+  "versao": 1,
+  "fonte": "IBGE, API CNAE subclasses v2 (https://servicodados.ibge.gov.br/api/v2/cnae/subclasses)",
+  "consultado_em": "2026-11-18",
+  "escopo": "Somente comércio varejista (divisão 47) e atacadista (divisão 46). Não inclui fabricação nem representante comercial.",
+  "criterio": "Código entra quando a descrição ou a nota oficial da subclasse cobre o produto. Onde o IBGE não cita o item pelo nome, o papel fica 'enquadramento' e o campo 'porque' diz qual trecho da nota foi usado. 'principal' é o enquadramento mais específico; 'tambem' é o outro canal legítimo.",
+  "produtos": [
+    {
+      "id": "filamento_3d",
+      "nome": "Filamento 3D",
+      "varejo": [
+        {
+          "codigo": "4751-2/01",
+          "codigo_ibge": "4751201",
+          "descricao": "Comércio varejista especializado de equipamentos e suprimentos de informática",
+          "papel": "principal",
+          "porque": "A nota cobre suprimentos de informática (toner, discos, cartuchos). O carretel de filamento é suprimento de impressora 3D; o IBGE não cita filamento."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4651-6/02",
+          "codigo_ibge": "4651602",
+          "descricao": "Comércio atacadista de suprimentos para informática",
+          "papel": "principal",
+          "porque": "Nota oficial: suprimentos para informática (toner, fitas, disquetes e discos ópticos). Mesmo enquadramento do carretel vendido como suprimento."
+        },
+        {
+          "codigo": "4684-2/01",
+          "codigo_ibge": "4684201",
+          "descricao": "Comércio atacadista de resinas e elastômeros",
+          "papel": "tambem",
+          "porque": "Nota oficial lista resinas termoplásticas (poliamidas, poliestireno, policarbonatos, PVC e similares). Serve quando a venda é da resina (PLA, ABS, PETG, náilon), não do carretel de uso final."
+        }
+      ]
+    },
+    {
+      "id": "apagador_quadro_branco",
+      "nome": "Apagador de quadro branco",
+      "varejo": [
+        {
+          "codigo": "4761-0/03",
+          "codigo_ibge": "4761003",
+          "descricao": "Comércio varejista de artigos de papelaria",
+          "papel": "principal",
+          "porque": "Artigo de escritório e papelaria. A nota inclui grampeadores, perfuradores e similares de mesa."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4647-8/01",
+          "codigo_ibge": "4647801",
+          "descricao": "Comércio atacadista de artigos de escritório e de papelaria",
+          "papel": "principal",
+          "porque": "Nota oficial: artigos de escritório e de papelaria e artigos escolares."
+        }
+      ]
+    },
+    {
+      "id": "caneta_quadro_branco",
+      "nome": "Caneta para quadro branco",
+      "varejo": [
+        {
+          "codigo": "4761-0/03",
+          "codigo_ibge": "4761003",
+          "descricao": "Comércio varejista de artigos de papelaria",
+          "papel": "principal",
+          "porque": "Marcador de quadro é artigo de papelaria e de escritório."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4647-8/01",
+          "codigo_ibge": "4647801",
+          "descricao": "Comércio atacadista de artigos de escritório e de papelaria",
+          "papel": "principal",
+          "porque": "Mesma subclasse dos artigos de papelaria e escolares."
+        }
+      ]
+    },
+    {
+      "id": "parafusos",
+      "nome": "Parafusos",
+      "varejo": [
+        {
+          "codigo": "4744-0/01",
+          "codigo_ibge": "4744001",
+          "descricao": "Comércio varejista de ferragens e ferramentas",
+          "papel": "principal",
+          "porque": "Nota oficial: ferragens para construção. Parafuso é ferragem; o IBGE não cita a palavra parafuso."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4672-9/00",
+          "codigo_ibge": "4672900",
+          "descricao": "Comércio atacadista de ferragens e ferramentas",
+          "papel": "principal",
+          "porque": "Nota oficial: ferragens para construção."
+        },
+        {
+          "codigo": "4679-6/04",
+          "codigo_ibge": "4679604",
+          "descricao": "Comércio atacadista especializado de materiais de construção não especificados anteriormente",
+          "papel": "tambem",
+          "porque": "A nota cita produtos siderúrgicos para construção, inclusive pregos e arames, o grupo dos fixadores."
+        }
+      ]
+    },
+    {
+      "id": "ferramentas_alicate_martelo",
+      "nome": "Ferramentas (alicate e martelo)",
+      "varejo": [
+        {
+          "codigo": "4744-0/01",
+          "codigo_ibge": "4744001",
+          "descricao": "Comércio varejista de ferragens e ferramentas",
+          "papel": "principal",
+          "porque": "A nota cita ferramentas manuais, elétricas e não elétricas, e nomeia martelos e alicates."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4672-9/00",
+          "codigo_ibge": "4672900",
+          "descricao": "Comércio atacadista de ferragens e ferramentas",
+          "papel": "principal",
+          "porque": "A nota cita martelos, serras, alicates e chaves de fenda, exceto ferramenta industrial."
+        }
+      ]
+    },
+    {
+      "id": "abracadeira_nylon",
+      "nome": "Abraçadeira de náilon",
+      "varejo": [
+        {
+          "codigo": "4742-3/00",
+          "codigo_ibge": "4742300",
+          "descricao": "Comércio varejista de material elétrico",
+          "papel": "principal",
+          "porque": "A nota cobre fios, cabos e condutores. A abraçadeira é acessório de fixação desses cabos; o IBGE não cita a palavra."
+        },
+        {
+          "codigo": "4744-0/01",
+          "codigo_ibge": "4744001",
+          "descricao": "Comércio varejista de ferragens e ferramentas",
+          "papel": "tambem",
+          "porque": "Também é vendida como ferragem de uso geral."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4673-7/00",
+          "codigo_ibge": "4673700",
+          "descricao": "Comércio atacadista de material elétrico",
+          "papel": "principal",
+          "porque": "Nota oficial: fios, cabos e condutores elétricos."
+        },
+        {
+          "codigo": "4672-9/00",
+          "codigo_ibge": "4672900",
+          "descricao": "Comércio atacadista de ferragens e ferramentas",
+          "papel": "tambem",
+          "porque": "Quando o lote é vendido como ferragem, não como material elétrico."
+        }
+      ]
+    },
+    {
+      "id": "acetona",
+      "nome": "Acetona",
+      "varejo": [
+        {
+          "codigo": "4772-5/00",
+          "codigo_ibge": "4772500",
+          "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+          "papel": "principal",
+          "porque": "Acetona e removedor de esmalte vendidos como produto de toucador e manicure."
+        },
+        {
+          "codigo": "4741-5/00",
+          "codigo_ibge": "4741500",
+          "descricao": "Comércio varejista de tintas e materiais para pintura",
+          "papel": "tambem",
+          "porque": "A nota cita solventes para tintas. Use este código quando a acetona é vendida como solvente de pintura, não como removedor."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4646-0/01",
+          "codigo_ibge": "4646001",
+          "descricao": "Comércio atacadista de cosméticos e produtos de perfumaria",
+          "papel": "principal",
+          "porque": "Removedor e acetona de uso cosmético."
+        },
+        {
+          "codigo": "4684-2/02",
+          "codigo_ibge": "4684202",
+          "descricao": "Comércio atacadista de solventes",
+          "papel": "tambem",
+          "porque": "Nota oficial: solventes para uso industrial. A nota de 4679-6/01 manda o solvente industrial para este código."
+        },
+        {
+          "codigo": "4679-6/01",
+          "codigo_ibge": "4679601",
+          "descricao": "Comércio atacadista de tintas, vernizes e similares",
+          "papel": "tambem",
+          "porque": "A nota cita solventes para tintas, vernizes e similares, e exclui o solvente industrial (4684-2/02)."
+        }
+      ]
+    },
+    {
+      "id": "cosmeticos",
+      "nome": "Produtos para cosmético",
+      "varejo": [
+        {
+          "codigo": "4772-5/00",
+          "codigo_ibge": "4772500",
+          "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+          "papel": "principal",
+          "porque": "Nota oficial: cosméticos, perfumaria, toucador e higiene pessoal."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4646-0/01",
+          "codigo_ibge": "4646001",
+          "descricao": "Comércio atacadista de cosméticos e produtos de perfumaria",
+          "papel": "principal",
+          "porque": "Nota oficial: cosméticos, perfumaria, toucador e essências manipuladas para perfume."
+        },
+        {
+          "codigo": "4646-0/02",
+          "codigo_ibge": "4646002",
+          "descricao": "Comércio atacadista de produtos de higiene pessoal",
+          "papel": "tambem",
+          "porque": "Linha de higiene pessoal que acompanha o cosmético (a nota separa este código do de perfumaria)."
+        }
+      ]
+    },
+    {
+      "id": "alicate_unha",
+      "nome": "Alicate de unha",
+      "varejo": [
+        {
+          "codigo": "4772-5/00",
+          "codigo_ibge": "4772500",
+          "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+          "papel": "principal",
+          "porque": "Instrumento de manicure vendido com cosméticos e higiene pessoal. Não é o alicate de ferragem (4744-0/01)."
+        },
+        {
+          "codigo": "4759-8/99",
+          "codigo_ibge": "4759899",
+          "descricao": "Comércio varejista de outros artigos de uso pessoal e doméstico não especificados anteriormente",
+          "papel": "tambem",
+          "porque": "A nota inclui artigos de cutelaria, grupo em que entram tesouras e alicates de unha."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4646-0/01",
+          "codigo_ibge": "4646001",
+          "descricao": "Comércio atacadista de cosméticos e produtos de perfumaria",
+          "papel": "principal",
+          "porque": "Lote de instrumento de manicure junto de cosméticos."
+        },
+        {
+          "codigo": "4649-4/99",
+          "codigo_ibge": "4649499",
+          "descricao": "Comércio atacadista de outros equipamentos e artigos de uso pessoal e doméstico não especificados anteriormente",
+          "papel": "tambem",
+          "porque": "A nota inclui artigos de cutelaria."
+        }
+      ]
+    },
+    {
+      "id": "apagador",
+      "nome": "Apagador (borracha escolar)",
+      "varejo": [
+        {
+          "codigo": "4761-0/03",
+          "codigo_ibge": "4761003",
+          "descricao": "Comércio varejista de artigos de papelaria",
+          "papel": "principal",
+          "porque": "Borracha escolar é artigo de papelaria. O apagador de quadro branco está no item apagador_quadro_branco, no mesmo código."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4647-8/01",
+          "codigo_ibge": "4647801",
+          "descricao": "Comércio atacadista de artigos de escritório e de papelaria",
+          "papel": "principal",
+          "porque": "Artigos escolares e de papelaria."
+        }
+      ]
+    },
+    {
+      "id": "papel",
+      "nome": "Papel",
+      "varejo": [
+        {
+          "codigo": "4761-0/03",
+          "codigo_ibge": "4761003",
+          "descricao": "Comércio varejista de artigos de papelaria",
+          "papel": "principal",
+          "porque": "A nota cobre artigos de papelaria e de escritório e embalagens de papel e papelão."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4647-8/01",
+          "codigo_ibge": "4647801",
+          "descricao": "Comércio atacadista de artigos de escritório e de papelaria",
+          "papel": "principal",
+          "porque": "A nota cobre papel, papelão e seus artefatos, exceto embalagens e exceto o papel em bruto industrial."
+        },
+        {
+          "codigo": "4686-9/01",
+          "codigo_ibge": "4686901",
+          "descricao": "Comércio atacadista de papel e papelão em bruto",
+          "papel": "tambem",
+          "porque": "Papel e papelão em bruto como produto intermediário de uso industrial. A própria nota de 4647-8/01 exclui este caso."
+        },
+        {
+          "codigo": "4686-9/02",
+          "codigo_ibge": "4686902",
+          "descricao": "Comércio atacadista de embalagens",
+          "papel": "tambem",
+          "porque": "Embalagens de qualquer material, inclusive papel e papelão. Não é o papel de escritório."
+        }
+      ]
+    },
+    {
+      "id": "detergente",
+      "nome": "Detergente",
+      "varejo": [
+        {
+          "codigo": "4789-0/05",
+          "codigo_ibge": "4789005",
+          "descricao": "Comércio varejista de produtos saneantes domissanitários",
+          "papel": "principal",
+          "porque": "A nota nomeia detergentes, alvejantes e desinfetantes."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4649-4/08",
+          "codigo_ibge": "4649408",
+          "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar",
+          "papel": "principal",
+          "porque": "Detergente de uso domiciliar. A nota de 4684-2/99 manda a limpeza domiciliar para este código."
+        },
+        {
+          "codigo": "4649-4/09",
+          "codigo_ibge": "4649409",
+          "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar, com atividade de fracionamento e acondicionamento associada",
+          "papel": "tambem",
+          "porque": "O mesmo produto quando o atacado fraciona e acondiciona."
+        },
+        {
+          "codigo": "4684-2/99",
+          "codigo_ibge": "4684299",
+          "descricao": "Comércio atacadista de outros produtos químicos e petroquímicos não especificados anteriormente",
+          "papel": "tambem",
+          "porque": "A nota nomeia alvejantes e detergentes industriais, e exclui o detergente domiciliar."
+        }
+      ]
+    },
+    {
+      "id": "sabao_e_po",
+      "nome": "Sabão e pó",
+      "varejo": [
+        {
+          "codigo": "4789-0/05",
+          "codigo_ibge": "4789005",
+          "descricao": "Comércio varejista de produtos saneantes domissanitários",
+          "papel": "principal",
+          "porque": "Sabão em pedra e sabão em pó são saneantes de limpeza domiciliar, no mesmo grupo de detergentes e alvejantes nomeados na nota."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4649-4/08",
+          "codigo_ibge": "4649408",
+          "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar",
+          "papel": "principal",
+          "porque": "Limpeza e conservação domiciliar."
+        },
+        {
+          "codigo": "4649-4/09",
+          "codigo_ibge": "4649409",
+          "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar, com atividade de fracionamento e acondicionamento associada",
+          "papel": "tambem",
+          "porque": "Quando há fracionamento e acondicionamento no atacado."
+        }
+      ]
+    },
+    {
+      "id": "amaciante",
+      "nome": "Amaciante",
+      "varejo": [
+        {
+          "codigo": "4789-0/05",
+          "codigo_ibge": "4789005",
+          "descricao": "Comércio varejista de produtos saneantes domissanitários",
+          "papel": "principal",
+          "porque": "Amaciante de roupas é saneante de conservação domiciliar. A nota não cita a palavra amaciante."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4649-4/08",
+          "codigo_ibge": "4649408",
+          "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar",
+          "papel": "principal",
+          "porque": "Conservação domiciliar, junto de sabão e detergente de uso doméstico."
+        },
+        {
+          "codigo": "4649-4/09",
+          "codigo_ibge": "4649409",
+          "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar, com atividade de fracionamento e acondicionamento associada",
+          "papel": "tambem",
+          "porque": "Quando há fracionamento e acondicionamento no atacado."
+        }
+      ]
+    },
+    {
+      "id": "escova_de_dente",
+      "nome": "Escova de dente",
+      "varejo": [
+        {
+          "codigo": "4772-5/00",
+          "codigo_ibge": "4772500",
+          "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+          "papel": "principal",
+          "porque": "Higiene pessoal. A escova doméstica de limpeza (vassoura, escova de chão) é outro código, 4759-8/99, e não entra aqui."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4646-0/02",
+          "codigo_ibge": "4646002",
+          "descricao": "Comércio atacadista de produtos de higiene pessoal",
+          "papel": "principal",
+          "porque": "Nota oficial: produtos de higiene pessoal."
+        }
+      ]
+    },
+    {
+      "id": "enxaguante_bucal",
+      "nome": "Enxaguante bucal",
+      "varejo": [
+        {
+          "codigo": "4772-5/00",
+          "codigo_ibge": "4772500",
+          "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+          "papel": "principal",
+          "porque": "Higiene pessoal. Não é produto odontológico de consultório (4645-1/03 cobre cera e compostos de restauração)."
+        },
+        {
+          "codigo": "4771-7/01",
+          "codigo_ibge": "4771701",
+          "descricao": "Comércio varejista de produtos farmacêuticos, sem manipulação de fórmulas",
+          "papel": "tambem",
+          "porque": "Quando o ponto de venda é drogaria. Não substitui 4772-5/00 numa loja de higiene pessoal."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4646-0/02",
+          "codigo_ibge": "4646002",
+          "descricao": "Comércio atacadista de produtos de higiene pessoal",
+          "papel": "principal",
+          "porque": "Higiene pessoal, não material odontológico de laboratório."
+        }
+      ]
+    },
+    {
+      "id": "disco_de_corte",
+      "nome": "Disco de corte",
+      "varejo": [
+        {
+          "codigo": "4744-0/01",
+          "codigo_ibge": "4744001",
+          "descricao": "Comércio varejista de ferragens e ferramentas",
+          "papel": "principal",
+          "porque": "Consumível de ferramenta manual elétrica (a nota cita serras, furadeiras e ferramentas elétricas). O IBGE não cita disco de corte."
+        }
+      ],
+      "atacado": [
+        {
+          "codigo": "4672-9/00",
+          "codigo_ibge": "4672900",
+          "descricao": "Comércio atacadista de ferragens e ferramentas",
+          "papel": "principal",
+          "porque": "Ferramentas manuais elétricas e não elétricas, exceto máquina industrial."
+        },
+        {
+          "codigo": "4663-0/00",
+          "codigo_ibge": "4663000",
+          "descricao": "Comércio atacadista de máquinas e equipamentos para uso industrial; partes e peças",
+          "papel": "tambem",
+          "porque": "Quando o disco é parte ou peça de máquina-ferramenta industrial. A nota de 4672-9/00 exclui a ferramenta industrial e aponta o grupo 46.6."
+        }
+      ]
+    }
+  ],
+  "codigos": [
+    {
+      "codigo": "4646-0/01",
+      "codigo_ibge": "4646001",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de cosméticos e produtos de perfumaria",
+      "produtos": ["acetona", "cosmeticos", "alicate_unha"]
+    },
+    {
+      "codigo": "4646-0/02",
+      "codigo_ibge": "4646002",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de produtos de higiene pessoal",
+      "produtos": ["cosmeticos", "escova_de_dente", "enxaguante_bucal"]
+    },
+    {
+      "codigo": "4647-8/01",
+      "codigo_ibge": "4647801",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de artigos de escritório e de papelaria",
+      "produtos": ["apagador_quadro_branco", "caneta_quadro_branco", "apagador", "papel"]
+    },
+    {
+      "codigo": "4649-4/08",
+      "codigo_ibge": "4649408",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar",
+      "produtos": ["detergente", "sabao_e_po", "amaciante"]
+    },
+    {
+      "codigo": "4649-4/09",
+      "codigo_ibge": "4649409",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de produtos de higiene, limpeza e conservação domiciliar, com atividade de fracionamento e acondicionamento associada",
+      "produtos": ["detergente", "sabao_e_po", "amaciante"]
+    },
+    {
+      "codigo": "4649-4/99",
+      "codigo_ibge": "4649499",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de outros equipamentos e artigos de uso pessoal e doméstico não especificados anteriormente",
+      "produtos": ["alicate_unha"]
+    },
+    {
+      "codigo": "4651-6/02",
+      "codigo_ibge": "4651602",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de suprimentos para informática",
+      "produtos": ["filamento_3d"]
+    },
+    {
+      "codigo": "4663-0/00",
+      "codigo_ibge": "4663000",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de máquinas e equipamentos para uso industrial; partes e peças",
+      "produtos": ["disco_de_corte"]
+    },
+    {
+      "codigo": "4672-9/00",
+      "codigo_ibge": "4672900",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de ferragens e ferramentas",
+      "produtos": ["parafusos", "ferramentas_alicate_martelo", "abracadeira_nylon", "disco_de_corte"]
+    },
+    {
+      "codigo": "4673-7/00",
+      "codigo_ibge": "4673700",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de material elétrico",
+      "produtos": ["abracadeira_nylon"]
+    },
+    {
+      "codigo": "4679-6/01",
+      "codigo_ibge": "4679601",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de tintas, vernizes e similares",
+      "produtos": ["acetona"]
+    },
+    {
+      "codigo": "4679-6/04",
+      "codigo_ibge": "4679604",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista especializado de materiais de construção não especificados anteriormente",
+      "produtos": ["parafusos"]
+    },
+    {
+      "codigo": "4684-2/01",
+      "codigo_ibge": "4684201",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de resinas e elastômeros",
+      "produtos": ["filamento_3d"]
+    },
+    {
+      "codigo": "4684-2/02",
+      "codigo_ibge": "4684202",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de solventes",
+      "produtos": ["acetona"]
+    },
+    {
+      "codigo": "4684-2/99",
+      "codigo_ibge": "4684299",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de outros produtos químicos e petroquímicos não especificados anteriormente",
+      "produtos": ["detergente"]
+    },
+    {
+      "codigo": "4686-9/01",
+      "codigo_ibge": "4686901",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de papel e papelão em bruto",
+      "produtos": ["papel"]
+    },
+    {
+      "codigo": "4686-9/02",
+      "codigo_ibge": "4686902",
+      "canal": "atacado",
+      "descricao": "Comércio atacadista de embalagens",
+      "produtos": ["papel"]
+    },
+    {
+      "codigo": "4741-5/00",
+      "codigo_ibge": "4741500",
+      "descricao": "Comércio varejista de tintas e materiais para pintura",
+      "canal": "varejo",
+      "produtos": ["acetona"]
+    },
+    {
+      "codigo": "4742-3/00",
+      "codigo_ibge": "4742300",
+      "canal": "varejo",
+      "descricao": "Comércio varejista de material elétrico",
+      "produtos": ["abracadeira_nylon"]
+    },
+    {
+      "codigo": "4744-0/01",
+      "codigo_ibge": "4744001",
+      "canal": "varejo",
+      "descricao": "Comércio varejista de ferragens e ferramentas",
+      "produtos": ["parafusos", "ferramentas_alicate_martelo", "abracadeira_nylon", "disco_de_corte"]
+    },
+    {
+      "codigo": "4751-2/01",
+      "codigo_ibge": "4751201",
+      "canal": "varejo",
+      "descricao": "Comércio varejista especializado de equipamentos e suprimentos de informática",
+      "produtos": ["filamento_3d"]
+    },
+    {
+      "codigo": "4759-8/99",
+      "codigo_ibge": "4759899",
+      "canal": "varejo",
+      "descricao": "Comércio varejista de outros artigos de uso pessoal e doméstico não especificados anteriormente",
+      "produtos": ["alicate_unha"]
+    },
+    {
+      "codigo": "4761-0/03",
+      "codigo_ibge": "4761003",
+      "canal": "varejo",
+      "descricao": "Comércio varejista de artigos de papelaria",
+      "produtos": ["apagador_quadro_branco", "caneta_quadro_branco", "apagador", "papel"]
+    },
+    {
+      "codigo": "4771-7/01",
+      "codigo_ibge": "4771701",
+      "canal": "varejo",
+      "descricao": "Comércio varejista de produtos farmacêuticos, sem manipulação de fórmulas",
+      "produtos": ["enxaguante_bucal"]
+    },
+    {
+      "codigo": "4772-5/00",
+      "codigo_ibge": "4772500",
+      "canal": "varejo",
+      "descricao": "Comércio varejista de cosméticos, produtos de perfumaria e de higiene pessoal",
+      "produtos": ["acetona", "cosmeticos", "alicate_unha", "escova_de_dente", "enxaguante_bucal"]
+    },
+    {
+      "codigo": "4789-0/05",
+      "codigo_ibge": "4789005",
+      "canal": "varejo",
+      "descricao": "Comércio varejista de produtos saneantes domissanitários",
+      "produtos": ["detergente", "sabao_e_po", "amaciante"]
+    }
+  ]
+}
